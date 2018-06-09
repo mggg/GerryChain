@@ -32,7 +32,7 @@ jobs:
           name: run tests
           command: |
             # source activate adj
-            pytest tests
+            pytest tests --cov
             pip install codecov
             codecov
 

@@ -2,4 +2,5 @@
 omit =
     setup.py
     rundmcmc/__main__.py
+    rundmcmc/_version.py
     tests/*
