@@ -1,3 +1,3 @@
-from rundmcmc import cli
+from rundmcmc.cli import cli
 
 cli()
