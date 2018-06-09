@@ -2,7 +2,7 @@
 
 package:
   name: rundmcmc
-  version: Monte-Carlo exploration of districting plans
+  version: {{ data['version'] }}
 
 source:
   path: ..
@@ -20,6 +20,15 @@ requirements:
     {% for dep in data['install_requires'] %}
     - {{ dep.lower() }}
     {% endfor %}
+
+test:
+  source_files:
+    - tests
+  requires:
+    - pytest
+    - pytest-cov
+  commands:
+    - pytest tests
 
 about:
   home: https://github.com/gerrymandr/RunDMCMC
