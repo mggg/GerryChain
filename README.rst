@@ -3,8 +3,8 @@ RunDMCMC
 ===============================
 
 
-.. image:: https://img.shields.io/travis/gerrymandr/RunDMCMC.svg
-        :target: https://travis-ci.org/gerrymandr/RunDMCMC
+.. image:: https://circleci.com/gh/gerrymandr/RunDMCMC.svg?style=svg
+    :target: https://circleci.com/gh/gerrymandr/RunDMCMC
 
 
 This code implements Monte-Carlo exploration of districting plans, exploring the
