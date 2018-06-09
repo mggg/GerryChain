@@ -33,6 +33,8 @@ jobs:
           command: |
             # source activate adj
             pytest tests
+            pip install codecov
+            codecov
 
       - store_artifacts:
           path: test-reports
