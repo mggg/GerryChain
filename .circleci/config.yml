@@ -1,0 +1,39 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: continuumio/miniconda3
+
+    working_directory: ~/repo
+
+    steps:
+      - checkout
+
+      # - restore_cache:
+      #     keys:
+      #     - v1-dependencies-{{ checksum "environment.yml" }}
+      #     - v1-dependencies-
+
+      - run:
+          name: install dependencies
+          command: |
+            # conda env create -q || conda env update -q
+            # source activate adj
+            conda install -qy pytest click
+            conda clean -ay
+            pip install -e .
+
+      # - save_cache:
+      #     paths:
+      #       - /opt/conda
+      #     key: v1-dependencies-{{ checksum "environment.yml" }}
+
+      - run:
+          name: run tests
+          command: |
+            # source activate adj
+            pytest tests
+
+      - store_artifacts:
+          path: test-reports
+          destination: test-reports

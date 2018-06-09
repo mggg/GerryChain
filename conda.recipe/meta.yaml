@@ -1,0 +1,26 @@
+{% set data = load_setup_py_data() %}
+
+package:
+  name: rundmcmc
+  version: Monte-Carlo exploration of districting plans
+
+source:
+  path: ..
+
+build:
+  script: python setup.py install --single-version-externally-managed --record=record.txt
+
+requirements:
+  build:
+    - python
+    - setuptools
+  run:
+    - python
+    # dependencies are defined in setup.py
+    {% for dep in data['install_requires'] %}
+    - {{ dep.lower() }}
+    {% endfor %}
+
+about:
+  home: https://github.com/gerrymandr/RunDMCMC
+  summary: Monte-Carlo exploration of districting plans for gerrymandering analysis

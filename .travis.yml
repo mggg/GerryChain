@@ -1,0 +1,30 @@
+# Config file for automatic testing at travis-ci.org
+
+language: python
+  - "2.7"
+  - "3.6"
+sudo: required
+before_install:
+  - sudo apt-get update
+install:
+  - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
+      wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh;
+    else
+      wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+    fi
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - hash -r
+  - conda config --set always_yes yes
+  - conda update -q conda
+  - conda install -n conda-build
+  - conda install anaconda-client
+  - conda install pytest-cov
+  - pip install coveralls
+  - conda build .
+  - conda install --use-local rundmcmc
+  - conda info -a
+script:
+  - pytest -v --cov=rundmcmc tests
+after_success:
+  - coveralls
