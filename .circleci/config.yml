@@ -19,7 +19,7 @@ jobs:
           command: |
             # conda env create -q || conda env update -q
             # source activate adj
-            conda install -qy pytest click
+            conda install -qy pytest pytest-cov click
             conda clean -ay
             pip install -e .
 

@@ -1,4 +1,5 @@
 from setuptools import setup
+import versioneer
 
 requirements = [
     # package requirements go here
@@ -6,12 +7,13 @@ requirements = [
 
 setup(
     name='RunDMCMC',
-    version='Monte-Carlo exploration of districting plans',
     description="Short description",
     author="Metric Geometry and Gerrymandering Group",
     author_email='gerrymandr@gmail.com',
     url='https://github.com/gerrymandr/RunDMCMC',
     packages=['rundmcmc'],
+    version=versioneer.get_version(),
+    cmdclass=versioneer.get_cmdclass(),
     entry_points={
         'console_scripts': [
             'rundmcmc=rundmcmc.cli:cli'
