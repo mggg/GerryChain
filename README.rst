@@ -2,6 +2,10 @@
 RunDMCMC
 ===============================
 
+.. image:: https://api.codacy.com/project/badge/Grade/8c914b8ed49144e0b68a920beadf89a2
+   :alt: Codacy Badge
+   :target: https://app.codacy.com/app/msarahan/RunDMCMC?utm_source=github.com&utm_medium=referral&utm_content=gerrymandr/RunDMCMC&utm_campaign=badger
+
 
 .. image:: https://circleci.com/gh/gerrymandr/RunDMCMC.svg?style=svg
     :target: https://circleci.com/gh/gerrymandr/RunDMCMC
