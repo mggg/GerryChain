@@ -62,3 +62,6 @@ target/
 .python-version
 
 junit.xml
+
+# crapple
+.DS_Store

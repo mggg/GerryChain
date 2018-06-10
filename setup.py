@@ -3,6 +3,7 @@ import versioneer
 
 requirements = [
     # package requirements go here
+    'pandas',
 ]
 
 setup(
