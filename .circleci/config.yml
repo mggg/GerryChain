@@ -19,9 +19,9 @@ jobs:
           command: |
             # conda env create -q || conda env update -q
             # source activate adj
-            conda install -qy pytest pytest-cov click
-            conda clean -ay
-            pip install -e .
+            conda install -qy pytest pytest-cov conda-build anaconda-client
+            conda build --no-test .
+            conda install --use-local rundmcmc
 
       # - save_cache:
       #     paths:
@@ -32,8 +32,8 @@ jobs:
           name: run tests
           command: |
             # source activate adj
-            pytest tests --cov
-            pip install codecov
+            pytest -v --cov=rundmcmc tests
+            conda install -c conda-forge codecov
             codecov
 
       - store_artifacts:
