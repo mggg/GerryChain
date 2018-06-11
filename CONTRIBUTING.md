@@ -47,6 +47,9 @@ When writing git commit messages, use the following guidelines:
 - Use the imperative mood ("Fix import", not "Fixes import")
 - Limit first line to 72 characters
 
+For further guidelines, see [this
+gist](https://gist.github.com/robertpainsi/b632364184e70900af4ab688decf6f53).
+
 ### Python styleguide
 
 The recommended styleguide is
@@ -72,7 +75,13 @@ details.
     - `2 + 2`, not `2+2`
     - `x / y`, not `x/y`.
 
-- Comments should be complete sentences with correct punctuation and grammar.
+- Write comments as complete sentences with correct punctuation and grammar.
 
-- When writing docstrings, refer to
-  [PEP257](https://www.python.org/dev/peps/pep-0257/).
+- Write docstrings in
+  [reStructuredText](http://docutils.sourceforge.net/rst.html) and in
+  accordance with [PEP257](https://www.python.org/dev/peps/pep-0257/).
+
+    - Docstrings are scanned by
+      [Sphinx](http://www.sphinx-doc.org/en/master/index.html) to autogenerate
+      documentation on our [documentation
+      site](http://rundmcmc.readthedocs.io/en/latest/).
