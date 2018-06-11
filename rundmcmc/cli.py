@@ -1,3 +1,8 @@
+"""This is the CLI frontend.  It should map to the api as closely as possible.
+
+No functionality should be defined here - just passing through CLI arguments to the API."""
+
+
 def cli():
     print("CLI template")
     # No return value means no error.
