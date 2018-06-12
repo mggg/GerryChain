@@ -38,7 +38,7 @@ def add_data_to_graph(your_data, graph, data_name):
     for i,j in enumerate(graph.nodes()):
         graph.nodes[j][data_name] = your_data[i]
 
-def construct_graph(lists_of_neighbors, lists_of_perims, district_list):
+def construct_graph(lists_of_neighbors, lists_of_perims, geoid):
     '''Constructs your starting graph to run chain on
 
     :lists_of_neighbors: A list of lists stating the neighbors of each VTD.
@@ -60,6 +60,6 @@ def construct_graph(lists_of_neighbors, lists_of_perims, district_list):
 
     #Add districts to each node(VTD)
     for i,j in enumerate(graph.nodes()):
-        graph.nodes[j]['CD'] = district_list[i]
+        graph.nodes[j]['GEOID'] = geoid[i]
 
     return graph
