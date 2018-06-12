@@ -65,3 +65,6 @@ junit.xml
 
 # crapple
 .DS_Store
+
+# Editors
+.vscode/

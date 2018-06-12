@@ -1,0 +1,9 @@
+[
+  "tests/test_cli.py::test_cli_template",
+  "tests/test_models.py::test_load_files_into_dataframe",
+  "tests/test_models.py::test_precincts_file_missing_column",
+  "tests/test_models.py::test_load_election_file_with_wrong_rows",
+  "tests/test_models.py::test_load_election_file_with_header",
+  "tests/test_models.py::test_load_precint_file_with_wrong_rows",
+  "tests/test_models.py::test_load_precint_file_with_header"
+]
