@@ -33,10 +33,9 @@ def add_data_to_graph(your_data, graph, data_name):
     if len(graph) != len(your_data):
         print("Your column length doesn't match the number of nodes!")
         sys.exit(1)
-
     #Adding data to the nodes
     for i,j in enumerate(graph.nodes()):
-        graph.nodes[j][data_name] = your_data[i]
+        graph.nodes[i][data_name] = your_data[i]
 
 def construct_graph(lists_of_neighbors, lists_of_perims, geoid):
     '''Constructs your starting graph to run chain on
