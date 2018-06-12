@@ -15,6 +15,15 @@ jobs:
       #     - v1-dependencies-
 
       - run:
+          name: run linter
+          command: |
+              pip install flake8-colors
+              flake8 --format="$FORMAT" --config=./setup.cfg --show-source
+
+          environment:
+              FORMAT: '${cyan}%(path)s${reset}:${yellow_bold}%(row)d${reset}:${green_bold}%(col)d${reset}: ${red_bold}%(code)s${reset} %(text)s'
+
+      - run:
           name: install dependencies
           command: |
             # conda env create -q || conda env update -q
