@@ -4,13 +4,9 @@ import matplotlib.pyplot as plt
 import networkx as nx
 
 def main():
-    G = construct_graph(*ingest("./../tests/data/test/testData.shp", "CD"))
-
-    data1 = get_list_of_data('testData/test_pop_data.csv', 'POP')
-    data2 = get_list_of_data('testData/testData.shp', 'CD')
-
-    add_data_to_graph(data1, G, 'POP')
-    add_data_to_graph(data2, G, 'CD2')
+    G = construct_graph(*ingest("testData/testData.shp", "POP"))
+    cd_data = get_list_of_data('testData/testData.shp', 'CD')
+    add_data_to_graph(cd_data, G, 'CD')
 
     print(G.nodes(data=True))
     nx.draw(G)
