@@ -3,14 +3,19 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to RunDMCMC's documentation!
-====================================
+RunDMCMC
+========
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+    :maxdepth: 2
+    :caption: Contents:
 
+    models
 
+This is the documentation for RunDMCMC, a project to randomly sample from valid
+congressional district plans using Markov Chain Monte Carlo. The project is
+hosted in the `Gerrymandr/RunDMCMC <https://github.com/gerrymandr/RunDMCMC>`_
+GitHub repo.
 
 Indices and tables
 ==================
