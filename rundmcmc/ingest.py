@@ -1,9 +1,6 @@
 
-import networkx as nx
 import pysal as ps
 import geopandas as gp
-import matplotlib.pyplot as plt
-import numpy as np
 
 
 def ingest(filepath):
@@ -36,11 +33,9 @@ def ingest(filepath):
         for j, _ in enumerate(adjacency):
             adj = adjacency[i][j]
 
-            """
-                If block i is adjacent to block j, append their shared perimeter
-                to the list of perimeters; additionally, change the [i][j]th matrix
-                entry to j (to represent actual adjacency).
-            """ 
+            # If block i is adjacent to block j, append their shared perimeter
+            # to the list of perimeters; additionally, change the [i][j]th matrix
+            # entry to j (to represent actual adjacency).
             if adj == 1:
                 row.append(df["perimeter"][j])
                 adjacency[i][j] = j
