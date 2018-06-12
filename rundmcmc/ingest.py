@@ -5,7 +5,7 @@ import geopandas as gp
 import matplotlib.pyplot as plt
 
 
-def ingest(filepath="./../data/test/testData.shp"):
+def ingest(filepath="./../tests/data/test/testData.shp"):
     """
         Reads in a shapefile through PySAL, and generates an
         adjacency matrix (rook adjacency). Then, load the converted
