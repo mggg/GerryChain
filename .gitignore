@@ -69,3 +69,6 @@ junit.xml
 
 # Editors
 .vscode/
+
+# Pytest cache
+.pytest_cache/
