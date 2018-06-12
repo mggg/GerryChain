@@ -6,4 +6,3 @@ RunDMCMC
 
    rundmcmc
    tests
-   versioneer
