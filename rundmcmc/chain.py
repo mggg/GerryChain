@@ -44,19 +44,3 @@ class MarkovChain:
                     self.state = proposal
                 yield proposal
         raise StopIteration
-
-
-# class PartitionsMetaGraph:
-#     def __init__(self, graph, criteria):
-#         self.graph = graph
-#         self.criteria = criteria
-
-#     def check_criteria(self, partition, step):
-#         uncut_edges = set(self.graph.edges) - partition.cut_edges
-#         # Is this what we want to pass to the functions?
-#         # We should ask other teams what makes the most sense for them.
-#         #
-#         # I think we might want to just give the graph with subsets of nodes
-#         # for the different components
-#         hypothetical_graph = self.graph.edge_subgraph(uncut_edges)
-#         return all(criterion(hypothetical_graph) for criterion in self.criteria)
