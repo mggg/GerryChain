@@ -10,8 +10,6 @@ RunDMCMC
     :maxdepth: 2
     :caption: Contents:
 
-    models
-
 This is the documentation for RunDMCMC, a project to randomly sample from valid
 congressional district plans using Markov Chain Monte Carlo. The project is
 hosted in the `Gerrymandr/RunDMCMC <https://github.com/gerrymandr/RunDMCMC>`_
