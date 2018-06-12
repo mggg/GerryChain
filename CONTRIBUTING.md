@@ -64,7 +64,7 @@ details.
 
 - Use spaces, not tabs.
 
-- Limit lines to 79 characters at maximum.
+- Limit lines to 100 characters at maximum.
 
 - Avoid extraneous whitespace, such as in the following situations:
     - `f(x)`, not `f( x )`.
