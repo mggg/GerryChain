@@ -1,6 +1,25 @@
-
 import sys
 import networkx
+import pandas as pd
+import geopandas as gp
+
+def get_list_of_data(filepath, col_name):
+    '''
+
+    :param filepath: The path to where your data is located.
+    :param col_name: The column of data you want to grab.
+    :return: A list of the data you have specified.
+    '''
+    #Checks if you have inputed a csv or shp file then captures the data
+    if filepath.split('.')[-1] == 'csv':
+        df = pd.read_csv(filepath)
+        data = df[col_name]
+        return data.tolist()
+    if filepath.split('.')[-1] == 'shp':
+        df = gp.read_file(filepath)
+        data = df[col_name]
+        return list(data)
+
 
 def add_data_to_graph(your_data, graph, data_name):
     '''Adds data to the graph after it has been constructed.
@@ -42,5 +61,5 @@ def construct_graph(lists_of_neighbors, lists_of_perims, district_list):
     #Add districts to each node(VTD)
     for i,j in enumerate(graph.nodes()):
         graph.nodes[j]['CD'] = district_list[i]
- 
+
     return graph
