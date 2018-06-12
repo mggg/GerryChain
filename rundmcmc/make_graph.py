@@ -1,10 +1,6 @@
+
 import sys
 import networkx
-
-a = [[3,8838,2],[8956,8843,5,7,45,3,2,8838]]
-b = [[0.01528087,0.00587986,0.01549645],[0.0028062936,0.00869499,0.02802319,0.02752234,0.03923771,0.05836117,0.03923771,0.0028062936]]
-c = [1, 1, 1, 1, 2, 2, 2, 2, 2, 2]
-pop = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
 
 def add_data_to_graph(your_data, graph, data_name):
     '''Adds data to the graph after it has been constructed.
@@ -48,13 +44,3 @@ def construct_graph(lists_of_neighbors, lists_of_perims, district_list):
         graph.nodes[j]['CD'] = district_list[i]
  
     return graph
-
-#Creating the base graph
-G = construct_graph(a, b, c)
-
-#Adding data to our nodes(VTDs)
-add_data_to_graph(pop, G, 'Pop')
-
-nx.draw(G)
-print(G.edges(data=True))
-print(G.nodes(data=True))
