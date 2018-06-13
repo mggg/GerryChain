@@ -40,10 +40,10 @@ def add_data_to_graph(your_data, graph, data_name):
         graph.nodes[i][data_name] = your_data[i]
 
 
-def construct_graph(neighbor_dict, lists_of_perims, geoid):
+def construct_graph(lists_of_neighbors, lists_of_perims, geoid):
     '''Constructs your starting graph to run chain on
 
-    :neighbor_dict: A dictionary of lists stating the neighbors of each VTD.
+    :lists_of_neighbors: A list of lists stating the neighbors of each VTD.
     :lists_of_perims: List of lists of perimeters.
     :district_list: List of congressional districts associated to each node(VTD).
 
@@ -51,14 +51,14 @@ def construct_graph(neighbor_dict, lists_of_perims, geoid):
     graph = networkx.Graph()
 
     # Creating the graph itself
-    for nodeid, neighbors in neighbor_dict.items():
-        for neighbor in neighbors:
-            graph.add_edge(nodeid, neighbor)
+    for vtd, list_nbs in enumerate(lists_of_neighbors):
+        for d in list_nbs:
+            graph.add_edge(vtd, d)
 
     # Add perims to edges
-    for nodeid, neighbors in neighbor_dict.items():
-        for neighbor in neighbors:
-            graph.add_edge(nodeid, neighbor, perim=lists_of_perims[nodeid][neighbor])
+    for i, nbs in enumerate(lists_of_neighbors):
+        for x, nb in enumerate(nbs):
+            graph.add_edge(i, nb, perim=lists_of_perims[i][x])
 
     # Add districts to each node(VTD)
     for i, j in enumerate(graph.nodes()):
