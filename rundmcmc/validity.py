@@ -25,10 +25,11 @@ def contiguous(graph):
     return dist_contig
 
 
-def districts_within_tolerance(graphObj, attrName, percentage):
+def districts_within_tolerance(graphObj, attrName, assignment, percentage):
     """
     :graphObj: networkX graph object 
     :attrName: string that is the name of a field in graphObj nodes (e.g. population)
+    :assignment: dictionary with keys that are node ids and values of assigned district
     :percentage: what percent difference is allowed
     :return: boolean of if the districts are within specified tolerance
     """
@@ -38,7 +39,7 @@ def districts_within_tolerance(graphObj, attrName, percentage):
         percentage *= 0.01
 
     #get value of attrName column for each graph node
-    cdVals = [ (n['CD'], n[attrName]) for n in graphObj.nodes(data=True)]
+    cdVals = [ (assignment[n], n[attrName]) for n in graphObj.nodes(data=True)]
     #get sum of all nodes per district as found in assignment
     cdVals = pd.DataFrame(cdVals).groupby(0)[1].sum().tolist()
     #total difference in value between any two districts
@@ -50,4 +51,3 @@ def districts_within_tolerance(graphObj, attrName, percentage):
         withinTol = True
 
     return withinTol
-
