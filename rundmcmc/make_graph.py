@@ -66,6 +66,7 @@ def construct_graph(lists_of_neighbors, lists_of_perims, geoid):
 
     return graph
 
+
 def pull_districts(graph, cd_identifier):
     '''Creates dictionary of nodes to their CD.
 
@@ -73,9 +74,8 @@ def pull_districts(graph, cd_identifier):
     :param cd_identifier: How the congressional district is labeled on your graph.
     :return: A dictionary.
     '''
-    #creates a dictionary and iterates over the nodes to add node to CD.
+    # creates a dictionary and iterates over the nodes to add node to CD.
     nodes = {}
     for (p, d) in graph.nodes(data=True):
         nodes[p] = d[cd_identifier]
     return nodes
-
