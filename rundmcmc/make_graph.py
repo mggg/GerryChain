@@ -22,7 +22,6 @@ def get_list_of_data(filepath, col_name):
         return list(data)
 
 
-
 def add_data_to_graph(your_data, graph, data_name):
     '''Adds data to the graph after it has been constructed.
 
