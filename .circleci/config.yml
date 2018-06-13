@@ -31,6 +31,7 @@ jobs:
             conda install -qy pytest pytest-cov conda-build anaconda-client
             conda build --no-test .
             conda install --use-local rundmcmc
+            conda install networkx
 
       # - save_cache:
       #     paths:

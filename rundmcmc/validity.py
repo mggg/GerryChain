@@ -32,7 +32,6 @@ def contiguous(partition):
     '''
 
     #TODO
-    
 
     # Creates a dictionary where the key is the district and the value is
     # a list of VTDs that belong to that district
