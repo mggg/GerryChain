@@ -4,6 +4,7 @@ from rundmcmc.validity import is_valid
 import matplotlib.pyplot as plt
 import networkx as nx
 
+
 def main():
     G = construct_graph(*ingest("testData/wyoming_test.shp", "GEOID"))
     cd_data = get_list_of_data('testData/wyoming_test.shp', 'CD')
@@ -13,6 +14,7 @@ def main():
     print(G.nodes(data=True))
     nx.draw(G)
     plt.show()
+
 
 if __name__ == "__main__":
     main()

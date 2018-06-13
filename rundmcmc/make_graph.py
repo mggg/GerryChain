@@ -3,6 +3,7 @@ import networkx
 import pandas as pd
 import geopandas as gp
 
+
 def get_list_of_data(filepath, col_name):
     '''
 
@@ -10,7 +11,7 @@ def get_list_of_data(filepath, col_name):
     :param col_name: The column of data you want to grab.
     :return: A list of the data you have specified.
     '''
-    #Checks if you have inputed a csv or shp file then captures the data
+    # Checks if you have inputed a csv or shp file then captures the data
     if filepath.split('.')[-1] == 'csv':
         df = pd.read_csv(filepath)
         data = df[col_name]
@@ -29,13 +30,15 @@ def add_data_to_graph(your_data, graph, data_name):
     :data_name: How you would like the data on the node layer labeled.
 
     '''
-    #Check to make sure threre is a one-to-one between data and VTDs
+    # Check to make sure threre is a one-to-one between data and VTDs
     if len(graph) != len(your_data):
         print("Your column length doesn't match the number of nodes!")
         sys.exit(1)
-    #Adding data to the nodes
-    for i,j in enumerate(graph.nodes()):
+
+    # Adding data to the nodes
+    for i, j in enumerate(graph.nodes()):
         graph.nodes[i][data_name] = your_data[i]
+
 
 def construct_graph(lists_of_neighbors, lists_of_perims, geoid):
     '''Constructs your starting graph to run chain on
@@ -47,18 +50,18 @@ def construct_graph(lists_of_neighbors, lists_of_perims, geoid):
     '''
     graph = networkx.Graph()
 
-    #Creating the graph itself
+    # Creating the graph itself
     for vtd, list_nbs in enumerate(lists_of_neighbors):
         for d in list_nbs:
             graph.add_edge(vtd, d)
 
-    #Add perims to edges
+    # Add perims to edges
     for i, nbs in enumerate(lists_of_neighbors):
         for x, nb in enumerate(nbs):
             graph.add_edge(i, nb, perim=lists_of_perims[i][x])
 
-    #Add districts to each node(VTD)
-    for i,j in enumerate(graph.nodes()):
+    # Add districts to each node(VTD)
+    for i, j in enumerate(graph.nodes()):
         graph.nodes[j]['GEOID'] = geoid[i]
 
     return graph
