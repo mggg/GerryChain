@@ -3,12 +3,15 @@ import geopandas as gp
 
 
 def ingest(filepath, name_of_geoid_col):
-    """
-        Reads in a shapefile through PySAL, and generates an
-        adjacency list (rook adjacency). Then, compute shared
-        perimeters for all adjacent shapes.
+    """Generate (rook) neighbor and perimeter information from a shapefile.
 
-        :filepath: Filepath to input shapefile location.
+    :filepath: Path to input shapefile location.
+
+    :returns: Tuple (neighbors, perims, geoid_col) to be passed to
+        :func:`.make_graph`. `neighbors` is a nested list of neighbors numbered
+        sequentially. `perims` is a list of perimeters numbered sequentially.
+        `geoid_col` is a list of the geoids of shapes numbered sequentially.
+
     """
     df = gp.read_file(filepath)
 
