@@ -20,7 +20,7 @@ import os
 # sys.path.insert(0, os.path.abspath('.'))
 
 # autodoc needs to find our code.
-sys.path.insert(0, os.path.abspath("../rundmcmc/"))
+sys.path.insert(0, os.path.abspath("../"))
 
 # -- Project information -----------------------------------------------------
 
