@@ -39,7 +39,7 @@ def add_data_to_graph(data, graph, data_name):
 
     # Adding data to the nodes
     for i, j in enumerate(graph.nodes()):
-        graph.nodes[i][data_name] = your_data[i]
+        graph.nodes[i][data_name] = data[i]
 
 
 def construct_graph(lists_of_neighbors, lists_of_perims, geoid):
