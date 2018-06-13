@@ -2,7 +2,7 @@ import sys
 import networkx
 import pandas as pd
 import geopandas as gp
-import numpy as np
+
 
 def get_list_of_data(filepath, col_name):
     '''
@@ -16,12 +16,12 @@ def get_list_of_data(filepath, col_name):
     if filepath.split('.')[-1] == 'csv':
         df = pd.read_csv(filepath)
         for i in col_name:
-          data.append(df[i])
+            data.append(df[i])
         return data
     if filepath.split('.')[-1] == 'shp':
         df = gp.read_file(filepath)
         for i in col_name:
-          data.append(df[i])
+            data.append(df[i])
         return data
 
 
