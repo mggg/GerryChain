@@ -1,6 +1,7 @@
 import pysal as ps
 import geopandas as gp
 
+
 def ingest(filepath, name_of_geoid_col):
     """
         Reads in a shapefile through PySAL, and generates an
