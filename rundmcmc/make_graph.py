@@ -5,11 +5,13 @@ import geopandas as gp
 
 
 def get_list_of_data(filepath, col_name):
-    '''
+    '''Pull a column data from a shape or CSV file.
 
     :param filepath: The path to where your data is located.
+
     :param col_name: A list of the columns of data you want to grab.
     :return: A list of the data you have specified.
+
     '''
     # Checks if you have inputed a csv or shp file then captures the data
     data = []
@@ -25,11 +27,12 @@ def get_list_of_data(filepath, col_name):
         return data
 
 
-def add_data_to_graph(your_data, graph, data_name):
-    '''Adds data to the graph after it has been constructed.
+def add_data_to_graph(data, graph, data_name):
+    '''Add a list of data to graph nodes.
 
-    :your_data: A column with the data you would like to add to the nodes(VTDs).
+    :data: A column with the data you would like to add to the nodes(VTDs).
     :graph: The graph you constructed and want to run chain on.
+
     :data_name: A list of the attribute names you are adding.
 
     '''
@@ -45,11 +48,14 @@ def add_data_to_graph(your_data, graph, data_name):
 
 
 def construct_graph(lists_of_neighbors, lists_of_perims, geoid):
-    '''Constructs your starting graph to run chain on
+    '''Construct initial graph from neighbor and perimeter information.
 
     :lists_of_neighbors: A list of lists stating the neighbors of each VTD.
     :lists_of_perims: List of lists of perimeters.
     :district_list: List of congressional districts associated to each node(VTD).
+    :returns: Networkx Graph.
+
+    The three arguments can be built from shape files with :func:`.ingest`.
 
     '''
     graph = networkx.Graph()
