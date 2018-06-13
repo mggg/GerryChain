@@ -1,20 +1,16 @@
-from rundmcmc.cli import cli
 from rundmcmc.ingest import ingest
 from rundmcmc.make_graph import construct_graph, get_list_of_data, add_data_to_graph
+from rundmcmc.validity import is_valid
 import matplotlib.pyplot as plt
 import networkx as nx
 
 
 def main():
-    cli()
-    G = construct_graph(*ingest("./../tests/data/test/testData.shp", "CD"))
+    G = construct_graph(*ingest("testData/wyoming_test.shp", "GEOID"))
+    cd_data = get_list_of_data('testData/wyoming_test.shp', 'CD')
+    add_data_to_graph(cd_data, G, 'CD')
 
-    data1 = get_list_of_data('testData/test_pop_data.csv', 'POP')
-    data2 = get_list_of_data('testData/testData.shp', 'CD')
-
-    add_data_to_graph(data1, G, 'POP')
-    add_data_to_graph(data2, G, 'CD2')
-
+    print(is_valid(G))
     print(G.nodes(data=True))
     nx.draw(G)
     plt.show()

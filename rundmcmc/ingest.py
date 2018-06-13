@@ -1,4 +1,3 @@
-
 import pysal as ps
 import geopandas as gp
 
@@ -22,8 +21,7 @@ def ingest(filepath, name_of_geoid_col):
     shp = ps.weights.Rook.from_dataframe(df, geom_col="geometry")
 
     # See http://bit.ly/2y3HNMh
-    adjacency = shp.full()[0]
-
+    adjacency = shp.full()[0].tolist()
     perims = []
     neighbors = []
 
@@ -38,15 +36,16 @@ def ingest(filepath, name_of_geoid_col):
             # entry to j (to represent actual adjacency).
             if adj == 1:
                 row.append(df["perimeter"][j])
-                adjacency[i][j] = j
+                adjacency[i][j] = int(j)
 
         perims.append(row)
 
     # Strip out zeros from adjacency list.
     for row in adjacency:
-        neighbors.append([i for i in row if i != 0])
+        neighbors.append([i for i in row if isinstance(i, int)])
 
-    return neighbors, perims, list(df[name_of_geoid_col])
+    for i, j in enumerate(neighbors):
+        return neighbors, perims, list(df[name_of_geoid_col])
 
 
 if __name__ == "__main__":
