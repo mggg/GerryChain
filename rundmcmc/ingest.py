@@ -18,19 +18,20 @@ def ingest(filepath, name_of_geoid_col):
         neighbors[n] = sorted(neighbors[n])
 
     shared_perims = {}
-    for shape in neighbors.keys():
+    for shape in neighbors:
         shared_perims[shape] = []
 
         for n in neighbors[shape]:
             shared_perims[shape].append(
                 df.loc[shape, "geometry"].intersection(
-                    df.loc[n, "geometry"]).length)
+                    df.loc[n, "geometry"])
+                .length)
 
     sorted_keys = sorted(neighbors)
 
-    return ([neighbors[i] for i in sorted_keys],
-            [shared_perims[i] for i in sorted_keys],
-            [df.loc[i, name_of_geoid_col] for i in sorted_keys])
+    return([neighbors[i] for i in sorted_keys],
+           [shared_perims[i] for i in sorted_keys],
+           [df.loc[i, name_of_geoid_col] for i in sorted_keys])
 
 
 if __name__ == "__main__":
