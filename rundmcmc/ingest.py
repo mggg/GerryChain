@@ -44,7 +44,7 @@ def ingest(filepath, name_of_geoid_col):
         neighbors.append([i for i in row if isinstance(i, int)])
 
     for i, j in enumerate(neighbors):
-      return neighbors, perims, list(df[name_of_geoid_col])
+        return neighbors, perims, list(df[name_of_geoid_col])
 
 
 if __name__ == "__main__":
