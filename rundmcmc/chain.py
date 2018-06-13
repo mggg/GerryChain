@@ -34,5 +34,6 @@ class MarkovChain:
             if self.is_valid(proposed_next_state):
                 if self.accept(proposed_next_state):
                     self.state = proposed_next_state
-                yield proposed_next_state
+                self.counter += 1
+                return proposed_next_state
         raise StopIteration
