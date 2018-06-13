@@ -23,8 +23,8 @@ def ingest(filepath, name_of_geoid_col):
 
         for n in neighbors[shape]:
             shared_perims[shape].append(
-                df.loc[shape, 'geometry'].intersection(
-                    df.loc[n, 'geometry']).length)
+                df.loc[shape, "geometry"].intersection(
+                    df.loc[n, "geometry"]).length)
 
     sorted_keys = sorted(neighbors)
 
