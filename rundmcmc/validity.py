@@ -51,4 +51,3 @@ def districts_within_tolerance(graphObj, attrName=, percentage):
 
     return withinTol
 
-def is_valid():
