@@ -1,7 +1,7 @@
 import networkx as nx
 
 
-def is_valid(graph):
+def contiguous(graph):
     '''
 
     :param graph: The graph object you are working on.
@@ -23,3 +23,32 @@ def is_valid(graph):
         tmp = graph.subgraph(district_list[key])
         dist_contig.append(nx.is_connected(tmp))
     return dist_contig
+
+
+def districts_within_tolerance(graphObj, attrName=, percentage): 
+    """
+    :graphObj: networkX graph object 
+    :attrName: string that is the name of a field in graphObj nodes (e.g. population)
+    :percentage: what percent difference is allowed
+    :return: boolean of if the districts are within specified tolerance
+    """
+    withinTol=False
+
+    if percentage >= 1:
+        percentage *= 0.01
+
+    #get value of attrName column for each graph node
+    cdVals = [ (n['CD'], n[attrName]) for n in graphObj.nodes(data=True)]
+    #get sum of all nodes per district as found in assignment
+    cdVals = pd.DataFrame(cdVals).groupby(0)[1].sum().tolist()
+    #total difference in value between any two districts  
+    maxDiff = max(cdVals) - min(cdVals)
+    #get percent of smallest district (in terms of attrName)
+    percentage = percentage * min(cdVals)
+
+    if maxDiff <= percentage: 
+        withinTol = True
+
+    return withinTol
+
+def is_valid():
