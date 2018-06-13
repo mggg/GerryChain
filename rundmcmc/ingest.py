@@ -41,7 +41,7 @@ def ingest(filepath, name_of_geoid_col):
 
     # Strip out zeros from adjacency list.
     for row in adjacency:
-        neighbors.append([i for i in row if type(i) is int])
+        neighbors.append([i for i in row if isinstance(i, int)])
 
     for i, j in enumerate(neighbors):
       return neighbors, perims, list(df[name_of_geoid_col])
