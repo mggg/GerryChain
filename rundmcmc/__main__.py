@@ -1,9 +1,12 @@
+from rundmcmc.cli import cli
 from rundmcmc.ingest import ingest
 from rundmcmc.make_graph import construct_graph, get_list_of_data, add_data_to_graph
 import matplotlib.pyplot as plt
 import networkx as nx
 
+
 def main():
+    cli()
     G = construct_graph(*ingest("./../tests/data/test/testData.shp", "CD"))
 
     data1 = get_list_of_data('testData/test_pop_data.csv', 'POP')
@@ -15,6 +18,7 @@ def main():
     print(G.nodes(data=True))
     nx.draw(G)
     plt.show()
+
 
 if __name__ == "__main__":
     main()
