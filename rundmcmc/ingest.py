@@ -5,47 +5,33 @@ import geopandas as gp
 def ingest(filepath, name_of_geoid_col):
     """
         Reads in a shapefile through PySAL, and generates an
-        adjacency matrix (rook adjacency). Then, load the converted
-        NumPy data from PySAL into NetworkX.
+        adjacency list (rook adjacency). Then, compute shared
+        perimeters for all adjacent shapes.
 
         :filepath: Filepath to input shapefile location.
     """
     df = gp.read_file(filepath)
 
-    # Iterate over rows from dataframe and assign perimeters.
-    for i, _ in df.iterrows():
-        poly = df.loc[i, "geometry"]
-        df.loc[i, "perimeter"] = poly.length
+    # Generate rook neighbor lists from dataframe.
+    neighbors = ps.weights.Rook.from_dataframe(df, geom_col="geometry").neighbors
+    for n in neighbors:
+        neighbors[n] = sorted(neighbors[n])
 
-    # Generate rook neighbor adjacency matrix from dataframe.
-    shp = ps.weights.Rook.from_dataframe(df, geom_col="geometry")
+    shared_perims = {}
+    for shape in neighbors:
+        shared_perims[shape] = []
 
-    # See http://bit.ly/2y3HNMh
-    adjacency = shp.full()[0].tolist()
-    perims = []
-    neighbors = []
+        for n in neighbors[shape]:
+            shared_perims[shape].append(
+                df.loc[shape, "geometry"].intersection(
+                    df.loc[n, "geometry"])
+                .length)
 
-    # Iterate over adjacency matrix
-    for i, _ in enumerate(adjacency):
-        row = []
-        for j, _ in enumerate(adjacency):
-            adj = adjacency[i][j]
+    sorted_keys = sorted(neighbors)
 
-            # If block i is adjacent to block j, append their shared perimeter
-            # to the list of perimeters; additionally, change the [i][j]th matrix
-            # entry to j (to represent actual adjacency).
-            if adj == 1:
-                row.append(df["perimeter"][j])
-                adjacency[i][j] = int(j)
-
-        perims.append(row)
-
-    # Strip out zeros from adjacency list.
-    for row in adjacency:
-        neighbors.append([i for i in row if isinstance(i, int)])
-
-    for i, j in enumerate(neighbors):
-        return neighbors, perims, list(df[name_of_geoid_col])
+    return([neighbors[i] for i in sorted_keys],
+           [shared_perims[i] for i in sorted_keys],
+           [df.loc[i, name_of_geoid_col] for i in sorted_keys])
 
 
 if __name__ == "__main__":
