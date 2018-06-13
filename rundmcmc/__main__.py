@@ -6,16 +6,16 @@ from rundmcmc.chain import MarkovChain
 
 
 def main():
-    G = construct_graph(*ingest("./testData/wyoming_test.shp", "GEOID"))
+    graph = construct_graph(*ingest("./testData/wyoming_test.shp", "GEOID"))
 
     cd_data = get_list_of_data('./testData/wyoming_test.shp', ['CD', 'ALAND'])
 
-    add_data_to_graph(cd_data, G, ['CD', 'ALAND'])
+    add_data_to_graph(cd_data, graph, ['CD', 'ALAND'])
 
-    assignment = pull_districts(G, 'CD')
+    assignment = pull_districts(graph, 'CD')
     validator = Validator([contiguous])
 
-    initial_partition = Partition(G, assignment, aggregate_fields=['ALAND'])
+    initial_partition = Partition(graph, assignment, aggregate_fields=['ALAND'])
     accept = lambda x: True
 
     chain = MarkovChain(propose_random_flip, validator, accept, initial_partition, total_steps=10)
