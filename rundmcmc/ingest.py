@@ -8,20 +8,33 @@ def ingest(filepath, name_of_geoid_col):
     :filepath: Path to input shapefile location.
 
     :returns: Tuple (neighbors, perims, geoid_col) to be passed to
-        :func:`.make_graph`. `neighbors` is a dictionary of (id, [adj_ids\).
-        `perims` is a list of perimeters numbered sequentially. `geoid_col` is a
-        list of the geoids of shapes.
+        :func:`.make_graph`. `neighbors` is a nested list of neighbors numbered
+        sequentially. `perims` is a list of perimeters numbered sequentially.
+        `geoid_col` is a list of the geoids of shapes numbered sequentially.
 
     """
     df = gp.read_file(filepath)
 
-    perimeters = df["geometry"].apply(lambda shape: shape.length).tolist()
+    # Generate rook neighbor lists from dataframe.
+    neighbors = ps.weights.Rook.from_dataframe(df, geom_col="geometry").neighbors
+    for n in neighbors:
+        neighbors[n] = sorted(neighbors[n])
 
-    # Dumb stopgap to account for silly non-shared perimeter behavior.
-    perimeters = [perimeters] * len(df)
-    rook = ps.weights.Rook.from_dataframe(df, geom_col="geometry")
+    shared_perims = {}
+    for shape in neighbors:
+        shared_perims[shape] = []
 
-    return rook.neighbors, perimeters, df[name_of_geoid_col].tolist()
+        for n in neighbors[shape]:
+            shared_perims[shape].append(
+                df.loc[shape, "geometry"].intersection(
+                    df.loc[n, "geometry"])
+                .length)
+
+    sorted_keys = sorted(neighbors)
+
+    return([neighbors[i] for i in sorted_keys],
+           [shared_perims[i] for i in sorted_keys],
+           [df.loc[i, name_of_geoid_col] for i in sorted_keys])
 
 
 if __name__ == "__main__":
