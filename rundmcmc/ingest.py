@@ -3,49 +3,22 @@ import geopandas as gp
 
 
 def ingest(filepath, name_of_geoid_col):
-    """
-        Reads in a shapefile through PySAL, and generates an
-        adjacency matrix (rook adjacency). Then, load the converted
-        NumPy data from PySAL into NetworkX.
+    """Generate (rook) neighbor and perimeter information from a shapefile.
 
-        :filepath: Filepath to input shapefile location.
+    :filepath: Path to input shapefile location.
+
+    :returns: Tuple (neighbors, perims, geoid_col) to be passed to :func:`.make_graph`. `neighbors` is a dictionary of (id, [adj_ids\). `perims` is a list of perimeters numbered sequentially. `geoid_col` is a list of the geoids of shapes.
+
     """
     df = gp.read_file(filepath)
 
-    # Iterate over rows from dataframe and assign perimeters.
-    for i, _ in df.iterrows():
-        poly = df.loc[i, "geometry"]
-        df.loc[i, "perimeter"] = poly.length
+    perimeters = df["geometry"].apply(lambda shape: shape.length).tolist()
 
-    # Generate rook neighbor adjacency matrix from dataframe.
-    shp = ps.weights.Rook.from_dataframe(df, geom_col="geometry")
+    # Dumb stopgap to account for silly non-shared perimeter behavior.
+    perimeters = [perimeters] * len(df)
+    rook = ps.weights.Rook.from_dataframe(df, geom_col="geometry")
 
-    # See http://bit.ly/2y3HNMh
-    adjacency = shp.full()[0].tolist()
-    perims = []
-    neighbors = []
-
-    # Iterate over adjacency matrix
-    for i, _ in enumerate(adjacency):
-        row = []
-        for j, _ in enumerate(adjacency):
-            adj = adjacency[i][j]
-
-            # If block i is adjacent to block j, append their shared perimeter
-            # to the list of perimeters; additionally, change the [i][j]th matrix
-            # entry to j (to represent actual adjacency).
-            if adj == 1:
-                row.append(df["perimeter"][j])
-                adjacency[i][j] = int(j)
-
-        perims.append(row)
-
-    # Strip out zeros from adjacency list.
-    for row in adjacency:
-        neighbors.append([i for i in row if isinstance(i, int)])
-
-    for i, j in enumerate(neighbors):
-        return neighbors, perims, list(df[name_of_geoid_col])
+    return rook.neighbors, perimeters, df[name_of_geoid_col].tolist()
 
 
 if __name__ == "__main__":
