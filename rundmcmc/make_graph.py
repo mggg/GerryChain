@@ -3,6 +3,7 @@ import networkx
 import pandas as pd
 import geopandas as gp
 
+
 def get_list_of_data(filepath, col_name):
     '''
 
@@ -10,7 +11,7 @@ def get_list_of_data(filepath, col_name):
     :param col_name: The column of data you want to grab.
     :return: A list of the data you have specified.
     '''
-    #Checks if you have inputed a csv or shp file then captures the data
+    # Checks if you have inputed a csv or shp file then captures the data
     if filepath.split('.')[-1] == 'csv':
         df = pd.read_csv(filepath)
         data = df[col_name]
@@ -60,8 +61,8 @@ def construct_graph(lists_of_neighbors, lists_of_perims, geoid):
         for x, nb in enumerate(nbs):
             graph.add_edge(i, nb, perim=lists_of_perims[i][x])
 
-    #Add districts to each node(VTD)
-    for i,j in enumerate(graph.nodes()):
+    # Add districts to each node(VTD)
+    for i, j in enumerate(graph.nodes()):
         graph.nodes[j]['GEOID'] = geoid[i]
 
     return graph
