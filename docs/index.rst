@@ -10,7 +10,7 @@ RunDMCMC
     :maxdepth: 2
     :caption: Contents:
 
-    models
+    modules
 
 This is the documentation for RunDMCMC, a project to randomly sample from valid
 congressional district plans using Markov Chain Monte Carlo. The project is

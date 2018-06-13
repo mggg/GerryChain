@@ -3,7 +3,7 @@ import pysal as ps
 import geopandas as gp
 
 
-def ingest(filepath):
+def ingest(filepath, name_of_geoid_col):
     """
         Reads in a shapefile through PySAL, and generates an
         adjacency matrix (rook adjacency). Then, load the converted
@@ -46,8 +46,8 @@ def ingest(filepath):
     for row in adjacency:
         neighbors.append([i for i in row if i != 0])
 
-    return neighbors, perims, list(df["CD"])
+    return neighbors, perims, list(df[name_of_geoid_col])
 
 
 if __name__ == "__main__":
-    ingest("./../tests/data/test/testData.shp")
+    ingest("testData/testData.shp", "CD")
