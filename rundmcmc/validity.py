@@ -3,11 +3,11 @@ import pandas as pd
 
 
 def contiguous(graph):
-    '''
+    """
 
     :param graph: The graph object you are working on.
     :return: A list of booleans to state if the sub graph is connected.
-    '''
+    """
     # Creates a dictionary where the key is the district and the value is
     # a list of VTDs that belong to that district
     district_list = {}

@@ -1,11 +1,11 @@
-import rundmcmc.chain
+from rundmcmc.partition import Partition, propose_random_flip
 import networkx
 
 
 def example_partition():
     graph = networkx.complete_graph(3)
     assignment = {0: 1, 1: 1, 2: 2}
-    partition = rundmcmc.chain.Partition(graph, assignment)
+    partition = Partition(graph, assignment)
     return partition
 
 
@@ -24,5 +24,5 @@ def test_Partition_knows_cut_edges_K3():
 
 def test_propose_random_flip_proposes_a_dict():
     partition = example_partition()
-    proposal = rundmcmc.chain.propose_random_flip(partition)
+    proposal = propose_random_flip(partition)
     assert isinstance(proposal, dict)
