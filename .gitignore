@@ -66,3 +66,9 @@ junit.xml
 
 # crapple
 .DS_Store
+
+# Editors
+.vscode/
+
+# Pytest cache
+.pytest_cache/
