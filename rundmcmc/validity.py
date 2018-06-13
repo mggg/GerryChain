@@ -1,4 +1,5 @@
 import networkx as nx
+import pandas as pd
 
 
 def contiguous(graph):
@@ -39,7 +40,7 @@ def districts_within_tolerance(graphObj, attrName, assignment, percentage):
         percentage *= 0.01
 
     # get value of attrName column for each graph node
-    cdVals = [(assignment[n], n[attrName]) for n in graphObj.nodes(data = True)]
+    cdVals = [(assignment[n], n[attrName]) for n in graphObj.nodes(data=True)]
     # get sum of all nodes per district as found in assignment
     cdVals = pd.DataFrame(cdVals).groupby(0)[1].sum().tolist()
     # total difference in value between any two districts
