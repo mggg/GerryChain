@@ -33,18 +33,18 @@ def districts_within_tolerance(graphObj, attrName, assignment, percentage):
     :percentage: what percent difference is allowed
     :return: boolean of if the districts are within specified tolerance
     """
-    withinTol=False
+    withinTol = False
 
     if percentage >= 1:
         percentage *= 0.01
 
-    #get value of attrName column for each graph node
-    cdVals = [ (assignment[n], n[attrName]) for n in graphObj.nodes(data=True)]
-    #get sum of all nodes per district as found in assignment
+    # get value of attrName column for each graph node
+    cdVals = [(assignment[n], n[attrName]) for n in graphObj.nodes(data = True)]
+    # get sum of all nodes per district as found in assignment
     cdVals = pd.DataFrame(cdVals).groupby(0)[1].sum().tolist()
-    #total difference in value between any two districts
+    # total difference in value between any two districts
     maxDiff = max(cdVals) - min(cdVals)
-    #get percent of smallest district (in terms of attrName)
+    # get percent of smallest district (in terms of attrName)
     percentage = percentage * min(cdVals)
 
     if maxDiff <= percentage:
