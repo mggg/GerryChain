@@ -7,8 +7,10 @@ import networkx as nx
 
 def main():
     G = construct_graph(*ingest("testData/wyoming_test.shp", "GEOID"))
-    cd_data = get_list_of_data('testData/wyoming_test.shp', 'CD')
-    add_data_to_graph(cd_data, G, 'CD')
+
+    cd_data = get_list_of_data('testData/wyoming_test.shp', ['CD', 'ALAND'])
+
+    add_data_to_graph(cd_data, G, ['CD', 'ALAND'])
 
     print(contiguous(G))
     print(G.nodes(data=True))

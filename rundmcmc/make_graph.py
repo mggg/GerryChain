@@ -2,24 +2,27 @@ import sys
 import networkx
 import pandas as pd
 import geopandas as gp
-
+import numpy as np
 
 def get_list_of_data(filepath, col_name):
     '''
 
     :param filepath: The path to where your data is located.
-    :param col_name: The column of data you want to grab.
+    :param col_name: A list of the columns of data you want to grab.
     :return: A list of the data you have specified.
     '''
     # Checks if you have inputed a csv or shp file then captures the data
+    data = []
     if filepath.split('.')[-1] == 'csv':
         df = pd.read_csv(filepath)
-        data = df[col_name]
-        return data.tolist()
+        for i in col_name:
+          data.append(df[i])
+        return data
     if filepath.split('.')[-1] == 'shp':
         df = gp.read_file(filepath)
-        data = df[col_name]
-        return list(data)
+        for i in col_name:
+          data.append(df[i])
+        return data
 
 
 def add_data_to_graph(your_data, graph, data_name):
@@ -27,17 +30,18 @@ def add_data_to_graph(your_data, graph, data_name):
 
     :your_data: A column with the data you would like to add to the nodes(VTDs).
     :graph: The graph you constructed and want to run chain on.
-    :data_name: How you would like the data on the node layer labeled.
+    :data_name: A list of the attribute names you are adding.
 
     '''
-    # Check to make sure threre is a one-to-one between data and VTDs
-    if len(graph) != len(your_data):
-        print("Your column length doesn't match the number of nodes!")
-        sys.exit(1)
+    # Check to make sure there is a one-to-one between data and VTDs
+    for i, j in enumerate(data_name):
+        if len(graph) != len(your_data[i]):
+            print("Your column length doesn't match the number of nodes!")
+            sys.exit(1)
 
     # Adding data to the nodes
-    for i, j in enumerate(graph.nodes()):
-        graph.nodes[i][data_name] = your_data[i]
+        for x, _ in enumerate(graph.nodes()):
+            graph.nodes[x][j] = your_data[i][x]
 
 
 def construct_graph(lists_of_neighbors, lists_of_perims, geoid):
