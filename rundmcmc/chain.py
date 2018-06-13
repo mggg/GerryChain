@@ -9,22 +9,22 @@ def propose_random_flip(partition):
     index = random.choice((0, 1))
 
     flipped_node, other_node = edge[index], edge[1 - index]
-    flip = Flip(node=flipped_node, assign_to=partition.assignment[other_node])
+    flip = dict([(flipped_node, partition.assignment[other_node])])
 
-    return partition.apply_flip(flip)
+    return flip
 
 
 class Partition:
     def __init__(self, graph, assignment):
         self.graph = graph
         self.assignment = assignment
-        self.cut_edges = set(edge for edge in self.graph.edges if self.crosses_parts(edge))
+        self.cut_edges = [edge for edge in self.graph.edges if self.crosses_parts(edge)]
 
     def crosses_parts(self, edge):
-        return self.assignment(edge[0]) == self.assignment(edge[1])
+        return self.assignment[edge[0]] != self.assignment[edge[1]]
 
-    def apply_flip(self, flip):
-        new_assignment = collections.ChainMap(self.assignment, dict([flip.node, flip.assign_to]))
+    def merge(self, flips):
+        new_assignment = {**self.assignment, **flips}
         return Partition(self.graph, new_assignment)
 
 
@@ -42,7 +42,8 @@ class MarkovChain:
 
     def __next__(self):
         while self.counter < self.total_steps:
-            proposed_next_state = self.proposal(self.state)
+            proposal = self.proposal(self.state)
+            proposed_next_state = self.state.merge(proposal)
             if self.is_valid(proposed_next_state):
                 if self.accept(proposed_next_state):
                     self.state = proposed_next_state
