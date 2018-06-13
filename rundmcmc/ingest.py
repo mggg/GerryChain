@@ -35,4 +35,3 @@ def ingest(filepath, name_of_geoid_col):
 
 if __name__ == "__main__":
     ingest("testData/testData.shp", "CD")
-    
