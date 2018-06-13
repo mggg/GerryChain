@@ -4,8 +4,18 @@ import random
 Flip = collections.namedtuple('Flip', ['node', 'assign_to'])
 
 
+def propose_random_flip(partition):
+    edge = random.choice(partition.cut_edges)
+    index = random.choice((0, 1))
+
+    flipped_node, other_node = edge[index], edge[1 - index]
+    flip = Flip(node=flipped_node, assign_to=partition.assignment[other_node])
+
+    return partition.apply_flip(flip)
+
+
 class Partition:
-    def __init__(self, graph, assignment, cut_edges=None):
+    def __init__(self, graph, assignment):
         self.graph = graph
         self.assignment = assignment
         self.cut_edges = set(edge for edge in self.graph.edges if self.crosses_parts(edge))
@@ -16,12 +26,6 @@ class Partition:
     def apply_flip(self, flip):
         new_assignment = collections.ChainMap(self.assignment, dict([flip.node, flip.assign_to]))
         return Partition(self.graph, new_assignment)
-
-    def possible_flips(self):
-        for edge in self.cut_edges:
-            index = random.choice([0, 1])
-            flipped_node, other_node = edge[index], edge[1 - index]
-            yield Flip(node=flipped_node, assign_to=self.assignment[other_node])
 
 
 class MarkovChain:
@@ -38,9 +42,9 @@ class MarkovChain:
 
     def __next__(self):
         while self.counter < self.total_steps:
-            proposal = self.proposal(self.state)
-            if self.is_valid(proposal):
-                if self.accept(proposal):
-                    self.state = proposal
-                yield proposal
+            proposed_next_state = self.proposal(self.state)
+            if self.is_valid(proposed_next_state):
+                if self.accept(proposed_next_state):
+                    self.state = proposed_next_state
+                yield proposed_next_state
         raise StopIteration
