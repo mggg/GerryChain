@@ -1,6 +1,6 @@
 from rundmcmc.ingest import ingest
-from rundmcmc.make_graph import construct_graph, get_list_of_data, add_data_to_graph
-from rundmcmc.validity import is_valid
+from rundmcmc.make_graph import construct_graph, get_list_of_data, add_data_to_graph, pull_districts
+from rundmcmc.validity import contiguous
 import matplotlib.pyplot as plt
 import networkx as nx
 
@@ -10,8 +10,9 @@ def main():
     cd_data = get_list_of_data('testData/wyoming_test.shp', 'CD')
     add_data_to_graph(cd_data, G, 'CD')
 
-    print(is_valid(G))
+    print(contiguous(G))
     print(G.nodes(data=True))
+    print(pull_districts(G, 'CD'))
     nx.draw(G)
     plt.show()
 
