@@ -25,7 +25,7 @@ def contiguous(graph):
     return dist_contig
 
 
-def districts_within_tolerance(graphObj, attrName=, percentage): 
+def districts_within_tolerance(graphObj, attrName=, percentage):
     """
     :graphObj: networkX graph object 
     :attrName: string that is the name of a field in graphObj nodes (e.g. population)
@@ -41,12 +41,12 @@ def districts_within_tolerance(graphObj, attrName=, percentage):
     cdVals = [ (n['CD'], n[attrName]) for n in graphObj.nodes(data=True)]
     #get sum of all nodes per district as found in assignment
     cdVals = pd.DataFrame(cdVals).groupby(0)[1].sum().tolist()
-    #total difference in value between any two districts  
+    #total difference in value between any two districts
     maxDiff = max(cdVals) - min(cdVals)
     #get percent of smallest district (in terms of attrName)
     percentage = percentage * min(cdVals)
 
-    if maxDiff <= percentage: 
+    if maxDiff <= percentage:
         withinTol = True
 
     return withinTol
