@@ -1,9 +1,13 @@
-from rundmcmc.ingest import ingest
-from rundmcmc.make_graph import construct_graph, get_list_of_data, add_data_to_graph
-import matplotlib.pyplot as plt
 import networkx as nx
 
 def is_valid(graph):
+    '''
+
+    :param graph: The graph object you are working on.
+    :return: A list of booleans to state if the sub graph is connected.
+    '''
+    #Creates a dictionary where the key is the district and the value is
+    #a list of VTDs that belong to that district
     district_list = {}
     for nodes in graph.nodes.data('CD'):
         dist = int(nodes[1])
@@ -12,18 +16,9 @@ def is_valid(graph):
         else:
             district_list[dist] = [nodes[0]]
 
-
+    #Checks if the subgraph of one district is connected(contiguous)
+    dist_contig = []
     for key in district_list:
         tmp = graph.subgraph(district_list[key])
-        print(nx.is_connected(tmp))
-
-
-
-
-G = construct_graph(*ingest("testData/wyoming_test.shp", "GEOID"))
-cd_data = get_list_of_data('testData/wyoming_test.shp', 'CD')
-add_data_to_graph(cd_data, G, 'CD')
-is_valid(G)
-print(G.nodes(data=True))
-
-print(nx.is_connected(G))
+        dist_contig.append(nx.is_connected(tmp))
+    return dist_contig
