@@ -7,7 +7,10 @@ def ingest(filepath, name_of_geoid_col):
 
     :filepath: Path to input shapefile location.
 
-    :returns: Tuple (neighbors, perims, geoid_col) to be passed to :func:`.make_graph`. `neighbors` is a dictionary of (id, [adj_ids\). `perims` is a list of perimeters numbered sequentially. `geoid_col` is a list of the geoids of shapes.
+    :returns: Tuple (neighbors, perims, geoid_col) to be passed to
+        :func:`.make_graph`. `neighbors` is a dictionary of (id, [adj_ids\).
+        `perims` is a list of perimeters numbered sequentially. `geoid_col` is a
+        list of the geoids of shapes.
 
     """
     df = gp.read_file(filepath)
