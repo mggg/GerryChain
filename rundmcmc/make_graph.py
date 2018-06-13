@@ -39,8 +39,7 @@ def add_data_to_graph(data, graph, data_name):
     # Check to make sure there is a one-to-one between data and VTDs
     for i, j in enumerate(data_name):
         if len(graph) != len(data[i]):
-            print("Your column length doesn't match the number of nodes!")
-            sys.exit(1)
+            raise ValueError("Your column length doesn't match the number of nodes!")
 
     # Adding data to the nodes
         for x, _ in enumerate(graph.nodes()):
