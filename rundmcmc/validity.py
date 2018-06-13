@@ -1,12 +1,13 @@
 import networkx as nx
 import pandas as pd
 
+
 class Validator:
     def __init__(self, constraints):
-		'''
-		:constraints: The list of functions that will check to see if your assignment is valid
-		'''
-		self.constraints = constraints
+        '''
+        :constraints: The list of functions that will check to see if your assignment is valid
+        '''
+        self.constraints = constraints
 
     def __call__(self, partition):
         '''
@@ -18,9 +19,10 @@ class Validator:
         for constraint in self.constraints:
             if constraint(partition) is False:
                 return False
-        
+
         # all constraints are satisfied
         return True
+
 
 def contiguous(partition):
     '''
@@ -31,14 +33,14 @@ def contiguous(partition):
     :return: A list of booleans to state if the sub graph is connected.
     '''
 
-    #TODO
+    # TODO
 
     # Creates a dictionary where the key is the district and the value is
     # a list of VTDs that belong to that district
     district_list = {}
-    #TODO
+    # TODO
     for node in partition.graph.nodes:
-        #TODO
+        # TODO
         dist = partition.assignment[node]
         if dist in district_list:
             district_list[dist].append(node)
@@ -47,7 +49,7 @@ def contiguous(partition):
 
     # Checks if the subgraph of all districts are connected(contiguous)
     for key in district_list:
-        #TODO
+        # TODO
         tmp = partition.graph.subgraph(district_list[key])
         if nx.is_connected(tmp) is False:
             return False
@@ -62,7 +64,7 @@ def contiguous(partition):
     return True
 
 
-#TODO make attrName and percentage configurable 
+# TODO make attrName and percentage configurable
 def districts_within_tolerance(partition):
     """
     :graphObj: networkX graph object
@@ -79,7 +81,7 @@ def districts_within_tolerance(partition):
         percentage *= 0.01
 
     # get value of attrName column for each graph node
-    #TODO fixe when partition class is implemented
+    # TODO fixe when partition class is implemented
     cdVals = [(partition.assignment[n], n[attrName]) for n in partition.graphObj.nodes(data=True)]
     # get sum of all nodes per district as found in assignment
     cdVals = pd.DataFrame(cdVals).groupby(0)[1].sum().tolist()
