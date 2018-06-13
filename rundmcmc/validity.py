@@ -25,7 +25,7 @@ def contiguous(graph):
     return dist_contig
 
 
-def districts_within_tolerance(graphObj, attrName=, percentage):
+def districts_within_tolerance(graphObj, attrName, percentage):
     """
     :graphObj: networkX graph object 
     :attrName: string that is the name of a field in graphObj nodes (e.g. population)
