@@ -3,8 +3,6 @@ from rundmcmc.make_graph import construct_graph, get_list_of_data, add_data_to_g
 from rundmcmc.validity import contiguous, Validator
 from rundmcmc.partition import Partition, propose_random_flip
 from rundmcmc.chain import MarkovChain
-import matplotlib.pyplot as plt
-import networkx as nx
 
 
 def main():
