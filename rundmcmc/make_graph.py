@@ -38,13 +38,13 @@ def add_data_to_graph(data, graph, data_name):
     '''
     # Check to make sure there is a one-to-one between data and VTDs
     for i, j in enumerate(data_name):
-        if len(graph) != len(your_data[i]):
+        if len(graph) != len(data[i]):
             print("Your column length doesn't match the number of nodes!")
             sys.exit(1)
 
     # Adding data to the nodes
         for x, _ in enumerate(graph.nodes()):
-            graph.nodes[x][j] = your_data[i][x]
+            graph.nodes[x][j] = data[i][x]
 
 
 def construct_graph(lists_of_neighbors, lists_of_perims, geoid):
