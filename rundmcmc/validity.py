@@ -69,13 +69,18 @@ def single_flip_contiguous(partition, flips=None):
 
         return 1
 
-    for changed_node, _ in flips:
+    for changed_node, _ in flips.items():
         old_neighbors = []
         old_assignment = assignment_dict[changed_node]
 
         for node in graph.neighbors(changed_node):
             if proposed_assignment(node) == old_assignment:
                 old_neighbors.append(node)
+
+        if not old_neighbors:
+            # Under our assumptions, if there are no old neighbors, then the
+            # old_assignment district has vanished. It is trivially connected.
+            return True
 
         start_neighbor = random.choice(old_neighbors)
 
