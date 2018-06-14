@@ -90,7 +90,7 @@ def single_flip_contiguous(partition, flips=None):
                                                              weight=partition_edge_weight)
                 if not (distance < float("inf")):
                     return False
-            except NetworkXNoPath as e:
+            except NetworkXNoPath:
                 return False
 
     # All neighbors of all changed nodes are connected, so the new graph is
