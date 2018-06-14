@@ -1,5 +1,8 @@
+from networkx import NetworkXNoPath
+import networkx.algorithms.shortest_paths.weighted as nx_path
 import networkx as nx
 import pandas as pd
+import random
 
 
 class Validator:
@@ -22,6 +25,58 @@ class Validator:
 
         # all constraints are satisfied
         return True
+
+
+def single_flip_contiguous(partition):
+    """
+    Check if swapping the given node from its old assignment disconnects the
+    old assignment class.
+
+    :removed_node: Node id.
+    :old_assignment: The assignment class that the node was removed from.
+    :returns: Boolean.
+
+    We assume that `removed_node` belonged to an assignment class that formed a
+    connected subgraph. To see if its removal left the subgraph connected, we
+    check that the neighbors of the removed node are still connected through
+    the changed graph.
+
+    """
+    graph = partition.graph
+    old_assignments = partition.changed_assignments
+    assignment_dict = partition.assignment
+
+    def partition_edge_weight(start_node, end_node, edge_attrs):
+        """
+        Compute the district edge weight, which is 1 if the nodes have the same
+        assignment, and infinity otherwise.
+        """
+        if assignment_dict[start_node] != assignment_dict[end_node]:
+            return float("inf")
+
+        return 1
+
+    for change_node, old_assignment in partition.changed_assignments.items():
+        new_assignment = assignment_dict[change_node]
+
+        old_neighbors = []
+        for node in graph.neighbors(change_node):
+            if assignment_dict[node] == old_assignment:
+                old_neighbors.append(node)
+
+        start_neighbor = random.choice(old_neighbors)
+
+        for neighbor in old_neighbors:
+            try:
+                nx_path.single_source_dijkstra(graph, start_neighbor, neighbor,
+                                               cutoff=5,
+                                               weight=partition_edge_weight)
+            except NetworkXNoPath as e:
+                return False
+
+    # All neighbors of all changed nodes are connected, so the new graph is
+    # connected.
+    return True
 
 
 def contiguous(partition):
