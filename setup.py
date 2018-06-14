@@ -4,6 +4,10 @@ import versioneer
 requirements = [
     # package requirements go here
     'pandas',
+    "networkx",
+    "geopandas",
+    "pysal",
+    "matplotlib",
 ]
 
 setup(
