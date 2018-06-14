@@ -84,7 +84,6 @@ class Logger:
                 plt.hist(self.histograms[stat], bins=bins)
                 plt.show()
 
-
     def _output_step(self, step, state):
         """
             Prints statistical information to the console.
