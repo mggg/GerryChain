@@ -50,7 +50,6 @@ class Partition:
         :flips: a dictionary of nodes mapped to their new assignments
         :return: a new Partition instance
         """
-        changed_assignments = {node: self.assignment[node] for node in flips.keys()}
         new_assignment = {**self.assignment, **flips}
 
         new_fields = {key: updater(self, flips) for key, updater in self.updaters.items()}
