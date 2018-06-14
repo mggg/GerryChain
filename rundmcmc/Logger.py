@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 
 class Logger:
-    def __init__(self, Chain, interval=None):
+    def __init__(self, Chain, interval=None, console_output=True, encode_hist=False, plot_hist=True):
         """
             Logger is a wrapper for the MarkovChain class that tracks
             statistics as we move through the states of the chain. Uses
@@ -15,6 +15,9 @@ class Logger:
                         default is 1% of the total number of iterations.
         """
         self.Chain = Chain
+        self.console_output = console_output
+        self.encode_hist = encode_hist
+        self.plot_hist = plot_hist
 
         # Assign the binning interval; if there's no interval provided as
         # an argument to Logger, then we bin every 1% of the steps.
@@ -49,8 +52,12 @@ class Logger:
         # Loop for running the chain. *This method needs to be augmented.*
         for state in self.Chain:
             # If we encounter an interval step, get the current statistics
-            # and add their values to the existing histograms.
+            # and add their values to the existing histograms. Also prints
+            # some stuff out to the console.
             if step % self.interval == 0:
+                # Output stuff to console (if we want to).
+                if self.console_output:
+                    self._output_step(step, state)
 
                 # Add current state's stats to the histogram.
                 for stat in self.histograms:
@@ -70,9 +77,29 @@ class Logger:
             # Calculating the number of histogram bins. Assuming we want each bin
             # to represent ~10 values, we can calculate bins by:
             #
-            #   bins = (number of collections) / (number of districts * values per bin)
+            #   bins = (number of collections) / (number of districts * ~values per bin)
             bins = int(len(self.histograms[stat]) / (self.num_districts * 10))
 
             # Plot histogram for this statistic.
-            plt.hist(self.histograms[stat], bins=bins)
-            plt.show()
+            if self.plot_hist:
+                plt.hist(self.histograms[stat], bins=bins)
+                plt.show()
+
+
+    def _output_step(self, step, state):
+        """
+            Prints statistical information to the console.
+
+            :step: Current chain iteration.
+            :state: Current chain state.
+        """
+        print("Step {0}/{1}".format(step, self.Chain.total_steps))
+        print("----------")
+        
+        for stat in state.keys():
+            print("{}".format(stat))
+
+            for cd in state[stat]:
+                print("\t{0}: {1}".format(cd, state[stat][cd]))
+
+            print("\n\n")

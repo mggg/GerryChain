@@ -76,7 +76,6 @@ class Partition:
 
     def items(self):
         """
-            Implementation of the Python dictu's items() method.
+            Implementation of the Python dict's items() method.
         """
         return self.fields.items()
-        
