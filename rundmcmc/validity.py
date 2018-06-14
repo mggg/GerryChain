@@ -65,9 +65,10 @@ def single_flip_contiguous(partition):
 
         for neighbor in old_neighbors:
             try:
-                nx_path.single_source_dijkstra(graph, start_neighbor, neighbor,
-                                               cutoff=5,
-                                               weight=partition_edge_weight)
+                distance, _ = nx_path.single_source_dijkstra(graph, start_neighbor, neighbor,
+                                                             weight=partition_edge_weight)
+                if not (distance < float("inf")):
+                    return False
             except NetworkXNoPath as e:
                 return False
 
