@@ -27,12 +27,17 @@ class Validator:
         return True
 
 
-def single_flip_contiguous(partition):
+def single_flip_contiguous(partition, flips=None):
     """
     Check if swapping the given node from its old assignment disconnects the
     old assignment class.
 
-    :parition: :class:`.Partition` object.
+    :parition: Current :class:`.Partition` object.
+
+    :flips: Dictionary of proposed flips, with `(nodeid: new_assignment)`
+            pairs. If `flips` is `None`, then fallback to the
+            :func:`.contiguous` check.
+
     :returns: Boolean.
 
     We assume that `removed_node` belonged to an assignment class that formed a
@@ -41,23 +46,35 @@ def single_flip_contiguous(partition):
     the changed graph.
 
     """
+    if not flips:
+        return contiguous(partition, flips)
+
     graph = partition.graph
     assignment_dict = partition.assignment
+
+    def proposed_assignment(node):
+        """Return the proposed assignment of the given node."""
+        if node in flips:
+            return flips[node]
+
+        return assignment_dict[node]
 
     def partition_edge_weight(start_node, end_node, edge_attrs):
         """
         Compute the district edge weight, which is 1 if the nodes have the same
         assignment, and infinity otherwise.
         """
-        if assignment_dict[start_node] != assignment_dict[end_node]:
+        if proposed_assignment(start_node) != proposed_assignment(end_node):
             return float("inf")
 
         return 1
 
-    for change_node, old_assignment in partition.changed_assignments.items():
+    for changed_node, _ in flips:
         old_neighbors = []
-        for node in graph.neighbors(change_node):
-            if assignment_dict[node] == old_assignment:
+        old_assignment = assignment_dict[changed_node]
+
+        for node in graph.neighbors(changed_node):
+            if proposed_assignment(node) == old_assignment:
                 old_neighbors.append(node)
 
         start_neighbor = random.choice(old_neighbors)
