@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 
 class Logger:
-    def __init__(self, Chain, interval=None, console_output=True, encode_hist=False, plot_hist=True):
+    def __init__(self, Chain, interval=None, console_output=True, encode_hist=False, plot_hist=False):
         """
             Logger is a wrapper for the MarkovChain class that tracks
             statistics as we move through the states of the chain. Uses
