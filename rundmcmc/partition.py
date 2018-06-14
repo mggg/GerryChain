@@ -9,10 +9,15 @@ def propose_random_flip(partition):
     :partition: The current partition to propose a flip from.
     :return: a dictionary of with the flipped node mapped to its new assignment
     """
-    edge = random.choice(partition.cut_edges)
+    # TODO fix empty array issue
+    #edge = random.choice(partition.cut_edges)
+    edge = partition.graph.edge(partition.graph.vertex(0), partition.graph.vertex(8))
     index = random.choice((0, 1))
 
-    flipped_node, other_node = edge[index], edge[1 - index]
+    if index == 1:
+        flipped_node, other_node = edge.source(), edge.target()
+    else:
+        flipped_node, other_node = edge.target(), edge.source()
     flip = dict([(flipped_node, partition.assignment[other_node])])
 
     return flip
@@ -45,7 +50,7 @@ class Partition:
     def __init__(self, graph, assignment, aggregate_fields=None, overwrite_stats=None):
         self.graph = graph
         self.assignment = assignment
-        self.cut_edges = [edge for edge in self.graph.edges if self.crosses_parts(edge)]
+        self.cut_edges = [edge for edge in self.graph.edges() if self.crosses_parts(edge)]
 
         if aggregate_fields:
             self.statistics = {field: dict() for field in aggregate_fields}
@@ -60,7 +65,7 @@ class Partition:
             self.statistics = overwrite_stats
 
     def crosses_parts(self, edge):
-        return self.assignment[edge[0]] != self.assignment[edge[1]]
+        return self.assignment[edge.source()] != self.assignment[edge.target()]
 
     def merge(self, flips):
         """
@@ -84,7 +89,8 @@ class Partition:
         """
         statistic = collections.defaultdict(int)
         for node, part in self.assignment.items():
-            statistic[part] += self.graph.nodes[node][field]
+            vprop = self.graph.vertex_properties[field]
+            statistic[part] += vprop[self.graph.vertex(node)]  # self.graph.vertex[node][field]
         return statistic
 
     def update_statistic(self, changes, old_statistic, field):
@@ -94,7 +100,8 @@ class Partition:
         """
         new_statistic = dict()
         for part, flow in flows_from_changes(self, changes).items():
-            out_flow = sum(self.graph.nodes[node][field] for node in flow['out'])
-            in_flow = sum(self.graph.nodes[node][field] for node in flow['in'])
+            vprop = self.graph.vertex_properties[field]
+            out_flow = sum(vprop[self.graph.vertex(node)] for node in flow['out'])
+            in_flow = sum(vprop[self.graph.vertex(node)] for node in flow['in'])
             new_statistic[part] = old_statistic[part] - out_flow + in_flow
         return {**old_statistic, **new_statistic}

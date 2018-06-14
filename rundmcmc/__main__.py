@@ -3,6 +3,7 @@ from rundmcmc.make_graph import construct_graph, get_list_of_data, add_data_to_g
 from rundmcmc.validity import contiguous, Validator
 from rundmcmc.partition import Partition, propose_random_flip
 from rundmcmc.chain import MarkovChain
+import time
 
 
 def main():
@@ -18,11 +19,21 @@ def main():
     initial_partition = Partition(graph, assignment, aggregate_fields=['ALAND'])
     accept = lambda x: True
 
-    chain = MarkovChain(propose_random_flip, validator, accept, initial_partition, total_steps=10)
+    n = 2**15
+    chain = MarkovChain(propose_random_flip, validator, accept, initial_partition, total_steps=n)
 
+    i = 0
+    print("starting")
+    start = time.time()
     for step in chain:
-        print(step.assignment)
+        # print(step.assignment)
+        if i % 2**10 == 0:
+            print(i)
+        i += 1
+    print(time.time() - start)
 
 
 if __name__ == "__main__":
+    import sys
+    sys.path.append('/usr/local/Cellar/graph-tool/2.26_2/lib/python3.6/site-packages/')
     main()
