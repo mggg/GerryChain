@@ -43,7 +43,6 @@ def single_flip_contiguous(partition):
 
     """
     graph = partition.graph
-    old_assignments = partition.changed_assignments
     assignment_dict = partition.assignment
 
     def partition_edge_weight(start_node, end_node, edge_attrs):
@@ -57,8 +56,6 @@ def single_flip_contiguous(partition):
         return 1
 
     for change_node, old_assignment in partition.changed_assignments.items():
-        new_assignment = assignment_dict[change_node]
-
         old_neighbors = []
         for node in graph.neighbors(change_node):
             if assignment_dict[node] == old_assignment:
