@@ -1,7 +1,5 @@
 import random
 
-import rundmcmc.updaters
-
 
 def propose_random_flip(partition):
     """Proposes a random boundary flip from the partition.
