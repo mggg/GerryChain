@@ -8,7 +8,7 @@ class Logger:
             Logger is a wrapper for the MarkovChain class that tracks
             statistics as we move through the states of the chain. Uses
             regular Python lists for performance (as it's faster to append
-            to a linked list than it is to merge to NumPy arrays).
+            to a linked list than it is to merge two NumPy arrays).
 
             :Chain: Instance of the MarkovChain class.
             :interval: Sets the interval at which statistics are binned;
