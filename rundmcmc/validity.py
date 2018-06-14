@@ -32,8 +32,7 @@ def single_flip_contiguous(partition):
     Check if swapping the given node from its old assignment disconnects the
     old assignment class.
 
-    :removed_node: Node id.
-    :old_assignment: The assignment class that the node was removed from.
+    :parition: :class:`.Partition` object.
     :returns: Boolean.
 
     We assume that `removed_node` belonged to an assignment class that formed a
