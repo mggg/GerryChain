@@ -1,8 +1,10 @@
+
 from rundmcmc.ingest import ingest
 from rundmcmc.make_graph import construct_graph, get_list_of_data, add_data_to_graph, pull_districts
 from rundmcmc.validity import contiguous, Validator
 from rundmcmc.partition import Partition, propose_random_flip
 from rundmcmc.chain import MarkovChain
+from rundmcmc.Logger import Logger
 
 
 def main():
@@ -18,11 +20,10 @@ def main():
     initial_partition = Partition(graph, assignment, aggregate_fields=['ALAND'])
     accept = lambda x: True
 
-    chain = MarkovChain(propose_random_flip, validator, accept, initial_partition, total_steps=10)
-
-    for step in chain:
-        print(step.assignment)
+    # Exposes the chain object to the Logger.
+    return MarkovChain(propose_random_flip, validator, accept, initial_partition, total_steps=10000)
 
 
 if __name__ == "__main__":
-    main()
+    # Wrap main()'s chain object in the Logger.
+    Logger(main())
