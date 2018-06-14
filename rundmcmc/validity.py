@@ -24,7 +24,7 @@ class Validator:
         return True
 
 
-def contiguous(partition):
+def contiguous(partition, flips=None):
     '''
 
     :graphObj: The graph object you are working on.
