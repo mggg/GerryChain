@@ -5,6 +5,7 @@ from rundmcmc.validity import contiguous, Validator
 from rundmcmc.partition import Partition, propose_random_flip
 from rundmcmc.chain import MarkovChain
 from rundmcmc.Logger import Logger
+from rundmcmc.updaters import statistic_factory
 
 
 def main():
@@ -16,8 +17,9 @@ def main():
 
     assignment = pull_districts(graph, 'CD')
     validator = Validator([contiguous])
+    updaters = {'area': statistic_factory('ALAND', alias='area')}
 
-    initial_partition = Partition(graph, assignment, aggregate_fields=['ALAND'])
+    initial_partition = Partition(graph, assignment, updaters)
     accept = lambda x: True
 
     # Exposes the chain object to the Logger.
