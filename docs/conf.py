@@ -167,7 +167,7 @@ texinfo_documents = [
 # -- Mock C libraries --------------------------------------------------------
 
 # RTD is unable to install libraries with C dependencies.
-# Using the fix from here: http://docs.readthedocs.io/en/latest/faq.html?#i-get-import-errors-on-libraries-that-depend-on-c-modules
+# Using the fix from here: http://docs.readthedocs.io/en/latest/faq.html
 
 
 class Mock(MagicMock):
