@@ -6,10 +6,11 @@
 # full list see the documentation:
 # http://www.sphinx-doc.org/en/master/config
 
-# -- Path setup --------------------------------------------------------------
-
 import sys
 import os
+from unittest.mock import MagicMock
+
+# -- Path setup --------------------------------------------------------------
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -163,5 +164,19 @@ texinfo_documents = [
      'Miscellaneous'),
 ]
 
+# -- Mock C libraries --------------------------------------------------------
+
+# RTD is unable to install libraries with C dependencies.
+# Using the fix from here: http://docs.readthedocs.io/en/latest/faq.html?#i-get-import-errors-on-libraries-that-depend-on-c-modules
+
+
+class Mock(MagicMock):
+    @classmethod
+    def __getattr__(cls, name):
+        return MagicMock()
+
+
+MOCK_MODULES = ["numpy", "pandas", "geopandas", "pysal", "matplotlib"]
+sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 # -- Extension configuration -------------------------------------------------
