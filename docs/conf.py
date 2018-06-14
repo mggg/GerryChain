@@ -176,7 +176,7 @@ class Mock(MagicMock):
         return MagicMock()
 
 
-MOCK_MODULES = ["numpy", "pandas", "geopandas", "pysal", "matplotlib"]
+MOCK_MODULES = ["numpy", "pandas", "geopandas", "pysal", "matplotlib", "networkx"]
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 # -- Extension configuration -------------------------------------------------
