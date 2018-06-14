@@ -36,9 +36,9 @@ def test_single_flip_contiguity_equals_contiguity():
         assert val
         return partition["contiguous"]
 
-    graph = construct_graph(*ingest("../rundmcmc/testData/wyoming_test.shp", "GEOID"))
+    graph = construct_graph(*ingest("rundmcmc/testData/wyoming_test.shp", "GEOID"))
 
-    cd_data = get_list_of_data("../rundmcmc/testData/wyoming_test.shp", ["CD"])
+    cd_data = get_list_of_data("rundmcmc/testData/wyoming_test.shp", ["CD"])
     add_data_to_graph(cd_data, graph, ["CD"])
 
     assignment = pull_districts(graph, "CD")
