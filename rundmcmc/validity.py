@@ -106,6 +106,15 @@ def contiguous(partition, flips=None):
 
     :return: A list of booleans to state if the sub graph is connected.
     '''
+    if not flips:
+        flips = dict()
+
+    def proposed_assignment(node):
+        """Return the proposed assignment of the given node."""
+        if node in flips:
+            return flips[node]
+
+        return partition.assignment[node]
 
     # TODO
 
@@ -115,7 +124,7 @@ def contiguous(partition, flips=None):
     # TODO
     for node in partition.graph.nodes:
         # TODO
-        dist = partition.assignment[node]
+        dist = proposed_assignment(node)
         if dist in district_list:
             district_list[dist].append(node)
         else:
