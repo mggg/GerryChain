@@ -6,7 +6,7 @@ from rundmcmc.chain import MarkovChain
 
 
 def main():
-    graph = construct_graph(*ingest("./testData/wyoming_test.shp", "GEOID"))
+    graph = construct_graph(ingest("./testData/wyoming_test.shp", name_of_geoid_col="GEOID"))
 
     cd_data = get_list_of_data('./testData/wyoming_test.shp', ['CD', 'ALAND'])
 
