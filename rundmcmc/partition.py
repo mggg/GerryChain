@@ -42,10 +42,12 @@ class Partition:
     :assignment: dictionary mapping nodes to their assigned parts of the partition
     """
 
-    def __init__(self, graph, assignment, aggregate_fields=None, overwrite_stats=None):
+    def __init__(self, graph, assignment, aggregate_fields=None,
+                 overwrite_stats=None, changed_assignments=None):
         self.graph = graph
         self.assignment = assignment
         self.cut_edges = [edge for edge in self.graph.edges if self.crosses_parts(edge)]
+        self.changed_assignments = changed_assignments
 
         if aggregate_fields:
             self.statistics = {field: dict() for field in aggregate_fields}
@@ -70,12 +72,14 @@ class Partition:
         :flips: a dictionary of nodes mapped to their new assignments
         :return: a new Partition instance
         """
+        changed_assignments = {node: self.assignment[node] for node in flips.keys()}
         new_assignment = {**self.assignment, **flips}
 
         new_stats = {field: self.update_statistic(
             flips, statistic, field) for field, statistic in self.statistics.items()}
 
-        return Partition(self.graph, new_assignment, overwrite_stats=new_stats)
+        return Partition(self.graph, new_assignment, overwrite_stats=new_stats,
+                         changed_assignments=changed_assignments)
 
     def initialize_statistic(self, field):
         """
