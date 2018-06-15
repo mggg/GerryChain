@@ -27,11 +27,11 @@ def ingest(filepath, name_of_geoid_col, nbr_col_name=None, perim_col_name=None):
         uniques = df[name_of_geoid_col].unique().tolist()
         lookup = dict(zip(uniques, range(len(uniques))))
 
-        neighbors = {lookup[x[0]] : [lookup[y] for y in x[1]]
-                        for x in df.groupby([name_of_geoid_col])[nbr_col_name]}
+        neighbors = {lookup[x[0]]: [lookup[y] for y in x[1]]
+                    for x in df.groupby([name_of_geoid_col])[nbr_col_name]}
 
-        shared_perims = {lookup[x[0]] : [y for y in x[1]]
-                        for x in df.groupby([name_of_geoid_col])[perim_col_name]}
+        shared_perims = {lookup[x[0]]: [y for y in x[1]]
+                    for x in df.groupby([name_of_geoid_col])[perim_col_name]}
 
         sorted_keys = sorted(neighbors)
         for i in neighbors.keys():
