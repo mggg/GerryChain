@@ -7,7 +7,7 @@ def propose_random_flip(partition):
     :partition: The current partition to propose a flip from.
     :return: a dictionary of with the flipped node mapped to its new assignment
     """
-    edge = random.choice(partition.cut_edges)
+    edge = random.choice(partition['cut_edges'])
     index = random.choice((0, 1))
 
     flipped_node, other_node = edge[index], edge[1 - index]
