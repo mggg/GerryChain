@@ -34,7 +34,6 @@ version = ''
 # The full version, including alpha/beta/rc tags
 release = ''
 
-
 # -- General configuration ---------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -84,7 +83,7 @@ pygments_style = 'sphinx'
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+html_theme = 'default'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -176,7 +175,11 @@ class Mock(MagicMock):
         return MagicMock()
 
 
-MOCK_MODULES = ["numpy", "pandas", "geopandas", "pysal", "matplotlib", "networkx"]
+MOCK_MODULES = ["numpy", "pandas", "geopandas", "pysal",
+                "matplotlib", "networkx", "networkx.algorithms.shortest_path",
+                "networkx.algorithms"]
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 # -- Extension configuration -------------------------------------------------
+
+add_module_names = False
