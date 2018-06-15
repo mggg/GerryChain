@@ -19,9 +19,9 @@ def get_list_of_data(filepath, col_name, geoid=None):
     elif filepath.split('.')[-1] == 'shp':
         df = gp.read_file(filepath)
 
-    if geoid is None: 
+    if geoid is None:
         geoid = "sampleIndex"
-        df[geoid]=range(len(df))
+        df[geoid] = range(len(df))
 
     for i in col_name:
         data.append(dict(zip(df[geoid], df[i])))
