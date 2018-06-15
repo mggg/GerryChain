@@ -75,3 +75,13 @@ class Partition:
             Implementation of the Python dict's items() method.
         """
         return self.fields.items()
+
+    @staticmethod
+    def compress_adjacency(Graph):
+        """
+            Generate adjacency matrix and strip out irrelevant data.
+        """
+        _adj = list(Graph.adjacency())
+        adjacency = {}
+        adjacency = {u: list(vs.keys()) for u, vs in _adj if adjacency.get(u, None) is None}
+        return adjacency

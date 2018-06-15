@@ -1,5 +1,6 @@
 
 import matplotlib.pyplot as plt
+import time
 
 
 class Logger:
@@ -48,6 +49,7 @@ class Logger:
             to a file (every n intervals) or using another caching method.
         """
         step = 0
+        start = time.time()
 
         # Loop for running the chain. *This method needs to be augmented.*
         for state in self.Chain:
@@ -64,6 +66,9 @@ class Logger:
                     self.histograms[stat] += list(state[stat].values())
 
             step += 1
+
+        end = time.time()
+        print("Loop ran in {} seconds.".format(str(end - start)))
 
         # Generate graphical histograms.
         self._generate_histograms()
@@ -82,6 +87,8 @@ class Logger:
             # Plot histogram for this statistic.
             if self.plot_hist:
                 plt.hist(self.histograms[stat], bins=bins)
+                plt.xlabel("Area")
+                plt.ylabel("Frequency per {} iterations".format(self.Chain.total_steps))
                 plt.show()
 
     def _output_step(self, step, state):
@@ -90,7 +97,7 @@ class Logger:
             :step: Current chain iteration.
             :state: Current chain state.
         """
-        print("Step {0}/{1}".format(step, self.Chain.total_steps))
+        print("Step {0}/{1}".format(step + 1, self.Chain.total_steps))
         print("----------")
 
         for stat in state.keys():

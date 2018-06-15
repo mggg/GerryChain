@@ -32,7 +32,7 @@ def ingest(filepath, name_of_geoid_col):
                 .length)
 
     sorted_keys = sorted(neighbors)
-
+    
     return([neighbors[i] for i in sorted_keys],
            [shared_perims[i] for i in sorted_keys],
            [df.loc[i, name_of_geoid_col] for i in sorted_keys])
