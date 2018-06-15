@@ -9,10 +9,10 @@ jobs:
     steps:
       - checkout
 
-      # - restore_cache:
-      #     keys:
-      #     - v1-dependencies-{{ checksum "environment.yml" }}
-      #     - v1-dependencies-
+      - restore_cache:
+          keys:
+          - v1-dependencies-{{ checksum "setup.py" }}
+          - v1-dependencies-
 
       - run:
           name: run linter
@@ -26,23 +26,25 @@ jobs:
       - run:
           name: install dependencies
           command: |
-            # conda env create -q || conda env update -q
-            # source activate adj
-            conda install -qy pytest pytest-cov conda-build anaconda-client networkx pysal pandas geopandas
+            conda config --set auto_update_conda false
+            conda config --set always_yes true
+            # deps from requirements.txt are picked up by conda-build
+            #   only list deps for test/coverage here.
+            conda install -qy pytest pytest-cov conda-build
             conda build --no-test .
             conda install --use-local rundmcmc
+            conda install -qyc conda-forge codecov
 
-      # - save_cache:
-      #     paths:
-      #       - /opt/conda
-      #     key: v1-dependencies-{{ checksum "environment.yml" }}
+      - save_cache:
+          paths:
+            - /opt/conda
+          key: v1-dependencies-{{ checksum "setup.py" }}
 
       - run:
           name: run tests
           command: |
             # source activate adj
             pytest -v --cov=rundmcmc tests
-            conda install -c conda-forge codecov
             codecov
 
       - store_artifacts:
