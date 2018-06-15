@@ -1,6 +1,6 @@
-import networkx as nx
 import pandas as pd
-from graph_tool.all import *
+from graph_tool import GraphView
+from graph_tool.topology import label_components
 import numpy as np
 
 

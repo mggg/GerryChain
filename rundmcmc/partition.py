@@ -10,7 +10,7 @@ def propose_random_flip(partition):
     :return: a dictionary of with the flipped node mapped to its new assignment
     """
     # TODO fix empty array issue
-    #edge = random.choice(partition.cut_edges)
+    # also note only flipping 1 edge for testing purposes!!
     edge = partition.graph.edge(partition.graph.vertex(0), partition.graph.vertex(8))
     index = random.choice((0, 1))
 

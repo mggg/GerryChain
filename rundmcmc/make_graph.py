@@ -1,4 +1,4 @@
-from graph_tool.all import *
+from graph_tool import Graph
 import pandas as pd
 import geopandas as gp
 import numpy as np
@@ -43,15 +43,18 @@ def add_data_to_graph(data, graph, data_name):
 
     # Adding data to the nodes
         for i, _ in enumerate(data_name):
+            # get the graph-tool value type to create the property map for the data
             dtype = get_type(data[i][0])
             vdata = graph.new_vertex_property(dtype)
+
+            # can't vectorize assignment of nonscalar data types
             if dtype == "string":
-                for j in range(len(geoid)):
-                    vgdata[graph.vertex(i)] = data[i][j]
+                for j in range(len(data[i])):
+                    vdata[graph.vertex(i)] = data[i][j]
             else:
+                # assign data as a vector, very slick
                 graph.vertex_properties[data_name[i]] = vdata
                 vdata.a = data[i]
-            #graph.vertices[x][j] = data[i][x]
 
 
 def construct_graph(lists_of_neighbors, lists_of_perims, geoid):
@@ -67,7 +70,7 @@ def construct_graph(lists_of_neighbors, lists_of_perims, geoid):
     '''
     graph = Graph()
 
-    vertices = graph.add_vertex(len(lists_of_neighbors))
+    graph.add_vertex(len(lists_of_neighbors))
     # Creating the graph itself
     for vtd, list_nbs in enumerate(lists_of_neighbors):
         for d in list_nbs:
@@ -99,6 +102,7 @@ def pull_districts(graph, cd_identifier):
     '''
     # creates a dictionary and iterates over the nodes to add node to CD.
     nodes = {}
+    # get the vertex property map of the identifier
     vpop = graph.vertex_properties[cd_identifier]
     for i in range(graph.num_vertices()):
         nodes[i] = vpop[graph.vertex(i)]
@@ -106,11 +110,11 @@ def pull_districts(graph, cd_identifier):
 
 
 def get_type(data):
-    if type(data) == type(1) or type(data) == type(np.int64(2)):
+    if isinstance(data, int) or isinstance(data, np.int64):  # type(data) == type(np.int64(2)):
         return "int"
-    elif type(data) == type(4.1):
+    elif isinstance(data, float):
         return "float"
-    elif type(data) == type(""):
+    elif isinstance(data, str):
         return "string"
     else:
         print(type(data))
