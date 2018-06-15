@@ -1,5 +1,8 @@
+from networkx import NetworkXNoPath
+import networkx.algorithms.shortest_paths.weighted as nx_path
 import networkx as nx
 import pandas as pd
+import random
 
 
 class Validator:
@@ -24,6 +27,77 @@ class Validator:
         return True
 
 
+def single_flip_contiguous(partition, flips=None):
+    """
+    Check if swapping the given node from its old assignment disconnects the
+    old assignment class.
+
+    :parition: Current :class:`.Partition` object.
+
+    :flips: Dictionary of proposed flips, with `(nodeid: new_assignment)`
+            pairs. If `flips` is `None`, then fallback to the
+            :func:`.contiguous` check.
+
+    :returns: Boolean.
+
+    We assume that `removed_node` belonged to an assignment class that formed a
+    connected subgraph. To see if its removal left the subgraph connected, we
+    check that the neighbors of the removed node are still connected through
+    the changed graph.
+
+    """
+    if not flips:
+        return contiguous(partition, flips)
+
+    graph = partition.graph
+    assignment_dict = partition.assignment
+
+    def proposed_assignment(node):
+        """Return the proposed assignment of the given node."""
+        if node in flips:
+            return flips[node]
+
+        return assignment_dict[node]
+
+    def partition_edge_weight(start_node, end_node, edge_attrs):
+        """
+        Compute the district edge weight, which is 1 if the nodes have the same
+        assignment, and infinity otherwise.
+        """
+        if proposed_assignment(start_node) != proposed_assignment(end_node):
+            return float("inf")
+
+        return 1
+
+    for changed_node, _ in flips.items():
+        old_neighbors = []
+        old_assignment = assignment_dict[changed_node]
+
+        for node in graph.neighbors(changed_node):
+            if proposed_assignment(node) == old_assignment:
+                old_neighbors.append(node)
+
+        if not old_neighbors:
+            # Under our assumptions, if there are no old neighbors, then the
+            # old_assignment district has vanished. It is trivially connected.
+            return True
+
+        start_neighbor = random.choice(old_neighbors)
+
+        for neighbor in old_neighbors:
+            try:
+                distance, _ = nx_path.single_source_dijkstra(graph, start_neighbor, neighbor,
+                                                             weight=partition_edge_weight)
+                if not (distance < float("inf")):
+                    return False
+            except NetworkXNoPath:
+                return False
+
+    # All neighbors of all changed nodes are connected, so the new graph is
+    # connected.
+    return True
+
+
 def contiguous(partition, flips=None):
     '''
 
@@ -32,6 +106,15 @@ def contiguous(partition, flips=None):
 
     :return: A list of booleans to state if the sub graph is connected.
     '''
+    if not flips:
+        flips = dict()
+
+    def proposed_assignment(node):
+        """Return the proposed assignment of the given node."""
+        if node in flips:
+            return flips[node]
+
+        return partition.assignment[node]
 
     # TODO
 
@@ -41,7 +124,7 @@ def contiguous(partition, flips=None):
     # TODO
     for node in partition.graph.nodes:
         # TODO
-        dist = partition.assignment[node]
+        dist = proposed_assignment(node)
         if dist in district_list:
             district_list[dist].append(node)
         else:

@@ -28,10 +28,9 @@ jobs:
           command: |
             # conda env create -q || conda env update -q
             # source activate adj
-            conda install -qy pytest pytest-cov conda-build anaconda-client
+            conda install -qy pytest pytest-cov conda-build anaconda-client networkx pysal pandas geopandas
             conda build --no-test .
             conda install --use-local rundmcmc
-            conda install networkx
 
       # - save_cache:
       #     paths:
