@@ -58,4 +58,20 @@ class Partition:
                          updaters=self.updaters, fields=new_fields)
 
     def __getitem__(self, key):
+        """
+            Allows keying on a Partition instance.
+            :key: Property to access.
+        """
         return self.fields[key]
+
+    def keys(self):
+        """
+            Implementation of the Python dict's keys() method.
+        """
+        return self.fields.keys()
+
+    def items(self):
+        """
+            Implementation of the Python dict's items() method.
+        """
+        return self.fields.items()
