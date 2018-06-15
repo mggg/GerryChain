@@ -37,8 +37,6 @@ class Partition:
             fields = {key: updater(self) for key, updater in self.updaters.items()}
         self.fields = fields
 
-        self.cut_edges = [edge for edge in self.graph.edges if self.crosses_parts(edge)]
-
     def crosses_parts(self, edge):
         return self.assignment[edge[0]] != self.assignment[edge[1]]
 
@@ -52,7 +50,8 @@ class Partition:
         """
         new_assignment = {**self.assignment, **flips}
 
-        new_fields = {key: updater(self, flips) for key, updater in self.updaters.items()}
+        new_fields = {key: updater(self, new_assignment, flips)
+                                   for key, updater in self.updaters.items()}
 
         return Partition(self.graph, assignment=new_assignment,
                          updaters=self.updaters, fields=new_fields)
