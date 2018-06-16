@@ -1,7 +1,7 @@
 import networkx
 
 from rundmcmc.partition import Partition, propose_random_flip
-from rundmcmc.updaters import statistic_factory
+from rundmcmc.updaters import statistic_factory, cut_edges
 from rundmcmc.ingest import ingest
 from rundmcmc.make_graph import construct_graph, pull_districts, get_list_of_data, add_data_to_graph
 from rundmcmc.validity import Validator, contiguous, single_flip_contiguous
@@ -44,7 +44,8 @@ def test_single_flip_contiguity_equals_contiguity():
     assignment = pull_districts(graph, "CD")
 
     validator = Validator([equality_validator])
-    updaters = {"contiguous": contiguous, "flip_check": single_flip_contiguous}
+    updaters = {"contiguous": contiguous, "cut_edges": cut_edges,
+        "flip_check": single_flip_contiguous}
 
     initial_partition = Partition(graph, assignment, updaters)
     accept = lambda x: True
