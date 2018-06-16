@@ -5,4 +5,3 @@ RunDMCMC
    :maxdepth: 4
 
    rundmcmc
-   tests
