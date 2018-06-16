@@ -7,7 +7,7 @@ def propose_random_flip(partition):
     :partition: The current partition to propose a flip from.
     :return: a dictionary of with the flipped node mapped to its new assignment
     """
-    edge = random.choice(partition['cut_edges'])
+    edge = random.choice(tuple(partition['cut_edges']))
     index = random.choice((0, 1))
 
     flipped_node, other_node = edge[index], edge[1 - index]
@@ -36,9 +36,6 @@ class Partition:
         if not fields:
             fields = {key: updater(self) for key, updater in self.updaters.items()}
         self.fields = fields
-
-    def crosses_parts(self, edge):
-        return self.assignment[edge[0]] != self.assignment[edge[1]]
 
     def merge(self, flips):
         """Takes a dictionary of new assignments and returns the Partition

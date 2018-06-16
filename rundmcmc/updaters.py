@@ -3,10 +3,16 @@ import collections
 
 def cut_edges(partition, new_assignment=None, flips=None):
     if not flips:
-        return [edge for edge in partition.graph.edges if crosses_parts(partition.assignment, edge)]
-    return [(node, neighbor) for node in flips.keys()
+        return {edge for edge in partition.graph.edges if crosses_parts(partition.assignment, edge)}
+    # Edges that weren't cut, but now are cut
+    new_cuts = {(node, neighbor) for node in flips.keys()
             for neighbor in partition.graph[node]
-            if crosses_parts(new_assignment, (node, neighbor))]
+            if crosses_parts(new_assignment, (node, neighbor))}
+    # Edges that were cut, but now are not
+    obsolete_cuts = {(node, neighbor) for node in flips.keys()
+            for neighbor in partition.graph[node]
+            if not crosses_parts(new_assignment, (node, neighbor))}
+    return (partition['cut_edges'] | new_cuts) - obsolete_cuts
 
 
 def crosses_parts(assignment, edge):
