@@ -1,5 +1,3 @@
-import matplotlib.pyplot as plt
-
 from rundmcmc.chain import MarkovChain
 from rundmcmc.ingest import ingest
 from rundmcmc.make_graph import (add_data_to_graph, construct_graph,
@@ -24,12 +22,10 @@ def main():
     accept = lambda x: True
 
     chain = MarkovChain(propose_random_flip, validator, accept,
-                        initial_partition, total_steps=100000)
+                        initial_partition, total_steps=1000)
 
-    data = [area for step in chain for area in step['area'].values()]
-
-    plt.hist(data)
-    plt.show()
+    for step in chain:
+        pass
 
 
 if __name__ == "__main__":
