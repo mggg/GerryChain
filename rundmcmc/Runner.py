@@ -28,7 +28,7 @@ class Runner:
         if kwargs.get("interval") is None:
             self.interval = max(1, int(self.Chain.total_steps * 0.01))
         else:
-            self.interval = max(1, int(kwargs["interval"])
+            self.interval = max(1, int(kwargs["interval"]))
 
         # Find the total number of districts.
         stats = self.Chain.state

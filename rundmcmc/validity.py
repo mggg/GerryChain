@@ -179,6 +179,7 @@ def districts_within_tolerance(partition):
 
     return withinTol
 
+
 def fast_connected(partition, flips=None):
     """
         Checks that a given partition's components are connected using
@@ -209,6 +210,7 @@ def fast_connected(partition, flips=None):
 
     return True
 
+
 def bfs(graph):
     """
         Performs a breadth-first search on the provided graph and
@@ -225,7 +227,7 @@ def bfs(graph):
     while len(q) is not 0:
         current = q.pop(0)
         neighbors = graph[current]
-        
+
         for neighbor in neighbors:
             if neighbor not in visited:
                 visited.add(neighbor)

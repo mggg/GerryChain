@@ -7,6 +7,7 @@ from rundmcmc.chain import MarkovChain
 from rundmcmc.Runner import Runner
 from rundmcmc.updaters import statistic_factory
 
+
 def main():
     graph = construct_graph(*ingest("./testData/wyoming_test.shp", "GEOID"))
 

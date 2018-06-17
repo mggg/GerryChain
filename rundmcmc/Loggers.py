@@ -36,4 +36,3 @@ class Loggers:
         """
         for end in self.ends:
             end(state)
-        
