@@ -1,6 +1,5 @@
 
 from rundmcmc.Loggers import Loggers
-import matplotlib.pyplot as plt
 
 
 class Runner:
@@ -24,7 +23,7 @@ class Runner:
         # too long. Then, if Loggers exist, set the interval to the default
         # binning rate (1%).
         self.interval = None
-        
+
         if kwargs.get("interval") is None:
             self.interval = max(1, int(self.Chain.total_steps * 0.01))
         else:
