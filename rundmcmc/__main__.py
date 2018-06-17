@@ -1,7 +1,7 @@
 
 from rundmcmc.ingest import ingest
 from rundmcmc.make_graph import construct_graph, get_list_of_data, add_data_to_graph, pull_districts
-from rundmcmc.validity import contiguous, Validator, fast_connected, single_flip_contiguous
+from rundmcmc.validity import contiguous, Validator
 from rundmcmc.partition import Partition, propose_random_flip
 from rundmcmc.chain import MarkovChain
 from rundmcmc.Runner import Runner
@@ -15,7 +15,7 @@ def main():
     add_data_to_graph(cd_data, graph, ['CD', 'ALAND'])
 
     assignment = pull_districts(graph, 'CD')
-    validator = Validator([single_flip_contiguous])
+    validator = Validator([contiguous])
     updaters = {'area': statistic_factory('ALAND', alias='area')}
 
     initial_partition = Partition(graph, assignment, updaters)
