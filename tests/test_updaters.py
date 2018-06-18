@@ -1,11 +1,11 @@
 import networkx
 
-from rundmcmc.partition import Partition, propose_random_flip
 from rundmcmc.updaters import statistic_factory
-from rundmcmc.ingest import ingest
-from rundmcmc.make_graph import construct_graph, pull_districts, get_list_of_data, add_data_to_graph
+from rundmcmc.make_graph import construct_graph, add_data_to_graph, get_assignment_dict
 from rundmcmc.validity import Validator, contiguous, single_flip_contiguous
+from rundmcmc.partition import Partition, propose_random_flip
 from rundmcmc.chain import MarkovChain
+import geopandas as gp
 
 
 def test_Partition_can_update_stats():
@@ -36,12 +36,10 @@ def test_single_flip_contiguity_equals_contiguity():
         assert val
         return partition["contiguous"]
 
-    graph = construct_graph(*ingest("rundmcmc/testData/wyoming_test.shp", "GEOID"))
-
-    cd_data = get_list_of_data("rundmcmc/testData/wyoming_test.shp", ["CD"])
-    add_data_to_graph(cd_data, graph, ["CD"])
-
-    assignment = pull_districts(graph, "CD")
+    df = gp.read_file("rundmcmc/testData/wyoming_test.shp")
+    graph = construct_graph(df, geoid_col="GEOID")
+    add_data_to_graph(df, graph, ['CD', 'ALAND'], id_col='GEOID')
+    assignment = get_assignment_dict(df, "GEOID", "CD")
 
     validator = Validator([equality_validator])
     updaters = {"contiguous": contiguous, "flip_check": single_flip_contiguous}
