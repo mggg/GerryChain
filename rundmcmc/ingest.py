@@ -35,8 +35,8 @@ def ingest(filepath, name_of_geoid_col, nbr_col_name=None, perim_col_name=None):
 
         sorted_keys = sorted(neighbors)
         for i in neighbors.keys():
-             shared_perims[i] = [shared_perims[i][j] for j in np.argsort(neighbors[i])]
-             neighbors[i] = sorted(neighbors[i])
+            shared_perims[i] = [shared_perims[i][j] for j in np.argsort(neighbors[i])]
+            neighbors[i] = sorted(neighbors[i])
 
     elif filepath.split(".")[-1] == "shp":
         df = gp.read_file(filepath)
