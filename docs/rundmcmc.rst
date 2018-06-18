@@ -28,14 +28,6 @@ cli module
     :undoc-members:
     :show-inheritance:
 
-ingest module
-----------------------
-
-.. automodule:: rundmcmc.ingest
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 make_graph module
 --------------------------
 

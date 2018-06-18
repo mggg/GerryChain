@@ -7,16 +7,17 @@ import random
 
 class Validator:
     def __init__(self, constraints):
-        '''
-        :constraints: The list of functions that will check to see if your assignment is valid
-        '''
+        """
+        :constraints: List of validator functions that will check partitions.
+
+        """
         self.constraints = constraints
 
     def __call__(self, partition):
-        '''
-        :graph: the networkx graph of vtds
-        :dist_dict: the district assignment dictionary
-        '''
+        """
+        :partition: :class:`Partition` class to check.
+
+        """
 
         # check each constraint function and fail when a constraint test fails
         for constraint in self.constraints:
@@ -38,7 +39,7 @@ def single_flip_contiguous(partition, new_assignment=None, flips=None):
             pairs. If `flips` is `None`, then fallback to the
             :func:`.contiguous` check.
 
-    :returns: Boolean.
+    :returns: True if contiguous, and False otherwise.
 
     We assume that `removed_node` belonged to an assignment class that formed a
     connected subgraph. To see if its removal left the subgraph connected, we
@@ -107,9 +108,7 @@ def contiguous(partition, new_assignment=None, flips=None):
             pairs. If `flips` is `None`, then fallback to the
             :func:`.contiguous` check.
 
-    :returns: True if contiguous, false otherwise.
-
-    :return: A list of booleans to state if the sub graph is connected.
+    :returns: True if contiguous, False otherwise.
     '''
     if not flips:
         flips = dict()
@@ -159,7 +158,8 @@ def districts_within_tolerance(partition):
     :attrName: string that is the name of a field in graphObj nodes (e.g. population)
     :assignment: dictionary with keys that are node ids and values of assigned district
     :percentage: what percent difference is allowed
-    :return: boolean of if the districts are within specified tolerance
+    :returns: boolean of if the districts are within specified tolerance
+
     """
     withinTol = False
     percentage = 0.01
