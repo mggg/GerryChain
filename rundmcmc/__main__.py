@@ -2,7 +2,7 @@ from rundmcmc.chain import MarkovChain
 from rundmcmc.make_graph import construct_graph, add_data_to_graph, get_assignment_dict
 from rundmcmc.partition import Partition, propose_random_flip
 from rundmcmc.updaters import statistic_factory, cut_edges
-from rundmcmc.validity import Validator, contiguous, fast_connected
+from rundmcmc.validity import Validator, fast_connected
 import geopandas as gp
 
 
