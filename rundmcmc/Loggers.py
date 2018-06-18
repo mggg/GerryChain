@@ -1,13 +1,13 @@
 
-class DataFrameLogger:
-    """DataFrameLogger builds a pandas DataFrame with data from each state of
-    the random walk.
-    :keys: list of the names of the properties that you want to record for each state
+class FlatListLogger:
+    """FlatListLogger collects the value of the property specified by key for
+    all of the parts of the partition at every state in the chain, and returns
+    this as a list in its `after` method.
+
+    This logger is only here until we come up with a better way to handle the
+    data we want to collect. I should not have even written this docstring.
     """
-    pass
 
-
-class ListLogger:
     def __init__(self, key):
         self.key = key
 
@@ -15,7 +15,7 @@ class ListLogger:
         self.data = []
 
     def during(self, state):
-        self.data.append(state[self.key])
+        self.data += state[self.key].values()
 
     def after(self, state):
         return self.data
@@ -39,3 +39,4 @@ class ConsoleLogger:
 
     def after(self, state):
         print("Chain run complete!")
+        return True

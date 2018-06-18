@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 
 from rundmcmc.chain import MarkovChain
 from rundmcmc.ingest import ingest
-from rundmcmc.loggers import ConsoleLogger, ListLogger
+from rundmcmc.loggers import ConsoleLogger, FlatListLogger
 from rundmcmc.make_graph import (add_data_to_graph, construct_graph,
                                  get_list_of_data, pull_districts)
 from rundmcmc.partition import Partition, propose_random_flip
@@ -13,9 +13,7 @@ from rundmcmc.validity import Validator, contiguous
 
 def main():
     graph = construct_graph(*ingest('./testData/wyoming_test.shp', 'GEOID'))
-
     cd_data = get_list_of_data('./testData/wyoming_test.shp', ['CD', 'ALAND'])
-
     add_data_to_graph(cd_data, graph, ['CD', 'ALAND'])
 
     assignment = pull_districts(graph, 'CD')
@@ -31,11 +29,9 @@ def main():
     chain = MarkovChain(propose_random_flip, validator, accept,
                         initial_partition, total_steps=100)
 
-    loggers = [ListLogger('area'), ConsoleLogger(interval=10)]
+    loggers = [FlatListLogger('area'), ConsoleLogger(interval=10)]
 
-    results = run(chain, loggers)
-
-    areas = [value for record in results[0] for key, value in record.items()]
+    areas, success = run(chain, loggers)
 
     plt.hist(areas)
     plt.show()

@@ -1,3 +1,4 @@
+
 def run(chain, loggers):
     """run runs all the `during` methods of each of the loggers for each steo
     in the chain. The `before` and `during` methods each take a `state` parameter,
@@ -8,6 +9,7 @@ def run(chain, loggers):
     :chain: MarkovChain instance
     :loggers: list of Loggers (objects with before, during, and after methods)
     """
+
     for logger in loggers:
         logger.before(chain.state)
 
