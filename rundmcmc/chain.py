@@ -6,7 +6,7 @@ class MarkovChain:
 
     Example usage:
 
-    .. highlight:: python
+    .. code-block:: python
 
         chain = MarkovChain(proposal, is_valid, accept, initial_state)
         for state in chain:
@@ -21,6 +21,7 @@ class MarkovChain:
         :accept: Function accepting or rejecting the proposed state.
         :initial_state: Initial :class:`Partition` class.
         :total_steps: Number of steps to run.
+
         """
         self.proposal = proposal
         self.is_valid = is_valid
