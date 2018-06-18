@@ -1,6 +1,7 @@
 import networkx
 import pandas as pd
 import geopandas as gp
+import pysal as ps
 
 
 def get_list_of_data(filepath, col_name, geoid=None):
@@ -28,71 +29,70 @@ def get_list_of_data(filepath, col_name, geoid=None):
     return data
 
 
-def add_data_to_graph(data, graph, data_name, geoid=None):
-    '''Add a list of data to graph nodes.
+def add_data_to_graph(df, graph, col_names, id_col=None):
+    '''Add columns of a dataframe to a graph based on ids.
 
-    :data: A column with the data you would like to add to the nodes(VTDs).
-    :graph: The graph you constructed and want to run chain on.
-
-    :data_name: A list of the attribute names you are adding.
+    :df: Dataframe containing given column.
+    :graph: Networkx object containing appropriately labeled nodes.
+    :col_names: List of dataframe column names to add.
+    :id_col: The column name to pull graph ids from. The row from this id will
+             be assigned to the corresponding node in the graph. If `None`,
+             then the data is assigned to consecutive integer labels 0, 1, ...,
+             len(graph) - 1.
 
     '''
-    # Check to make sure there is a one-to-one between data and VTDs
-    for i, j in enumerate(data_name):
-        if len(graph) != len(data[i]):
-            raise ValueError("Your column length doesn't match the number of nodes!")
-
-    if geoid is not None:
-        for i, j in enumerate(data_name):
-            # Adding data to the nodes
-            for x, y in enumerate(graph.nodes()):
-                graph.nodes[x][j] = data[i][y]
+    if id_col:
+        for row in df.itertuples():
+            node = getattr(row, id_col)
+            for name in col_names:
+                data = getattr(row, name)
+                graph.nodes[node][name] = data
     else:
-        for i, j in enumerate(data_name):
-            # Adding data to the nodes
-            for x, _ in enumerate(graph.nodes()):
-                graph.nodes[x][j] = data[i][x]
+        for i, row in enumerate(df.itertuples()):
+            node = getattr(row, id_col)
+            for name in col_names:
+                data = getattr(row, name)
+                graph.nodes[i][name] = data
 
 
-def construct_graph(lists_of_neighbors, lists_of_perims, geoid):
-    '''Construct initial graph from neighbor and perimeter information.
+def construct_graph(df, geoid_col=None):
+    '''Construct initial graph from information about neighboring VTDs.
 
-    :lists_of_neighbors: A list of lists stating the neighbors of each VTD.
-    :lists_of_perims: List of lists of perimeters.
-    :district_list: List of congressional districts associated to each node(VTD).
+    :df: Geopandas dataframe.
     :returns: Networkx Graph.
 
-    The three arguments can be built from shape files with :func:`.ingest`.
-
     '''
-    graph = networkx.Graph()
+    if geoid_col is not None:
+        df = df.set_index(geoid_col)
 
-    # Creating the graph itself
-    for vtd, list_nbs in enumerate(lists_of_neighbors):
-        for d in list_nbs:
-            graph.add_edge(vtd, d)
+    # Generate rook neighbor lists from dataframe.
+    neighbors = ps.weights.Rook.from_dataframe(
+        df, geom_col="geometry").neighbors
 
-    # Add perims to edges
-    for i, nbs in enumerate(lists_of_neighbors):
-        for x, nb in enumerate(nbs):
-            graph.add_edge(i, nb, perim=lists_of_perims[i][x])
+    vtds = {}
 
-    # Add districts to each node(VTD)
-    for i, j in enumerate(graph.nodes()):
-        graph.nodes[j]['GEOID'] = geoid[i]
+    for shape in neighbors:
+        vtds[shape] = {}
+
+        for neighbor in neighbors[shape]:
+            shared_perim = df.loc[shape, "geometry"].intersection(
+                df.loc[neighbor, "geometry"]).length
+
+            vtds[shape][neighbor] = {'shared_perim': shared_perim}
+
+    graph = networkx.from_dict_of_dicts(vtds)
 
     return graph
 
 
-def pull_districts(graph, cd_identifier):
-    '''Creates dictionary of nodes to their CD.
+def get_assignment_dict(df, key_col, val_col):
+    """Return a dictionary of {key: val} pairs from the dataframe.
 
-    :param graph: The graph object you are working on.
-    :param cd_identifier: How the congressional district is labeled on your graph.
-    :return: A dictionary.
-    '''
-    # creates a dictionary and iterates over the nodes to add node to CD.
-    nodes = {}
-    for (p, d) in graph.nodes(data=True):
-        nodes[p] = d[cd_identifier]
-    return nodes
+    :df: Dataframe.
+    :key_col: Column name to be used for keys.
+    :val_col: Column name to be used for values.
+    :returns: Dictionary of {key: val} pairs from the given columns.
+
+    """
+    dict_df = df.set_index(key_col)
+    return dict_df[val_col].to_dict()

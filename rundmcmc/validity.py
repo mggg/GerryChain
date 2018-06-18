@@ -101,8 +101,13 @@ def single_flip_contiguous(partition, new_assignment=None, flips=None):
 def contiguous(partition, new_assignment=None, flips=None):
     '''
 
-    :graphObj: The graph object you are working on.
-    :assignment: The assignment dictionary
+    :parition: Current :class:`.Partition` object.
+
+    :flips: Dictionary of proposed flips, with `(nodeid: new_assignment)`
+            pairs. If `flips` is `None`, then fallback to the
+            :func:`.contiguous` check.
+
+    :returns: True if contiguous, false otherwise.
 
     :return: A list of booleans to state if the sub graph is connected.
     '''
@@ -120,20 +125,20 @@ def contiguous(partition, new_assignment=None, flips=None):
 
     # Creates a dictionary where the key is the district and the value is
     # a list of VTDs that belong to that district
-    district_list = {}
+    district_dict = {}
     # TODO
     for node in partition.graph.nodes:
         # TODO
         dist = proposed_assignment(node)
-        if dist in district_list:
-            district_list[dist].append(node)
+        if dist in district_dict:
+            district_dict[dist].append(node)
         else:
-            district_list[dist] = [node]
+            district_dict[dist] = [node]
 
     # Checks if the subgraph of all districts are connected(contiguous)
-    for key in district_list:
+    for key in district_dict:
         # TODO
-        tmp = partition.graph.subgraph(district_list[key])
+        tmp = partition.graph.subgraph(district_dict[key])
         if nx.is_connected(tmp) is False:
             return False
 
