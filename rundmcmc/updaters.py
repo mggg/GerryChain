@@ -1,6 +1,24 @@
 import collections
 
 
+def cut_edges(partition, new_assignment=None, flips=None):
+    if not flips:
+        return {edge for edge in partition.graph.edges if crosses_parts(partition.assignment, edge)}
+    # Edges that weren't cut, but now are cut
+    new_cuts = {(node, neighbor) for node in flips.keys()
+            for neighbor in partition.graph[node]
+            if crosses_parts(new_assignment, (node, neighbor))}
+    # Edges that were cut, but now are not
+    obsolete_cuts = {(node, neighbor) for node in flips.keys()
+            for neighbor in partition.graph[node]
+            if not crosses_parts(new_assignment, (node, neighbor))}
+    return (partition['cut_edges'] | new_cuts) - obsolete_cuts
+
+
+def crosses_parts(assignment, edge):
+    return assignment[edge[0]] != assignment[edge[1]]
+
+
 def statistic_factory(field, alias=None):
     """statistic_factory returns an updater function that updates the
     district-wide sum of the given statistic.
@@ -11,7 +29,7 @@ def statistic_factory(field, alias=None):
     if not alias:
         alias = field
 
-    def statistic(partition, flips=None):
+    def statistic(partition, new_assignment=None, flips=None):
         if not flips:
             return initialize_statistic(field, partition, flips)
         return update_statistic(field, partition[alias], partition, flips)
