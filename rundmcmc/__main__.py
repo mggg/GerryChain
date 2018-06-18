@@ -1,10 +1,10 @@
+import geopandas as gp
 import matplotlib.pyplot as plt
 
 from rundmcmc.chain import MarkovChain
-from rundmcmc.ingest import ingest
 from rundmcmc.loggers import ConsoleLogger, FlatListLogger
 from rundmcmc.make_graph import (add_data_to_graph, construct_graph,
-                                 get_list_of_data, pull_districts)
+                                 get_assignment_dict)
 from rundmcmc.partition import Partition, propose_random_flip
 from rundmcmc.run import run
 from rundmcmc.updaters import cut_edges, statistic_factory
@@ -12,15 +12,17 @@ from rundmcmc.validity import Validator, contiguous
 
 
 def main():
-    graph = construct_graph(*ingest('./testData/wyoming_test.shp', 'GEOID'))
-    cd_data = get_list_of_data('./testData/wyoming_test.shp', ['CD', 'ALAND'])
-    add_data_to_graph(cd_data, graph, ['CD', 'ALAND'])
+    # Sketch:
+    #   1. Load dataframe.
+    #   2. Construct neighbor information.
+    #   3. Make a graph from this.
+    #   4. Throw attributes into graph.
+    df = gp.read_file("./testData/wyoming_test.shp")
+    graph = construct_graph(df, geoid_col="GEOID")
+    add_data_to_graph(df, graph, ['CD', 'ALAND'], id_col='GEOID')
 
-    assignment = pull_districts(graph, 'CD')
-    updaters = {
-        'area': statistic_factory('ALAND', alias='area'),
-        'cut_edges': cut_edges
-    }
+    assignment = get_assignment_dict(df, "GEOID", "CD")
+    updaters = {'area': statistic_factory('ALAND', alias='area'), 'cut_edges': cut_edges}
     initial_partition = Partition(graph, assignment, updaters)
 
     validator = Validator([contiguous])

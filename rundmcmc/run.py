@@ -11,7 +11,7 @@ def run(chain, loggers):
     """
 
     for logger in loggers:
-        logger.before(chain.state)
+        logger.before(chain)
 
     for state in chain:
         for logger in loggers:
