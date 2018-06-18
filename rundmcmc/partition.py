@@ -7,10 +7,15 @@ def propose_random_flip(partition):
     :partition: The current partition to propose a flip from.
     :return: a dictionary of with the flipped node mapped to its new assignment
     """
-    edge = random.choice(partition.cut_edges)
+    # TODO fix empty array issue
+    # also note only flipping 1 edge for testing purposes!!
+    edge = partition.graph.edge(partition.graph.vertex(0), partition.graph.vertex(8))
     index = random.choice((0, 1))
 
-    flipped_node, other_node = edge[index], edge[1 - index]
+    if index == 1:
+        flipped_node, other_node = edge.source(), edge.target()
+    else:
+        flipped_node, other_node = edge.target(), edge.source()
     flip = dict([(flipped_node, partition.assignment[other_node])])
 
     return flip
@@ -40,7 +45,7 @@ class Partition:
         self.cut_edges = [edge for edge in self.graph.edges if self.crosses_parts(edge)]
 
     def crosses_parts(self, edge):
-        return self.assignment[edge[0]] != self.assignment[edge[1]]
+        return self.assignment[edge.source()] != self.assignment[edge.target()]
 
     def merge(self, flips):
         """Takes a dictionary of new assignments and returns the Partition
@@ -56,6 +61,30 @@ class Partition:
 
         return Partition(self.graph, assignment=new_assignment,
                          updaters=self.updaters, fields=new_fields)
+
+    def initialize_statistic(self, field):
+        """
+        initialize_statistic computes the initial sum of the data column that
+        we want to sum up for each district at each step.
+        """
+        statistic = collections.defaultdict(int)
+        for node, part in self.assignment.items():
+            vprop = self.graph.vertex_properties[field]
+            statistic[part] += vprop[self.graph.vertex(node)]  # self.graph.vertex[node][field]
+        return statistic
+
+    def update_statistic(self, changes, old_statistic, field):
+        """
+        update_statistic returns the updated sum for the specificed statistic
+        after changes are incorporated.
+        """
+        new_statistic = dict()
+        for part, flow in flows_from_changes(self, changes).items():
+            vprop = self.graph.vertex_properties[field]
+            out_flow = sum(vprop[self.graph.vertex(node)] for node in flow['out'])
+            in_flow = sum(vprop[self.graph.vertex(node)] for node in flow['in'])
+            new_statistic[part] = old_statistic[part] - out_flow + in_flow
+        return {**old_statistic, **new_statistic}
 
     def __getitem__(self, key):
         return self.fields[key]

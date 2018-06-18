@@ -1,5 +1,7 @@
-import networkx as nx
 import pandas as pd
+from graph_tool import GraphView
+from graph_tool.topology import label_components
+import numpy as np
 
 
 class Validator:
@@ -37,21 +39,16 @@ def contiguous(partition, flips=None):
 
     # Creates a dictionary where the key is the district and the value is
     # a list of VTDs that belong to that district
-    district_list = {}
-    # TODO
-    for node in partition.graph.nodes:
-        # TODO
-        dist = partition.assignment[node]
-        if dist in district_list:
-            district_list[dist].append(node)
-        else:
-            district_list[dist] = [node]
 
-    # Checks if the subgraph of all districts are connected(contiguous)
-    for key in district_list:
-        # TODO
-        tmp = partition.graph.subgraph(district_list[key])
-        if nx.is_connected(tmp) is False:
+    _, dist_idxs = np.unique(partition.graph.vp.CD.a, return_index=True)
+    dists = partition.graph.vp.CD.a[dist_idxs]
+
+    for i in dists:
+        vfilt = partition.graph.new_vertex_property('bool')
+        vfilt = partition.graph.vp.CD.a == np.full(len(vfilt.a), i)
+        tmp = GraphView(partition.graph, vfilt)
+        _, hist = label_components(tmp)
+        if len(hist) != 1:
             return False
 
     # all districts are contiguous
