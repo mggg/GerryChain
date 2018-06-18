@@ -19,15 +19,15 @@ def main():
     add_data_to_graph(cd_data, graph, ['CD', 'ALAND'])
 
     assignment = pull_districts(graph, 'CD')
-    validator = Validator([contiguous])
     updaters = {
         'area': statistic_factory('ALAND', alias='area'),
         'cut_edges': cut_edges
     }
-
     initial_partition = Partition(graph, assignment, updaters)
+
+    validator = Validator([contiguous])
     accept = lambda x: True
-    # Exposes the chain object to the Runner.
+
     chain = MarkovChain(propose_random_flip, validator, accept,
                         initial_partition, total_steps=100)
 
@@ -36,8 +36,9 @@ def main():
     results = run(chain, loggers)
 
     areas = [value for record in results[0] for key, value in record.items()]
-    print(areas)
+
     plt.hist(areas)
+    plt.show()
 
 
 if __name__ == "__main__":
