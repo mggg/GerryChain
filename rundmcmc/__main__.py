@@ -1,6 +1,8 @@
+import matplotlib.pyplot as plt
+
 from rundmcmc.chain import MarkovChain
 from rundmcmc.ingest import ingest
-from rundmcmc.loggers import ConsoleLogger, DataFrameLogger
+from rundmcmc.loggers import ConsoleLogger, ListLogger
 from rundmcmc.make_graph import (add_data_to_graph, construct_graph,
                                  get_list_of_data, pull_districts)
 from rundmcmc.partition import Partition, propose_random_flip
@@ -29,15 +31,13 @@ def main():
     chain = MarkovChain(propose_random_flip, validator, accept,
                         initial_partition, total_steps=100)
 
-    df_logger = DataFrameLogger(["area"])
-    loggers = [df_logger, ConsoleLogger(interval=10)]
+    loggers = [ListLogger('area'), ConsoleLogger(interval=10)]
 
     results = run(chain, loggers)
 
-    df = results[0]
-    print(df)
-
-    df['area'].plot(kind='hist')
+    areas = [value for record in results[0] for key, value in record.items()]
+    print(areas)
+    plt.hist(areas)
 
 
 if __name__ == "__main__":

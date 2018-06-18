@@ -1,22 +1,21 @@
-import pandas as pd
-
 
 class DataFrameLogger:
     """DataFrameLogger builds a pandas DataFrame with data from each state of
     the random walk.
     :keys: list of the names of the properties that you want to record for each state
     """
+    pass
 
-    def __init__(self, keys=None):
-        self.keys = keys
+
+class ListLogger:
+    def __init__(self, key):
+        self.key = key
 
     def before(self, state):
-        self.data = pd.DataFrame(columns=self.keys)
+        self.data = []
 
     def during(self, state):
-        new_row = pd.DataFrame.from_dict(state.fields)
-        print(new_row)
-        self.data.append(new_row)
+        self.data.append(state[self.key])
 
     def after(self, state):
         return self.data
