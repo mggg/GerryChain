@@ -84,15 +84,14 @@ def construct_graph(df, geoid_col=None):
     return graph
 
 
-def pull_districts(graph, cd_identifier):
-    '''Creates dictionary of nodes to their CD.
+def get_assignment_dict(df, key_col, val_col):
+    """Return a dictionary of {key: val} pairs from the dataframe.
 
-    :param graph: The graph object you are working on.
-    :param cd_identifier: How the congressional district is labeled on your graph.
-    :return: A dictionary.
-    '''
-    # creates a dictionary and iterates over the nodes to add node to CD.
-    nodes = {}
-    for (p, d) in graph.nodes(data=True):
-        nodes[p] = d[cd_identifier]
-    return nodes
+    :df: Dataframe.
+    :key_col: Column name to be used for keys.
+    :val_col: Column name to be used for values.
+    :returns: Dictionary of {key: val} pairs from the given columns.
+
+    """
+    dict_df = df.set_index(key_col)
+    return dict_df[val_col].to_dict()
