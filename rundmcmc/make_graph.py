@@ -3,7 +3,7 @@ import pandas as pd
 import geopandas as gp
 
 
-def get_list_of_data(filepath, col_name):
+def get_list_of_data(filepath, col_name, geoid=None):
     '''Pull a column data from a shape or CSV file.
 
     :param filepath: The path to where your data is located.
@@ -16,17 +16,19 @@ def get_list_of_data(filepath, col_name):
     data = []
     if filepath.split('.')[-1] == 'csv':
         df = pd.read_csv(filepath)
-        for i in col_name:
-            data.append(df[i])
-        return data
-    if filepath.split('.')[-1] == 'shp':
+    elif filepath.split('.')[-1] == 'shp':
         df = gp.read_file(filepath)
-        for i in col_name:
-            data.append(df[i])
-        return data
+
+    if geoid is None:
+        geoid = "sampleIndex"
+        df[geoid] = range(len(df))
+
+    for i in col_name:
+        data.append(dict(zip(df[geoid], df[i])))
+    return data
 
 
-def add_data_to_graph(data, graph, data_name):
+def add_data_to_graph(data, graph, data_name, geoid=None):
     '''Add a list of data to graph nodes.
 
     :data: A column with the data you would like to add to the nodes(VTDs).
@@ -40,9 +42,16 @@ def add_data_to_graph(data, graph, data_name):
         if len(graph) != len(data[i]):
             raise ValueError("Your column length doesn't match the number of nodes!")
 
-    # Adding data to the nodes
-        for x, _ in enumerate(graph.nodes()):
-            graph.nodes[x][j] = data[i][x]
+    if geoid is not None:
+        for i, j in enumerate(data_name):
+            # Adding data to the nodes
+            for x, y in enumerate(graph.nodes()):
+                graph.nodes[x][j] = data[i][y]
+    else:
+        for i, j in enumerate(data_name):
+            # Adding data to the nodes
+            for x, _ in enumerate(graph.nodes()):
+                graph.nodes[x][j] = data[i][x]
 
 
 def construct_graph(lists_of_neighbors, lists_of_perims, geoid):

@@ -28,7 +28,7 @@ class Validator:
         return True
 
 
-def single_flip_contiguous(partition, flips=None):
+def single_flip_contiguous(partition, new_assignment=None, flips=None):
     """
     Check if swapping the given node from its old assignment disconnects the
     old assignment class.
@@ -99,7 +99,7 @@ def single_flip_contiguous(partition, flips=None):
     return True
 
 
-def contiguous(partition, flips=None):
+def contiguous(partition, new_assignment=None, flips=None):
     '''
 
     :graphObj: The graph object you are working on.
