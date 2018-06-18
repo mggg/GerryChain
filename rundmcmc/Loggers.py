@@ -1,38 +1,42 @@
+import pandas as pd
 
 
-class Loggers:
-    def __init__(self, funcs=None, ends=None):
-        """
-            Loggers are essentially a wrapper object for a list of functions
-            that run at certain intervals of the chain (with some added
-            facilities).
-            :funcs: List of functions of the format `name(state)`, where state
-                    is an instance of the Partition class. Run on each
-                    specified iteration of the chain.
-            :ends:  List of functions of the format `name(state)`, where state
-                    is an instance of the Partition class. Run after the chain
-                    completes.
-        """
-        # Lists of functions.
-        self.funcs = [] if funcs is None else funcs
-        self.ends = [] if ends is None else ends
+class DataFrameLogger:
+    """DataFrameLogger builds a pandas DataFrame with data from each state of
+    the random walk.
+    :keys: list of the names of the properties that you want to record for each state
+    """
 
-    def during_chain(self, state):
-        """
-            Runs all functions in `self.funcs`, each of which takes a `state`
-            parameter, which is an instance of the Partition class. Run at
-            each state in the chain.
-            :state: Current state in the chain.
-        """
-        for func in self.funcs:
-            func(state)
+    def __init__(self, keys=None):
+        self.keys = keys
 
-    def after_chain(self, state):
-        """
-            Runs all functions in `self.ends`, each of which takes a `state`
-            parameter, which is an instance of the Partition class. Run after
-            the chain completes.
-            :state: Ending state of the chain.
-        """
-        for end in self.ends:
-            end(state)
+    def before(self, state):
+        self.data = pd.DataFrame(columns=self.keys)
+
+    def during(self, state):
+        new_row = pd.DataFrame.from_dict(state.fields)
+        print(new_row)
+        self.data.append(new_row)
+
+    def after(self, state):
+        return self.data
+
+
+class ConsoleLogger:
+    """ConsoleLogger just prints the state to the console at each step of the
+    chain, at the prescribed interval.
+    """
+
+    def __init__(self, interval=0):
+        self.interval = interval
+
+    def before(self, state):
+        print(state)
+        self.counter = 0
+
+    def during(self, state):
+        if self.counter % self.interval == 0:
+            print(state)
+
+    def after(self, state):
+        print("Chain run complete!")

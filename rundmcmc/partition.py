@@ -48,36 +48,21 @@ class Partition:
         new_assignment = {**self.assignment, **flips}
 
         new_fields = {key: updater(self, new_assignment, flips)
-                                   for key, updater in self.updaters.items()}
+                      for key, updater in self.updaters.items()}
 
         return Partition(self.graph, assignment=new_assignment,
                          updaters=self.updaters, fields=new_fields)
 
     def __getitem__(self, key):
-        """
-            Allows keying on a Partition instance.
-            :key: Property to access.
+        """Allows keying on a Partition instance.
+        :key: Property to access.
         """
         return self.fields[key]
 
     def keys(self):
-        """
-            Implementation of the Python dict's keys() method.
-        """
+        """Implementation of the Python dict's keys() method."""
         return self.fields.keys()
 
     def items(self):
-        """
-            Implementation of the Python dict's items() method.
-        """
+        """Implementation of the Python dict's items() method."""
         return self.fields.items()
-
-    @staticmethod
-    def compress_adjacency(Graph):
-        """
-            Generate adjacency matrix and strip out irrelevant data.
-        """
-        _adj = list(Graph.adjacency())
-        adjacency = {}
-        adjacency = {u: list(vs.keys()) for u, vs in _adj if adjacency.get(u, None) is None}
-        return adjacency
