@@ -1,8 +1,8 @@
-from rundmcmc.make_graph import construct_graph, add_data_to_graph, get_assignment_dict
-from rundmcmc.validity import contiguous, Validator
-from rundmcmc.partition import Partition, propose_random_flip
 from rundmcmc.chain import MarkovChain
-from rundmcmc.updaters import statistic_factory
+from rundmcmc.make_graph import construct_graph, add_data_to_graph, get_assignment_dict
+from rundmcmc.partition import Partition, propose_random_flip
+from rundmcmc.updaters import statistic_factory, cut_edges
+from rundmcmc.validity import Validator, contiguous
 import geopandas as gp
 
 
@@ -18,15 +18,16 @@ def main():
     assignment = get_assignment_dict(df, "GEOID", "CD")
 
     validator = Validator([contiguous])
-    updaters = {'area': statistic_factory('ALAND', alias='area')}
+    updaters = {'area': statistic_factory('ALAND', alias='area'), 'cut_edges': cut_edges}
 
     initial_partition = Partition(graph, assignment, updaters)
     accept = lambda x: True
 
-    chain = MarkovChain(propose_random_flip, validator, accept, initial_partition, total_steps=10)
+    chain = MarkovChain(propose_random_flip, validator, accept,
+                        initial_partition, total_steps=1000)
 
     for step in chain:
-        print(step.assignment)
+        pass
 
 
 if __name__ == "__main__":

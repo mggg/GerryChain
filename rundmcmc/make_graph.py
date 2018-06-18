@@ -4,7 +4,7 @@ import geopandas as gp
 import pysal as ps
 
 
-def get_list_of_data(filepath, col_name):
+def get_list_of_data(filepath, col_name, geoid=None):
     '''Pull a column data from a shape or CSV file.
 
     :param filepath: The path to where your data is located.
@@ -17,14 +17,16 @@ def get_list_of_data(filepath, col_name):
     data = []
     if filepath.split('.')[-1] == 'csv':
         df = pd.read_csv(filepath)
-        for i in col_name:
-            data.append(df[i])
-        return data
-    if filepath.split('.')[-1] == 'shp':
+    elif filepath.split('.')[-1] == 'shp':
         df = gp.read_file(filepath)
-        for i in col_name:
-            data.append(df[i])
-        return data
+
+    if geoid is None:
+        geoid = "sampleIndex"
+        df[geoid] = range(len(df))
+
+    for i in col_name:
+        data.append(dict(zip(df[geoid], df[i])))
+    return data
 
 
 def add_data_to_graph(df, graph, col_names, id_col=None):
