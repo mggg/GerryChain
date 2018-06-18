@@ -2,7 +2,8 @@ import networkx
 import pandas as pd
 import geopandas as gp
 import pysal as ps
-
+from shapely.ops import cascaded_union
+from matplotlib import pyplot as plt
 
 def get_list_of_data(filepath, col_name, geoid=None):
     '''Pull a column data from a shape or CSV file.
@@ -72,15 +73,20 @@ def construct_graph(df, geoid_col=None):
     vtds = {}
 
     for shape in neighbors:
+
         vtds[shape] = {}
 
         for neighbor in neighbors[shape]:
-            shared_perim = df.loc[shape, "geometry"].intersection(
-                df.loc[neighbor, "geometry"]).length
-
+            shared_perim = df.loc[shape, "geometry"].intersection(df.loc[neighbor, "geometry"]).length
             vtds[shape][neighbor] = {'shared_perim': shared_perim}
 
     graph = networkx.from_dict_of_dicts(vtds)
+
+    vtd = df['geometry']
+    inter = gp.GeoSeries(cascaded_union(vtd).boundary)
+
+    for node in neighbors:
+        graph.node[node]['boundary_node'] = inter.intersects(df.loc[node, "geometry"]).bool()
 
     return graph
 

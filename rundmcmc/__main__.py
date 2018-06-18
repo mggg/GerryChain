@@ -16,7 +16,6 @@ def main():
     graph = construct_graph(df, geoid_col="GEOID")
     add_data_to_graph(df, graph, ['CD', 'ALAND'], id_col='GEOID')
     assignment = get_assignment_dict(df, "GEOID", "CD")
-
     validator = Validator([contiguous])
     updaters = {'area': statistic_factory('ALAND', alias='area'), 'cut_edges': cut_edges}
 
@@ -29,6 +28,7 @@ def main():
     for step in chain:
         pass
 
+    print(graph.nodes(data=True))
 
 if __name__ == "__main__":
     main()
