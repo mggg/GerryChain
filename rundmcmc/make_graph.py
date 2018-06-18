@@ -27,7 +27,6 @@ def get_list_of_data(filepath, col_name):
         return data
 
 
-
 def add_data_to_graph(df, graph, col_names, id_col=None):
     '''Add columns of a dataframe to a graph based on ids.
 
