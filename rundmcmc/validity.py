@@ -7,16 +7,17 @@ import random
 
 class Validator:
     def __init__(self, constraints):
-        '''
-        :constraints: The list of functions that will check to see if your assignment is valid
-        '''
+        """
+        :constraints: List of validator functions that will check partitions.
+
+        """
         self.constraints = constraints
 
     def __call__(self, partition):
-        '''
-        :graph: the networkx graph of vtds
-        :dist_dict: the district assignment dictionary
-        '''
+        """
+        :partition: :class:`Partition` class to check.
+
+        """
 
         # check each constraint function and fail when a constraint test fails
         for constraint in self.constraints:
@@ -27,7 +28,7 @@ class Validator:
         return True
 
 
-def single_flip_contiguous(partition, flips=None):
+def single_flip_contiguous(partition, new_assignment=None, flips=None):
     """
     Check if swapping the given node from its old assignment disconnects the
     old assignment class.
@@ -38,7 +39,7 @@ def single_flip_contiguous(partition, flips=None):
             pairs. If `flips` is `None`, then fallback to the
             :func:`.contiguous` check.
 
-    :returns: Boolean.
+    :returns: True if contiguous, and False otherwise.
 
     We assume that `removed_node` belonged to an assignment class that formed a
     connected subgraph. To see if its removal left the subgraph connected, we
@@ -98,13 +99,16 @@ def single_flip_contiguous(partition, flips=None):
     return True
 
 
-def contiguous(partition, flips=None):
+def contiguous(partition, new_assignment=None, flips=None):
     '''
 
-    :graphObj: The graph object you are working on.
-    :assignment: The assignment dictionary
+    :parition: Current :class:`.Partition` object.
 
-    :return: A list of booleans to state if the sub graph is connected.
+    :flips: Dictionary of proposed flips, with `(nodeid: new_assignment)`
+            pairs. If `flips` is `None`, then fallback to the
+            :func:`.contiguous` check.
+
+    :returns: True if contiguous, False otherwise.
     '''
     if not flips:
         flips = dict()
@@ -120,20 +124,20 @@ def contiguous(partition, flips=None):
 
     # Creates a dictionary where the key is the district and the value is
     # a list of VTDs that belong to that district
-    district_list = {}
+    district_dict = {}
     # TODO
     for node in partition.graph.nodes:
         # TODO
         dist = proposed_assignment(node)
-        if dist in district_list:
-            district_list[dist].append(node)
+        if dist in district_dict:
+            district_dict[dist].append(node)
         else:
-            district_list[dist] = [node]
+            district_dict[dist] = [node]
 
     # Checks if the subgraph of all districts are connected(contiguous)
-    for key in district_list:
+    for key in district_dict:
         # TODO
-        tmp = partition.graph.subgraph(district_list[key])
+        tmp = partition.graph.subgraph(district_dict[key])
         if nx.is_connected(tmp) is False:
             return False
 
@@ -147,6 +151,73 @@ def contiguous(partition, flips=None):
     return True
 
 
+def fast_connected(partition, flips=None):
+    """
+        Checks that a given partition's components are connected using
+        a simple breadth-first search.
+        :partition: Instance of Partition; contains connected components.
+        :flips: Dictionary of proposed flips.
+        :return: Boolean; Are the components of this partition connected?
+    """
+    assignment = partition.assignment
+
+    # Inverts the assignment dictionary so that lists of VTDs are keyed
+    # by their congressional districts.
+    districts = {}
+
+    for vtd in assignment:
+        district = assignment[vtd]
+        if districts.get(district, None) is None:
+            districts[district] = [vtd]
+        else:
+            districts[district] += [vtd]
+
+    # Generates a subgraph for each district and perform a BFS on it
+    # to check connectedness.
+    for district in districts:
+        adj = nx.to_dict_of_lists(partition.graph, districts[district])
+        if bfs(adj) is False:
+            return False
+
+    return True
+
+
+def bfs(graph):
+    """
+        Performs a breadth-first search on the provided graph and
+        returns true or false depending on whether the graph is
+        connected.
+        :graph: Dict-of-lists; an adjacency matrix.
+        :return: Boolean; is this graph connected?
+    """
+    q = [next(iter(graph))]
+    visited = set()
+    total_vertices = len(list(graph.keys()))
+
+    # bfs!
+    while len(q) is not 0:
+        current = q.pop(0)
+        neighbors = graph[current]
+
+        for neighbor in neighbors:
+            if neighbor not in visited:
+                visited.add(neighbor)
+                q += [neighbor]
+
+    return total_vertices == len(visited)
+
+
+def fast_local_connected(partition, flips=None):
+    """
+        Checks that a given partition's components are connected, but
+        uses a specific optimized method (with a forthcoming proof).
+        :partition: Instance of Partition; contains connected components.
+        :flips: Dictionary of proposed flips.
+        :return: Boolean; are the components of this partition connected?
+    """
+    pass
+
+
 # TODO make attrName and percentage configurable
 def districts_within_tolerance(partition):
     """
@@ -154,7 +225,8 @@ def districts_within_tolerance(partition):
     :attrName: string that is the name of a field in graphObj nodes (e.g. population)
     :assignment: dictionary with keys that are node ids and values of assigned district
     :percentage: what percent difference is allowed
-    :return: boolean of if the districts are within specified tolerance
+    :returns: boolean of if the districts are within specified tolerance
+
     """
     withinTol = False
     percentage = 0.01
