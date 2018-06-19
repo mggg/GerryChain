@@ -18,6 +18,7 @@ def main():
     assignment = get_assignment_dict(df, "GEOID", "CD")
 
     validator = Validator([fast_connected])
+
     updaters = {'area': statistic_factory('ALAND', alias='area'), 'cut_edges': cut_edges}
 
     initial_partition = Partition(graph, assignment, updaters)
@@ -28,6 +29,8 @@ def main():
 
     for step in chain:
         pass
+
+    print(graph.nodes(data=True))
 
 
 if __name__ == "__main__":
