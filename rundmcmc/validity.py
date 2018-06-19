@@ -1,7 +1,6 @@
 from networkx import NetworkXNoPath
 import networkx.algorithms.shortest_paths.weighted as nx_path
 import networkx as nx
-import pandas as pd
 import random
 
 
@@ -235,6 +234,6 @@ def districts_within_tolerance(partition, attrName="population", percentage=.01)
     maxdiff = max(values) - min(values)
 
     if (maxdiff) <= percentage * min(values):
-        withinTol=True
+        withinTol = True
 
     return withinTol
