@@ -2,7 +2,7 @@ from rundmcmc.chain import MarkovChain
 from rundmcmc.make_graph import construct_graph, add_data_to_graph, get_assignment_dict
 from rundmcmc.partition import Partition, propose_random_flip
 from rundmcmc.updaters import statistic_factory, cut_edges
-from rundmcmc.validity import Validator, contiguous
+from rundmcmc.validity import Validator, fast_connected
 import geopandas as gp
 
 
@@ -17,7 +17,7 @@ def main():
     add_data_to_graph(df, graph, ['CD', 'ALAND'], id_col='GEOID')
     assignment = get_assignment_dict(df, "GEOID", "CD")
 
-    validator = Validator([contiguous])
+    validator = Validator([fast_connected])
     updaters = {'area': statistic_factory('ALAND', alias='area'), 'cut_edges': cut_edges}
 
     initial_partition = Partition(graph, assignment, updaters)
