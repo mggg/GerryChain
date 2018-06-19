@@ -1,6 +1,7 @@
 
 def run(chain, loggers):
-    """run runs all the `during` methods of each of the loggers for each steo
+    """run runs the chain.
+    All the `during` methods of each of the loggers are called for each step
     in the chain. The `before` and `during` methods each take a `state` parameter,
     which is an instance of the Partition class. After the random walk is
     over, we call the `after` method of each logger for clean-up tasks, like
