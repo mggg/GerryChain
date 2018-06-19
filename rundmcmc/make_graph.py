@@ -3,7 +3,6 @@ import pandas as pd
 import geopandas as gp
 import pysal as ps
 from shapely.ops import cascaded_union
-from matplotlib import pyplot as plt
 
 def get_list_of_data(filepath, col_name, geoid=None):
     '''Pull a column data from a shape or CSV file.
@@ -50,7 +49,6 @@ def add_data_to_graph(df, graph, col_names, id_col=None):
                 graph.nodes[node][name] = data
     else:
         for i, row in enumerate(df.itertuples()):
-            node = getattr(row, id_col)
             for name in col_names:
                 data = getattr(row, name)
                 graph.nodes[i][name] = data
@@ -81,12 +79,17 @@ def construct_graph(df, geoid_col=None):
             vtds[shape][neighbor] = {'shared_perim': shared_perim}
 
     graph = networkx.from_dict_of_dicts(vtds)
-
     vtd = df['geometry']
+
+    #creates one shape of the entire state to compare outer boundaries against
     inter = gp.GeoSeries(cascaded_union(vtd).boundary)
 
+    #finds if it intersects on outside and sets a 'boundary_node' attribute to true if it does
+    #if it is set to true, it also adds how much shared perimiter they have to a 'boundary_perim' attribute
     for node in neighbors:
         graph.node[node]['boundary_node'] = inter.intersects(df.loc[node, "geometry"]).bool()
+        if inter.intersects(df.loc[node, "geometry"]).bool():
+            graph.node[node]['boundary_perim'] = float(inter.intersection(df.loc[node, "geometry"]).length)
 
     return graph
 
