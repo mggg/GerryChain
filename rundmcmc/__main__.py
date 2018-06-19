@@ -30,5 +30,6 @@ def main():
 
     print(graph.nodes(data=True))
 
+
 if __name__ == "__main__":
     main()
