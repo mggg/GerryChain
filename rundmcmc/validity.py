@@ -1,7 +1,6 @@
 from networkx import NetworkXNoPath
 import networkx.algorithms.shortest_paths.weighted as nx_path
 import networkx as nx
-import pandas as pd
 import random
 
 
@@ -219,33 +218,22 @@ def fast_local_connected(partition, flips=None):
 
 
 # TODO make attrName and percentage configurable
-def districts_within_tolerance(partition):
+def districts_within_tolerance(partition, attrName="population", percentage=.01):
     """
-    :graphObj: networkX graph object
-    :attrName: string that is the name of a field in graphObj nodes (e.g. population)
-    :assignment: dictionary with keys that are node ids and values of assigned district
+    :partition: partition class instance
+    :attrName: string that is the name of an updater in partition
     :percentage: what percent difference is allowed
-    :returns: boolean of if the districts are within specified tolerance
-
+    :return: boolean of if the districts are within specified tolerance
     """
     withinTol = False
-    percentage = 0.01
-    attrName = 'POP10'
 
     if percentage >= 1:
         percentage *= 0.01
 
-    # get value of attrName column for each graph node
-    # TODO fixe when partition class is implemented
-    cdVals = [(partition.assignment[n], n[attrName]) for n in partition.graphObj.nodes(data=True)]
-    # get sum of all nodes per district as found in assignment
-    cdVals = pd.DataFrame(cdVals).groupby(0)[1].sum().tolist()
-    # total difference in value between any two districts
-    maxDiff = max(cdVals) - min(cdVals)
-    # get percent of smallest district (in terms of attrName)
-    percentage = percentage * min(cdVals)
+    values = [x for x in partition.fields[attrName].values()]
+    maxdiff = max(values) - min(values)
 
-    if maxDiff <= percentage:
+    if (maxdiff) <= percentage * min(values):
         withinTol = True
 
     return withinTol
