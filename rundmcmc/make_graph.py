@@ -86,8 +86,10 @@ def construct_graph(df, geoid_col=None):
     # creates one shape of the entire state to compare outer boundaries against
     inter = gp.GeoSeries(cascaded_union(vtd).boundary)
 
-    # finds if it intersects on outside and sets a 'boundary_node' attribute to true if it does
-    # if it is set to true, it also adds how much shared perimiter they have to a 'boundary_perim' attribute
+    # finds if it intersects on outside and sets
+    # a 'boundary_node' attribute to true if it does
+    # if it is set to true, it also adds how much shared
+    # perimiter they have to a 'boundary_perim' attribute
     for node in neighbors:
         graph.node[node]['boundary_node'] = inter.intersects(
             df.loc[node, "geometry"]).bool()
