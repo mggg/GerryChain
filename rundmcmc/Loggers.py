@@ -54,7 +54,7 @@ class DataFrameLogger:
     sized DataFrame of the specified computed metrics.
     """
 
-    def __init__(self, metrics, sample_rate=0):
+    def __init__(self, metrics, sample_rate=1):
         self.sample_rate = sample_rate
         self.metrics = metrics
 
