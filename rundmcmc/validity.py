@@ -1,3 +1,4 @@
+
 from networkx import NetworkXNoPath
 import networkx.algorithms.shortest_paths.weighted as nx_path
 import networkx as nx
@@ -6,17 +7,11 @@ import random
 
 class Validator:
     def __init__(self, constraints):
-        """
-        :constraints: List of validator functions that will check partitions.
-
-        """
+        """:constraints: List of validator functions that will check partitions."""
         self.constraints = constraints
 
     def __call__(self, partition):
-        """
-        :partition: :class:`Partition` class to check.
-
-        """
+        """:partition: :class:`Partition` class to check."""
 
         # check each constraint function and fail when a constraint test fails
         for constraint in self.constraints:
@@ -99,16 +94,14 @@ def single_flip_contiguous(partition, new_assignment=None, flips=None):
 
 
 def contiguous(partition, new_assignment=None, flips=None):
-    '''
-
+    """
     :parition: Current :class:`.Partition` object.
-
     :flips: Dictionary of proposed flips, with `(nodeid: new_assignment)`
             pairs. If `flips` is `None`, then fallback to the
             :func:`.contiguous` check.
 
     :returns: True if contiguous, False otherwise.
-    '''
+    """
     if not flips:
         flips = dict()
 
@@ -141,11 +134,11 @@ def contiguous(partition, new_assignment=None, flips=None):
             return False
 
     # all districts are contiguous
-    '''
+    """
     for district in partition.districts:
         if partition.districts[district]['contiguous'] is False:
             return False
-    '''
+    """
 
     return True
 

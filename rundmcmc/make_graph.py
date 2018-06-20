@@ -6,13 +6,13 @@ from shapely.ops import cascaded_union
 
 
 def get_list_of_data(filepath, col_name, geoid=None):
-    '''Pull a column data from a shape or CSV file.
+    """Pull a column data from a shape or CSV file.
 
     :filepath: The path to where your data is located.
     :col_name: A list of the columns of data you want to grab.
     :returns: A list of the data you have specified.
 
-    '''
+    """
     # Checks if you have inputed a csv or shp file then captures the data
     data = []
     if filepath.split('.')[-1] == 'csv':
@@ -30,7 +30,7 @@ def get_list_of_data(filepath, col_name, geoid=None):
 
 
 def add_data_to_graph(df, graph, col_names, id_col=None):
-    '''Add columns of a dataframe to a graph based on ids.
+    """Add columns of a dataframe to a graph based on ids.
 
     :df: Dataframe containing given column.
     :graph: NetworkX object containing appropriately labeled nodes.
@@ -40,7 +40,7 @@ def add_data_to_graph(df, graph, col_names, id_col=None):
              then the data is assigned to consecutive integer labels 0, 1, ...,
              len(graph) - 1.
 
-    '''
+    """
     if id_col:
         for row in df.itertuples():
             node = getattr(row, id_col)
@@ -55,12 +55,12 @@ def add_data_to_graph(df, graph, col_names, id_col=None):
 
 
 def construct_graph(df, geoid_col=None):
-    '''Construct initial graph from information about neighboring VTDs.
+    """Construct initial graph from information about neighboring VTDs.
 
     :df: Geopandas dataframe.
     :returns: NetworkX Graph.
 
-    '''
+    """
     if geoid_col is not None:
         df = df.set_index(geoid_col)
 

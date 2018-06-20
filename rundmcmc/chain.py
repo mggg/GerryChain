@@ -43,3 +43,6 @@ class MarkovChain:
                 self.counter += 1
                 return proposed_next_state
         raise StopIteration
+
+    def __len__(self):
+        return self.total_steps
