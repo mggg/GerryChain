@@ -16,7 +16,7 @@ def cut_edges(partition, parent=None, flips=None):
     return (parent['cut_edges'] | new_cuts) - obsolete_cuts
 
 
-def statistic_factory(field, alias=None):
+def statistic_factory(field, alias=None, dtype=int):
     """
     Create updater function that updates the district-wide sum of the given
     statistic.
@@ -34,7 +34,7 @@ def statistic_factory(field, alias=None):
     return statistic
 
 
-def initialize_statistic(field, partition):
+def initialize_statistic(field, partition, dtype=int):
     """
     Compute the initial district-wide statistic of data stored in the "field"
     attribute of nodes.
@@ -43,7 +43,7 @@ def initialize_statistic(field, partition):
     :partition: :class:`Partition` class.
 
     """
-    statistic = collections.defaultdict(int)
+    statistic = collections.defaultdict(dtype)
     for node, part in partition.assignment.items():
         statistic[part] += partition.graph.nodes[node][field]
     return statistic

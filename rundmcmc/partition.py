@@ -65,6 +65,9 @@ class Partition:
         return self.assignment[edge[0]] != self.assignment[edge[1]]
 
     def __getitem__(self, key):
+        """Allows keying on a Partition instance.
+        :key: Property to access.
+        """
         if key not in self._cache:
             self._cache[key] = self.updaters[key](self, self.parent, self.flips)
         return self._cache[key]
