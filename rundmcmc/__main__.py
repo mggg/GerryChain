@@ -1,8 +1,8 @@
 import geopandas as gp
+import networkx.readwrite
 
 from rundmcmc.chain import MarkovChain
-from rundmcmc.make_graph import (add_data_to_graph, construct_graph,
-                                 get_assignment_dict)
+from rundmcmc.make_graph import get_assignment_dict
 from rundmcmc.partition import Partition, propose_random_flip
 from rundmcmc.updaters import statistic_factory, cut_edges
 from rundmcmc.metrics import mean_median
@@ -16,10 +16,9 @@ def main():
     #   3. Make a graph from this.
     #   4. Throw attributes into graph.
     df = gp.read_file("./testData/mo_cleaned_vtds.shp")
-    graph = construct_graph(df, geoid_col="GEOID10")
-    add_data_to_graph(df, graph, ['CD', 'ALAND10'], id_col='GEOID10')
-
+    graph = networkx.readwrite.read_gpickle('example_graph.gpickle')
     assignment = get_assignment_dict(df, "GEOID10", "CD")
+
     updaters = {'area': statistic_factory('ALAND10', alias='area'), 'cut_edges': cut_edges}
     initial_partition = Partition(graph, assignment, updaters)
 
