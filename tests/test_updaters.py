@@ -2,7 +2,7 @@ import networkx
 
 from rundmcmc.make_graph import construct_graph, add_data_to_graph, get_assignment_dict
 from rundmcmc.partition import Partition, propose_random_flip
-from rundmcmc.updaters import statistic_factory, cut_edges, crosses_parts
+from rundmcmc.updaters import statistic_factory, cut_edges
 from rundmcmc.validity import Validator, contiguous, single_flip_contiguous
 from rundmcmc.chain import MarkovChain
 import geopandas as gp
@@ -32,10 +32,11 @@ def test_implementation_of_cut_edges_matches_naive_method():
 
     flip = {4: 2}
     new_assignment = {**assignment, **flip}
-    result = cut_edges(partition, new_assignment, flip)
+    new_partition = Partition(graph, new_assignment, updaters)
+    result = cut_edges(new_partition, partition, flips=flip)
 
-    naive_cut_edges = {edge for edge in graph.edges if crosses_parts(
-        new_assignment, edge)}
+    naive_cut_edges = {edge for edge in graph.edges
+                       if new_partition.crosses_parts(edge)}
 
     print(result)
     print(naive_cut_edges)

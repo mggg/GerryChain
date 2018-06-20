@@ -27,7 +27,7 @@ class Validator:
         return True
 
 
-def single_flip_contiguous(partition, new_assignment=None, flips=None):
+def single_flip_contiguous(partition, parent=None, flips=None):
     """
     Check if swapping the given node from its old assignment disconnects the
     old assignment class.
@@ -46,11 +46,11 @@ def single_flip_contiguous(partition, new_assignment=None, flips=None):
     the changed graph.
 
     """
-    if not flips:
+    if not flips or not parent:
         return contiguous(partition, flips)
 
     graph = partition.graph
-    assignment_dict = partition.assignment
+    assignment_dict = parent.assignment
 
     def proposed_assignment(node):
         """Return the proposed assignment of the given node."""
@@ -98,7 +98,7 @@ def single_flip_contiguous(partition, new_assignment=None, flips=None):
     return True
 
 
-def contiguous(partition, new_assignment=None, flips=None):
+def contiguous(partition, parent=None, flips=None):
     '''
 
     :parition: Current :class:`.Partition` object.
@@ -114,11 +114,7 @@ def contiguous(partition, new_assignment=None, flips=None):
 
     def proposed_assignment(node):
         """Return the proposed assignment of the given node."""
-        if node in flips:
-            return flips[node]
-
         return partition.assignment[node]
-
     # TODO
 
     # Creates a dictionary where the key is the district and the value is
