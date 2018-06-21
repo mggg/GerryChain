@@ -1,8 +1,11 @@
+import geopandas as gp
 import networkx
 
-from rundmcmc.make_graph import construct_graph, add_data_to_graph, get_assignment_dict
+from rundmcmc.chain import MarkovChain
+from rundmcmc.make_graph import (add_data_to_graph, construct_graph,
+                                 get_assignment_dict)
 from rundmcmc.partition import Partition, propose_random_flip
-from rundmcmc.updaters import statistic_factory, cut_edges
+from rundmcmc.updaters import cut_edges, tally_factory
 from rundmcmc.validity import Validator, contiguous, single_flip_contiguous
 from rundmcmc.chain import MarkovChain
 import geopandas as gp
@@ -32,9 +35,8 @@ def test_implementation_of_cut_edges_matches_naive_method():
     partition = Partition(graph, assignment, updaters)
 
     flip = {4: 2}
-    new_assignment = {**assignment, **flip}
-    new_partition = Partition(graph, new_assignment, updaters)
-    result = cut_edges(new_partition, partition, flips=flip)
+    new_partition = Partition(parent=partition, flips=flip)
+    result = cut_edges(new_partition)
 
     naive_cut_edges = {edge for edge in graph.edges
                        if new_partition.crosses_parts(edge)}
@@ -53,7 +55,7 @@ def test_Partition_can_update_stats():
     graph.nodes[1]['stat'] = 2
     graph.nodes[2]['stat'] = 3
 
-    updaters = {'total_stat': statistic_factory('stat', alias='total_stat')}
+    updaters = {'total_stat': tally_factory('stat', alias='total_stat')}
 
     partition = Partition(graph, assignment, updaters)
     assert partition['total_stat'][2] == 3

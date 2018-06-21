@@ -10,7 +10,7 @@ class MarkovChain:
 
         chain = MarkovChain(proposal, is_valid, accept, initial_state)
         for state in chain:
-            # Do whatever you want - print output, compute metrics, ...
+            # Do whatever you want - print output, compute scores, ...
 
     """
 

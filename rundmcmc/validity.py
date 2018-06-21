@@ -1,8 +1,9 @@
 
-from networkx import NetworkXNoPath
-import networkx.algorithms.shortest_paths.weighted as nx_path
-import networkx as nx
 import random
+
+import networkx as nx
+import networkx.algorithms.shortest_paths.weighted as nx_path
+from networkx import NetworkXNoPath
 
 
 class Validator:
@@ -128,13 +129,6 @@ def contiguous(partition, parent=None, flips=None):
         tmp = partition.graph.subgraph(district_dict[key])
         if nx.is_connected(tmp) is False:
             return False
-
-    # all districts are contiguous
-    """
-    for district in partition.districts:
-        if partition.districts[district]['contiguous'] is False:
-            return False
-    """
 
     return True
 
