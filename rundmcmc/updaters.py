@@ -76,7 +76,7 @@ def tally_factory(fields, alias=None, dtype=int):
         Defaults to the given field, or the first in the list of fields if
         a list of fields is given.
     """
-    if isinstance(fields, list):
+    if not isinstance(fields, list):
         fields = [fields]
     if not alias:
         alias = fields[0]
