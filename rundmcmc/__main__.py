@@ -17,6 +17,7 @@ def example_partition():
 
     with open("./testData/MO_graph.json") as f:
         graph_json = json.load(f)
+
     graph = networkx.readwrite.json_graph.adjacency_graph(graph_json)
 
     assignment = get_assignment_dict(df, "GEOID10", "CD")

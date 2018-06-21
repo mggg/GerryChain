@@ -11,6 +11,9 @@ from rundmcmc.partition import Partition
 from rundmcmc.proposals import propose_random_flip
 from rundmcmc.updaters import cut_edges, tally_factory, votes_updaters
 from rundmcmc.validity import Validator, contiguous, single_flip_contiguous
+from rundmcmc.chain import MarkovChain
+import geopandas as gp
+import json
 
 
 def three_by_three_grid():
