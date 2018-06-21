@@ -1,3 +1,4 @@
+import json
 import math
 import random
 
@@ -5,8 +6,7 @@ import geopandas as gp
 import networkx
 
 from rundmcmc.chain import MarkovChain
-from rundmcmc.make_graph import (add_data_to_graph, construct_graph,
-                                 get_assignment_dict)
+from rundmcmc.make_graph import get_assignment_dict
 from rundmcmc.partition import Partition
 from rundmcmc.proposals import propose_random_flip
 from rundmcmc.updaters import cut_edges, tally_factory, votes_updaters
@@ -76,10 +76,13 @@ def test_single_flip_contiguity_equals_contiguity():
         assert val
         return partition["contiguous"]
 
-    df = gp.read_file("rundmcmc/testData/wyoming_test.shp")
-    graph = construct_graph(df, geoid_col="GEOID")
-    add_data_to_graph(df, graph, ['CD', 'ALAND'], id_col='GEOID')
-    assignment = get_assignment_dict(df, "GEOID", "CD")
+    df = gp.read_file("rundmcmc/testData/mo_cleaned_vtds.shp")
+
+    with open("rundmcmc/testData/MO_graph.json") as f:
+        graph_json = json.load(f)
+
+    graph = networkx.readwrite.json_graph.adjacency_graph(graph_json)
+    assignment = get_assignment_dict(df, "GEOID10", "CD")
 
     validator = Validator([equality_validator])
     updaters = {"contiguous": contiguous, "cut_edges": cut_edges,
@@ -88,7 +91,7 @@ def test_single_flip_contiguity_equals_contiguity():
     initial_partition = Partition(graph, assignment, updaters)
     accept = lambda x: True
 
-    chain = MarkovChain(propose_random_flip, validator, accept, initial_partition, total_steps=1000)
+    chain = MarkovChain(propose_random_flip, validator, accept, initial_partition, total_steps=100)
     list(chain)
 
 
@@ -134,10 +137,10 @@ def test_vote_proportion_updater_returns_percentage():
     initial_partition = setup_for_proportion_updaters(['D', 'R'])
 
     # The first update gives a percentage
-    assert all(0 < value for value in initial_partition['D%'].values())
-    assert all(value < 1 for value in initial_partition['D%'].values())
-    assert all(0 < value for value in initial_partition['R%'].values())
-    assert all(value < 1 for value in initial_partition['R%'].values())
+    assert all(0 <= value for value in initial_partition['D%'].values())
+    assert all(value <= 1 for value in initial_partition['D%'].values())
+    assert all(0 <= value for value in initial_partition['R%'].values())
+    assert all(value <= 1 for value in initial_partition['R%'].values())
 
 
 def test_vote_proportion_returns_nan_if_total_votes_is_zero():
