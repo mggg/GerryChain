@@ -34,9 +34,16 @@ class Proportion:
 def votes_updaters(columns, election_name=''):
     """
     Returns a dictionary of updaters that tally total votes and compute
-    vote share.
+    vote share. Example: `votes_updaters(['D','R'], election_name='08')` would
+    have entries `'R'`, `'D'`, `'total_votes'` (the tallies) as well as
+    `'R%'`, `'D%'` (the percentages of the total vote).
+
     :columns: the names of the node attributes storing vote counts for each
         party that you are interested in
+    :election_name: an optional identifier that will be appended to the names of the
+        returned updaters. This is in order to support computing scores
+        for multiple elections at the same time, so that the names of the
+        updaters don't collide.
     """
 
     def name_count(party):
