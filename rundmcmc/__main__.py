@@ -1,42 +1,60 @@
-import geopandas as gp
-import networkx.readwrite
 import json
 
+import geopandas as gp
+import networkx.readwrite
+
 from rundmcmc.chain import MarkovChain
-from rundmcmc.make_graph import get_assignment_dict
-from rundmcmc.partition import Partition, propose_random_flip
-from rundmcmc.scores import mean_median
-from rundmcmc.updaters import cut_edges, tally_factory
+from rundmcmc.make_graph import add_data_to_graph, get_assignment_dict
+from rundmcmc.partition import Partition
+from rundmcmc.proposals import propose_random_flip
+from rundmcmc.scores import efficiency_gap, mean_median, mean_thirdian
+from rundmcmc.updaters import cut_edges, votes_updaters
 from rundmcmc.validity import Validator, contiguous
 
 
-def main():
-    # Sketch:
-    #   1. Load dataframe.
-    #   2. Construct neighbor information.
-    #   3. Make a graph from this.
-    #   4. Throw attributes into graph.
+def example_partition():
     df = gp.read_file("./testData/mo_cleaned_vtds.shp")
 
     with open("./testData/MO_graph.json") as f:
         graph_json = json.load(f)
 
     graph = networkx.readwrite.json_graph.adjacency_graph(graph_json)
+
     assignment = get_assignment_dict(df, "GEOID10", "CD")
 
-    updaters = {'area': tally_factory('ALAND10', alias='area'), 'cut_edges': cut_edges}
-    initial_partition = Partition(graph, assignment, updaters)
+    add_data_to_graph(df, graph, ['PR_DV08', 'PR_RV08'], id_col='GEOID10')
 
-    validator = Validator([contiguous])
-    accept = lambda x: True
+    updaters = {
+        **votes_updaters(['PR_DV08', 'PR_RV08'], election_name='08'),
+        'cut_edges': cut_edges
+    }
+    return Partition(graph, assignment, updaters)
 
-    chain = MarkovChain(propose_random_flip, validator, accept,
+
+def always_accept(partition):
+    return True
+
+
+def print_summary(partition, scores):
+    print("")
+    for name, score in scores.items():
+        print(f"{name}: {score(partition, 'PR_DV08%')}")
+
+
+def main():
+    initial_partition = example_partition()
+
+    chain = MarkovChain(propose_random_flip, Validator([contiguous]), always_accept,
                         initial_partition, total_steps=100)
 
-    for state in chain:
-        print(mean_median(state, data_column='area'))
+    scores = {
+        'Efficiency Gap': efficiency_gap,
+        'Mean-Median': mean_median,
+        'Mean-Thirdian': mean_thirdian
+    }
 
-    print(graph.nodes(data=True))
+    for partition in chain:
+        print_summary(partition, scores)
 
 
 if __name__ == "__main__":
