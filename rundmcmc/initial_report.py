@@ -1,20 +1,24 @@
 
 import geopandas as gp
 import pysal as ps
-import time
-from rundmcmc.make_graph import construct_graph
+import networkx as nx
+from rundmcmc.make_graph import construct_graph, add_data_to_graph
 
 
 def report(prorated=None, location="./testData/mo_dists.geojson"):
-    print("Generating adjacencies...")
-    start = time.time()
+    """
+        Takes in a geopandas dataframe of prorated voting data or the location
+        of a shape/geojson file, generates a graph, and runs the initial report
+        functions.
+
+        :prorated: A dataframe of prorated data.
+        :location: Filepath for a shape/geojson/csv file.
+    """
     df = gp.read_file(location)
-    graph = construct_graph(df)
-    end = time.time()
-    print("Finished in {} seconds".format(str(end - start)))
-    print(list(graph.adjacency()))
+    graph = construct_graph(df, geoid_col="GEOID10")
+    add_data_to_graph(df, graph, list(df), id_col="GEOID10")
 
-
+    ### RUN ALL THE REPORTING THINGS! ###
 
 if __name__ == "__main__":
     report()
