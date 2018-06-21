@@ -4,8 +4,8 @@ import networkx.readwrite
 from rundmcmc.chain import MarkovChain
 from rundmcmc.make_graph import get_assignment_dict
 from rundmcmc.partition import Partition, propose_random_flip
-from rundmcmc.updaters import statistic_factory, cut_edges
-from rundmcmc.metrics import mean_median
+from rundmcmc.scores import mean_median
+from rundmcmc.updaters import cut_edges, tally_factory
 from rundmcmc.validity import Validator, contiguous
 
 
@@ -19,7 +19,7 @@ def main():
     graph = networkx.readwrite.read_gpickle('example_graph.gpickle')
     assignment = get_assignment_dict(df, "GEOID10", "CD")
 
-    updaters = {'area': statistic_factory('ALAND10', alias='area'), 'cut_edges': cut_edges}
+    updaters = {'area': tally_factory('ALAND10', alias='area'), 'cut_edges': cut_edges}
     initial_partition = Partition(graph, assignment, updaters)
 
     validator = Validator([contiguous])

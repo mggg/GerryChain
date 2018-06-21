@@ -1,7 +1,9 @@
 import collections
 
 
-def cut_edges(partition, parent=None, flips=None):
+def cut_edges(partition):
+    parent = partition.parent
+    flips = partition.flips
     if not parent:
         return {edge for edge in partition.graph.edges
                 if partition.crosses_parts(edge)}
@@ -16,42 +18,44 @@ def cut_edges(partition, parent=None, flips=None):
     return (parent['cut_edges'] | new_cuts) - obsolete_cuts
 
 
-def statistic_factory(field, alias=None, dtype=int):
+def tally_factory(field, alias=None, dtype=int):
     """
     Create updater function that updates the district-wide sum of the given
-    statistic.
+    tally.
 
     :field: Attribute key for data stored on nodes.
-    :alias: Name to be stored in the chain for the aggregate statistic.
+    :alias: Name to be stored in the chain for the aggregate tally.
     """
     if not alias:
         alias = field
 
-    def statistic(partition, parent=None, flips=None):
+    def tally(partition):
+        parent = partition.parent
+        flips = partition.flips
         if not flips or not parent:
-            return initialize_statistic(field, partition)
-        return update_statistic(field, alias, parent, partition, flips)
-    return statistic
+            return initialize_tally(field, partition)
+        return update_tally(field, alias, parent, partition, flips)
+    return tally
 
 
-def initialize_statistic(field, partition, dtype=int):
+def initialize_tally(field, partition, dtype=int):
     """
-    Compute the initial district-wide statistic of data stored in the "field"
+    Compute the initial district-wide tally of data stored in the "field"
     attribute of nodes.
 
     :field: Attribute name of data stored in nodes.
     :partition: :class:`Partition` class.
 
     """
-    statistic = collections.defaultdict(dtype)
+    tally = collections.defaultdict(dtype)
     for node, part in partition.assignment.items():
-        statistic[part] += partition.graph.nodes[node][field]
-    return statistic
+        tally[part] += partition.graph.nodes[node][field]
+    return tally
 
 
-def update_statistic(field, alias, parent, partition, flips):
+def update_tally(field, alias, parent, partition, flips):
     """
-    Compute the district-wide statistic of data stored in the "field" attribute
+    Compute the district-wide tally of data stored in the "field" attribute
     of nodes, given proposed changes.
 
     :field: Attribute name of data stored in nodes.
@@ -59,15 +63,15 @@ def update_statistic(field, alias, parent, partition, flips):
     :changes: Proposed changes.
 
     """
-    old_statistic = parent[alias]
-    new_statistic = dict()
+    old_tally = parent[alias]
+    new_tally = dict()
     graph = partition.graph
     for part, flow in flows_from_changes(parent.assignment, flips).items():
         out_flow = sum(graph.nodes[node][field] for node in flow['out'])
         in_flow = sum(graph.nodes[node][field] for node in flow['in'])
-        new_statistic[part] = old_statistic[part] - out_flow + in_flow
+        new_tally[part] = old_tally[part] - out_flow + in_flow
 
-    return {**old_statistic, **new_statistic}
+    return {**old_tally, **new_tally}
 
 
 def create_flow():

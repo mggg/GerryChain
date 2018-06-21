@@ -1,14 +1,6 @@
 import numpy
 
 
-# I'm assuming the partition has a data column (a field), maybe called 'votes',
-# that is a dict from district ids to one side's vote proportition in that
-# district.
-
-# Also assuming that votes are normalized by turnout in some way.
-
-# This needs testing!
-
 def mean_median(partition, data_column='votes'):
     data = list(partition[data_column].values())
     return numpy.mean(data) - numpy.median(data)

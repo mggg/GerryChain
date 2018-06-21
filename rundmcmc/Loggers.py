@@ -51,26 +51,26 @@ class ConsoleLogger:
 class DataFrameLogger:
     """
     DataFrameLogger samples the states of the chain to load up a reasonably-
-    sized DataFrame of the specified computed metrics.
+    sized DataFrame of the specified computed scores.
     """
 
-    def __init__(self, metrics, sample_rate=1):
+    def __init__(self, scores, sample_rate=1):
         self.sample_rate = sample_rate
-        self.metrics = metrics
+        self.scores = scores
 
     def before(self, chain):
         if not self.sample_rate:
             self.sample_rate = math.floor(len(chain) * 0.01)
         self.counter = 0
 
-        initial_data = self.compute_metrics(chain.state)
+        initial_data = self.compute_scores(chain.state)
         self.data = pd.DataFrame(initial_data)
 
     def during(self, state):
-        self.data.append(self.compute_metrics(state))
+        self.data.append(self.compute_scores(state))
 
     def after(self, state):
         return self.data
 
-    def compute_metrics(self, state):
-        return {key: metric(state) for key, metric in self.metrics.items()}
+    def compute_scores(self, state):
+        return {key: score(state) for key, score in self.scores.items()}

@@ -56,7 +56,7 @@ class Partition:
 
         for key in self.updaters:
             if key not in self._cache:
-                self._cache[key] = self.updaters[key](self, self.parent, self.flips)
+                self._cache[key] = self.updaters[key](self)
 
     def merge(self, flips):
         return Partition(parent=self, flips=flips)
