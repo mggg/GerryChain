@@ -1,9 +1,13 @@
-from rundmcmc.chain import MarkovChain
-from rundmcmc.make_graph import construct_graph, add_data_to_graph, get_assignment_dict
-from rundmcmc.partition import Partition, propose_random_flip
-from rundmcmc.updaters import statistic_factory, cut_edges
-from rundmcmc.validity import Validator, fast_connected
 import geopandas as gp
+import networkx.readwrite
+import json
+
+from rundmcmc.chain import MarkovChain
+from rundmcmc.make_graph import get_assignment_dict
+from rundmcmc.partition import Partition, propose_random_flip
+from rundmcmc.scores import mean_median
+from rundmcmc.updaters import cut_edges, tally_factory
+from rundmcmc.validity import Validator, contiguous
 
 
 def main():
@@ -12,23 +16,25 @@ def main():
     #   2. Construct neighbor information.
     #   3. Make a graph from this.
     #   4. Throw attributes into graph.
-    df = gp.read_file("./testData/wyoming_test.shp")
-    graph = construct_graph(df, geoid_col="GEOID")
-    add_data_to_graph(df, graph, ['CD', 'ALAND'], id_col='GEOID')
-    assignment = get_assignment_dict(df, "GEOID", "CD")
+    df = gp.read_file("./testData/mo_cleaned_vtds.shp")
 
-    validator = Validator([fast_connected])
+    with open("./testData/MO_graph.json") as f:
+        graph_json = json.load(f)
 
-    updaters = {'area': statistic_factory('ALAND', alias='area'), 'cut_edges': cut_edges}
+    graph = networkx.readwrite.json_graph.adjacency_graph(graph_json)
+    assignment = get_assignment_dict(df, "GEOID10", "CD")
 
+    updaters = {'area': tally_factory('ALAND10', alias='area'), 'cut_edges': cut_edges}
     initial_partition = Partition(graph, assignment, updaters)
+
+    validator = Validator([contiguous])
     accept = lambda x: True
 
     chain = MarkovChain(propose_random_flip, validator, accept,
-                        initial_partition, total_steps=1000)
+                        initial_partition, total_steps=100)
 
-    for step in chain:
-        pass
+    for state in chain:
+        print(mean_median(state, data_column='area'))
 
     print(graph.nodes(data=True))
 

@@ -10,7 +10,7 @@ class MarkovChain:
 
         chain = MarkovChain(proposal, is_valid, accept, initial_state)
         for state in chain:
-            # Do whatever you want - print output, compute metrics, ...
+            # Do whatever you want - print output, compute scores, ...
 
     """
 
@@ -43,3 +43,6 @@ class MarkovChain:
                 self.counter += 1
                 return proposed_next_state
         raise StopIteration
+
+    def __len__(self):
+        return self.total_steps

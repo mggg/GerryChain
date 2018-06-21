@@ -1,22 +1,18 @@
-from networkx import NetworkXNoPath
-import networkx.algorithms.shortest_paths.weighted as nx_path
-import networkx as nx
+
 import random
+
+import networkx as nx
+import networkx.algorithms.shortest_paths.weighted as nx_path
+from networkx import NetworkXNoPath
 
 
 class Validator:
     def __init__(self, constraints):
-        """
-        :constraints: List of validator functions that will check partitions.
-
-        """
+        """:constraints: List of validator functions that will check partitions."""
         self.constraints = constraints
 
     def __call__(self, partition):
-        """
-        :partition: :class:`Partition` class to check.
-
-        """
+        """:partition: :class:`Partition` class to check."""
 
         # check each constraint function and fail when a constraint test fails
         for constraint in self.constraints:
@@ -27,7 +23,7 @@ class Validator:
         return True
 
 
-def single_flip_contiguous(partition, new_assignment=None, flips=None):
+def single_flip_contiguous(partition, parent=None, flips=None):
     """
     Check if swapping the given node from its old assignment disconnects the
     old assignment class.
@@ -46,11 +42,11 @@ def single_flip_contiguous(partition, new_assignment=None, flips=None):
     the changed graph.
 
     """
-    if not flips:
+    if not flips or not parent:
         return contiguous(partition, flips)
 
     graph = partition.graph
-    assignment_dict = partition.assignment
+    assignment_dict = parent.assignment
 
     def proposed_assignment(node):
         """Return the proposed assignment of the given node."""
@@ -98,27 +94,21 @@ def single_flip_contiguous(partition, new_assignment=None, flips=None):
     return True
 
 
-def contiguous(partition, new_assignment=None, flips=None):
-    '''
-
+def contiguous(partition, parent=None, flips=None):
+    """
     :parition: Current :class:`.Partition` object.
-
     :flips: Dictionary of proposed flips, with `(nodeid: new_assignment)`
             pairs. If `flips` is `None`, then fallback to the
             :func:`.contiguous` check.
 
     :returns: True if contiguous, False otherwise.
-    '''
+    """
     if not flips:
         flips = dict()
 
     def proposed_assignment(node):
         """Return the proposed assignment of the given node."""
-        if node in flips:
-            return flips[node]
-
         return partition.assignment[node]
-
     # TODO
 
     # Creates a dictionary where the key is the district and the value is
@@ -139,13 +129,6 @@ def contiguous(partition, new_assignment=None, flips=None):
         tmp = partition.graph.subgraph(district_dict[key])
         if nx.is_connected(tmp) is False:
             return False
-
-    # all districts are contiguous
-    '''
-    for district in partition.districts:
-        if partition.districts[district]['contiguous'] is False:
-            return False
-    '''
 
     return True
 

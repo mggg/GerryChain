@@ -25,40 +25,49 @@ class Partition:
 
     """
 
-    def __init__(self, graph, assignment, updaters=None, fields=None):
-        """
-        :graph: NetworkX graph.
-        :assignment: Dictionary mapping node ids to their partition cell.
+    def __init__(self, graph=None, assignment=None, updaters=None,
+                 parent=None, flips=None):
+        if parent:
+            self._from_parent(parent, flips)
+        else:
+            self._first_time(graph, assignment, updaters)
 
-        """
+        self._update()
+
+    def _first_time(self, graph, assignment, updaters):
         self.graph = graph
         self.assignment = assignment
-
-        if not updaters:
-            updaters = dict()
         self.updaters = updaters
 
-        if not fields:
-            fields = {key: updater(self) for key, updater in self.updaters.items()}
-        self.fields = fields
+        self.parent = None
+        self.flips = None
+
+    def _from_parent(self, parent, flips):
+        self.parent = parent
+        self.flips = flips
+
+        self.graph = parent.graph
+        self.updaters = parent.updaters
+
+        self.assignment = {**parent.assignment, **self.flips}
+
+    def _update(self):
+        self._cache = dict()
+
+        for key in self.updaters:
+            if key not in self._cache:
+                self._cache[key] = self.updaters[key](self)
 
     def merge(self, flips):
-        """
-        Takes a dictionary of new assignments and returns the Partition
-        obtained by applying these new assignments to this instance (self) of
-        Partition.
+        return Partition(parent=self, flips=flips)
 
-        :flips: a dictionary of nodes mapped to their new assignments
-        :returns: a new Partition instance
-
-        """
-        new_assignment = {**self.assignment, **flips}
-
-        new_fields = {key: updater(self, new_assignment, flips)
-                                   for key, updater in self.updaters.items()}
-
-        return Partition(self.graph, assignment=new_assignment,
-                         updaters=self.updaters, fields=new_fields)
+    def crosses_parts(self, edge):
+        return self.assignment[edge[0]] != self.assignment[edge[1]]
 
     def __getitem__(self, key):
-        return self.fields[key]
+        """Allows keying on a Partition instance.
+        :key: Property to access.
+        """
+        if key not in self._cache:
+            self._cache[key] = self.updaters[key](self, self.parent, self.flips)
+        return self._cache[key]

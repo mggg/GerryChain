@@ -1,11 +1,15 @@
+import geopandas as gp
 import networkx
 
-from rundmcmc.make_graph import construct_graph, add_data_to_graph, get_assignment_dict
+from rundmcmc.chain import MarkovChain
+from rundmcmc.make_graph import (add_data_to_graph, construct_graph,
+                                 get_assignment_dict)
 from rundmcmc.partition import Partition, propose_random_flip
-from rundmcmc.updaters import statistic_factory, cut_edges, crosses_parts
+from rundmcmc.updaters import cut_edges, tally_factory
 from rundmcmc.validity import Validator, contiguous, single_flip_contiguous
 from rundmcmc.chain import MarkovChain
 import geopandas as gp
+import json
 
 
 def three_by_three_grid():
@@ -31,11 +35,11 @@ def test_implementation_of_cut_edges_matches_naive_method():
     partition = Partition(graph, assignment, updaters)
 
     flip = {4: 2}
-    new_assignment = {**assignment, **flip}
-    result = cut_edges(partition, new_assignment, flip)
+    new_partition = Partition(parent=partition, flips=flip)
+    result = cut_edges(new_partition)
 
-    naive_cut_edges = {edge for edge in graph.edges if crosses_parts(
-        new_assignment, edge)}
+    naive_cut_edges = {edge for edge in graph.edges
+                       if new_partition.crosses_parts(edge)}
 
     print(result)
     print(naive_cut_edges)
@@ -51,7 +55,7 @@ def test_Partition_can_update_stats():
     graph.nodes[1]['stat'] = 2
     graph.nodes[2]['stat'] = 3
 
-    updaters = {'total_stat': statistic_factory('stat', alias='total_stat')}
+    updaters = {'total_stat': tally_factory('stat', alias='total_stat')}
 
     partition = Partition(graph, assignment, updaters)
     assert partition['total_stat'][2] == 3
@@ -71,10 +75,13 @@ def test_single_flip_contiguity_equals_contiguity():
         assert val
         return partition["contiguous"]
 
-    df = gp.read_file("rundmcmc/testData/wyoming_test.shp")
-    graph = construct_graph(df, geoid_col="GEOID")
-    add_data_to_graph(df, graph, ['CD', 'ALAND'], id_col='GEOID')
-    assignment = get_assignment_dict(df, "GEOID", "CD")
+    df = gp.read_file("rundmcmc/testData/mo_cleaned_vtds.shp")
+
+    with open("rundmcmc/testData/MO_graph.json") as f:
+        graph_json = json.load(f)
+
+    graph = networkx.readwrite.json_graph.adjacency_graph(graph_json)
+    assignment = get_assignment_dict(df, "GEOID10", "CD")
 
     validator = Validator([equality_validator])
     updaters = {"contiguous": contiguous, "cut_edges": cut_edges,
@@ -83,5 +90,5 @@ def test_single_flip_contiguity_equals_contiguity():
     initial_partition = Partition(graph, assignment, updaters)
     accept = lambda x: True
 
-    chain = MarkovChain(propose_random_flip, validator, accept, initial_partition, total_steps=1000)
+    chain = MarkovChain(propose_random_flip, validator, accept, initial_partition, total_steps=100)
     list(chain)
