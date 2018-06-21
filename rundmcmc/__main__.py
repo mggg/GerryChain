@@ -1,5 +1,6 @@
 import geopandas as gp
 import networkx.readwrite
+import json
 
 from rundmcmc.chain import MarkovChain
 from rundmcmc.make_graph import get_assignment_dict
@@ -16,7 +17,11 @@ def main():
     #   3. Make a graph from this.
     #   4. Throw attributes into graph.
     df = gp.read_file("./testData/mo_cleaned_vtds.shp")
-    graph = networkx.readwrite.read_gpickle('example_graph.gpickle')
+
+    with open("./testData/MO_graph.json") as f:
+        graph_json = json.load(f)
+
+    graph = networkx.readwrite.json_graph.adjacency_graph(graph_json)
     assignment = get_assignment_dict(df, "GEOID10", "CD")
 
     updaters = {'area': statistic_factory('ALAND10', alias='area'), 'cut_edges': cut_edges}
