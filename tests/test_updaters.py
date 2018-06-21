@@ -11,9 +11,6 @@ from rundmcmc.partition import Partition
 from rundmcmc.proposals import propose_random_flip
 from rundmcmc.updaters import cut_edges, tally_factory, votes_updaters
 from rundmcmc.validity import Validator, contiguous, single_flip_contiguous
-from rundmcmc.chain import MarkovChain
-import geopandas as gp
-import json
 
 
 def three_by_three_grid():
@@ -131,9 +128,9 @@ def test_tally_multiple_columns():
     assert partition['total'][1] == expected_total_in_district_one
 
 
-def test_vote_totals_are_positive():
+def test_vote_totals_are_nonnegative():
     partition = setup_for_proportion_updaters(['D', 'R'])
-    assert all(count > 0 for count in partition['total_votes'].values())
+    assert all(count >= 0 for count in partition['total_votes'].values())
 
 
 def test_vote_proportion_updater_returns_percentage():
@@ -173,10 +170,10 @@ def test_vote_proportion_updater_returns_percentage_on_later_steps():
     chain = MarkovChain(propose_random_flip, lambda x: True,
                         lambda x: True, initial_partition, total_steps=10)
     for partition in chain:
-        assert all(0 < value for value in partition['D%'].values())
-        assert all(value < 1 for value in partition['D%'].values())
-        assert all(0 < value for value in partition['R%'].values())
-        assert all(value < 1 for value in partition['R%'].values())
+        assert all(0 <= value for value in partition['D%'].values())
+        assert all(value <= 1 for value in partition['D%'].values())
+        assert all(0 <= value for value in partition['R%'].values())
+        assert all(value <= 1 for value in partition['R%'].values())
 
 
 def test_vote_proportion_field_has_key_for_each_district():
