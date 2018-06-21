@@ -133,14 +133,12 @@ def test_vote_totals_are_nonnegative():
     assert all(count >= 0 for count in partition['total_votes'].values())
 
 
-def test_vote_proportion_updater_returns_percentage():
-    initial_partition = setup_for_proportion_updaters(['D', 'R'])
+def test_vote_proportion_updater_returns_percentage_or_nan():
+    partition = setup_for_proportion_updaters(['D', 'R'])
 
     # The first update gives a percentage
-    assert all(0 <= value for value in initial_partition['D%'].values())
-    assert all(value <= 1 for value in initial_partition['D%'].values())
-    assert all(0 <= value for value in initial_partition['R%'].values())
-    assert all(value <= 1 for value in initial_partition['R%'].values())
+    assert all(is_percentage_or_nan(value) for value in partition['D%'].values())
+    assert all(is_percentage_or_nan(value) for value in partition['R%'].values())
 
 
 def test_vote_proportion_returns_nan_if_total_votes_is_zero():
@@ -158,7 +156,11 @@ def test_vote_proportion_returns_nan_if_total_votes_is_zero():
     assert all(math.isnan(value) for value in partition['R%'].values())
 
 
-def test_vote_proportion_updater_returns_percentage_on_later_steps():
+def is_percentage_or_nan(value):
+    return (0 <= value and value <= 1) or math.isnan(value)
+
+
+def test_vote_proportion_updater_returns_percentage_or_nan_on_later_steps():
     columns = ['D', 'R']
     graph = three_by_three_grid()
     attach_random_data(graph, columns)
@@ -170,10 +172,8 @@ def test_vote_proportion_updater_returns_percentage_on_later_steps():
     chain = MarkovChain(propose_random_flip, lambda x: True,
                         lambda x: True, initial_partition, total_steps=10)
     for partition in chain:
-        assert all(0 <= value for value in partition['D%'].values())
-        assert all(value <= 1 for value in partition['D%'].values())
-        assert all(0 <= value for value in partition['R%'].values())
-        assert all(value <= 1 for value in partition['R%'].values())
+        assert all(is_percentage_or_nan(value) for value in partition['D%'].values())
+        assert all(is_percentage_or_nan(value) for value in partition['R%'].values())
 
 
 def test_vote_proportion_field_has_key_for_each_district():
