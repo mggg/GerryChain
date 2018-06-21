@@ -1,3 +1,6 @@
+import math
+import random
+
 import geopandas as gp
 import networkx
 
@@ -6,7 +9,7 @@ from rundmcmc.make_graph import (add_data_to_graph, construct_graph,
                                  get_assignment_dict)
 from rundmcmc.partition import Partition
 from rundmcmc.proposals import propose_random_flip
-from rundmcmc.updaters import cut_edges, tally_factory
+from rundmcmc.updaters import cut_edges, tally_factory, votes_updaters
 from rundmcmc.validity import Validator, contiguous, single_flip_contiguous
 
 
@@ -87,3 +90,95 @@ def test_single_flip_contiguity_equals_contiguity():
 
     chain = MarkovChain(propose_random_flip, validator, accept, initial_partition, total_steps=1000)
     list(chain)
+
+
+def random_assignment(graph, num_districts):
+    return {node: random.choice(range(num_districts)) for node in graph.nodes}
+
+
+def setup_for_proportion_updaters(columns):
+    graph = three_by_three_grid()
+
+    attach_random_data(graph, columns)
+
+    assignment = random_assignment(graph, 3)
+
+    updaters = votes_updaters(columns)
+    return Partition(graph, assignment, updaters)
+
+
+def attach_random_data(graph, columns):
+    for node in graph.nodes:
+        for col in columns:
+            graph.nodes[node][col] = random.randint(1, 1000)
+
+
+def test_tally_multiple_columns():
+    graph = three_by_three_grid()
+    attach_random_data(graph, ['D', 'R'])
+    updaters = {'total': tally_factory(['D', 'R'], alias='total')}
+    assignment = {i: 1 if i in range(4) else 2 for i in range(9)}
+
+    partition = Partition(graph, assignment, updaters)
+    expected_total_in_district_one = sum(
+        graph.nodes[i]['D'] + graph.nodes[i]['R'] for i in range(4))
+    assert partition['total'][1] == expected_total_in_district_one
+
+
+def test_vote_totals_are_positive():
+    partition = setup_for_proportion_updaters(['D', 'R'])
+    assert all(count > 0 for count in partition['total_votes'].values())
+
+
+def test_vote_proportion_updater_returns_percentage():
+    initial_partition = setup_for_proportion_updaters(['D', 'R'])
+
+    # The first update gives a percentage
+    assert all(0 < value for value in initial_partition['D%'].values())
+    assert all(value < 1 for value in initial_partition['D%'].values())
+    assert all(0 < value for value in initial_partition['R%'].values())
+    assert all(value < 1 for value in initial_partition['R%'].values())
+
+
+def test_vote_proportion_returns_nan_if_total_votes_is_zero():
+    columns = ['D', 'R']
+    graph = three_by_three_grid()
+    for node in graph.nodes:
+        for col in columns:
+            graph.nodes[node][col] = 0
+    updaters = votes_updaters(columns)
+    assignment = random_assignment(graph, 3)
+
+    partition = Partition(graph, assignment, updaters)
+
+    assert all(math.isnan(value) for value in partition['D%'].values())
+    assert all(math.isnan(value) for value in partition['R%'].values())
+
+
+def test_vote_proportion_updater_returns_percentage_on_later_steps():
+    columns = ['D', 'R']
+    graph = three_by_three_grid()
+    attach_random_data(graph, columns)
+    assignment = random_assignment(graph, 3)
+    updaters = {**votes_updaters(columns), 'cut_edges': cut_edges}
+
+    initial_partition = Partition(graph, assignment, updaters)
+
+    chain = MarkovChain(propose_random_flip, lambda x: True,
+                        lambda x: True, initial_partition, total_steps=10)
+    for partition in chain:
+        assert all(0 < value for value in partition['D%'].values())
+        assert all(value < 1 for value in partition['D%'].values())
+        assert all(0 < value for value in partition['R%'].values())
+        assert all(value < 1 for value in partition['R%'].values())
+
+
+def test_vote_proportion_field_has_key_for_each_district():
+    partition = setup_for_proportion_updaters(['D', 'R'])
+    assert set(partition['D%'].keys()) == set(partition.parts.keys())
+
+
+def test_vote_proportions_sum_to_one():
+    partition = setup_for_proportion_updaters(['D', 'R'])
+
+    assert all(abs(1 - partition['D%'][i] - partition['R%'][i]) < 0.001 for i in partition['D%'])
