@@ -4,7 +4,8 @@ import networkx
 from rundmcmc.chain import MarkovChain
 from rundmcmc.make_graph import (add_data_to_graph, construct_graph,
                                  get_assignment_dict)
-from rundmcmc.partition import Partition, propose_random_flip
+from rundmcmc.partition import Partition
+from rundmcmc.proposals import propose_random_flip
 from rundmcmc.updaters import cut_edges, tally_factory
 from rundmcmc.validity import Validator, contiguous, single_flip_contiguous
 

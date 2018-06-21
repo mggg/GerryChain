@@ -1,6 +1,7 @@
 import networkx
 
-from rundmcmc.partition import Partition, propose_random_flip
+from rundmcmc.partition import Partition
+from rundmcmc.proposals import propose_random_flip
 from rundmcmc.updaters import cut_edges
 
 

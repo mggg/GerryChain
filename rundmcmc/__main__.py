@@ -3,7 +3,8 @@ import networkx.readwrite
 
 from rundmcmc.chain import MarkovChain
 from rundmcmc.make_graph import get_assignment_dict
-from rundmcmc.partition import Partition, propose_random_flip
+from rundmcmc.partition import Partition
+from rundmcmc.proposals import propose_random_flip
 from rundmcmc.scores import mean_median
 from rundmcmc.updaters import cut_edges, tally_factory
 from rundmcmc.validity import Validator, contiguous
