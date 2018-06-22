@@ -2,6 +2,10 @@ import json
 
 import geopandas as gp
 import networkx.readwrite
+import psutil as ps
+import matplotlib.pyplot as plt
+import sys
+import os
 
 from rundmcmc.chain import MarkovChain
 from rundmcmc.make_graph import add_data_to_graph, get_assignment_dict
@@ -36,16 +40,20 @@ def always_accept(partition):
 
 
 def print_summary(partition, scores):
+    bins = []
     print("")
     for name, score in scores.items():
         print(f"{name}: {score(partition, 'PR_DV08%')}")
+        bins += [{name: score(partition, 'PR_DV08%')}]
+
+    return bins
 
 
 def main():
     initial_partition = example_partition()
 
     chain = MarkovChain(propose_random_flip, Validator([contiguous]), always_accept,
-                        initial_partition, total_steps=100)
+                        initial_partition, total_steps=2**15)
 
     scores = {
         'Efficiency Gap': efficiency_gap,
@@ -53,8 +61,38 @@ def main():
         'Mean-Thirdian': mean_thirdian
     }
 
+    process = ps.Process(os.getpid())
+    start = process.memory_info().rss
+
+    hist = []
+    mem_usage = []
+    num_inside = []
+
     for partition in chain:
-        print_summary(partition, scores)
+        data = print_summary(partition, scores)
+        hist += data
+
+        """
+            Try and mock a histogram by tracking all the data from start to
+            finish on a billion iterations of the chain.
+        """
+        available = process.memory_info().rss
+        used = available
+        mem_usage += [(used - start) / 1000000]
+        num_inside += [len(mem_usage)]
+
+    iterations = list(range(0, len(mem_usage)))
+
+    """
+        Generate histograms of how the number of things in the histogram scale
+        compared to how much memory is actually being used.
+    """
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.scatter(iterations, mem_usage, c="r", label="Memory used (kb)")
+    ax.scatter(iterations, num_inside, c="b", label="Entries in list")
+    plt.legend(loc="upper left")
+    plt.show()
 
 
 if __name__ == "__main__":
