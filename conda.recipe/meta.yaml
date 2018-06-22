@@ -26,6 +26,7 @@ requirements:
 test:
   source_files:
     - tests
+    - rundmcmc/testData
   requires:
     - pytest
     - pytest-cov
