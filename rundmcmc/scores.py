@@ -21,7 +21,6 @@ def efficiency_gap(partition, proportion_column_name):
 
 
 def final_report():
-    with open('../test_run.txt') as f:
+    with open('../tests/test_run.txt') as f:
         f = f.read()
         print(f)
-    
