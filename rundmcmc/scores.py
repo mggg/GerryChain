@@ -18,3 +18,10 @@ def efficiency_gap(partition, proportion_column_name):
     seats_share = seats / len(vote_shares_by_district)
     total_vote_share = numpy.mean(vote_shares_by_district)
     return 2 * total_vote_share - seats_share
+
+
+def final_report():
+    with open('../test_run.txt') as f:
+        f = f.read()
+        print(f)
+    
