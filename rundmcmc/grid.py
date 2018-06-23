@@ -65,7 +65,7 @@ class Grid(Partition):
         return [[self.assignment[(i, j)] for i in range(m)] for j in range(n)]
 
 
-def create_grid_graph(self, dimensions, with_diagonals):
+def create_grid_graph(dimensions, with_diagonals):
     if len(dimensions) != 2:
         raise ValueError("Expected two dimensions.")
     m, n = dimensions
