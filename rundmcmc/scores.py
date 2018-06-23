@@ -26,3 +26,9 @@ def efficiency_gap(partition, col1='D', col2='R', total='total_votes'):
 
 def wasted_votes(partition, col1='D', col2='R'):
     return sum(partition[col1][part] - partition[col2][part] for part in partition.parts)
+
+
+def final_report():
+    with open('../tests/test_run.txt') as f:
+        f = f.read()
+        print(f)
