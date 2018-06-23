@@ -2,13 +2,13 @@ import json
 
 import geopandas as gp
 import networkx.readwrite
-from rundmcmc.chain import MarkovChain
+
+from rundmcmc.defaults import BasicChain
 from rundmcmc.make_graph import add_data_to_graph, get_assignment_dict
 from rundmcmc.partition import Partition
-from rundmcmc.proposals import propose_random_flip
-from rundmcmc.scores import efficiency_gap, mean_median, mean_thirdian, final_report
+from rundmcmc.scores import (efficiency_gap, final_report, mean_median,
+                             mean_thirdian)
 from rundmcmc.updaters import cut_edges, votes_updaters
-from rundmcmc.validity import Validator, contiguous
 
 
 def example_partition():
@@ -30,10 +30,6 @@ def example_partition():
     return Partition(graph, assignment, updaters)
 
 
-def always_accept(partition):
-    return True
-
-
 def print_summary(partition, scores):
     print("")
     for name, score in scores.items():
@@ -43,8 +39,7 @@ def print_summary(partition, scores):
 def main():
     initial_partition = example_partition()
 
-    chain = MarkovChain(propose_random_flip, Validator([contiguous]), always_accept,
-                        initial_partition, total_steps=100)
+    chain = BasicChain(initial_partition, total_steps=100)
 
     scores = {
         'Efficiency Gap': efficiency_gap,
