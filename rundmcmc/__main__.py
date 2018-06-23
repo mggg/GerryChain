@@ -2,12 +2,11 @@ import json
 
 import geopandas as gp
 import networkx.readwrite
-
 from rundmcmc.chain import MarkovChain
 from rundmcmc.make_graph import add_data_to_graph, get_assignment_dict
 from rundmcmc.partition import Partition
 from rundmcmc.proposals import propose_random_flip
-from rundmcmc.scores import efficiency_gap, mean_median, mean_thirdian
+from rundmcmc.scores import efficiency_gap, mean_median, mean_thirdian, final_report
 from rundmcmc.updaters import cut_edges, votes_updaters
 from rundmcmc.validity import Validator, contiguous
 
@@ -59,3 +58,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    final_report()
