@@ -29,7 +29,7 @@ class Grid(Partition):
         """
         if dimensions:
             self.dimensions = dimensions
-            graph = self._create_grid(dimensions, with_diagonals)
+            graph = create_grid_graph(dimensions, with_diagonals)
 
             if not assignment:
                 thresholds = tuple(math.floor(n / 2) for n in self.dimensions)
@@ -64,23 +64,24 @@ class Grid(Partition):
         m, n = self.dimensions
         return [[self.assignment[(i, j)] for i in range(m)] for j in range(n)]
 
-    def _create_grid(self, dimensions, with_diagonals):
-        if len(dimensions) != 2:
-            raise ValueError("Expected two dimensions.")
-        m, n = dimensions
-        graph = networkx.generators.lattice.grid_2d_graph(m, n)
 
-        if with_diagonals:
-            nw_to_se = [((i, j), (i + 1, j + 1)) for i in range(m - 1) for j in range(n - 1)]
-            sw_to_ne = [((i, j + 1), (i + 1, j)) for i in range(m - 1) for j in range(n - 1)]
-            diagonal_edges = nw_to_se + sw_to_ne
-            graph.add_edges_from(diagonal_edges)
+def create_grid_graph(self, dimensions, with_diagonals):
+    if len(dimensions) != 2:
+        raise ValueError("Expected two dimensions.")
+    m, n = dimensions
+    graph = networkx.generators.lattice.grid_2d_graph(m, n)
 
-        return graph
+    if with_diagonals:
+        nw_to_se = [((i, j), (i + 1, j + 1)) for i in range(m - 1) for j in range(n - 1)]
+        sw_to_ne = [((i, j + 1), (i + 1, j)) for i in range(m - 1) for j in range(n - 1)]
+        diagonal_edges = nw_to_se + sw_to_ne
+        graph.add_edges_from(diagonal_edges)
+
+    return graph
 
 
 def color_half(node, threshold=5):
-    x, y = node
+    x = node[0]
     return 0 if x <= threshold else 1
 
 
