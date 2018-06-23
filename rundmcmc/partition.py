@@ -13,6 +13,13 @@ class Partition:
 
     def __init__(self, graph=None, assignment=None, updaters=None,
                  parent=None, flips=None):
+        """
+        :graph: the underlying graph (networkx.Graph)
+        :assignment: dict assigning nodes to districts. Defaults to uniformly
+        assigning all nodes to district 0.
+        :updaters: dict from names of attributes of the Partition to the functions
+        that compute those attributes.
+        """
         if parent:
             self._from_parent(parent, flips)
         else:
@@ -23,6 +30,13 @@ class Partition:
     def _first_time(self, graph, assignment, updaters):
         self.graph = graph
         self.assignment = assignment
+
+        if not assignment:
+            assignment = {node: 0 for node in graph.nodes}
+
+        if not updaters:
+            updaters = dict()
+
         self.updaters = updaters
 
         self.parent = None
@@ -68,6 +82,11 @@ class Partition:
                 self._cache[key] = self.updaters[key](self)
 
     def merge(self, flips):
+        """
+        :flips: dict assigning nodes of the graph to their new districts
+        :returns: A new instance representing the partition obtained by performing the given flips
+        on this partition.
+        """
         return self.__class__(parent=self, flips=flips)
 
     def crosses_parts(self, edge):
