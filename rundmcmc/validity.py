@@ -220,3 +220,8 @@ def districts_within_tolerance(partition, attrName="population", percentage=.01)
         withinTol = True
 
     return withinTol
+
+
+def no_vanishing_districts(partition):
+    parts = partition.parts
+    return all(len(nodes) > 0 for part, nodes in parts.items())

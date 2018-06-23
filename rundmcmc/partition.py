@@ -45,9 +45,15 @@ class Partition:
 
     def _update_parts(self):
         flows = flows_from_changes(self.parent.assignment, self.flips)
-        self.parts = {part: self.parent.parts[part] for part in self.parent.parts}
+
+        # Parts must ontinue to be a defaultdict, so that new parts can appear.
+        self.parts = collections.defaultdict(set, self.parent.parts)
+
         for part, flow in flows.items():
             self.parts[part] = (self.parent.parts[part] | flow['in']) - flow['out']
+
+        # We do not want empty parts.
+        self.parts = {part: nodes for part, nodes in self.parts.items() if len(nodes) > 0}
 
     def _update(self):
         self._cache = dict()
@@ -57,7 +63,7 @@ class Partition:
                 self._cache[key] = self.updaters[key](self)
 
     def merge(self, flips):
-        return Partition(parent=self, flips=flips)
+        return self.__class__(parent=self, flips=flips)
 
     def crosses_parts(self, edge):
         return self.assignment[edge[0]] != self.assignment[edge[1]]
