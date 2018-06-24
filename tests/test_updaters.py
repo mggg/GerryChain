@@ -9,7 +9,7 @@ from rundmcmc.chain import MarkovChain
 from rundmcmc.make_graph import get_assignment_dict
 from rundmcmc.partition import Partition
 from rundmcmc.proposals import propose_random_flip
-from rundmcmc.updaters import cut_edges, tally_factory, votes_updaters
+from rundmcmc.updaters import Tally, cut_edges, votes_updaters
 from rundmcmc.validity import Validator, contiguous, single_flip_contiguous
 
 
@@ -56,7 +56,7 @@ def test_Partition_can_update_stats():
     graph.nodes[1]['stat'] = 2
     graph.nodes[2]['stat'] = 3
 
-    updaters = {'total_stat': tally_factory('stat', alias='total_stat')}
+    updaters = {'total_stat': Tally('stat', alias='total_stat')}
 
     partition = Partition(graph, assignment, updaters)
     assert partition['total_stat'][2] == 3
@@ -119,7 +119,7 @@ def attach_random_data(graph, columns):
 def test_tally_multiple_columns():
     graph = three_by_three_grid()
     attach_random_data(graph, ['D', 'R'])
-    updaters = {'total': tally_factory(['D', 'R'], alias='total')}
+    updaters = {'total': Tally(['D', 'R'], alias='total')}
     assignment = {i: 1 if i in range(4) else 2 for i in range(9)}
 
     partition = Partition(graph, assignment, updaters)
