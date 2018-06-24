@@ -1,6 +1,6 @@
 
 import psutil as ps
-
+import os
 
 class Bins:
     """
@@ -13,10 +13,7 @@ class Bins:
         it.
     """
     def __init__(self):
-        self.mem = ps.virtual_memory()
-        self.total_memory = self.mem[0]
-        self.raw_available_memory = self.mem[1]
-        self.percent_available_memory = self.mem[2]
+        self.mem = ps.Process(os.getpid())
     
 
     @staticmethod
@@ -32,4 +29,9 @@ if __name__ == "__main__":
 """
     Note that this should calculate percent of memory used relative to the
     start; i.e. our starting point is 0% memory used *by the histogram*.
+
+    Then, for large numbers of iterations, we can write (or stream) the data to
+    separate files and map the data to bins in each file. If we have n files and
+    want to map into k bins, then we have n*k total bins; then, we simply have
+    to reduce all n*k bins to k bins.
 """

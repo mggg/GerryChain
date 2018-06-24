@@ -53,7 +53,7 @@ def main():
     initial_partition = example_partition()
 
     chain = MarkovChain(propose_random_flip, Validator([contiguous]), always_accept,
-                        initial_partition, total_steps=2**15)
+                        initial_partition, total_steps=2**10)
 
     scores = {
         'Efficiency Gap': efficiency_gap,
@@ -63,6 +63,7 @@ def main():
 
     process = ps.Process(os.getpid())
     start = process.memory_info().rss
+    total = ps.virtual_memory()[0]
 
     hist = []
     mem_usage = []
@@ -78,7 +79,7 @@ def main():
         """
         available = process.memory_info().rss
         used = available
-        mem_usage += [(used - start) / 1000000]
+        mem_usage += [100 * ((used - start) / total)]
         num_inside += [len(mem_usage)]
 
     iterations = list(range(0, len(mem_usage)))
@@ -87,11 +88,7 @@ def main():
         Generate histograms of how the number of things in the histogram scale
         compared to how much memory is actually being used.
     """
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.scatter(iterations, mem_usage, c="r", label="Memory used (kb)")
-    ax.scatter(iterations, num_inside, c="b", label="Entries in list")
-    plt.legend(loc="upper left")
+    plt.scatter(iterations, mem_usage, c="r", label="% memory used")
     plt.show()
 
 
