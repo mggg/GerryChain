@@ -26,7 +26,9 @@ class BasicChain(MarkovChain):
         """
         if not initial_state['cut_edges']:
             raise ValueError('BasicChain needs the Partition to have a cut_edges updater.')
+
         if not initial_state['population']:
             raise ValueError('BasicChain needs the Partition to have a population updater.')
-        super().__init__(self, propose_random_flip, default_validator,
-                         always_accept, initial_state, total_steps)
+
+        super().__init__(propose_random_flip, default_validator,
+                         always_accept, initial_state, total_steps=total_steps)

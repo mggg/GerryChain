@@ -3,7 +3,7 @@ import math
 import networkx
 
 from rundmcmc.partition import Partition
-from rundmcmc.updaters import cut_edges
+from rundmcmc.updaters import Tally, cut_edges
 
 
 class Grid(Partition):
@@ -36,7 +36,7 @@ class Grid(Partition):
                 assignment = {node: color_quadrants(node, thresholds) for node in graph.nodes}
 
             if not updaters:
-                updaters = {'cut_edges': cut_edges}
+                updaters = {'cut_edges': cut_edges, 'population': Tally('population')}
 
             super().__init__(graph, assignment, updaters)
         elif parent:
@@ -77,7 +77,21 @@ def create_grid_graph(dimensions, with_diagonals):
         diagonal_edges = nw_to_se + sw_to_ne
         graph.add_edges_from(diagonal_edges)
 
+    give_constant_attribute(graph, 'population', 1)
+    tag_boundary_nodes(graph, dimensions)
+
     return graph
+
+
+def give_constant_attribute(graph, attribute, value):
+    for node in graph.nodes:
+        graph.nodes[node][attribute] = value
+
+
+def tag_boundary_nodes(graph, dimensions):
+    m, n = dimensions
+    for node in graph.nodes:
+        graph.nodes[node]['boundary_node'] = node[0] in [0, m - 1] or node[1] in [0, n - 1]
 
 
 def color_half(node, threshold=5):
