@@ -67,7 +67,13 @@ def votes_updaters(columns, election_name=''):
 
 class Tally:
     """
-    An updater for 
+    An updater for keeping a tally of one or more node attributes.
+
+    :fields: the list of node attributes that you want to tally. Or a just a
+    single attribute name as a string.
+    :alias: the aliased name of this Tally (meaning, the key corresponding to
+    this Tally in the Partition's updaters dictionary)
+    :dtype: the type (int, float, etc.) that you want the tally to have
     """
 
     def __init__(self, fields, alias=None, dtype=int):
