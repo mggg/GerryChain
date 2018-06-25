@@ -19,6 +19,22 @@ def cut_edges(partition):
     return (parent['cut_edges'] | new_cuts) - obsolete_cuts
 
 
+def max_edge_cuts(partition):
+    """returns wes computation for max number of edge cuts... not well documented,
+    and a vague upper bound (to be made smaller if possible)
+
+    inputs:
+    :partition: a partition instance.
+
+    returns: an integer value
+
+    """
+    # TODO need number of frozen edges of graph
+    numFrozen = 0
+    numDists = len(set(partition.assignment.values()))
+    return 2 * (2 * len(partition.graph.nodes) + (numDists - numFrozen) - 6)
+
+
 class Proportion:
     def __init__(self, tally_name, total_name):
         self.tally_name = tally_name

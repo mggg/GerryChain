@@ -1,21 +1,6 @@
 import collections
 
-from rundmcmc.updaters import flows_from_changes
-
-
-def max_edge_cuts(partition):
-    """returns wes computation for max number of edge cuts... not well documented,
-    and a vague upper bound (to be made smaller if possible)
-
-    inputs:
-    :partition: a partition instance.
-
-    returns: an integer value
-
-    """
-    # TODO need number of frozen edges of graph
-    numFrozen = 0
-    return 2 * (2 * len(partition.graph.nodes) + len(partition.assignment) - numFrozen - 6)
+from rundmcmc.updaters import flows_from_changes, max_edge_cuts
 
 
 class Partition:
