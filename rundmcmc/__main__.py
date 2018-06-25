@@ -21,13 +21,13 @@ def example_partition():
     graph = networkx.readwrite.json_graph.adjacency_graph(graph_json)
 
     assignment = get_assignment_dict(df, "GEOID10", "CD")
-    
+
     add_data_to_graph(df, graph, ['PR_DV08', 'PR_RV08', 'POP100', 'COUNTYFP10'], id_col='GEOID10')
 
     updaters = {
         **votes_updaters(['PR_DV08', 'PR_RV08'], election_name='08'),
         'population': Tally('POP100', alias='population'),
-        'cut_edges': cut_edges
+        'cut_edges': cut_edges,
         'counties': county_splits("counties", "COUNTYFP10")
     }
 
@@ -42,7 +42,7 @@ def print_summary(partition, scores):
 
 def main():
     initial_partition = example_partition()
-    
+
     validator = Validator([single_flip_contiguous, refuse_new_splits("counties")])
     chain = MarkovChain(propose_random_flip, validator, always_accept,
                         initial_partition, total_steps=1000)
