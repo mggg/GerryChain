@@ -6,6 +6,19 @@ import networkx.algorithms.shortest_paths.weighted as nx_path
 from networkx import NetworkXNoPath
 
 
+def L1_reciprocal_polsby_popper(partition):
+    return sum(1 / value for value in partition['polsby_popper'].values())
+
+
+class LowerBound:
+    def __init__(self, func, bound):
+        self.func = func
+        self.bound = bound
+
+    def __call__(self, *args, **kwargs):
+        return self.func(*args, **kwargs) >= self.bound
+
+
 class Validator:
     def __init__(self, constraints):
         """:constraints: List of validator functions that will check partitions."""
