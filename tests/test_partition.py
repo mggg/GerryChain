@@ -47,3 +47,21 @@ def test_Partition_does_not_mutate_parent():
     # the old partition's parts should be preserved
 
     assert partition.parts[1] == {0, 1} and partition.parts[2] == {2}
+
+
+def test_partition_can_create_new_parts_in_flips():
+    partition = example_partition()
+    # Assign 1 to a part that doesn't exist in partition (99)
+    flip = {1: 99}
+    new_partition = partition.merge(flip)
+    assert 1 in new_partition.parts[99]
+
+
+def test_partition_has_no_empty_parts():
+    partition = example_partition()
+
+    flips = {node: 99 for node in partition.graph.nodes}
+    new_partition = partition.merge(flips)
+    parts = new_partition.parts
+
+    assert all(len(parts[part]) > 0 for part in parts)

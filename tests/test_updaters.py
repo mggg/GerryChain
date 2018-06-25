@@ -9,7 +9,8 @@ from rundmcmc.chain import MarkovChain
 from rundmcmc.make_graph import get_assignment_dict
 from rundmcmc.partition import Partition
 from rundmcmc.proposals import propose_random_flip
-from rundmcmc.updaters import cut_edges, tally_factory, votes_updaters
+from rundmcmc.updaters import (Tally, cut_edges, cut_edges_by_part,
+                               votes_updaters)
 from rundmcmc.validity import Validator, contiguous, single_flip_contiguous
 
 
@@ -42,9 +43,6 @@ def test_implementation_of_cut_edges_matches_naive_method():
     naive_cut_edges = {edge for edge in graph.edges
                        if new_partition.crosses_parts(edge)}
 
-    print(result)
-    print(naive_cut_edges)
-
     assert edge_set_equal(result, naive_cut_edges)
 
 
@@ -56,7 +54,7 @@ def test_Partition_can_update_stats():
     graph.nodes[1]['stat'] = 2
     graph.nodes[2]['stat'] = 3
 
-    updaters = {'total_stat': tally_factory('stat', alias='total_stat')}
+    updaters = {'total_stat': Tally('stat', alias='total_stat')}
 
     partition = Partition(graph, assignment, updaters)
     assert partition['total_stat'][2] == 3
@@ -119,7 +117,7 @@ def attach_random_data(graph, columns):
 def test_tally_multiple_columns():
     graph = three_by_three_grid()
     attach_random_data(graph, ['D', 'R'])
-    updaters = {'total': tally_factory(['D', 'R'], alias='total')}
+    updaters = {'total': Tally(['D', 'R'], alias='total')}
     assignment = {i: 1 if i in range(4) else 2 for i in range(9)}
 
     partition = Partition(graph, assignment, updaters)
@@ -185,3 +183,80 @@ def test_vote_proportions_sum_to_one():
     partition = setup_for_proportion_updaters(['D', 'R'])
 
     assert all(abs(1 - partition['D%'][i] - partition['R%'][i]) < 0.001 for i in partition['D%'])
+
+
+def test_cut_edges_doesnt_duplicate_edges_with_different_order_of_nodes():
+    graph = three_by_three_grid()
+    assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
+    updaters = {'cut_edges': cut_edges}
+    partition = Partition(graph, assignment, updaters)
+    # 112    111
+    # 112 -> 121
+    # 222    222
+    flip = {4: 2, 2: 1, 5: 1}
+
+    new_partition = Partition(parent=partition, flips=flip)
+
+    result = new_partition['cut_edges']
+
+    for edge in result:
+        assert (edge[1], edge[0]) not in result
+
+
+def test_cut_edges_can_handle_multiple_flips():
+    graph = three_by_three_grid()
+    assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
+    updaters = {'cut_edges': cut_edges}
+    partition = Partition(graph, assignment, updaters)
+    # 112    111
+    # 112 -> 121
+    # 222    222
+    flip = {4: 2, 2: 1, 5: 1}
+
+    new_partition = Partition(parent=partition, flips=flip)
+
+    result = new_partition['cut_edges']
+
+    naive_cut_edges = {tuple(sorted(edge)) for edge in graph.edges
+                       if new_partition.crosses_parts(edge)}
+    assert result == naive_cut_edges
+
+
+def test_cut_edges_by_part_doesnt_duplicate_edges_with_different_order_of_nodes():
+    graph = three_by_three_grid()
+    assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
+    updaters = {'cut_edges': cut_edges_by_part}
+    partition = Partition(graph, assignment, updaters)
+    # 112    111
+    # 112 -> 121
+    # 222    222
+    flip = {4: 2, 2: 1, 5: 1}
+
+    new_partition = Partition(parent=partition, flips=flip)
+
+    result = new_partition['cut_edges']
+
+    for part in result:
+        for edge in result[part]:
+            assert (edge[1], edge[0]) not in result
+
+
+def test_cut_edges_by_part_gives_same_total_edges_as_naive_method():
+    graph = three_by_three_grid()
+    assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
+    updaters = {'cut_edges': cut_edges_by_part}
+    partition = Partition(graph, assignment, updaters)
+    # 112    111
+    # 112 -> 121
+    # 222    222
+    flip = {4: 2, 2: 1, 5: 1}
+
+    new_partition = Partition(parent=partition, flips=flip)
+
+    result = new_partition['cut_edges']
+    naive_cut_edges = {tuple(sorted(edge)) for edge in graph.edges
+                       if new_partition.crosses_parts(edge)}
+
+    print(result)
+    print(naive_cut_edges)
+    assert naive_cut_edges == {tuple(sorted(edge)) for part in result for edge in result[part]}

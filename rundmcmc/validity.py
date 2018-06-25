@@ -201,22 +201,23 @@ def fast_local_connected(partition, flips=None):
 
 
 # TODO make attrName and percentage configurable
-def districts_within_tolerance(partition, attrName="population", percentage=.01):
+def districts_within_tolerance(partition, attribute_name="population", percentage=0.1):
     """
     :partition: partition class instance
     :attrName: string that is the name of an updater in partition
     :percentage: what percent difference is allowed
     :return: boolean of if the districts are within specified tolerance
     """
-    withinTol = False
-
     if percentage >= 1:
         percentage *= 0.01
 
-    values = [x for x in partition.fields[attrName].values()]
-    maxdiff = max(values) - min(values)
+    values = [x for x in partition[attribute_name].values()]
+    max_difference = max(values) - min(values)
 
-    if (maxdiff) <= percentage * min(values):
-        withinTol = True
+    within_tolerance = max_difference <= percentage * min(values)
+    return within_tolerance
 
-    return withinTol
+
+def no_vanishing_districts(partition):
+    parts = partition.parts
+    return all(len(nodes) > 0 for part, nodes in parts.items())
