@@ -13,8 +13,6 @@ def put_edges_into_parts(edges, assignment):
         by_part[assignment[edge[0]]].add(edge)
         by_part[assignment[edge[1]]].add(edge)
     return by_part
-    # return {part: {tuple(sorted(edge)) for edge in edges if touches_part(edge, part, partition)}
-    #        for part in partition.parts}
 
 
 def new_cuts(partition):
