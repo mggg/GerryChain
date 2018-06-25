@@ -18,6 +18,6 @@ def propose_random_flip(partition):
     # self loop
     nbrs = set([partition.assignment[x] for x in partition.graph.neighbors[flipped_node]])
     if random.random() < 1.0 - (len(nbrs) * 1.0 / partition.max_edge_cuts):
-        flip = {flipped_node:partition.assignment[flipped_node]}
+        flip = {flipped_node: partition.assignment[flipped_node]}
 
     return flip
