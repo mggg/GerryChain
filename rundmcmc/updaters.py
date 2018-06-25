@@ -9,13 +9,16 @@ def cut_edges(partition):
         return {edge for edge in partition.graph.edges
                 if partition.crosses_parts(edge)}
     # Edges that weren't cut, but now are cut
-    new_cuts = {(node, neighbor) for node in flips.keys()
+    # We sort the tuples to make sure we don't accidentally end
+    # up with both (4,5) and (5,4) (e.g.) in it
+    new_cuts = {tuple(sorted((node, neighbor))) for node in flips
             for neighbor in partition.graph[node]
             if partition.crosses_parts((node, neighbor))}
     # Edges that were cut, but now are not
-    obsolete_cuts = {(node, neighbor) for node in flips.keys()
+    obsolete_cuts = {tuple(sorted((node, neighbor))) for node in flips
             for neighbor in partition.graph[node]
             if not partition.crosses_parts((node, neighbor))}
+
     return (parent['cut_edges'] | new_cuts) - obsolete_cuts
 
 
@@ -102,7 +105,7 @@ class Tally:
         """
         tally = collections.defaultdict(self.dtype)
         for node, part in partition.assignment.items():
-            tally[part] += sum_up_node_attributes(partition.graph, node, self.fields)
+            tally[part] += self._get_tally_from_node(partition.graph, node, self.fields)
         return tally
 
     def _update_tally(self, partition):
@@ -131,9 +134,8 @@ class Tally:
 
         return {**old_tally, **new_tally}
 
-
-def sum_up_node_attributes(graph, node, attributes):
-    return sum(graph.nodes[node][field] for field in attributes)
+    def _get_tally_from_node(self, partition, node):
+        return sum(partition.graph.nodes[node][field] for field in self.fields)
 
 
 def compute_out_flow(graph, fields, flow):

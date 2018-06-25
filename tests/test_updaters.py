@@ -42,9 +42,6 @@ def test_implementation_of_cut_edges_matches_naive_method():
     naive_cut_edges = {edge for edge in graph.edges
                        if new_partition.crosses_parts(edge)}
 
-    print(result)
-    print(naive_cut_edges)
-
     assert edge_set_equal(result, naive_cut_edges)
 
 
@@ -185,3 +182,21 @@ def test_vote_proportions_sum_to_one():
     partition = setup_for_proportion_updaters(['D', 'R'])
 
     assert all(abs(1 - partition['D%'][i] - partition['R%'][i]) < 0.001 for i in partition['D%'])
+
+
+def test_cut_edges_doesnt_duplicate_edges_with_different_order_of_nodes():
+    graph = three_by_three_grid()
+    assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
+    updaters = {'cut_edges': cut_edges}
+    partition = Partition(graph, assignment, updaters)
+    # 112    111
+    # 112 -> 121
+    # 222    222
+    flip = {4: 2, 2: 1, 5: 1}
+
+    new_partition = Partition(parent=partition, flips=flip)
+
+    result = new_partition['cut_edges']
+
+    for edge in result:
+        assert (edge[1], edge[0]) not in result
