@@ -20,11 +20,11 @@ def normalized_efficiency_gap(partition, proportion_column_name):
     return 2 * total_vote_share - seats_share
 
 
-def efficiency_gap(partition, col1='D', col2='R', total='total_votes'):
+def efficiency_gap(partition, col1='PR_DV08', col2='PR_RV08', total='total_votes08'):
     return wasted_votes(partition, col1, col2) / sum(partition[total].values())
 
 
-def wasted_votes(partition, col1='D', col2='R'):
+def wasted_votes(partition, col1='PR_DV08', col2='PR_RV08'):
     return sum(partition[col1][part] - partition[col2][part] for part in partition.parts)
 
 

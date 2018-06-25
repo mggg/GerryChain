@@ -201,7 +201,7 @@ def fast_local_connected(partition, flips=None):
 
 
 # TODO make attrName and percentage configurable
-def districts_within_tolerance(partition, attribute_name="population", percentage=0.01):
+def districts_within_tolerance(partition, attribute_name="population", percentage=0.1):
     """
     :partition: partition class instance
     :attrName: string that is the name of an updater in partition

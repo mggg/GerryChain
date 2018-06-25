@@ -6,9 +6,8 @@ import networkx.readwrite
 from rundmcmc.defaults import BasicChain
 from rundmcmc.make_graph import add_data_to_graph, get_assignment_dict
 from rundmcmc.partition import Partition
-from rundmcmc.scores import (efficiency_gap, final_report, mean_median,
-                             mean_thirdian)
-from rundmcmc.updaters import cut_edges, votes_updaters
+from rundmcmc.scores import mean_median, mean_thirdian
+from rundmcmc.updaters import Tally, cut_edges, votes_updaters
 
 
 def example_partition():
@@ -21,10 +20,11 @@ def example_partition():
 
     assignment = get_assignment_dict(df, "GEOID10", "CD")
 
-    add_data_to_graph(df, graph, ['PR_DV08', 'PR_RV08'], id_col='GEOID10')
+    add_data_to_graph(df, graph, ['PR_DV08', 'PR_RV08', 'POP100'], id_col='GEOID10')
 
     updaters = {
         **votes_updaters(['PR_DV08', 'PR_RV08'], election_name='08'),
+        'population': Tally('POP100', alias='population'),
         'cut_edges': cut_edges
     }
     return Partition(graph, assignment, updaters)
@@ -42,7 +42,6 @@ def main():
     chain = BasicChain(initial_partition, total_steps=100)
 
     scores = {
-        'Efficiency Gap': efficiency_gap,
         'Mean-Median': mean_median,
         'Mean-Thirdian': mean_thirdian
     }
@@ -53,4 +52,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    final_report()
