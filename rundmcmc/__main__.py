@@ -2,13 +2,12 @@ import json
 
 import geopandas as gp
 import networkx.readwrite
-from rundmcmc.chain import MarkovChain
+
+from rundmcmc.defaults import BasicChain
 from rundmcmc.make_graph import add_data_to_graph, get_assignment_dict
 from rundmcmc.partition import Partition
-from rundmcmc.proposals import propose_random_flip
-from rundmcmc.scores import efficiency_gap, mean_median, mean_thirdian, final_report
-from rundmcmc.updaters import cut_edges, votes_updaters
-from rundmcmc.validity import Validator, contiguous
+from rundmcmc.scores import mean_median, mean_thirdian
+from rundmcmc.updaters import Tally, cut_edges, votes_updaters
 
 
 def example_partition():
@@ -21,17 +20,14 @@ def example_partition():
 
     assignment = get_assignment_dict(df, "GEOID10", "CD")
 
-    add_data_to_graph(df, graph, ['PR_DV08', 'PR_RV08'], id_col='GEOID10')
+    add_data_to_graph(df, graph, ['PR_DV08', 'PR_RV08', 'POP100'], id_col='GEOID10')
 
     updaters = {
         **votes_updaters(['PR_DV08', 'PR_RV08'], election_name='08'),
+        'population': Tally('POP100', alias='population'),
         'cut_edges': cut_edges
     }
     return Partition(graph, assignment, updaters)
-
-
-def always_accept(partition):
-    return True
 
 
 def print_summary(partition, scores):
@@ -43,11 +39,9 @@ def print_summary(partition, scores):
 def main():
     initial_partition = example_partition()
 
-    chain = MarkovChain(propose_random_flip, Validator([contiguous]), always_accept,
-                        initial_partition, total_steps=100)
+    chain = BasicChain(initial_partition, total_steps=100)
 
     scores = {
-        'Efficiency Gap': efficiency_gap,
         'Mean-Median': mean_median,
         'Mean-Thirdian': mean_thirdian
     }
@@ -58,4 +52,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    final_report()

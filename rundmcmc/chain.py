@@ -23,6 +23,9 @@ class MarkovChain:
         :total_steps: Number of steps to run.
 
         """
+        if not is_valid(initial_state):
+            raise ValueError('The given initial_state is not valid according is_valid.')
+
         self.proposal = proposal
         self.is_valid = is_valid
         self.accept = accept
