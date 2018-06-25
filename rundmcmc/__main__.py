@@ -19,8 +19,13 @@ def main():
         'Mean-Thirdian': mean_thirdian
     }
 
+    test_counties = ["007", "099", "205", "127"]
+
     for partition in chain:
         print_summary(partition, scores)
+        for county in test_counties:
+            info = partition["counties"][county]
+            print(f"county {county}: {info.split} ({info.contains})")
 
 
 if __name__ == "__main__":

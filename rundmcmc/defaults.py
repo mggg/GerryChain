@@ -8,16 +8,19 @@ from rundmcmc.chain import MarkovChain
 from rundmcmc.make_graph import add_data_to_graph, get_assignment_dict
 from rundmcmc.partition import Partition
 from rundmcmc.proposals import propose_random_flip
-from rundmcmc.updaters import (Tally, boundary_nodes, cut_edges,
+from rundmcmc.updaters import (Tally, boundary_nodes, county_splits, cut_edges,
                                cut_edges_by_part, exterior_boundaries,
                                perimeters)
 from rundmcmc.updaters import polsby_popper_updater as polsby_popper
 from rundmcmc.updaters import votes_updaters
 from rundmcmc.validity import (Validator, districts_within_tolerance,
-                               no_vanishing_districts, single_flip_contiguous)
+                               no_vanishing_districts, refuse_new_splits,
+                               single_flip_contiguous)
 
-default_validator = Validator(
-    [single_flip_contiguous, no_vanishing_districts, districts_within_tolerance])
+default_validator = Validator([single_flip_contiguous,
+                               no_vanishing_districts,
+                               districts_within_tolerance,
+                               refuse_new_splits])
 
 
 def example_partition():
@@ -30,13 +33,14 @@ def example_partition():
 
     assignment = get_assignment_dict(df, "GEOID10", "CD")
 
-    add_data_to_graph(df, graph, ['PR_DV08', 'PR_RV08', 'POP100', 'ALAND10', 'AWATER10'],
+    add_data_to_graph(df, graph, ['PR_DV08', 'PR_RV08', 'POP100', 'ALAND10', 'COUNTYFP10'],
                       id_col='GEOID10')
 
     updaters = {
         **votes_updaters(['PR_DV08', 'PR_RV08'], election_name='08'),
         'population': Tally('POP100', alias='population'),
         'areas': Tally('ALAND10', alias='areas'),
+        'counties': county_splits('counties', 'COUNTYFP10'),
         'perimeters': perimeters,
         'exterior_boundaries': exterior_boundaries,
         'boundary_nodes': boundary_nodes,
