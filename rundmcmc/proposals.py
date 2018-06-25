@@ -1,4 +1,5 @@
 import random
+from rundmcmc.updaters import cut_edges
 
 
 def propose_random_flip(partition):
@@ -12,6 +13,11 @@ def propose_random_flip(partition):
     index = random.choice((0, 1))
 
     flipped_node, other_node = edge[index], edge[1 - index]
+
     flip = {flipped_node: partition.assignment[other_node]}
 
+    # self loop
+    numEdges = 2.0 * len(cut_edges(partition))
+    if random.random() < 1.0 - (numEdges * 1.0 / partition.max_edge_cuts):
+        flip = {flipped_node: partition.assignment[flipped_node]}
     return flip
