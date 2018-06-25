@@ -5,18 +5,27 @@ class MarkovChain:
     of a Markov chain run.
 
     Example usage:
-    >>> chain = MarkovChain(proposal, is_valid, accept, initial_state)
-    >>> for state in chain:
-    >>>     # Do whatever you want - print output, compute metrics, ...
 
-    :proposal: propose the next state from the current state
-    :is_valid: is the proposed state within the space we're walking in?
-    :accept: do we want to walk to the proposed state?
-    :initial_state:
-    :total_steps:
+    .. code-block:: python
+
+        chain = MarkovChain(proposal, is_valid, accept, initial_state)
+        for state in chain:
+            # Do whatever you want - print output, compute scores, ...
+
     """
 
     def __init__(self, proposal, is_valid, accept, initial_state, total_steps=1000):
+        """
+        :proposal: Function proposing the next state from the current state.
+        :is_valid: :class:`Validator` class instance.
+        :accept: Function accepting or rejecting the proposed state.
+        :initial_state: Initial :class:`Partition` class.
+        :total_steps: Number of steps to run.
+
+        """
+        if not is_valid(initial_state):
+            raise ValueError('The given initial_state is not valid according is_valid.')
+
         self.proposal = proposal
         self.is_valid = is_valid
         self.accept = accept
@@ -37,3 +46,6 @@ class MarkovChain:
                 self.counter += 1
                 return proposed_next_state
         raise StopIteration
+
+    def __len__(self):
+        return self.total_steps

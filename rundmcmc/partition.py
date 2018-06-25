@@ -1,66 +1,102 @@
-import random
+import collections
 
-
-def propose_random_flip(partition):
-    """Proposes a random boundary flip from the partition.
-
-    :partition: The current partition to propose a flip from.
-    :return: a dictionary of with the flipped node mapped to its new assignment
-    """
-    # TODO fix empty array issue
-    # also note only flipping 1 edge for testing purposes!!
-    edge = partition.graph.edge(partition.graph.vertex(0), partition.graph.vertex(8))
-    index = random.choice((0, 1))
-
-    if index == 1:
-        flipped_node, other_node = edge.source(), edge.target()
-    else:
-        flipped_node, other_node = edge.target(), edge.source()
-    flip = dict([(flipped_node, partition.assignment[other_node])])
-
-    return flip
+from rundmcmc.updaters import flows_from_changes, max_edge_cuts
 
 
 class Partition:
-    """Partition represents a partition of the nodes of the graph. It will perform
+    """
+    Partition represents a partition of the nodes of the graph. It will perform
     the first layer of computations at each step in the Markov chain - basic
     aggregations and calculations that we want to optimize.
 
-    :graph: reference to the networkx graph
-    :assignment: dictionary mapping nodes to their assigned parts of the partition
     """
 
-    def __init__(self, graph, assignment, updaters=None, fields=None):
+    def __init__(self, graph=None, assignment=None, updaters=None,
+                 parent=None, flips=None):
+        """
+        :graph: the underlying graph (networkx.Graph)
+        :assignment: dict assigning nodes to districts. Defaults to uniformly
+        assigning all nodes to district 0.
+        :updaters: dict from names of attributes of the Partition to the functions
+        that compute those attributes.
+        """
+        if parent:
+            self._from_parent(parent, flips)
+        else:
+            self._first_time(graph, assignment, updaters)
+
+        self._update()
+
+        self.max_edge_cuts = max_edge_cuts(self)
+
+    def _first_time(self, graph, assignment, updaters):
         self.graph = graph
         self.assignment = assignment
 
+        if not assignment:
+            assignment = {node: 0 for node in graph.nodes}
+
         if not updaters:
             updaters = dict()
+
         self.updaters = updaters
 
-        if not fields:
-            fields = {key: updater(self) for key, updater in self.updaters.items()}
-        self.fields = fields
+        self.parent = None
+        self.flips = None
 
-        self.cut_edges = [edge for edge in self.graph.edges if self.crosses_parts(edge)]
+        self.max_edge_cuts = max_edge_cuts(self)
 
-    def crosses_parts(self, edge):
-        return self.assignment[edge.source()] != self.assignment[edge.target()]
+        self.parts = collections.defaultdict(set)
+        for node, part in self.assignment.items():
+            self.parts[part].add(node)
+
+    def _from_parent(self, parent, flips):
+        self.parent = parent
+        self.flips = flips
+
+        self.assignment = {**parent.assignment, **flips}
+
+        self.graph = parent.graph
+        self.updaters = parent.updaters
+
+        self.max_edge_cuts = parent.max_edge_cuts
+
+        self._update_parts()
+
+    def __repr__(self):
+        number_of_parts = len(self.parts)
+        s = "s" if number_of_parts > 1 else ""
+        return f"Partition of a graph into {str(number_of_parts)} part{s}"
+
+    def _update_parts(self):
+        flows = flows_from_changes(self.parent.assignment, self.flips)
+
+        # Parts must ontinue to be a defaultdict, so that new parts can appear.
+        self.parts = collections.defaultdict(set, self.parent.parts)
+
+        for part, flow in flows.items():
+            self.parts[part] = (self.parent.parts[part] | flow['in']) - flow['out']
+
+        # We do not want empty parts.
+        self.parts = {part: nodes for part, nodes in self.parts.items() if len(nodes) > 0}
+
+    def _update(self):
+        self._cache = dict()
+
+        for key in self.updaters:
+            if key not in self._cache:
+                self._cache[key] = self.updaters[key](self)
 
     def merge(self, flips):
-        """Takes a dictionary of new assignments and returns the Partition
-        obtained by applying these new assignments to this instance (self)
-        of Partition.
-
-        :flips: a dictionary of nodes mapped to their new assignments
-        :return: a new Partition instance
         """
-        new_assignment = {**self.assignment, **flips}
+        :flips: dict assigning nodes of the graph to their new districts
+        :returns: A new instance representing the partition obtained by performing the given flips
+        on this partition.
+        """
+        return self.__class__(parent=self, flips=flips)
 
-        new_fields = {key: updater(self, flips) for key, updater in self.updaters.items()}
-
-        return Partition(self.graph, assignment=new_assignment,
-                         updaters=self.updaters, fields=new_fields)
+    def crosses_parts(self, edge):
+        return self.assignment[edge[0]] != self.assignment[edge[1]]
 
     def initialize_statistic(self, field):
         """
@@ -87,4 +123,9 @@ class Partition:
         return {**old_statistic, **new_statistic}
 
     def __getitem__(self, key):
-        return self.fields[key]
+        """Allows keying on a Partition instance.
+        :key: Property to access.
+        """
+        if key not in self._cache:
+            self._cache[key] = self.updaters[key](self)
+        return self._cache[key]

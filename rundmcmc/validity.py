@@ -1,21 +1,17 @@
-import pandas as pd
-from graph_tool import GraphView
-from graph_tool.topology import label_components
-import numpy as np
+
+import random
+import networkx as nx
+import networkx.algorithms.shortest_paths.weighted as nx_path
+from networkx import NetworkXNoPath
 
 
 class Validator:
     def __init__(self, constraints):
-        '''
-        :constraints: The list of functions that will check to see if your assignment is valid
-        '''
+        """:constraints: List of validator functions that will check partitions."""
         self.constraints = constraints
 
     def __call__(self, partition):
-        '''
-        :graph: the networkx graph of vtds
-        :dist_dict: the district assignment dictionary
-        '''
+        """:partition: :class:`Partition` class to check."""
 
         # check each constraint function and fail when a constraint test fails
         for constraint in self.constraints:
@@ -26,68 +22,201 @@ class Validator:
         return True
 
 
-def contiguous(partition, flips=None):
-    '''
+def single_flip_contiguous(partition, parent=None, flips=None):
+    """
+    Check if swapping the given node from its old assignment disconnects the
+    old assignment class.
 
-    :graphObj: The graph object you are working on.
-    :assignment: The assignment dictionary
+    :parition: Current :class:`.Partition` object.
 
-    :return: A list of booleans to state if the sub graph is connected.
-    '''
+    :flips: Dictionary of proposed flips, with `(nodeid: new_assignment)`
+            pairs. If `flips` is `None`, then fallback to the
+            :func:`.contiguous` check.
 
+    :returns: True if contiguous, and False otherwise.
+
+    We assume that `removed_node` belonged to an assignment class that formed a
+    connected subgraph. To see if its removal left the subgraph connected, we
+    check that the neighbors of the removed node are still connected through
+    the changed graph.
+
+    """
+    if not flips or not parent:
+        return contiguous(partition, flips)
+
+    graph = partition.graph
+    assignment_dict = parent.assignment
+
+    def proposed_assignment(node):
+        """Return the proposed assignment of the given node."""
+        if node in flips:
+            return flips[node]
+
+        return assignment_dict[node]
+
+    def partition_edge_weight(start_node, end_node, edge_attrs):
+        """
+        Compute the district edge weight, which is 1 if the nodes have the same
+        assignment, and infinity otherwise.
+        """
+        if proposed_assignment(start_node) != proposed_assignment(end_node):
+            return float("inf")
+
+        return 1
+
+    for changed_node, _ in flips.items():
+        old_neighbors = []
+        old_assignment = assignment_dict[changed_node]
+
+        for node in graph.neighbors(changed_node):
+            if proposed_assignment(node) == old_assignment:
+                old_neighbors.append(node)
+
+        if not old_neighbors:
+            # Under our assumptions, if there are no old neighbors, then the
+            # old_assignment district has vanished. It is trivially connected.
+            return True
+
+        start_neighbor = random.choice(old_neighbors)
+
+        for neighbor in old_neighbors:
+            try:
+                distance, _ = nx_path.single_source_dijkstra(graph, start_neighbor, neighbor,
+                                                             weight=partition_edge_weight)
+                if not (distance < float("inf")):
+                    return False
+            except NetworkXNoPath:
+                return False
+
+    # All neighbors of all changed nodes are connected, so the new graph is
+    # connected.
+    return True
+
+
+def contiguous(partition, parent=None, flips=None):
+    """
+    :parition: Current :class:`.Partition` object.
+    :flips: Dictionary of proposed flips, with `(nodeid: new_assignment)`
+            pairs. If `flips` is `None`, then fallback to the
+            :func:`.contiguous` check.
+
+    :returns: True if contiguous, False otherwise.
+    """
+    if not flips:
+        flips = dict()
+
+    def proposed_assignment(node):
+        """Return the proposed assignment of the given node."""
+        return partition.assignment[node]
     # TODO
 
     # Creates a dictionary where the key is the district and the value is
     # a list of VTDs that belong to that district
+    district_dict = {}
+    # TODO
+    for node in partition.graph.nodes:
+        # TODO
+        dist = proposed_assignment(node)
+        if dist in district_dict:
+            district_dict[dist].append(node)
+        else:
+            district_dict[dist] = [node]
 
-    _, dist_idxs = np.unique(partition.graph.vp.CD.a, return_index=True)
-    dists = partition.graph.vp.CD.a[dist_idxs]
-
-    for i in dists:
-        vfilt = partition.graph.new_vertex_property('bool')
-        vfilt = partition.graph.vp.CD.a == np.full(len(vfilt.a), i)
-        tmp = GraphView(partition.graph, vfilt)
-        _, hist = label_components(tmp)
-        if len(hist) != 1:
+    # Checks if the subgraph of all districts are connected(contiguous)
+    for key in district_dict:
+        # TODO
+        tmp = partition.graph.subgraph(district_dict[key])
+        if nx.is_connected(tmp) is False:
             return False
-
-    # all districts are contiguous
-    '''
-    for district in partition.districts:
-        if partition.districts[district]['contiguous'] is False:
-            return False
-    '''
 
     return True
 
 
-# TODO make attrName and percentage configurable
-def districts_within_tolerance(partition):
+def fast_connected(partition, flips=None):
     """
-    :graphObj: networkX graph object
-    :attrName: string that is the name of a field in graphObj nodes (e.g. population)
-    :assignment: dictionary with keys that are node ids and values of assigned district
+        Checks that a given partition's components are connected using
+        a simple breadth-first search.
+        :partition: Instance of Partition; contains connected components.
+        :flips: Dictionary of proposed flips.
+        :return: Boolean; Are the components of this partition connected?
+    """
+    assignment = partition.assignment
+
+    # Inverts the assignment dictionary so that lists of VTDs are keyed
+    # by their congressional districts.
+    districts = {}
+
+    for vtd in assignment:
+        district = assignment[vtd]
+        if districts.get(district, None) is None:
+            districts[district] = [vtd]
+        else:
+            districts[district] += [vtd]
+
+    # Generates a subgraph for each district and perform a BFS on it
+    # to check connectedness.
+    for district in districts:
+        adj = nx.to_dict_of_lists(partition.graph, districts[district])
+        if bfs(adj) is False:
+            return False
+
+    return True
+
+
+def bfs(graph):
+    """
+        Performs a breadth-first search on the provided graph and
+        returns true or false depending on whether the graph is
+        connected.
+        :graph: Dict-of-lists; an adjacency matrix.
+        :return: Boolean; is this graph connected?
+    """
+    q = [next(iter(graph))]
+    visited = set()
+    total_vertices = len(list(graph.keys()))
+
+    # bfs!
+    while len(q) is not 0:
+        current = q.pop(0)
+        neighbors = graph[current]
+
+        for neighbor in neighbors:
+            if neighbor not in visited:
+                visited.add(neighbor)
+                q += [neighbor]
+
+    return total_vertices == len(visited)
+
+
+def fast_local_connected(partition, flips=None):
+    """
+        Checks that a given partition's components are connected, but
+        uses a specific optimized method (with a forthcoming proof).
+        :partition: Instance of Partition; contains connected components.
+        :flips: Dictionary of proposed flips.
+        :return: Boolean; are the components of this partition connected?
+    """
+    pass
+
+
+# TODO make attrName and percentage configurable
+def districts_within_tolerance(partition, attribute_name="population", percentage=0.1):
+    """
+    :partition: partition class instance
+    :attrName: string that is the name of an updater in partition
     :percentage: what percent difference is allowed
     :return: boolean of if the districts are within specified tolerance
     """
-    withinTol = False
-    percentage = 0.01
-    attrName = 'POP10'
-
     if percentage >= 1:
         percentage *= 0.01
 
-    # get value of attrName column for each graph node
-    # TODO fixe when partition class is implemented
-    cdVals = [(partition.assignment[n], n[attrName]) for n in partition.graphObj.nodes(data=True)]
-    # get sum of all nodes per district as found in assignment
-    cdVals = pd.DataFrame(cdVals).groupby(0)[1].sum().tolist()
-    # total difference in value between any two districts
-    maxDiff = max(cdVals) - min(cdVals)
-    # get percent of smallest district (in terms of attrName)
-    percentage = percentage * min(cdVals)
+    values = [x for x in partition[attribute_name].values()]
+    max_difference = max(values) - min(values)
 
-    if maxDiff <= percentage:
-        withinTol = True
+    within_tolerance = max_difference <= percentage * min(values)
+    return within_tolerance
 
-    return withinTol
+
+def no_vanishing_districts(partition):
+    parts = partition.parts
+    return all(len(nodes) > 0 for part, nodes in parts.items())

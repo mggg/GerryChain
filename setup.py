@@ -4,6 +4,10 @@ import versioneer
 requirements = [
     # package requirements go here
     'pandas',
+    "networkx",
+    "geopandas",
+    "pysal",
+    "matplotlib",
 ]
 
 setup(
@@ -17,7 +21,7 @@ setup(
     cmdclass=versioneer.get_cmdclass(),
     entry_points={
         'console_scripts': [
-            'rundmcmc=rundmcmc.cli:cli'
+            'rundmcmc=rundmcmc.__main__:main'
         ]
     },
     install_requires=requirements,

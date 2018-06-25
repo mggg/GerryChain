@@ -1,38 +1,51 @@
-from rundmcmc.ingest import ingest
-from rundmcmc.make_graph import construct_graph, get_list_of_data, add_data_to_graph, pull_districts
-from rundmcmc.validity import contiguous, Validator
-from rundmcmc.partition import Partition, propose_random_flip
-from rundmcmc.chain import MarkovChain
-from rundmcmc.updaters import statistic_factory
-import time
+import json
+import geopandas as gp
+import networkx.readwrite
+from rundmcmc.defaults import BasicChain
+from rundmcmc.make_graph import add_data_to_graph, get_assignment_dict
+from rundmcmc.partition import Partition
+from rundmcmc.scores import mean_median, mean_thirdian
+from rundmcmc.updaters import Tally, cut_edges, votes_updaters
+
+
+def example_partition():
+    df = gp.read_file("./testData/mo_cleaned_vtds.shp")
+
+    with open("./testData/MO_graph.json") as f:
+        graph_json = json.load(f)
+
+    graph = networkx.readwrite.json_graph.adjacency_graph(graph_json)
+
+    assignment = get_assignment_dict(df, "GEOID10", "CD")
+
+    add_data_to_graph(df, graph, ['PR_DV08', 'PR_RV08', 'POP100'], id_col='GEOID10')
+
+    updaters = {
+        **votes_updaters(['PR_DV08', 'PR_RV08'], election_name='08'),
+        'population': Tally('POP100', alias='population'),
+        'cut_edges': cut_edges
+    }
+    return Partition(graph, assignment, updaters)
+
+
+def print_summary(partition, scores):
+    print("")
+    for name, score in scores.items():
+        print(f"{name}: {score(partition, 'PR_DV08%')}")
 
 
 def main():
-    graph = construct_graph(*ingest("./testData/wyoming_test.shp", "GEOID"))
+    initial_partition = example_partition()
 
-    cd_data = get_list_of_data('./testData/wyoming_test.shp', ['CD', 'ALAND'])
+    chain = BasicChain(initial_partition, total_steps=100)
 
-    add_data_to_graph(cd_data, graph, ['CD', 'ALAND'])
+    scores = {
+        'Mean-Median': mean_median,
+        'Mean-Thirdian': mean_thirdian
+    }
 
-    assignment = pull_districts(graph, 'CD')
-    validator = Validator([contiguous])
-    updaters = {'area': statistic_factory('ALAND', alias='area')}
-
-    initial_partition = Partition(graph, assignment, updaters)
-    accept = lambda x: True
-
-    n = 2**15
-    chain = MarkovChain(propose_random_flip, validator, accept, initial_partition, total_steps=n)
-
-    i = 0
-    print("starting")
-    start = time.time()
-    for step in chain:
-        # print(step.assignment)
-        if i % 2**10 == 0:
-            print(i)
-        i += 1
-    print(time.time() - start)
+    for partition in chain:
+        print_summary(partition, scores)
 
 
 if __name__ == "__main__":

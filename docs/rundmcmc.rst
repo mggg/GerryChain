@@ -4,7 +4,23 @@ rundmcmc package
 Submodules
 ----------
 
-rundmcmc.cli module
+acceptance module
+--------------------------
+
+.. automodule:: rundmcmc.acceptance
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+chain module
+---------------------
+
+.. automodule:: rundmcmc.chain
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+cli module
 -------------------
 
 .. automodule:: rundmcmc.cli
@@ -12,15 +28,7 @@ rundmcmc.cli module
     :undoc-members:
     :show-inheritance:
 
-rundmcmc.ingest module
-----------------------
-
-.. automodule:: rundmcmc.ingest
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-rundmcmc.make_graph module
+make_graph module
 --------------------------
 
 .. automodule:: rundmcmc.make_graph
@@ -28,10 +36,34 @@ rundmcmc.make_graph module
     :undoc-members:
     :show-inheritance:
 
-rundmcmc.models module
+models module
 ----------------------
 
 .. automodule:: rundmcmc.models
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+partition module
+-------------------------
+
+.. automodule:: rundmcmc.partition
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+updaters module
+------------------------
+
+.. automodule:: rundmcmc.updaters
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+validity module
+------------------------
+
+.. automodule:: rundmcmc.validity
     :members:
     :undoc-members:
     :show-inheritance:

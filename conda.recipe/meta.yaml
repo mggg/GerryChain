@@ -16,6 +16,8 @@ requirements:
     - setuptools
   run:
     - python
+    # force openblas over mkl to make download size smaller.  Note that this precludes using mkl_random
+    - nomkl
     # dependencies are defined in setup.py
     {% for dep in data['install_requires'] %}
     - {{ dep.lower() }}
@@ -24,6 +26,7 @@ requirements:
 test:
   source_files:
     - tests
+    - rundmcmc/testData
   requires:
     - pytest
     - pytest-cov
