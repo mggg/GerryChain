@@ -230,7 +230,7 @@ def refuse_new_splits(partition_county_field):
 
     """
     def _refuse_new_splits(partition):
-        for county, county_info in partition[partition_county_field].items():
+        for county_info in partition[partition_county_field].values():
             if county_info.split == CountySplit.NEW_SPLIT:
                 return False
 

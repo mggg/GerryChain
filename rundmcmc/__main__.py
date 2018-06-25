@@ -57,7 +57,6 @@ def main():
 
     test_counties = ["007", "099", "205", "127"]
     for partition in chain:
-        pass
         print_summary(partition, scores)
         for county in test_counties:
             info = partition["counties"][county]
