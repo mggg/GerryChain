@@ -226,7 +226,7 @@ def test_cut_edges_can_handle_multiple_flips():
 def test_cut_edges_by_part_doesnt_duplicate_edges_with_different_order_of_nodes():
     graph = three_by_three_grid()
     assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
-    updaters = {'cut_edges': cut_edges_by_part}
+    updaters = {'cut_edges_by_part': cut_edges_by_part}
     partition = Partition(graph, assignment, updaters)
     # 112    111
     # 112 -> 121
@@ -235,7 +235,7 @@ def test_cut_edges_by_part_doesnt_duplicate_edges_with_different_order_of_nodes(
 
     new_partition = Partition(parent=partition, flips=flip)
 
-    result = new_partition['cut_edges']
+    result = new_partition['cut_edges_by_part']
 
     for part in result:
         for edge in result[part]:
@@ -245,7 +245,7 @@ def test_cut_edges_by_part_doesnt_duplicate_edges_with_different_order_of_nodes(
 def test_cut_edges_by_part_gives_same_total_edges_as_naive_method():
     graph = three_by_three_grid()
     assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
-    updaters = {'cut_edges': cut_edges_by_part}
+    updaters = {'cut_edges_by_part': cut_edges_by_part}
     partition = Partition(graph, assignment, updaters)
     # 112    111
     # 112 -> 121
@@ -254,7 +254,7 @@ def test_cut_edges_by_part_gives_same_total_edges_as_naive_method():
 
     new_partition = Partition(parent=partition, flips=flip)
 
-    result = new_partition['cut_edges']
+    result = new_partition['cut_edges_by_part']
     naive_cut_edges = {tuple(sorted(edge)) for edge in graph.edges
                        if new_partition.crosses_parts(edge)}
 
@@ -301,7 +301,7 @@ def test_perimeters():
         graph.edges[edge]['shared_perim'] = 1
 
     assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
-    updaters = {'exterior_boundaries': exterior_boundaries, 'cut_edges': cut_edges_by_part,
+    updaters = {'exterior_boundaries': exterior_boundaries, 'cut_edges_by_part': cut_edges_by_part,
         'boundary_nodes': boundary_nodes, 'perimeters': perimeters}
     partition = Partition(graph, assignment, updaters)
 
