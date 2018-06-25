@@ -45,7 +45,8 @@ def print_summary(partition, scores):
 def main():
     initial_partition = example_partition()
 
-    chain = MarkovChain(propose_random_flip, Validator([single_flip_contiguous, refuse_new_splits("counties")]), always_accept,
+    validator = Validator([single_flip_contiguous, refuse_new_splits("counties")])
+    chain = MarkovChain(propose_random_flip, validator, always_accept,
                         initial_partition, total_steps=1000)
 
     scores = {
