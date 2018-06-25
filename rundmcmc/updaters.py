@@ -1,5 +1,14 @@
 import collections
 
+"""
+    Interactions with graph
+    ========================
+    • iterating over edges
+    • iterating over nodes
+    • keying on graph to get nodes
+    • keying on nodes to get data
+"""
+
 
 def statistic_factory(field, alias=None):
     """statistic_factory returns an updater function that updates the
