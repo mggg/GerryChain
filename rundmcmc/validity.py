@@ -1,8 +1,10 @@
-from rundmcmc.updaters import CountySplit
-from networkx import NetworkXNoPath
-import networkx.algorithms.shortest_paths.weighted as nx_path
-import networkx as nx
 import random
+
+import networkx as nx
+import networkx.algorithms.shortest_paths.weighted as nx_path
+from networkx import NetworkXNoPath
+
+from rundmcmc.updaters import CountySplit
 
 
 def L1_reciprocal_polsby_popper(partition):

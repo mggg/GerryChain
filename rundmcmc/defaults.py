@@ -13,14 +13,15 @@ from rundmcmc.updaters import (Tally, boundary_nodes, county_splits, cut_edges,
                                perimeters)
 from rundmcmc.updaters import polsby_popper_updater as polsby_popper
 from rundmcmc.updaters import votes_updaters
-from rundmcmc.validity import (Validator, districts_within_tolerance,
+from rundmcmc.validity import (L1_reciprocal_polsby_popper, LowerBound,
+                               Validator, districts_within_tolerance,
                                no_vanishing_districts, refuse_new_splits,
                                single_flip_contiguous)
 
-default_validator = Validator([single_flip_contiguous,
-                               no_vanishing_districts,
-                               districts_within_tolerance,
-                               refuse_new_splits])
+default_constraints = [single_flip_contiguous,
+                       no_vanishing_districts,
+                       districts_within_tolerance,
+                       refuse_new_splits]
 
 
 def example_partition():
@@ -53,12 +54,12 @@ def example_partition():
 
 class BasicChain(MarkovChain):
     """
-    A basic MarkovChain. The proposal is a single random flip at the boundary of a district.
-    A step is valid if the districts are connected, no districts disappear, and the
-    populations of the districts are all within 1% of one another.
-    Accepts every valid proposal.
+    The standard MarkovChain for replicating the Pennsylvania analysis. The proposal
+    is a single random flip at the boundary of a district. A step is valid if the
+    districts are connected, no districts disappear, and the populations of the districts
+    are all within 10% (TODO: 1%) of one another. Accepts every valid proposal.
 
-    Requires 'cut_edges' and 'population' updaters.
+    Requires a lot of different updaters.
     """
 
     def __init__(self, initial_state, total_steps=1000):
@@ -73,5 +74,31 @@ class BasicChain(MarkovChain):
         if not initial_state['population']:
             raise ValueError('BasicChain needs the Partition to have a population updater.')
 
-        super().__init__(propose_random_flip, default_validator,
-                         always_accept, initial_state, total_steps=total_steps)
+        if not initial_state['polsby_popper']:
+            raise ValueError('BasicChain needs the Partition to have a polsby_popper updater.')
+
+        threshold = L1_reciprocal_polsby_popper(initial_state)
+        polsby_popper_constraint = LowerBound(L1_reciprocal_polsby_popper, threshold)
+
+        validator = Validator(default_constraints + [polsby_popper_constraint])
+
+        super().__init__(propose_random_flip, validator, always_accept, initial_state,
+                         total_steps=total_steps)
+
+
+grid_validator = Validator([single_flip_contiguous, no_vanishing_districts])
+
+
+class GridChain(MarkovChain):
+    """
+    A very simple Markov chain. The proposal is a single random flip at the boundary of a district.
+    A step is valid if the districts are connected and no districts disappear.
+    Requires a 'cut_edges' updater.
+    """
+
+    def __init__(self, initial_grid, total_steps=1000):
+        if not initial_grid['cut_edges']:
+            raise ValueError('BasicChain needs the Partition to have a cut_edges updater.')
+
+        super().__init__(propose_random_flip, grid_validator,
+                         always_accept, initial_grid, total_steps=total_steps)
