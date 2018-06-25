@@ -105,7 +105,7 @@ class Tally:
         """
         tally = collections.defaultdict(self.dtype)
         for node, part in partition.assignment.items():
-            tally[part] += self._get_tally_from_node(partition.graph, node, self.fields)
+            tally[part] += self._get_tally_from_node(partition, node)
         return tally
 
     def _update_tally(self, partition):
