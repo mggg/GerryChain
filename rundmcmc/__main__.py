@@ -3,11 +3,12 @@ import json
 import geopandas as gp
 import networkx.readwrite
 
-from rundmcmc.defaults import BasicChain
+from rundmcmc.accept import always_accept
+from rundmcmc.chain import MarkovChain
 from rundmcmc.make_graph import add_data_to_graph, get_assignment_dict
 from rundmcmc.partition import Partition
 from rundmcmc.proposals import propose_random_flip
-from rundmcmc.scores import efficiency_gap, mean_median, mean_thirdian
+from rundmcmc.scores import mean_median, mean_thirdian
 from rundmcmc.updaters import Tally, cut_edges, votes_updaters, county_splits
 from rundmcmc.validity import Validator, single_flip_contiguous, refuse_new_splits
 
