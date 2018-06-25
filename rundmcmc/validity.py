@@ -41,9 +41,6 @@ def single_flip_contiguous(partition, parent=None, flips=None):
     the changed graph.
 
     """
-    parent = partition.parent
-    flips = partition.flips
-
     if not flips or not parent:
         return contiguous(partition, flips)
 
