@@ -33,8 +33,6 @@ def example_partition():
 
     return Partition(graph, assignment, updaters)
 
-import time
-
 
 def print_summary(partition, scores):
     print("")
@@ -55,10 +53,10 @@ def main():
 
     test_counties = ["007", "099", "205", "127"]
     for partition in chain:
-        # print_summary(partition, scores)
+        print_summary(partition, scores)
         for county in test_counties:
             info = partition["counties"][county]
-            # print("county {}: {} ({})".format(county, info.split, info.contains))
+            print("county {}: {} ({})".format(county, info.split, info.contains))
 
 
 if __name__ == "__main__":
