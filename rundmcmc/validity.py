@@ -1,3 +1,4 @@
+import collections
 import random
 
 import networkx as nx
@@ -162,14 +163,10 @@ def fast_connected(partition):
 
     # Inverts the assignment dictionary so that lists of VTDs are keyed
     # by their congressional districts.
-    districts = {}
+    districts = collections.defaultdict(set)
 
     for vtd in assignment:
-        district = assignment[vtd]
-        if districts.get(district, None) is None:
-            districts[district] = [vtd]
-        else:
-            districts[district] += [vtd]
+        districts[assignment[vtd]].add(vtd)
 
     # Generates a subgraph for each district and perform a BFS on it
     # to check connectedness.
