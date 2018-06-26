@@ -146,7 +146,7 @@ for loop over all the states in the chain.
 
 ..code-block:: python
     for partition in chain:
-        print(chain)
+        print(partition)
 
 This should output a bunch of grids like before, but with the districts changing over time.
 
