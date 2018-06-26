@@ -12,6 +12,33 @@ def L1_reciprocal_polsby_popper(partition):
     return sum(1 / value for value in partition['polsby_popper'].values())
 
 
+def population(partition):
+    return partition['population'].values()
+
+
+def within_percent_of_ideal_population(initial_partition, percent=0.01):
+    """
+    Slightly different implementation of the 'within 1%' rule, based on the text of
+    Moon's PA report.
+    """
+    number_of_districts = len(initial_partition['population'].keys())
+    total_population = sum(initial_partition['population'].values())
+    ideal_population = total_population / number_of_districts
+    bounds = ((1 - percent) * ideal_population, (1 + percent) * ideal_population)
+    return Bounds(func=population, bounds=bounds)
+
+
+class Bounds:
+    def __init__(self, func, bounds):
+        self.func = func
+        self.bounds = bounds
+
+    def __call__(self, *args, **kwargs):
+        lower, upper = self.bounds
+        values = self.func(*args, **kwargs)
+        return lower <= min(values) and max(values) <= upper
+
+
 class LowerBound:
     def __init__(self, func, bound):
         self.func = func
