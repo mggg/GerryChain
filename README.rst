@@ -168,7 +168,7 @@ We can generate the data for our histogram using a simple list comprehension:
 .. code-block:: python
     data = [min(partition['population'].values()) for partition in chain]
 
-..code-bock::
+.. code-block:: python
     plt.hist(data)
     plt.show()
 
