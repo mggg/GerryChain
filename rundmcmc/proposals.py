@@ -1,5 +1,4 @@
 import random
-from rundmcmc.updaters import cut_edges
 
 
 def propose_random_flip(partition):
