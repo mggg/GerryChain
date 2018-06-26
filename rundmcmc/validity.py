@@ -5,6 +5,19 @@ import networkx as nx
 import random
 
 
+def L1_reciprocal_polsby_popper(partition):
+    return sum(1 / value for value in partition['polsby_popper'].values())
+
+
+class LowerBound:
+    def __init__(self, func, bound):
+        self.func = func
+        self.bound = bound
+
+    def __call__(self, *args, **kwargs):
+        return self.func(*args, **kwargs) >= self.bound
+
+
 class Validator:
     def __init__(self, constraints):
         """:constraints: List of validator functions that will check partitions."""
@@ -22,7 +35,7 @@ class Validator:
         return True
 
 
-def single_flip_contiguous(partition, parent=None, flips=None):
+def single_flip_contiguous(partition):
     """
     Check if swapping the given node from its old assignment disconnects the
     old assignment class.
@@ -41,8 +54,10 @@ def single_flip_contiguous(partition, parent=None, flips=None):
     the changed graph.
 
     """
+    parent = partition.parent
+    flips = partition.flips
     if not flips or not parent:
-        return contiguous(partition, flips)
+        return contiguous(partition)
 
     graph = partition.graph
     assignment_dict = parent.assignment
@@ -93,7 +108,7 @@ def single_flip_contiguous(partition, parent=None, flips=None):
     return True
 
 
-def contiguous(partition, parent=None, flips=None):
+def contiguous(partition):
     """
     :parition: Current :class:`.Partition` object.
     :flips: Dictionary of proposed flips, with `(nodeid: new_assignment)`
@@ -102,6 +117,7 @@ def contiguous(partition, parent=None, flips=None):
 
     :returns: True if contiguous, False otherwise.
     """
+    flips = partition.flips
     if not flips:
         flips = dict()
 
@@ -132,7 +148,7 @@ def contiguous(partition, parent=None, flips=None):
     return True
 
 
-def fast_connected(partition, flips=None):
+def fast_connected(partition):
     """
         Checks that a given partition's components are connected using
         a simple breadth-first search.

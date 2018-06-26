@@ -9,8 +9,9 @@ from rundmcmc.chain import MarkovChain
 from rundmcmc.make_graph import get_assignment_dict
 from rundmcmc.partition import Partition
 from rundmcmc.proposals import propose_random_flip
-from rundmcmc.updaters import (Tally, cut_edges, cut_edges_by_part,
-                               votes_updaters)
+from rundmcmc.updaters import (Tally, boundary_nodes, cut_edges,
+                               cut_edges_by_part, exterior_boundaries,
+                               perimeters, votes_updaters)
 from rundmcmc.validity import Validator, contiguous, single_flip_contiguous
 
 
@@ -225,7 +226,7 @@ def test_cut_edges_can_handle_multiple_flips():
 def test_cut_edges_by_part_doesnt_duplicate_edges_with_different_order_of_nodes():
     graph = three_by_three_grid()
     assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
-    updaters = {'cut_edges': cut_edges_by_part}
+    updaters = {'cut_edges_by_part': cut_edges_by_part}
     partition = Partition(graph, assignment, updaters)
     # 112    111
     # 112 -> 121
@@ -234,7 +235,7 @@ def test_cut_edges_by_part_doesnt_duplicate_edges_with_different_order_of_nodes(
 
     new_partition = Partition(parent=partition, flips=flip)
 
-    result = new_partition['cut_edges']
+    result = new_partition['cut_edges_by_part']
 
     for part in result:
         for edge in result[part]:
@@ -244,7 +245,7 @@ def test_cut_edges_by_part_doesnt_duplicate_edges_with_different_order_of_nodes(
 def test_cut_edges_by_part_gives_same_total_edges_as_naive_method():
     graph = three_by_three_grid()
     assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
-    updaters = {'cut_edges': cut_edges_by_part}
+    updaters = {'cut_edges_by_part': cut_edges_by_part}
     partition = Partition(graph, assignment, updaters)
     # 112    111
     # 112 -> 121
@@ -253,10 +254,62 @@ def test_cut_edges_by_part_gives_same_total_edges_as_naive_method():
 
     new_partition = Partition(parent=partition, flips=flip)
 
-    result = new_partition['cut_edges']
+    result = new_partition['cut_edges_by_part']
     naive_cut_edges = {tuple(sorted(edge)) for edge in graph.edges
                        if new_partition.crosses_parts(edge)}
 
     print(result)
     print(naive_cut_edges)
     assert naive_cut_edges == {tuple(sorted(edge)) for part in result for edge in result[part]}
+
+
+def test_exterior_boundaries():
+    graph = three_by_three_grid()
+
+    for i in [0, 1, 2, 3, 5, 6, 7, 8]:
+        graph.nodes[i]['boundary_node'] = True
+    graph.nodes[4]['boundary_node'] = False
+
+    assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
+    updaters = {'exterior_boundaries': exterior_boundaries, 'boundary_nodes': boundary_nodes}
+    partition = Partition(graph, assignment, updaters)
+
+    result = partition['exterior_boundaries']
+    assert result[1] == {0, 1, 3} and result[2] == {2, 5, 6, 7, 8}
+
+    # 112    111
+    # 112 -> 121
+    # 222    222
+    flips = {4: 2, 2: 1, 5: 1}
+
+    new_partition = Partition(parent=partition, flips=flips)
+
+    result = new_partition['exterior_boundaries']
+
+    assert result[1] == {0, 1, 2, 3, 5} and result[2] == {6, 7, 8}
+
+
+def test_perimeters():
+    graph = three_by_three_grid()
+
+    for i in [0, 1, 2, 3, 5, 6, 7, 8]:
+        graph.nodes[i]['boundary_node'] = True
+        graph.nodes[i]['boundary_perim'] = 1
+    graph.nodes[4]['boundary_node'] = False
+
+    for edge in graph.edges:
+        graph.edges[edge]['shared_perim'] = 1
+
+    assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
+    updaters = {'exterior_boundaries': exterior_boundaries, 'cut_edges_by_part': cut_edges_by_part,
+        'boundary_nodes': boundary_nodes, 'perimeters': perimeters}
+    partition = Partition(graph, assignment, updaters)
+
+    # 112
+    # 112
+    # 222
+
+    result = partition['perimeters']
+
+    assert result[1] == 3 + 4  # 3 nodes + 4 edges
+    assert result[2] == 5 + 4  # 5 nodes + 4 edges
