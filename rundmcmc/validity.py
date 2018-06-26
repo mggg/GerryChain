@@ -1,8 +1,11 @@
-from rundmcmc.updaters import CountySplit
-from networkx import NetworkXNoPath
-import networkx.algorithms.shortest_paths.weighted as nx_path
-import networkx as nx
+import collections
 import random
+
+import networkx as nx
+import networkx.algorithms.shortest_paths.weighted as nx_path
+from networkx import NetworkXNoPath
+
+from rundmcmc.updaters import CountySplit
 
 
 def L1_reciprocal_polsby_popper(partition):
@@ -160,14 +163,10 @@ def fast_connected(partition):
 
     # Inverts the assignment dictionary so that lists of VTDs are keyed
     # by their congressional districts.
-    districts = {}
+    districts = collections.defaultdict(set)
 
     for vtd in assignment:
-        district = assignment[vtd]
-        if districts.get(district, None) is None:
-            districts[district] = [vtd]
-        else:
-            districts[district] += [vtd]
+        districts[assignment[vtd]].add(vtd)
 
     # Generates a subgraph for each district and perform a BFS on it
     # to check connectedness.
