@@ -4,18 +4,12 @@ import matplotlib.pyplot as plt
 
 from rundmcmc.defaults import BasicChain, PA_partition
 from rundmcmc.run import pipe_to_table
-from rundmcmc.scores import (compute_meta_graph_degree, efficiency_gap,
-                             mean_median, mean_thirdian)
+from rundmcmc.scores import efficiency_gap, mean_median, mean_thirdian
 from rundmcmc.validity import L1_reciprocal_polsby_popper
 
 
 def main():
     initial_partition = PA_partition()
-
-    chain = BasicChain(initial_partition, total_steps=10)
-    print("About to compute metagraph degree")
-
-    compute_meta_graph_degree(chain)
 
     chain = BasicChain(initial_partition, total_steps=10000)
 
