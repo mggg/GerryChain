@@ -1,4 +1,5 @@
 import numpy
+from rundmcmc.proposals import number_of_flips
 
 
 class DukeGerrymanderingIndex:
@@ -18,7 +19,7 @@ class DukeGerrymanderingIndex:
         terms_in_the_sum = [median_plan - plan
                             for median_plan, plan in zip(medians, self.initial_plan_data)]
 
-        return numpy.sqrt(sum(term**2 for term in terms_in_the_sum))
+        return numpy.sqrt(sum(term ** 2 for term in terms_in_the_sum))
 
 
 def mean_median(partition, proportion_column_name):
@@ -65,3 +66,12 @@ def final_report():
     with open('../tests/test_run.txt') as f:
         f = f.read()
         print(f)
+
+
+def get_dict_of_flips(chain):
+    dict_of_flips = {}
+    prev_partition = {}
+    for partition in chain:
+        dict_of_flips, prev_partition = number_of_flips(
+            partition, dict_of_flips, prev_partition)
+        print(dict_of_flips)

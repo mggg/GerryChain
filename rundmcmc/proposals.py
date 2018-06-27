@@ -23,9 +23,10 @@ def propose_random_flip(partition):
 
 
 def number_of_flips(partition, dict_of_flips, prev_partition):
-    if partition is None or partition is prev_partition:
+    flips = partition.flips
+    if flips is None or flips is prev_partition:
         return dict_of_flips, prev_partition
     else:
-        prev_partition = partition
-        dict_of_flips[next(iter(partition))] = dict_of_flips.get(next(iter(partition)), 0) + 1
+        prev_partition = flips
+        dict_of_flips[next(iter(flips))] = dict_of_flips.get(next(iter(flips)), 0) + 1
         return dict_of_flips, prev_partition
