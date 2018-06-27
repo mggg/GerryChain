@@ -20,10 +20,12 @@ import scipy
 
 def log_number_trees(G, weight=False):
     # Kirkoffs is the determinant of the minor..
-    # at some point this should be replaced with a Cholesky decomposition based algorithm, which is supposedly faster.
-    if weight == False:
+    # at some point this should be replaced with a
+    # Cholesky decomposition based algorithm,
+    # which is supposedly faster.
+    if weight is False:
         m = nx.laplacian_matrix(G)[1:, 1:]
-    if weight == True:
+    if weight is True:
         m = nx.laplacian_matrix(G, weight="weight")[1:, 1:]
     m = csc_matrix(m)
     splumatrix = scipy.sparse.linalg.splu(m)
@@ -89,11 +91,8 @@ def random_spanning_tree(G):
 
 
 # For lifting:
-
 def cut_edges(G, G_A, G_B):
     # Finds the edges in G from G_A to G_B
-
-
     edges_of_G = list(G.edges())
 
     list_of_cut_edges = []
@@ -137,7 +136,6 @@ def random_lift(G, subgraphs):
 
 
 # Projection tools:
-
 def R(G, T, edge_list):
     T.remove_edges_from(edge_list)
     components = list(nx.connected_components(T))

@@ -55,20 +55,20 @@ def mutual_information(dX, dY):
     HY = partition_entropy(dY)
     HXY = partition_entropy(d)
 
-    I = HX + HY - HXY
-    return I
+    I_needs_name = HX + HY - HXY
+    return I_needs_name
 
 
 def mi_metric(d1, d2, normalised=False):
     d = common_refinement(d1, d2)
     H = partition_entropy(d)
 
-    I = mutual_information(d1, d2)
+    I_needs_name = mutual_information(d1, d2)
 
     if normalised is True:
-        return (H - I) / H
+        return (H - I_needs_name) / H
     else:
-        return H - I
+        return H - I_needs_name
 
 
 def build_distance_matrix(partitions):
