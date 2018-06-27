@@ -1,5 +1,5 @@
 from rundmcmc.defaults import BasicChain, example_partition
-from rundmcmc.scores import mean_median, mean_thirdian
+from rundmcmc.scores import mean_median, mean_thirdian, get_dict_of_flips
 
 
 def print_summary(partition, scores):
@@ -19,13 +19,9 @@ def main():
         'Mean-Thirdian': mean_thirdian
     }
 
-    test_counties = ["007", "099", "205", "127"]
-
     for partition in chain:
         print_summary(partition, scores)
-        for county in test_counties:
-            info = partition["counties"][county]
-            print(f"county {county}: {info.split} ({info.contains})")
+    get_dict_of_flips(chain)
 
 
 if __name__ == "__main__":
