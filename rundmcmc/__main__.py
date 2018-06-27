@@ -1,6 +1,5 @@
 from rundmcmc.defaults import BasicChain, example_partition
 from rundmcmc.scores import mean_median, mean_thirdian, get_dict_of_flips
-from rundmcmc.proposals import number_of_flips
 
 
 def print_summary(partition, scores):
