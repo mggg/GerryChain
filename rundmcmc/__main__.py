@@ -24,5 +24,6 @@ def main():
         print_summary(partition, scores)
     get_dict_of_flips(chain)
 
+
 if __name__ == "__main__":
     main()
