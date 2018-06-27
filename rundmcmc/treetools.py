@@ -220,15 +220,15 @@ def make_histogram(A, visited_partitions):
         dictionary[str(x)] = count(x,visited_partitions) / len(visited_partitions)
     return dictionary
         
-def test():
+def test(grid_size, k_part, steps = 100):
     from naive_graph_partitions import k_connected_graph_partitions
-    k_part = 3
-    G = nx.grid_graph([2,3])
+    #k_part = 3
+    G = nx.grid_graph(grid_size)
     A = list(k_connected_graph_partitions(G, k_part))
     T = random_spanning_tree(G)
     e = list(T.edges())[0:k_part - 1]
     visited_partitions = []
-    for i in range(1000):
+    for i in range(100):
         new = MH_step(G, T, e)
         T = new[0]
         e = new[1]
@@ -238,11 +238,11 @@ def test():
     for k in histogram.keys():
         total_variation += np.abs( histogram[k] - 1 / len(A))
     print("total variation", total_variation)
-    return histogram
+    return [histogram, A, visited_partitions]
      
 def TV(p,q):
     total_variation = 0
     for k in p.keys():
         total_variation += np.abs(p[k] - q[k])
     return total_variation
-h1 = test()
+h1, A, partitions = test([2,3], 3)
