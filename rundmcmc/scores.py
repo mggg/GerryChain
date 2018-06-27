@@ -77,7 +77,7 @@ def get_dict_of_flips(chain):
         print(dict_of_flips)
 
 
-def p_value(chain):
+def p_value(chain, initial_partition):
     better = 0
     worse = 0
     initial_value = mean_median(initial_partition, 'PR_DV08%')
@@ -88,5 +88,5 @@ def p_value(chain):
         else:
             better += 1
 
-    print (initial_value)
-    print (better, worse)
+    print(initial_value)
+    print(better, worse)
