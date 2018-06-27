@@ -29,6 +29,7 @@ class Validator:
         # check each constraint function and fail when a constraint test fails
         for constraint in self.constraints:
             if constraint(partition) is False:
+                print(constraint)
                 return False
 
         # all constraints are satisfied

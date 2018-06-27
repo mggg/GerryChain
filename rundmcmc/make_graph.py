@@ -2,6 +2,8 @@ import networkx
 import pandas as pd
 import geopandas as gp
 import pysal as ps
+import json
+from networkx.readwrite import json_graph
 from shapely.ops import cascaded_union
 
 
@@ -54,7 +56,7 @@ def add_data_to_graph(df, graph, col_names, id_col=None):
                 graph.nodes[i][name] = data
 
 
-def construct_graph(df, geoid_col=None):
+def construct_graph_from_df(df, geoid_col=None, cols_to_add=None):
     """Construct initial graph from information about neighboring VTDs.
 
     :df: Geopandas dataframe.
@@ -96,7 +98,64 @@ def construct_graph(df, geoid_col=None):
             graph.node[node]['boundary_perim'] = float(
                 inter.intersection(df.loc[node, "geometry"]).length)
 
+    if cols_to_add is not None:
+        data = pd.DataFrame({x:df[x] for x in cols_to_add})
+        if geoid_col is not None:
+            data[geoid_col] = df.index
+        add_data_to_graph(data, graph, cols_to_add, geoid_col)
     return graph
+
+
+def construct_graph_from_json(jsonData):
+    """Construct initial graph from networkx.json_graph adjacency json format
+
+    :jsonData: adjacency_graph data in json format
+    :returns: networkx graph
+    """
+    return json_graph.adjacency_graph(jsonData)
+
+
+def construct_graph_from_file(filename, geoid_col=None, cols_to_add=None):
+    """Constucts initial graph from either json(networkx adjacency_graph format) file
+    or from a shapefile
+
+    NOTE: at this point only supports the following 2 file formats:
+    - ESRI shapefile
+    - networkx.readwrite.json_data serialized json
+
+    :filename: name of file to read
+    :geoid_col: unique identifier for the data units to be used as nodes in the graph
+    :cols_to_add: list of column names from file of data to be added to each node
+    :returns: networkx graph
+    """
+    if filename.split('.')[-1] == "json":
+        mydata = json.loads(open(filename).read())
+        graph = construct_graph_from_json(mydata)
+        return graph
+    elif filename.split('.')[-1] == "shp":
+        df = gp.read_file(filename)
+        graph = construct_graph_from_df(df, geoid_col, cols_to_add)
+        return graph
+
+
+def construct_graph(data_source, geoid_col=None, data_cols=None, data_source_type="filename"):
+    """Constructs initial graph using the graph constructor that best
+    matches the data_source and dataType formats
+
+    :data_source: data from which to create graph (file name, graph object, json, etc)
+    :geoid_col: name of unique identifier for basic data units
+    :data_cols: any extra data contained in data_source to be added to nodes of graph
+    :dataType: string specifying the type of data_source
+    :returns: netwrokx graph
+    """
+    if data_source_type == "filename":
+        return construct_graph_from_file(data_source, geoid_col, data_cols)
+
+    elif data_source_type == "json":
+        return construct_graph_from_json(data_source)
+
+    elif data_source_type == "geo_data_frame":
+        return construct_graph_from_df(data_source, geoid_col, data_cols)
 
 
 def get_assignment_dict(df, key_col, val_col):
