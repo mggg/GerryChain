@@ -174,6 +174,36 @@ testmds()
 ##########################################################
 #Spectral Embeddings
 
+def spectral_plot(A, M_A, h1, n = 2):
+    
+    color_list = []
+    A_node_lists = [ set([frozenset(g.nodes()) for g in x]) for x in A]
+    for x in A_node_lists:
+        color_list.append(h1[str(x)])
+    z = gaussian_kde(color_list)(color_list)
+    
+    se = manifold.SpectralEmbedding(n_components = 3, affinity = 'precomputed')
+    Y = se.fit_transform(M_A)
+    if n == 2:
+        import matplotlib.pyplot as plt
+        plt.scatter(Y[:, 0], Y[:, 1], c=z)
+        plt.show()
+    if n == 3:
+        import matplotlib.pyplot as plt
+        from mpl_toolkits.mplot3d import Axes3D
+        fig = plt.figure()
+        ax = fig.add_subplot(111,projection='3d')
+        ax.scatter(Y[:,0], Y[:,1], Y[:,2],  c = z)
+
+def test_spectral():
+    #it would be great to have a tool that lets us see which partitions are which by hovering over them
+    from treetools import test
+    h1, A, partitions = test([3,3], 3,50)
+    dlist_A = partition_list_to_dictionary_list(A)
+    M_A = build_distance_matrix(dlist_A)
+    spectral_plot(A, M_A, h1, 3)
+
+test_spectral() 
 ##Spectral partitioning
 
 #K medioids
