@@ -5,7 +5,6 @@ from rundmcmc.chain import MarkovChain
 from rundmcmc.proposals import propose_random_flip
 from rundmcmc.validity import Validator, contiguous
 from rundmcmc.accept import always_accept
-import numpy as np
 
 
 def read_chain(graph, iterations):

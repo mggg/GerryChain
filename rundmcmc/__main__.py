@@ -27,7 +27,8 @@ def main():
 
     for partition in chain:
         print_summary(partition, scores)
-        dict_of_flips, prev_partition = number_of_flips(partition.flips, dict_of_flips, prev_partition)
+        dict_of_flips, prev_partition = number_of_flips(
+            partition.flips, dict_of_flips, prev_partition)
         print(dict_of_flips)
         for county in test_counties:
             info = partition["counties"][county]

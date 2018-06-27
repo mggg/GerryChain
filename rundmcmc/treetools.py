@@ -12,12 +12,11 @@ import numpy as np
 import scipy.linalg
 from scipy.sparse import csc_matrix
 import scipy
-from scipy import array, linalg, dot
 
 
 # from naive_graph_partitions import k_connected_graph_partitions
 
-######Tree counting
+# Tree counting
 
 def log_number_trees(G, weight=False):
     # Kirkoffs is the determinant of the minor..
@@ -57,7 +56,7 @@ def score_tree_edges_pair(G, T, e):
     # YOU NEED THIS -1 -- the score is the inverse! Don't take it away!
 
 
-#####For creating a spanning tree
+# For creating a spanning tree
 
 def srw(G, a):
     wet = set([a])
@@ -89,7 +88,7 @@ def random_spanning_tree(G):
     return T
 
 
-#####For lifting:
+# For lifting:
 
 def cut_edges(G, G_A, G_B):
     # Finds the edges in G from G_A to G_B
@@ -137,7 +136,7 @@ def random_lift(G, subgraphs):
     return [T, e]
 
 
-######Projection tools:
+# Projection tools:
 
 def R(G, T, edge_list):
     T.remove_edges_from(edge_list)
@@ -168,7 +167,7 @@ def R(G, T, edge_list):
 #    x =  np.min([A / (A + B), B / (A + B)])
 #    return x
 
-###Metropolis-Hastings tools
+# Metropolis-Hastings tools
 
 def propose_step(G, T):
     T_edges = list(T.edges())
@@ -205,7 +204,7 @@ def MH_step(G, T, e):
             return [T, e]
 
 
-########Validation --
+# Validation --
 
 def count(x, visited_partitions):
     x_lens = np.sort([len(k) for k in x])

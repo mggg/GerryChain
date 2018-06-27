@@ -6,7 +6,12 @@ Created on Wed Jun 27 10:41:37 2018
 """
 
 from itertools import product
+from treetools import test
 import numpy as np
+from matplotlib import pyplot as plt
+from sklearn import manifold
+from sklearn.decomposition import PCA
+from scipy.stats import gaussian_kde
 
 
 def common_refinement(d1, d2):
@@ -93,8 +98,6 @@ def partition_list_to_dictionary_list(partitions):
     return dictionary_list
 
 
-from treetools import test
-
 h1, A, partitions = test([3, 2], 3, 1000)
 d = subgraph_list_to_dictionary(partitions[0])
 dlist_A = partition_list_to_dictionary_list(A)
@@ -107,22 +110,12 @@ A_node_lists = [set([frozenset(g.nodes()) for g in x]) for x in A]
 for x in A_node_lists:
     color_list.append(h1[str(x)])
 
-from scipy.stats import gaussian_kde
-
 z = gaussian_kde(color_list)(color_list)
 ############################################################
 
-##Multi-Dimensional scaling
+# Multi-Dimensional scaling
 
 print(__doc__)
-import numpy as np
-
-from matplotlib import pyplot as plt
-from matplotlib.collections import LineCollection
-
-from sklearn import manifold
-from sklearn.metrics import euclidean_distances
-from sklearn.decomposition import PCA
 
 similariaties = M_A
 
@@ -152,6 +145,6 @@ plt.show()
 ##########################################################
 # Spectral Embeddings
 
-##Spectral partitioning
+# Spectral partitioning
 
 # K medioids
