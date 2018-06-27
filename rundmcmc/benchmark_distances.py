@@ -52,7 +52,8 @@ def partition_entropy(partition):
     return H
 
 def dict_invert(dictionary):
-  {val: [key for key in dictionary.keys() if dictionary[key] == val] for val in dictionary.values()}
+  dict = {val: [key for key in dictionary.keys() if dictionary[key] == val] for val in dictionary.values()}
+  return dict
 
 def find_closest_part(units_in_part, partition):
   parts = dict_invert(partition)
@@ -60,18 +61,20 @@ def find_closest_part(units_in_part, partition):
   
   for part_set in parts.values():
     symm_diff = set(part_set).symmetric_difference(set(units_in_part))
-    if len(test) < min_symm_diff:
-      min_symm_diff = len(test)
+    print(min_symm_diff)
+    if len(symm_diff) < min_symm_diff:
+      min_symm_diff = len(symm_diff)
   return(min_symm_diff)
 
 def shared_information_distance(partition1, partition2):
   return(2*partition_entropy(common_refinement(partition1,partition2)) - partition_entropy(partition1) - partition_entropy(partition2))
 
-def stupid_hamming_pre_distrance(partition1, partition2):
+def stupid_hamming_pre_distance(partition1, partition2):
   parts1 = dict_invert(partition1)
   hamming_list = []
-  for key in part1.keys():
-    hamming_list.appent(find_closest_part(parts1[key], partition2))
+  for key in parts1.keys():
+    hamming_list.append(find_closest_part(parts1[key], partition2))
+  #print(hamming_list)
   return(sum(hamming_list))
 
 def stupid_hamming_distance(partition1, partition2):
