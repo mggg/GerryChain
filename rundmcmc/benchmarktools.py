@@ -7,7 +7,17 @@ Created on Wed Jun 27 10:41:37 2018
 
 from itertools import product
 import numpy as np
+import numpy as np
 
+from matplotlib import pyplot as plt
+from matplotlib.collections import LineCollection
+
+from sklearn import manifold
+from sklearn.metrics import euclidean_distances
+from sklearn.decomposition import PCA
+
+
+from scipy.stats import gaussian_kde
 def common_refinement(d1,d2):
     if set(d1.keys()) != set(d2.keys()):
         return "Keys do not match!"
@@ -88,62 +98,48 @@ def partition_list_to_dictionary_list(partitions):
         dictionary_list.append(subgraph_list_to_dictionary(x))
     return dictionary_list
 
-from treetools import test
-h1, A, partitions = test([3,2], 3,1000)
-d = subgraph_list_to_dictionary(partitions[0])
-dlist_A = partition_list_to_dictionary_list(A)
-dlist_partitions = partition_list_to_dictionary_list(partitions)
-M_A = build_distance_matrix(dlist_A)
-M_Sample= build_distance_matrix(dlist_partitions)
 
-color_list = []
-A_node_lists = [ set([frozenset(g.nodes()) for g in x]) for x in A]
-for x in A_node_lists:
-    color_list.append(h1[str(x)])
-    
-from scipy.stats import gaussian_kde
-z = gaussian_kde(color_list)(color_list)
 ############################################################
 
 ##Multi-Dimensional scaling
 
-print(__doc__)
-import numpy as np
+def make_mds(A, M_A, h1, dim = 2):
+    #A is the ground set of partitions
+    #M_A is the distance matrix
+    #h1 is the histogram (labeled by A_node_lists -- below) that tells us the heat map
+    color_list = []
+    A_node_lists = [ set([frozenset(g.nodes()) for g in x]) for x in A]
+    for x in A_node_lists:
+        color_list.append(h1[str(x)])
+    z = gaussian_kde(color_list)(color_list)
+    
+    similariaties = M_A
+    seed = np.random.RandomState(seed=3)
+    
+    mds = manifold.MDS(n_components=2, max_iter=3000, eps=1e-9, random_state=seed,
+                       dissimilarity="precomputed", n_jobs=1)
+    
+    pos = mds.fit(similariaties).embedding_
+    print(mds.get_params)
+    # Rotate the data
+    clf = PCA(n_components=2)    
+    pos = clf.fit_transform(pos)
+    
+    s = 100
+    plt.scatter(pos[:, 0], pos[:, 1], c=z, s=s, lw=0)    
+    plt.show()
 
-from matplotlib import pyplot as plt
-from matplotlib.collections import LineCollection
-
-from sklearn import manifold
-from sklearn.metrics import euclidean_distances
-from sklearn.decomposition import PCA
-
-similariaties = M_A
-
-seed = np.random.RandomState(seed=3)
-
-mds = manifold.MDS(n_components=2, max_iter=3000, eps=1e-9, random_state=seed,
-                   dissimilarity="precomputed", n_jobs=1)
-
-pos = mds.fit(similariaties).embedding_
-#npos = mds.fit(similariaties_A).embedding_
-
-
-# Rotate the data
-clf = PCA(n_components=2)
-
-pos = clf.fit_transform(pos)
-
-
-fig = plt.figure(1)
-ax = plt.axes([0., 0., 1., 1.])
-
-s = 100
-plt.scatter(pos[:, 0], pos[:, 1], c=z, s=s, lw=0, label='MDS')
-plt.legend(scatterpoints=1, loc='best', shadow=False)
-
-
-plt.show()
-
+def testmds():
+    #Questions, whats the stress function?
+    #Dimension
+    from treetools import test
+    h1, A, partitions = test([3,3], 3,1000)
+    dlist_A = partition_list_to_dictionary_list(A)
+    M_A = build_distance_matrix(dlist_A)
+    make_mds(A, M_A, h1)
+    
+testmds()
+    
 ##########################################################
 #Spectral Embeddings
 
