@@ -15,7 +15,6 @@ from rundmcmc.updaters import polsby_popper_updater as polsby_popper
 from rundmcmc.updaters import votes_updaters
 from rundmcmc.validity import (L1_reciprocal_polsby_popper, LowerBound,
                                Validator, no_vanishing_districts,
-                               districts_within_tolerance,
                                refuse_new_splits, single_flip_contiguous,
                                within_percent_of_ideal_population)
 
