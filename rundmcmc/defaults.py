@@ -14,13 +14,12 @@ from rundmcmc.updaters import (Tally, boundary_nodes, county_splits, cut_edges,
 from rundmcmc.updaters import polsby_popper_updater as polsby_popper
 from rundmcmc.updaters import votes_updaters
 from rundmcmc.validity import (L1_reciprocal_polsby_popper, LowerBound,
-                               Validator, districts_within_tolerance,
-                               no_vanishing_districts, refuse_new_splits,
-                               single_flip_contiguous)
+                               Validator, no_vanishing_districts,
+                               refuse_new_splits, single_flip_contiguous,
+                               within_percent_of_ideal_population)
 
 default_constraints = [single_flip_contiguous,
                        no_vanishing_districts,
-                       districts_within_tolerance,
                        refuse_new_splits]
 
 
@@ -80,7 +79,10 @@ class BasicChain(MarkovChain):
         threshold = L1_reciprocal_polsby_popper(initial_state)
         polsby_popper_constraint = LowerBound(L1_reciprocal_polsby_popper, threshold)
 
-        validator = Validator(default_constraints + [polsby_popper_constraint])
+        population_constraint = within_percent_of_ideal_population(initial_state, 0.05)
+
+        validator = Validator(default_constraints +
+                              [polsby_popper_constraint, population_constraint])
 
         super().__init__(propose_random_flip, validator, always_accept, initial_state,
                          total_steps=total_steps)

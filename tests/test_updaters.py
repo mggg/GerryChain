@@ -12,7 +12,8 @@ from rundmcmc.proposals import propose_random_flip
 from rundmcmc.updaters import (Tally, boundary_nodes, cut_edges,
                                cut_edges_by_part, exterior_boundaries,
                                perimeters, votes_updaters)
-from rundmcmc.validity import Validator, contiguous, single_flip_contiguous
+from rundmcmc.validity import (Validator, contiguous, no_vanishing_districts,
+                               single_flip_contiguous)
 
 
 def three_by_three_grid():
@@ -168,7 +169,7 @@ def test_vote_proportion_updater_returns_percentage_or_nan_on_later_steps():
 
     initial_partition = Partition(graph, assignment, updaters)
 
-    chain = MarkovChain(propose_random_flip, lambda x: True,
+    chain = MarkovChain(propose_random_flip, Validator([no_vanishing_districts]),
                         lambda x: True, initial_partition, total_steps=10)
     for partition in chain:
         assert all(is_percentage_or_nan(value) for value in partition['D%'].values())

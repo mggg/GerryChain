@@ -1,6 +1,26 @@
 import numpy
 
 
+class DukeGerrymanderingIndex:
+    def __init__(self, initial_plan, vote_shares_column):
+        self.column = vote_shares_column
+        self.initial_plan_data = self.sorted_vote_shares(initial_plan)
+        self.N = len(self.initial_plan_data)
+
+    def sorted_vote_shares(self, partition, column='PR_DV08%'):
+        return sorted(list(partition[self.column].values()))
+
+    def __call__(self, chain):
+        data = [self.sorted_vote_shares(state) for state in chain]
+
+        medians = [numpy.median([data_row[i] for data_row in data]) for i in range(self.N)]
+
+        terms_in_the_sum = [median_plan - plan
+                            for median_plan, plan in zip(medians, self.initial_plan_data)]
+
+        return numpy.sqrt(sum(term**2 for term in terms_in_the_sum))
+
+
 def mean_median(partition, proportion_column_name):
     data = list(partition[proportion_column_name].values())
     return numpy.mean(data) - numpy.median(data)

@@ -18,5 +18,5 @@ def propose_random_flip(partition):
     # self loop
     numEdges = 2.0 * len(partition['cut_edges'])
     if random.random() < 1.0 - (numEdges * 1.0 / partition.max_edge_cuts):
-        flip = {flipped_node: partition.assignment[flipped_node]}
+        flip = dict()
     return flip
