@@ -1,3 +1,5 @@
+from rundmcmc.output import ChainOutputTable
+
 
 def run(chain, loggers):
     """run runs the chain.
@@ -19,3 +21,15 @@ def run(chain, loggers):
             logger.during(state)
 
     return [logger.after(chain.state) for logger in loggers]
+
+
+def handle_chain(chain, handlers):
+    for state in chain:
+        yield {key: handler(state) for key, handler in handlers.items}
+
+
+def pipe_to_table(chain, handlers):
+    table = ChainOutputTable()
+    for row in handle_chain(chain, handlers):
+        table.append(row)
+    return table

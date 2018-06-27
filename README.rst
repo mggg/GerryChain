@@ -111,11 +111,13 @@ to open an interactive session. Alternatively, this should work in the terminal 
 Now we can start playing with Markov chains! First we'll import some things.
 
 .. code-block:: python
+
     from rundmcmc.grid import Grid
 
 The `Grid` class is a little helper class for playing around with grid examples.
 
 .. code-block:: python
+
     grid = Grid((20,20))    # Make a 20x20 grid
     print(grid)
 
@@ -128,6 +130,7 @@ Running a chain
 Now we can configure and run a `MarkovChain`.
 
 .. code-block:: python
+
     from rundmcmc.chain import MarkovChain
     from rundmcmc.proposals import propose_random_flip
     from rundmcmc.validity import Validator, contiguous
@@ -139,12 +142,14 @@ We'll configure a chain starting with `grid`, using the regular boundary flip pr
 validating that the districts are connected, and always accepting if the proposal is valid.
 
 .. code-block:: python
+
     chain = MarkovChain(propose_random_flip, is_valid, always_accept, grid, total_steps=1000)
 
 The `MarkovChain` in RunDMCMC is just a python generator. This means we can do a simple
 for loop over all the states in the chain.
 
 .. code-block:: python
+
     for partition in chain:
         print(partition)
 
@@ -161,14 +166,17 @@ We'll make a histogram of the minimum district population at each step in the ch
 We'll import `matplotlib` to make the histogram, but feel free to use your favorite alternative.
 
 .. code-block:: python
+
     import matplotlib.pyplot as plt
 
 We can generate the data for our histogram using a simple list comprehension:
 
 .. code-block:: python
+
     data = [min(partition['population'].values()) for partition in chain]
 
 .. code-block:: python
+
     plt.hist(data)
     plt.show()
 
