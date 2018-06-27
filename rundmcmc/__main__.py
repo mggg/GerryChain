@@ -1,5 +1,5 @@
 from rundmcmc.defaults import BasicChain, example_partition, PA_partition
-from rundmcmc.scores import mean_median, mean_thirdian
+from rundmcmc.scores import mean_median, mean_thirdian, get_dict_of_flips
 
 
 def print_summary(partition, scores):
@@ -20,6 +20,7 @@ def main():
     for partition in chain:
         print_summary(partition, scores)
         print(chain.counter)
+    get_dict_of_flips(chain)
 
 
 if __name__ == "__main__":
