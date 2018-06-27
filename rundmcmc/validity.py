@@ -1,12 +1,42 @@
-from rundmcmc.updaters import CountySplit
-from networkx import NetworkXNoPath
-import networkx.algorithms.shortest_paths.weighted as nx_path
-import networkx as nx
+import collections
 import random
+
+import networkx as nx
+import networkx.algorithms.shortest_paths.weighted as nx_path
+from networkx import NetworkXNoPath
+
+from rundmcmc.updaters import CountySplit
 
 
 def L1_reciprocal_polsby_popper(partition):
     return sum(1 / value for value in partition['polsby_popper'].values())
+
+
+def population(partition):
+    return partition['population'].values()
+
+
+def within_percent_of_ideal_population(initial_partition, percent=0.01):
+    """
+    Slightly different implementation of the 'within 1%' rule, based on the text of
+    Moon's PA report.
+    """
+    number_of_districts = len(initial_partition['population'].keys())
+    total_population = sum(initial_partition['population'].values())
+    ideal_population = total_population / number_of_districts
+    bounds = ((1 - percent) * ideal_population, (1 + percent) * ideal_population)
+    return Bounds(func=population, bounds=bounds)
+
+
+class Bounds:
+    def __init__(self, func, bounds):
+        self.func = func
+        self.bounds = bounds
+
+    def __call__(self, *args, **kwargs):
+        lower, upper = self.bounds
+        values = self.func(*args, **kwargs)
+        return lower <= min(values) and max(values) <= upper
 
 
 class LowerBound:
@@ -161,14 +191,10 @@ def fast_connected(partition):
 
     # Inverts the assignment dictionary so that lists of VTDs are keyed
     # by their congressional districts.
-    districts = {}
+    districts = collections.defaultdict(set)
 
     for vtd in assignment:
-        district = assignment[vtd]
-        if districts.get(district, None) is None:
-            districts[district] = [vtd]
-        else:
-            districts[district] += [vtd]
+        districts[assignment[vtd]].add(vtd)
 
     # Generates a subgraph for each district and perform a BFS on it
     # to check connectedness.

@@ -100,3 +100,76 @@ is rough around the edges, but usable.
 
     if __name__ == "__main__":
         main()
+
+Using in an interactive python session
+======================================
+
+Here's how you can use RunDMCMC in an interactive python session.
+Navigate to the RunDMCMC/rundmcmc folder in a terminal, and then run an `ipython` or `python` command
+to open an interactive session. Alternatively, this should work in the terminal window in Spyder.
+
+Now we can start playing with Markov chains! First we'll import some things.
+
+.. code-block:: python
+    from rundmcmc.grid import Grid
+
+The `Grid` class is a little helper class for playing around with grid examples.
+
+.. code-block:: python
+    grid = Grid((20,20))    # Make a 20x20 grid
+    print(grid)
+
+You should see a grid made out of 0's, 1's, 2's, and 3's. By default, the `Grid` is partitioned into
+four equal quadrants.
+
+Running a chain
+---------------
+
+Now we can configure and run a `MarkovChain`.
+
+.. code-block:: python
+    from rundmcmc.chain import MarkovChain
+    from rundmcmc.proposals import propose_random_flip
+    from rundmcmc.validity import Validator, contiguous
+    from rundmcmc.accept import always_accept
+
+    is_valid = Validator([contiguous])
+
+We'll configure a chain starting with `grid`, using the regular boundary flip proposal,
+validating that the districts are connected, and always accepting if the proposal is valid.
+
+.. code-block:: python
+    chain = MarkovChain(propose_random_flip, is_valid, always_accept, grid, total_steps=1000)
+
+The `MarkovChain` in RunDMCMC is just a python generator. This means we can do a simple
+for loop over all the states in the chain.
+
+.. code-block:: python
+    for partition in chain:
+        print(partition)
+
+This should output a bunch of grids like before, but with the districts changing over time.
+
+Making a histogram
+------------------
+
+Now we can make a histogram! The Grid class comes with a fake 'population' attribute. This
+attribute can be accessed as `grid['population']`. It is a dictionary from the districts
+to their populations.
+We'll make a histogram of the minimum district population at each step in the chain.
+
+We'll import `matplotlib` to make the histogram, but feel free to use your favorite alternative.
+
+.. code-block:: python
+    import matplotlib.pyplot as plt
+
+We can generate the data for our histogram using a simple list comprehension:
+
+.. code-block:: python
+    data = [min(partition['population'].values()) for partition in chain]
+
+.. code-block:: python
+    plt.hist(data)
+    plt.show()
+
+The histogram should pop up in a new window. Yay!
