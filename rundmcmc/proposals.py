@@ -20,3 +20,13 @@ def propose_random_flip(partition):
     if random.random() < 1.0 - (numEdges * 1.0 / partition.max_edge_cuts):
         flip = dict()
     return flip
+
+
+def number_of_flips(partition, dict_of_flips, prev_partition):
+    flips = partition.flips
+    if flips is None or flips is prev_partition:
+        return dict_of_flips, prev_partition
+    else:
+        prev_partition = flips
+        dict_of_flips[next(iter(flips))] = dict_of_flips.get(next(iter(flips)), 0) + 1
+        return dict_of_flips, prev_partition

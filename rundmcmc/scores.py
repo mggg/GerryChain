@@ -1,5 +1,7 @@
 import numpy
 
+from rundmcmc.proposals import number_of_flips
+
 
 class DukeGerrymanderingIndex:
     def __init__(self, initial_plan, vote_shares_column):
@@ -18,7 +20,7 @@ class DukeGerrymanderingIndex:
         terms_in_the_sum = [median_plan - plan
                             for median_plan, plan in zip(medians, self.initial_plan_data)]
 
-        return numpy.sqrt(sum(term**2 for term in terms_in_the_sum))
+        return numpy.sqrt(sum(term ** 2 for term in terms_in_the_sum))
 
 
 def mean_median(partition, proportion_column_name):
@@ -107,3 +109,12 @@ def compute_meta_graph_degree(chain):
     print(numpy.mean([row['valid'] for row in data]))
 
     return data
+
+
+def get_dict_of_flips(chain):
+    dict_of_flips = {}
+    prev_partition = {}
+    for partition in chain:
+        dict_of_flips, prev_partition = number_of_flips(
+            partition, dict_of_flips, prev_partition)
+        print(dict_of_flips)
