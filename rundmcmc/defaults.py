@@ -5,7 +5,7 @@ import networkx.readwrite
 
 from rundmcmc.accept import always_accept
 from rundmcmc.chain import MarkovChain
-from rundmcmc.make_graph import add_data_to_graph, get_assignment_dict
+from rundmcmc.make_graph import add_data_to_graph, get_assignment_dict, construct_graph
 from rundmcmc.partition import Partition
 from rundmcmc.proposals import propose_random_flip
 from rundmcmc.updaters import (Tally, county_splits, cut_edges,
@@ -39,6 +39,26 @@ def example_partition():
         'cut_edges': cut_edges,
         'cut_edges_by_part': cut_edges_by_part
     }
+    return Partition(graph, assignment, updaters)
+
+
+def PA_partition():
+    # this is a networkx adjancency data json file with CD, area, population, and vote data
+    graph = construct_graph("./testData/PA_graph_with_data.json")
+
+    assignment = dict(zip(graph.nodes(), [graph.node[x]['CD'] for x in graph.nodes()]))
+
+    updaters = {
+            'population': Tally('POP100', alias='population'),
+            "perimeters": perimeters,
+            "exterior_boundaries": exterior_boundaries,
+            "boundary_nodes": boundary_nodes,
+            "cut_edges": cut_edges,
+            'areas': Tally('ALAND10', alias='areas'),
+            'polsby_popper': polsby_popper,
+            "cut_edges_by_part": cut_edges_by_part
+            }
+
     return Partition(graph, assignment, updaters)
 
 

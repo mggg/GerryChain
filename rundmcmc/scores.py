@@ -118,3 +118,18 @@ def get_dict_of_flips(chain):
         dict_of_flips, prev_partition = number_of_flips(
             partition, dict_of_flips, prev_partition)
         print(dict_of_flips)
+
+
+def p_value(chain, initial_partition):
+    better = 0
+    worse = 0
+    initial_value = mean_median(initial_partition, 'PR_DV08%')
+    for partition in chain:
+        partition_value = mean_median(partition, 'PR_DV08%')
+        if partition_value > initial_value:
+            worse += 1
+        else:
+            better += 1
+
+    print(initial_value)
+    print(better, worse)
