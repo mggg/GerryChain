@@ -7,6 +7,7 @@ Created on Wed Jun 27 10:41:37 2018
 
 from itertools import product
 import numpy as np
+
 def common_refinement(d1,d2):
     if set(d1.keys()) != set(d2.keys()):
         return "Keys do not match!"
@@ -62,6 +63,7 @@ def mi_metric(d1,d2, normalised = False):
         return H-I
     
 def build_distance_matrix(partitions):
+    #Partition should be stored as dictionaries 
     n = len(partitions)
     M = np.zeros([n,n])
     for i in range(n):
