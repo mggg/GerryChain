@@ -55,6 +55,8 @@ def mutual_information(dX,dY):
 def mi_metric(d1,d2, normalised = False):
     d = common_refinement(d1,d2)
     H = partition_entropy(d)
+    
+    
     I = mutual_information(d1,d2)
     
     if normalised is True:
@@ -71,3 +73,80 @@ def build_distance_matrix(partitions):
             M[i][j] = mi_metric(partitions[i], partitions[j])
     return M
  
+def subgraph_list_to_dictionary(subgraph):
+    m = len(subgraph)
+    node_lists = [g.nodes() for g in subgraph]
+    dictionary = {}
+    for i in range(m):
+        for x in node_lists[i]:
+            dictionary[x] = i
+    return dictionary
+
+def partition_list_to_dictionary_list(partitions):
+    dictionary_list = []
+    for x in partitions:
+        dictionary_list.append(subgraph_list_to_dictionary(x))
+    return dictionary_list
+
+from treetools import test
+h1, A, partitions = test([3,2], 3,1000)
+d = subgraph_list_to_dictionary(partitions[0])
+dlist_A = partition_list_to_dictionary_list(A)
+dlist_partitions = partition_list_to_dictionary_list(partitions)
+M_A = build_distance_matrix(dlist_A)
+M_Sample= build_distance_matrix(dlist_partitions)
+
+color_list = []
+A_node_lists = [ set([frozenset(g.nodes()) for g in x]) for x in A]
+for x in A_node_lists:
+    color_list.append(h1[str(x)])
+    
+from scipy.stats import gaussian_kde
+z = gaussian_kde(color_list)(color_list)
+############################################################
+
+##Multi-Dimensional scaling
+
+print(__doc__)
+import numpy as np
+
+from matplotlib import pyplot as plt
+from matplotlib.collections import LineCollection
+
+from sklearn import manifold
+from sklearn.metrics import euclidean_distances
+from sklearn.decomposition import PCA
+
+similariaties = M_A
+
+seed = np.random.RandomState(seed=3)
+
+mds = manifold.MDS(n_components=2, max_iter=3000, eps=1e-9, random_state=seed,
+                   dissimilarity="precomputed", n_jobs=1)
+
+pos = mds.fit(similariaties).embedding_
+#npos = mds.fit(similariaties_A).embedding_
+
+
+# Rotate the data
+clf = PCA(n_components=2)
+
+pos = clf.fit_transform(pos)
+
+
+fig = plt.figure(1)
+ax = plt.axes([0., 0., 1., 1.])
+
+s = 100
+plt.scatter(pos[:, 0], pos[:, 1], c=z, s=s, lw=0, label='MDS')
+plt.legend(scatterpoints=1, loc='best', shadow=False)
+
+
+plt.show()
+
+##########################################################
+#Spectral Embeddings
+
+##Spectral partitioning
+
+#K medioids
