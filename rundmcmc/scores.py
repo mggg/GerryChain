@@ -65,3 +65,45 @@ def final_report():
     with open('../tests/test_run.txt') as f:
         f = f.read()
         print(f)
+
+
+class MetaGraphDegree:
+    def __init__(self, chain):
+        self.is_valid = chain.is_valid
+        self.data = []
+
+    def __call__(self, partition):
+        total_available_flips = 2 * len(partition['cut_edges'])
+        total_valid_flips = sum(self.num_valid_flips(edge, partition)
+                                for edge in partition['cut_edges'])
+        return {'total': total_available_flips, 'valid': total_valid_flips}
+
+    def num_valid_flips(self, edge, partition):
+        """
+        Takes an edge and a partition and returns the number of valid
+        flips the partition can make across this edge (0, 1, or 2).
+        """
+        flip = {edge[0]: partition.assignment[edge[1]]}
+        reverse_flip = {edge[1]: partition.assignment[edge[0]]}
+        flip_valid = 1 if self.is_valid(partition.merge(flip)) else 0
+        reverse_valid = 1 if self.is_valid(partition.merge(reverse_flip)) else 0
+        return flip_valid + reverse_valid
+
+
+def compute_meta_graph_degree(chain):
+    degree = MetaGraphDegree(chain)
+    data = []
+
+    previous = None
+    for state in chain:
+        if state is previous:
+            continue
+        d = degree(state)
+        data.append(d)
+        print(d)
+        previous = state
+
+    print("Local average degree of the metagraph:")
+    print(numpy.mean([row['valid'] for row in data]))
+
+    return data

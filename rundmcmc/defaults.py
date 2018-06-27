@@ -8,13 +8,9 @@ from rundmcmc.chain import MarkovChain
 from rundmcmc.make_graph import add_data_to_graph, get_assignment_dict
 from rundmcmc.partition import Partition
 from rundmcmc.proposals import propose_random_flip
-from rundmcmc.updaters import (Tally, boundary_nodes, county_splits, cut_edges,
-                               cut_edges_by_part, exterior_boundaries,
-                               perimeters)
-from rundmcmc.updaters import polsby_popper_updater as polsby_popper
-from rundmcmc.updaters import votes_updaters
-from rundmcmc.validity import (L1_reciprocal_polsby_popper, LowerBound,
-                               Validator, no_vanishing_districts,
+from rundmcmc.updaters import (Tally, county_splits, cut_edges,
+                               cut_edges_by_part, votes_updaters)
+from rundmcmc.validity import (Validator, no_vanishing_districts,
                                refuse_new_splits, single_flip_contiguous,
                                within_percent_of_ideal_population)
 
@@ -39,12 +35,7 @@ def example_partition():
     updaters = {
         **votes_updaters(['PR_DV08', 'PR_RV08'], election_name='08'),
         'population': Tally('POP100', alias='population'),
-        'areas': Tally('ALAND10', alias='areas'),
         'counties': county_splits('counties', 'COUNTYFP10'),
-        'perimeters': perimeters,
-        'exterior_boundaries': exterior_boundaries,
-        'boundary_nodes': boundary_nodes,
-        'polsby_popper': polsby_popper,
         'cut_edges': cut_edges,
         'cut_edges_by_part': cut_edges_by_part
     }
@@ -73,16 +64,9 @@ class BasicChain(MarkovChain):
         if not initial_state['population']:
             raise ValueError('BasicChain needs the Partition to have a population updater.')
 
-        if not initial_state['polsby_popper']:
-            raise ValueError('BasicChain needs the Partition to have a polsby_popper updater.')
-
-        threshold = L1_reciprocal_polsby_popper(initial_state)
-        polsby_popper_constraint = LowerBound(L1_reciprocal_polsby_popper, threshold)
-
         population_constraint = within_percent_of_ideal_population(initial_state, 0.05)
 
-        validator = Validator(default_constraints +
-                              [polsby_popper_constraint, population_constraint])
+        validator = Validator(default_constraints + [population_constraint])
 
         super().__init__(propose_random_flip, validator, always_accept, initial_state,
                          total_steps=total_steps)
