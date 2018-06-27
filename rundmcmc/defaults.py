@@ -88,7 +88,7 @@ class BasicChain(MarkovChain):
         if not initial_state['population']:
             raise ValueError('BasicChain needs the Partition to have a population updater.')
 
-        population_constraint = within_percent_of_ideal_population(initial_state, 0.05)
+        population_constraint = within_percent_of_ideal_population(initial_state, 0.01)
 
         validator = Validator(default_constraints + [population_constraint])
 
