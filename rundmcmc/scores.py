@@ -90,4 +90,3 @@ def p_value(chain, initial_partition):
 
     print(initial_value)
     print(better, worse)
-
