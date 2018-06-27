@@ -1,4 +1,4 @@
-from rundmcmc.defaults import BasicChain, example_partition, PA_partition
+from rundmcmc.defaults import BasicChain, PA_partition
 from rundmcmc.scores import mean_median, mean_thirdian, get_dict_of_flips
 
 

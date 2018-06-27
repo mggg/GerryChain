@@ -53,10 +53,6 @@ def example_partition():
 
 
 def PA_partition():
-    global default_validator
-    default_validator = Validator([single_flip_contiguous,
-                               no_vanishing_districts,
-                               districts_within_tolerance])
     # this is a networkx adjancency data json file with CD, area, population, and vote data
     graph = construct_graph("./testData/PA_graph_with_data.json")
 
