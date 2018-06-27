@@ -99,7 +99,7 @@ def construct_graph_from_df(df, geoid_col=None, cols_to_add=None):
                 inter.intersection(df.loc[node, "geometry"]).length)
 
     if cols_to_add is not None:
-        data = pd.DataFrame({x:df[x] for x in cols_to_add})
+        data = pd.DataFrame({x: df[x] for x in cols_to_add})
         if geoid_col is not None:
             data[geoid_col] = df.index
         add_data_to_graph(data, graph, cols_to_add, geoid_col)
