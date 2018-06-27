@@ -33,5 +33,6 @@ def main():
             info = partition["counties"][county]
             print(f"county {county}: {info.split} ({info.contains})")
 
+
 if __name__ == "__main__":
     main()
