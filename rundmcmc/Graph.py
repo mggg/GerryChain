@@ -12,6 +12,7 @@ import numpy as np
 import time
 
 from rundmcmc.make_graph import add_data_to_graph, construct_graph
+from rundmcmc.validity import bfs
 
 class Graph:
     """
@@ -103,6 +104,7 @@ class Graph:
                 print(colored("Aborting.", "red"))
                 return
 
+        # Try to convert the graph to GraphML
         try:
             self._xml_location = os.getcwd() + "/graph.xml"
             nx.write_graphml_xml(self.graph,(self._xml_location))
@@ -132,13 +134,12 @@ class Graph:
             Returns a numpy array over the nodes of the graph. Finding neighbors
             in graph-tool is significantly faster.
 
-            TODO @psward, please make it so that NetworkX and graph-tool both
+            TODO @psward, please work magic so that NetworkX and graph-tool both
             index by geoid – as of now, only NetworkX does that.
         """
         if self.library == "networkx":
             return np.asarray(self.graph.nodes())
         else:
-
             return self.graph.get_vertices()
 
 
@@ -183,12 +184,13 @@ class Graph:
             return properties
 
 
-    def shortest_path(self, source, target):
+    def connected(self, nodes):
         """
-            Finds the shortest path between node `source` and node `target`.
+            Checks that the set of nodes is connected.
         """
         pass
 
+        
     
     def subgraph(self, nodes):
         """
@@ -238,6 +240,5 @@ if __name__ == "__main__":
     g.convert()
 
     start = time.time()
-    # time a thing in here!
-    end = time.time()
-    print("Ran in {} seconds".format(str(end - start)))
+    
+    print("Operation took {} seconds".format(str(end - start)))
