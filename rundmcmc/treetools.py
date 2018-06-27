@@ -245,4 +245,4 @@ def TV(p,q):
     for k in p.keys():
         total_variation += np.abs(p[k] - q[k])
     return total_variation
-h1, A, partitions = test([2,3], 3)
+#h1, A, partitions = test([2,3], 3)

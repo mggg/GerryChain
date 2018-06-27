@@ -9,7 +9,6 @@ from itertools import product
 import numpy as np
 import numpy as np
 
-from matplotlib import pyplot as plt
 from matplotlib.collections import LineCollection
 
 from sklearn import manifold
@@ -74,13 +73,28 @@ def mi_metric(d1,d2, normalised = False):
     else:
         return H-I
     
-def build_distance_matrix(partitions):
+def lp_distance(p1, p2, p):
+    if set(p1.keys()) != set(p2.keys()):
+        return "Keys do not match!"
+    
+    keys = p1.keys()
+    difference_vector = []
+    for k in keys:
+            difference_vector.append( p1[k] - p2[k])
+    return np.linalg.norm(difference_vector, p)
+        
+    
+def build_distance_matrix(partitions, metric = "information", p = 1):
     #Partition should be stored as dictionaries 
     n = len(partitions)
     M = np.zeros([n,n])
     for i in range(n):
         for j in range(n):
-            M[i][j] = mi_metric(partitions[i], partitions[j])
+            if metric == "information":
+                M[i][j] = mi_metric(partitions[i], partitions[j])
+            if metric == "Lp":
+                #p = 1 is hamming
+                M[i][j] = lp_distance(partitions[i], partitions[j],p)
     return M
  
 def subgraph_list_to_dictionary(subgraph):
@@ -119,24 +133,41 @@ def make_mds(A, M_A, h1, dim = 2):
     mds = manifold.MDS(n_components=2, max_iter=3000, eps=1e-9, random_state=seed,
                        dissimilarity="precomputed", n_jobs=1)
     
-    pos = mds.fit(similariaties).embedding_
-    print(mds.get_params)
+    mds.fit(similariaties)
+    pos = mds.embedding_
     # Rotate the data
     clf = PCA(n_components=2)    
     pos = clf.fit_transform(pos)
     
     s = 100
+    
+    from matplotlib import pyplot as plt
     plt.scatter(pos[:, 0], pos[:, 1], c=z, s=s, lw=0)    
     plt.show()
-
+    
+def stress_test(A, M_A, h1, low_dim = 2, high_dim = 10):
+    stress_list = []
+    similariaties = M_A
+    seed = np.random.RandomState(seed=3)
+    for k in range(low_dim, high_dim):
+        mds = manifold.MDS(n_components=2, max_iter=3000, eps=1e-9, random_state=seed,
+                           dissimilarity="precomputed", n_jobs=1)        
+        mds.fit(similariaties)
+        print(mds.stress_)
+        stress_list.append(mds.stress_)
+    from matplotlib import pyplot as plt
+    plt.plot(stress_list)
+    plt.show()
+    
 def testmds():
-    #Questions, whats the stress function?
-    #Dimension
+    #To see the stress function -- chcek out stress test. It doesn't seem to improve by increaseing dimension.
+    #Probably this means that this space cannot be easily embedded. Maybe try hamming?
     from treetools import test
     h1, A, partitions = test([3,3], 3,1000)
     dlist_A = partition_list_to_dictionary_list(A)
     M_A = build_distance_matrix(dlist_A)
     make_mds(A, M_A, h1)
+   # stress_test(A, M_A, h1, 2, 25)
     
 testmds()
     
