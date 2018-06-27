@@ -5,11 +5,15 @@ import networkx.readwrite
 
 from rundmcmc.accept import always_accept
 from rundmcmc.chain import MarkovChain
-from rundmcmc.make_graph import add_data_to_graph, get_assignment_dict, construct_graph
+from rundmcmc.make_graph import (add_data_to_graph, construct_graph,
+                                 get_assignment_dict)
 from rundmcmc.partition import Partition
 from rundmcmc.proposals import propose_random_flip
-from rundmcmc.updaters import (Tally, county_splits, cut_edges,
-                               cut_edges_by_part, votes_updaters)
+from rundmcmc.updaters import (Tally, boundary_nodes, county_splits, cut_edges,
+                               cut_edges_by_part, exterior_boundaries,
+                               perimeters)
+from rundmcmc.updaters import polsby_popper_updater as polsby_popper
+from rundmcmc.updaters import votes_updaters
 from rundmcmc.validity import (Validator, no_vanishing_districts,
                                refuse_new_splits, single_flip_contiguous,
                                within_percent_of_ideal_population)

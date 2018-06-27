@@ -259,8 +259,6 @@ def test_cut_edges_by_part_gives_same_total_edges_as_naive_method():
     naive_cut_edges = {tuple(sorted(edge)) for edge in graph.edges
                        if new_partition.crosses_parts(edge)}
 
-    print(result)
-    print(naive_cut_edges)
     assert naive_cut_edges == {tuple(sorted(edge)) for part in result for edge in result[part]}
 
 
