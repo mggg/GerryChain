@@ -1,3 +1,4 @@
+
 # I know this is an abhorrent way to import things, but I promise that this is
 # the way the docs told me to do it.
 from graph_tool.all import *
@@ -16,6 +17,7 @@ class Graph:
     """
         This class is an abstraction layer that sits in between NetworkX (or
         graph-tool) and the rest of the program.
+
         TODO Figure out which methods run faster at scale. Currently, getting
         vertices and edges are faster with graph-tool, but NetworkX has the
         upper hand on getting node attributes and neighbors.
@@ -96,12 +98,15 @@ class Graph:
             format readable by graph-tool. Additionally, the XML file that's
             written is available for the life of the Graph instance, then thrown
             out afterward.
+
             TODO See if we can write to a buffer/stream instead of a file... that
             may prove faster.
+
             TODO Do a user's permissions affect this program's ability to write
             in the directory where it's installed? Currently, the XML file is
             being created in the *user's* current working directory, not where
             the RunDMCMC is put... might be worth looking into.
+
             TODO Discuss if there should be a flag (--preserve-conversion, maybe)
             to not delete the XML file when this object is garbage-collected. If
             a user is running a bunch of chains and getting their adjacency (and
@@ -129,6 +134,7 @@ class Graph:
             Exports a graph in the specified file format. We'll include support
             for JSON, GeoJSON (if this is somehow different from regular JSON),
             GraphML, and shapefiles.
+            
             TODO Passing graphs between NetworkX and Graph-Tool allows us to
             support a wide range of functionality, including exporting as
             shapefile.
@@ -150,81 +156,82 @@ class Graph:
                 li.append(self.graph.vertex_properties["_graphml_vertex_id"][v])
             return np.asarray(li)
 
-        def edges(self):
-            """
-                Returns a numpy array over the edges of the graph. See
-                `Graph.nodes()` for more info on why the graph-tool call to get_edges
-                is different.
-            """
-            if self.library == "networkx":
-                return np.asarray(self.graph.edges())
-            else:
-                return self.graph.get_edges()[:, 1:]
 
-        def neighbors(self, node):
-            """
-                Returns numpy array over the neighbors of node `node`. For whatever
-                reason, graph-tool is worse than NetworkX at this call, but they're
-                still close.
-            """
-            if self.library == "networkx":
-                return np.asarray(list(nx.all_neighbors(self.graph, node)))
-            else:
-                return self.graph.get_out_neighbors(node)
+    def edges(self):
+        """
+            Returns a numpy array over the edges of the graph. See
+            `Graph.nodes()` for more info on why the graph-tool call to get_edges
+            is different.
+        """
+        if self.library == "networkx":
+            return np.asarray(self.graph.edges())
+        else:
+            return self.graph.get_edges()[:, 1:]
 
-        def get_node_attributes(self, node):
-            """
-                Returns a dict of each node's attributes.
-            """
-            if self.library == "networkx":
-                return self.graph.node[node]
-            else:
-                # Create an empty properties dictionary and get the PropertyMap
-                properties = {}
-                propertymap = self.graph.vertex_properties
+    def neighbors(self, node):
+        """
+            Returns numpy array over the neighbors of node `node`. For whatever
+            reason, graph-tool is worse than NetworkX at this call, but they're
+            still close.
+        """
+        if self.library == "networkx":
+            return np.asarray(list(nx.all_neighbors(self.graph, node)))
+        else:
+            return self.graph.get_out_neighbors(node)
 
-                # Iterate over each key in the PropertyMap, storing values on the way
-                for prop in propertymap.keys():
-                    vprop = propertymap[prop]
-                    properties[prop] = vprop[self.graph.vertex(node)]
+    def get_node_attributes(self, node):
+        """
+            Returns a dict of each node's attributes.
+        """
+        if self.library == "networkx":
+            return self.graph.node[node]
+        else:
+            # Create an empty properties dictionary and get the PropertyMap
+            properties = {}
+            propertymap = self.graph.vertex_properties
 
-                return properties
+            # Iterate over each key in the PropertyMap, storing values on the way
+            for prop in propertymap.keys():
+                vprop = propertymap[prop]
+                properties[prop] = vprop[self.graph.vertex(node)]
 
-        def connected(self, nodes):
-            """
-                Checks that the set of nodes is connected.
-            """
-            pass
+            return properties
 
-        def subgraph(self, nodes):
-            """
-                Finds the subgraph containing all nodes in `nodes`.
-            """
-            pass
+    def connected(self, nodes):
+        """
+            Checks that the set of nodes is connected.
+        """
+        pass
 
-        def to_dict_of_dicts(self):
-            """
-                Returns the graph as a dictionary of dictionaries.
-            """
-            pass
+    def subgraph(self, nodes):
+        """
+            Finds the subgraph containing all nodes in `nodes`.
+        """
+        pass
 
-        def from_dict_of_dicts(self):
-            """
-                Loads in the graph as a dictionary of dictionaries.
-            """
-            pass
+    def to_dict_of_dicts(self):
+        """
+            Returns the graph as a dictionary of dictionaries.
+        """
+        pass
 
-        def to_dict_of_lists(self):
-            """
-                Returns the graph as a dictionary of lists.
-            """
-            pass
+    def from_dict_of_dicts(self):
+        """
+            Loads in the graph as a dictionary of dictionaries.
+        """
+        pass
 
-        def from_dict_of_lists(self):
-            """
-                Loads in the graph as a dictionary of lists.
-            """
-            pass
+    def to_dict_of_lists(self):
+        """
+            Returns the graph as a dictionary of lists.
+        """
+        pass
+
+    def from_dict_of_lists(self):
+        """
+            Loads in the graph as a dictionary of lists.
+        """
+        pass
 
 if __name__ == "__main__":
     g = Graph("./testData/MO_graph.json")
