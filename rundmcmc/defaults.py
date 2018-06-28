@@ -14,7 +14,8 @@ from rundmcmc.updaters import (Tally, boundary_nodes, county_splits, cut_edges,
                                perimeters)
 from rundmcmc.updaters import polsby_popper_updater as polsby_popper
 from rundmcmc.updaters import votes_updaters
-from rundmcmc.validity import (Validator, no_vanishing_districts,
+from rundmcmc.validity import (L1_reciprocal_polsby_popper, UpperBound,
+                               Validator, no_vanishing_districts,
                                refuse_new_splits, single_flip_contiguous,
                                within_percent_of_ideal_population)
 
@@ -53,14 +54,15 @@ def PA_partition():
     assignment = dict(zip(graph.nodes(), [graph.node[x]['CD'] for x in graph.nodes()]))
 
     updaters = {
+            **votes_updaters(['VoteA', 'VoteB']),
             'population': Tally('POP100', alias='population'),
-            "perimeters": perimeters,
-            "exterior_boundaries": exterior_boundaries,
-            "boundary_nodes": boundary_nodes,
-            "cut_edges": cut_edges,
+            'perimeters': perimeters,
+            'exterior_boundaries': exterior_boundaries,
+            'boundary_nodes': boundary_nodes,
+            'cut_edges': cut_edges,
             'areas': Tally('ALAND10', alias='areas'),
             'polsby_popper': polsby_popper,
-            "cut_edges_by_part": cut_edges_by_part
+            'cut_edges_by_part': cut_edges_by_part
             }
 
     return Partition(graph, assignment, updaters)
@@ -88,9 +90,12 @@ class BasicChain(MarkovChain):
         if not initial_state['population']:
             raise ValueError('BasicChain needs the Partition to have a population updater.')
 
-        population_constraint = within_percent_of_ideal_population(initial_state, 0.05)
+        population_constraint = within_percent_of_ideal_population(initial_state, 0.01)
 
-        validator = Validator(default_constraints + [population_constraint])
+        compactness_limit = L1_reciprocal_polsby_popper(initial_state)
+        compactness_constraint = UpperBound(L1_reciprocal_polsby_popper, compactness_limit)
+
+        validator = Validator(default_constraints + [population_constraint, compactness_constraint])
 
         super().__init__(propose_random_flip, validator, always_accept, initial_state,
                          total_steps=total_steps)
