@@ -88,7 +88,7 @@ def propose_flip_every_edge_of_district(partition):
     """Chooses a random district to manipulate. Each edge on the boundary is
        incident to a node in this district and a node outside of it. For each
        edge, toss a fair coin. If tails, do nothing. If heads, toss a second
-       fair coin. If heads, add the node outside of this district to it. If 
+       fair coin. If heads, add the node outside of this district to it. If
        tails, add the node inside of this district to the other one.
 
     :partition: The current partition to propose a flip from.
