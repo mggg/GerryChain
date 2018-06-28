@@ -162,7 +162,16 @@ class Graph:
         else:
             # the first two columns are the edges
             # connected and the last is the index
-            return np.asarray(list(self.graph.get_edges()))
+            geoids = np.asarray(list(self.graph.vertex_properties["_graphml_vertex_id"]))
+
+            lookup = {}
+            for idx, geoid in enumerate(geoids):
+                lookup[idx] = geoid
+            edge_lists = []
+            arr = np.asarray(list(self.graph.get_edges()))
+            for i in range(len(arr)):
+                edge_lists.append([lookup.get(n, n) for n in arr[i]])
+            return np.asarray(edge_lists)
 
     def neighbors(self, node):
         """
