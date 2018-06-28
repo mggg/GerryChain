@@ -25,12 +25,23 @@ class Graph:
     """
     def __init__(self, path=None, geoid_col=None, graph_tool=False):
         """
+            Initialization. Returns None.
+                :path:          Optional path for the graph's data source.
+                                passed to make_graph.
+                :geoid_col:     The column by which data will be indexed. Also
+                                passed to make_graph.
+                :graph_tool:    Do you want to use graph-tool?
+            """
+            """
             Main properties of the Graph instance.
                 :library:   String denoting which graph implementation library
                             is being used.
                 :graph:     Graph object.
+
+            Returns None.
         """
         self.library = "graph_tool" if graph_tool else "networkx"
+        self.desire = graph_tool
         self.graph = None
 
         """
@@ -51,7 +62,7 @@ class Graph:
     def __del__(self):
         """
             Removes a file if a converted graph exists so there aren't any
-            artifacts.
+            artifacts. Returns None.
         """
         if self._xml_location:
             os.remove(self._xml_location)
@@ -63,7 +74,9 @@ class Graph:
             in __init__, but can also be used as a simple auxiliary function if
             somebody wants to initialize the graph in a more visible way.
             Additionally, it automatically detects the filetype and loads the
-            provided file the correct way.
+            provided file the correct way. Returns None.
+                :path:      Path to the graph's data source.
+                :geoid_col: Column by which the data will be indexed.
         """
         _, extension = os.path.splitext(path)
         self.path = path
@@ -90,6 +103,8 @@ class Graph:
         """
             Shoves data (from the dataframe) into the graph. Uses Preston's
             add_data_to_graph.
+
+            Returns None.
         """
         df = gp.read_file(path)
         add_data_to_graph(df, self.graph, col_names, id_col) 
@@ -101,7 +116,7 @@ class Graph:
             a simple XML write/read; i.e. NetworkX writes the graph to XML in a
             format readable by graph-tool. Additionally, the XML file that's
             written is available for the life of the Graph instance, then thrown
-            out afterward.
+            out afterward. Returns None.
 
             TODO See if we can write to a buffer/stream instead of a file... that
             may prove faster.
@@ -120,8 +135,9 @@ class Graph:
         """
         err = "Are you sure you want to convert to graph-tool? [y/N] "
 
-        # Check that the user actually wants to convert to graph-tool.
-        if self.library != "graph-tool":
+        # Check that the user actually wants to convert to graph-tool if they
+        # haven't indicated otherwise already.
+        if self.library != "graph-tool" and self.library != "networkx":
             answer = input(colored(err, "blue")).lower()
             if answer == "n" or answer == "no":
                 print(colored("Aborting.", "red"))
@@ -181,7 +197,7 @@ class Graph:
 
     def neighbors(self, node):
         """
-            Returns numpy array over the neighbors of node `node`. For whatever
+            Returns a numpy array over the neighbors of node `node`. For whatever
             reason, graph-tool is worse than NetworkX at this call, but they're
             still close.
         """
@@ -212,18 +228,19 @@ class Graph:
 
     def connected(self, nodes):
         """
-            Checks that the set of nodes is connected.
+            Checks that the set of nodes is connected. Returns True or False
+            based on the connectivity of the graph.
         """
         pass
 
-        
     
     def subgraph(self, nodes):
         """
-            Finds the subgraph containing all nodes in `nodes`.
+            Finds the subgraph containing all nodes in `nodes`. Returns the
+            subgraph as an adjacency matrix.
         """
         pass
-        
+
 
     def to_dict_of_dicts(self):
         """
@@ -234,7 +251,7 @@ class Graph:
 
     def from_dict_of_dicts(self):
         """
-            Loads in the graph as a dictionary of dictionaries.
+            Loads in the graph as a dictionary of dictionaries. Returns None.
         """
         pass
 
@@ -248,15 +265,17 @@ class Graph:
 
     def from_dict_of_lists(self):
         """
-            Loads in the graph as a dictionary of lists.
+            Loads in the graph as a dictionary of lists. Returns None.
         """
         pass
 
 
 if __name__ == "__main__":
-    g = Graph("./testData/MO_graph.dbf")
+    g = Graph("./testData/MO_graph.json")
     g.convert()
 
     start = time.time()
-    
+    for node in g.nodes():
+        print(g.get_node_attributes(node))
+    end = time.time()
     print("Operation took {} seconds".format(str(end - start)))
