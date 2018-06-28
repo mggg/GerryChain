@@ -1,9 +1,65 @@
+from enum import Enum
 import collections
 import math
 
 
-def touches_part(edge, part, partition):
-    return partition.assignment[edge[0]] == part or partition.assignment[edge[1]] == part
+def compute_polsby_popper(area, perimeter):
+    return 4 * math.pi * area / perimeter**2
+
+
+def polsby_popper_updater(partition):
+    return {part: compute_polsby_popper(partition['areas'][part], partition['perimeters'][part])
+            for part in partition.parts}
+
+
+def boundary_nodes(partition, alias='boundary_nodes'):
+    if partition.parent:
+        return partition.parent[alias]
+    return {node for node in partition.graph.nodes if partition.graph.nodes[node]['boundary_node']}
+
+
+def initialize_exterior_boundaries(partition):
+    part_boundaries = collections.defaultdict(set)
+    for node in partition['boundary_nodes']:
+        part_boundaries[partition.assignment[node]].add(node)
+    return part_boundaries
+
+
+def exterior_boundaries(partition, alias='exterior_boundaries'):
+    if not partition.parent:
+        return initialize_exterior_boundaries(partition)
+
+    graph_boundary = partition['boundary_nodes']
+
+    parent = partition.parent
+    flips = partition.flips
+
+    old_boundaries = parent[alias]
+    new_boundaries = collections.defaultdict(set)
+
+    for part, flow in flows_from_changes(parent.assignment, flips).items():
+        inflow = {node for node in flow['in'] if node in graph_boundary}
+        outflow = {node for node in flow['out']}
+        new_boundaries[part] = (old_boundaries[part] | inflow) - outflow
+
+    return new_boundaries
+
+
+def perimeter_of_part(partition, part):
+    """
+    Totals up the perimeter of the part in the partition.
+    Requires that 'boundary_perim' be a node attribute, 'shared_perim' be an edge
+    attribute, 'cut_edges' be an updater, and 'exterior_boundaries' be an updater.
+    """
+    exterior_perimeter = sum(partition.graph.nodes[node]['boundary_perim']
+                             for node in partition['exterior_boundaries'][part])
+    inter_part_perimeter = sum(partition.graph.edges[edge]['shared_perim']
+                               for edge in partition['cut_edges_by_part'][part])
+    return exterior_perimeter + inter_part_perimeter
+
+
+def perimeters(partition):
+    return {part: perimeter_of_part(partition, part) for part in partition.parts}
 
 
 def put_edges_into_parts(edges, assignment):
@@ -30,7 +86,7 @@ def obsolete_cuts(partition):
             not partition.crosses_parts((node, neighbor))}
 
 
-def cut_edges_by_part(partition, alias='cut_edges'):
+def cut_edges_by_part(partition, alias='cut_edges_by_part'):
     if not partition.parent:
         edges = {tuple(sorted(edge)) for edge in partition.graph.edges
                 if partition.crosses_parts(edge)}
@@ -216,3 +272,75 @@ def flows_from_changes(old_assignment, flips):
             flows[target]['in'].add(node)
             flows[source]['out'].add(node)
     return flows
+
+
+CountyInfo = collections.namedtuple("CountyInfo", "split nodes contains")
+
+
+class CountySplit(Enum):
+    NOT_SPLIT = 0
+    NEW_SPLIT = 1
+    OLD_SPLIT = 2
+
+
+def county_splits(partition_name, county_field_name):
+    """Track county splits.
+
+    :partition_name: Name that the :class:`.Partition` instance will store.
+    :county_field_name: Name of county ID field on the graph.
+
+    :returns: The tracked data is a dictionary keyed on the county ID. The
+              stored values are tuples of the form `(split, nodes, seen)`.
+              `split` is a :class:`.CountySplit` enum, `nodes` is a list of
+              node IDs, and `seen` is a list of assignment IDs that are
+              contained in the county.
+
+    """
+    def _get_county_splits(partition):
+        return compute_county_splits(partition, county_field_name,
+                                     partition_name)
+
+    return _get_county_splits
+
+
+def compute_county_splits(partition, county_field, partition_field):
+    """Track nodes in counties and information about their splitting."""
+
+    # Create the initial county data containers.
+    if not partition.parent:
+        county_dict = dict()
+
+        for node in partition.graph:
+            county = partition.graph.nodes[node][county_field]
+            if county in county_dict:
+                split, nodes, seen = county_dict[county]
+            else:
+                split, nodes, seen = CountySplit.NOT_SPLIT, [], set()
+
+            nodes.append(node)
+            seen.update(set([partition.assignment[node]]))
+
+            if len(seen) > 1:
+                split = CountySplit.OLD_SPLIT
+
+            county_dict[county] = CountyInfo(split, nodes, seen)
+
+        return county_dict
+
+    new_county_dict = dict()
+
+    parent = partition.parent
+    for county, county_info in parent[partition_field].items():
+        seen = set(partition.assignment[node] for node in county_info.nodes)
+
+        split = CountySplit.NOT_SPLIT
+
+        if len(seen) > 1:
+            if county_info.split != CountySplit.OLD_SPLIT:
+                split = CountySplit.NEW_SPLIT
+            else:
+                split = CountySplit.OLD_SPLIT
+
+        new_county_dict[county] = CountyInfo(split, county_info.nodes, seen)
+
+    return new_county_dict

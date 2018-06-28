@@ -1,87 +1,43 @@
-import json
+import functools
 
-import geopandas as gp
-import networkx.readwrite
-import psutil as ps
 import matplotlib.pyplot as plt
-import sys
-import os
 
-from rundmcmc.defaults import BasicChain
-from rundmcmc.make_graph import add_data_to_graph, get_assignment_dict
-from rundmcmc.partition import Partition
-from rundmcmc.scores import mean_median, mean_thirdian
-from rundmcmc.updaters import Tally, cut_edges, votes_updaters
-
-
-def example_partition():
-    df = gp.read_file("./testData/mo_cleaned_vtds.shp")
-
-    with open("./testData/MO_graph.json") as f:
-        graph_json = json.load(f)
-
-    graph = networkx.readwrite.json_graph.adjacency_graph(graph_json)
-
-    assignment = get_assignment_dict(df, "GEOID10", "CD")
-
-    add_data_to_graph(df, graph, ['PR_DV08', 'PR_RV08', 'POP100'], id_col='GEOID10')
-
-    updaters = {
-        **votes_updaters(['PR_DV08', 'PR_RV08'], election_name='08'),
-        'population': Tally('POP100', alias='population'),
-        'cut_edges': cut_edges
-    }
-    return Partition(graph, assignment, updaters)
-
-
-def print_summary(partition, scores):
-    bins = []
-    print("")
-    for name, score in scores.items():
-        print(f"{name}: {score(partition, 'PR_DV08%')}")
-        bins += [{name: score(partition, 'PR_DV08%')}]
-
-    return bins
+from rundmcmc.defaults import BasicChain, PA_partition
+from rundmcmc.run import pipe_to_table
+from rundmcmc.scores import efficiency_gap, mean_median, mean_thirdian
+from rundmcmc.validity import L1_reciprocal_polsby_popper
 
 
 def main():
-    initial_partition = example_partition()
+    initial_partition = PA_partition()
 
-    chain = BasicChain(initial_partition, total_steps=100)
+    chain = BasicChain(initial_partition, total_steps=10000)
 
     scores = {
-        'Mean-Median': mean_median,
-        'Mean-Thirdian': mean_thirdian
+        'Mean-Median': functools.partial(mean_median, proportion_column_name='VoteA%'),
+        'Mean-Thirdian': functools.partial(mean_thirdian, proportion_column_name='VoteA%'),
+        'Efficiency Gap': functools.partial(efficiency_gap, col1='VoteA', col2='VoteB'),
+        'L1 Reciprocal Polsby-Popper': L1_reciprocal_polsby_popper
     }
 
-    process = ps.Process(os.getpid())
-    start = process.memory_info().rss
-    total = ps.virtual_memory()[0]
+    initial_scores = {key: score(initial_partition) for key, score in scores.items()}
 
-    hist = []
-    mem_usage = []
-    num_inside = []
+    table = pipe_to_table(chain, scores)
 
-    for partition in chain:
-        data = print_summary(partition, scores)
-        hist += data
+    fig, axes = plt.subplots(2, 2)
 
-        """
-            Try and mock a histogram by tracking all the data from start to
-            finish on a billion iterations of the chain.
-        """
-        available = process.memory_info().rss
-        used = available
-        mem_usage += [100 * ((used - start) / total)]
-        num_inside += [len(mem_usage)]
+    quadrants = {
+        'Mean-Median': (0, 0),
+        'Mean-Thirdian': (0, 1),
+        'Efficiency Gap': (1, 0),
+        'L1 Reciprocal Polsby-Popper': (1, 1)
+    }
 
-    iterations = list(range(0, len(mem_usage)))
-
-    """
-        Generate histograms of how the number of things in the histogram scale
-        compared to how much memory is actually being used.
-    """
-    plt.scatter(iterations, mem_usage, c="r", label="% memory used")
+    for key in scores:
+        quadrant = quadrants[key]
+        axes[quadrant].hist(table[key], bins=50)
+        axes[quadrant].set_title(key)
+        axes[quadrant].axvline(x=initial_scores[key], color='r')
     plt.show()
 
 
