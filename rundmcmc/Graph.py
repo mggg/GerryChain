@@ -148,11 +148,8 @@ class Graph:
         if self.library == "networkx":
             return np.asarray(self.graph.nodes())
         else:
-            li = []
-            for i in range(len(self.graph.get_vertices())):
-                v = self.graph.vertex(i)
-                li.append(self.graph.vertex_properties["_graphml_vertex_id"][v])
-            return np.asarray(li)
+            return np.asarray(list(self.graph.vertex_properties["_graphml_vertex_id"]))
+
 
     def edges(self):
         """
