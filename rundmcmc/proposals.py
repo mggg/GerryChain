@@ -29,7 +29,7 @@ def propose_several_random_flips(partition):
     :partition: The current partition to propose a flip from.
     :returns: a dictionary with the flipped nodes mapped to their new assignments
 
-    """   
+    """
     number_of_flips = random.randint(2, 7)
 
     proposal = dict()
@@ -46,7 +46,7 @@ def propose_flip_every_district(partition):
     :partition: The current partition to propose a flip from.
     :returns: a dictionary with the flipped nodes mapped to their new assignments
 
-    """   
+    """
     proposal = dict()
 
     for dist_edges in partition['cut_edges_by_part'].values():
@@ -67,7 +67,7 @@ def propose_chunk_flip(partition):
     :partition: The current partition to propose a flip from.
     :returns: a dictionary with the flipped nodes mapped to their new assignments
 
-    """   
+    """
     proposal = dict()
 
     edge = random.choice(tuple(partition['cut_edges']))
@@ -119,7 +119,7 @@ def propose_single_or_chunk(partition):
     :partition: The current partition to propose a flip from.
     :returns: a dictionary with the flipped nodes mapped to their new assignments
 
-    """   
+    """
     if(random.random() > .1):
         return propose_random_flip(partition)
     else:
