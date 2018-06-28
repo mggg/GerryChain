@@ -169,9 +169,8 @@ class Graph:
                 lookup[idx] = geoid
             edge_lists = []
             arr = np.asarray(list(self.graph.get_edges()))
-            for i in range(len(arr)):
-                edge_lists.append([lookup.get(n, n) for n in arr[i]])
-            return np.asarray(edge_lists)
+            return np.vectorize(lookup.get)(arr)
+
 
     def neighbors(self, node):
         """
@@ -244,4 +243,7 @@ if __name__ == "__main__":
     g = Graph("./testData/MO_graph.json")
     g.convert()
     print(g.nodes())
+    start = time.time()
     print(g.edges())
+    end = time.time()
+    print(end - start)
