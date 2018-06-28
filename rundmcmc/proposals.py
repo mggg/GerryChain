@@ -94,7 +94,7 @@ def propose_flip_every_edge_of_district(partition):
     :partition: The current partition to propose a flip from.
     :returns: a dictionary with the flipped nodes mapped to their new assignments
 
-    """   
+    """
     proposal = dict()
 
     edges = random.choice(list(partition['cut_edges_by_part'].values()))
