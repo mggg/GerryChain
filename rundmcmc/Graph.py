@@ -1,10 +1,8 @@
-
 # I know this is an abhorrent way to import things, but I promise that this is
 # the way the docs told me to do it.
 from graph_tool.all import *
 from termcolor import colored
 import geopandas as gp
-import pysal as ps
 import os
 import networkx as nx
 import json
@@ -12,36 +10,25 @@ import numpy as np
 import time
 
 from rundmcmc.make_graph import add_data_to_graph, construct_graph
-from rundmcmc.validity import bfs
+
 
 class Graph:
     """
         This class is an abstraction layer that sits in between NetworkX (or
         graph-tool) and the rest of the program.
-
         TODO Figure out which methods run faster at scale. Currently, getting
         vertices and edges are faster with graph-tool, but NetworkX has the
         upper hand on getting node attributes and neighbors.
     """
+
     def __init__(self, path=None, geoid_col=None, graph_tool=False):
         """
-            Initialization. Returns None.
-                :path:          Optional path for the graph's data source.
-                                passed to make_graph.
-                :geoid_col:     The column by which data will be indexed. Also
-                                passed to make_graph.
-                :graph_tool:    Do you want to use graph-tool?
-            """
-            """
             Main properties of the Graph instance.
                 :library:   String denoting which graph implementation library
                             is being used.
                 :graph:     Graph object.
-
-            Returns None.
         """
         self.library = "graph_tool" if graph_tool else "networkx"
-        self.desire = graph_tool
         self.graph = None
 
         """
@@ -54,19 +41,17 @@ class Graph:
         self._data_added = False
         self._xml_location = None
 
-        # Try to make a graph if `path` is provided
+        # Try to make a graph if `path` is provided.
         if path:
             self.make_graph(path, geoid_col)
-
 
     def __del__(self):
         """
             Removes a file if a converted graph exists so there aren't any
-            artifacts. Returns None.
+            artifacts.
         """
         if self._xml_location:
             os.remove(self._xml_location)
-
 
     def make_graph(self, path, geoid_col=None):
         """
@@ -74,9 +59,7 @@ class Graph:
             in __init__, but can also be used as a simple auxiliary function if
             somebody wants to initialize the graph in a more visible way.
             Additionally, it automatically detects the filetype and loads the
-            provided file the correct way. Returns None.
-                :path:      Path to the graph's data source.
-                :geoid_col: Column by which the data will be indexed.
+            provided file the correct way.
         """
         _, extension = os.path.splitext(path)
         self.path = path
@@ -98,17 +81,13 @@ class Graph:
                 adjacency = json.load(f)
                 self.graph = nx.readwrite.json_graph.adjacency_graph(adjacency)
 
-
     def add_data(self, path=None, col_names=None, id_col=None):
         """
             Shoves data (from the dataframe) into the graph. Uses Preston's
             add_data_to_graph.
-
-            Returns None.
         """
         df = gp.read_file(path)
         add_data_to_graph(df, self.graph, col_names, id_col)
-
 
     def convert(self):
         """
@@ -116,16 +95,13 @@ class Graph:
             a simple XML write/read; i.e. NetworkX writes the graph to XML in a
             format readable by graph-tool. Additionally, the XML file that's
             written is available for the life of the Graph instance, then thrown
-            out afterward. Returns None.
-
+            out afterward.
             TODO See if we can write to a buffer/stream instead of a file... that
             may prove faster.
-
             TODO Do a user's permissions affect this program's ability to write
             in the directory where it's installed? Currently, the XML file is
             being created in the *user's* current working directory, not where
             the RunDMCMC is put... might be worth looking into.
-
             TODO Discuss if there should be a flag (--preserve-conversion, maybe)
             to not delete the XML file when this object is garbage-collected. If
             a user is running a bunch of chains and getting their adjacency (and
@@ -134,37 +110,25 @@ class Graph:
             re-convert each time? I feel this is something to address.
         """
 
-<<<<<<< HEAD
         # Check that the user actually wants to convert to graph-tool.
         if self.library != "graph-tool":
-
             # Try to convert the graph to GraphML
             try:
                 self._xml_location = os.getcwd() + "/graph.xml"
-                nx.write_graphml_xml(self.graph,(self._xml_location))
+                nx.write_graphml_xml(self.graph, (self._xml_location))
                 self.graph = load_graph(self._xml_location)
                 self._converted = True
                 self.library = "graph_tool"
             except:
                 err = "Encountered an error during conversion. Aborting."
                 raise RuntimeError(err)
-=======
-        # Check that the user actually wants to convert to graph-tool if they
-        # haven't indicated otherwise already.
-        if self.library != "graph-tool" and self.library != "networkx":
-            answer = input(colored(err, "blue")).lower()
-            if answer == "n" or answer == "no":
-                print(colored("Aborting.", "red"))
->>>>>>> 790e34a1818c6a431d7878840811313383886561
                 return
-
 
     def export_to_file(self, format="json"):
         """
             Exports a graph in the specified file format. We'll include support
             for JSON, GeoJSON (if this is somehow different from regular JSON),
             GraphML, and shapefiles.
-
             TODO Passing graphs between NetworkX and Graph-Tool allows us to
             support a wide range of functionality, including exporting as
             shapefile.
@@ -176,123 +140,93 @@ class Graph:
         """
             Returns a numpy array over the nodes of the graph. Finding neighbors
             in graph-tool is significantly faster.
-
-            TODO @psward, please work magic so that NetworkX and graph-tool both
-            index by geoid – as of now, only NetworkX does that.
         """
         if self.library == "networkx":
             return np.asarray(self.graph.nodes())
         else:
             li = []
-
             for i in range(len(self.graph.get_vertices())):
                 v = self.graph.vertex(i)
                 li.append(self.graph.vertex_properties["_graphml_vertex_id"][v])
             return np.asarray(li)
 
+        def edges(self):
+            """
+                Returns a numpy array over the edges of the graph. See
+                `Graph.nodes()` for more info on why the graph-tool call to get_edges
+                is different.
+            """
+            if self.library == "networkx":
+                return np.asarray(self.graph.edges())
+            else:
+                return self.graph.get_edges()[:, 1:]
 
-    def edges(self):
-        """
-            Returns a numpy array over the edges of the graph. See
-            `Graph.nodes()` for more info on why the graph-tool call to get_edges
-            is different.
-        """
-        if self.library == "networkx":
-            return np.asarray(self.graph.edges())
-        else:
-            return self.graph.get_edges()[:,1:]
+        def neighbors(self, node):
+            """
+                Returns numpy array over the neighbors of node `node`. For whatever
+                reason, graph-tool is worse than NetworkX at this call, but they're
+                still close.
+            """
+            if self.library == "networkx":
+                return np.asarray(list(nx.all_neighbors(self.graph, node)))
+            else:
+                return self.graph.get_out_neighbors(node)
 
+        def get_node_attributes(self, node):
+            """
+                Returns a dict of each node's attributes.
+            """
+            if self.library == "networkx":
+                return self.graph.node[node]
+            else:
+                # Create an empty properties dictionary and get the PropertyMap
+                properties = {}
+                propertymap = self.graph.vertex_properties
 
-    def neighbors(self, node):
-        """
-            Returns a numpy array over the neighbors of node `node`. For whatever
-            reason, graph-tool is worse than NetworkX at this call, but they're
-            still close.
-        """
-        if self.library == "networkx":
-            return np.asarray(list(nx.all_neighbors(self.graph, node)))
-        else:
-            return self.graph.get_out_neighbors(node)
+                # Iterate over each key in the PropertyMap, storing values on the way
+                for prop in propertymap.keys():
+                    vprop = propertymap[prop]
+                    properties[prop] = vprop[self.graph.vertex(node)]
 
+                return properties
 
-    def get_node_attributes(self, node):
-        """
-            Returns a dict of each node's attributes.
-        """
-        if self.library == "networkx":
-            return self.graph.node[node]
-        else:
-            # Create an empty properties dictionary and get the PropertyMap
-            properties = {}
-            propertymap = self.graph.vertex_properties
+        def connected(self, nodes):
+            """
+                Checks that the set of nodes is connected.
+            """
+            pass
 
-            # Iterate over each key in the PropertyMap, storing values on the way
-            for prop in propertymap.keys():
-                vprop = propertymap[prop]
-                properties[prop] = vprop[self.graph.vertex(node)]
+        def subgraph(self, nodes):
+            """
+                Finds the subgraph containing all nodes in `nodes`.
+            """
+            pass
 
-            return properties
+        def to_dict_of_dicts(self):
+            """
+                Returns the graph as a dictionary of dictionaries.
+            """
+            pass
 
+        def from_dict_of_dicts(self):
+            """
+                Loads in the graph as a dictionary of dictionaries.
+            """
+            pass
 
-    def connected(self, nodes):
-        """
-            Checks that the set of nodes is connected. Returns True or False
-            based on the connectivity of the graph.
-        """
-        pass
+        def to_dict_of_lists(self):
+            """
+                Returns the graph as a dictionary of lists.
+            """
+            pass
 
-<<<<<<< HEAD
-
-
-=======
-    
->>>>>>> 790e34a1818c6a431d7878840811313383886561
-    def subgraph(self, nodes):
-        """
-            Finds the subgraph containing all nodes in `nodes`. Returns the
-            subgraph as an adjacency matrix.
-        """
-        pass
-
-
-    def to_dict_of_dicts(self):
-        """
-            Returns the graph as a dictionary of dictionaries.
-        """
-        pass
-
-
-    def from_dict_of_dicts(self):
-        """
-            Loads in the graph as a dictionary of dictionaries. Returns None.
-        """
-        pass
-
-
-    def to_dict_of_lists(self):
-        """
-            Returns the graph as a dictionary of lists.
-        """
-        pass
-
-
-    def from_dict_of_lists(self):
-        """
-            Loads in the graph as a dictionary of lists. Returns None.
-        """
-        pass
-
+        def from_dict_of_lists(self):
+            """
+                Loads in the graph as a dictionary of lists.
+            """
+            pass
 
 if __name__ == "__main__":
     g = Graph("./testData/MO_graph.json")
     g.convert()
-<<<<<<< HEAD
     print(g.nodes())
-=======
-
-    start = time.time()
-    for node in g.nodes():
-        print(g.get_node_attributes(node))
-    end = time.time()
-    print("Operation took {} seconds".format(str(end - start)))
->>>>>>> 790e34a1818c6a431d7878840811313383886561
