@@ -160,7 +160,7 @@ class Graph:
         if self.library == "networkx":
             return np.asarray(self.graph.edges())
         else:
-            return self.graph.get_edges()[:, 1:]
+            return np.asarray(list(self.graph.get_edges()))
 
     def neighbors(self, node):
         """
@@ -233,3 +233,4 @@ if __name__ == "__main__":
     g = Graph("./testData/MO_graph.json")
     g.convert()
     print(g.nodes())
+    print(g.edges())
