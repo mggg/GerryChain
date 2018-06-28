@@ -287,5 +287,6 @@ def refuse_new_splits(partition_county_field):
 
 
 def no_vanishing_districts(partition):
-    parts = partition.parts
-    return all(len(nodes) > 0 for part, nodes in parts.items())
+    if not partition.parent:
+        return True
+    return len(partition) == len(partition.parent)
