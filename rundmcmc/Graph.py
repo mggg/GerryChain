@@ -22,7 +22,6 @@ class Graph:
         vertices and edges are faster with graph-tool, but NetworkX has the
         upper hand on getting node attributes and neighbors.
     """
-
     def __init__(self, path=None, geoid_col=None, graph_tool=False):
         """
             Main properties of the Graph instance.
@@ -141,7 +140,6 @@ class Graph:
         """
         pass
 
-
     def nodes(self):
         """
             Returns a numpy array over the nodes of the graph. Finding neighbors
@@ -155,7 +153,6 @@ class Graph:
                 v = self.graph.vertex(i)
                 li.append(self.graph.vertex_properties["_graphml_vertex_id"][v])
             return np.asarray(li)
-
 
     def edges(self):
         """
@@ -178,6 +175,7 @@ class Graph:
             return np.asarray(list(nx.all_neighbors(self.graph, node)))
         else:
             return self.graph.get_out_neighbors(node)
+
 
     def get_node_attributes(self, node):
         """
@@ -232,6 +230,7 @@ class Graph:
             Loads in the graph as a dictionary of lists.
         """
         pass
+
 
 if __name__ == "__main__":
     g = Graph("./testData/MO_graph.json")
