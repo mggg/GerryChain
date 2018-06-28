@@ -160,6 +160,8 @@ class Graph:
         if self.library == "networkx":
             return np.asarray(self.graph.edges())
         else:
+            # the first two columns are the edges
+            # connected and the last is the index
             return np.asarray(list(self.graph.get_edges()))
 
     def neighbors(self, node):

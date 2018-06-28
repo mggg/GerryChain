@@ -1,4 +1,3 @@
-
 class MarkovChain:
     """
     MarkovChain is an iterator that allows the user to iterate over the states
@@ -39,7 +38,16 @@ class MarkovChain:
     def __next__(self):
         while self.counter < self.total_steps:
             proposal = self.proposal(self.state)
+
+            if not proposal:
+                if self.accept(self.state):
+                    self.counter += 1
+                    return self.state
+                else:
+                    continue
+
             proposed_next_state = self.state.merge(proposal)
+
             if self.is_valid(proposed_next_state):
                 if self.accept(proposed_next_state):
                     self.state = proposed_next_state

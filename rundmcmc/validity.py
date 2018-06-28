@@ -1,8 +1,60 @@
-from rundmcmc.updaters import CountySplit
-from networkx import NetworkXNoPath
-import networkx.algorithms.shortest_paths.weighted as nx_path
-import networkx as nx
+import collections
 import random
+
+import networkx as nx
+import networkx.algorithms.shortest_paths.weighted as nx_path
+from networkx import NetworkXNoPath
+
+from rundmcmc.updaters import CountySplit
+
+
+def L1_reciprocal_polsby_popper(partition):
+    return sum(1 / value for value in partition['polsby_popper'].values())
+
+
+def population(partition):
+    return partition['population'].values()
+
+
+def within_percent_of_ideal_population(initial_partition, percent=0.01):
+    """
+    Slightly different implementation of the 'within 1%' rule, based on the text of
+    Moon's PA report.
+    """
+    number_of_districts = len(initial_partition['population'].keys())
+    total_population = sum(initial_partition['population'].values())
+    ideal_population = total_population / number_of_districts
+    bounds = ((1 - percent) * ideal_population, (1 + percent) * ideal_population)
+    return Bounds(func=population, bounds=bounds)
+
+
+class Bounds:
+    def __init__(self, func, bounds):
+        self.func = func
+        self.bounds = bounds
+
+    def __call__(self, *args, **kwargs):
+        lower, upper = self.bounds
+        values = self.func(*args, **kwargs)
+        return lower <= min(values) and max(values) <= upper
+
+
+class UpperBound:
+    def __init__(self, func, bound):
+        self.func = func
+        self.bound = bound
+
+    def __call__(self, *args, **kwargs):
+        return self.func(*args, **kwargs) <= self.bound
+
+
+class LowerBound:
+    def __init__(self, func, bound):
+        self.func = func
+        self.bound = bound
+
+    def __call__(self, *args, **kwargs):
+        return self.func(*args, **kwargs) >= self.bound
 
 
 class Validator:
@@ -22,7 +74,7 @@ class Validator:
         return True
 
 
-def single_flip_contiguous(partition, parent=None, flips=None):
+def single_flip_contiguous(partition):
     """
     Check if swapping the given node from its old assignment disconnects the
     old assignment class.
@@ -41,8 +93,10 @@ def single_flip_contiguous(partition, parent=None, flips=None):
     the changed graph.
 
     """
+    parent = partition.parent
+    flips = partition.flips
     if not flips or not parent:
-        return contiguous(partition, flips)
+        return contiguous(partition)
 
     graph = partition.graph
     assignment_dict = parent.assignment
@@ -93,7 +147,7 @@ def single_flip_contiguous(partition, parent=None, flips=None):
     return True
 
 
-def contiguous(partition, parent=None, flips=None):
+def contiguous(partition):
     """
     :parition: Current :class:`.Partition` object.
     :flips: Dictionary of proposed flips, with `(nodeid: new_assignment)`
@@ -102,6 +156,7 @@ def contiguous(partition, parent=None, flips=None):
 
     :returns: True if contiguous, False otherwise.
     """
+    flips = partition.flips
     if not flips:
         flips = dict()
 
@@ -132,7 +187,7 @@ def contiguous(partition, parent=None, flips=None):
     return True
 
 
-def fast_connected(partition, flips=None):
+def fast_connected(partition):
     """
         Checks that a given partition's components are connected using
         a simple breadth-first search.
@@ -144,14 +199,10 @@ def fast_connected(partition, flips=None):
 
     # Inverts the assignment dictionary so that lists of VTDs are keyed
     # by their congressional districts.
-    districts = {}
+    districts = collections.defaultdict(set)
 
     for vtd in assignment:
-        district = assignment[vtd]
-        if districts.get(district, None) is None:
-            districts[district] = [vtd]
-        else:
-            districts[district] += [vtd]
+        districts[assignment[vtd]].add(vtd)
 
     # Generates a subgraph for each district and perform a BFS on it
     # to check connectedness.
