@@ -21,10 +21,15 @@ class Graph:
 
         TODO Figure out which methods run faster at scale. Currently, getting
         vertices and edges are faster with graph-tool, but NetworkX has the
-        upper hand on getting node attributes and getting neighbors.
+        upper hand on getting node attributes and neighbors.
     """
     def __init__(self, path=None, geoid_col=None, graph_tool=False):
-        # Main properties of the Graph object.
+        """
+            Main properties of the Graph instance.
+                :library:   String denoting which graph implementation library
+                            is being used.
+                :graph:     Graph object.
+        """
         self.library = "graph_tool" if graph_tool else "networkx"
         self.graph = None
 
@@ -57,7 +62,6 @@ class Graph:
             Loads a graph from the specified data source. Called automatically
             in __init__, but can also be used as a simple auxiliary function if
             somebody wants to initialize the graph in a more visible way.
-
             Additionally, it automatically detects the filetype and loads the
             provided file the correct way.
         """
@@ -67,7 +71,7 @@ class Graph:
         # If we encounter an unsupported filetype, kill the program
         if not (extension == ".shp" or extension == ".json"):
             err = "The {} filetype is unsupported. Aborting.".format(extension)
-            print(err, "red")
+            raise RuntimeError(err)
             return
 
         # Determines whether to read in from shapefiles or geojson.
@@ -93,7 +97,26 @@ class Graph:
 
     def convert(self):
         """
-            Converts an existing NetworkX graph to graph-tool.
+            Converts an existing NetworkX graph to graph-tool. This method uses
+            a simple XML write/read; i.e. NetworkX writes the graph to XML in a
+            format readable by graph-tool. Additionally, the XML file that's
+            written is available for the life of the Graph instance, then thrown
+            out afterward.
+
+            TODO See if we can write to a buffer/stream instead of a file... that
+            may prove faster.
+
+            TODO Do a user's permissions affect this program's ability to write
+            in the directory where it's installed? Currently, the XML file is
+            being created in the *user's* current working directory, not where
+            the RunDMCMC is put... might be worth looking into.
+
+            TODO Discuss if there should be a flag (--preserve-conversion, maybe)
+            to not delete the XML file when this object is garbage-collected. If
+            a user is running a bunch of chains and getting their adjacency (and
+            other) data from, say, a GeoJSON file, and they're using graph-tool,
+            wouldn't it make sense to provide them with an option to not have to
+            re-convert each time? I feel this is something to address.
         """
         err = "Are you sure you want to convert to graph-tool? [y/N] "
 
@@ -112,7 +135,8 @@ class Graph:
             self._converted = True
             self.library = "graph_tool"
         except:
-            print(colored("Encountered an error during conversion. Aborting.", "red"))
+            err = "Encountered an error during conversion. Aborting."
+            raise RuntimeError(err)
             return
 
     
@@ -174,9 +198,11 @@ class Graph:
         if self.library == "networkx":
             return self.graph.node[node]
         else:
+            # Create an empty properties dictionary and get the PropertyMap
             properties = {}
             propertymap = self.graph.vertex_properties
 
+            # Iterate over each key in the PropertyMap, storing values on the way
             for prop in propertymap.keys():
                 vprop = propertymap[prop]
                 properties[prop] = vprop[self.graph.vertex(node)]
@@ -197,14 +223,7 @@ class Graph:
             Finds the subgraph containing all nodes in `nodes`.
         """
         pass
-
-
-    def is_connected(self):
-        """
-            Checks whether the graph is connected.
-        """
-        pass
-
+        
 
     def to_dict_of_dicts(self):
         """
@@ -235,8 +254,7 @@ class Graph:
 
 
 if __name__ == "__main__":
-    g = Graph()
-    g.make_graph("./testData/MO_graph.json")
+    g = Graph("./testData/MO_graph.dbf")
     g.convert()
 
     start = time.time()
