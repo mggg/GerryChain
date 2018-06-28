@@ -39,6 +39,15 @@ class Bounds:
         return lower <= min(values) and max(values) <= upper
 
 
+class UpperBound:
+    def __init__(self, func, bound):
+        self.func = func
+        self.bound = bound
+
+    def __call__(self, *args, **kwargs):
+        return self.func(*args, **kwargs) <= self.bound
+
+
 class LowerBound:
     def __init__(self, func, bound):
         self.func = func

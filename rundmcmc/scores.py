@@ -96,14 +96,14 @@ def compute_meta_graph_degree(chain):
     degree = MetaGraphDegree(chain)
     data = []
 
-    previous = None
+    previous_assignment = None
     for state in chain:
-        if state is previous:
-            continue
-        d = degree(state)
-        data.append(d)
-        print(d)
-        previous = state
+        if state.assignment != previous_assignment:
+            d = degree(state)
+            data.append(d)
+            print(state.flips)
+            print(d)
+            previous_assignment = state.assignment
 
     print("Local average degree of the metagraph:")
     print(numpy.mean([row['valid'] for row in data]))

@@ -25,7 +25,7 @@ def run(chain, loggers):
 
 def handle_chain(chain, handlers):
     for state in chain:
-        yield {key: handler(state) for key, handler in handlers.items}
+        yield {key: handler(state) for key, handler in handlers.items()}
 
 
 def pipe_to_table(chain, handlers):
