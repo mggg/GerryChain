@@ -1,12 +1,12 @@
-<<<<<<< HEAD
+
 import json
 import geopandas as gp
 import networkx.readwrite
-=======
+
 import functools
 
 import matplotlib.pyplot as plt
->>>>>>> 5a5ed691e33b7b092a596b35f7c49fcec28fc5ab
+
 
 from rundmcmc.defaults import BasicChain, PA_partition
 from rundmcmc.run import pipe_to_table
