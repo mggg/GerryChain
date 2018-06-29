@@ -68,7 +68,7 @@ class Histogram:
         return self.bins[self.find_bin_index(value)]
 
     def generate_bins(self):
-        left, right = self.bounds
+        left = self.bounds[0]
         for n in range(self.number_of_bins):
             yield (left + n * self.bin_size, left + (n + 1) * self.bin_size)
 
