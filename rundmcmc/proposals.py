@@ -5,7 +5,7 @@ def propose_random_flip(partition):
     """Proposes a random boundary flip from the partition.
 
     :partition: The current partition to propose a flip from.
-    :returns: a dictionary of with the flipped node mapped to its new assignment
+    :returns: a dictionary with the flipped node mapped to its new assignment
 
     """
     edge = random.choice(tuple(partition['cut_edges']))
@@ -23,6 +23,13 @@ def propose_random_flip(partition):
 
 
 def propose_several_random_flips(partition):
+    """Proposes between 2 and 7 random boundary flips from the partition.
+       Calls the propose_random_flip() method from this file.
+
+    :partition: The current partition to propose a flip from.
+    :returns: a dictionary with the flipped nodes mapped to their new assignments
+
+    """
     number_of_flips = random.randint(2, 7)
 
     proposal = dict()
@@ -34,6 +41,12 @@ def propose_several_random_flips(partition):
 
 
 def propose_flip_every_district(partition):
+    """Proposes a random boundary flip for each district in the partition.
+
+    :partition: The current partition to propose a flip from.
+    :returns: a dictionary with the flipped nodes mapped to their new assignments
+
+    """
     proposal = dict()
 
     for dist_edges in partition['cut_edges_by_part'].values():
@@ -49,6 +62,12 @@ def propose_flip_every_district(partition):
 
 
 def propose_chunk_flip(partition):
+    """Chooses a random boundary node and proposes to flip it and all of its neighbors
+
+    :partition: The current partition to propose a flip from.
+    :returns: a dictionary with the flipped nodes mapped to their new assignments
+
+    """
     proposal = dict()
 
     edge = random.choice(tuple(partition['cut_edges']))
@@ -66,6 +85,16 @@ def propose_chunk_flip(partition):
 
 
 def propose_flip_every_edge_of_district(partition):
+    """Chooses a random district to manipulate. Each edge on the boundary is
+       incident to a node in this district and a node outside of it. For each
+       edge, toss a fair coin. If tails, do nothing. If heads, toss a second
+       fair coin. If heads, add the node outside of this district to it. If
+       tails, add the node inside of this district to the other one.
+
+    :partition: The current partition to propose a flip from.
+    :returns: a dictionary with the flipped nodes mapped to their new assignments
+
+    """
     proposal = dict()
 
     edges = random.choice(list(partition['cut_edges_by_part'].values()))
@@ -80,6 +109,17 @@ def propose_flip_every_edge_of_district(partition):
 
 
 def propose_single_or_chunk(partition):
+    """With probability .9, chooses a random boundary node and proposes to flip it.
+       With probability .1, chooses a random boundary node and proposes to flip it
+       and all of its neighbors.
+       Calls the propose_random_flip() and propose_chunk_flip()
+       methods from this file.
+
+
+    :partition: The current partition to propose a flip from.
+    :returns: a dictionary with the flipped nodes mapped to their new assignments
+
+    """
     if(random.random() > .1):
         return propose_random_flip(partition)
     else:
