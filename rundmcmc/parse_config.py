@@ -15,10 +15,17 @@ from rundmcmc.chain import MarkovChain
 from rundmcmc.run import pipe_to_table
 
 
-
 def outputfunc(table, scores):
+    """Function that processes the output of a chain run.
+    (should probably be in a different file at some point
+    in the future)
+
+    outputs a window plot of 
+    """
     numrows = 2
-    numcols = int(len(scores)/2+0.5)
+    numcols = int(len(scores)/numrows)
+    numrows = max(numrows, 1)
+    numcols = max(numcols, 1)
     fig, axes = plt.subplots(ncols=numcols, nrows=numrows)
 
     scoreNames = [x for x in scores.keys()][:numrows*numcols]
@@ -27,7 +34,6 @@ def outputfunc(table, scores):
         for i, key in enumerate(scoreNames)
     }
 
-    print(quadrants)
     initial_scores = table[0]
 
     for key in scores:
@@ -81,7 +87,7 @@ def scores_arg_placement(funcName, args):
 
 def required_graph_fields():
     """The minimum data required to run MCMC on a state at the moment"""
-    return ['id', 'pop', 'area', 'perim', 'cd']
+    return ['id', 'pop', 'area', 'cd']
 
 
 def gsource_gdata(configGraphSource, configGraphData):
@@ -89,11 +95,10 @@ def gsource_gdata(configGraphSource, configGraphData):
     ID = configGraphData['id']
     POP = configGraphData['pop']
     AREA = configGraphData['area']
-    PERIM = configGraphData['perim']
     CD = configGraphData['cd']
     # create graph from data and load required data
-    graph = mgs.construct_graph(configGraphSource['gSource'], ID, [POP, AREA, PERIM, CD])
-    return graph, ID, POP, AREA, PERIM, CD
+    graph = mgs.construct_graph(configGraphSource['gSource'], ID, [POP, AREA, CD])
+    return graph, ID, POP, AREA, CD
 
 
 def vsource_vdata(graph, configVoteSource, configVoteData):
@@ -125,7 +130,7 @@ def read_basic_config(configFileName):
         raise Exception("ERROR: graph_data must contain all of the following fields:%s"%elements)
 
     # create graph and get global names for required graph attributes
-    graph, ID, POP, AREA, PERIM, CD = gsource_gdata(config['GRAPH_SOURCE'], config['GRAPH_DATA'])
+    graph, ID, POP, AREA, CD = gsource_gdata(config['GRAPH_SOURCE'], config['GRAPH_DATA'])
     # if there is more data to add to graph (e.g. voting data in a csv)
     if config.has_section('VOTE_DATA_SOURCE'):
         vsource_vdata(graph, config['VOTE_DATA_SOURCE'], config['VOTE_DATA'])

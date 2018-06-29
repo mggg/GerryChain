@@ -11,4 +11,4 @@ def main():
     output_func(output, scores)
 
 if __name__ == "__main__":
-    mymain()
+    main()
