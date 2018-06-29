@@ -261,7 +261,7 @@ def districts_within_tolerance(partition, attribute_name="population", percentag
     if percentage >= 1:
         percentage *= 0.01
 
-    values = [x for x in partition[attribute_name].values()]
+    values = partition[attribute_name].values()
     max_difference = max(values) - min(values)
 
     within_tolerance = max_difference <= percentage * min(values)
