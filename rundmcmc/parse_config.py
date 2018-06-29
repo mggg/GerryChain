@@ -98,7 +98,7 @@ def gsource_gdata(configGraphSource, configGraphData):
     CD = configGraphData['cd']
     # create graph from data and load required data
     graph = mgs.construct_graph(configGraphSource['gSource'], ID, [POP, AREA, CD])
-    return graph, ID, POP, AREA, CD
+    return graph, POP, AREA, CD
 
 
 def vsource_vdata(graph, configVoteSource, configVoteData):
@@ -130,7 +130,7 @@ def read_basic_config(configFileName):
         raise Exception("ERROR: graph_data must contain all of the following fields:%s" % elements)
 
     # create graph and get global names for required graph attributes
-    graph, ID, POP, AREA, CD = gsource_gdata(config['GRAPH_SOURCE'], config['GRAPH_DATA'])
+    graph, POP, AREA, CD = gsource_gdata(config['GRAPH_SOURCE'], config['GRAPH_DATA'])
     # if there is more data to add to graph (e.g. voting data in a csv)
     if config.has_section('VOTE_DATA_SOURCE'):
         vsource_vdata(graph, config['VOTE_DATA_SOURCE'], config['VOTE_DATA'])
@@ -185,8 +185,6 @@ def read_basic_config(configFileName):
     # END SET UP MARKOVCHAIN RUN SECTION
 
     # SET UP DATA PROCESSOR FOR CHAIN RUN
-    def chainfunc(thing):
-        pass
 
     # get evaluation scores to compute and the columns to use for each
     eval_scores = ''
@@ -194,10 +192,15 @@ def read_basic_config(configFileName):
         eval_list = config['EVALUATION_SCORES'].values()
         eval_scores = {x.split(',')[0]:
                 scores_arg_placement(x.split(',')[0], x.split(',')[1:]) for x in eval_list}
-
         if config.has_section('EVALUATION_SCORES_DATA'):
             scoreLogType = sLogType(config['EVALUATION_SCORES_DATA']['evalScoreLogType'])
             chainfunc = functools.partial(scoreLogType, handlers=eval_scores)
+        else:
+            def chainfunc(thing):
+                pass
+    else:
+        def chainfunc(thing):
+            pass
 
     # END SET UP DATA PROCESSOR FOR CHAIN RUN
 
