@@ -153,36 +153,6 @@ def propose_random_flip_no_loops(partition):
     return flip
 
 
-def propose_chunk_swap(partition):
-    proposal = dict()
-    dists = list(range(0, max(partition.assignment.values())))
-
-    for dist in dists:
-        edge = random.choice(list(partition['cut_edges_by_part'].values(dist)))
-        index = random.choice((0, 1))
-        dists = dists.remove(dist)
-        flipped_node = edge[index]
-
-        if partition.assignment[flipped_node] != dist:
-            partition.assignment[flipped_node] == dist
-
-        valid_flips = []
-
-        for nbr in partition.graph.neighbors(flipped_node):
-            if valid_flips.empty():
-                if partition.assignment[nbr] != dist:
-                    valid_flips.add(nbr)
-            else:
-                a = valid_flips[0].assignment()
-                if a == partition.assignment[nbr]:
-                    valid_flips.add(nbr)
-
-        for flipped_neighbor in valid_flips:
-            proposal.update({flipped_neighbor: dist})
-
-    return proposal
-
-
 def propose_lowest_pop_single_flip(partition):
     dists = list(partition['population'])
     pops = partition['population'].values()
