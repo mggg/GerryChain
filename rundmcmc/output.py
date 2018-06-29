@@ -34,6 +34,7 @@ def get_from_each(table, key):
     return [{header: row[header][key] for header in row if key in row[header]}
             for row in table]
 
+
 def hist_of_table_scores(table, scores=None, outputFile="output.png"):
     """Creates a histogram of each score in scores, where
     table is keyed on score and has values that can be binned
@@ -66,6 +67,7 @@ def hist_of_table_scores(table, scores=None, outputFile="output.png"):
     else:
         plt.show()
 
+
 def log_dict_as_json(hist, scores, outputFile="output.json"):
     print(outputFile)
     if outputFile is not None:
@@ -75,6 +77,7 @@ def log_dict_as_json(hist, scores, outputFile="output.json"):
 
 def flips_to_pngs(hist, scores, outputFile="output.png"):
     pass
+
 
 def log_table_to_file(table, scores, outputFile="output.txt"):
     if outputFile:

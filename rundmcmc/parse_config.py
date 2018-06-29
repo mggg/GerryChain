@@ -14,7 +14,6 @@ from rundmcmc.chain import MarkovChain
 from rundmcmc.run import pipe_to_table, flips_to_dict
 
 
-
 def nothingFunc(args):
     pass
 
@@ -113,7 +112,7 @@ def escores_edata(config, evalScores, evalScoresData):
 
     if config.has_section('EVALUATION_SCORES'):
         eval_list = config['EVALUATION_SCORES'].values()
-        funcs, cols = zip(*[ (x.split(',')[0], x.split(',')[1:]) for x in eval_list])
+        funcs, cols = zip(*[(x.split(',')[0], x.split(',')[1:]) for x in eval_list])
 
         eval_scores = {funcs[x]: scores_arg_placement(funcs[x], cols[x]) for x in range(len(funcs))}
 
@@ -144,7 +143,7 @@ def dependencies(scoreType, POP, AREA):
     """
     depends = {}
     if scoreType == "areas":
-        depends = {"areas":updates.Tally(AREA, alias="areas")}
+        depends = {"areas": updates.Tally(AREA, alias="areas")}
 
     elif scoreType == "population":
         depends = {"population": updates.Tally(POP, alias="population")}
@@ -159,7 +158,7 @@ def dependencies(scoreType, POP, AREA):
                 }
 
     elif scoreType == "polsby_popper":
-        depends = {**dependencies("areas", POP, AREA),**dependencies("perimeters", POP, AREA)}
+        depends = {**dependencies("areas", POP, AREA), **dependencies("perimeters", POP, AREA)}
         depends["polsby_popper"] = updates.polsby_popper_updater
 
     elif scoreType == "L1_reciprocal_polsby_popper":
@@ -196,7 +195,7 @@ def read_basic_config(configFileName):
     graph, POP, AREA, CD = gsource_gdata(config, 'GRAPH_SOURCE', 'GRAPH_DATA')
     voteDataList = vsource_vdata(graph, config, 'VOTE_DATA_SOURCE', 'VOTE_DATA')
     # create a list of vote columns to update
-    DataUpdaters = {v:updates.Tally(v) for v in voteDataList}
+    DataUpdaters = {v: updates.Tally(v) for v in voteDataList}
     # construct initial districting plan
     assignment = {x[0]: x[1][CD] for x in graph.nodes(data=True)}
     # set up validator functions and create Validator class instance
