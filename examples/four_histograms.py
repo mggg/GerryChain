@@ -3,7 +3,6 @@ import functools
 import matplotlib.pyplot as plt
 
 from rundmcmc.defaults import BasicChain, PA_partition
-from rundmcmc.output import p_value_report
 from rundmcmc.run import pipe_to_table
 from rundmcmc.scores import efficiency_gap, mean_median, mean_thirdian
 from rundmcmc.validity import L1_reciprocal_polsby_popper
@@ -25,8 +24,6 @@ def main():
 
     table = pipe_to_table(chain, scores)
 
-    print({key: p_value_report(key, table[key], initial_scores[key]) for key in scores})
-
     fig, axes = plt.subplots(2, 2)
 
     quadrants = {
@@ -41,9 +38,8 @@ def main():
         axes[quadrant].hist(table[key], bins=50)
         axes[quadrant].set_title(key)
         axes[quadrant].axvline(x=initial_scores[key], color='r')
-
     plt.show()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

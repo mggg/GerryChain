@@ -3,7 +3,7 @@ import math
 from collections import Counter
 
 
-def p_value_report(ensemble_scores, initial_plan_score):
+def p_value_report(score_name, ensemble_scores, initial_plan_score):
     """
     p_value_report takes an iterable :ensemble_scores: (scores computed on the
     ensemble seen in the random walk) and the :initial_plan_score: and returns
@@ -25,7 +25,8 @@ def p_value_report(ensemble_scores, initial_plan_score):
     p_value = math.sqrt(2 * fraction_higher)
     opposite_p_value = math.sqrt(2 * fraction_lower)
 
-    report = {'initial_plan_score': initial_plan_score,
+    report = {'name': score_name,
+              'initial_plan_score': initial_plan_score,
               'fraction_higher': fraction_higher,
               'p_value': p_value,
               'opposite_p_value': opposite_p_value}
@@ -41,6 +42,8 @@ class Histogram:
     """
     A histogram with fixed bins, determined by the number of bins and the
     bounds for values.
+
+    Anthony is working on the super smart histogram that does the binning for you.
     """
 
     def __init__(self, bounds, number_of_bins):
