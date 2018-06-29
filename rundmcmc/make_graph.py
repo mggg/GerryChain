@@ -27,7 +27,7 @@ def get_list_of_data(filepath, col_name, geoid=None):
         geoid = "sampleIndex"
         df[geoid] = range(len(df))
 
-    data = pd.DataFrame({geoid:df[geoid]})
+    data = pd.DataFrame({geoid: df[geoid]})
     for i in col_name:
         data[i] = df[i]
     return data

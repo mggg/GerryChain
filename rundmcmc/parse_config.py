@@ -20,17 +20,17 @@ def outputfunc(table, scores):
     (should probably be in a different file at some point
     in the future)
 
-    outputs a window plot of 
+    outputs a window plot of histograms of logged scores
     """
     numrows = 2
-    numcols = int(len(scores)/numrows)
+    numcols = int(len(scores) / numrows)
     numrows = max(numrows, 1)
     numcols = max(numcols, 1)
     fig, axes = plt.subplots(ncols=numcols, nrows=numrows)
 
-    scoreNames = [x for x in scores.keys()][:numrows*numcols]
+    scoreNames = [x for x in scores.keys()][: numrows * numcols]
     quadrants = {
-        key: (int(i/numcols), i%numcols)
+        key: (int(i / numcols), i % numcols)
         for i, key in enumerate(scoreNames)
     }
 
@@ -127,7 +127,7 @@ def read_basic_config(configFileName):
         raise Exception("ERROR: config needs a GRAPH_DATA section and a GRAPH_SOURCE section")
     if not all(x in list(config['GRAPH_DATA'].keys()) for x in required_graph_fields()):
         elements = " ".join(required_graph_fields())
-        raise Exception("ERROR: graph_data must contain all of the following fields:%s"%elements)
+        raise Exception("ERROR: graph_data must contain all of the following fields:%s" % elements)
 
     # create graph and get global names for required graph attributes
     graph, ID, POP, AREA, CD = gsource_gdata(config['GRAPH_SOURCE'], config['GRAPH_DATA'])
@@ -137,7 +137,7 @@ def read_basic_config(configFileName):
         vlist = [x for x in config['VOTE_DATA'].values()]
 
     # construct initial districting plan
-    assignment = {x[0]:x[1][CD] for x in graph.nodes(data=True)}
+    assignment = {x[0]: x[1][CD] for x in graph.nodes(data=True)}
 
     # set up validator functions and create Validator class instance
     validators = [valids.fast_connected]
