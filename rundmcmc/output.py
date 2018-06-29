@@ -33,11 +33,6 @@ def p_value_report(score_name, ensemble_scores, initial_plan_score):
     return report
 
 
-def pipe_to_handlers(iterable, handlers):
-    for element in iterable:
-        yield (handlers[key](element) for key in handlers for element in iterable)
-
-
 class Histogram:
     """
     A histogram with fixed bins, determined by the number of bins and the
@@ -66,7 +61,7 @@ class Histogram:
         """
         find_bin conducts a binary search to find the right bin for the given value.
         """
-        left, right = self.bounds
+        left = self.bounds[0]
         return math.floor((value - left) / self.bin_size)
 
     def find_bin(self, value):
