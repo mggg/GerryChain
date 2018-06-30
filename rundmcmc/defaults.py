@@ -74,7 +74,7 @@ class BasicChain(MarkovChain):
     The standard MarkovChain for replicating the Pennsylvania analysis. The proposal
     is a single random flip at the boundary of a district. A step is valid if the
     districts are connected, no districts disappear, and the populations of the districts
-    are all within 10% (TODO: 1%) of one another. Accepts every valid proposal.
+    are all within 1% of one another. Accepts every valid proposal.
 
     Requires a lot of different updaters.
     """
