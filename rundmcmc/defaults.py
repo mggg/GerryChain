@@ -52,8 +52,8 @@ def PA_partition():
     graph = construct_graph("./testData/PA_graph_with_data.json")
 
     # Add frozen attributes to graph
-    '''data = gp.read_file("./testData/frozen.shp")
-    add_data_to_graph(data, graph, ['Frozen'], 'wes_id')'''
+    # data = gp.read_file("./testData/frozen.shp")
+    # add_data_to_graph(data, graph, ['Frozen'], 'wes_id')
 
     assignment = dict(zip(graph.nodes(), [graph.node[x]['CD'] for x in graph.nodes()]))
 
