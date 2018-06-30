@@ -1,4 +1,5 @@
 import random
+import networkx
 
 
 def propose_random_flip(partition):
@@ -19,6 +20,12 @@ def propose_random_flip(partition):
     numEdges = 2.0 * len(partition['cut_edges'])
     if random.random() < 1.0 - (numEdges * 1.0 / partition.max_edge_cuts):
         flip = dict()
+
+    # checks for a frozen nodes field and self loops if the value has
+    # been set to 1
+    if bool(networkx.get_node_attributes(partition.graph, 'Frozen')) and bool(flip.keys()):
+        if bool(partition.graph.node[str(list(flip.keys())[0])]['Frozen']):
+            flip = dict()
     return flip
 
 
