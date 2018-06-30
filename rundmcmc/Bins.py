@@ -14,6 +14,9 @@ class Bins:
 
         TODO The number of stores should be a power of two so we can do some
         mapreduce magic.
+
+        TODO Use `collection.deque`s whenever I can – doing lots of popping and
+        inserting will probably happen when binning data.
     """
     def __init__(self):
         """
