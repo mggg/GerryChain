@@ -2,10 +2,43 @@ import functools
 
 import matplotlib.pyplot as plt
 
-from rundmcmc.defaults import BasicChain, PA_partition
-from rundmcmc.run import pipe_to_table
-from rundmcmc.scores import efficiency_gap, mean_median, mean_thirdian
-from rundmcmc.validity import L1_reciprocal_polsby_popper
+from rundmcmc.defaults import BasicChain
+from rundmcmc.make_graph import add_data_to_graph, get_assignment_dict
+from rundmcmc.partition import Partition
+from rundmcmc.scores import mean_median, mean_thirdian
+from rundmcmc.updaters import Tally, cut_edges, votes_updaters
+
+
+def example_partition():
+    df = gp.read_file("./testData/mo_cleaned_vtds.shp")
+
+    with open("./testData/MO_graph.json") as f:
+        graph_json = json.load(f)
+
+    graph = networkx.readwrite.json_graph.adjacency_graph(graph_json)
+
+    assignment = get_assignment_dict(df, "GEOID10", "CD")
+
+    add_data_to_graph(df, graph, ['PR_DV08', 'PR_RV08', 'POP100'], id_col='GEOID10')
+
+    """
+    updaters = {
+        **votes_updaters(['PR_DV08', 'PR_RV08'], election_name='08'),
+        'population': Tally('POP100', alias='population'),
+        'cut_edges': cut_edges
+    }
+    return Partition(graph, assignment, updaters)
+    """
+
+
+def print_summary(partition, scores):
+    bins = []
+    print("")
+    for name, score in scores.items():
+        print(f"{name}: {score(partition, 'PR_DV08%')}")
+        bins += [{name: score(partition, 'PR_DV08%')}]
+
+    return bins
 
 
 def main():

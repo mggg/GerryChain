@@ -2,6 +2,15 @@ from enum import Enum
 import collections
 import math
 
+"""
+    Interactions with graph
+    ========================
+    • iterating over edges
+    • iterating over nodes
+    • keying on graph to get nodes
+    • keying on nodes to get data
+"""
+
 
 def compute_polsby_popper(area, perimeter):
     return 4 * math.pi * area / perimeter**2
