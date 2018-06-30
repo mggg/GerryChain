@@ -10,6 +10,10 @@ import math
     • keying on graph to get nodes
     • keying on nodes to get data
 """
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
 
 
 def compute_polsby_popper(area, perimeter):
