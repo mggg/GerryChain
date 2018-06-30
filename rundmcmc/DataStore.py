@@ -2,8 +2,9 @@
 import psutil as ps
 import os
 import sys
-import pickle
-import collections
+import pickle as pkl
+import pickletools as pklt
+from collections import deque
 
 
 class DataStore:
@@ -18,19 +19,25 @@ class DataStore:
 
         TODO The number of stores should be a power of two so we can do some
         mapreduce magic.
+
+        TODO Some file i/o.
+
+        TODO Get data out of the pickles.
     """
-    def __init__(self, data=None):
+    def __init__(self, data=None, epsilon=15):
         """
             Initialize.
+                :data:      Initial data.
+                :epsilon:   Default memory threshold that must be eclipsed before
+                            pickling/filewriting.
         """
         """
             Properties.
                 :mem:       Dictionary containing vmem information.
                 :start:     Amount of memory we start out using.
                 :_data:     List of objects to be saved.
-                :_pickles:  Pickled objects represented as `bytes` objects.
-                            This just holds internal references to them, and
-                            they'll be written to file when 
+                :_pickles:  Number of pickles.
+                :_epsilon:  Memory threshold.
         """
         mem = ps.virtual_memory()
         self.mem = {
@@ -44,11 +51,12 @@ class DataStore:
         # size (rss) at the start of the process.
         self.start = ps.Process(os.getpid()).memory_info().rss
 
-        # Initialize the (private) internal `_data` and `_pickles` collections.
+        # Initialize the (private) internal `_data` collection as deques.
         # Fortunately, these are faster at adding/inserting/popping things. See
         # http://bit.ly/2MzkuMD for more details on this.
-        self._data = collections.deque()
-        self._pickles = collections.deque() if data is None else collections.deque(data)
+        self._data = deque()
+        self._pickles = 1
+        self._epsilon = epsilon
 
     @property
     def usage(self):
@@ -58,6 +66,14 @@ class DataStore:
         """
         current = ps.Process(os.getpid()).memory_info().rss
         return 100 * (current - self.start) / self.mem["available"]
+
+    @property
+    def available(self):
+        """
+            Readonly property that returns the current amount of available
+            memory.
+        """
+        return ps.virtual_memory()[1]
 
     @property
     def data(self):
@@ -72,7 +88,7 @@ class DataStore:
         """
             Adds `obj` to the list of data. Also checks current memory
             pressure to see whether to pickle objects or write existing pickled
-            objects in `_pickles` to file.
+            objects in `_pickles` to file. Returns None.
 
             Note that `obj` should be Pickleable, otherwise DataStore will throw
             a `pickle.PicklingError` error. Take a look here to find more info
@@ -81,17 +97,52 @@ class DataStore:
                 :obj:   (Pickleable) object added to _data.
         """
         # Check current data pressure.
+        if self.usage > self._epsilon:
+            self._pickle()
+        
         self._data.append(obj)
+
+    def _flush_data(self):
+        """
+            Flushes `._data`. Returns None.
+        """
+        self._data.clear()
     
     def _pickle(self):
         """
-            Compresses the data in _data, writes the data to a file, and flushes
-            _data.
+            Compresses the data in `_data` and adds the resulting picklestring
+            object to `_pickles`. Also, as described below, we optimize the
+            picklestring before adding it to `_pickles`. Finally, checks mem
+            pressure to see whether we need to write any of the pickle objects
+            to file.
         """
-        pass
+        # First, generate a picklestring. Then, using the `optmize()` method,
+        # make the already small picklestring even smaller (see
+        # http://bit.ly/2MDdGhh for more info on that). Then, write the baby
+        # pickle to file and move on.
+        picklestring = pkl.dumps(self._data)
+        optimized_pickle = pklt.optimize(picklestring)
 
-    def _pickle_to_file(self):
-        pass
+        # Write the picklestring to file and flush `_data`.
+        self._pickle_to_file(optimized_pickle)
+        self._flush_data()
+
+    def _pickle_to_file(self, picklestring):
+        """
+            Write all the pickle data to a file. Returns None.
+                :picklestring:  Optimized picklestring to be written to file.
+        """
+        # Write to the specified (internal, for now) path and make sure we're in
+        # `wb` mode, as we're writing `bytes` objects to file.
+        fname = "./hist/pickle{}.pkl".format(self._pickles)
+        mode = "wb"
+
+        with open(fname, mode) as pfile:
+            pfile.write(picklestring)
+
+        # If no exceptions are raised, then all is well! Increment the number of
+        # pickles, and we're done.
+        self._pickles += 1
 
 
 if __name__ == "__main__":
@@ -99,7 +150,7 @@ if __name__ == "__main__":
 
     for i in range(0, 2**20):
         ds.add(i)
-        print(ds.data)
+        print(ds.usage)
 
 """
     Then, for large numbers of iterations, we can write (or stream) the data to
