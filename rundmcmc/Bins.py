@@ -1,35 +1,36 @@
 
 import psutil as ps
 import os
+import sys
+import pickle
+
 
 class Bins:
     """
-        The Bins class bins histogram data smartly. By dynamically managing
-        available non-swap memory, we can maximize the size that our data
-        structure (a Python `list` object, in this case) can attain before
-        slowing other operations.
+        The Bins class bins histogram data smartly.
 
-        #TODO Write a short whitepaper on why/how this works and why we're using
-        it.
+        TODO Write a short whitepaper on why/how this works and why we're using
+        it. (!!!!!!!!!!!!!!!!!!!!!)
+
+        TODO The number of stores should be a power of two so we can do some
+        mapreduce magic.
     """
     def __init__(self):
-        self.mem = ps.Process(os.getpid())
-    
-
-    @staticmethod
-    def sample():
-        avail = ps.virtual_memory()
-        print(avail)
-        print(avail[1])
+        """
+            Initialize.
+        """
+        pass
 
 
 if __name__ == "__main__":
-    Bins.sample()
+    b = Bins()
+    col = []
+
+    for i in range(0, 2**20):
+        col += [i]
+        print(b.current_usage)
 
 """
-    Note that this should calculate percent of memory used relative to the
-    start; i.e. our starting point is 0% memory used *by the histogram*.
-
     Then, for large numbers of iterations, we can write (or stream) the data to
     separate files and map the data to bins in each file. If we have n files and
     want to map into k bins, then we have n*k total bins; then, we simply have

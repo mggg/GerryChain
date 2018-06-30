@@ -9,6 +9,7 @@ class Partition:
     the first layer of computations at each step in the Markov chain - basic
     aggregations and calculations that we want to optimize.
 
+    TODO Make this class pickleable. See http://bit.ly/2yQV9ff for more info.
     """
 
     def __init__(self, graph=None, assignment=None, updaters=None,
