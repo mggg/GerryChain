@@ -257,11 +257,11 @@ def select_vis_type(event):
         vistype = var
 
 
-w = tk.Label(SCORING, 
-        anchor="w", 
-        text="Configure MarkovChain constraints", 
-        bg=col1, 
-        fg=col2, 
+w = tk.Label(SCORING,
+        anchor="w",
+        text="Configure MarkovChain constraints",
+        bg=col1,
+        fg=col2,
         pady=3)
 validvar = tk.StringVar(value="Validity Functions")
 validators = tk.OptionMenu(SCORING, validvar, *validOptions, command=add_to_validlist)
