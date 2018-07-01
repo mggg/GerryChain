@@ -25,9 +25,8 @@ vfuncs = []
 # EVALUATION SCORES
 efuncs = []
 # EVALUATION_SCORES_DATA
-evalScoreLogType = None
+evalScoreLogType = ""
 vistype = ""
-savefilename = ""
 # MARKOV CHAIN
 num_steps = ""
 proposal = ""
@@ -68,7 +67,7 @@ def callback():
     Main function of the Process button to pull out the text entry fields.
     :return: Strings of all the column names specified.
     """
-    global cFileName, config, gSource, vSource, vSourceID, gcsvvar, num_steps, proposal, vfuncs
+    global cFileName, config, gSource, vSource, gcsvvar, num_steps, proposal, vfuncs
 
     # GRAPH DATA
     config = configparser.ConfigParser()
@@ -80,10 +79,10 @@ def callback():
             "area": garea.get()}
 
     # VOTE SOURCE
-    if gcsvvar == 1:
-        config["VOTE_DATA_SOURCE"] = {"vSource": vSource, "vSourceID": vSourceID}
+    if gcsvvar.get() == 1:
+        config["VOTE_DATA_SOURCE"] = {"vSource": vSource, "vSourceID": vid.get()}
         vcols = vdata.get().split(',')
-        config["VOTE_DATA"] = {"col" + int(x): vcols[x] for x in range(len(vcols))}
+        config["VOTE_DATA"] = {"col" + str(x): vcols[x] for x in range(len(vcols))}
 
     # VALIDITY
     if len(vfuncs) > 0:
@@ -93,11 +92,13 @@ def callback():
     if len(efuncs) > 0:
         config['EVALUATION_SCORES'] = {"col" + str(i): efuncs[i] for i in range(len(efuncs))}
     config['EVALUATION_SCORES_DATA'] = {}
-    """ "evalScoreLogType": score_logger """
+
+    #TODO: standardize scoring types and outputs
+    config["EVALUATION_SCORES_DATA"]["evalScoreLogType"] = "histograms"
     if vistype is not "":
         config['EVALUATION_SCORES_DATA']["vistype"] = str(vistype)
-    if savefilename is not "":
-        config['EVALUATION_SCORES_DATA']["savefilename"] = savefilename
+    if saveFileName.get() is not "":
+        config['EVALUATION_SCORES_DATA']["savefilename"] = saveFileName.get()
 
     # CHAIN CONFIG
     config['MARKOV_CHAIN'] = {}
@@ -108,6 +109,10 @@ def callback():
     proposal = propvar.get()
     if proposal is not None:
         config['MARKOV_CHAIN']['proposal'] = proposal
+
+    # TODO: add acceptance functions
+    if objectiveFunc.get() is not "Objective Function":
+        config['MARKOV_CHAIN']['accept'] = objectiveFunc.get()
 
     # CONFIGFILE OUTPUT NAME
     cFileName = cfilename.get()
@@ -121,10 +126,10 @@ top.geometry("x".join([str(x) for x in windowSize]))
 
 # top bar of the window is for grpah import/setup
 GRAPH = tk.Frame(top, height=int(2*windowSize[1]/8), width=windowSize[0], bg=col2)
-w = tk.Label(GRAPH, 
-        anchor="w", 
-        text="Select graph/geography file and relevant column names", 
-        bg=col2, 
+w = tk.Label(GRAPH,
+        anchor="w",
+        text="Select graph/geography file and relevant column names",
+        bg=col2,
         fg=col1)
 graphx = 0.01
 
@@ -133,7 +138,7 @@ def getGraphSource():
     gSource = filedialog.askopenfilename()
     gsource.config(text='...'+gSource[-5:])
 def getDataSource():
-    global dSource
+    global vSource
     vSource = filedialog.askopenfilename()
     vsource.config(text='...'+vSource[-5:])
 def clear_idprompt(event):
@@ -206,9 +211,12 @@ def add_to_evallist(event):
         evallist.insert(tk.END, str(newfunc) + ",")
         efuncs.append(newfunc)
 def select_prop_method(event):
+    pass
+"""
     var = propvar.get()
     if not var == "Proposal Type":
         proposal = var
+"""
 def select_vis_type(event):
     var = visdatatype.get()
     if not var == "Visualization":
@@ -232,16 +240,20 @@ numstepsdata.bind("<Button-1>", clear_numstepsdata)
 visdatatype = tk.StringVar(value="Visualization")
 vischoice = tk.OptionMenu(SCORING, visdatatype, *visOptions, command=select_vis_type)
 vischoice.config(width=20)
+objectiveFunc = tk.StringVar(value="Objective Function")
+objectiveFuncs = tk.OptionMenu(SCORING, objectiveFunc, "always_accept")
+objectiveFuncs.config(width=20)
 
 bysp=6
 w.grid(row=0,column=0, columnspan=3, in_=SCORING, sticky=tk.W, padx=3,pady=2)
 proposaldata.grid(row=1, column=1, in_=SCORING, sticky=tk.W, pady=bysp)
 validators.grid(row=2, column=1, in_=SCORING, sticky=tk.W, pady=bysp)
-validlist.grid(row=2, column=2, in_=SCORING, sticky=tk.W, pady=bysp)
+validlist.grid(row=2, column=2, columnspan=2, in_=SCORING, sticky=tk.W, pady=bysp)
 evals.grid(row=3, column=1, in_=SCORING, sticky=tk.W, pady=bysp)
-evallist.grid(row=3, column=2, in_=SCORING, sticky=tk.W, pady=bysp)
+evallist.grid(row=3, column=2, columnspan=2, in_=SCORING, sticky=tk.W, pady=bysp)
 vischoice.grid(row=5, column=1, in_=SCORING, sticky=tk.W, pady=bysp)
-numstepsdata.grid(row=5, column=2, in_=SCORING, sticky=tk.E, pady=bysp+2)
+objectiveFuncs.grid(row=5, column=2, in_=SCORING, pady=bysp)
+numstepsdata.grid(row=5, column=3, in_=SCORING, sticky=tk.E, pady=bysp+2)
 SCORING.pack()
 
 # output file options
