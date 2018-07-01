@@ -4,7 +4,7 @@ import os
 import sys
 import pickle as pkl
 import pickletools as pklt
-from collections import deque
+from collections import deque, OrderedDict
 
 
 class DataStore:
@@ -35,8 +35,10 @@ class DataStore:
             Properties.
                 :mem:       Dictionary containing vmem information.
                 :start:     Amount of memory we start out using.
-                :_data:     List of objects to be saved.
-                :_pickles:  Number of pickles.
+                :_data:     Deque of objects to be saved.
+                :_pickles:  OrderedDict. <k, v> pairs are such that k represents
+                            the index of the last item added to `_data` before
+                            pickling, where v is the file `_data` was written to.
                 :_epsilon:  Memory threshold.
         """
         mem = ps.virtual_memory()
@@ -55,7 +57,7 @@ class DataStore:
         # Fortunately, these are faster at adding/inserting/popping things. See
         # http://bit.ly/2MzkuMD for more details on this.
         self._data = deque()
-        self._pickles = 1
+        self._pickles = OrderedDict()
         self._epsilon = epsilon
 
     @property
@@ -134,15 +136,22 @@ class DataStore:
         """
         # Write to the specified (internal, for now) path and make sure we're in
         # `wb` mode, as we're writing `bytes` objects to file.
-        fname = "./hist/pickle{}.pkl".format(self._pickles)
+        fname = "./hist/pickle_{}.pkl".format(len(self._pickles))
         mode = "wb"
 
         with open(fname, mode) as pfile:
             pfile.write(picklestring)
 
-        # If no exceptions are raised, then all is well! Increment the number of
-        # pickles, and we're done.
-        self._pickles += 1
+        # After writing, add an additional key to `._pickles` containing the last
+        # index added to `_.data` before pickling.
+        stores = len(self._pickles)
+        data_length = len(self._data)
+
+        if stores > 0:
+            last = self._pickles[stores - 2]
+            self._pickles[data_length + last - 1] = fname
+        else:
+            self._pickles[data_length - 1] = fname
 
 
 if __name__ == "__main__":
