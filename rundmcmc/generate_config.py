@@ -33,33 +33,33 @@ proposal = ""
 accept = ""
 cFileName = ''
 validOptions = [
-  "L1_reciprocal_polsby_popper",
-  "within_percent_of_ideal_population",
-  "single_flip_contiguous",
-  "contiguous",
-  "fast_connected",
-  "districts_within_tolerance",
-  "refuse_new_splits",
-  "no_vanishing_districts"
+    "L1_reciprocal_polsby_popper",
+    "within_percent_of_ideal_population",
+    "single_flip_contiguous",
+    "contiguous",
+    "fast_connected",
+    "districts_within_tolerance",
+    "refuse_new_splits",
+    "no_vanishing_districts"
 ]
 evalOptions = [
-  "flips",
-  "efficiency_gap",
-  "mean_median",
-  "mean_thirdian",
-  "L1_reciprocal_polsby_popper",
-  "normalized_efficiency_gap",
-  "perimeters",
-  "polsby-popper",
-  "p_value"
+    "flips",
+    "efficiency_gap",
+    "mean_median",
+    "mean_thirdian",
+    "L1_reciprocal_polsby_popper",
+    "normalized_efficiency_gap",
+    "perimeters",
+    "polsby-popper",
+    "p_value"
 ]
 propOptions = [
-  "propose_random_flip"
+    "propose_random_flip"
 ]
 visOptions = [
-"histogram",
-"history_as_json",
-"save_to_file"
+    "histogram",
+    "history_as_json",
+    "save_to_file"
 ]
 
 def callback():
@@ -67,15 +67,15 @@ def callback():
     Main function of the Process button to pull out the text entry fields.
     :return: Strings of all the column names specified.
     """
-    global cFileName, config, gSource, vSource, gcsvvar, num_steps, proposal, vfuncs
+    global cFileName, config, gSource, vSource, gcsvvar, num_steps, proposal, vfuncs, vistype
 
     # GRAPH DATA
     config = configparser.ConfigParser()
     config["GRAPH_SOURCE"] = {"gSource": gSource}
     config["GRAPH_DATA"] = {
-            "ID": gid.get(), 
-            "pop": gpop.get(), 
-            "cd": gcd.get(), 
+            "ID": gid.get(),
+            "pop": gpop.get(),
+            "cd": gcd.get(),
             "area": garea.get()}
 
     # VOTE SOURCE
@@ -93,7 +93,7 @@ def callback():
         config['EVALUATION_SCORES'] = {"col" + str(i): efuncs[i] for i in range(len(efuncs))}
     config['EVALUATION_SCORES_DATA'] = {}
 
-    #TODO: standardize scoring types and outputs
+    # TODO: standardize scoring types and outputs
     config["EVALUATION_SCORES_DATA"]["evalScoreLogType"] = "histograms"
     if vistype is not "":
         config['EVALUATION_SCORES_DATA']["vistype"] = str(vistype)
@@ -116,7 +116,7 @@ def callback():
 
     # CONFIGFILE OUTPUT NAME
     cFileName = cfilename.get()
-    cFileName = cFileName.split(".")[0]+".ini"
+    cFileName = cFileName.split(".")[0] + ".ini"
     top.destroy()
 
 # create the window
@@ -125,7 +125,7 @@ top.title("make a config file & run chain!")
 top.geometry("x".join([str(x) for x in windowSize]))
 
 # top bar of the window is for grpah import/setup
-GRAPH = tk.Frame(top, height=int(2*windowSize[1]/8), width=windowSize[0], bg=col2)
+GRAPH = tk.Frame(top, height=int(2 * windowSize[1] / 8), width=windowSize[0], bg=col2)
 w = tk.Label(GRAPH,
         anchor="w",
         text="Select graph/geography file and relevant column names",
@@ -133,26 +133,42 @@ w = tk.Label(GRAPH,
         fg=col1)
 graphx = 0.01
 
+
 def getGraphSource():
     global gSource
     gSource = filedialog.askopenfilename()
-    gsource.config(text='...'+gSource[-5:])
+    gsource.config(text='...' + gSource[-5: ])
+
+
 def getDataSource():
     global vSource
     vSource = filedialog.askopenfilename()
-    vsource.config(text='...'+vSource[-5:])
+    vsource.config(text='...' + vSource[-5: ])
+
+
 def clear_idprompt(event):
     gid.delete(0, tk.END)
+
+
 def clear_popprompt(event):
     gpop.delete(0, tk.END)
+
+
 def clear_areaprompt(event):
     garea.delete(0, tk.END)
+
+
 def clear_cdprompt(event):
     gcd.delete(0, tk.END)
+
+
 def clear_vidprompt(event):
     vid.delete(0, tk.END)
+
+
 def clear_vdataprompt(event):
     vdata.delete(0, tk.END)
+
 
 gsource = tk.Button(GRAPH, text="Browse", command=getGraphSource, width=8)
 gsource.place(relx=graphx, rely=0.2)
@@ -170,7 +186,13 @@ gcd.insert(tk.END, "CD")
 gcd.bind("<Button-1>", clear_cdprompt)
 
 gcsvvar = tk.IntVar()
-gcsv = tk.Checkbutton(GRAPH, text="(optional) add vote data", variable=gcsvvar, bg=col2, fg=col1, onvalue=1, offvalue=0)
+gcsv = tk.Checkbutton(GRAPH,
+        text="(optional) add vote data",
+        variable=gcsvvar,
+        bg=col2,
+        fg=col1,
+        onvalue=1,
+        offvalue=0)
 vsource = tk.Button(GRAPH, text="Browse", command=getDataSource, width=8)
 vid = tk.Entry(GRAPH, width=10)
 vid.bind("<Button-1>", clear_vidprompt)
@@ -180,43 +202,57 @@ vdata.insert(tk.END, "names of columns to add, comma separated")
 vdata.bind("<Button-1>", clear_vdataprompt)
 bottomstrip = tk.Label(GRAPH, text="", bg=col2, fg=col1)
 xsp = 27
-ysp=1
-w.grid(row=0,column=0,columnspan=3,in_=GRAPH, sticky=tk.W, padx=3)
+ysp = 1
+w.grid(row=0, column=0, columnspan=3, in_=GRAPH, sticky=tk.W, padx=3)
 gsource.grid(row=1, column=0, padx=xsp, pady=ysp, sticky=tk.W, in_=GRAPH)
 gid.grid(row=1, column=1, padx=xsp, pady=ysp, sticky=tk.W, in_=GRAPH)
 gpop.grid(row=1, column=2, padx=xsp, pady=ysp, sticky=tk.W, in_=GRAPH)
 garea.grid(row=1, column=3, padx=xsp, pady=ysp, sticky=tk.W, in_=GRAPH)
 gcd.grid(row=1, column=4, padx=xsp, pady=ysp, sticky=tk.W, in_=GRAPH)
-gcsv.grid(row=2, column=0, columnspan=10, pady=2*ysp, sticky=tk.W, in_=GRAPH)
+gcsv.grid(row=2, column=0, columnspan=10, pady=2 * ysp, sticky=tk.W, in_=GRAPH)
 vsource.grid(row=3, column=0, padx=xsp, pady=ysp, sticky=tk.W, in_=GRAPH)
 vid.grid(row=3, column=1, padx=xsp, pady=ysp, sticky=tk.W, in_=GRAPH)
-vdata.grid(row=3, column=2,columnspan=8, padx=xsp, pady=ysp, sticky=tk.W, in_=GRAPH)
-bottomstrip.grid(row=4,column=0,columnspan=11)
+vdata.grid(row=3, column=2, columnspan=8, padx=xsp, pady=ysp, sticky=tk.W, in_=GRAPH)
+bottomstrip.grid(row=4, column=0, columnspan=11)
 GRAPH.pack()
 
 # scoring/validity functions and markovchain options
-SCORING = tk.Frame(top, height=int(5*windowSize[1]/9), width=windowSize[0], bg=col1)
+SCORING = tk.Frame(top, height=int(5 * windowSize[1] / 9), width=windowSize[0], bg=col1)
+
+
 def clear_numstepsdata(event):
     numstepsdata.delete(0, tk.END)
+
+
 def clear_proposaldata(event):
     proposaldata.delete(0, tk.END)
+
+
 def add_to_validlist(event):
     newfunc = validvar.get()
     if (newfunc not in vfuncs) and (newfunc != "VALIDATORS"):
         validlist.insert(tk.END, str(newfunc) + ",")
         vfuncs.append(newfunc)
+
+
 def add_to_evallist(event):
     newfunc = evalvar.get()
     if (newfunc not in efuncs) and (newfunc != "SCORES"):
         evallist.insert(tk.END, str(newfunc) + ",")
         efuncs.append(newfunc)
+
+
 def select_prop_method(event):
     pass
+
+
 """
     var = propvar.get()
     if not var == "Proposal Type":
         proposal = var
 """
+
+
 def select_vis_type(event):
     var = visdatatype.get()
     if not var == "Visualization":
@@ -244,8 +280,8 @@ objectiveFunc = tk.StringVar(value="Objective Function")
 objectiveFuncs = tk.OptionMenu(SCORING, objectiveFunc, "always_accept")
 objectiveFuncs.config(width=20)
 
-bysp=6
-w.grid(row=0,column=0, columnspan=3, in_=SCORING, sticky=tk.W, padx=3,pady=2)
+bysp = 6
+w.grid(row=0, column=0, columnspan=3, in_=SCORING, sticky=tk.W, padx=3, pady=2)
 proposaldata.grid(row=1, column=1, in_=SCORING, sticky=tk.W, pady=bysp)
 validators.grid(row=2, column=1, in_=SCORING, sticky=tk.W, pady=bysp)
 validlist.grid(row=2, column=2, columnspan=2, in_=SCORING, sticky=tk.W, pady=bysp)
@@ -253,15 +289,20 @@ evals.grid(row=3, column=1, in_=SCORING, sticky=tk.W, pady=bysp)
 evallist.grid(row=3, column=2, columnspan=2, in_=SCORING, sticky=tk.W, pady=bysp)
 vischoice.grid(row=5, column=1, in_=SCORING, sticky=tk.W, pady=bysp)
 objectiveFuncs.grid(row=5, column=2, in_=SCORING, pady=bysp)
-numstepsdata.grid(row=5, column=3, in_=SCORING, sticky=tk.E, pady=bysp+2)
+numstepsdata.grid(row=5, column=3, in_=SCORING, sticky=tk.E, pady=bysp + 2)
 SCORING.pack()
 
 # output file options
-OUTPUT = tk.Frame(top, height=int(2*windowSize[1]/8), width=windowSize[0], bg=col2)
+OUTPUT = tk.Frame(top, height=int(2 * windowSize[1] / 8), width=windowSize[0], bg=col2)
+
+
 def clear_cfilenameprompt(event):
     cfilename.delete(0, tk.END)
+
+
 def clear_saveFileName(event):
     saveFileName.delete(0, tk.END)
+
 
 outputcommand = tk.Label(OUTPUT, text="config file and chain run output options", bg=col2, fg=col1)
 saveFileName = tk.Entry(OUTPUT, width=20)
@@ -286,8 +327,7 @@ saveFileName.grid(row=2, column=3, in_=OUTPUT, padx=2, pady=2, sticky=tk.W)
 midbar3.grid(row=2, column=4, in_=OUTPUT)
 b.grid(row=2, column=5, in_=OUTPUT, padx=2, pady=2, sticky=tk.E)
 midbar4.grid(row=2, column=6, in_=OUTPUT)
-
-lastbar.grid(row=3,column=0, columnspan=2, sticky=tk.E+tk.W)
+lastbar.grid(row=3, column=0, columnspan=2, sticky=tk.E + tk.W)
 
 OUTPUT.pack()
 
@@ -295,4 +335,4 @@ top.mainloop()
 if cFileName != "":
     with open(cFileName, 'w') as configfile:
         config.write(configfile)
-    print("Success!!\nto use, type ''python __main__.py %s '' into terminal"%cFileName)
+    print("Success!!\nto use, type ''python __main__.py %s '' into terminal" % cFileName)
