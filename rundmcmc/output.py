@@ -47,7 +47,7 @@ def hist_of_table_scores(table, scores=None, outputFile="output.png"):
     numcols = int(len(scores) / numrows)
     numrows = max(numrows, 1)
     numcols = max(numcols, 1)
-    fig, axes = plt.subplots(ncols=numcols, nrows=numrows)
+    _, axes = plt.subplots(ncols=numcols, nrows=numrows)
 
     scoreNames = [x for x in scores.keys()][: numrows * numcols]
     quadrants = {

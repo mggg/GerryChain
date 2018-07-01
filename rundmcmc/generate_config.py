@@ -8,6 +8,7 @@ col2 = "#B0E0E6"
 windowSize = [750, 425]
 
 # GLOBAL VARIABLES
+config = configparser.ConfigParser()
 # GRAPH SOURCE
 gSource = ''
 # GRAPH DATA
@@ -62,6 +63,7 @@ visOptions = [
     "save_to_file"
 ]
 
+
 def callback():
     """
     Main function of the Process button to pull out the text entry fields.
@@ -70,7 +72,6 @@ def callback():
     global cFileName, config, gSource, vSource, gcsvvar, num_steps, proposal, vfuncs, vistype
 
     # GRAPH DATA
-    config = configparser.ConfigParser()
     config["GRAPH_SOURCE"] = {"gSource": gSource}
     config["GRAPH_DATA"] = {
             "ID": gid.get(),
@@ -119,6 +120,7 @@ def callback():
     cFileName = cFileName.split(".")[0] + ".ini"
     top.destroy()
 
+
 # create the window
 top = tk.Tk()
 top.title("make a config file & run chain!")
@@ -126,6 +128,8 @@ top.geometry("x".join([str(x) for x in windowSize]))
 
 # top bar of the window is for grpah import/setup
 GRAPH = tk.Frame(top, height=int(2 * windowSize[1] / 8), width=windowSize[0], bg=col2)
+
+
 w = tk.Label(GRAPH,
         anchor="w",
         text="Select graph/geography file and relevant column names",
@@ -137,13 +141,13 @@ graphx = 0.01
 def getGraphSource():
     global gSource
     gSource = filedialog.askopenfilename()
-    gsource.config(text='...' + gSource[-5: ])
+    gsource.config(text='...' + gSource[-5:])
 
 
 def getDataSource():
     global vSource
     vSource = filedialog.askopenfilename()
-    vsource.config(text='...' + vSource[-5: ])
+    vsource.config(text='...' + vSource[-5:])
 
 
 def clear_idprompt(event):
@@ -246,17 +250,12 @@ def select_prop_method(event):
     pass
 
 
-"""
-    var = propvar.get()
-    if not var == "Proposal Type":
-        proposal = var
-"""
-
-
 def select_vis_type(event):
+    global vistype
     var = visdatatype.get()
     if not var == "Visualization":
         vistype = var
+
 
 w = tk.Label(SCORING, anchor="w", text="Configure MarkovChain constraints", bg=col1, fg=col2, pady=3)
 validvar = tk.StringVar(value="Validity Functions")
@@ -322,7 +321,7 @@ outputcommand.grid(row=0, column=0, columnspan=4, in_=OUTPUT, padx=10, pady=10, 
 
 midbar1.grid(row=2, column=0, in_=OUTPUT)
 cfilename.grid(row=2, column=1, in_=OUTPUT, pady=2, sticky=tk.W)
-midbar2.grid(row=2,column=2, in_=OUTPUT)
+midbar2.grid(row=2, column=2, in_=OUTPUT)
 saveFileName.grid(row=2, column=3, in_=OUTPUT, padx=2, pady=2, sticky=tk.W)
 midbar3.grid(row=2, column=4, in_=OUTPUT)
 b.grid(row=2, column=5, in_=OUTPUT, padx=2, pady=2, sticky=tk.E)
