@@ -1,4 +1,3 @@
-
 # I know this is an abhorrent way to import things, but I promise that this is
 # the way the docs told me to do it.
 from graph_tool.all import *
@@ -22,6 +21,7 @@ class Graph:
         vertices and edges are faster with graph-tool, but NetworkX has the
         upper hand on getting node attributes and neighbors.
     """
+
     def __init__(self, path=None, geoid_col=None, graph_tool=False):
         """
             Main properties of the Graph instance.
@@ -150,7 +150,6 @@ class Graph:
         else:
             return np.asarray(list(self.graph.vertex_properties["_graphml_vertex_id"]))
 
-
     def edges(self):
         """
             Returns a numpy array over the edges of the graph. See
@@ -167,10 +166,8 @@ class Graph:
             lookup = {}
             for idx, geoid in enumerate(geoids):
                 lookup[idx] = geoid
-            edge_lists = []
             arr = np.asarray(list(self.graph.get_edges()))
             return np.vectorize(lookup.get)(arr)
-
 
     def neighbors(self, node):
         """
@@ -182,7 +179,6 @@ class Graph:
             return np.asarray(list(nx.all_neighbors(self.graph, node)))
         else:
             return self.graph.get_out_neighbors(node)
-
 
     def get_node_attributes(self, node):
         """
@@ -206,13 +202,24 @@ class Graph:
         """
             Checks that the set of nodes is connected.
         """
-        pass
+        if self.library == 'networkx':
+            return nx.is_connected(self.graph.subgraph(nodes))
+        else:
+            label = label_components(self.graph)[0]
+            sub = GraphView(self.graph, vfilt=label.a == nodes)
+            # need to keep thinking about this moving on for now
+            pass
 
     def subgraph(self, nodes):
         """
             Finds the subgraph containing all nodes in `nodes`.
         """
-        pass
+        if self.library == 'networkx':
+            return self.graph.subgraph(nodes)
+        else:
+            label = label_components(self.graph)[0]
+            return GraphView(self.graph, vfilt=label.a == nodes)
+
 
     def to_dict_of_dicts(self):
         """
@@ -241,9 +248,6 @@ class Graph:
 
 if __name__ == "__main__":
     g = Graph("./testData/MO_graph.json")
-    g.convert()
-    print(g.nodes())
-    start = time.time()
-    print(g.edges())
-    end = time.time()
-    print(end - start)
+    # g.convert()
+    g.nodes()
+    print(g.connected())
