@@ -28,6 +28,7 @@ class Partition:
         self._update()
 
         self.max_edge_cuts = max_edge_cuts(self)
+        self.parent = None
 
     def _first_time(self, graph, assignment, updaters):
         self.graph = graph
