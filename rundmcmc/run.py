@@ -33,3 +33,10 @@ def pipe_to_table(chain, handlers):
     for row in handle_chain(chain, handlers):
         table.append(row)
     return table
+
+
+def flips_to_dict(chain, handlers=None):
+    hist = {0: chain.state.assignment}
+    for state in chain:
+        hist[chain.counter + 1] = state.flips
+    return hist
