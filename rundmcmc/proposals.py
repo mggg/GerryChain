@@ -9,17 +9,17 @@ def propose_random_flip(partition):
     :returns: a dictionary with the flipped node mapped to its new assignment
 
     """
-    edge = random.choice(tuple(partition['cut_edges']))
+    # self loop
+    numEdges = 2.0 * len(partition['cut_edges'])
+    if random.random() < 1.0 - (numEdges * 1.0 / partition.max_edge_cuts):
+        return dict()
+
+    edge = random.sample(partition['cut_edges'], 1)[0]
     index = random.choice((0, 1))
 
     flipped_node, other_node = edge[index], edge[1 - index]
 
     flip = {flipped_node: partition.assignment[other_node]}
-
-    # self loop
-    numEdges = 2.0 * len(partition['cut_edges'])
-    if random.random() < 1.0 - (numEdges * 1.0 / partition.max_edge_cuts):
-        flip = dict()
 
     # checks for a frozen nodes field and self loops if the value has
     # been set to 1
