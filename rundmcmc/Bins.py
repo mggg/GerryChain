@@ -26,12 +26,7 @@ class Bins:
 
 
 if __name__ == "__main__":
-    b = Bins()
-    col = []
-
-    for i in range(0, 2**20):
-        col += [i]
-        print(b.current_usage)
+    pass
 
 """
     Then, for large numbers of iterations, we can write (or stream) the data to
