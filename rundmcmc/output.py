@@ -1,5 +1,5 @@
 import json
-import matplotlib.pyplot as plt
+import matplotlib
 
 
 class ChainOutputTable:
@@ -47,7 +47,7 @@ def hist_of_table_scores(table, scores=None, outputFile="output.png"):
     numcols = int(len(scores) / numrows)
     numrows = max(numrows, 1)
     numcols = max(numcols, 1)
-    _, axes = plt.subplots(ncols=numcols, nrows=numrows)
+    _, axes = matplotlib.pyplot.subplots(ncols=numcols, nrows=numrows)
 
     scoreNames = [x for x in scores.keys()][: numrows * numcols]
     quadrants = {
@@ -63,9 +63,9 @@ def hist_of_table_scores(table, scores=None, outputFile="output.png"):
         axes[quadrant].set_title(key)
         axes[quadrant].axvline(x=initial_scores[key], color='r')
     if outputFile:
-        plt.savefig(outputFile)
+        matplotlib.pyplot.savefig(outputFile)
     else:
-        plt.show()
+        matplotlib.pyplot.show()
 
 
 def log_dict_as_json(hist, scores, outputFile="output.json"):
