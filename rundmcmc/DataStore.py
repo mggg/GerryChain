@@ -2,7 +2,7 @@
 import psutil as ps
 import os
 import sys
-import time
+import random
 import shutil
 import pickle as pkl
 import pickletools as pklt
@@ -89,7 +89,7 @@ class DataStore:
         # Check current data pressure.
         if self.usage > self._epsilon:
             self._pickle()
-        
+
         self._data.append(obj)
 
     def append(self, obj):
@@ -106,7 +106,7 @@ class DataStore:
         """
         del self._data
         self._data = []
-    
+
     def _pickle(self):
         """
             Compresses the data in `_data` and adds the resulting picklestring
@@ -160,7 +160,7 @@ class DataStore:
             return len(self._data)
 
         return len(self._data) + next(reversed(self._pickles))
-    
+
     def __str__(self):
         return "DataStore object at {}\nMemory Usage: {}\nItems: {}\nFiles: {}" \
                 .format(hex(id(self)), self.usage, len(self), len(self._pickles))
@@ -173,7 +173,7 @@ class DataStore:
                 :index: Index of data point to be retrieved.
         """
         stores = len(self._pickles)
-        
+
         if stores == 0:
             return self._data[index]
         else:
