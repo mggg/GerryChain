@@ -1,4 +1,5 @@
 import random
+
 import networkx
 
 
@@ -9,13 +10,7 @@ def propose_random_flip(partition):
     :returns: a dictionary with the flipped node mapped to its new assignment
 
     """
-    edge = random.choice(tuple(partition['cut_edges']))
-    index = random.choice((0, 1))
-
-    flipped_node, other_node = edge[index], edge[1 - index]
-
-    flip = {flipped_node: partition.assignment[other_node]}
-
+    flip = propose_random_flip_no_loops(partition)
     # self loop
     numEdges = 2.0 * len(partition['cut_edges'])
     if random.random() < 1.0 - (numEdges * 1.0 / partition.max_edge_cuts):
