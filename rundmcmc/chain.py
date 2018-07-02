@@ -41,6 +41,7 @@ class MarkovChain:
 
             if not proposal:
                 if self.accept(self.state):
+                    self.counter += 1
                     return self.state
                 else:
                     continue
