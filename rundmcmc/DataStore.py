@@ -2,7 +2,6 @@
 import psutil as ps
 import os
 import sys
-import random
 import shutil
 import pickle as pkl
 import pickletools as pklt
@@ -22,8 +21,7 @@ class DataStore:
                 :data:      Initial data.
                 :epsilon:   Default memory threshold that must be eclipsed before
                             pickling/filewriting.
-        """
-        """
+
             Properties.
                 :_data:         Deque of objects to be saved.
                 :_pickles:      OrderedDict. <k, v> pairs are such that k

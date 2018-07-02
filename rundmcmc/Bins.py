@@ -19,6 +19,11 @@ class Bins:
 
         TODO Use `collection.deque`s whenever I can – doing lots of popping and
         inserting will probably happen when binning data.
+
+        TODO For large numbers of iterations, we can write (or stream) the data to
+        separate files and map the data to bins in each file. If we have n files and
+        want to map into k bins, then we have n*k total bins; then, we simply have
+        to reduce all n*k bins to k bins.
     """
     def __init__(self):
         """
@@ -29,10 +34,3 @@ class Bins:
 
 if __name__ == "__main__":
     pass
-
-"""
-    Then, for large numbers of iterations, we can write (or stream) the data to
-    separate files and map the data to bins in each file. If we have n files and
-    want to map into k bins, then we have n*k total bins; then, we simply have
-    to reduce all n*k bins to k bins.
-"""
