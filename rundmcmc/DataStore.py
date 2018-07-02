@@ -2,6 +2,7 @@
 import psutil as ps
 import os
 import sys
+import time
 import shutil
 import pickle as pkl
 import pickletools as pklt
@@ -24,15 +25,18 @@ class DataStore:
         """
         """
             Properties.
-                :_data:     Deque of objects to be saved.
-                :_pickles:  OrderedDict. <k, v> pairs are such that k represents
-                            the index of the last item added to `_data` before
-                            pickling, where v is the file `_data` was written to.
-                :_epsilon:  Memory threshold.
-                :i:         Current place in iteration.
-                :filecache: File being used by the iterator.
-                :filenum:   Number of file being used by the iterator.
-        """"
+                :_data:         Deque of objects to be saved.
+                :_pickles:      OrderedDict. <k, v> pairs are such that k
+                                represents the index of the last item added to
+                                `_data` before pickling, where v is the file
+                                `_data` was written to.
+                :_epsilon:      Memory threshold.
+                :_i:            Current place in iteration.
+                :_cache:        File being used by the iterator.
+                :_filenum:      Number of file being used by the iterator.
+                :_lastindex:    Last index saved in file `_filecache`.
+                :_runnning_i:   Current index on a loaded block of data.
+        """
         # Initialize the (private) internal `_data` collection as deques.
         # Fortunately, these are faster at adding/inserting/popping things. See
         # http://bit.ly/2MzkuMD for more details on this.
@@ -44,9 +48,11 @@ class DataStore:
         os.mkdir("./hist/")
 
         # Initialize the remaining properties.
-        self.i = 0
-        self.filecache = None
-        self.filenum = 0
+        self._i = 0
+        self._cache = None
+        self._filenum = 0
+        self._lastindex = 0
+        self._running_i = 0
 
     @property
     def usage(self):
@@ -178,7 +184,7 @@ class DataStore:
             # `last_saved_index`. Otherwise, find the file that the entry at
             # index `index` is in, unpickle it, and retrieve the data point.
             if index > last_saved_index:
-                return self._data[(index % last_saved_index)]
+                return self._data[index % last_saved_index]
             else:
                 indices = iter(self._pickles)
 
@@ -207,35 +213,56 @@ class DataStore:
             for loops. For the love of god do NOT call list() on this thing. I'll
             put a warning in here somewhere about that.
 
+            Futhermore, we expressly don't want to use the simple __getitem__
+            method here, as it'd require a completely unnecessary amount of
+            filereads and would take forever.
+
             TODO Warn people against calling list() on this, as it'll destroy
             their computer (probably). I'll put something like "Are you sure you
             want to expand this object to a list? It will take up <size>gb on your
             system uncompressed."
         """
         if self.i < len(self):
-            # There are two situations we have to address here:
-            #
-            #   1. *No files used.* In this case, no files are being used to
-            #       store data, so we just return the index of `_data` on each
-            #       iteration.
-            #
-            #   2. *Files are being used.* Here, we know that files store some of
-            #       the data. Then, we have to unpickle each file in order, and
-            #       return the proper data points. After we exhaust the files, we
-            #       start returning data points from `_data`, and call it a day.
-            
-            # Situation 1, followed by situation 2.
+            # If we have no files.
             if len(self._pickles) == 0:
                 result = self._data[self.i]
                 self.i += 1
                 return result
-            else:
-                root = "./hist/pickle_{}.pkl"
 
-                if self.cached is None:
-                    with open(root.format(self.filenum), "rb") as pfile:
-                        self.filecache = pkl.load(pfile)
+            # If we have some files, we need to iterate over them progressively.
+            elif len(self._pickles) is not 0:
+                indices = list(self._pickles)
+
+                # If we have no file loaded, load the first one. Alternatively,
+                # we load the next file. Finally, if we need to start iterating
+                # over things currently held in memory, dump the file reference
+                # and set `_cache` to point to `_data`.
+                if self._cache is None:
+                    filename = self._pickles[indices[self._filenum]]
+                    with open(filename, "rb") as pfile:
+                        self._cache = pkl.load(pfile)
+
+                elif self._running_i == len(self._cache) and self._filenum + 1 < len(indices):
+                    self._filenum += 1
+                    filename = self._pickles[indices[self._filenum]]
+
+                    with open(filename, "rb") as pfile:
+                        self._cache = pkl.load(pfile)
+
+                    # Reset our running iteration counter.
+                    self._running_i = 0
+
+                elif self._running_i == len(self._cache) and self._filenum + 1 == len(indices):
+                    # Point `_cache` to `_data`, and reset our running iteration counter.
+                    self._cache = self._data
+                    self._running_i = 0
+
+                result = self._cache[self._running_i]
+                self.i += 1
+                self._running_i += 1
+                return result
         else:
+            # Done!
             raise StopIteration
 
     def __del__(self):
@@ -248,7 +275,7 @@ class DataStore:
 if __name__ == "__main__":
     ds = DataStore(epsilon=0.1)
 
-    for i in range(0, 2**5):
+    for i in range(0, 2**20):
         ds.add(i)
 
         if i % 10000 == 0:
