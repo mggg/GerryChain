@@ -47,7 +47,6 @@ class DataStore:
         self.i = 0
         self.filecache = None
         self.filenum = 0
-        self.
 
     @property
     def usage(self):
