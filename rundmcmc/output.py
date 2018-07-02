@@ -104,3 +104,23 @@ class ChainOutputTable:
 def get_from_each(table, key):
     return [{header: row[header][key] for header in row if key in row[header]}
             for row in table]
+
+
+def log_dict_as_json(hist, scores, outputFile="output.json"):
+    print(outputFile)
+    if outputFile is not None:
+        with open(outputFile, "w") as f:
+            f.write(json.dumps(hist))
+
+
+def flips_to_pngs(hist, scores, outputFile="output.png"):
+    pass
+
+
+def log_table_to_file(table, scores, outputFile="output.txt"):
+    if outputFile:
+        with open(outputFile, 'w') as f:
+            for key in scores:
+                if table[key] is not None:
+                    f.write(", ".join([str(x) for x in table[key]]))
+                    f.write("\n")
