@@ -25,6 +25,10 @@ def initialize_exterior_boundaries(partition):
     return part_boundaries
 
 
+def flips(partition):
+    return partition.flips
+
+
 def exterior_boundaries(partition, alias='exterior_boundaries'):
     if not partition.parent:
         return initialize_exterior_boundaries(partition)
