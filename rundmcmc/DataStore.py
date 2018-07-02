@@ -2,6 +2,7 @@
 import psutil as ps
 import os
 import sys
+import time
 import pickle as pkl
 import pickletools as pklt
 from collections import deque, OrderedDict
@@ -66,8 +67,8 @@ class DataStore:
             Readonly property that returns the percentage of memory used by this
             process.
         """
-        current = ps.Process(os.getpid()).memory_info().rss
-        return 100 * (current - self.start) / self.mem["available"]
+        current = sys.getsizeof(self._data)
+        return 100 * (current / self.mem["available"])
 
     @property
     def available(self):
@@ -101,6 +102,7 @@ class DataStore:
         # Check current data pressure.
         if self.usage > self._epsilon:
             self._pickle()
+            time.sleep(5)
         
         self._data.append(obj)
 
@@ -108,7 +110,8 @@ class DataStore:
         """
             Flushes `._data`. Returns None.
         """
-        self._data.clear()
+        del self._data
+        self._data = []
     
     def _pickle(self):
         """
@@ -143,25 +146,40 @@ class DataStore:
             pfile.write(picklestring)
 
         # After writing, add an additional key to `._pickles` containing the last
-        # index added to `_.data` before pickling.
-        stores = len(self._pickles)
-        data_length = len(self._data)
+        # index added to `_.data` before pickling. Accessing the last-added key
+        # is O(1).
+        files = len(self._pickles)
+        last_current_index = len(self._data) - 1
 
-        if stores > 0:
-            last = self._pickles[stores - 2]
-            self._pickles[data_length + last - 1] = fname
+        if files < 1:
+            self._pickles[last_current_index] = fname
         else:
-            self._pickles[data_length - 1] = fname
+            last_saved_index = next(reversed(self._pickles))
+            self._pickles[last_saved_index + last_current_index] = fname
+        
+
+    def __len__(self):
+        pass
+    
+    def __str__(self):
+        pass
+
+    def __getitem__(self, index):
+        """
+            Given an index, get the data. Uses a short, linear search over the
+            keys of `._pickles`, to find the correct file, then returns the
+            data.
+        """
+        pass
 
 
 if __name__ == "__main__":
-    ds = DataStore(epsilon=1)
+    ds = DataStore(epsilon=0.1)
 
     for i in range(0, 2**20):
         ds.add(i)
 
-        if i % 10000 == 0:
-            print("Step {}".format(i))
+    print(ds[300001])
 
 """
     Then, for large numbers of iterations, we can write (or stream) the data to
