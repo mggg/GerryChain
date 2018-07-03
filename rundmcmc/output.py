@@ -1,6 +1,6 @@
+from collections import Counter
 import json
 import math
-from collections import Counter
 
 
 def p_value_report(score_name, ensemble_scores, initial_plan_score):
