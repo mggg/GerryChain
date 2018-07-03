@@ -3,7 +3,7 @@ import math
 import networkx
 
 from rundmcmc.partition import Partition
-from rundmcmc.updaters import Tally, cut_edges
+from rundmcmc.updaters import Tally, cut_edges, cut_edges_by_part
 
 
 class Grid(Partition):
@@ -36,7 +36,9 @@ class Grid(Partition):
                 assignment = {node: color_quadrants(node, thresholds) for node in graph.nodes}
 
             if not updaters:
-                updaters = {'cut_edges': cut_edges, 'population': Tally('population')}
+                updaters = {'cut_edges': cut_edges,
+                            'population': Tally('population'),
+                            'cut_edges_by_part': cut_edges_by_part}
 
             super().__init__(graph, assignment, updaters)
         elif parent:
