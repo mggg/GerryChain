@@ -17,6 +17,7 @@ def propose_random_flip(partition):
 
     # checks for a frozen nodes field and self loops if the value has
     # been set to 1
+    flipped_node = list(flip.keys())[0]
     node_attrs = partition.graph.nodes[flipped_node]
     if "Frozen" in node_attrs and node_attrs["Frozen"]:
         return dict()
