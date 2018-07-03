@@ -1,5 +1,4 @@
 from collections import Counter
-import matplotlib
 import json
 import math
 
