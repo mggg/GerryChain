@@ -90,7 +90,7 @@ def gsource_gdata(config, graphSource, graphData):
 def vsource_vdata(graph, config, voteSource, voteData):
     """Add data to graph from the config file VOTE_SOURCE and VOTE_DATA sections"""
     if not config.has_section(voteSource):
-        return
+        return []
 
     configVoteSource = config[voteSource]
     configVoteData = config[voteData]
