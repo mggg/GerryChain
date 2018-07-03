@@ -46,6 +46,7 @@ class MarkovChain:
                 else:
                     continue
 
+            self.state.parent = None
             proposed_next_state = self.state.merge(proposal)
 
             if self.is_valid(proposed_next_state):

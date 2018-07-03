@@ -1,5 +1,4 @@
 import random
-import networkx
 
 
 def propose_random_flip(partition):
@@ -9,23 +8,20 @@ def propose_random_flip(partition):
     :returns: a dictionary with the flipped node mapped to its new assignment
 
     """
-    edge = random.choice(tuple(partition['cut_edges']))
-    index = random.choice((0, 1))
-
-    flipped_node, other_node = edge[index], edge[1 - index]
-
-    flip = {flipped_node: partition.assignment[other_node]}
-
     # self loop
     numEdges = 2.0 * len(partition['cut_edges'])
     if random.random() < 1.0 - (numEdges * 1.0 / partition.max_edge_cuts):
-        flip = dict()
+        return dict()
+
+    flip = propose_random_flip_no_loops(partition)
 
     # checks for a frozen nodes field and self loops if the value has
     # been set to 1
-    if bool(networkx.get_node_attributes(partition.graph, 'Frozen')) and bool(flip.keys()):
-        if bool(partition.graph.node[str(list(flip.keys())[0])]['Frozen']):
-            flip = dict()
+    flipped_node = list(flip.keys())[0]
+    node_attrs = partition.graph.nodes[flipped_node]
+    if "Frozen" in node_attrs and node_attrs["Frozen"]:
+        return dict()
+
     return flip
 
 
@@ -141,3 +137,80 @@ def number_of_flips(partition, dict_of_flips, prev_partition):
         prev_partition = flips
         dict_of_flips[next(iter(flips))] = dict_of_flips.get(next(iter(flips)), 0) + 1
         return dict_of_flips, prev_partition
+
+
+def propose_random_flip_no_loops(partition):
+    """Proposes a random boundary flip from the partition.
+
+    :partition: The current partition to propose a flip from.
+    :returns: a dictionary with the flipped node mapped to its new assignment
+
+    """
+    edge = random.choice(tuple(partition['cut_edges']))
+    index = random.choice((0, 1))
+
+    flipped_node, other_node = edge[index], edge[1 - index]
+
+    flip = {flipped_node: partition.assignment[other_node]}
+
+    return flip
+
+
+def propose_lowest_pop_single_flip(partition):
+    dists = list(partition['population'])
+    pops = partition['population'].values()
+    rev_pop = dict(zip(pops, dists))
+    dist = rev_pop[min(pops)]
+
+    edge = random.choice(tuple(partition['cut_edges_by_part'][dist]))
+
+    if partition.assignment[edge[0]] == dist:
+        flip = {edge[1]: dist}
+    else:
+        flip = {edge[0]: dist}
+
+    return flip
+
+
+def propose_single_lowest_pop_or_random(partition):
+    if(random.random() > .2):
+        return propose_random_flip(partition)
+    else:
+        return propose_lowest_pop_single_flip(partition)
+
+
+def propose_chunk_swap(partition):
+    proposal = dict()
+    dists = list(partition.parts.keys())
+
+    while len(dists) != 0:
+        dist = dists[0]
+
+        edge = random.choice(list(partition['cut_edges_by_part'][dist]))
+        index = random.choice((0, 1))
+        flipped_node = edge[index]
+
+        if partition.assignment[flipped_node] != dist:
+            proposal[flipped_node] = dist
+
+        valid_flips = []
+        count = 0
+
+        for nbr in partition.graph.neighbors(flipped_node):
+            if len(valid_flips) == 0:
+                if partition.assignment[nbr] != dist:
+                    valid_flips.append(nbr)
+                    count = count + 1
+
+            else:
+                a = partition.assignment[valid_flips[0]]
+                if a == partition.assignment[nbr]:
+                    valid_flips.append(nbr)
+                    count = count + 1
+
+        for flipped_neighbor in valid_flips:
+            proposal[flipped_neighbor] = dist
+
+        dists.remove(dist)
+
+    return proposal
