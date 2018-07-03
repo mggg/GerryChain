@@ -16,18 +16,20 @@ def get_list_of_data(filepath, col_name, geoid=None):
 
     """
     # Checks if you have inputed a csv or shp file then captures the data
-    data = []
     if filepath.split('.')[-1] == 'csv':
         df = pd.read_csv(filepath)
     elif filepath.split('.')[-1] == 'shp':
+        df = gp.read_file(filepath)
+    elif filepath.split('.')[-1] == 'geojson':
         df = gp.read_file(filepath)
 
     if geoid is None:
         geoid = "sampleIndex"
         df[geoid] = range(len(df))
 
+    data = pd.DataFrame({geoid: df[geoid]})
     for i in col_name:
-        data.append(dict(zip(df[geoid], df[i])))
+        data[i] = df[i]
     return data
 
 

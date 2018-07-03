@@ -64,9 +64,12 @@ class Partition:
         self._update_parts()
 
     def __repr__(self):
-        number_of_parts = len(self.parts)
+        number_of_parts = len(self)
         s = "s" if number_of_parts > 1 else ""
         return f"Partition of a graph into {str(number_of_parts)} part{s}"
+
+    def __len__(self):
+        return len(self.parts)
 
     def _update_parts(self):
         flows = flows_from_changes(self.parent.assignment, self.flips)

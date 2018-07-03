@@ -8,7 +8,8 @@ from rundmcmc.chain import MarkovChain
 from rundmcmc.make_graph import (add_data_to_graph, construct_graph,
                                  get_assignment_dict)
 from rundmcmc.partition import Partition
-from rundmcmc.proposals import propose_random_flip
+from rundmcmc.proposals import \
+    propose_random_flip_no_loops as propose_random_flip
 from rundmcmc.updaters import (Tally, boundary_nodes, county_splits, cut_edges,
                                cut_edges_by_part, exterior_boundaries,
                                perimeters)
@@ -51,6 +52,10 @@ def PA_partition():
     # this is a networkx adjancency data json file with CD, area, population, and vote data
     graph = construct_graph("./testData/PA_graph_with_data.json")
 
+    # Add frozen attributes to graph
+    # data = gp.read_file("./testData/frozen.shp")
+    # add_data_to_graph(data, graph, ['Frozen'], 'wes_id')
+
     assignment = dict(zip(graph.nodes(), [graph.node[x]['CD'] for x in graph.nodes()]))
 
     updaters = {
@@ -73,7 +78,7 @@ class BasicChain(MarkovChain):
     The standard MarkovChain for replicating the Pennsylvania analysis. The proposal
     is a single random flip at the boundary of a district. A step is valid if the
     districts are connected, no districts disappear, and the populations of the districts
-    are all within 10% (TODO: 1%) of one another. Accepts every valid proposal.
+    are all within 1% of one another. Accepts every valid proposal.
 
     Requires a lot of different updaters.
     """
