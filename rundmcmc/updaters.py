@@ -142,7 +142,7 @@ def max_edge_cuts(partition):
     # TODO need number of frozen edges of graph
     numFrozen = 0
     numDists = len(set(partition.assignment.values()))
-    return 2 * (2 * len(partition.graph.nodes) + (numDists - numFrozen) - 6)
+    return 2 * (2 * len(list(partition.graph.nodes())) + (numDists - numFrozen) - 6)
 
 
 class Proportion:
@@ -258,7 +258,8 @@ class Tally:
         return {**old_tally, **new_tally}
 
     def _get_tally_from_node(self, partition, node):
-        return sum(partition.graph.nodes[node][field] for field in self.fields)
+        pass
+        #return sum(partition.graph.nodes[node][field] for field in self.fields)
 
 
 def compute_out_flow(graph, fields, flow):

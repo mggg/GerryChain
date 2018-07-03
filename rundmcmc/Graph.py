@@ -1,13 +1,12 @@
 # I know this is an abhorrent way to import things, but I promise that this is
 # the way the docs told me to do it.
 from graph_tool.all import *
-from termcolor import colored
 import geopandas as gp
 import os
 import networkx as nx
 import json
 import numpy as np
-import time
+from rundmcmc.make_graph import construct_graph
 
 from rundmcmc.make_graph import add_data_to_graph, construct_graph
 
@@ -31,6 +30,7 @@ class Graph:
         """
         self.library = "graph_tool" if graph_tool else "networkx"
         self.graph = None
+        self.nxgraph = construct_graph(path)
 
         """
             Internal properties:
@@ -123,6 +123,7 @@ class Graph:
                 self.graph = load_graph(self._xml_location)
                 self._converted = True
                 self.library = "graph_tool"
+                return self.graph
             except:
                 err = "Encountered an error during conversion. Aborting."
                 raise RuntimeError(err)
@@ -146,9 +147,13 @@ class Graph:
             in graph-tool is significantly faster.
         """
         if self.library == "networkx":
-            return np.asarray(self.graph.nodes())
+            return iter(np.asarray(self.graph.nodes()))
         else:
             return np.asarray(list(self.graph.vertex_properties["_graphml_vertex_id"]))
+
+    def node_properties(self, prop):
+        if self.library == "networkx":
+            return [self.nxgraph.node[x][prop] for x in self.nxgraph.nodes()]
 
     def edges(self):
         """
