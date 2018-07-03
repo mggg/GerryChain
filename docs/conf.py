@@ -6,9 +6,9 @@
 # full list see the documentation:
 # http://www.sphinx-doc.org/en/master/config
 
+import mock
 import sys
 import os
-from unittest.mock import MagicMock
 
 # -- Path setup --------------------------------------------------------------
 
@@ -83,7 +83,7 @@ pygments_style = 'sphinx'
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'default'
+html_theme = 'sphinxdoc'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -163,23 +163,27 @@ texinfo_documents = [
      'Miscellaneous'),
 ]
 
+# Autodoc config.
+
+# Append the __init__ string of a class to the class docstring.
+autoclass_content = 'both'
+
+autodoc_default_flags = ["members"]
+
 # -- Mock C libraries --------------------------------------------------------
 
 # RTD is unable to install libraries with C dependencies.
 # Using the fix from here: http://docs.readthedocs.io/en/latest/faq.html
 
-
-class Mock(MagicMock):
-    @classmethod
-    def __getattr__(cls, name):
-        return MagicMock()
-
-
 MOCK_MODULES = ["numpy", "pandas", "geopandas", "pysal",
-                "matplotlib", "networkx", "networkx.algorithms.shortest_path",
-                "networkx.algorithms"]
-sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+                "matplotlib", "networkx", "networkx.readwrite",
+                "networkx.algorithms", "networkx.algorithms.shortest_paths",
+                "networkx.algorithms.shortest_paths.weighted"]
+
+for module in MOCK_MODULES:
+    sys.modules[module] = mock.Mock()
 
 # -- Extension configuration -------------------------------------------------
 
-add_module_names = False
+# Prepend the module name of classes.
+add_module_names = True

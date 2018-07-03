@@ -11,12 +11,28 @@ congressional district plans using Markov Chain Monte Carlo. The project is
 hosted in the `Gerrymandr/RunDMCMC <https://github.com/gerrymandr/RunDMCMC>`_
 GitHub repo.
 
+User Guide
+----------
+
+These documents give a brief introduction and help a user get started. The
+later parts describe how to customize parts of the chain.
+
 .. toctree::
-    modules
+    :maxdepth: 2
 
-Indices and tables
-==================
+    user/intro
+    user/install
+    user/quickstart
+    user/examples
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+Developers' Guide
+-----------------
+
+These documents provide detailed references for classes and functions in
+RunDMCMC.
+
+.. toctree::
+    :maxdepth: 2
+
+    dev/advanced
+    api
