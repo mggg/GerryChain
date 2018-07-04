@@ -11,8 +11,10 @@ from rundmcmc.updaters import CountySplit
 def L1_reciprocal_polsby_popper(partition):
     return sum(1 / value for value in partition['polsby_popper'].values())
 
+
 def L1_reciprocal_discrete_polsby_popper(partition):
     return sum(1 / value for value in partition['discrete_polsby_popper'].values())
+
 
 def population(partition):
     return partition['population'].values()

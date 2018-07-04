@@ -11,6 +11,7 @@ def polsby_popper_updater(partition):
     return {part: compute_polsby_popper(partition['areas'][part], partition['perimeters'][part])
             for part in partition.parts}
 
+
 def boundary_nodes(partition, alias='boundary_nodes'):
     if partition.parent:
         return partition.parent[alias]
@@ -344,30 +345,35 @@ def compute_county_splits(partition, county_field, partition_field):
 
     return new_county_dict
 
+
 def boundary_node_count_of_part(partition, part):
     """
     Counts the nodes on the boundary of a part.
     Requires that 'cut_edges' be an updater, and 'exterior_boundaries' be an updater.
     """
-    
-    #Counts the nodes that are on the edge of the (US) state
+
+    # Counts the nodes that are on the edge of the (US) state
     state_boundary_count = len(partition['exterior_boundaries'][part])
 
-    #Counts the nodes of the part that share an edge with a different part.
-    partition_boundary_count = len(set([x for y in partition['cut_edges_by_part'][part] for x in y]).intersection(
-                        partition.parts[part]))
+    # Counts the nodes of the part that share an edge with a different part.
+    partition_boundary_count = len(set([x for y in partition['cut_edges_by_part'][part]\
+                                       for x in y]).intersection(partition.parts[part]))
     
     return state_boundary_count + partition_boundary_count
+
 
 def boundary_node_counts(partition):
     return {part: boundary_node_count_of_part(partition, part) for part in partition.parts}
 
+
 def node_counts(partition):
     return {part: len(partition.parts[part]) for part in partition.parts.keys()}
 
+
 def compute_discrete_polsby_popper(discrete_area, discrete_perimeter):
-    return 4*math.pi*discrete_area / discrete_perimeter**2
+    return 4 * math.pi * discrete_area / discrete_perimeter**2
 
 def discrete_polsby_popper_updater(partition):
-    return {part: compute_discrete_polsby_popper(partition['node_counts'][part], partition['boundary_node_counts'][part])
+    return {part: compute_discrete_polsby_popper(partition['node_counts'][part],
+                                                 partition['boundary_node_counts'][part])
         for part in partition.parts}
