@@ -356,9 +356,9 @@ def boundary_node_count_of_part(partition, part):
     state_boundary_count = len(partition['exterior_boundaries'][part])
 
     # Counts the nodes of the part that share an edge with a different part.
-    partition_boundary_count = len(set([x for y in partition['cut_edges_by_part'][part]\
+    partition_boundary_count = len(set([x for y in partition['cut_edges_by_part'][part]
                                        for x in y]).intersection(partition.parts[part]))
-    
+
     return state_boundary_count + partition_boundary_count
 
 
@@ -372,6 +372,7 @@ def node_counts(partition):
 
 def compute_discrete_polsby_popper(discrete_area, discrete_perimeter):
     return 4 * math.pi * discrete_area / discrete_perimeter**2
+
 
 def discrete_polsby_popper_updater(partition):
     return {part: compute_discrete_polsby_popper(partition['node_counts'][part],
