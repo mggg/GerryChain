@@ -34,5 +34,5 @@ RunDMCMC.
 .. toctree::
     :maxdepth: 2
 
-    dev/advanced
+    dev/layer_api
     api
