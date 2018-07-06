@@ -178,7 +178,7 @@ autodoc_default_flags = ["members"]
 MOCK_MODULES = ["numpy", "pandas", "geopandas", "pysal",
                 "matplotlib", "networkx", "networkx.readwrite",
                 "networkx.algorithms", "networkx.algorithms.shortest_paths",
-                "networkx.algorithms.shortest_paths.weighted", "shapely"]
+                "networkx.algorithms.shortest_paths.weighted", "shapely", "shapely.ops"]
 
 for module in MOCK_MODULES:
     sys.modules[module] = mock.Mock()
