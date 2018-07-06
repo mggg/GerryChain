@@ -24,7 +24,7 @@ def polsby_popper_updater(partition):
 def boundary_nodes(partition, alias='boundary_nodes'):
     if partition.parent:
         return partition.parent[alias]
-    return {node for node in partition.graph.nodes if partition.graph.nodes[node]['boundary_node']}
+    return {node_id for node_id in partition.graph.nodes() if partition.graph.node(node_id, 'boundary_node')}
 
 
 def initialize_exterior_boundaries(partition):
@@ -64,10 +64,10 @@ def perimeter_of_part(partition, part):
     Requires that 'boundary_perim' be a node attribute, 'shared_perim' be an edge
     attribute, 'cut_edges' be an updater, and 'exterior_boundaries' be an updater.
     """
-    exterior_perimeter = sum(partition.graph.nodes[node]['boundary_perim']
-                             for node in partition['exterior_boundaries'][part])
-    inter_part_perimeter = sum(partition.graph.edges[edge]['shared_perim']
-                               for edge in partition['cut_edges_by_part'][part])
+    exterior_perimeter = sum(partition.graph.node(node_id, 'boundary_perim')
+                             for node_id in partition['exterior_boundaries'][part])
+    inter_part_perimeter = sum(partition.graph.edge(edge_id, 'shared_perim')
+                               for edge_id in partition['cut_edges_by_part'][part])
     return exterior_perimeter + inter_part_perimeter
 
 
@@ -101,7 +101,7 @@ def obsolete_cuts(partition):
 
 def cut_edges_by_part(partition, alias='cut_edges_by_part'):
     if not partition.parent:
-        edges = {tuple(sorted(edge)) for edge in partition.graph.edges
+        edges = {tuple(sorted(edge)) for edge in partition.graph.edges()
                 if partition.crosses_parts(edge)}
         return put_edges_into_parts(edges, partition.assignment)
 
@@ -119,7 +119,7 @@ def cut_edges(partition):
     parent = partition.parent
 
     if not parent:
-        return {edge for edge in partition.graph.edges
+        return {tuple(edge) for edge in partition.graph.edges()
                 if partition.crosses_parts(edge)}
     # Edges that weren't cut, but now are cut
     # We sort the tuples to make sure we don't accidentally end
@@ -227,8 +227,7 @@ class Tally:
 
         """
         tally = collections.defaultdict(self.dtype)
-        for node, part in partition.assignment.items():
-            tally[part] += self._get_tally_from_node(partition, node)
+        for node, part in partition.assignment.items():            tally[part] += self._get_tally_from_node(partition, node)
         return tally
 
     def _update_tally(self, partition):
@@ -257,9 +256,8 @@ class Tally:
 
         return {**old_tally, **new_tally}
 
-    def _get_tally_from_node(self, partition, node):
-        pass
-        #return sum(partition.graph.nodes[node][field] for field in self.fields)
+    def _get_tally_from_node(self, partition, node_id):
+        return sum(list(partition.graph.node(node_id, fields) for fields in self.fields))
 
 
 def compute_out_flow(graph, fields, flow):

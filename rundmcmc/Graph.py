@@ -141,6 +141,13 @@ class Graph:
         """
         pass
 
+    def node(self, node_id, attribute):
+        if self.library == "networkx":
+            return self.graph.nodes[node_id][attribute]
+        else:
+            print(self.graph.vertex_properties[attribute])
+            return list(self.graph.vertex_properties[attribute])[int(node_id)]
+
     def nodes(self):
         """
             Returns a numpy array over the nodes of the graph. Finding neighbors
@@ -154,6 +161,14 @@ class Graph:
     def node_properties(self, prop):
         if self.library == "networkx":
             return [self.nxgraph.node[x][prop] for x in self.nxgraph.nodes()]
+        else:
+            pass
+
+    def edge(self, edge_id, attribute):
+        if self.library == "networkx":
+            return self.graph.edges[edge_id][attribute]
+        else:
+            pass
 
     def edges(self):
         """
