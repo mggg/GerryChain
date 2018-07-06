@@ -8,6 +8,9 @@ with the chain. For a high-level overview of the code's structure, see
 :ref:`the overview <overview>`. For a user-friendly introduction, see :ref:`the
 introduction <introduction>`.
 
+.. contents:: Table of Contents
+    :local:
+
 Chain and related classes
 -------------------------
 

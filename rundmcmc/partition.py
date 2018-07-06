@@ -14,11 +14,13 @@ class Partition:
     def __init__(self, graph=None, assignment=None, updaters=None,
                  parent=None, flips=None):
         """
-        :graph: the underlying graph (networkx.Graph)
-        :assignment: dict assigning nodes to districts. Defaults to uniformly
-        assigning all nodes to district 0.
-        :updaters: dict from names of attributes of the Partition to the functions
-        that compute those attributes.
+        :graph: Underlying graph; a NetworkX object.
+        :assignment: Dictionary assigning nodes to districts. If None,
+                     initialized to assign all nodes to district 0.
+        :updaters: Dictionary of functions to track data about the partition.
+                   The keys are stored as attributes on the partition class,
+                   which the functions compute.
+
         """
         if parent:
             self._from_parent(parent, flips)
@@ -94,7 +96,8 @@ class Partition:
         """
         :flips: dict assigning nodes of the graph to their new districts
         :returns: A new instance representing the partition obtained by performing the given flips
-        on this partition.
+                  on this partition.
+
         """
         return self.__class__(parent=self, flips=flips)
 
@@ -103,7 +106,9 @@ class Partition:
 
     def __getitem__(self, key):
         """Allows keying on a Partition instance.
+
         :key: Property to access.
+
         """
         if key not in self._cache:
             self._cache[key] = self.updaters[key](self)
