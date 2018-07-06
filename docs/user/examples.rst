@@ -3,6 +3,15 @@
 Examples
 ========
 
+.. contents::
+    :local:
+
+Running a chain
+---------------
+
+.. literalinclude:: ../../examples/chain_configurable.py
+    :language: python
+
 Reporting p-values
 ------------------
 
