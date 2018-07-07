@@ -94,7 +94,7 @@ def callback():
     config['EVALUATION_SCORES_LOG'] = {}
 
     # TODO: standardize scoring types and outputs
-    for key, in visOptions.keys():
+    for key in visOptions.keys():
         if vchoices[key].get():
             config['EVALUATION_SCORES_LOG']['col' + key] = key
     config['SAVEFILENAME'] = {}
@@ -304,7 +304,7 @@ def select_prop_method(event):
 
 def select_vis_type():
     global vchoices
-    if vchoices["histogram"].get():
+    if vchoices["write_hists"].get():
         box1.configure(state='normal')
     else:
         box1.configure(state='normal')
@@ -312,7 +312,7 @@ def select_vis_type():
         box1.insert(0, "plot filename")
         box1.configure(state='disabled')
 
-    if vchoices["save_history_of_changes"].get():
+    if vchoices["write_flips"].get():
         box2.configure(state='normal')
     else:
         box2.configure(state='normal')
@@ -320,7 +320,7 @@ def select_vis_type():
         box2.insert(0, "json filename")
         box2.configure(state='disabled')
 
-    if vchoices["p_value"].get():
+    if vchoices["write_p_values"].get():
         box3.configure(state='normal')
     else:
         box3.configure(state='normal')
