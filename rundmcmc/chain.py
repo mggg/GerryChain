@@ -16,9 +16,9 @@ class MarkovChain:
     def __init__(self, proposal, is_valid, accept, initial_state, total_steps=1000):
         """
         :proposal: Function proposing the next state from the current state.
-        :is_valid: :class:`Validator` class instance.
+        :is_valid: :class:`~rundmcmc.validity.Validator` class instance.
         :accept: Function accepting or rejecting the proposed state.
-        :initial_state: Initial :class:`Partition` class.
+        :initial_state: Initial :class:`rundmcmc.partition.Partition` class.
         :total_steps: Number of steps to run.
 
         """
