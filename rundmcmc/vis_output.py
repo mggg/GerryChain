@@ -16,17 +16,17 @@ def hist_of_table_scores(table, scores=None, outputFile="output.png"):
     _, axes = plt.subplots(ncols=numcols, nrows=numrows)
 
     if numcols == 1:
-        quadrants = {key: i%numcols for i, key in enumerate(scores.keys())}
+        quadrants = {key: i % numcols for i, key in enumerate(scores.keys())}
     else:
         quadrants = {
-            key: (i%numcols, int(i / numcols))
-            for i, key in enumerate(scores.keys()) if i < numrows*numcols
+            key: (i % numcols, int(i / numcols))
+            for i, key in enumerate(scores.keys()) if i < numrows * numcols
         }
 
     initial_scores = table[0]
 
     for i, key in enumerate(scores.keys()):
-        if i < numrows*numcols:
+        if i < numrows * numcols:
             quadrant = quadrants[key]
             axes[quadrant].hist(table[key], bins=50)
             axes[quadrant].set_title(key)

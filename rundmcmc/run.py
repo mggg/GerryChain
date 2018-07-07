@@ -67,13 +67,14 @@ def flips_to_dict(chain, handlers=None):
 def handle_scores_separately(chain, handlers):
     table = ChainOutputTable()
 
-    initialScores = {key: handler(chain.state) for key, handler in handlers.items() if key != "flips"}
+    initialScores = {key: handler(chain.state) for
+            key, handler in handlers.items() if key != "flips"}
     table.append(initialScores)
 
     nhandlers = {key: value for key, value in handlers.items() if key != "flips"}
 
     jsonToText = '{'
-    jsonSave=False
+    jsonSave = False
     if "flips" in list(handlers.keys()):
         jsonToText += '{0: ' + json.dumps(handlers['flips'](chain.state)) + '}'
         jsonSave = True

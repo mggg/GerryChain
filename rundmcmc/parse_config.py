@@ -17,11 +17,11 @@ from rundmcmc.chain import MarkovChain
 from rundmcmc.run import handle_scores_separately
 
 
-#output_func(output, scores, output_type)
 thismodule = sys.modules[__name__]
 
+
 def write_hists(a, b, c, filename=''):
-     visoutputs.hist_of_table_scores(a[0], a[2], filename)
+    visoutputs.hist_of_table_scores(a[0], a[2], filename)
 
 
 def write_flips(a, b, c, filename=''):
@@ -184,12 +184,12 @@ def escores_edata(config, evalScores, evalScoresData):
         eval_scores = {funcs[x]: scores_arg_placement(funcs[x], cols[x]) for x in range(len(funcs))}
 
         if config.has_section('EVALUATION_SCORES_LOG'):
-            fname = {key:value for key, value in config['SAVEFILENAME'].items()}
+            fname = {key: value for key, value in config['SAVEFILENAME'].items()}
 
             if "write_flips" in fname:
                 eval_scores["flips"] = updates.flips
 
-            output_funcs = [functools.partial(getattr(thismodule, x), filename=fname[x]) \
+            output_funcs = [functools.partial(getattr(thismodule, x), filename=fname[x])
                     for x in fname.keys()]
 
             output_vis_type = lambda x, y, z: [a(x, y, z) for a in output_funcs]
