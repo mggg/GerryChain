@@ -68,7 +68,8 @@ def callback():
     Main function of the Process button to pull out the text entry fields.
     :return: Strings of all the column names specified.
     """
-    global cFileName, config, gSource, vSource, gcsvvar, num_steps, proposal, vfuncs, efuncs, vchoices
+    global cFileName, config, gSource, vSource, gcsvvar, num_steps
+    global proposal, vfuncs, efuncs, vchoices
 
     # GRAPH DATA
     config["GRAPH_SOURCE"] = {"gSource": gSource}
@@ -135,7 +136,7 @@ graphtitle = tk.Label(GRAPH, anchor="w",
         font="Helvetica 14", fg=col1, bg=col2)
 graphtitle.place(relx=offset, rely=offset, relwidth=1, relheight=0.15)
 GRAPHINPUT = tk.Frame(GRAPH, bg=col2)
-GRAPHINPUT.place(relx=2*offset, rely=0.2, relwidth=1, relheight=0.45)
+GRAPHINPUT.place(relx=2 * offset, rely=0.2, relwidth=1, relheight=0.45)
 
 
 def getGraphSource():
@@ -288,7 +289,7 @@ def add_to_evallist():
         [y.get() for y in columnNameChoices[x].values()])]
 
     allfuncs = [x + ',' + ','.join(y for y, z
-            in columnNameChoices[x].items() if z.get()) \
+            in columnNameChoices[x].items() if z.get())
             for x in keysOfInterest]
     evallist.configure(state="normal")
     evallist.delete(0, tk.END)
@@ -459,4 +460,3 @@ if cFileName != "":
     with open(cFileName, 'w') as configfile:
         config.write(configfile)
     print("Success!!\nto use, type ''python __main__.py %s '' into terminal" % cFileName)
-
