@@ -173,12 +173,12 @@ autodoc_default_flags = ["members"]
 # -- Mock C libraries --------------------------------------------------------
 
 # RTD is unable to install libraries with C dependencies.
-# Using the fix from here: http://docs.readthedocs.io/en/latest/faq.html
+# We're using the mock module to mock those away.
 
 MOCK_MODULES = ["numpy", "pandas", "geopandas", "pysal",
                 "matplotlib", "networkx", "networkx.readwrite",
                 "networkx.algorithms", "networkx.algorithms.shortest_paths",
-                "networkx.algorithms.shortest_paths.weighted"]
+                "networkx.algorithms.shortest_paths.weighted", "shapely", "shapely.ops"]
 
 for module in MOCK_MODULES:
     sys.modules[module] = mock.Mock()
