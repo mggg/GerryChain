@@ -214,3 +214,19 @@ def propose_chunk_swap(partition):
         dists.remove(dist)
 
     return proposal
+
+
+def max_edge_cuts(partition):
+    """returns wes computation for max number of edge cuts... not well documented,
+    and a vague upper bound (to be made smaller if possible)
+
+    inputs:
+    :partition: a partition instance.
+
+    returns: an integer value
+
+    """
+    # TODO need number of frozen edges of graph
+    numFrozen = 0
+    numDists = len(set(partition.assignment.values()))
+    return 2 * (2 * len(partition.graph.nodes) + (numDists - numFrozen) - 6)
