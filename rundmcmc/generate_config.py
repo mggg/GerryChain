@@ -51,7 +51,6 @@ evalOptions = [
     "mean_thirdian",
     "L1_reciprocal_polsby_popper",
     "normalized_efficiency_gap",
-    #"polsby_popper_updater"
 ]
 propOptions = [
     "propose_random_flip"
