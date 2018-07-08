@@ -84,14 +84,15 @@ def callback():
         config["VOTE_DATA_SOURCE"] = {"vSource": vSource, "vSourceID": vid.get()}
         config["VOTE_DATA"] = {}
 
-        # check that any columns were spacified
-        if vcols != "names of columns to add, comma separated":
+        # check that any voting data columns were spacified to use
+        if len(vfuncs) > 0:
             vcols = vdata.get().split(',')
-            config["VOTE_DATA"] = {"col" + str(x): vcols[x] for x in range(len(vcols))}
+            if vcols != "names of columns to add, comma separated":
+                config["VOTE_DATA"] = {"col" + str(x): vcols[x] for x in range(len(vcols))}
 
         # make sure the columns specified in evaluation scores get added
         for e in efuncs:
-            for f in e.split(',')[1: ]:
+            for f in e.split(',')[1:]:
                 if f != "NONE":
                     config["VOTE_DATA"][f] = f
 
