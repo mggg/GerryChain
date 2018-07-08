@@ -51,7 +51,7 @@ evalOptions = [
     "mean_thirdian",
     "L1_reciprocal_polsby_popper",
     "normalized_efficiency_gap",
-    "polsby_popper_updater"
+    #"polsby_popper_updater"
 ]
 propOptions = [
     "propose_random_flip"
@@ -82,8 +82,19 @@ def callback():
     # VOTE SOURCE
     if gcsvvar.get() == 1:
         config["VOTE_DATA_SOURCE"] = {"vSource": vSource, "vSourceID": vid.get()}
-        vcols = vdata.get().split(',')
-        config["VOTE_DATA"] = {"col" + str(x): vcols[x] for x in range(len(vcols))}
+        config["VOTE_DATA"] = {}
+
+        # check that any columns were spacified
+        if vcols != "names of columns to add, comma separated":
+            vcols = vdata.get().split(',')
+            config["VOTE_DATA"] = {"col" + str(x): vcols[x] for x in range(len(vcols))}
+
+        # make sure the columns specified in evaluation scores get added
+        for e in efuncs:
+            for f in e.split(',')[1: ]:
+                if f != "NONE":
+                    config["VOTE_DATA"][f] = f
+
     # VALIDITY
     if len(vfuncs) > 0:
         config['VALIDITY'] = {"col" + str(i): vfuncs[i] for i in range(len(vfuncs))}
@@ -179,13 +190,15 @@ def updateEvalF():
     global columns, columnNameChoices, evalOptions
     if vSource != '':
         if vSource.split('.')[-1] == 'shp' or vSource.split('.')[-1] == 'dbf':
-            columns = gp.read_file(vSource).columns
+            columns = [x for x in gp.read_file(vSource).columns]
         elif vSource.split('.')[-1] == 'xlsx':
-            columns = pd.read_excel(vSource).columns
+            columns = [x for x in pd.read_excel(vSource).columns]
         elif vSource.split('.')[-1] == "csv":
-            columns = pd.read_csv(vSource).columns
+            columns = [x for x in pd.read_csv(vSource).columns]
         else:
             raise Exception("ERROR: vote data file type not supported")
+
+        columns.append('NONE')
 
         colnamemenu.configure(state='normal')
         for item in evalOptions:
