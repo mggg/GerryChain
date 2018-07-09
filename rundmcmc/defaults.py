@@ -46,9 +46,9 @@ def example_partition():
     return Partition(graph, assignment, updaters)
 
 
-def PA_partition():
+def PA_partition(path='./testData/PA_graph_with_data.json'):
     # this is a networkx adjancency data json file with CD, area, population, and vote data
-    graph = construct_graph("./testData/PA_graph_with_data.json")
+    graph = construct_graph(path)
 
     # Add frozen attributes to graph
     # data = gp.read_file("./testData/frozen.shp")

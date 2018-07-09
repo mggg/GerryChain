@@ -8,7 +8,7 @@ def compute_polsby_popper(area, perimeter):
     return 4 * math.pi * area / perimeter**2
 
 
-def polsby_popper_updater(partition):
+def polsby_popper(partition):
     return {part: compute_polsby_popper(partition['areas'][part], partition['perimeters'][part])
             for part in partition.parts}
 
@@ -19,17 +19,34 @@ def boundary_nodes(partition, alias='boundary_nodes'):
     return {node for node in partition.graph.nodes if partition.graph.nodes[node]['boundary_node']}
 
 
-def initialize_exterior_boundaries(partition):
+def initialize_exterior_boundaries_as_a_set(partition):
     part_boundaries = collections.defaultdict(set)
     for node in partition['boundary_nodes']:
         part_boundaries[partition.assignment[node]].add(node)
     return part_boundaries
 
 
+@on_flow(initialize_exterior_boundaries_as_a_set, alias='exterior_boundaries_as_a_set')
+def exterior_boundaries_as_a_set(partition, previous, inflow, outflow):
+    graph_boundary = partition['boundary_nodes']
+    return (previous | (inflow & graph_boundary)) - outflow
+
+
+def initialize_exterior_boundaries(partition):
+    graph_boundary = partition['boundary_nodes']
+    return {part: sum(partition.graph.nodes[node]['boundary_perim']
+                      for node in partition.parts[part] & graph_boundary)
+                      for part in partition.parts}
+
+
 @on_flow(initialize_exterior_boundaries, alias='exterior_boundaries')
 def exterior_boundaries(partition, previous, inflow, outflow):
     graph_boundary = partition['boundary_nodes']
-    return (previous | (inflow & graph_boundary)) - outflow
+    added_perimeter = sum(partition.graph.nodes[node]['boundary_perim']
+                          for node in inflow & graph_boundary)
+    removed_perimeter = sum(partition.graph.nodes[node]['boundary_perim']
+                            for node in outflow & graph_boundary)
+    return previous + added_perimeter - removed_perimeter
 
 
 def flips(partition):
@@ -42,8 +59,7 @@ def perimeter_of_part(partition, part):
     Requires that 'boundary_perim' be a node attribute, 'shared_perim' be an edge
     attribute, 'cut_edges' be an updater, and 'exterior_boundaries' be an updater.
     """
-    exterior_perimeter = sum(partition.graph.nodes[node]['boundary_perim']
-                             for node in partition['exterior_boundaries'][part])
+    exterior_perimeter = partition['exterior_boundaries'][part]
     inter_part_perimeter = sum(partition.graph.edges[edge]['shared_perim']
                                for edge in partition['cut_edges_by_part'][part])
     return exterior_perimeter + inter_part_perimeter

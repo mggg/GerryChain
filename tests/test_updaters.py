@@ -11,6 +11,7 @@ from rundmcmc.partition import Partition
 from rundmcmc.proposals import propose_random_flip
 from rundmcmc.updaters import (Tally, boundary_nodes, cut_edges,
                                cut_edges_by_part, exterior_boundaries,
+                               exterior_boundaries_as_a_set,
                                perimeters, votes_updaters)
 from rundmcmc.validity import (Validator, contiguous, no_vanishing_districts,
                                single_flip_contiguous)
@@ -262,7 +263,7 @@ def test_cut_edges_by_part_gives_same_total_edges_as_naive_method():
     assert naive_cut_edges == {tuple(sorted(edge)) for part in result for edge in result[part]}
 
 
-def test_exterior_boundaries():
+def test_exterior_boundaries_as_a_set():
     graph = three_by_three_grid()
 
     for i in [0, 1, 2, 3, 5, 6, 7, 8]:
@@ -270,11 +271,40 @@ def test_exterior_boundaries():
     graph.nodes[4]['boundary_node'] = False
 
     assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
-    updaters = {'exterior_boundaries': exterior_boundaries, 'boundary_nodes': boundary_nodes}
+    updaters = {'exterior_boundaries_as_a_set': exterior_boundaries_as_a_set,
+        'boundary_nodes': boundary_nodes}
+    partition = Partition(graph, assignment, updaters)
+
+    result = partition['exterior_boundaries_as_a_set']
+    assert result[1] == {0, 1, 3} and result[2] == {2, 5, 6, 7, 8}
+
+    # 112    111
+    # 112 -> 121
+    # 222    222
+    flips = {4: 2, 2: 1, 5: 1}
+
+    new_partition = Partition(parent=partition, flips=flips)
+
+    result = new_partition['exterior_boundaries_as_a_set']
+
+    assert result[1] == {0, 1, 2, 3, 5} and result[2] == {6, 7, 8}
+
+
+def test_exterior_boundaries():
+    graph = three_by_three_grid()
+
+    for i in [0, 1, 2, 3, 5, 6, 7, 8]:
+        graph.nodes[i]['boundary_node'] = True
+        graph.nodes[i]['boundary_perim'] = 2
+    graph.nodes[4]['boundary_node'] = False
+
+    assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
+    updaters = {'exterior_boundaries': exterior_boundaries,
+        'boundary_nodes': boundary_nodes}
     partition = Partition(graph, assignment, updaters)
 
     result = partition['exterior_boundaries']
-    assert result[1] == {0, 1, 3} and result[2] == {2, 5, 6, 7, 8}
+    assert result[1] == 6 and result[2] == 10
 
     # 112    111
     # 112 -> 121
@@ -285,7 +315,7 @@ def test_exterior_boundaries():
 
     result = new_partition['exterior_boundaries']
 
-    assert result[1] == {0, 1, 2, 3, 5} and result[2] == {6, 7, 8}
+    assert result[1] == 10 and result[2] == 6
 
 
 def test_perimeters():
