@@ -7,11 +7,12 @@ from rundmcmc.updaters import (Tally, boundary_nodes, cut_edges,
 from rundmcmc.updaters import polsby_popper_updater as polsby_popper
 from rundmcmc.updaters import votes_updaters
 from rundmcmc.defaults import BasicChain
+from time import time
+from rundmcmc.run import pipe_to_table
 
 def main():
     G = Graph("./testData/PA_graph_with_data.json")
     assignment = dict(zip(G.nodes(), G.node_properties('CD')))
-    G.convert()
     updaters = {
         **votes_updaters(['VoteA', 'VoteB']),
         'population': Tally('POP100', alias='population'),
@@ -25,8 +26,9 @@ def main():
     }
 
     p = Partition(G, assignment, updaters)
+    G.convert()
 
-    chain = BasicChain(p, 100)
+    chain = BasicChain(p, 30)
 
 if __name__ == "__main__":
     import sys

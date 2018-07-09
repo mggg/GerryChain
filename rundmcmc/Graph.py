@@ -237,9 +237,10 @@ class Graph:
         if self.library == 'networkx':
             return self.graph.subgraph(nodes)
         else:
-            label = label_components(self.graph)[0]
-            return GraphView(self.graph, vfilt=label.a == nodes)
-
+            vfilt = self.graph.new_vertex_property('bool')
+            for el in nodes:
+                vfilt[el] = True
+            return GraphView(self.graph, vfilt)
 
     def to_dict_of_dicts(self):
         """

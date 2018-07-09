@@ -179,11 +179,13 @@ def contiguous(partition):
 
     # Checks if the subgraph of all districts are connected(contiguous)
     for key in district_dict:
-        # TODO
-        tmp = partition.graph.subgraph(district_dict[key])
-        if nx.is_connected(tmp) is False:
-            return False
-
+        if partition.graph._converted is False:
+            tmp = partition.graph.subgraph(district_dict[key])
+            if nx.is_connected(tmp) is False:
+                return False
+        else:
+            tmp = partition.graph.subgraph(district_dict[key])
+            print(tmp)
     return True
 
 
