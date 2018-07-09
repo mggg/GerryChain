@@ -175,7 +175,7 @@ def vsource_vdata(graph, config, voteSource, voteData):
 def escores_edata(config, evalScores, evalScoresData):
     eval_scores = ''
     output_file_name = None
-    output_vis_type = None
+    output_vis_type = lambda x, y, z: 0
     chainfunc = lambda x: 0
 
     if config.has_section('EVALUATION_SCORES'):
