@@ -85,8 +85,9 @@ def callback():
 
         # check that any voting data columns were spacified to use
         if len(vfuncs) > 0:
-            vcols = vdata.get().split(',')
+            vcols = vdata.get()
             if vcols != "names of columns to add, comma separated":
+                vcols = vcols.split(',')
                 config["VOTE_DATA"] = {"col" + str(x): vcols[x] for x in range(len(vcols))}
 
         # make sure the columns specified in evaluation scores get added
