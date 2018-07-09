@@ -13,10 +13,10 @@ def hist_of_table_scores(table, scores=None, outputFile="output.png"):
     numcols = int(len(scores) / numrows)
     numrows = max(numrows, 1)
     numcols = max(numcols, 1)
-    _, axes = plt.subplots(ncols=numcols, nrows=numrows)
+    _, axes = plt.subplots(nrows=numrows, ncols=numcols)
 
     if numcols == 1:
-        quadrants = {key: i % numcols for i, key in enumerate(scores.keys())}
+        quadrants = {key: i for i, key in enumerate(scores.keys())}
     else:
         quadrants = {
             key: (i % numcols, int(i / numcols))
