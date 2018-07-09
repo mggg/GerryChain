@@ -31,7 +31,7 @@ TEST_DATA_PATH = os.path.join(FILE_PATH, "testData/")
 def example_partition():
     df = gp.read_file(os.path.join(TEST_DATA_PATH, "mo_cleaned_vtds.shp"))
 
-    with open(os.path.join(TEST_DATA_PATH, "./testData/MO_graph.json")) as f:
+    with open(os.path.join(TEST_DATA_PATH, "MO_graph.json")) as f:
         graph_json = json.load(f)
 
     graph = networkx.readwrite.json_graph.adjacency_graph(graph_json)
