@@ -36,6 +36,10 @@ class MarkovChain:
         return self
 
     def __next__(self):
+        if self.counter == 0:
+            self.counter += 1
+            return self.state
+
         while self.counter < self.total_steps:
             proposal = self.proposal(self.state)
 

@@ -12,9 +12,8 @@ from rundmcmc.proposals import \
     propose_random_flip_no_loops as propose_random_flip
 from rundmcmc.updaters import (Tally, boundary_nodes, county_splits, cut_edges,
                                cut_edges_by_part, exterior_boundaries,
-                               perimeters)
-from rundmcmc.updaters import polsby_popper_updater as polsby_popper
-from rundmcmc.updaters import votes_updaters
+                               perimeters, polsby_popper, votes_updaters,
+                               interior_boundaries)
 from rundmcmc.validity import (L1_reciprocal_polsby_popper, UpperBound,
                                Validator, no_vanishing_districts,
                                refuse_new_splits, single_flip_contiguous,
@@ -48,9 +47,9 @@ def example_partition():
     return Partition(graph, assignment, updaters)
 
 
-def PA_partition():
+def PA_partition(path='./testData/PA_graph_with_data.json'):
     # this is a networkx adjancency data json file with CD, area, population, and vote data
-    graph = construct_graph("./testData/PA_graph_with_data.json")
+    graph = construct_graph(path)
 
     # Add frozen attributes to graph
     # data = gp.read_file("./testData/frozen.shp")
@@ -63,6 +62,7 @@ def PA_partition():
             'population': Tally('POP100', alias='population'),
             'perimeters': perimeters,
             'exterior_boundaries': exterior_boundaries,
+            'interior_boundaries': interior_boundaries,
             'boundary_nodes': boundary_nodes,
             'cut_edges': cut_edges,
             'areas': Tally('ALAND10', alias='areas'),
