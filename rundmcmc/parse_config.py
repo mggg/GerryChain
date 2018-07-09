@@ -1,3 +1,5 @@
+import sys
+import json
 import functools
 import configparser
 
@@ -8,24 +10,30 @@ import rundmcmc.scores as scores
 import rundmcmc.proposals as proposals
 import rundmcmc.accept as accepts
 import rundmcmc.output as outputs
+import rundmcmc.vis_output as visoutputs
 
 from rundmcmc.partition import Partition
 from rundmcmc.chain import MarkovChain
-from rundmcmc.run import pipe_to_table, flips_to_dict
+from rundmcmc.run import handle_scores_separately
 
 
-def nothingFunc(args):
-    pass
+thismodule = sys.modules[__name__]
 
 
-def scoresLogType(typestr):
-    """return the type of logger to use for scores"""
-    if typestr == "pipe_to_table":
-        return pipe_to_table
-    elif typestr == "flips_to_dict":
-        return flips_to_dict
-    else:
-        print("ERROR: TYPE OF LOGGER NOT SUPPORTED")
+def write_hists(a, b, c, filename=''):
+    visoutputs.hist_of_table_scores(a[0], a[2], filename)
+
+
+def write_flips(a, b, c, filename=''):
+    with open(filename, "w") as f:
+        f.write(a[1])
+
+
+def write_p_values(a, b, c, filename=''):
+    initial_plans = a[0][0]
+    output = [outputs.p_value_report(score, a[0][score], initial_plans[score]) for score in a[2]]
+    with open(filename, "w") as f:
+        f.write(json.dumps(output))
 
 
 def scores_arg_placement(funcName, args):
@@ -59,6 +67,65 @@ def scores_arg_placement(funcName, args):
     elif hasattr(valids, funcName):
         func = getattr(valids, funcName)
         return func
+    else:
+        raise Exception(f"Error: {funcName} not supported")
+
+
+def dependencies(scoreType, POP, AREA):
+    """returns the updaters dependencies for whatever scoretype
+    is passed in. To be used as a checking device against the
+    user-specified validators and score functions
+    NOTE: this does not check efficiency/mean-median/mean-thirdian.
+
+    :scoreType: name of function to check dependencies of
+    :POP: name of population column in graph object
+    :AREA: name of area column in graph object
+
+    """
+    depends = {}
+    if scoreType == "areas":
+        depends = {"areas": updates.Tally(AREA, alias="areas")}
+
+    elif scoreType == "population":
+        depends = {"population": updates.Tally(POP, alias="population")}
+
+    elif scoreType == "perimeters":
+        depends = {
+                'boundary_nodes': updates.boundary_nodes,
+                'cut_edges': updates.cut_edges,
+                'cut_edges_by_part': updates.cut_edges_by_part,
+                'exterior_boundaries': updates.exterior_boundaries,
+                'perimeters': updates.perimeters
+                }
+
+    elif scoreType == "polsby_popper_updater":
+        depends = {**dependencies("areas", POP, AREA), **dependencies("perimeters", POP, AREA)}
+        depends["polsby_popper_updater"] = updates.polsby_popper_updater
+        depends['cut_edges'] = updates.cut_edges
+        depends['cut_edges_by_part'] = updates.cut_edges_by_part
+
+    elif scoreType == "L1_reciprocal_polsby_popper":
+        depends = dependencies("polsby_popper_updater", POP, AREA)
+
+    elif scoreType == "no_vanishing_districts":
+        depends = dependencies("population", POP, AREA)
+        depends['cut_edges'] = updates.cut_edges
+        depends['cut_edges_by_part'] = updates.cut_edges_by_part
+
+    elif scoreType == "fast_connected":
+        depends = {}
+
+    elif scoreType == "within_percent_of_ideal_population":
+        depends = dependencies("population", POP, AREA)
+        depends['cut_edges'] = updates.cut_edges
+        depends['cut_edges_by_part'] = updates.cut_edges_by_part
+
+    elif scoreType == "p_value":
+        depends = {"mean_median": scores.mean_median, "mean_thirdian": scores.mean_thirdian}
+        depends['cut_edges'] = updates.cut_edges
+        depends['cut_edges_by_part'] = updates.cut_edges_by_part
+
+    return depends
 
 
 def required_graph_fields():
@@ -106,9 +173,9 @@ def vsource_vdata(graph, config, voteSource, voteData):
 
 def escores_edata(config, evalScores, evalScoresData):
     eval_scores = ''
-    outputFileName = None
-    scoreVisType = None
-    chainfunc = nothingFunc
+    output_file_name = None
+    output_vis_type = None
+    chainfunc = lambda x: 0
 
     if config.has_section('EVALUATION_SCORES'):
         eval_list = config['EVALUATION_SCORES'].values()
@@ -116,67 +183,20 @@ def escores_edata(config, evalScores, evalScoresData):
 
         eval_scores = {funcs[x]: scores_arg_placement(funcs[x], cols[x]) for x in range(len(funcs))}
 
-        if config.has_section('EVALUATION_SCORES_DATA'):
-            if 'evalscorelogtype' in list(config['EVALUATION_SCORES_DATA'].keys()):
-                scoreLogType = scoresLogType(config['EVALUATION_SCORES_DATA']['evalscorelogtype'])
-                chainfunc = functools.partial(scoreLogType, handlers=eval_scores)
+        if config.has_section('EVALUATION_SCORES_LOG'):
+            fname = {key: value for key, value in config['SAVEFILENAME'].items()}
 
-            if 'vistype' in list(config['EVALUATION_SCORES_DATA'].keys()):
-                scoreVisType = getattr(outputs, config['EVALUATION_SCORES_DATA']['vistype'])
+            if "write_flips" in fname:
+                eval_scores["flips"] = updates.flips
 
-            if 'savefilename' in list(config['EVALUATION_SCORES_DATA'].keys()):
-                outputFileName = config['EVALUATION_SCORES_DATA']['savefilename']
+            output_funcs = [functools.partial(getattr(thismodule, x), filename=fname[x])
+                    for x in fname.keys()]
 
-    return eval_scores, chainfunc, funcs, scoreVisType, outputFileName
+            output_vis_type = lambda x, y, z: [a(x, y, z) for a in output_funcs]
 
+        chainfunc = functools.partial(handle_scores_separately, handlers=eval_scores)
 
-def dependencies(scoreType, POP, AREA):
-    """returns the updaters dependencies for whatever scoretype
-    is passed in. To be used as a checking device against the
-    user-specified validators and score functions
-    NOTE: this does not check efficiency/mean-median/mean-thirdian.
-
-    :scoreType: name of function to check dependencies of
-    :POP: name of population column in graph object
-    :AREA: name of area column in graph object
-
-    """
-    depends = {}
-    if scoreType == "areas":
-        depends = {"areas": updates.Tally(AREA, alias="areas")}
-
-    elif scoreType == "population":
-        depends = {"population": updates.Tally(POP, alias="population")}
-
-    elif scoreType == "perimeters":
-        depends = {
-                'boundary_nodes': updates.boundary_nodes,
-                'cut_edges': updates.cut_edges,
-                'cut_edges_by_part': updates.cut_edges_by_part,
-                'exterior_boundaries': updates.exterior_boundaries,
-                'perimeters': updates.perimeters
-                }
-
-    elif scoreType == "polsby_popper":
-        depends = {**dependencies("areas", POP, AREA), **dependencies("perimeters", POP, AREA)}
-        depends["polsby_popper"] = updates.polsby_popper_updater
-
-    elif scoreType == "L1_reciprocal_polsby_popper":
-        depends = dependencies("polsby_popper", POP, AREA)
-
-    elif scoreType == "no_vanishing_districts":
-        depends = dependencies("population", POP, AREA)
-
-    elif scoreType == "fast_connected":
-        depends = {}
-
-    elif scoreType == "within_percent_of_ideal_population":
-        depends = dependencies("population", POP, AREA)
-
-    elif scoreType == "p_value":
-        depends = {"mean_median": scores.mean_median, "mean_thirdian": scores.mean_thirdian}
-
-    return depends
+    return eval_scores, chainfunc, funcs, output_vis_type, output_file_name
 
 
 def read_basic_config(configFileName):
