@@ -12,7 +12,8 @@ from rundmcmc.proposals import \
     propose_random_flip_no_loops as propose_random_flip
 from rundmcmc.updaters import (Tally, boundary_nodes, county_splits, cut_edges,
                                cut_edges_by_part, exterior_boundaries,
-                               perimeters, polsby_popper, votes_updaters)
+                               perimeters, polsby_popper, votes_updaters,
+                               interior_boundaries)
 from rundmcmc.validity import (L1_reciprocal_polsby_popper, UpperBound,
                                Validator, no_vanishing_districts,
                                refuse_new_splits, single_flip_contiguous,
@@ -61,6 +62,7 @@ def PA_partition(path='./testData/PA_graph_with_data.json'):
             'population': Tally('POP100', alias='population'),
             'perimeters': perimeters,
             'exterior_boundaries': exterior_boundaries,
+            'interior_boundaries': interior_boundaries,
             'boundary_nodes': boundary_nodes,
             'cut_edges': cut_edges,
             'areas': Tally('ALAND10', alias='areas'),

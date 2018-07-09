@@ -11,6 +11,7 @@ from rundmcmc.partition import Partition
 from rundmcmc.proposals import propose_random_flip
 from rundmcmc.updaters import (Tally, boundary_nodes, cut_edges,
                                cut_edges_by_part, exterior_boundaries,
+                               interior_boundaries,
                                exterior_boundaries_as_a_set,
                                perimeters, votes_updaters)
 from rundmcmc.validity import (Validator, contiguous, no_vanishing_districts,
@@ -330,7 +331,9 @@ def test_perimeters():
         graph.edges[edge]['shared_perim'] = 1
 
     assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
-    updaters = {'exterior_boundaries': exterior_boundaries, 'cut_edges_by_part': cut_edges_by_part,
+    updaters = {'exterior_boundaries': exterior_boundaries,
+        'interior_boundaries': interior_boundaries,
+        'cut_edges_by_part': cut_edges_by_part,
         'boundary_nodes': boundary_nodes, 'perimeters': perimeters}
     partition = Partition(graph, assignment, updaters)
 

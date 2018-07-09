@@ -2,6 +2,7 @@ import collections
 import math
 
 from .flows import on_flow
+from .cut_edges import on_edge_flow
 
 
 def compute_polsby_popper(area, perimeter):
@@ -49,6 +50,19 @@ def exterior_boundaries(partition, previous, inflow, outflow):
     return previous + added_perimeter - removed_perimeter
 
 
+def initialize_interior_boundaries(partition):
+    return {part: sum(partition.graph.edges[edge]['shared_perim']
+                      for edge in partition['cut_edges_by_part'][part])
+            for part in partition.parts}
+
+
+@on_edge_flow(initialize_interior_boundaries, alias='interior_boundaries')
+def interior_boundaries(partition, previous, new_edges, old_edges):
+    added_perimeter = sum(partition.graph.edges[edge]['shared_perim'] for edge in new_edges)
+    removed_perimeter = sum(partition.graph.edges[edge]['shared_perim'] for edge in old_edges)
+    return previous + added_perimeter - removed_perimeter
+
+
 def flips(partition):
     return partition.flips
 
@@ -60,9 +74,9 @@ def perimeter_of_part(partition, part):
     attribute, 'cut_edges' be an updater, and 'exterior_boundaries' be an updater.
     """
     exterior_perimeter = partition['exterior_boundaries'][part]
-    inter_part_perimeter = sum(partition.graph.edges[edge]['shared_perim']
-                               for edge in partition['cut_edges_by_part'][part])
-    return exterior_perimeter + inter_part_perimeter
+    interior_perimeter = partition['interior_boundaries'][part]
+
+    return exterior_perimeter + interior_perimeter
 
 
 def perimeters(partition):
