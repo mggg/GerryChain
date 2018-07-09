@@ -109,9 +109,9 @@ def callback():
         if vchoices[key].get():
             config['EVALUATION_SCORES_LOG']['col' + key] = key
     config['SAVEFILENAME'] = {}
-    config['SAVEFILENAME']['write_hists'] = box1.get()
-    config['SAVEFILENAME']['write_flips'] = box2.get()
-    config['SAVEFILENAME']['write_p_values'] = box3.get()
+    config['SAVEFILENAME']['write_hists'] = box1.get().split('.')[0]+'.png'
+    config['SAVEFILENAME']['write_flips'] = box2.get().split('.')[0]+'.json'
+    config['SAVEFILENAME']['write_p_values'] = box3.get().split('.')[0]+'.txt'
 
     # CHAIN CONFIG
     config['MARKOV_CHAIN'] = {}
