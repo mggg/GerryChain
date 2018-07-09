@@ -95,7 +95,7 @@ def dependencies(scoreType, POP, AREA):
                 'cut_edges': updates.cut_edges,
                 'cut_edges_by_part': updates.cut_edges_by_part,
                 'exterior_boundaries': updates.exterior_boundaries,
-                'interior__boundaries': updates.interior_boundaries,
+                'interior_boundaries': updates.interior_boundaries,
                 'perimeters': updates.perimeters
                 }
 
