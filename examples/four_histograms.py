@@ -9,7 +9,7 @@ from rundmcmc.validity import L1_reciprocal_polsby_popper
 
 
 def main():
-    initial_partition = PA_partition()
+    initial_partition = PA_partition('../rundmcmc/testData/PA_graph_with_data.json')
 
     chain = BasicChain(initial_partition, total_steps=10000)
 
