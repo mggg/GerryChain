@@ -230,6 +230,11 @@ def bfs(graph):
     visited = set()
     total_vertices = len(list(graph.keys()))
 
+    # Check if the district has a single vertex. If it does, then simply return
+    # `True`, as it's trivially connected.
+    if total_vertices <= 1:
+        return True
+
     # bfs!
     while len(q) is not 0:
         current = q.pop(0)
