@@ -2,8 +2,8 @@ import sys
 from rundmcmc.parse_config import read_basic_config
 
 
-def main(arg):
-    chain, chain_func, scores, output_func, output_type = read_basic_config(arg)
+def main(args = sys.argv):
+    chain, chain_func, scores, output_func, output_type = read_basic_config(args[1])
     print("setup the chain")
 
     output = chain_func(chain)
@@ -13,4 +13,4 @@ def main(arg):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1])
+    main()
