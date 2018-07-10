@@ -2,7 +2,12 @@ import sys
 from rundmcmc.parse_config import read_basic_config
 
 
-def main(args = sys.argv):
+def main(args):
+    if not args:
+        args = sys.argv
+    if len(args) < 1:
+        raise ValueError("no config file provided")
+
     chain, chain_func, scores, output_func, output_type = read_basic_config(args[1])
     print("setup the chain")
 
@@ -13,4 +18,4 @@ def main(args = sys.argv):
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv)
