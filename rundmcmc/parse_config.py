@@ -95,17 +95,18 @@ def dependencies(scoreType, POP, AREA):
                 'cut_edges': updates.cut_edges,
                 'cut_edges_by_part': updates.cut_edges_by_part,
                 'exterior_boundaries': updates.exterior_boundaries,
+                'interior_boundaries': updates.interior_boundaries,
                 'perimeters': updates.perimeters
                 }
 
-    elif scoreType == "polsby_popper_updater":
+    elif scoreType == "polsby_popper":
         depends = {**dependencies("areas", POP, AREA), **dependencies("perimeters", POP, AREA)}
-        depends["polsby_popper_updater"] = updates.polsby_popper_updater
+        depends["polsby_popper"] = updates.polsby_popper
         depends['cut_edges'] = updates.cut_edges
         depends['cut_edges_by_part'] = updates.cut_edges_by_part
 
     elif scoreType == "L1_reciprocal_polsby_popper":
-        depends = dependencies("polsby_popper_updater", POP, AREA)
+        depends = dependencies("polsby_popper", POP, AREA)
 
     elif scoreType == "no_vanishing_districts":
         depends = dependencies("population", POP, AREA)
@@ -174,7 +175,7 @@ def vsource_vdata(graph, config, voteSource, voteData):
 def escores_edata(config, evalScores, evalScoresData):
     eval_scores = ''
     output_file_name = None
-    output_vis_type = None
+    output_vis_type = lambda x, y, z: 0
     chainfunc = lambda x: 0
 
     if config.has_section('EVALUATION_SCORES'):

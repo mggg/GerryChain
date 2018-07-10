@@ -1,4 +1,5 @@
 import json
+import math
 from rundmcmc.output import ChainOutputTable
 
 
@@ -52,8 +53,14 @@ def handle_chain(chain, handlers):
 
 def pipe_to_table(chain, handlers):
     table = ChainOutputTable()
+    interval = math.floor(len(chain) / 100)
+    counter = 0
     for row in handle_chain(chain, handlers):
-        table.append(row)
+        if counter % interval == 0:
+            print(f"Step {counter}")
+            table.append(row)
+            print(row)
+        counter += 1
     return table
 
 

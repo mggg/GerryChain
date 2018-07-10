@@ -23,7 +23,11 @@ class MarkovChain:
 
         """
         if not is_valid(initial_state):
-            raise ValueError('The given initial_state is not valid according is_valid.')
+            failed = [
+                constraint for constraint in is_valid.constraints if not constraint(initial_state)]
+            message = 'The given initial_state is not valid according is_valid. ' \
+                      'The failed constraints were: ' + ','.join([f.__name__ for f in failed])
+            raise ValueError(message)
 
         self.proposal = proposal
         self.is_valid = is_valid
@@ -36,6 +40,10 @@ class MarkovChain:
         return self
 
     def __next__(self):
+        if self.counter == 0:
+            self.counter += 1
+            return self.state
+
         while self.counter < self.total_steps:
             proposal = self.proposal(self.state)
 
