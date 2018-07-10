@@ -12,9 +12,9 @@ def p_value_report(score_name, ensemble_scores, initial_plan_score):
     that the plan is chosen randomly as determined by the 'square root of
     2*epsilon' theorem.
     """
-    count_higher = Counter(score > initial_plan_score for score in ensemble_scores)
+    count_higher = Counter(score >= initial_plan_score for score in ensemble_scores)
     total_scores = sum(count_higher.values())
-    fraction_higher = count_higher[True] / total_scores
+    fraction_as_high = count_higher[True] / total_scores
     fraction_lower = count_higher[False] / total_scores
 
     # By Chikina-Frieze-Pegden, if a plan scores in the highest fraction_higher of all
@@ -22,12 +22,12 @@ def p_value_report(score_name, ensemble_scores, initial_plan_score):
     # probability of being chosen randomly from the sample space. (Paraphrasing Moon's
     # PA report).
 
-    p_value = math.sqrt(2 * fraction_higher)
+    p_value = math.sqrt(2 * fraction_as_high)
     opposite_p_value = math.sqrt(2 * fraction_lower)
 
     report = {'name': score_name,
               'initial_plan_score': initial_plan_score,
-              'fraction_higher': fraction_higher,
+              'fraction_as_high': fraction_as_high,
               'p_value': p_value,
               'opposite_p_value': opposite_p_value}
     return report
