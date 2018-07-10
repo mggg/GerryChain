@@ -26,11 +26,10 @@ Installation
 ============
 
 To install RunDMCMC, we currently recommend cloning the repository and
-installing manually::
+installing a development version manually::
 
     git clone https://github.com/gerrymandr/RunDMCMC.git
     cd RunDMCMC
-    python3 setup.py install
     python3 setup.py develop
 
 
