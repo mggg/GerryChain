@@ -2,6 +2,8 @@ import sys
 import json
 import functools
 import configparser
+import os
+import zipfile
 
 import rundmcmc.make_graph as mgs
 import rundmcmc.validity as valids
@@ -18,6 +20,7 @@ from rundmcmc.run import handle_scores_separately
 
 
 thismodule = sys.modules[__name__]
+file_name = ''
 
 
 def write_hists(a, b, c, filename=''):
@@ -135,8 +138,10 @@ def required_graph_fields():
 
 
 def gsource_gdata(config, graphSource, graphData):
-    """Create a graph from the config file GRAPH_SOURCE and GRAPH_DATA sections"""
+    global file_name
+    file_name = ((config.items('GRAPH_SOURCE')[0])[1]).split('/')[-1]
 
+    """Create a graph from the config file GRAPH_SOURCE and GRAPH_DATA sections"""
     # make sure the config file has graph information in it
     if (not config.has_section(graphData)) or (not config.has_section(graphSource)):
         raise Exception("ERROR: config needs a GRAPH_DATA section and a GRAPH_SOURCE section")
@@ -185,7 +190,9 @@ def escores_edata(config, evalScores, evalScoresData):
         eval_scores = {funcs[x]: scores_arg_placement(funcs[x], cols[x]) for x in range(len(funcs))}
 
         if config.has_section('EVALUATION_SCORES_LOG'):
-            fname = {key: value for key, value in config['SAVEFILENAME'].items()}
+            fname = {'write_hists': '/tmp/chains/'+file_name.split('.')[0]+'_user_run.png',
+                     'write_flips': '/tmp/chains/'+file_name.split('.')[0]+'_user_run.json',
+                     'write_p_values': '/tmp/chains/'+file_name.split('.')[0]+'_user_run.txt'}
 
             if "write_flips" in fname:
                 eval_scores["flips"] = updates.flips
