@@ -1,7 +1,5 @@
 import random
 
-import networkx
-
 
 def propose_random_flip(partition):
     """Proposes a random boundary flip from the partition.
@@ -10,17 +8,20 @@ def propose_random_flip(partition):
     :returns: a dictionary with the flipped node mapped to its new assignment
 
     """
-    flip = propose_random_flip_no_loops(partition)
     # self loop
     numEdges = 2.0 * len(partition['cut_edges'])
     if random.random() < 1.0 - (numEdges * 1.0 / partition.max_edge_cuts):
-        flip = dict()
+        return dict()
+
+    flip = propose_random_flip_no_loops(partition)
 
     # checks for a frozen nodes field and self loops if the value has
     # been set to 1
-    if bool(networkx.get_node_attributes(partition.graph, 'Frozen')) and bool(flip.keys()):
-        if bool(partition.graph.node[str(list(flip.keys())[0])]['Frozen']):
-            flip = dict()
+    flipped_node = list(flip.keys())[0]
+    node_attrs = partition.graph.nodes[flipped_node]
+    if "Frozen" in node_attrs and node_attrs["Frozen"]:
+        return dict()
+
     return flip
 
 
@@ -213,3 +214,19 @@ def propose_chunk_swap(partition):
         dists.remove(dist)
 
     return proposal
+
+
+def max_edge_cuts(partition):
+    """returns wes computation for max number of edge cuts... not well documented,
+    and a vague upper bound (to be made smaller if possible)
+
+    inputs:
+    :partition: a partition instance.
+
+    returns: an integer value
+
+    """
+    # TODO need number of frozen edges of graph
+    numFrozen = 0
+    numDists = len(set(partition.assignment.values()))
+    return 2 * (2 * len(partition.graph.nodes) + (numDists - numFrozen) - 6)

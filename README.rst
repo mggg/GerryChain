@@ -25,12 +25,8 @@ chain without mixing" (http://www.pnas.org/content/114/11/2860)
 Installation
 ============
 
-Ideally, the following conda command will work:
-
-``conda install -c gerrymandr rundmcmc``
-
-Should our release system be broken, cloning this repository and manually
-running ``setup.py`` will also work::
+To install RunDMCMC, we currently recommend cloning the repository and
+installing manually::
 
     git clone https://github.com/gerrymandr/RunDMCMC.git
     cd RunDMCMC

@@ -12,6 +12,10 @@ def L1_reciprocal_polsby_popper(partition):
     return sum(1 / value for value in partition['polsby_popper'].values())
 
 
+def L1_reciprocal_discrete_polsby_popper(partition):
+    return sum(1 / value for value in partition['discrete_polsby_popper'].values())
+
+
 def population(partition):
     return partition['population'].values()
 
@@ -225,6 +229,11 @@ def bfs(graph):
     q = [next(iter(graph))]
     visited = set()
     total_vertices = len(list(graph.keys()))
+
+    # Check if the district has a single vertex. If it does, then simply return
+    # `True`, as it's trivially connected.
+    if total_vertices <= 1:
+        return True
 
     # bfs!
     while len(q) is not 0:
