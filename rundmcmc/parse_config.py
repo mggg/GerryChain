@@ -171,11 +171,11 @@ def vsource_vdata(graph, config, voteSource, voteData):
     source = configVoteSource['vSource']
     geoid = configVoteSource['vSourceID']
 
-    cols_to_add = [x for x in configVoteData.values()]
+    cols_to_add = list(configVoteData.values())
     mdata = mgs.get_list_of_data(source, cols_to_add, geoid)
     mgs.add_data_to_graph(mdata, graph, cols_to_add, geoid)
 
-    return [x for x in configVoteData.values()]
+    return list(configVoteData.values())
 
 
 def escores_edata(config, evalScores, evalScoresData):
