@@ -1,7 +1,8 @@
 import matplotlib.pyplot as plt
 
 
-def hist_of_table_scores(table, scores=None, outputFile="output.png"):
+def hist_of_table_scores(table, scores=None, outputFile="output.png",
+                         num_bins = 50):
     """Creates a histogram of each score in scores, where
     table is keyed on score and has values that can be binned
 
@@ -30,7 +31,7 @@ def hist_of_table_scores(table, scores=None, outputFile="output.png"):
     for i, key in enumerate(scores.keys()):
         if i < numrows * numcols:
             quadrant = quadrants[key]
-            axes[quadrant].hist(table[key], bins=50)
+            axes[quadrant].hist(table[key], bins = num_bins)
             axes[quadrant].set_title(key)
             axes[quadrant].axvline(x=initial_scores[key], color='r')
     if outputFile:
