@@ -50,7 +50,7 @@ no_worse_L1_reciprocal_polsby_popper = SelfConfiguringUpperBound(L1_reciprocal_p
 class WithinPercentRangeOfBounds:
     def __init__(self, func, percent):
         self.func = func
-        self.percent = float(percent)
+        self.percent = float(percent) / 100.
         self.lbound = None
         self.ubound = None
 

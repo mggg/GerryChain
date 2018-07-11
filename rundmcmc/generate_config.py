@@ -108,7 +108,7 @@ def callback():
 
     # VALIDITY
     if len(vfuncs) > 0:
-        config['VALIDITY'] = {"col" + str(i): vfuncs[i] for i in range(len(vfuncs))}
+        config['VALIDITY'] = {"col" + x: x for x in validlist.get().split(';')}
 
     # EVALUATION SCORES
     if len(efuncs) > 0:
