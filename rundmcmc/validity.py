@@ -62,6 +62,7 @@ class WithinPercentRangeOfBounds:
         else:
             return self.lbound <= self.func(partition) <= self.ubound
 
+
 def L1_reciprocal_discrete_polsby_popper(partition):
     return sum(1 / value for value in partition['discrete_polsby_popper'].values())
 

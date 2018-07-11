@@ -232,7 +232,7 @@ def read_basic_config(configFileName):
             else:
                 [y, z] = x.split(',')
                 validators[i] = valids.WithinPercentRangeOfBounds(getattr(valids, y), z)
-        validatorsUpdaters.extend([ x.split(',')[0] for x in config['VALIDITY'].values()])
+        validatorsUpdaters.extend([x.split(',')[0] for x in config['VALIDITY'].values()])
 
     validators = valids.Validator(validators)
     # add updaters required by this list of validators to list of updaters

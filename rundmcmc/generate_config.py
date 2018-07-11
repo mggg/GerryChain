@@ -299,18 +299,18 @@ def clear_proposaldata(event):
 
 def add_to_validlist():
     global validMenuFuncs, vfuncs, oldH, oldS
-    hard='hard_limit'
-    soft='within_percent_of_original'
+    hard = 'hard_limit'
+    soft = 'within_percent_of_original'
 
     # get list of all constraints added (hard or soft keys have different types)
     hardKeysOfInterest = [x for x in validOptions if validMenuFuncs[x][hard].get()]
-    softKeysOfInterest = [','.join([x, str(y)]) for x in validOptions 
+    softKeysOfInterest = [','.join([x, str(y)]) for x in validOptions
                 for y, z in validMenuFuncs[x][soft].items() if z.get()]
 
-    # compare with previously recorded constraints to delete 
+    # compare with previously recorded constraints to delete
     newFuncNames = hardKeysOfInterest + [x.split(',')[0] for x in softKeysOfInterest]
     obsoleteSFuncs = [y for y in oldS if newFuncNames.count(y.split(',')[0]) > 1]
-    obsoleteHFuncs = [y for y in oldH if newFuncNames.count(y              ) > 1]
+    obsoleteHFuncs = [y for y in oldH if newFuncNames.count(y) > 1]
 
     # now update the menu items
     for y in obsoleteHFuncs:
@@ -419,7 +419,7 @@ numstepsdata.place(relx=0.3 + offset, rely=0, relheight=1)
 VALIDF = tk.Frame(SCORING)
 VALIDF.place(relx=offset, rely=.25 + offset, relwidth=1 - 2 * offset, relheight=.1)
 validators = tk.Menubutton(VALIDF, text="Constraints", indicatoron=True, width=20)
-valid_menu=tk.Menu(validators, tearoff=False)
+valid_menu = tk.Menu(validators, tearoff=False)
 validators.configure(menu=valid_menu)
 percent_menu = tk.Menu(valid_menu, tearoff=False)
 
@@ -430,7 +430,7 @@ for item in validOptions:
     menu = tk.Menu(valid_menu, tearoff=False)
     valid_menu.add_cascade(label=item, menu=menu)
 
-    # add check option for a hard limit 
+    # add check option for a hard limit
     validMenuFuncs[item]['hard_limit'] = tk.BooleanVar(value=False)
     menu.add_checkbutton(label='hard_limit',
             variable=validMenuFuncs[item]['hard_limit'],
