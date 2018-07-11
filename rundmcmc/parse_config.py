@@ -108,6 +108,9 @@ def dependencies(scoreType, POP, AREA):
     elif scoreType == "L1_reciprocal_polsby_popper":
         depends = dependencies("polsby_popper", POP, AREA)
 
+    elif scoreType == "L_minus_1_polsby_popper":
+        depends = dependencies("polsby_popper", POP, AREA)
+
     elif scoreType == "no_vanishing_districts":
         depends = dependencies("population", POP, AREA)
         depends['cut_edges'] = updates.cut_edges

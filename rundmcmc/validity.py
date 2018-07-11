@@ -21,9 +21,28 @@ class SelfConfiguringUpperBound:
             return self.func(partition) <= self.bound
 
 
+class SelfConfiguringLowerBound:
+    def __init__(self, func):
+        self.func = func
+        self.bound = None
+
+    def __call__(self, partition):
+        if not self.bound:
+            self.bound = self.func(partition) + 0.05
+            return True
+        else:
+            return self.func(partition) >= self.bound
+
+
 def L1_reciprocal_polsby_popper(partition):
     return sum(1 / value for value in partition['polsby_popper'].values())
 
+
+def L_minus_1_polsby_popper(partition):
+    return len(partition.parts) / sum(1 / value for value in partition['polsby_popper'].values())
+
+
+no_worse_L_minus_1_polsby_popper = SelfConfiguringLowerBound(L_minus_1_polsby_popper)
 
 no_worse_L1_reciprocal_polsby_popper = SelfConfiguringUpperBound(L1_reciprocal_polsby_popper)
 
