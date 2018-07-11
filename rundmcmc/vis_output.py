@@ -14,7 +14,7 @@ def hist_of_table_scores(table, scores=None, outputFile="output.png"):
     numrows = max(numrows, 1)
     numcols = max(numcols, 1)
     _, axes = plt.subplots(nrows=numrows, ncols=numcols, squeeze=False)
-    plt.subplots_adjust(wspace=.2,hspace=.4)
+    plt.subplots_adjust(wspace=.2, hspace=.4)
 
     if numcols == 1:
         axes = axes.flatten()
