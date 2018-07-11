@@ -225,8 +225,15 @@ def read_basic_config(configFileName):
     # set up validator functions and create Validator class instance
     validatorsUpdaters = []
     if config.has_section('VALIDITY') and len(list(config['VALIDITY'].keys())) > 0:
-        validators = [getattr(valids, x) for x in config['VALIDITY'].values()]
-        validatorsUpdaters.extend(list(config['VALIDITY'].values()))
+        validators = list(config['VALIDITY'].values())
+        for i, x in enumerate(validators):
+            if len(x.split(',')) == 1:
+                validators[i] = getattr(valids, x)
+            else:
+                [y, z] = x.split(',')
+                validators[i] = valids.WithinPercentRangeOfBounds(getattr(valids, y), z)
+        validatorsUpdaters.extend([ x.split(',')[0] for x in config['VALIDITY'].values()])
+
     validators = valids.Validator(validators)
     # add updaters required by this list of validators to list of updaters
     for x in validatorsUpdaters:
