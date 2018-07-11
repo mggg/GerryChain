@@ -1,4 +1,4 @@
-#Imports for I/O processing
+# Imports for I/O processing
 
 import json
 import geopandas as gp
@@ -6,9 +6,9 @@ from networkx.readwrite import json_graph
 import functools
 
 
-#Imports for RunDMCMC components
-#You can look at the list of available functions in each
-#corresponding .py file.
+# Imports for RunDMCMC components
+# You can look at the list of available functions in each
+# corresponding .py file.
 
 from rundmcmc.accept import always_accept
 
@@ -18,7 +18,7 @@ from rundmcmc.make_graph import (add_data_to_graph, construct_graph)
 
 from rundmcmc.partition import Partition
 
-from rundmcmc.proposals import  propose_random_flip_no_loops
+from rundmcmc.proposals importpropose_random_flip_no_loops
 
 from rundmcmc.updaters import (Tally, boundary_nodes, cut_edges,
                                cut_edges_by_part, exterior_boundaries,
@@ -42,8 +42,7 @@ from rundmcmc.output import p_value_report
 from vis_output import (hist_of_table_scores, trace_of_table_scores)
 
 
-
-# Input the path to the graph (either JSON or shapefile) and the label column 
+# Input the path to the graph (either JSON or shapefile) and the label column
 graph_path = "./testData/PA_graph_with_data.json"
 unique_label = "wes_id"
 
@@ -60,10 +59,9 @@ graph = construct_graph(graph_path)
 # Write graph to file
 with open('graph_with_data.json', 'w') as outfile1:
     outfile1.write(json_graph.dumps(graph))
-    
+
 # Put district on graph
 assignment = dict(zip(graph.nodes(), [graph.node[x][district_col] for x in graph.nodes()]))
-
 
 
 # Input the shapefile with vote data here
@@ -82,7 +80,6 @@ vote_col2 = "voteB"
 data_list = [vote_col1, vote_col2]
 
 add_data_to_graph(df, graph, data_list, id_col=unique_label)
-
 
 
 # Desired proposal method
@@ -144,11 +141,10 @@ print("ran chain")
 # Post processing commands go below:
 
 scores = {
-        'Mean-Median': functools.partial(mean_median, proportion_column_name=vote_col1+ "%"),
-        'Mean-Thirdian': functools.partial(mean_thirdian, proportion_column_name=vote_col1+ "%"),
+        'Mean-Median': functools.partial(mean_median, proportion_column_name=vote_col1 + "%"),
+        'Mean-Thirdian': functools.partial(mean_thirdian, proportion_column_name=vote_col1 + "%"),
         'Efficiency Gap': functools.partial(efficiency_gap, col1=vote_col1, col2=vote_col2),
-        'L1 Reciprocal Polsby-Popper': L1_reciprocal_polsby_popper
-    }
+        'L1 Reciprocal Polsby-Popper': L1_reciprocal_polsby_popper}
 
 initial_scores = {key: score(initial_partition) for key, score in scores.items()}
 
@@ -191,5 +187,3 @@ with open("chain_flips.json", "w") as fp:
     json.dump(allAssignments, fp)
 
 print("wrote flips")
-
-
