@@ -50,8 +50,8 @@ evalOptions = [
     "efficiency_gap",
     "mean_median",
     "mean_thirdian",
-    "no_worse_L1_reciprocal_polsby_popper",
-    "no_worse_L_minus_1_polsby_popper",
+    "L1_reciprocal_polsby_popper",
+    "L_minus_1_polsby_popper",
     "normalized_efficiency_gap",
 ]
 propOptions = [
