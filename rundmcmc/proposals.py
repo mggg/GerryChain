@@ -52,7 +52,6 @@ def propose_random_flip_metagraph(partition):
     return flip
 
 
-
 def propose_several_random_flips(partition):
     """Proposes between 2 and 7 random boundary flips from the partition.
        Calls the propose_random_flip() method from this file.
