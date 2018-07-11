@@ -8,8 +8,24 @@ from networkx import NetworkXNoPath
 from rundmcmc.updaters import CountySplit
 
 
+class SelfConfiguringUpperBound:
+    def __init__(self, func):
+        self.func = func
+        self.bound = None
+
+    def __call__(self, partition):
+        if not self.bound:
+            self.bound = self.func(partition)
+            return True
+        else:
+            return self.func(partition) <= self.bound
+
+
 def L1_reciprocal_polsby_popper(partition):
     return sum(1 / value for value in partition['polsby_popper'].values())
+
+
+no_worse_L1_reciprocal_polsby_popper = SelfConfiguringUpperBound(L1_reciprocal_polsby_popper)
 
 
 def L1_reciprocal_discrete_polsby_popper(partition):
