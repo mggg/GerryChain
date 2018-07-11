@@ -1,5 +1,6 @@
 import random
 
+
 def always_accept(partition):
     return True
 
@@ -13,7 +14,7 @@ def cut_edge_accept(partition):
 
     """
     bound = 1
-    
+
     if partition.parent is not None:
         bound = min(1, len(partition.parent["cut_edges"]) / len(partition["cut_edges"]))
 
@@ -29,8 +30,8 @@ def metagraph_accept(partition):
 
     """
     bound = 1
-    
+
     if partition.parent is not None:
-        bound = min(1,len(partition.parent["metagraph_degree"]) / len(partition["metagraph_degree"]))
+        bound = min(1, len(partition.parent["metagraph_degree"]) / len(partition["metagraph_degree"]))
 
     return random.random() < bound
