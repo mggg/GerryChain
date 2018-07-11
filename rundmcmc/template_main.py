@@ -159,14 +159,14 @@ scores = {
 
 initial_scores = {key: score(initial_partition) for key, score in scores.items()}
 
-table = pipe_to_table(chain, scores, display = True, display_frequency = 10,
-                      bin_frequency = 1)
+table = pipe_to_table(chain, scores, display=True, display_frequency=10,
+                      bin_frequency=1)
 
 
 #Histogram Plotting
 hist_path = "chain_histogram.png"
 
-hist_of_table_scores(table, scores, outputFile = hist_path, num_bins = 50)
+hist_of_table_scores(table, scores, outputFile=hist_path, num_bins=50)
 
 print("plotted histograms")
 
@@ -174,7 +174,7 @@ print("plotted histograms")
 #Trace Plotting
 trace_path = "chain_traces.png"
 
-trace_of_table_scores(table, scores, outputFile = trace_path)
+trace_of_table_scores(table, scores, outputFile=trace_path)
 
 print("plotted traces")
 
@@ -189,9 +189,13 @@ print("computed p-values")
 
 #Write flips to file
 
-with open('chain_flips.json', 'w') as fp:
-    json.dump(initial_partition.flips, fp)
+allAssignments = {0 : chain.state.assignment}
 
+for step in chain:
+    allAssignments[chain.counter + 1] = [step.flips]
+
+with open("chain_flips.json", "w") as fp:
+    json.dump(allAssignments,fp)
 
 print("wrote flips")
 
