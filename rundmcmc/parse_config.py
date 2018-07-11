@@ -68,7 +68,7 @@ def scores_arg_placement(funcName, args):
         func = getattr(valids, funcName)
         return func
     else:
-        raise Exception(f"Error: {funcName} not supported")
+        raise NotImplementedError(f"{funcName} not supported")
 
 
 def dependencies(scoreType, POP, AREA):
