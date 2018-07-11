@@ -18,7 +18,7 @@ from rundmcmc.make_graph import (add_data_to_graph, construct_graph)
 
 from rundmcmc.partition import Partition
 
-from rundmcmc.proposals importpropose_random_flip_no_loops
+from rundmcmc.proposals import propose_random_flip_no_loops
 
 from rundmcmc.updaters import (Tally, boundary_nodes, cut_edges,
                                cut_edges_by_part, exterior_boundaries,
