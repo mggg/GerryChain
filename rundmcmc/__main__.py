@@ -27,7 +27,6 @@ def main():
 
     p = Partition(G, assignment, updaters)
     G.convert()
-
     chain = BasicChain(p, 30)
 
 if __name__ == "__main__":

@@ -235,12 +235,13 @@ class Graph:
             Finds the subgraph containing all nodes in `nodes`.
         """
         if self.library == 'networkx':
+            #print(len(self.graph.subgraph(nodes)))
             return self.graph.subgraph(nodes)
         else:
             vfilt = self.graph.new_vertex_property('bool')
             for el in nodes:
                 vfilt[el] = True
-            return GraphView(self.graph, vfilt)
+            return GraphView(self.graph,  vfilt)
 
     def to_dict_of_dicts(self):
         """
