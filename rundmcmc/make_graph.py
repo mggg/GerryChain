@@ -130,14 +130,18 @@ def construct_graph_from_file(filename, geoid_col=None, cols_to_add=None):
     :cols_to_add: list of column names from file of data to be added to each node
     :returns: networkx graph
     """
-    if filename.split('.')[-1] == "json":
-        mydata = json.loads(open(filename).read())
-        graph = construct_graph_from_json(mydata)
-        return graph
-    elif filename.split('.')[-1] == "shp":
+    ext = filename.split(".")[-1]
+
+    if ext == "json":
+        with open(filename) as f:
+            data = json.load(f)
+
+        graph = construct_graph_from_json(data)
+    elif ext == "shp":
         df = gp.read_file(filename)
         graph = construct_graph_from_df(df, geoid_col, cols_to_add)
-        return graph
+
+    return graph
 
 
 def construct_graph(data_source, geoid_col=None, data_cols=None, data_source_type="filename"):
