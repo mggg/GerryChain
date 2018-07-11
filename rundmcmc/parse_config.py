@@ -186,6 +186,7 @@ def escores_edata(config, evalScores, evalScoresData):
     output_file_name = None
     output_vis_type = lambda x, y, z: 0
     chainfunc = lambda x: 0
+    eval_list = []
 
     if config.has_section('EVALUATION_SCORES'):
         eval_list = config['EVALUATION_SCORES'].values()
