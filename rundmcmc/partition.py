@@ -1,6 +1,7 @@
 import collections
 
-from rundmcmc.updaters import flows_from_changes, max_edge_cuts
+from rundmcmc.proposals import max_edge_cuts
+from rundmcmc.updaters import flows_from_changes
 
 
 class Partition:
@@ -14,11 +15,13 @@ class Partition:
     def __init__(self, graph=None, assignment=None, updaters=None,
                  parent=None, flips=None):
         """
-        :graph: the underlying graph (networkx.Graph)
-        :assignment: dict assigning nodes to districts. Defaults to uniformly
-        assigning all nodes to district 0.
-        :updaters: dict from names of attributes of the Partition to the functions
-        that compute those attributes.
+        :graph: Underlying graph; a NetworkX object.
+        :assignment: Dictionary assigning nodes to districts. If None,
+                     initialized to assign all nodes to district 0.
+        :updaters: Dictionary of functions to track data about the partition.
+                   The keys are stored as attributes on the partition class,
+                   which the functions compute.
+
         """
         if parent:
             self._from_parent(parent, flips)
@@ -43,6 +46,7 @@ class Partition:
 
         self.parent = None
         self.flips = None
+        self.flows = None
 
         self.max_edge_cuts = max_edge_cuts(self)
 
@@ -64,17 +68,20 @@ class Partition:
         self._update_parts()
 
     def __repr__(self):
-        number_of_parts = len(self.parts)
+        number_of_parts = len(self)
         s = "s" if number_of_parts > 1 else ""
         return f"Partition of a graph into {str(number_of_parts)} part{s}"
 
+    def __len__(self):
+        return len(self.parts)
+
     def _update_parts(self):
-        flows = flows_from_changes(self.parent.assignment, self.flips)
+        self.flows = flows_from_changes(self.parent.assignment, self.flips)
 
         # Parts must ontinue to be a defaultdict, so that new parts can appear.
         self.parts = collections.defaultdict(set, self.parent.parts)
 
-        for part, flow in flows.items():
+        for part, flow in self.flows.items():
             self.parts[part] = (self.parent.parts[part] | flow['in']) - flow['out']
 
         # We do not want empty parts.
@@ -91,7 +98,8 @@ class Partition:
         """
         :flips: dict assigning nodes of the graph to their new districts
         :returns: A new instance representing the partition obtained by performing the given flips
-        on this partition.
+                  on this partition.
+
         """
         return self.__class__(parent=self, flips=flips)
 
@@ -100,7 +108,9 @@ class Partition:
 
     def __getitem__(self, key):
         """Allows keying on a Partition instance.
+
         :key: Property to access.
+
         """
         if key not in self._cache:
             self._cache[key] = self.updaters[key](self)

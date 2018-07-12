@@ -16,14 +16,18 @@ class MarkovChain:
     def __init__(self, proposal, is_valid, accept, initial_state, total_steps=1000):
         """
         :proposal: Function proposing the next state from the current state.
-        :is_valid: :class:`Validator` class instance.
+        :is_valid: :class:`~rundmcmc.validity.Validator` class instance.
         :accept: Function accepting or rejecting the proposed state.
-        :initial_state: Initial :class:`Partition` class.
+        :initial_state: Initial :class:`rundmcmc.partition.Partition` class.
         :total_steps: Number of steps to run.
 
         """
         if not is_valid(initial_state):
-            raise ValueError('The given initial_state is not valid according is_valid.')
+            failed = [
+                constraint for constraint in is_valid.constraints if not constraint(initial_state)]
+            message = 'The given initial_state is not valid according is_valid. ' \
+                      'The failed constraints were: ' + ','.join([f.__name__ for f in failed])
+            raise ValueError(message)
 
         self.proposal = proposal
         self.is_valid = is_valid
@@ -36,15 +40,21 @@ class MarkovChain:
         return self
 
     def __next__(self):
+        if self.counter == 0:
+            self.counter += 1
+            return self.state
+
         while self.counter < self.total_steps:
             proposal = self.proposal(self.state)
 
             if not proposal:
                 if self.accept(self.state):
+                    self.counter += 1
                     return self.state
                 else:
                     continue
 
+            self.state.parent = None
             proposed_next_state = self.state.merge(proposal)
 
             if self.is_valid(proposed_next_state):

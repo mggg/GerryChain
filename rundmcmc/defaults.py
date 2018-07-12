@@ -8,26 +8,30 @@ from rundmcmc.chain import MarkovChain
 from rundmcmc.make_graph import (add_data_to_graph, construct_graph,
                                  get_assignment_dict)
 from rundmcmc.partition import Partition
-from rundmcmc.proposals import propose_random_flip
+from rundmcmc.proposals import \
+    propose_random_flip_no_loops as propose_random_flip
 from rundmcmc.updaters import (Tally, boundary_nodes, county_splits, cut_edges,
                                cut_edges_by_part, exterior_boundaries,
-                               perimeters)
-from rundmcmc.updaters import polsby_popper_updater as polsby_popper
-from rundmcmc.updaters import votes_updaters
+                               perimeters, polsby_popper, votes_updaters,
+                               interior_boundaries)
 from rundmcmc.validity import (L1_reciprocal_polsby_popper, UpperBound,
                                Validator, no_vanishing_districts,
                                refuse_new_splits, single_flip_contiguous,
                                within_percent_of_ideal_population)
+import os
 
 default_constraints = [single_flip_contiguous,
                        no_vanishing_districts,
                        refuse_new_splits]
 
+FILE_PATH = os.path.dirname(os.path.abspath(__file__))
+TEST_DATA_PATH = os.path.join(FILE_PATH, "testData/")
+
 
 def example_partition():
-    df = gp.read_file("./testData/mo_cleaned_vtds.shp")
+    df = gp.read_file(os.path.join(TEST_DATA_PATH, "mo_cleaned_vtds.shp"))
 
-    with open("./testData/MO_graph.json") as f:
+    with open(os.path.join(TEST_DATA_PATH, "MO_graph.json")) as f:
         graph_json = json.load(f)
 
     graph = networkx.readwrite.json_graph.adjacency_graph(graph_json)
@@ -47,9 +51,16 @@ def example_partition():
     return Partition(graph, assignment, updaters)
 
 
-def PA_partition():
+def PA_partition(path=None):
+    if not path:
+        path = os.path.join(TEST_DATA_PATH, "PA_graph_with_data.json")
+
     # this is a networkx adjancency data json file with CD, area, population, and vote data
-    graph = construct_graph("./testData/PA_graph_with_data.json")
+    graph = construct_graph(path)
+
+    # Add frozen attributes to graph
+    # data = gp.read_file("./testData/frozen.shp")
+    # add_data_to_graph(data, graph, ['Frozen'], 'wes_id')
 
     assignment = dict(zip(graph.nodes(), [graph.node[x]['CD'] for x in graph.nodes()]))
 
@@ -58,6 +69,7 @@ def PA_partition():
             'population': Tally('POP100', alias='population'),
             'perimeters': perimeters,
             'exterior_boundaries': exterior_boundaries,
+            'interior_boundaries': interior_boundaries,
             'boundary_nodes': boundary_nodes,
             'cut_edges': cut_edges,
             'areas': Tally('ALAND10', alias='areas'),
@@ -73,7 +85,7 @@ class BasicChain(MarkovChain):
     The standard MarkovChain for replicating the Pennsylvania analysis. The proposal
     is a single random flip at the boundary of a district. A step is valid if the
     districts are connected, no districts disappear, and the populations of the districts
-    are all within 10% (TODO: 1%) of one another. Accepts every valid proposal.
+    are all within 1% of one another. Accepts every valid proposal.
 
     Requires a lot of different updaters.
     """
