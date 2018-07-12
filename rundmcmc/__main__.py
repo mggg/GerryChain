@@ -2,7 +2,7 @@ import sys
 from rundmcmc.parse_config import read_basic_config
 
 
-def main(args):
+def main(args=None):
     if not args:
         args = sys.argv
     if len(args) < 1:
