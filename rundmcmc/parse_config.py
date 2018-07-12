@@ -55,18 +55,20 @@ def scores_arg_placement(funcName, args):
     if hasattr(scores, funcName):
         if funcName == "efficiency_gap":
             func = getattr(scores, funcName)
-            return functools.partial(func, col1=args[0], col2=args[1])
+            return [functools.partial(func, col1=args[2 * i], col2=args[2 * i + 1])
+                    for i in range(int(len(args) / 2))]
         else:
             func = getattr(scores, funcName)
-            return functools.partial(func, proportion_column_name=args[0])
+            return [functools.partial(func, proportion_column_name=args[i])
+                    for i in range(len(args))]
 
     elif hasattr(updates, funcName):
         func = getattr(updates, funcName)
-        return func
+        return [func]
 
     elif hasattr(valids, funcName):
         func = getattr(valids, funcName)
-        return func
+        return [func]
     else:
         raise NotImplementedError(f"{funcName} not supported")
 
@@ -82,62 +84,42 @@ def dependencies(scoreType, POP, AREA):
     :AREA: name of area column in graph object
 
     """
-    depends = {}
-    if scoreType == "areas":
-        depends = {"areas": updates.Tally(AREA, alias="areas")}
+    depends = {
+            "areas": updates.Tally(AREA, alias="areas"),
+            "population": updates.Tally(POP, alias="population"),
+            'boundary_nodes': updates.boundary_nodes,
+            'cut_edges': updates.cut_edges,
+            'cut_edges_by_part': updates.cut_edges_by_part,
+            'exterior_boundaries': updates.exterior_boundaries,
+            'interior_boundaries': updates.interior_boundaries,
+            'perimeters': updates.perimeters
+            }
 
-    elif scoreType == "population":
+    if "population_balance" in scoreType:
         depends = {"population": updates.Tally(POP, alias="population")}
 
-    elif scoreType == "population_balance":
-        depends = {"population": updates.Tally(POP, alias="population")}
-
-    elif scoreType == "perimeters":
-        depends = {
-                'boundary_nodes': updates.boundary_nodes,
-                'cut_edges': updates.cut_edges,
-                'cut_edges_by_part': updates.cut_edges_by_part,
-                'exterior_boundaries': updates.exterior_boundaries,
-                'interior_boundaries': updates.interior_boundaries,
-                'perimeters': updates.perimeters
-                }
-
-    elif scoreType == "polsby_popper":
-        depends = {**dependencies("areas", POP, AREA), **dependencies("perimeters", POP, AREA)}
+    elif "polsby_popper" in scoreType:
         depends["polsby_popper"] = updates.polsby_popper
         depends['cut_edges'] = updates.cut_edges
         depends['cut_edges_by_part'] = updates.cut_edges_by_part
 
-    elif scoreType == "L1_reciprocal_polsby_popper":
-        depends = dependencies("polsby_popper", POP, AREA)
-
-    elif scoreType == "L_minus_1_polsby_popper":
-        depends = dependencies("polsby_popper", POP, AREA)
-
-    elif scoreType == "no_worse_L1_reciprocal_polsby_popper":
-        depends = dependencies("polsby_popper", POP, AREA)
-
-    elif scoreType == "no_worse_L_minus_1_polsby_popper":
-        depends = dependencies("polsby_popper", POP, AREA)
-
     elif scoreType == "no_vanishing_districts":
-        depends = dependencies("population", POP, AREA)
         depends['cut_edges'] = updates.cut_edges
         depends['cut_edges_by_part'] = updates.cut_edges_by_part
 
     elif scoreType == "fast_connected":
-        depends = {}
+        pass
 
     elif scoreType == "no_more_disconnected":
-        depends = {}
+        pass
 
-    elif scoreType == "within_percent_of_ideal_population":
-        depends = dependencies("population", POP, AREA)
+    elif "within_percent_of_ideal_population" in scoreType:
         depends['cut_edges'] = updates.cut_edges
         depends['cut_edges_by_part'] = updates.cut_edges_by_part
 
     elif scoreType == "p_value":
-        depends = {"mean_median": scores.mean_median, "mean_thirdian": scores.mean_thirdian}
+        depends["mean_median"] = scores.mean_median
+        depends["mean_thirdian"] = scores.mean_thirdian
         depends['cut_edges'] = updates.cut_edges
         depends['cut_edges_by_part'] = updates.cut_edges_by_part
 
@@ -205,7 +187,9 @@ def escores_edata(config, evalScores, evalScoresData):
         eval_list = config['EVALUATION_SCORES'].values()
         funcs, cols = zip(*[(x.split(',')[0], x.split(',')[1:]) for x in eval_list])
 
-        eval_scores = {funcs[x]: scores_arg_placement(funcs[x], cols[x]) for x in range(len(funcs))}
+        eval_scores = {funcs[x] + str(i): s
+                for x in range(len(funcs)) for i, s in
+                enumerate(scores_arg_placement(funcs[x], cols[x]))}
 
         if config.has_section('EVALUATION_SCORES_LOG'):
             fname = {key: value for key, value in config['SAVEFILENAME'].items()}
