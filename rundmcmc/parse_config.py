@@ -68,7 +68,7 @@ def scores_arg_placement(funcName, args):
         func = getattr(valids, funcName)
         return func
     else:
-        raise Exception(f"Error: {funcName} not supported")
+        raise NotImplementedError(f"{funcName} not supported")
 
 
 def dependencies(scoreType, POP, AREA):
@@ -138,22 +138,28 @@ def dependencies(scoreType, POP, AREA):
     return depends
 
 
-def required_graph_fields():
-    """The minimum data required to run MCMC on a state at the moment"""
-    return ['id', 'pop', 'area', 'cd']
-
-
 def gsource_gdata(config, graphSource, graphData):
     """Create a graph from the config file GRAPH_SOURCE and GRAPH_DATA sections"""
-
     # make sure the config file has graph information in it
-    if (not config.has_section(graphData)) or (not config.has_section(graphSource)):
-        raise Exception("ERROR: config needs a GRAPH_DATA section and a GRAPH_SOURCE section")
-    if not all(x in list(config[graphData].keys()) for x in required_graph_fields()):
-        elements = " ".join(required_graph_fields())
-        raise Exception("ERROR: graph_data must contain all of the following fields: %s" % elements)
+    graph_source_field = "gSource"
+    required_graph_data_fields = ['id', 'pop', 'area', 'cd']
+
+    if not config.has_section(graphData):
+        raise configparser.NoSectionError(graphData)
+    if not config.has_section(graphSource):
+        raise configparser.NoSectionError(graphSource)
+
     configGraphData = config[graphData]
     configGraphSource = config[graphSource]
+
+    missing = [x for x in required_graph_data_fields if x not in configGraphData]
+
+    if missing:
+        missing_str = " ".join(missing)
+        raise configparser.NoOptionError(missing_str, graphData)
+
+    if graph_source_field not in configGraphSource:
+        raise configparser.NoOptionError(graph_source_field, graphSource)
 
     ID = configGraphData['id']
     POP = configGraphData['pop']
@@ -174,11 +180,11 @@ def vsource_vdata(graph, config, voteSource, voteData):
     source = configVoteSource['vSource']
     geoid = configVoteSource['vSourceID']
 
-    cols_to_add = [x for x in configVoteData.values()]
+    cols_to_add = list(configVoteData.values())
     mdata = mgs.get_list_of_data(source, cols_to_add, geoid)
     mgs.add_data_to_graph(mdata, graph, cols_to_add, geoid)
 
-    return [x for x in configVoteData.values()]
+    return list(configVoteData.values())
 
 
 def escores_edata(config, evalScores, evalScoresData):
@@ -187,6 +193,7 @@ def escores_edata(config, evalScores, evalScoresData):
     output_vis_type = lambda x, y, z: 0
     chainfunc = lambda x: 0
     eval_list = []
+    funcs = []
 
     if config.has_section('EVALUATION_SCORES'):
         eval_list = config['EVALUATION_SCORES'].values()
