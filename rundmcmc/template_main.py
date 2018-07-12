@@ -58,8 +58,8 @@ graph = construct_graph(graph_path)
 
 # Write graph to file
 with open('graph_with_data.json', 'w') as outfile1:
-    outfile1.write(json_graph.dumps(graph))
-
+    outfile1.write(json.dumps(json_graph.node_link_data(graph)))
+    
 # Put district on graph
 assignment = dict(zip(graph.nodes(), [graph.node[x][district_col] for x in graph.nodes()]))
 
