@@ -1,7 +1,9 @@
+import os
 import sys
 import json
 import functools
 import configparser
+import networkx.readwrite.json_graph as json_graph
 
 import rundmcmc.make_graph as mgs
 import rundmcmc.validity as valids
@@ -130,6 +132,7 @@ def gsource_gdata(config, graphSource, graphData):
     """Create a graph from the config file GRAPH_SOURCE and GRAPH_DATA sections"""
     # make sure the config file has graph information in it
     graph_source_field = "gSource"
+    save_graph_field = "save_json"
     required_graph_data_fields = ['id', 'pop', 'area', 'cd']
 
     if not config.has_section(graphData):
@@ -154,7 +157,24 @@ def gsource_gdata(config, graphSource, graphData):
     AREA = configGraphData['area']
     CD = configGraphData['cd']
     # create graph from data and load required data
-    graph = mgs.construct_graph(configGraphSource['gSource'], ID, [POP, AREA, CD])
+
+    path = configGraphSource[graph_source_field]
+    save_graph = False
+
+    if save_graph_field in configGraphSource:
+        save_graph = True
+        if os.path.isfile(configGraphSource[save_graph_field]):
+            print("trying to load graph from", path)
+            path = configGraphSource[save_graph_field]
+            save_graph = False
+
+    graph = mgs.construct_graph(path, ID, [POP, AREA, CD])
+
+    if save_graph:
+        print("saving graph to", configGraphSource[save_graph_field])
+        with open(configGraphSource[save_graph_field], "w") as f:
+            json.dump(json_graph.adjacency_data(graph), f)
+
     return graph, POP, AREA, CD
 
 
@@ -221,6 +241,7 @@ def read_basic_config(configFileName):
     # SET UP GRAPH AND PARTITION SECTION
     # create graph and get global names for required graph attributes
     graph, POP, AREA, CD = gsource_gdata(config, 'GRAPH_SOURCE', 'GRAPH_DATA')
+
     voteDataList = vsource_vdata(graph, config, 'VOTE_DATA_SOURCE', 'VOTE_DATA')
     # create a list of vote columns to update
     DataUpdaters = {v: updates.Tally(v) for v in voteDataList}
@@ -228,6 +249,7 @@ def read_basic_config(configFileName):
     assignment = {x[0]: x[1][CD] for x in graph.nodes(data=True)}
     # set up validator functions and create Validator class instance
     validatorsUpdaters = []
+    validators = []
     if config.has_section('VALIDITY') and len(list(config['VALIDITY'].keys())) > 0:
         validators = list(config['VALIDITY'].values())
         for i, x in enumerate(validators):
