@@ -59,7 +59,7 @@ graph = construct_graph(graph_path)
 # Write graph to file
 with open('graph_with_data.json', 'w') as outfile1:
     outfile1.write(json.dumps(json_graph.node_link_data(graph)))
-    
+
 # Put district on graph
 assignment = dict(zip(graph.nodes(), [graph.node[x][district_col] for x in graph.nodes()]))
 
@@ -91,7 +91,7 @@ acceptance_method = always_accept
 
 
 # Number of steps to run
-steps = 1000
+steps = 100000
 
 print("loaded data")
 
@@ -148,7 +148,7 @@ scores = {
 
 initial_scores = {key: score(initial_partition) for key, score in scores.items()}
 
-table = pipe_to_table(chain, scores, display=True, display_frequency=10,
+table = pipe_to_table(chain, scores, display=True, display_frequency=100,
                       bin_frequency=1)
 
 
