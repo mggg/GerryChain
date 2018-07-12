@@ -16,20 +16,21 @@ class SelfConfiguringUpperBound:
     def __call__(self, partition):
         if not self.bound:
             self.bound = self.func(partition)
-            return True
+            return self.__call__(partition)
         else:
             return self.func(partition) <= self.bound
 
 
 class SelfConfiguringLowerBound:
-    def __init__(self, func):
+    def __init__(self, func, epsilon=0.05):
         self.func = func
         self.bound = None
+        self.epsilon = epsilon
 
     def __call__(self, partition):
         if not self.bound:
-            self.bound = self.func(partition) + 0.05
-            return True
+            self.bound = self.func(partition) - self.epsilon
+            return self.__call__(partition)
         else:
             return self.func(partition) >= self.bound
 
@@ -267,6 +268,36 @@ def fast_connected(partition):
             return False
 
     return True
+
+
+def non_bool_fast_connected(partition):
+    """
+        Checks that a given partition's components are connected using
+        a simple breadth-first search.
+        :partition: Instance of Partition; contains connected components.
+        :return: int: number of contiguous districts
+    """
+    assignment = partition.assignment
+
+    # Inverts the assignment dictionary so that lists of VTDs are keyed
+    # by their congressional districts.
+    districts = collections.defaultdict(set)
+    returns = 0
+
+    for vtd in assignment:
+        districts[assignment[vtd]].add(vtd)
+
+    # Generates a subgraph for each district and perform a BFS on it
+    # to check connectedness.
+    for district in districts:
+        adj = nx.to_dict_of_lists(partition.graph, districts[district])
+        if bfs(adj):
+            returns += 1
+
+    return returns
+
+
+no_more_disconnected = SelfConfiguringLowerBound(non_bool_fast_connected)
 
 
 def bfs(graph):

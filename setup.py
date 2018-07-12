@@ -17,7 +17,7 @@ setup(
     author="Metric Geometry and Gerrymandering Group",
     author_email='gerrymandr@gmail.com',
     url='https://github.com/gerrymandr/RunDMCMC',
-    packages=['rundmcmc'],
+    packages=['rundmcmc', 'rundmcmc.updaters'],
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
     entry_points={
