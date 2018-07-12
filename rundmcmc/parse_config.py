@@ -89,6 +89,9 @@ def dependencies(scoreType, POP, AREA):
     elif scoreType == "population":
         depends = {"population": updates.Tally(POP, alias="population")}
 
+    elif scoreType == "population_balance":
+        depends = {"population": updates.Tally(POP, alias="population")}
+
     elif scoreType == "perimeters":
         depends = {
                 'boundary_nodes': updates.boundary_nodes,
