@@ -41,11 +41,12 @@ cFileName = ''
 validOptions = [
     "no_worse_L1_reciprocal_polsby_popper",
     "no_worse_L_minus_1_polsby_popper",
-    "fast_connected",
+    "L1_reciprocal_polsby_popper",
     "refuse_new_splits",
     "no_vanishing_districts",
-    "L1_reciprocal_polsby_popper",
-    "population_balance"
+    "population_balance",
+    "fast_connected",
+    "no_more_disconnected"
 ]
 percents = [0, 1, 2, 5, 10]
 validMenuFuncs = {x: {
