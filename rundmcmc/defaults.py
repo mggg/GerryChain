@@ -95,7 +95,7 @@ class BasicChain(MarkovChain):
         if not initial_state['population']:
             raise ValueError('BasicChain needs the Partition to have a population updater.')
 
-        population_constraint = within_percent_of_ideal_population(initial_state, 0.01)
+        population_constraint = within_percent_of_ideal_population(initial_state, 1)
 
         compactness_limit = L1_reciprocal_polsby_popper(initial_state)
         compactness_constraint = UpperBound(L1_reciprocal_polsby_popper, compactness_limit)

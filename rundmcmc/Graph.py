@@ -27,20 +27,30 @@ class Graph:
                 :library:   String denoting which graph implementation library
                             is being used.
                 :graph:     Graph object.
+                :path:      Path to the source file of the graph.
         """
         self.library = "graph_tool" if graph_tool else "networkx"
         self.graph = None
-        self.nxgraph = construct_graph(path)
+        self.path = None
+        self.id = geoid_col
 
         """
             Internal properties:
                 :_converted:    Has this graph been converted to graph-tool?
                 :_data_added:   Has data been added to this graph?
                 :_xml_location: GraphML filepath.
+                :_id_lookup:    Simple lookup table that maps geoids to int IDs.
         """
         self._converted = False
         self._data_added = False
         self._xml_location = None
+        self._id_lookup = None
+        self._edge_lookup = None
+        self._nodelookup_geoid_to_idx = None
+        self._nodelookup_idx_to_geoid = None
+        self._edgelookup = None
+        self._vertexdata = None
+        self._edgedata = None
 
         # Try to make a graph if `path` is provided.
         if path:
@@ -74,13 +84,19 @@ class Graph:
         # Determines whether to read in from shapefiles or geojson.
         if extension == ".shp":
             df = gp.read_file(path)
-            self.graph = construct_graph(df, geoid_col)
+            self.graph = construct_graph(df, geoid_col, data_source_type='geo_data_frame', data_cols=['CD', 'ALAND'])
         elif extension == ".json":
             # Prepping for the file-read
             adjacency = None
             with open(path) as f:
                 adjacency = json.load(f)
                 self.graph = nx.readwrite.json_graph.adjacency_graph(adjacency)
+
+        # Generate a lookup table, assuming the user is going to convert to
+        # graph-tool.
+        self._id_lookup = {geoid: node for node, geoid in enumerate(self.graph.nodes())}
+        self._edge_lookup = {geoid: edge for edge, geoid in enumerate(self.graph.edges())}
+
 
     def add_data(self, path=None, col_names=None, id_col=None):
         """
@@ -123,11 +139,28 @@ class Graph:
                 self.graph = load_graph(self._xml_location)
                 self._converted = True
                 self.library = "graph_tool"
+                self._nodelookup_geoid_to_idx = {self.graph.vertex_properties[self.id][x]: x for x in range(len(list(self.graph.vertices())))}
+                self._nodelookup_idx_to_geoid = {x: self.graph.vertex_properties[self.id][x] for x in range(len(list(self.graph.vertices())))}
+                self._edgelookup = {(self._nodelookup_idx_to_geoid[tuple(e)[0]], self._nodelookup_idx_to_geoid[tuple(e)[1]]): i for i, e in enumerate(list(self.graph.edges()))}
+                self._edgelookup.update({(self._nodelookup_idx_to_geoid[tuple(e)[1]], self._nodelookup_idx_to_geoid[tuple(e)[0]]): i for i, e in enumerate(list(self.graph.edges()))})
+                print(self._edgelookup)
+                self._vertexdata = {
+                    x: list(y) for x, y in list(self.graph.vertex_properties.items())
+                }
+                self._edgedata = {
+                    x: list(y) for x, y in list(self.graph.edge_properties.items())
+                }
+
                 return self.graph
             except:
                 err = "Encountered an error during conversion. Aborting."
                 raise RuntimeError(err)
                 return
+
+    def __getitem__(self, nodeidx):
+        if self._converted:
+            return [self._nodelookup_idx_to_geoid[x] for x in
+                list(self.graph.get_out_neighbors(nodeidx)) + list(self.graph.get_in_neighbors(nodeidx))]
 
     def export_to_file(self, format="json"):
         """
@@ -145,22 +178,23 @@ class Graph:
         if self.library == "networkx":
             return self.graph.nodes[node_id][attribute]
         else:
-            print(self.graph.vertex_properties[attribute])
-            return list(self.graph.vertex_properties[attribute])[int(node_id)]
+            gt_node_id = self._id_lookup[node_id]
+            #return list(self.graph.vertex_properties[attribute])[gt_node_id]
+            return self._vertexdata[attribute][gt_node_id]
 
-    def nodes(self):
+    def nodes(self, data=False):
         """
             Returns a numpy array over the nodes of the graph. Finding neighbors
             in graph-tool is significantly faster.
         """
         if self.library == "networkx":
-            return iter(np.asarray(self.graph.nodes()))
+            return iter(np.asarray(self.graph.nodes(data=data)))
         else:
             return np.asarray(list(self.graph.vertex_properties["_graphml_vertex_id"]))
 
     def node_properties(self, prop):
         if self.library == "networkx":
-            return [self.nxgraph.node[x][prop] for x in self.nxgraph.nodes()]
+            return [self.graph.node[x][prop] for x in self.graph.nodes()]
         else:
             pass
 
@@ -168,7 +202,10 @@ class Graph:
         if self.library == "networkx":
             return self.graph.edges[edge_id][attribute]
         else:
-            pass
+            print(edge_id)
+            gt_edge_id = self._edgelookup[edge_id]
+            return self._edgedata[attribute][gt_edge_id]
+
 
     def edges(self):
         """
@@ -187,7 +224,7 @@ class Graph:
             for idx, geoid in enumerate(geoids):
                 lookup[idx] = geoid
             arr = np.asarray(list(self.graph.get_edges()))
-            return np.vectorize(lookup.get)(arr)
+            return np.vectorize(lookup.get)(arr[:, :2])
 
     def neighbors(self, node):
         """
@@ -235,12 +272,11 @@ class Graph:
             Finds the subgraph containing all nodes in `nodes`.
         """
         if self.library == 'networkx':
-            #print(len(self.graph.subgraph(nodes)))
             return self.graph.subgraph(nodes)
         else:
             vfilt = self.graph.new_vertex_property('bool')
             for el in nodes:
-                vfilt[el] = True
+                vfilt[self._nodelookup_geoid_to_idx[el]] = True
             return GraphView(self.graph,  vfilt)
 
     def to_dict_of_dicts(self):

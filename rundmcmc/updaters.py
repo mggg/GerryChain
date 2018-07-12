@@ -257,17 +257,18 @@ class Tally:
         return {**old_tally, **new_tally}
 
     def _get_tally_from_node(self, partition, node_id):
-        return sum(list(partition.graph.node(node_id, fields) for fields in self.fields))
+        parts = [float(k) for k in [partition.graph.node(node_id, fields) for fields in self.fields]]
+        return sum(parts)
 
 
 def compute_out_flow(graph, fields, flow):
-    return sum(graph.nodes[node][field]
+    return sum(graph.node(node, field)
                for node in flow['out']
                for field in fields)
 
 
 def compute_in_flow(graph, fields, flow):
-    return sum(graph.nodes[node][field]
+    return sum(graph.node(node, field)
                for node in flow['in']
                for field in fields)
 
