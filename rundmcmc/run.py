@@ -52,7 +52,7 @@ def handle_chain(chain, handlers):
 
 
 def pipe_to_table(chain, handlers, display=True, display_frequency=100,
-                  bin_frequency=100):
+                  bin_frequency=1):
     table = ChainOutputTable()
     display_interval = math.floor(len(chain) / display_frequency)
     counter = 0
