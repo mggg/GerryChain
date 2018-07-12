@@ -1,4 +1,5 @@
 import collections
+import sys
 
 from rundmcmc.updaters import flows_from_changes, max_edge_cuts
 
@@ -96,6 +97,7 @@ class Partition:
         :returns: A new instance representing the partition obtained by performing the given flips
         on this partition.
         """
+
         return self.__class__(parent=self, flips=flips)
 
     def crosses_parts(self, edge):

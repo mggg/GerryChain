@@ -10,6 +10,20 @@ from rundmcmc.defaults import BasicChain
 from rundmcmc.make_graph import construct_graph
 from time import time
 from rundmcmc.run import pipe_to_table
+from rundmcmc.validity import (L1_reciprocal_polsby_popper, UpperBound,
+                               Validator, no_vanishing_districts,
+                               refuse_new_splits, single_flip_contiguous,
+                               within_percent_of_ideal_population)
+
+from rundmcmc.proposals import \
+    propose_random_flip_no_loops as propose_random_flip
+from rundmcmc.accept import always_accept
+from rundmcmc.chain import MarkovChain
+
+import sys
+default_constraints = [single_flip_contiguous,
+                       no_vanishing_districts,
+                       refuse_new_splits]
 
 def main():
     G = Graph('./testData/MO_graph.json', geoid_col='id')
@@ -30,9 +44,30 @@ def main():
     G.convert()
     p = Partition(G, assignment, updaters)
 
-    chain = BasicChain(p, 30)
+    #chain = BasicChain(p, 30)
+    validator = Validator(default_constraints)
+
+    chain = MarkovChain(propose_random_flip, validator, always_accept, initial_state=p, total_steps=30)
+
+    print("MADE THE CHAIN")
+    print(chain.state.assignment)
+    print(":) ")
+    sys.stdout.flush()
+    newprop = chain.proposal(chain.state)
+    print(newprop)
+    print(":-|")
+    sys.stdout.flush()
+    x = list(newprop.keys())[0]
+    print( x in list(chain.state.assignment.keys() ))
+    print(":-0")
+    sys.stdout.flush()
+    proposed_next_state = chain.state.merge(newprop)
+    print(":-<")
+    sys.stdout.flush()
+
     for step in chain:
-        print(chain.counter)
+        print("---")
+        sys.stdout.flush()
 
 if __name__ == "__main__":
     import sys

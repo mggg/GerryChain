@@ -143,7 +143,7 @@ class Graph:
                 self._nodelookup_idx_to_geoid = {x: self.graph.vertex_properties[self.id][x] for x in range(len(list(self.graph.vertices())))}
                 self._edgelookup = {(self._nodelookup_idx_to_geoid[tuple(e)[0]], self._nodelookup_idx_to_geoid[tuple(e)[1]]): i for i, e in enumerate(list(self.graph.edges()))}
                 self._edgelookup.update({(self._nodelookup_idx_to_geoid[tuple(e)[1]], self._nodelookup_idx_to_geoid[tuple(e)[0]]): i for i, e in enumerate(list(self.graph.edges()))})
-                print(self._edgelookup)
+                #print(self._edgelookup)
                 self._vertexdata = {
                     x: list(y) for x, y in list(self.graph.vertex_properties.items())
                 }
@@ -159,6 +159,8 @@ class Graph:
 
     def __getitem__(self, nodeidx):
         if self._converted:
+            print([self._nodelookup_idx_to_geoid[x] for x in
+                list(self.graph.get_out_neighbors(nodeidx)) + list(self.graph.get_in_neighbors(nodeidx))])
             return [self._nodelookup_idx_to_geoid[x] for x in
                 list(self.graph.get_out_neighbors(nodeidx)) + list(self.graph.get_in_neighbors(nodeidx))]
 
@@ -202,7 +204,7 @@ class Graph:
         if self.library == "networkx":
             return self.graph.edges[edge_id][attribute]
         else:
-            print(edge_id)
+            #print(edge_id)
             gt_edge_id = self._edgelookup[edge_id]
             return self._edgedata[attribute][gt_edge_id]
 
@@ -308,4 +310,4 @@ if __name__ == "__main__":
     g = Graph("./testData/MO_graph.json")
     # g.convert()
     g.nodes()
-    print(g.connected())
+    #print(g.connected())

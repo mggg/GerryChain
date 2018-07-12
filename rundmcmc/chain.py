@@ -1,3 +1,4 @@
+import sys
 class MarkovChain:
     """
     MarkovChain is an iterator that allows the user to iterate over the states
