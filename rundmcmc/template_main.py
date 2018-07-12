@@ -117,7 +117,7 @@ initial_partition = Partition(graph, assignment, updaters)
 pop_limit = .02
 population_constraint = within_percent_of_ideal_population(initial_partition, pop_limit)
 
-compactness_limit =  L1_reciprocal_polsby_popper(initial_partition)
+compactness_limit = L1_reciprocal_polsby_popper(initial_partition)
 compactness_constraint = UpperBound(L1_reciprocal_polsby_popper, compactness_limit)
 
 validator = Validator([refuse_new_splits, no_vanishing_districts,
