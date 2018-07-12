@@ -1,6 +1,5 @@
 from .compactness import (boundary_nodes, exterior_boundaries, interior_boundaries,
-                          exterior_boundaries_as_a_set, flips, perimeters)
-from .compactness import polsby_popper
+                          exterior_boundaries_as_a_set, flips, perimeters, polsby_popper)
 from .county_splits import CountySplit, county_splits
 from .cut_edges import cut_edges, cut_edges_by_part
 from .election import votes_updaters
