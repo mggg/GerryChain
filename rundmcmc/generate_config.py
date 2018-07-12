@@ -78,7 +78,7 @@ def callback():
     Main function of the Process button to pull out the text entry fields.
     :return: Strings of all the column names specified.
     """
-    global cFileName, config, gSource, vSource, gcsvvar, num_steps
+    global cFileName, config, gSource, vSource, num_steps
     global proposal, vfuncs, efuncs, vchoices
 
     # GRAPH DATA
@@ -90,22 +90,14 @@ def callback():
             "area": garea.get()}
 
     # VOTE SOURCE
-    if gcsvvar.get() == 1:
-        config["VOTE_DATA_SOURCE"] = {"vSource": vSource, "vSourceID": vid.get()}
-        config["VOTE_DATA"] = {}
+    config["VOTE_DATA_SOURCE"] = {"vSource": vSource, "vSourceID": vid.get()}
+    config["VOTE_DATA"] = {}
 
-        # check that any voting data columns were spacified to use
-        if len(vfuncs) > 0:
-            vcols = vdata.get()
-            if (vcols != "names of columns to add, comma separated") and (vcols != ''):
-                vcols = vcols.split(',')
-                config["VOTE_DATA"] = {"col" + str(x): vcols[x] for x in range(len(vcols))}
-
-        # make sure the columns specified in evaluation scores get added
-        for e in efuncs:
-            for f in e.split(',')[1:]:
-                if f != "NONE":
-                    config["VOTE_DATA"][f] = f
+    # make sure the columns specified in evaluation scores get added
+    for e in efuncs:
+        for f in e.split(',')[1:]:
+            if f != "NONE":
+                config["VOTE_DATA"][f] = f
 
     # VALIDITY
     if len(vfuncs) > 0:
@@ -194,10 +186,6 @@ def clear_vidprompt(event):
     vid.delete(0, tk.END)
 
 
-def clear_vdataprompt(event):
-    vdata.delete(0, tk.END)
-
-
 def updateEvalF():
     global columns, columnNameChoices, evalOptions
     if vSource != '':
@@ -249,42 +237,16 @@ gcd.place(relx=2 * offset + 0.8, rely=0)
 VOTESOURCE = tk.Frame(GRAPH, bg=col2)
 VOTESOURCE.place(relx=2 * offset, rely=0.5, relwidth=1, relheight=0.65)
 
-
-def enable_voting_data():
-    if gcsvvar.get():
-        vsource.configure(state='normal')
-        vid.configure(state='normal')
-        vdata.configure(state='normal')
-    elif gcsvvar.get():
-        vsource.configure(state='disabled')
-        vid.configure(state='disabled')
-        vdata.configure(state='disabled')
-
-
-gcsvvar = tk.BooleanVar()
-gcsv = tk.Checkbutton(VOTESOURCE,
-        text="(OPTIONAL) ADD VOTE DATA",
-        variable=gcsvvar,
-        bg=col2,
-        fg=col1,
-        onvalue=True,
-        offvalue=False,
-        command=enable_voting_data)
-gcsv.place(relx=0, rely=0)
-
+vlabel = tk.Label(VOTESOURCE, anchor="w",
+        text="SELECT VOTE DATA FILE",
+        font="Helvetica 14", fg=col1, bg=col2)
+vlabel.place(relx=0, rely=offset, relwidth=1, relheight=0.15)
 vsource = tk.Button(VOTESOURCE, text="Browse", command=getDataSource, width=10)
 vsource.place(relx=2 * offset, rely=0.35)
-vsource.configure(state='disabled')
 vid = tk.Entry(VOTESOURCE, width=10)
 vid.bind("<Button-1>", clear_vidprompt)
 vid.insert(tk.END, "ID")
 vid.place(relx=2 * offset + 0.2, rely=0.35)
-vid.configure(state='disabled')
-vdata = tk.Entry(VOTESOURCE, width=42)
-vdata.insert(tk.END, "names of columns to add, comma separated")
-vdata.bind("<Button-1>", clear_vdataprompt)
-vdata.place(relx=2 * offset + 0.4, rely=0.35)
-vdata.configure(state='disabled')
 
 SCORING = tk.Frame(top, bg=col1)
 SCORING.place(relx=0, rely=1 / 3, relwidth=1, relheight=2 / 3)
