@@ -128,6 +128,9 @@ def dependencies(scoreType, POP, AREA):
     elif scoreType == "fast_connected":
         depends = {}
 
+    elif scoreType == "no_more_disconnected":
+        depends = {}
+
     elif scoreType == "within_percent_of_ideal_population":
         depends = dependencies("population", POP, AREA)
         depends['cut_edges'] = updates.cut_edges
