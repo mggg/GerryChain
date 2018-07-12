@@ -19,18 +19,21 @@ the space around an initial districting plan to give some idea of the degree of
 gerrymandering. It is a Python rewrite of the chain C++ program
 (https://github.com/gerrymandr/cfp_mcmc), originally by Maria Chikina, Alan
 Frieze and Wesley Pegden, for their paper, "Assessing significance in a Markov
-chain without mixing" (http://www.pnas.org/content/114/11/2860)
+chain without mixing" (http://www.pnas.org/content/114/11/2860).
+
+- **Website (with documentation):** https://rundmcmc.readthedocs.io/en/latest/
+- **Bug reports:** https://github.com/gerrymandr/RunDMCMC/issues
 
 
 Installation
 ============
 
 To install RunDMCMC, we currently recommend cloning the repository and
-installing manually::
+installing a development version manually::
 
     git clone https://github.com/gerrymandr/RunDMCMC.git
     cd RunDMCMC
-    python3 setup.py install
+    python3 setup.py develop
 
 
 Using in an interactive python session

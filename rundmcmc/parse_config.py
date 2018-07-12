@@ -108,6 +108,15 @@ def dependencies(scoreType, POP, AREA):
     elif scoreType == "L1_reciprocal_polsby_popper":
         depends = dependencies("polsby_popper", POP, AREA)
 
+    elif scoreType == "L_minus_1_polsby_popper":
+        depends = dependencies("polsby_popper", POP, AREA)
+
+    elif scoreType == "no_worse_L1_reciprocal_polsby_popper":
+        depends = dependencies("polsby_popper", POP, AREA)
+
+    elif scoreType == "no_worse_L_minus_1_polsby_popper":
+        depends = dependencies("polsby_popper", POP, AREA)
+
     elif scoreType == "no_vanishing_districts":
         depends = dependencies("population", POP, AREA)
         depends['cut_edges'] = updates.cut_edges
@@ -183,6 +192,7 @@ def escores_edata(config, evalScores, evalScoresData):
     output_file_name = None
     output_vis_type = lambda x, y, z: 0
     chainfunc = lambda x: 0
+    eval_list = []
     funcs = []
 
     if config.has_section('EVALUATION_SCORES'):
@@ -204,7 +214,7 @@ def escores_edata(config, evalScores, evalScoresData):
 
         chainfunc = functools.partial(handle_scores_separately, handlers=eval_scores)
 
-    return eval_scores, chainfunc, funcs, output_vis_type, output_file_name
+    return eval_scores, chainfunc, eval_list, output_vis_type, output_file_name
 
 
 def read_basic_config(configFileName):
@@ -229,8 +239,15 @@ def read_basic_config(configFileName):
     # set up validator functions and create Validator class instance
     validatorsUpdaters = []
     if config.has_section('VALIDITY') and len(list(config['VALIDITY'].keys())) > 0:
-        validators = [getattr(valids, x) for x in config['VALIDITY'].values()]
-        validatorsUpdaters.extend(list(config['VALIDITY'].values()))
+        validators = list(config['VALIDITY'].values())
+        for i, x in enumerate(validators):
+            if len(x.split(',')) == 1:
+                validators[i] = getattr(valids, x)
+            else:
+                [y, z] = x.split(',')
+                validators[i] = valids.WithinPercentRangeOfBounds(getattr(valids, y), z)
+        validatorsUpdaters.extend([x.split(',')[0] for x in config['VALIDITY'].values()])
+
     validators = valids.Validator(validators)
     # add updaters required by this list of validators to list of updaters
     for x in validatorsUpdaters:
