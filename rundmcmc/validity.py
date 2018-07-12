@@ -16,20 +16,21 @@ class SelfConfiguringUpperBound:
     def __call__(self, partition):
         if not self.bound:
             self.bound = self.func(partition)
-            return True
+            return self.__call__(partition)
         else:
             return self.func(partition) <= self.bound
 
 
 class SelfConfiguringLowerBound:
-    def __init__(self, func):
+    def __init__(self, func, epsilon=0.05):
         self.func = func
         self.bound = None
+        self.epsilon = epsilon
 
     def __call__(self, partition):
         if not self.bound:
-            self.bound = self.func(partition) + 0.05
-            return True
+            self.bound = self.func(partition) - self.epsilon
+            return self.__call__(partition)
         else:
             return self.func(partition) >= self.bound
 
