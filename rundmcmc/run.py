@@ -86,14 +86,14 @@ def handle_scores_separately(chain, handlers):
     jsonToText = '{'
     jsonSave = False
     if "flips" in list(handlers.keys()):
-        jsonToText += '{0: ' + json.dumps(handlers['flips'](chain.state)) + '}'
+        jsonToText += '0: ' + json.dumps(handlers['flips'](chain.state))
         jsonSave = True
 
     for row in handle_chain(chain, nhandlers):
         table.append(row)
         if jsonSave:
-            jsonToText += "{" + str(chain.counter + 1) \
-            + ":" + json.dumps(handlers["flips"](chain.state)) + "}"
+            jsonToText += str(chain.counter + 1) \
+            + ": " + json.dumps(handlers["flips"](chain.state))
     jsonToText += '}'
 
     return (table, jsonToText, nhandlers)
