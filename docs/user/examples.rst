@@ -6,6 +6,12 @@ Examples
 .. contents::
     :local:
 
+Grid graph example
+------------------
+
+.. literalinclude:: ../../examples/grid.py
+    :language: python
+
 Running a chain
 ---------------
 
@@ -25,7 +31,7 @@ Compute histograms
     :language: python
 
 Examining the metagraph
-------------------
+-----------------------
 
 .. literalinclude:: ../../examples/metagraph_degree.py
     :language: python

@@ -48,6 +48,22 @@ no_worse_L_minus_1_polsby_popper = SelfConfiguringLowerBound(L_minus_1_polsby_po
 no_worse_L1_reciprocal_polsby_popper = SelfConfiguringUpperBound(L1_reciprocal_polsby_popper)
 
 
+class WithinPercentRangeOfBounds:
+    def __init__(self, func, percent):
+        self.func = func
+        self.percent = float(percent) / 100.
+        self.lbound = None
+        self.ubound = None
+
+    def __call__(self, partition):
+        if not (self.lbound and self.ubound):
+            self.lbound = self.func(partition) * (1.0 - self.percent)
+            self.ubound = self.func(partition) * (1.0 + self.percent)
+            return True
+        else:
+            return self.lbound <= self.func(partition) <= self.ubound
+
+
 def L1_reciprocal_discrete_polsby_popper(partition):
     return sum(1 / value for value in partition['discrete_polsby_popper'].values())
 
@@ -266,6 +282,11 @@ def bfs(graph):
     visited = set()
     total_vertices = len(list(graph.keys()))
 
+    # Check if the district has a single vertex. If it does, then simply return
+    # `True`, as it's trivially connected.
+    if total_vertices <= 1:
+        return True
+
     # bfs!
     while len(q) is not 0:
         current = q.pop(0)
@@ -306,6 +327,13 @@ def districts_within_tolerance(partition, attribute_name="population", percentag
 
     within_tolerance = max_difference <= percentage * min(values)
     return within_tolerance
+
+
+# NOTE: this returns the maximum imbalance of popuation
+def population_balance(partition, attribute_name="population"):
+    values = partition[attribute_name].values()
+    max_difference = max(values) - min(values)
+    return max_difference / min(values)
 
 
 def refuse_new_splits(partition_county_field):

@@ -1,9 +1,8 @@
 # Contributing to RunDMCMC
 
-This is a guide to contributing to the RunDMCMC project. This guide is
-currently (as of 2018-06-11) in an early form and may change rapidly. These are
-not strict rules; break them when appropriate. Feel free to make a pull request
-modifying this document.
+Thank you for your interest in contributing to RunDMCMC! If you decide to
+participate, use this document as a guide for how to go about it. These are not
+strict rules; break them when appropriate.
 
 ## How can I contribute?
 

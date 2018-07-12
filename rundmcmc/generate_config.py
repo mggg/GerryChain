@@ -41,11 +41,19 @@ cFileName = ''
 validOptions = [
     "no_worse_L1_reciprocal_polsby_popper",
     "no_worse_L_minus_1_polsby_popper",
-    "within_percent_of_ideal_population",
     "fast_connected",
     "refuse_new_splits",
-    "no_vanishing_districts"
+    "no_vanishing_districts",
+    "L1_reciprocal_polsby_popper",
+    "population_balance"
 ]
+percents = [0, 1, 2, 5, 10]
+validMenuFuncs = {x: {
+    "hard_limit": False,
+    "within_percent_of_original": {z: False for z in percents}
+    } for x in validOptions}
+oldH = []
+oldS = []
 evalOptions = [
     "efficiency_gap",
     "mean_median",
@@ -87,8 +95,9 @@ def callback():
 
         # check that any voting data columns were spacified to use
         if len(vfuncs) > 0:
-            vcols = vdata.get().split(',')
-            if vcols != "names of columns to add, comma separated":
+            vcols = vdata.get()
+            if (vcols != "names of columns to add, comma separated") and (vcols != ''):
+                vcols = vcols.split(',')
                 config["VOTE_DATA"] = {"col" + str(x): vcols[x] for x in range(len(vcols))}
 
         # make sure the columns specified in evaluation scores get added
@@ -99,7 +108,7 @@ def callback():
 
     # VALIDITY
     if len(vfuncs) > 0:
-        config['VALIDITY'] = {"col" + str(i): vfuncs[i] for i in range(len(vfuncs))}
+        config['VALIDITY'] = {"col" + x: x for x in validlist.get().split(';')}
 
     # EVALUATION SCORES
     if len(efuncs) > 0:
@@ -288,14 +297,42 @@ def clear_proposaldata(event):
     proposaldata.delete(0, tk.END)
 
 
-def add_to_validlist(event):
-    global vfuncs
-    newfunc = validvar.get()
-    if (newfunc not in vfuncs) and (newfunc != "VALIDATORS"):
-        validlist.configure(state="normal")
-        validlist.insert(tk.END, str(newfunc) + ",")
-        validlist.configure(state="disabled")
-        vfuncs.append(newfunc)
+def add_to_validlist():
+    global validMenuFuncs, vfuncs, oldH, oldS
+    hard = 'hard_limit'
+    soft = 'within_percent_of_original'
+
+    # get list of all constraints added (hard or soft keys have different types)
+    hardKeysOfInterest = [x for x in validOptions if validMenuFuncs[x][hard].get()]
+    softKeysOfInterest = [','.join([x, str(y)]) for x in validOptions
+                for y, z in validMenuFuncs[x][soft].items() if z.get()]
+
+    # compare with previously recorded constraints to delete
+    newFuncNames = hardKeysOfInterest + [x.split(',')[0] for x in softKeysOfInterest]
+    obsoleteSFuncs = [y for y in oldS if newFuncNames.count(y.split(',')[0]) > 1]
+    obsoleteHFuncs = [y for y in oldH if newFuncNames.count(y) > 1]
+
+    # now update the menu items
+    for y in obsoleteHFuncs:
+        validMenuFuncs[y][hard] = tk.BooleanVar(value=False)
+    for y in obsoleteSFuncs:
+        validMenuFuncs[y.split(',')[0]][soft][y.split(',')[1]] = tk.BooleanVar(value=False)
+
+    # only keep the items of interest for text entry box
+    hardKeysOfInterest = [x for x in hardKeysOfInterest if x not in obsoleteHFuncs]
+    softKeysOfInterest = [x for x in softKeysOfInterest if x not in obsoleteSFuncs]
+
+    # update running tally of selected items
+    oldH = [x for x in hardKeysOfInterest]
+    oldS = [x for x in softKeysOfInterest]
+    allfuncs = [x for x in hardKeysOfInterest + softKeysOfInterest]
+
+    # add to the tet entry box
+    validlist.configure(state="normal")
+    validlist.delete(0, tk.END)
+    validlist.insert(0, ";".join(allfuncs))
+    validlist.configure(state="disabled")
+    vfuncs = [x for x in allfuncs]
 
 
 def add_to_evallist():
@@ -381,10 +418,37 @@ numstepsdata.place(relx=0.3 + offset, rely=0, relheight=1)
 
 VALIDF = tk.Frame(SCORING)
 VALIDF.place(relx=offset, rely=.25 + offset, relwidth=1 - 2 * offset, relheight=.1)
-validvar = tk.StringVar(value="Constraints")
-validators = tk.OptionMenu(VALIDF, validvar, *validOptions, command=add_to_validlist)
-validators.config(width=20)
+validators = tk.Menubutton(VALIDF, text="Constraints", indicatoron=True, width=20)
+valid_menu = tk.Menu(validators, tearoff=False)
+validators.configure(menu=valid_menu)
+percent_menu = tk.Menu(valid_menu, tearoff=False)
+
+for item in validOptions:
+    # create a menu item for each validity function,
+    # and add a dropdown menu for that function that
+    # specifies hard or soft limit
+    menu = tk.Menu(valid_menu, tearoff=False)
+    valid_menu.add_cascade(label=item, menu=menu)
+
+    # add check option for a hard limit
+    validMenuFuncs[item]['hard_limit'] = tk.BooleanVar(value=False)
+    menu.add_checkbutton(label='hard_limit',
+            variable=validMenuFuncs[item]['hard_limit'],
+            onvalue=True,
+            offvalue=False,
+            command=add_to_validlist)
+
+    # add dropdown menu for within_percent_of_original that has percent options
+    percentmenu = tk.Menu(menu, tearoff=False)
+    menu.add_cascade(label='within_percent_of_original', menu=percentmenu)
+    for p in percents:
+        validMenuFuncs[item]['within_percent_of_original'][p] = tk.BooleanVar(value=False)
+        percentmenu.add_checkbutton(label=p,
+                variable=validMenuFuncs[item]['within_percent_of_original'][p],
+                command=add_to_validlist)
+
 validators.place(relx=offset, rely=0, relheight=1)
+
 validlist = tk.Entry(VALIDF, width=45)
 validlist.place(relx=0.3 + offset, rely=0, relheight=1)
 
