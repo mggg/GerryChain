@@ -1,8 +1,6 @@
 import random
 
 
-propose_random_flip = propose_random_flip_no_loops
-
 # def propose_random_flip(partition):
 #     """Proposes a random boundary flip from the partition.
 #     Uses the number of cut edges to determine self--loops.
@@ -183,6 +181,9 @@ def propose_random_flip_no_loops(partition):
     flip = {flipped_node: partition.assignment[other_node]}
 
     return flip
+
+
+propose_random_flip = propose_random_flip_no_loops
 
 
 def propose_lowest_pop_single_flip(partition):
