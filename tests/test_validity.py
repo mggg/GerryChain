@@ -1,7 +1,7 @@
 import networkx as nx
 
 from rundmcmc.validity import (contiguous, districts_within_tolerance,
-                               fast_connected, single_flip_contiguous)
+                               fast_connected, single_flip_contiguous, SelfConfiguringLowerBound)
 
 
 class MockContiguousPartition:
@@ -80,3 +80,15 @@ def test_districts_within_tolerance_returns_true_if_districts_are_within_toleran
         mock_partition, attribute_name='population', percentage=0.01)
 
     assert result is True
+
+
+def test_self_configuring_lower_bound_always_allows_the_first_argument_it_gets():
+    mock_partition = {'value': 1}
+
+    def mock_func(partition):
+        return partition['value']
+
+    bound = SelfConfiguringLowerBound(mock_func)
+    assert bound(mock_partition)
+    assert bound(mock_partition)
+    assert bound(mock_partition)
