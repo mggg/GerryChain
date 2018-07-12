@@ -181,7 +181,8 @@ def escores_edata(config, evalScores, evalScoresData):
         funcs, cols = zip(*[(x.split(',')[0], x.split(',')[1:]) for x in eval_list])
 
         eval_scores = {funcs[x] + str(i): s
-                for x in range(len(funcs)) for i, s in enumerate(scores_arg_placement(funcs[x], cols[x]))}
+                for x in range(len(funcs)) for i, s in
+                enumerate(scores_arg_placement(funcs[x], cols[x]))}
 
         if config.has_section('EVALUATION_SCORES_LOG'):
             fname = {key: value for key, value in config['SAVEFILENAME'].items()}
