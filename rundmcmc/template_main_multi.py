@@ -136,6 +136,7 @@ initial_partition = Partition(graph, assignment, updaters)
 
 
 # Desired validators go here
+# Can change constants and bounds
 pop_limit = .01
 population_constraint = within_percent_of_ideal_population(initial_partition, pop_limit)
 
@@ -168,7 +169,7 @@ chain = MarkovChain(proposal_method, validator, acceptance_method,
 print("ran chain")
 
 # Post processing commands go below
-# Add Election Scores
+# Adds election Scores
 
 scores = {}
 
