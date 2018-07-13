@@ -1,4 +1,6 @@
 import collections
+import warnings
+import math
 
 from .flows import flows_from_changes
 
@@ -40,7 +42,13 @@ class Tally:
         """
         tally = collections.defaultdict(self.dtype)
         for node, part in partition.assignment.items():
-            tally[part] += self._get_tally_from_node(partition, node)
+            add = self._get_tally_from_node(partition, node)
+
+            if math.isnan(add):
+                warnings.warn("ignoring nan encountered at node '{}' for attribute '{}' "
+                              "with fields {}".format(node, self.alias, self.fields))
+            else:
+                tally[part] += add
         return tally
 
     def _update_tally(self, partition):
