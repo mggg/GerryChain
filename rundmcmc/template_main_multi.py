@@ -169,13 +169,16 @@ scores_for_plots = []
 
 for i in range(num_elections):
     vscores = {
-        'Mean-Median' + "\n" + election_names[i]: functools.partial(mean_median,
-                                                            proportion_column_name=election_columns[i][0] + "%"),
-        'Mean-Thirdian' + "\n" + election_names[i]: functools.partial(mean_thirdian,
-                                                              proportion_column_name=election_columns[i][0] + "%"),
-        'Efficiency Gap' + "\n" + election_names[i]: functools.partial(efficiency_gap,
-                                                               col1=election_columns[i][0], col2=election_columns[i][1]),
-        'L1 Reciprocal Polsby-Popper' + "\n" +\
+        'Mean-Median' + "\n" +
+        election_names[i]: functools.partial(mean_median,
+                                             proportion_column_name=election_columns[i][0] + "%"),
+        'Mean-Thirdian' + "\n" +
+        election_names[i]: functools.partial(mean_thirdian,
+                                             proportion_column_name=election_columns[i][0] + "%"),
+        'Efficiency Gap' + "\n" +
+        election_names[i]: functools.partial(efficiency_gap,
+                                             col1=election_columns[i][0], col2=election_columns[i][1]),
+        'L1 Reciprocal Polsby-Popper' + "\n" +
         election_names[i]: L1_reciprocal_polsby_popper}
 
     scores_for_plots.append(vscores)
@@ -224,7 +227,6 @@ for i in range(num_elections):
                          outputFile=hist_path + election_names[i] + ".png",
                          num_bins=50, name=state_name + "\n" + election_names[i])
 
-
     trace_of_table_scores(table, scores=scores_for_plots[i],
                           outputFile=trace_path + election_names[i] + ".png",
                           name=state_name + "\n" + election_names[i])
@@ -232,4 +234,3 @@ for i in range(num_elections):
 
 print("plotted histograms")
 print("plotted traces")
-
