@@ -177,14 +177,15 @@ for i in range(num_elections):
                                              proportion_column_name=election_columns[i][0] + "%"),
         'Efficiency Gap' + "\n" +
         election_names[i]: functools.partial(efficiency_gap,
-                                             col1=election_columns[i][0], col2=election_columns[i][1]),
+                                             col1=election_columns[i][0],
+                                             col2=election_columns[i][1]),
         'L1 Reciprocal Polsby-Popper' + "\n" +
         election_names[i]: L1_reciprocal_polsby_popper}
 
     scores_for_plots.append(vscores)
 
     scores = {**scores, **vscores}
-    
+
 # Compute the values of the intial state and the chain
 initial_scores = {key: score(initial_partition) for key, score in scores.items()}
 
