@@ -17,7 +17,7 @@ import rundmcmc.vis_output as visoutputs
 from rundmcmc.partition import Partition
 from rundmcmc.chain import MarkovChain
 from rundmcmc.run import handle_scores_separately
-
+from rundmcmc.updaters import votes_updaters
 
 thismodule = sys.modules[__name__]
 
@@ -245,7 +245,15 @@ def read_basic_config(configFileName):
 
     voteDataList = vsource_vdata(graph, config, 'VOTE_DATA_SOURCE', 'VOTE_DATA')
     # create a list of vote columns to update
-    DataUpdaters = {v: updates.Tally(v) for v in voteDataList}
+    DataUpdaters = {**votes_updaters(voteDataList)}
+
+    # Previously used individual columns
+    # {v: updates.Tally(v) for v in voteDataList}
+
+    # original plan for fixing %'s:
+    # for v in voteDataList:
+    #    DataUpdaters = {**DataUpdaters, v+"%": updates.Tally(v+"%")}
+
     # construct initial districting plan
     assignment = {x[0]: x[1][CD] for x in graph.nodes(data=True)}
     # set up validator functions and create Validator class instance
