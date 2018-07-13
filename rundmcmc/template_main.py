@@ -153,7 +153,7 @@ table = pipe_to_table(chain, scores, display=True, display_frequency=100,
 
 
 # Histogram Plotting
-hist_path = "chain_histogram3.png"
+hist_path = "chain_histogram31.png"
 
 hist_of_table_scores(table, scores, outputFile=hist_path, num_bins=50)
 
@@ -161,7 +161,7 @@ print("plotted histograms")
 
 
 # Trace Plotting
-trace_path = "chain_traces3.png"
+trace_path = "chain_traces31.png"
 
 trace_of_table_scores(table, scores, outputFile=trace_path)
 
@@ -170,7 +170,7 @@ print("plotted traces")
 # P-value reports
 pv_dict = {key: p_value_report(key, table[key], initial_scores[key]) for key in scores}
 print(pv_dict)
-with open('pvals_report3.json', 'w') as fp:
+with open('pvals_report31.json', 'w') as fp:
     json.dump(pv_dict, fp)
 
 print("computed p-values")
@@ -183,7 +183,7 @@ allAssignments = {0: chain.state.assignment}
 for step in chain:
     allAssignments[chain.counter + 1] = [step.flips]
 
-with open("chain_flips3.json", "w") as fp:
+with open("chain_flips31.json", "w") as fp:
     json.dump(allAssignments, fp)
 
 print("wrote flips")
