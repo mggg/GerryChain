@@ -57,7 +57,7 @@ def scores_arg_placement(funcName, args):
     if hasattr(scores, funcName):
         if funcName == "efficiency_gap":
             func = getattr(scores, funcName)
-            return [(functools.partial(func, col1=args[2 * i], col2=args[2 * i + 1]), 
+            return [(functools.partial(func, col1=args[2 * i], col2=args[2 * i + 1]),
                 str(args[2 * i]) + "_" + str(args[2 * i + 1]))
                     for i in range(int(len(args) / 2))]
         else:
