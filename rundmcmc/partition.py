@@ -99,9 +99,7 @@ class Partition:
         """
         self.parent = self
         self.flips = flips
-
         self.assignment = {**self.assignment, **flips}
-
         self._update_parts()
         return self
 

@@ -195,7 +195,7 @@ def contiguous(partition):
                 return False
         else:
             tmp = partition.graph.subgraph(district_dict[key])
-            name = tmp.vp['CD']
+            name = key
             visitor = VisitorExample(name)
             bfs_search(tmp, tmp.vertex(next(tmp.vertices())), visitor)
             #if len(tmp.get_vertices()) != len(visitor):

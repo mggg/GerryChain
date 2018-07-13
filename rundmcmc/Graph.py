@@ -150,12 +150,13 @@ class Graph:
                 self._edgedata = {
                     x: list(y) for x, y in list(self.graph.edge_properties.items())
                 }
-
+                self._num_nodes = len(list(self._nodelookup_geoid_to_idx))
                 return self.graph
             except:
                 err = "Encountered an error during conversion. Aborting."
                 raise RuntimeError(err)
                 return
+
 
     def __getitem__(self, nodeidx):
         if self._converted:
@@ -163,6 +164,7 @@ class Graph:
                 list(self.graph.get_out_neighbors(nodeidx)) + list(self.graph.get_in_neighbors(nodeidx))])
             return [self._nodelookup_idx_to_geoid[x] for x in
                 list(self.graph.get_out_neighbors(nodeidx)) + list(self.graph.get_in_neighbors(nodeidx))]
+
 
     def export_to_file(self, format="json"):
         """
@@ -228,16 +230,17 @@ class Graph:
             arr = np.asarray(list(self.graph.get_edges()))
             return np.vectorize(lookup.get)(arr[:, :2])
 
+
     def neighbors(self, node):
-        """
-            Returns numpy array over the neighbors of node `node`. For whatever
-            reason, graph-tool is worse than NetworkX at this call, but they're
-            still close.
-        """
         if self.library == "networkx":
             return np.asarray(list(nx.all_neighbors(self.graph, node)))
         else:
-            return self.graph.get_out_neighbors(node)
+            nodeidx = self._nodelookup_geoid_to_idx[node]
+            print([self._nodelookup_idx_to_geoid[x] for x in
+                list(self.graph.get_out_neighbors(nodeidx)) + list(self.graph.get_in_neighbors(nodeidx))])
+            return [self._nodelookup_idx_to_geoid[x] for x in
+                list(self.graph.get_out_neighbors(nodeidx)) + list(self.graph.get_in_neighbors(nodeidx))]
+
 
     def get_node_attributes(self, node):
         """
@@ -257,6 +260,7 @@ class Graph:
 
             return properties
 
+
     def connected(self, nodes):
         """
             Checks that the set of nodes is connected.
@@ -269,6 +273,7 @@ class Graph:
             # need to keep thinking about this moving on for now
             pass
 
+
     def subgraph(self, nodes):
         """
             Finds the subgraph containing all nodes in `nodes`.
@@ -276,10 +281,12 @@ class Graph:
         if self.library == 'networkx':
             return self.graph.subgraph(nodes)
         else:
-            vfilt = self.graph.new_vertex_property('bool')
-            for el in nodes:
-                vfilt[self._nodelookup_geoid_to_idx[el]] = True
-            return GraphView(self.graph,  vfilt)
+            vfilt = np.zeros(self._num_nodes, dtype=bool)
+            nodes = map(self._nodelookup_geoid_to_idx.get, nodes)
+            for x in nodes:
+                vfilt[x] = True
+            return GraphView(self.graph,  vfilt=vfilt)
+
 
     def to_dict_of_dicts(self):
         """
