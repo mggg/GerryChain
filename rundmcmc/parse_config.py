@@ -57,20 +57,21 @@ def scores_arg_placement(funcName, args):
     if hasattr(scores, funcName):
         if funcName == "efficiency_gap":
             func = getattr(scores, funcName)
-            return [functools.partial(func, col1=args[2 * i], col2=args[2 * i + 1])
+            return [(functools.partial(func, col1=args[2 * i], col2=args[2 * i + 1]), 
+                str(args[2 * i]) + "_" + str(args[2 * i + 1]))
                     for i in range(int(len(args) / 2))]
         else:
             func = getattr(scores, funcName)
-            return [functools.partial(func, proportion_column_name=args[i])
+            return [(functools.partial(func, proportion_column_name=args[i]), str(args[i]))
                     for i in range(len(args))]
 
     elif hasattr(updates, funcName):
         func = getattr(updates, funcName)
-        return [func]
+        return [(func, '')]
 
     elif hasattr(valids, funcName):
         func = getattr(valids, funcName)
-        return [func]
+        return [(func, '')]
     else:
         raise NotImplementedError(f"{funcName} not supported")
 
@@ -207,9 +208,9 @@ def escores_edata(config, evalScores, evalScoresData):
         eval_list = config['EVALUATION_SCORES'].values()
         funcs, cols = zip(*[(x.split(',')[0], x.split(',')[1:]) for x in eval_list])
 
-        eval_scores = {funcs[x] + str(i): s
-                for x in range(len(funcs)) for i, s in
-                enumerate(scores_arg_placement(funcs[x], cols[x]))}
+        eval_scores = {funcs[x] + '_' + s[1]: s[0]
+                for x in range(len(funcs)) for s in
+                scores_arg_placement(funcs[x], cols[x])}
 
         if config.has_section('EVALUATION_SCORES_LOG'):
             fname = {key: value for key, value in config['SAVEFILENAME'].items()}
