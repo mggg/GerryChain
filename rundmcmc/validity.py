@@ -198,8 +198,6 @@ def contiguous(partition):
             name = key
             visitor = VisitorExample(name)
             bfs_search(tmp, tmp.vertex(next(tmp.vertices())), visitor)
-            #if len(tmp.get_vertices()) != len(visitor):
-                #return False
 
     return True
 

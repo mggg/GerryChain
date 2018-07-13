@@ -154,19 +154,12 @@ class Graph:
                     x: list(y) for x, y in list(self.graph.edge_properties.items())
                 }
                 self._num_nodes = len(list(self._nodelookup_geoid_to_idx))
+                self._nodelist = np.asarray(list(self.graph.vertex_properties["_graphml_vertex_id"]))
                 return self.graph
             except:
                 err = "Encountered an error during conversion. Aborting."
                 raise RuntimeError(err)
                 return
-
-
-    def __getitem__(self, nodeidx):
-        if self._converted:
-            print([self._nodelookup_idx_to_geoid[x] for x in
-                list(self.graph.get_out_neighbors(nodeidx)) + list(self.graph.get_in_neighbors(nodeidx))])
-            return [self._nodelookup_idx_to_geoid[x] for x in
-                list(self.graph.get_out_neighbors(nodeidx)) + list(self.graph.get_in_neighbors(nodeidx))]
 
 
     def export_to_file(self, format="json"):
@@ -199,13 +192,13 @@ class Graph:
         if self.library == "networkx":
             return iter(np.asarray(self.graph.nodes(data=data)))
         else:
-            return np.asarray(list(self.graph.vertex_properties["_graphml_vertex_id"]))
+            return self._nodelist
 
     def node_properties(self, prop):
         if self.library == "networkx":
             return [self.graph.node[x][prop] for x in self.graph.nodes()]
         else:
-            pass
+            return self._vertexdata[prop]
 
 
     def edge(self, edge_id, attribute):
@@ -242,8 +235,6 @@ class Graph:
             return np.asarray(list(nx.all_neighbors(self.graph, node)))
         else:
             nodeidx = self._nodelookup_geoid_to_idx[node]
-            print([self._nodelookup_idx_to_geoid[x] for x in
-                list(self.graph.get_out_neighbors(nodeidx)) + list(self.graph.get_in_neighbors(nodeidx))])
             return [self._nodelookup_idx_to_geoid[x] for x in
                 list(self.graph.get_out_neighbors(nodeidx)) + list(self.graph.get_in_neighbors(nodeidx))]
 
@@ -294,7 +285,7 @@ class Graph:
             return GraphView(self.graph,  vfilt=vfilt)
 
 
-    def to_dict_of_dicts(self):
+    def to_dict_of_dicts(self, part=None):
         """
             Returns the graph as a dictionary of dictionaries.
         """
@@ -306,11 +297,19 @@ class Graph:
         """
         pass
 
-    def to_dict_of_lists(self):
+    def to_dict_of_lists(self, nodelist=None):
         """
             Returns the graph as a dictionary of lists.
         """
-        pass
+        if self.library == 'networkx':
+            return nx.to_dict_of_lists(self.graph, nodelist=nodelist)
+        else:
+           if nodelist is None:
+               nodelist = list(range(self._num_nodes))
+           d = {}
+           for n in nodelist:
+               d[n] = [nbr for nbr in self.neighbors(n) if nbr in nodelist]
+           return d
 
     def from_dict_of_lists(self):
         """
