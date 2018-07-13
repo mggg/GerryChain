@@ -36,16 +36,18 @@ class Graph:
 
         """
             Internal properties:
-                :_converted:    Has this graph been converted to graph-tool?
-                :_data_added:   Has data been added to this graph?
-                :_xml_location: GraphML filepath.
-                :_id_lookup:    Simple lookup table that maps geoids to int IDs.
+                :_converted:               Has this graph been converted to graph-tool?
+                :_data_added:              Has data been added to this graph?
+                :_xml_location:            GraphML filepath.
+                :_nodelookup_geoid_to_idx: Netowrkx node ID to graph-tool node index lookup
+                :_nodelookup_idx_to_geoid: Graph-tool node index to netowrkx node ID lookup
+                :_edgelookup:
+                :_vertexdata:
+                :_edgedata:
         """
         self._converted = False
         self._data_added = False
         self._xml_location = None
-        self._id_lookup = None
-        self._edge_lookup = None
         self._nodelookup_geoid_to_idx = None
         self._nodelookup_idx_to_geoid = None
         self._edgelookup = None
@@ -96,8 +98,6 @@ class Graph:
 
         # Generate a lookup table, assuming the user is going to convert to
         # graph-tool.
-        self._id_lookup = {geoid: node for node, geoid in enumerate(self.graph.nodes())}
-        self._edge_lookup = {geoid: edge for edge, geoid in enumerate(self.graph.edges())}
 
 
     def add_data(self, path=None, col_names=None, id_col=None):
@@ -179,7 +179,7 @@ class Graph:
         if self.library == "networkx":
             return self.graph.nodes[node_id][attribute]
         else:
-            gt_node_id = self._id_lookup[node_id]
+            gt_node_id = self._nodelookup_geoid_to_idx[node_id]
             #return list(self.graph.vertex_properties[attribute])[gt_node_id]
             return self._vertexdata[attribute][gt_node_id]
 
@@ -303,12 +303,12 @@ class Graph:
         if self.library == 'networkx':
             return nx.to_dict_of_lists(self.graph, nodelist=nodelist)
         else:
-           if nodelist is None:
-               nodelist = list(range(self._num_nodes))
-           d = {}
-           for n in nodelist:
-               d[n] = [nbr for nbr in self.neighbors(n) if nbr in nodelist]
-           return d
+            if nodelist is None:
+                nodelist = list(range(self._num_nodes))
+            d = {}
+            for n in nodelist:
+                d[n] = [nbr for nbr in self.neighbors(n) if nbr in nodelist]
+            return d
 
     def from_dict_of_lists(self):
         """
