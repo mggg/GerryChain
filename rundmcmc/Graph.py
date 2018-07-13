@@ -56,6 +56,7 @@ class Graph:
         if path:
             self.make_graph(path, geoid_col)
 
+
     def __del__(self):
         """
             Removes a file if a converted graph exists so there aren't any
@@ -63,6 +64,7 @@ class Graph:
         """
         if self._xml_location:
             os.remove(self._xml_location)
+
 
     def make_graph(self, path, geoid_col=None):
         """
@@ -105,6 +107,7 @@ class Graph:
         """
         df = gp.read_file(path)
         add_data_to_graph(df, self.graph, col_names, id_col)
+
 
     def convert(self):
         """
@@ -178,6 +181,7 @@ class Graph:
         """
         pass
 
+
     def node(self, node_id, attribute):
         if self.library == "networkx":
             return self.graph.nodes[node_id][attribute]
@@ -185,6 +189,7 @@ class Graph:
             gt_node_id = self._id_lookup[node_id]
             #return list(self.graph.vertex_properties[attribute])[gt_node_id]
             return self._vertexdata[attribute][gt_node_id]
+
 
     def nodes(self, data=False):
         """
@@ -201,6 +206,7 @@ class Graph:
             return [self.graph.node[x][prop] for x in self.graph.nodes()]
         else:
             pass
+
 
     def edge(self, edge_id, attribute):
         if self.library == "networkx":
