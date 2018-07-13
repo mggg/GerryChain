@@ -146,6 +146,13 @@ validator = Validator([refuse_new_splits, no_vanishing_districts,
                        single_flip_contiguous, population_constraint,
                        compactness_constraint])
 
+# Names of validators for output
+# Necessary since bounds don't have __name__'s
+list_of_validators = [refuse_new_splits, no_vanishing_districts,
+                       single_flip_contiguous, within_percent_of_ideal_population,
+                       L1_reciprocal_polsby_popper]
+
+
 # Add cyclic updaters :(
 # updaters['metagraph_degree'] = MetagraphDegree(validator, "metagraph_degree")
 
@@ -235,3 +242,39 @@ for i in range(num_elections):
 
 print("plotted histograms")
 print("plotted traces")
+
+
+# Record run paramters
+with open(newdir + "parameters.txt", "w") as f:
+    f.write("Basic Setup Info \n\n")
+    f.write("State: " + "\n" + state_name)
+    f.write("\n")
+    f.write("\n")
+    f.write("Initial Plan: " + "\n" + district_col)
+    f.write("\n")
+    f.write("\n")
+    f.write("Elections: ")
+    f.write("\n")
+    for i in range(num_elections):
+        f.write(election_names[i] + "\n")
+    f.write("\n")
+    f.write("\n")
+    f.write("\n")
+    f.write("Chain Parameters:")
+    f.write("\n")
+    f.write("\n")
+    f.write("Number of Steps: " + str(steps))
+    f.write("\n")
+    f.write("\n")
+    f.write("Proposal: " + proposal_method.__name__)
+    f.write("\n")
+    f.write("\n")
+    f.write("Acceptance Method: " + acceptance_method.__name__)
+    f.write("\n")
+    f.write("\n")
+    f.write("Validators: ")
+    f.write("\n")
+    for v in list_of_validators:
+        f.write(v.__name__ + "\n")      
+
+print("wrote paramters")
