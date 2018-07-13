@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 
 
 def hist_of_table_scores(table, scores=None, outputFile="output.png",
-                         num_bins=50):
+                         num_bins=50, name="Histogram"):
     """Creates a histogram of each score in scores, where
     table is keyed on score and has values that can be binned
 
@@ -15,7 +15,8 @@ def hist_of_table_scores(table, scores=None, outputFile="output.png",
     numrows = max(numrows, 1)
     numcols = max(numcols, 1)
     _, axes = plt.subplots(nrows=numrows, ncols=numcols, squeeze=False)
-    plt.subplots_adjust(wspace=.2, hspace=.4)
+    plt.subplots_adjust(wspace=1, hspace=1)
+    plt.suptitle(name)
 
     if numcols == 1:
         axes = axes.flatten()
@@ -40,11 +41,12 @@ def hist_of_table_scores(table, scores=None, outputFile="output.png",
         plt.show()
 
 
-def trace_of_table_scores(table, scores=None, outputFile="output.png"):
-    """Creates a histogram of each score in scores, where
+def trace_of_table_scores(table, scores=None, outputFile="output.png",
+                          name="Traces"):
+    """Creates a trace plot of each score in scores, where
     table is keyed on score and has values that can be binned
 
-    outputs a window plot of histograms of logged scores
+    outputs a window plot of traces of logged scores
     """
     if not scores:
         scores = table.keys()
@@ -53,7 +55,8 @@ def trace_of_table_scores(table, scores=None, outputFile="output.png"):
     numrows = max(numrows, 1)
     numcols = max(numcols, 1)
     _, axes = plt.subplots(nrows=numrows, ncols=numcols, squeeze=False)
-    plt.subplots_adjust(wspace=.2, hspace=.4)
+    plt.subplots_adjust(wspace=1, hspace=1)
+    plt.suptitle(name)
 
     if numcols == 1:
         axes = axes.flatten()
