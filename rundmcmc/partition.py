@@ -22,7 +22,7 @@ class Partition:
         that compute those attributes.
         """
         if parent:
-            self._from_parent(parent, flips)
+            self._from_parent(parent, flips, graph)
         else:
             self._first_time(graph, assignment, updaters)
 
@@ -51,13 +51,14 @@ class Partition:
         for node, part in self.assignment.items():
             self.parts[part].add(node)
 
-    def _from_parent(self, parent, flips):
+    def _from_parent(self, parent, flips, graph):
         self.parent = parent
         self.flips = flips
 
         self.assignment = {**parent.assignment, **flips}
 
-        self.graph = parent.graph
+        self.graph = graph
+
         self.updaters = parent.updaters
 
         self.max_edge_cuts = parent.max_edge_cuts
@@ -97,11 +98,14 @@ class Partition:
         :returns: A new instance representing the partition obtained by performing the given flips
         on this partition.
         """
+        """
         self.parent = self
         self.flips = flips
         self.assignment = {**self.assignment, **flips}
         self._update_parts()
         return self
+        """
+        return self.__class__(parent=self, flips=flips, graph=self.graph)
 
     def crosses_parts(self, edge):
         if type(edge) is not tuple:

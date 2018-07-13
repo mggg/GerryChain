@@ -222,7 +222,7 @@ def fast_connected(partition):
     # Generates a subgraph for each district and perform a BFS on it
     # to check connectedness.
     for district in districts:
-        adj = nx.to_dict_of_lists(partition.graph, districts[district])
+        adj = partition.graph.to_dict_of_lists(districts[district])
         if bfs(adj) is False:
             return False
 

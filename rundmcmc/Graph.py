@@ -235,8 +235,7 @@ class Graph:
             return np.asarray(list(nx.all_neighbors(self.graph, node)))
         else:
             nodeidx = self._nodelookup_geoid_to_idx[node]
-            return [self._nodelookup_idx_to_geoid[x] for x in
-                list(self.graph.get_out_neighbors(nodeidx)) + list(self.graph.get_in_neighbors(nodeidx))]
+            return [self._nodelookup_idx_to_geoid[x] for x in self.graph.get_out_neighbors(nodeidx)]
 
 
     def get_node_attributes(self, node):
