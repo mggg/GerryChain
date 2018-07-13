@@ -275,6 +275,6 @@ with open(newdir + "parameters.txt", "w") as f:
     f.write("Validators: ")
     f.write("\n")
     for v in list_of_validators:
-        f.write(v.__name__ + "\n")      
+        f.write(v.__name__ + "\n")
 
 print("wrote paramters")
