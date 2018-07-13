@@ -12,7 +12,7 @@ from time import time
 from rundmcmc.run import pipe_to_table
 from rundmcmc.validity import (L1_reciprocal_polsby_popper, UpperBound,
                                Validator, no_vanishing_districts,
-                               refuse_new_splits, single_flip_contiguous,
+                               refuse_new_splits, contiguous,
                                within_percent_of_ideal_population)
 
 from rundmcmc.proposals import \
@@ -20,8 +20,7 @@ from rundmcmc.proposals import \
 from rundmcmc.accept import always_accept
 from rundmcmc.chain import MarkovChain
 
-import sys
-default_constraints = [single_flip_contiguous,
+default_constraints = [contiguous,
                        no_vanishing_districts,
                        refuse_new_splits]
 
@@ -52,22 +51,17 @@ def main():
     print("MADE THE CHAIN")
     print(chain.state.assignment)
     print(":) ")
-    sys.stdout.flush()
     newprop = chain.proposal(chain.state)
     print(newprop)
     print(":-|")
-    sys.stdout.flush()
     x = list(newprop.keys())[0]
     print( x in list(chain.state.assignment.keys() ))
     print(":-0")
-    sys.stdout.flush()
-    proposed_next_state = chain.state.merge(newprop)
+    chain.state.merge(newprop)
     print(":-<")
-    sys.stdout.flush()
 
     for step in chain:
         print("---")
-        sys.stdout.flush()
 
 if __name__ == "__main__":
     import sys

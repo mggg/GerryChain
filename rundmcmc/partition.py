@@ -97,8 +97,13 @@ class Partition:
         :returns: A new instance representing the partition obtained by performing the given flips
         on this partition.
         """
+        self.parent = self
+        self.flips = flips
 
-        return self.__class__(parent=self, flips=flips)
+        self.assignment = {**self.assignment, **flips}
+
+        self._update_parts()
+        return self
 
     def crosses_parts(self, edge):
         if type(edge) is not tuple:
