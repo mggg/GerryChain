@@ -246,13 +246,12 @@ def read_basic_config(configFileName):
     # create a list of vote columns to update
     DataUpdaters = {**votes_updaters(voteDataList)}
 
-    #Previously used individual columns
-    #{v: updates.Tally(v) for v in voteDataList}
+    # Previously used individual columns
+    # {v: updates.Tally(v) for v in voteDataList}
 
-    #original plan for fixing %'s:
-    #for v in voteDataList:
+    # original plan for fixing %'s:
+    # for v in voteDataList:
     #    DataUpdaters = {**DataUpdaters, v+"%": updates.Tally(v+"%")}
-
 
     # construct initial districting plan
     assignment = {x[0]: x[1][CD] for x in graph.nodes(data=True)}

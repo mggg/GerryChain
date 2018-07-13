@@ -44,8 +44,10 @@ from vis_output import (hist_of_table_scores, trace_of_table_scores)
 
 # Make a folder for the output
 current = datetime.datetime.now()
-newdir = "./PAoutputs-"+ str(current)[:10]+ "-" + str(current)[11:13] + "-" + str(current)[14:16] + "-" + str(current)[17:19] + "/"
-os.makedirs(os.path.dirname(newdir+"init.txt"), exist_ok=True)
+newdir = "./PAoutputs-" + str(current)[:10] + "-" + str(current)[11:13]\
+         + "-" + str(current)[14:16] + "-" + str(current)[17:19] + "/"
+
+os.makedirs(os.path.dirname(newdir + "init.txt"), exist_ok=True)
 with open(newdir + "init.txt", "w") as f:
     f.write("Created Folder")
 
@@ -67,7 +69,7 @@ district_col = "rounded11"
 graph = construct_graph(graph_path)
 
 # Write graph to file
-with open(newdir+state_name+'graph_with_data.json', 'w') as outfile1:
+with open(newdir + state_name + 'graph_with_data.json', 'w') as outfile1:
     outfile1.write(json.dumps(json_graph.adjacency_data(graph)))
 
 # Put district on graph
@@ -88,17 +90,12 @@ num_elections = 2
 
 # Names of shapefile voting data columns go here
 election_names = ['2016_Presidential', '2016_Senate']
-election_columns = [['T16PRESD', 'T16PRESR'],['T16SEND', 'T16SENR']]
-
-#vote_col1 = "voteA"
-#vote_col2 = "voteB"
+election_columns = [['T16PRESD', 'T16PRESR'], ['T16SEND', 'T16SENR']]
 
 
 # This adds the data to the graph
-#data_list = [vote_col1, vote_col2]
-
-add_data_to_graph(df, graph, [cols for pair in election_columns for cols in pair]
-                  , id_col=unique_label)
+add_data_to_graph(df, graph, [cols for pair in election_columns for cols in pair],
+                  id_col=unique_label)
 
 
 # Desired proposal method
@@ -131,7 +128,7 @@ updaters = {
 # Add the vote updaters for multiple plans
 
 for i in range(num_elections):
-    updaters = {**updaters, **votes_updaters(election_columns[i],election_names[i])}
+    updaters = {**updaters, **votes_updaters(election_columns[i], election_names[i])}
 
 
 # This builds the partition object
@@ -142,7 +139,7 @@ initial_partition = Partition(graph, assignment, updaters)
 pop_limit = .01
 population_constraint = within_percent_of_ideal_population(initial_partition, pop_limit)
 
-compactness_limit =  1.01 * L1_reciprocal_polsby_popper(initial_partition)
+compactness_limit = 1.01 * L1_reciprocal_polsby_popper(initial_partition)
 compactness_constraint = UpperBound(L1_reciprocal_polsby_popper, compactness_limit)
 
 validator = Validator([refuse_new_splits, no_vanishing_districts,
@@ -168,24 +165,23 @@ print("ran chain")
 
 scores = {}
 
-scores_for_plots =[]
+scores_for_plots = []
 
 for i in range(num_elections):
     vscores = {
-        'Mean-Median' +"\n"+ election_names[i]: functools.partial(mean_median,
+        'Mean-Median' + "\n" + election_names[i]: functools.partial(mean_median,
                                                             proportion_column_name=election_columns[i][0] + "%"),
-        'Mean-Thirdian' +"\n"+ election_names[i]: functools.partial(mean_thirdian,
+        'Mean-Thirdian' + "\n" + election_names[i]: functools.partial(mean_thirdian,
                                                               proportion_column_name=election_columns[i][0] + "%"),
-        'Efficiency Gap' +"\n"+ election_names[i]: functools.partial(efficiency_gap,
+        'Efficiency Gap' + "\n" + election_names[i]: functools.partial(efficiency_gap,
                                                                col1=election_columns[i][0], col2=election_columns[i][1]),
-        'L1 Reciprocal Polsby-Popper' +"\n"+ election_names[i]: L1_reciprocal_polsby_popper}
-    
+        'L1 Reciprocal Polsby-Popper' + "\n" +\
+        election_names[i]: L1_reciprocal_polsby_popper}
+
     scores_for_plots.append(vscores)
-    
-    scores={**scores, **vscores}
-    
 
-
+    scores = {**scores, **vscores}
+    
 # Compute the values of the intial state and the chain
 initial_scores = {key: score(initial_partition) for key, score in scores.items()}
 
@@ -196,7 +192,7 @@ table = pipe_to_table(chain, scores, display=True, display_frequency=10,
 # P-value reports
 pv_dict = {key: p_value_report(key, table[key], initial_scores[key]) for key in scores}
 print(pv_dict)
-with open(newdir+'pvals_report_multi.json', 'w') as fp:
+with open(newdir + 'pvals_report_multi.json', 'w') as fp:
     json.dump(pv_dict, fp)
 
 print("computed p-values")
@@ -209,27 +205,29 @@ allAssignments = {0: chain.state.assignment}
 for step in chain:
     allAssignments[chain.counter + 1] = [step.flips]
 
-with open(newdir+"chain_flips_multi.json", "w") as fp:
+with open(newdir + "chain_flips_multi.json", "w") as fp:
     json.dump(allAssignments, fp)
 
 print("wrote flips")
 
 
 # Histogram and trace plotting paths
-hist_path = newdir+"chain_histogram_multi_"
-trace_path = newdir+"chain_traces_multi_"
+hist_path = newdir + "chain_histogram_multi_"
+trace_path = newdir + "chain_traces_multi_"
 
 
 # Plots for each election
 
 for i in range(num_elections):
-    
-    hist_of_table_scores(table, scores=scores_for_plots[i],  outputFile=hist_path + election_names[i] + ".png"
-                         , num_bins=50, name=state_name+"\n"+election_names[i])
+
+    hist_of_table_scores(table, scores=scores_for_plots[i],
+                         outputFile=hist_path + election_names[i] + ".png",
+                         num_bins=50, name=state_name + "\n" + election_names[i])
 
 
-    trace_of_table_scores(table, scores=scores_for_plots[i], outputFile=trace_path + election_names[i] + ".png"
-                          , name=state_name +"\n"+election_names[i])
+    trace_of_table_scores(table, scores=scores_for_plots[i],
+                          outputFile=trace_path + election_names[i] + ".png",
+                          name=state_name + "\n" + election_names[i])
 
 
 print("plotted histograms")

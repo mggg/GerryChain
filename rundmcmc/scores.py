@@ -24,14 +24,14 @@ class DukeGerrymanderingIndex:
 
 
 def mean_median(partition, proportion_column_name):
-    if proportion_column_name[-1]!="%":
+    if proportion_column_name[-1] != "%":
         proportion_column_name = proportion_column_name + "%"
     data = list(partition[proportion_column_name].values())
     return numpy.mean(data) - numpy.median(data)
 
 
 def mean_thirdian(partition, proportion_column_name):
-    if proportion_column_name[-1]!="%":
+    if proportion_column_name[-1] != "%":
         proportion_column_name = proportion_column_name + "%"
 
     data = list(partition[proportion_column_name].values())
