@@ -245,6 +245,7 @@ def propose_chunk_swap(partition):
 
     return proposal
 
+
 def reversible_chunk_flip(partition):
     edge = random.choice(tuple(partition['cut_edges']))
     index = random.choice((0, 1))
@@ -255,17 +256,16 @@ def reversible_chunk_flip(partition):
 
     num_flips = 1
     flips = [flipped_node]
-    choices = [nbr for nbr in partition.graph.neighbors(flipped_node) if partition.assignment   [nbr] == flip_from]
+    choices = [nbr for nbr in partition.graph.neighbors(flipped_node) if partition.assignment[nbr] == flip_from]
     while(choices and random.random() < .5 ** num_flips):
         next_flip = random.choice(tuple(choices))
         flips.append(next_flip)
         num_flips += 1
-
         choices.remove(next_flip)
-        choices = list(set(choices) | set([nbr for nbr in partition.graph.neighbors(next_flip) if partition.assignment[nbr] == flip_from and nbr not in flips]))
+        new_choices = [nbr for nbr in partition.graph.neighbors(next_flip) if partition.assignment[nbr] == flip_from and nbr not in flips]
+        choices = list(set(choices) | set(new_choices))
+    return {flip: flip_to for flip in flips}
 
-    return {flip : flip_to for flip in flips}
-    
 
 def max_edge_cuts(partition):
     """returns wes computation for max number of edge cuts... not well documented,
