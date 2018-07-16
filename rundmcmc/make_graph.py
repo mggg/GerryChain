@@ -108,49 +108,57 @@ def construct_graph_from_df(df, geoid_col=None, cols_to_add=None):
     return graph
 
 
-def construct_graph_from_json(jsonData):
+def construct_graph_from_json(json_file):
     """Construct initial graph from networkx.json_graph adjacency json format
 
     :jsonData: adjacency_graph data in json format
     :returns: networkx graph
     """
-    return json_graph.adjacency_graph(jsonData)
+    with open(json_file) as f:
+        data = json.load(f)
+
+    return json_graph.adjacency_graph(data)
 
 
 def construct_graph_from_file(filename, geoid_col=None, cols_to_add=None):
-    """Constucts initial graph from either json(networkx adjacency_graph format) file
-    or from a shapefile
+    """
+    Constuct the initial graph from any file that fiona can read.
 
-    NOTE: at this point only supports the following 2 file formats:
-    - ESRI shapefile
-    - networkx.readwrite.json_data serialized json
+    This can load any file format supported by GeoPandas, which is everything
+    that the fiona library supports.
 
-    :filename: name of file to read
-    :geoid_col: unique identifier for the data units to be used as nodes in the graph
+    :filename: file to read
+    :geoid_col: unique identifier column for the data units; used as node ids in the graph
     :cols_to_add: list of column names from file of data to be added to each node
     :returns: networkx graph
     """
-    if filename.split('.')[-1] == "json":
-        mydata = json.loads(open(filename).read())
-        graph = construct_graph_from_json(mydata)
-        return graph
-    elif filename.split('.')[-1] == "shp":
-        df = gp.read_file(filename)
-        graph = construct_graph_from_df(df, geoid_col, cols_to_add)
-        return graph
+    df = gp.read_file(filename)
+    return construct_graph_from_df(df, geoid_col, cols_to_add)
 
 
-def construct_graph(data_source, geoid_col=None, data_cols=None, data_source_type="filename"):
-    """Constructs initial graph using the graph constructor that best
-    matches the data_source and dataType formats
+def construct_graph(data_source, geoid_col=None, data_cols=None, data_source_type="fiona"):
+    """
+    Construct initial graph from given data source.
 
-    :data_source: data from which to create graph (file name, graph object, json, etc)
+    :data_source: data from which to create graph ("fiona", "geo_data_frame", or "json".)
     :geoid_col: name of unique identifier for basic data units
     :data_cols: any extra data contained in data_source to be added to nodes of graph
-    :dataType: string specifying the type of data_source
-    :returns: netwrokx graph
+    :data_source_type: string specifying the type of data_source;
+                       can be one of "fiona", "json", or "geo_data_frame".
+    :returns: networkx graph
+
+    The supported data types are:
+
+        - "fiona": The filename of any file that geopandas (i.e., fiona) can
+                    read. This includes SHAPE files, GeoJSON, and others. For a
+                    full list, check `fiona.supported_drivers`.
+
+        - "json": A json file formatted by NetworkX's adjacency graph method.
+
+        - "geo_data_frame": A geopandas dataframe.
+
     """
-    if data_source_type == "filename":
+    if data_source_type == "fiona":
         return construct_graph_from_file(data_source, geoid_col, data_cols)
 
     elif data_source_type == "json":

@@ -56,7 +56,7 @@ def PA_partition(path=None):
         path = os.path.join(TEST_DATA_PATH, "PA_graph_with_data.json")
 
     # this is a networkx adjancency data json file with CD, area, population, and vote data
-    graph = construct_graph(path)
+    graph = construct_graph(path, data_source_type="json")
 
     # Add frozen attributes to graph
     # data = gp.read_file("./testData/frozen.shp")

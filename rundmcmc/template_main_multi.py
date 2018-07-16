@@ -66,7 +66,7 @@ district_col = "rounded11"
 
 
 # This builds a graph
-graph = construct_graph(graph_path)
+graph = construct_graph(graph_path, "json")
 
 # Write graph to file
 with open(newdir + state_name + 'graph_with_data.json', 'w') as outfile1:
