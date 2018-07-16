@@ -24,11 +24,16 @@ class DukeGerrymanderingIndex:
 
 
 def mean_median(partition, proportion_column_name):
+    if proportion_column_name[-1] != "%":
+        proportion_column_name = proportion_column_name + "%"
     data = list(partition[proportion_column_name].values())
     return numpy.mean(data) - numpy.median(data)
 
 
 def mean_thirdian(partition, proportion_column_name):
+    if proportion_column_name[-1] != "%":
+        proportion_column_name = proportion_column_name + "%"
+
     data = list(partition[proportion_column_name].values())
     return numpy.mean(data) - numpy.percentile(data, 33)
 
@@ -120,16 +125,7 @@ def get_dict_of_flips(chain):
         print(dict_of_flips)
 
 
-def p_value(chain, initial_partition):
-    better = 0
-    worse = 0
-    initial_value = mean_median(initial_partition, 'PR_DV08%')
-    for partition in chain:
-        partition_value = mean_median(partition, 'PR_DV08%')
-        if partition_value > initial_value:
-            worse += 1
-        else:
-            better += 1
-
-    print(initial_value)
-    print(better, worse)
+def how_many_seats(col1, col2):
+    def function(partition):
+        return sum(partition[col1][part] > partition[col2][part] for part in partition.parts)
+    return function

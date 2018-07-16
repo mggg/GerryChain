@@ -8,8 +8,60 @@ from networkx import NetworkXNoPath
 from rundmcmc.updaters import CountySplit
 
 
+class SelfConfiguringUpperBound:
+    def __init__(self, func):
+        self.func = func
+        self.bound = None
+
+    def __call__(self, partition):
+        if not self.bound:
+            self.bound = self.func(partition)
+            return self.__call__(partition)
+        else:
+            return self.func(partition) <= self.bound
+
+
+class SelfConfiguringLowerBound:
+    def __init__(self, func, epsilon=0.05):
+        self.func = func
+        self.bound = None
+        self.epsilon = epsilon
+
+    def __call__(self, partition):
+        if not self.bound:
+            self.bound = self.func(partition) - self.epsilon
+            return self.__call__(partition)
+        else:
+            return self.func(partition) >= self.bound
+
+
 def L1_reciprocal_polsby_popper(partition):
     return sum(1 / value for value in partition['polsby_popper'].values())
+
+
+def L_minus_1_polsby_popper(partition):
+    return len(partition.parts) / sum(1 / value for value in partition['polsby_popper'].values())
+
+
+no_worse_L_minus_1_polsby_popper = SelfConfiguringLowerBound(L_minus_1_polsby_popper)
+
+no_worse_L1_reciprocal_polsby_popper = SelfConfiguringUpperBound(L1_reciprocal_polsby_popper)
+
+
+class WithinPercentRangeOfBounds:
+    def __init__(self, func, percent):
+        self.func = func
+        self.percent = float(percent) / 100.
+        self.lbound = None
+        self.ubound = None
+
+    def __call__(self, partition):
+        if not (self.lbound and self.ubound):
+            self.lbound = self.func(partition) * (1.0 - self.percent)
+            self.ubound = self.func(partition) * (1.0 + self.percent)
+            return True
+        else:
+            return self.lbound <= self.func(partition) <= self.ubound
 
 
 def L1_reciprocal_discrete_polsby_popper(partition):
@@ -218,6 +270,36 @@ def fast_connected(partition):
     return True
 
 
+def non_bool_fast_connected(partition):
+    """
+        Checks that a given partition's components are connected using
+        a simple breadth-first search.
+        :partition: Instance of Partition; contains connected components.
+        :return: int: number of contiguous districts
+    """
+    assignment = partition.assignment
+
+    # Inverts the assignment dictionary so that lists of VTDs are keyed
+    # by their congressional districts.
+    districts = collections.defaultdict(set)
+    returns = 0
+
+    for vtd in assignment:
+        districts[assignment[vtd]].add(vtd)
+
+    # Generates a subgraph for each district and perform a BFS on it
+    # to check connectedness.
+    for district in districts:
+        adj = nx.to_dict_of_lists(partition.graph, districts[district])
+        if bfs(adj):
+            returns += 1
+
+    return returns
+
+
+no_more_disconnected = SelfConfiguringLowerBound(non_bool_fast_connected)
+
+
 def bfs(graph):
     """
         Performs a breadth-first search on the provided graph and
@@ -275,6 +357,13 @@ def districts_within_tolerance(partition, attribute_name="population", percentag
 
     within_tolerance = max_difference <= percentage * min(values)
     return within_tolerance
+
+
+# NOTE: this returns the maximum imbalance of popuation
+def population_balance(partition, attribute_name="population"):
+    values = partition[attribute_name].values()
+    max_difference = max(values) - min(values)
+    return max_difference / min(values)
 
 
 def refuse_new_splits(partition_county_field):

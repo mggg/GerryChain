@@ -1,15 +1,42 @@
 import random
 
 
-def propose_random_flip(partition):
+# def propose_random_flip(partition):
+#     """Proposes a random boundary flip from the partition.
+#     Uses the number of cut edges to determine self--loops.
+
+#     :partition: The current partition to propose a flip from.
+#     :returns: a dictionary with the flipped node mapped to its new assignment
+
+#     """
+#     # self loop
+#     numEdges = 2.0 * len(partition['cut_edges'])
+#     if random.random() < 1.0 - (numEdges * 1.0 / partition.max_edge_cuts):
+#         return dict()
+
+#     flip = propose_random_flip_no_loops(partition)
+
+#     # checks for a frozen nodes field and self loops if the value has
+#     # been set to 1
+#     flipped_node = list(flip.keys())[0]
+#     node_attrs = partition.graph.nodes[flipped_node]
+#     if "Frozen" in node_attrs and node_attrs["Frozen"]:
+#         return dict()
+
+#     return flip
+
+
+def propose_random_flip_metagraph(partition):
     """Proposes a random boundary flip from the partition.
+    Uses the metagraph degree to determine self--loops.
+    Very slow.
 
     :partition: The current partition to propose a flip from.
     :returns: a dictionary with the flipped node mapped to its new assignment
 
     """
     # self loop
-    numEdges = 2.0 * len(partition['cut_edges'])
+    numEdges = partition["metagraph_degree"]
     if random.random() < 1.0 - (numEdges * 1.0 / partition.max_edge_cuts):
         return dict()
 
@@ -156,6 +183,9 @@ def propose_random_flip_no_loops(partition):
     return flip
 
 
+propose_random_flip = propose_random_flip_no_loops
+
+
 def propose_lowest_pop_single_flip(partition):
     dists = list(partition['population'])
     pops = partition['population'].values()
@@ -214,6 +244,27 @@ def propose_chunk_swap(partition):
         dists.remove(dist)
 
     return proposal
+
+
+def reversible_chunk_flip(partition):
+    edge = random.choice(tuple(partition['cut_edges']))
+    index = random.choice((0, 1))
+
+    flipped_node, other_node = edge[index], edge[1 - index]
+    flip_to = partition.assignment[flipped_node]
+    flip_from = partition.assignment[other_node]
+
+    num_flips = 1
+    flips = [flipped_node]
+    choices = [nbr for nbr in partition.graph.neighbors(flipped_node) if partition.assignment[nbr] == flip_from]
+    while(choices and random.random() < .5 ** num_flips):
+        next_flip = random.choice(tuple(choices))
+        flips.append(next_flip)
+        num_flips += 1
+        choices.remove(next_flip)
+        new_choices = [nbr for nbr in partition.graph.neighbors(next_flip) if partition.assignment[nbr] == flip_from and nbr not in flips]
+        choices = list(set(choices) | set(new_choices))
+    return {flip: flip_to for flip in flips}
 
 
 def max_edge_cuts(partition):
