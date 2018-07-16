@@ -54,7 +54,7 @@ district_col = "CD"
 
 
 # This builds a graph
-graph = construct_graph(graph_path)
+graph = construct_graph(graph_path, "json")
 
 # Write graph to file
 with open('graph_with_data.json', 'w') as outfile1:
