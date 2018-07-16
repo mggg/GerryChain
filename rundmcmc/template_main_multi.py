@@ -6,6 +6,7 @@ from networkx.readwrite import json_graph
 import functools
 import os
 import datetime
+import random
 
 # Imports for RunDMCMC components
 # You can look at the list of available functions in each
@@ -41,6 +42,9 @@ from rundmcmc.run import pipe_to_table
 from rundmcmc.output import p_value_report
 
 from vis_output import (hist_of_table_scores, trace_of_table_scores)
+
+# Set random seed.
+random.seed(1835)
 
 # Make a folder for the output
 current = datetime.datetime.now()
@@ -113,8 +117,7 @@ print("loaded data")
 
 
 # Necessary updaters go here
-updaters = {
-            'population': Tally(pop_col, alias='population'),
+updaters = {'population': Tally(pop_col, alias='population'),
             'perimeters': perimeters,
             'exterior_boundaries': exterior_boundaries,
             'interior_boundaries': interior_boundaries,
@@ -150,8 +153,8 @@ validator = Validator([refuse_new_splits, no_vanishing_districts,
 # Names of validators for output
 # Necessary since bounds don't have __name__'s
 list_of_validators = [refuse_new_splits, no_vanishing_districts,
-                       single_flip_contiguous, within_percent_of_ideal_population,
-                       L1_reciprocal_polsby_popper]
+                      single_flip_contiguous, within_percent_of_ideal_population,
+                      L1_reciprocal_polsby_popper]
 
 
 # Add cyclic updaters :(
@@ -164,7 +167,7 @@ print("setup chain")
 
 # This builds the chain object for us to iterate over
 chain = MarkovChain(proposal_method, validator, acceptance_method,
-                  initial_partition, total_steps=steps)
+                    initial_partition, total_steps=steps)
 
 print("ran chain")
 
