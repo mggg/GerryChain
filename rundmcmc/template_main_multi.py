@@ -44,7 +44,7 @@ from rundmcmc.output import p_value_report
 
 from vis_output import (hist_of_table_scores, trace_of_table_scores)
 
-logging.basicConfig(filename="template.log", format="{name},{lineno},{msg}", style="{", filemode="w", level=logging.DEBUG)
+logging.basicConfig(filename="template.log", format="{name}:{lineno} {msg}", style="{", filemode="w", level=logging.DEBUG)
 
 # Set random seed.
 random.seed(1835)
