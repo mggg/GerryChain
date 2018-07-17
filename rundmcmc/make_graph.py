@@ -95,7 +95,7 @@ def construct_graph_from_df(df, id_column=None, cols_to_add=None):
 
     graph = networkx.from_dict_of_dicts(vtds)
 
-    add_boundary_perimeters(graph)
+    add_boundary_perimeters(graph, neighbors, df)
 
     if cols_to_add is not None:
         add_data_to_graph(df, graph, cols_to_add)
