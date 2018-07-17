@@ -491,7 +491,10 @@ def districts_within_tolerance(partition, attribute_name="population", percentag
 
 
 def population_balance(partition, attribute_name="population"):
-    """Compute the range of population values of assignment blocks."""
+    """
+    Compute the ratio "range / minimum value" of the given attribute on
+    assignment blocks.
+    """
     values = partition[attribute_name].values()
     max_difference = max(values) - min(values)
     return max_difference / min(values)
