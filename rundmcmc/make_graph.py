@@ -98,7 +98,7 @@ def construct_graph_from_df(df, id_column=None, cols_to_add=None):
     add_boundary_perimeters(graph)
 
     if cols_to_add is not None:
-        add_data_to_graph(data, graph, cols_to_add)
+        add_data_to_graph(df, graph, cols_to_add)
 
     return graph
 
