@@ -7,6 +7,7 @@ import functools
 import os
 import datetime
 import random
+import logging
 
 # Imports for RunDMCMC components
 # You can look at the list of available functions in each
@@ -42,6 +43,9 @@ from rundmcmc.run import pipe_to_table
 from rundmcmc.output import p_value_report
 
 from vis_output import (hist_of_table_scores, trace_of_table_scores)
+
+logging.basicConfig(filename="template.log", format="{name}:{lineno} {msg}",
+                    style="{", filemode="w", level=logging.DEBUG)
 
 # Set random seed.
 random.seed(1835)

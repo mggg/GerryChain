@@ -45,6 +45,7 @@ examples of this.
 """
 
 import collections
+import logging
 import random
 
 import networkx as nx
@@ -52,6 +53,8 @@ import networkx.algorithms.shortest_paths.weighted as nx_path
 from networkx import NetworkXNoPath
 
 from rundmcmc.updaters import CountySplit
+
+logger = logging.getLogger(__name__)
 
 
 class Validator:
@@ -106,10 +109,6 @@ class Bounds:
 
     @property
     def __name__(self):
-        """TODO: Docstring for __name__.
-        :returns: TODO
-
-        """
         return "Bounds({})".format(self.func.__name__)
 
 
@@ -133,6 +132,10 @@ class UpperBound:
     def __call__(self, *args, **kwargs):
         return self.func(*args, **kwargs) <= self.bound
 
+    @property
+    def __name__(self):
+        return "UpperBound({})".format(self.func.__name__)
+      
 
 class LowerBound:
     """
@@ -153,6 +156,10 @@ class LowerBound:
 
     def __call__(self, *args, **kwargs):
         return self.func(*args, **kwargs) >= self.bound
+
+    @property
+    def __name__(self):
+        return "LowerBound({})".format(self.func.__name__)
 
 
 class SelfConfiguringUpperBound:
