@@ -6,6 +6,8 @@ from networkx.readwrite import json_graph
 import functools
 import os
 import datetime
+import random
+import logging
 
 # Imports for RunDMCMC components
 # You can look at the list of available functions in each
@@ -42,6 +44,12 @@ from rundmcmc.output import p_value_report
 
 from vis_output import (hist_of_table_scores, trace_of_table_scores)
 
+logging.basicConfig(filename="template.log", format="{name}:{lineno} {msg}",
+                    style="{", filemode="w", level=logging.DEBUG)
+
+# Set random seed.
+random.seed(1835)
+
 # Make a folder for the output
 current = datetime.datetime.now()
 newdir = "./PAoutputs-" + str(current)[:10] + "-" + str(current)[11:13]\
@@ -66,7 +74,7 @@ district_col = "rounded11"
 
 
 # This builds a graph
-graph = construct_graph(graph_path, "json")
+graph = construct_graph(graph_path, data_source_type="json")
 
 # Write graph to file
 with open(newdir + state_name + 'graph_with_data.json', 'w') as outfile1:
@@ -113,8 +121,7 @@ print("loaded data")
 
 
 # Necessary updaters go here
-updaters = {
-            'population': Tally(pop_col, alias='population'),
+updaters = {'population': Tally(pop_col, alias='population'),
             'perimeters': perimeters,
             'exterior_boundaries': exterior_boundaries,
             'interior_boundaries': interior_boundaries,
@@ -150,8 +157,8 @@ validator = Validator([refuse_new_splits, no_vanishing_districts,
 # Names of validators for output
 # Necessary since bounds don't have __name__'s
 list_of_validators = [refuse_new_splits, no_vanishing_districts,
-                       single_flip_contiguous, within_percent_of_ideal_population,
-                       L1_reciprocal_polsby_popper]
+                      single_flip_contiguous, within_percent_of_ideal_population,
+                      L1_reciprocal_polsby_popper]
 
 
 # Add cyclic updaters :(
@@ -164,7 +171,7 @@ print("setup chain")
 
 # This builds the chain object for us to iterate over
 chain = MarkovChain(proposal_method, validator, acceptance_method,
-                  initial_partition, total_steps=steps)
+                    initial_partition, total_steps=steps)
 
 print("ran chain")
 

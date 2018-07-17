@@ -1,4 +1,5 @@
 import collections
+import logging
 import random
 
 import networkx as nx
@@ -6,6 +7,8 @@ import networkx.algorithms.shortest_paths.weighted as nx_path
 from networkx import NetworkXNoPath
 
 from rundmcmc.updaters import CountySplit
+
+logger = logging.getLogger(__name__)
 
 
 class SelfConfiguringUpperBound:
@@ -94,6 +97,10 @@ class Bounds:
         values = self.func(*args, **kwargs)
         return lower <= min(values) and max(values) <= upper
 
+    @property
+    def __name__(self):
+        return "Bound({})".format(self.func.__name__)
+
 
 class UpperBound:
     def __init__(self, func, bound):
@@ -102,6 +109,10 @@ class UpperBound:
 
     def __call__(self, *args, **kwargs):
         return self.func(*args, **kwargs) <= self.bound
+
+    @property
+    def __name__(self):
+        return "UpperBound({})".format(self.func.__name__)
 
 
 class LowerBound:
@@ -112,10 +123,15 @@ class LowerBound:
     def __call__(self, *args, **kwargs):
         return self.func(*args, **kwargs) >= self.bound
 
+    @property
+    def __name__(self):
+        return "LowerBound({})".format(self.func.__name__)
+
 
 class Validator:
     def __init__(self, constraints):
         """:constraints: List of validator functions that will check partitions."""
+        logger.info("validator", self, "created")
         self.constraints = constraints
 
     def __call__(self, partition):
@@ -124,7 +140,11 @@ class Validator:
         # check each constraint function and fail when a constraint test fails
         for constraint in self.constraints:
             if constraint(partition) is False:
+                name = constraint.__name__
+                logger.debug("{} constraint failed: {}".format(self, name))
                 return False
+
+            logger.debug("{} constraints passed".format(self))
 
         # all constraints are satisfied
         return True
