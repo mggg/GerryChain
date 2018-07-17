@@ -135,7 +135,7 @@ class UpperBound:
     @property
     def __name__(self):
         return "UpperBound({})".format(self.func.__name__)
-      
+
 
 class LowerBound:
     """
