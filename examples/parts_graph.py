@@ -1,8 +1,6 @@
-from collections import defaultdict
 import networkx
 
-from rundmcmc.defaults import PA_partition
-from rundmcmc.defaults import BasicChain
+from rundmcmc.defaults import BasicChain, PA_partition
 
 
 def parts_adjacency_matrix(partition):
