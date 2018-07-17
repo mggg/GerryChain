@@ -33,61 +33,22 @@ def get_list_of_data(filepath, col_name, geoid=None):
     return data
 
 
-def add_data_to_graph(df, graph, col_names, id_col=None):
-    """Add columns of a dataframe to a graph based on ids.
+def add_data_to_graph(df, graph, col_names):
+    """Add columns of a dataframe to a graph based on ids. We assume
+    that the dataframe df is indexed by the node ids.
 
     :df: Dataframe containing given column.
     :graph: NetworkX object containing appropriately labeled nodes.
     :col_names: List of dataframe column names to add.
-    :id_col: The column name to pull graph ids from. The row from this id will
-             be assigned to the corresponding node in the graph. If `None`,
-             then the data is assigned to consecutive integer labels 0, 1, ...,
-             len(graph) - 1.
-
     """
-    if id_col:
-        for row in df.itertuples():
-            node = getattr(row, id_col)
-            for name in col_names:
-                data = getattr(row, name)
-                graph.nodes[node][name] = data
-    else:
-        for i, row in enumerate(df.itertuples()):
-            for name in col_names:
-                data = getattr(row, name)
-                graph.nodes[i][name] = data
+    column_dictionaries = df[col_names].to_dict('index')
+    networkx.set_node_attributes(graph, column_dictionaries)
 
 
-def construct_graph_from_df(df, geoid_col=None, cols_to_add=None):
-    """Construct initial graph from information about neighboring VTDs.
-
-    :df: Geopandas dataframe.
-    :returns: NetworkX Graph.
-
-    """
-    if geoid_col is not None:
-        df = df.set_index(geoid_col)
-
-    # Generate rook neighbor lists from dataframe.
-    neighbors = ps.weights.Rook.from_dataframe(
-        df, geom_col="geometry").neighbors
-
-    vtds = {}
-
-    for shape in neighbors:
-
-        vtds[shape] = {}
-
-        for neighbor in neighbors[shape]:
-            shared_perim = df.loc[shape, "geometry"].intersection(
-                df.loc[neighbor, "geometry"]).length
-            vtds[shape][neighbor] = {'shared_perim': shared_perim}
-
-    graph = networkx.from_dict_of_dicts(vtds)
-    vtd = df['geometry']
-
+def add_boundary_perimeters(graph, neighbors, df):
+    all_units = df['geometry']
     # creates one shape of the entire state to compare outer boundaries against
-    inter = gp.GeoSeries(cascaded_union(vtd).boundary)
+    inter = gp.GeoSeries(cascaded_union(all_units).boundary)
 
     # finds if it intersects on outside and sets
     # a 'boundary_node' attribute to true if it does
@@ -99,12 +60,46 @@ def construct_graph_from_df(df, geoid_col=None, cols_to_add=None):
         if inter.intersects(df.loc[node, "geometry"]).bool():
             graph.node[node]['boundary_perim'] = float(
                 inter.intersection(df.loc[node, "geometry"]).length)
+    return graph
+
+
+def neighbors_with_shared_perimeters(neighbors, df):
+    vtds = {}
+
+    for shape in neighbors:
+        vtds[shape] = {}
+
+        for neighbor in neighbors[shape]:
+            shared_perim = df.loc[shape, "geometry"].intersection(
+                df.loc[neighbor, "geometry"]).length
+            vtds[shape][neighbor] = {'shared_perim': shared_perim}
+
+    return vtds
+
+
+def construct_graph_from_df(df, id_column=None, cols_to_add=None):
+    """Construct initial graph from information about neighboring VTDs.
+
+    :df: Geopandas dataframe.
+    :returns: NetworkX Graph.
+
+    """
+    if id_column is not None:
+        df = df.set_index(id_column)
+
+    # Generate rook neighbor lists from dataframe.
+    neighbors = ps.weights.Rook.from_dataframe(
+        df, geom_col="geometry").neighbors
+
+    vtds = neighbors_with_shared_perimeters(neighbors, df)
+
+    graph = networkx.from_dict_of_dicts(vtds)
+
+    add_boundary_perimeters(graph)
 
     if cols_to_add is not None:
-        data = pd.DataFrame({x: df[x] for x in cols_to_add})
-        if geoid_col is not None:
-            data[geoid_col] = df.index
         add_data_to_graph(data, graph, cols_to_add, geoid_col)
+
     return graph
 
 
