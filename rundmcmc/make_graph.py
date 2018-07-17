@@ -98,7 +98,7 @@ def construct_graph_from_df(df, id_column=None, cols_to_add=None):
     add_boundary_perimeters(graph)
 
     if cols_to_add is not None:
-        add_data_to_graph(data, graph, cols_to_add, geoid_col)
+        add_data_to_graph(data, graph, cols_to_add)
 
     return graph
 
@@ -115,7 +115,7 @@ def construct_graph_from_json(json_file):
     return json_graph.adjacency_graph(data)
 
 
-def construct_graph_from_file(filename, geoid_col=None, cols_to_add=None):
+def construct_graph_from_file(filename, id_column=None, cols_to_add=None):
     """
     Constuct the initial graph from any file that fiona can read.
 
@@ -123,20 +123,20 @@ def construct_graph_from_file(filename, geoid_col=None, cols_to_add=None):
     that the fiona library supports.
 
     :filename: file to read
-    :geoid_col: unique identifier column for the data units; used as node ids in the graph
+    :id_column: unique identifier column for the data units; used as node ids in the graph
     :cols_to_add: list of column names from file of data to be added to each node
     :returns: networkx graph
     """
     df = gp.read_file(filename)
-    return construct_graph_from_df(df, geoid_col, cols_to_add)
+    return construct_graph_from_df(df, id_column, cols_to_add)
 
 
-def construct_graph(data_source, geoid_col=None, data_cols=None, data_source_type="fiona"):
+def construct_graph(data_source, id_column=None, data_cols=None, data_source_type="fiona"):
     """
     Construct initial graph from given data source.
 
     :data_source: data from which to create graph ("fiona", "geo_data_frame", or "json".)
-    :geoid_col: name of unique identifier for basic data units
+    :id_column: name of unique identifier for basic data units
     :data_cols: any extra data contained in data_source to be added to nodes of graph
     :data_source_type: string specifying the type of data_source;
                        can be one of "fiona", "json", or "geo_data_frame".
@@ -154,13 +154,13 @@ def construct_graph(data_source, geoid_col=None, data_cols=None, data_source_typ
 
     """
     if data_source_type == "fiona":
-        return construct_graph_from_file(data_source, geoid_col, data_cols)
+        return construct_graph_from_file(data_source, id_column, data_cols)
 
     elif data_source_type == "json":
         return construct_graph_from_json(data_source)
 
     elif data_source_type == "geo_data_frame":
-        return construct_graph_from_df(data_source, geoid_col, data_cols)
+        return construct_graph_from_df(data_source, id_column, data_cols)
 
 
 def get_assignment_dict(df, key_col, val_col):
