@@ -6,7 +6,7 @@ import geopandas as gp
 import networkx
 
 from rundmcmc.chain import MarkovChain
-from rundmcmc.make_graph import get_assignment_dict
+from rundmcmc.make_graph import get_assignment_dict_from_df
 from rundmcmc.partition import Partition
 from rundmcmc.proposals import propose_random_flip
 from rundmcmc.updaters import (Tally, boundary_nodes, cut_edges,
@@ -84,7 +84,7 @@ def test_single_flip_contiguity_equals_contiguity():
         graph_json = json.load(f)
 
     graph = networkx.readwrite.json_graph.adjacency_graph(graph_json)
-    assignment = get_assignment_dict(df, "GEOID10", "CD")
+    assignment = get_assignment_dict_from_df(df, "GEOID10", "CD")
 
     validator = Validator([equality_validator])
     updaters = {"contiguous": contiguous, "cut_edges": cut_edges,

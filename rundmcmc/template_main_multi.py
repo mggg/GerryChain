@@ -17,7 +17,8 @@ from rundmcmc.accept import always_accept
 
 from rundmcmc.chain import MarkovChain
 
-from rundmcmc.make_graph import (add_data_to_graph, construct_graph)
+from rundmcmc.make_graph import (add_data_to_graph, construct_graph,
+                                 get_assignment_dict_from_graph)
 
 from rundmcmc.partition import Partition
 
@@ -83,8 +84,8 @@ graph = construct_graph(graph_path, data_source_type="json")
 with open(newdir + state_name + '_graph_with_data.json', 'w') as outfile1:
     outfile1.write(json.dumps(json_graph.adjacency_data(graph)))
 
-# Put district on graph
-assignment = dict(zip(graph.nodes(), [graph.node[x][district_col] for x in graph.nodes()]))
+# Get assignment dictionary
+assignment = get_assignment_dict_from_graph(graph, district_col)
 
 
 # Input the shapefile with vote data here
