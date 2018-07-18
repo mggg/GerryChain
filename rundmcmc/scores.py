@@ -27,7 +27,7 @@ def mean_median(partition, proportion_column_name):
     if proportion_column_name[-1] != "%":
         proportion_column_name = proportion_column_name + "%"
     data = list(partition[proportion_column_name].values())
-    return numpy.mean(data) - numpy.median(data)
+    return numpy.median(data) - numpy.mean(data)
 
 
 def mean_thirdian(partition, proportion_column_name):
@@ -35,7 +35,7 @@ def mean_thirdian(partition, proportion_column_name):
         proportion_column_name = proportion_column_name + "%"
 
     data = list(partition[proportion_column_name].values())
-    return numpy.mean(data) - numpy.percentile(data, 33)
+    return numpy.percentile(data, 33) - numpy.mean(data)
 
 
 def normalized_efficiency_gap(partition, proportion_column_name):
