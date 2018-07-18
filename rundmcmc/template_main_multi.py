@@ -93,7 +93,7 @@ vote_path = "./testData/wes_with_districtings.shp"
 
 # This inputs a shapefile with columns you want to add
 df = gp.read_file(vote_path)
-
+df = df.set_index(unique_label)
 
 # This is the number of elections you want to analyze
 num_elections = 2
