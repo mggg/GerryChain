@@ -6,7 +6,7 @@ import networkx.readwrite
 from rundmcmc.accept import always_accept
 from rundmcmc.chain import MarkovChain
 from rundmcmc.make_graph import (add_data_to_graph, construct_graph,
-                                 get_assignment_dict)
+                                 get_assignment_dict_from_df)
 from rundmcmc.partition import Partition
 from rundmcmc.proposals import \
     propose_random_flip_no_loops as propose_random_flip
@@ -36,7 +36,7 @@ def example_partition():
 
     graph = networkx.readwrite.json_graph.adjacency_graph(graph_json)
 
-    assignment = get_assignment_dict(df, "GEOID10", "CD")
+    assignment = get_assignment_dict_from_df(df, "GEOID10", "CD")
 
     add_data_to_graph(df, graph, ['PR_DV08', 'PR_RV08', 'POP100', 'ALAND10', 'COUNTYFP10'],
                       id_col='GEOID10')

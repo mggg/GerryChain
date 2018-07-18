@@ -184,8 +184,8 @@ def construct_graph(data_source, id_column=None, data_cols=None, data_source_typ
         return construct_graph_from_df(data_source, id_column, data_cols)
 
 
-def get_assignment_dict(df, key_col, val_col):
-    """Compute a dictionary from the given columns of the dataframe.
+def get_assignment_dict_from_df(df, key_col, val_col):
+    """Grab assignment dictionary from the given columns of the dataframe.
 
     :df: Dataframe.
     :key_col: Column name to be used for keys.
@@ -195,3 +195,14 @@ def get_assignment_dict(df, key_col, val_col):
     """
     dict_df = df.set_index(key_col)
     return dict_df[val_col].to_dict()
+
+
+def get_assignment_dict_from_graph(graph, assignment_attribute):
+    """Grab assignment dictionary from the given attributes of the graph.
+
+    :graph: NetworkX graph.
+    :assignment_attribute: Attribute available on all nodes.
+    :returns: Dictionary of {node_id: attribute} pairs.
+
+    """
+    return networkx.get_node_attributes(graph, assignment_attribute)
