@@ -38,7 +38,7 @@ os.makedirs(os.path.dirname(newdir + "init.txt"), exist_ok=True)
 with open(newdir + "init.txt", "w") as f:
     f.write("Created Folder")
 
-i=1
+i = 1
 for partition in chain:
     plt.matshow(partition.as_list_of_lists())
     plt.savefig(newdir + "g3_%04d.png" % i)
