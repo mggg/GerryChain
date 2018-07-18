@@ -5,22 +5,23 @@ import pysal as ps
 import json
 from networkx.readwrite import json_graph
 from shapely.ops import cascaded_union
+import os.path
 
 
 def get_list_of_data(filepath, col_name, geoid=None):
-    """Pull a column data from a shape or CSV file.
+    """Pull a column data from a CSV file or any fiona-supported file.
 
-    :filepath: The path to where your data is located.
-    :col_name: A list of the columns of data you want to grab.
-    :returns: A list of the data you have specified.
+    :filepath: Path to datafile.
+    :col_name: List of column names to grab.
+    :returns: List of data.
 
     """
     # Checks if you have inputed a csv or shp file then captures the data
-    if filepath.split('.')[-1] == 'csv':
+    extension = os.path.splitext(filepath)
+
+    if extension.lower() == "csv":
         df = pd.read_csv(filepath)
-    elif filepath.split('.')[-1] == 'shp':
-        df = gp.read_file(filepath)
-    elif filepath.split('.')[-1] == 'geojson':
+    else:
         df = gp.read_file(filepath)
 
     if geoid is None:
