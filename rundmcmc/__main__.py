@@ -13,6 +13,7 @@ from rundmcmc.run import pipe_to_table
 from rundmcmc.validity import (L1_reciprocal_polsby_popper, UpperBound,
                                Validator, no_vanishing_districts,
                                refuse_new_splits, contiguous, fast_connected,
+                               proposed_changes_still_contiguous,
                                within_percent_of_ideal_population)
 
 from rundmcmc.proposals import \
@@ -21,9 +22,11 @@ from rundmcmc.accept import always_accept
 from rundmcmc.chain import MarkovChain
 
 default_constraints = [#fast_connected,
-                       contiguous,
+                       proposed_changes_still_contiguous,
+                       #contiguous,
                        no_vanishing_districts,
                        refuse_new_splits]
+
 
 def main():
     G = Graph('./testData/MO_graph.json', geoid_col='id')
@@ -41,6 +44,7 @@ def main():
         'polsby_popper': polsby_popper,
         'cut_edges_by_part': cut_edges_by_part
     }
+
     G.convert()
     p = Partition(G, assignment, updaters)
 
@@ -56,6 +60,7 @@ def main():
 
     for step in chain:
         print(chain.counter)
+    print("All done using ", default_constraints[0])
 
 if __name__ == "__main__":
     import sys

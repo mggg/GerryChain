@@ -235,7 +235,8 @@ class Graph:
             return np.asarray(list(nx.all_neighbors(self.graph, node)))
         else:
             nodeidx = self._nodelookup_geoid_to_idx[node]
-            return [self._nodelookup_idx_to_geoid[x] for x in self.graph.get_out_neighbors(nodeidx)]
+            return map(self._nodelookup_idx_to_geoid.get, self.graph.vertex(nodeidx).all_neighbors())
+            #return [self._nodelookup_idx_to_geoid[x] for x in , self.graph.vertex(nodeidx).all_neighbors())
 
 
     def get_node_attributes(self, node):
@@ -281,7 +282,7 @@ class Graph:
             nodes = map(self._nodelookup_geoid_to_idx.get, nodes)
             for x in nodes:
                 vfilt[x] = True
-            return GraphView(self.graph,  vfilt=vfilt)
+            return GraphView(self.graph, vfilt=vfilt)
 
 
     def to_dict_of_dicts(self, part=None):
@@ -305,6 +306,11 @@ class Graph:
         else:
             if nodelist is None:
                 nodelist = list(range(self._num_nodes))
+            vfilt = np.zeros(self._num_nodes, dtype=bool)
+            nodes = map(self._nodelookup_geoid_to_idx.get, nodelist)
+            for x in nodes:
+                vfilt[x] = True
+
             d = {}
             for n in nodelist:
                 d[n] = [nbr for nbr in self.neighbors(n) if nbr in nodelist]

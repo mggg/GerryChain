@@ -202,6 +202,43 @@ def contiguous(partition):
     return True
 
 
+def proposed_changes_still_contiguous(partition):
+    """
+        Checks whether the districts that are altered by a proposed change
+        (stored in partition.flips) remain contiguous under said changes.
+
+        :parition: Current :class:`.Partition` object.
+
+        :returns: True if changed districts are contiguous, False otherwise.
+    """
+
+    # Check whether this is the initial partition (parent=None)
+    # or one with proposed changes (parent != None).
+    districts_of_interest = set(partition.assignment.values())
+    if partition.parent:
+        districts_of_interest = set(partition.flips.values())
+
+    # Inverts the assignment dictionary so that lists of VTDs are keyed
+    # by their congressional districts.
+    assignment = partition.assignment
+    districts = collections.defaultdict(set)
+    for vtd in assignment:
+        districts[assignment[vtd]].add(vtd)
+
+    for key in districts_of_interest:
+        if partition.graph._converted is False:
+            tmp = partition.graph.subgraph(districts[key])
+            if nx.is_connected(tmp) is False:
+                return False
+        else:
+            tmp = partition.graph.subgraph(districts[key])
+            name = key
+            visitor = VisitorExample(name)
+            bfs_search(tmp, tmp.vertex(next(tmp.vertices())), visitor)
+
+    return True
+
+
 def fast_connected(partition):
     """
         Checks that a given partition's components are connected using
