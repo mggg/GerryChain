@@ -95,7 +95,7 @@ def neighbors_with_shared_perimeters(neighbors, df):
                 df.loc[neighbor, "geometry"]).length
             vtds[shape][neighbor] = {'shared_perim': shared_perim}
 
-    return vtds
+    return networkx.from_dict_of_dicts(vtds)
 
 
 def construct_graph_from_df(df, id_column=None, cols_to_add=None):
@@ -112,9 +112,7 @@ def construct_graph_from_df(df, id_column=None, cols_to_add=None):
     neighbors = pysal.weights.Rook.from_dataframe(
         df, geom_col="geometry").neighbors
 
-    vtds = neighbors_with_shared_perimeters(neighbors, df)
-
-    graph = networkx.from_dict_of_dicts(vtds)
+    graph = neighbors_with_shared_perimeters(neighbors, df)
 
     add_boundary_perimeters(graph, neighbors, df)
 
