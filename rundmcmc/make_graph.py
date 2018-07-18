@@ -35,18 +35,28 @@ def get_list_of_data(filepath, col_name, geoid=None):
 
 
 def add_data_to_graph(df, graph, col_names):
-    """Add columns of a dataframe to a graph based on ids. We assume
-    that the dataframe df is indexed by the node ids.
+    """Add columns of a dataframe to a graph using the the index as node ids.
 
-    :df: Dataframe containing given column.
-    :graph: NetworkX object containing appropriately labeled nodes.
+    :df: Dataframe containing given columns.
+    :graph: NetworkX graph containing appropriately labeled nodes.
     :col_names: List of dataframe column names to add.
+    :returns: Nothing.
+
     """
     column_dictionaries = df[col_names].to_dict('index')
     networkx.set_node_attributes(graph, column_dictionaries)
 
 
 def add_boundary_perimeters(graph, neighbors, df):
+    """
+    Add shared perimeter between nodes and the total geometry boundary.
+
+    :graph: NetworkX graph.
+    :neighbors: Adjacency information generated from pysal.
+    :df: Geodataframe containing geometry information.
+    :returns: The updated graph.
+
+    """
     all_units = df['geometry']
     # creates one shape of the entire state to compare outer boundaries against
     inter = gp.GeoSeries(cascaded_union(all_units).boundary)
@@ -65,6 +75,13 @@ def add_boundary_perimeters(graph, neighbors, df):
 
 
 def neighbors_with_shared_perimeters(neighbors, df):
+    """Construct a graph with shared perimeter between neighbors on the edges.
+
+    :neighbors: Adjacency information generated from pysal.
+    :df: Geodataframe containing geometry information.
+    :returns: NetworkX graph.
+
+    """
     vtds = {}
 
     for shape in neighbors:
@@ -105,10 +122,11 @@ def construct_graph_from_df(df, id_column=None, cols_to_add=None):
 
 
 def construct_graph_from_json(json_file):
-    """Construct initial graph from networkx.json_graph adjacency json format
+    """Construct initial graph from networkx.json_graph adjacency JSON format.
 
-    :jsonData: adjacency_graph data in json format
-    :returns: networkx graph
+    :json_file: Path to JSON file.
+    :returns: NetworkX graph.
+
     """
     with open(json_file) as f:
         data = json.load(f)
@@ -117,18 +135,19 @@ def construct_graph_from_json(json_file):
 
 
 def construct_graph_from_file(filename, id_column=None, cols_to_add=None):
-    """
-    Constuct the initial graph from any file that fiona can read.
+    """Constuct initial graph from any file that fiona can read.
 
     This can load any file format supported by GeoPandas, which is everything
     that the fiona library supports.
 
-    :filename: file to read
-    :id_column: unique identifier column for the data units; used as node ids in the graph
-    :cols_to_add: list of column names from file of data to be added to each node
-    :returns: networkx graph
+    :filename: File to read.
+    :id_column: Unique identifier column for the data units; used as node ids in the graph.
+    :cols_to_add: List of column names from file of data to be added to each node.
+    :returns: NetworkX Graph.
+
     """
     df = gp.read_file(filename)
+
     return construct_graph_from_df(df, id_column, cols_to_add)
 
 
@@ -136,12 +155,12 @@ def construct_graph(data_source, id_column=None, data_cols=None, data_source_typ
     """
     Construct initial graph from given data source.
 
-    :data_source: data from which to create graph ("fiona", "geo_data_frame", or "json".)
-    :id_column: name of unique identifier for basic data units
-    :data_cols: any extra data contained in data_source to be added to nodes of graph
-    :data_source_type: string specifying the type of data_source;
+    :data_source: Data from which to create graph ("fiona", "geo_data_frame", or "json".).
+    :id_column: Name of unique identifier for basic data units.
+    :data_cols: Any extra data contained in data_source to be added to nodes of graph.
+    :data_source_type: String specifying the type of data_source;
                        can be one of "fiona", "json", or "geo_data_frame".
-    :returns: networkx graph
+    :returns: NetworkX graph.
 
     The supported data types are:
 
