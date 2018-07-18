@@ -51,17 +51,18 @@ def handle_chain(chain, handlers):
         yield {key: handler(state) for key, handler in handlers.items()}
 
 
-def pipe_to_table(chain, handlers, display=True, display_frequency=100,
-                  bin_frequency=1):
+def pipe_to_table(chain, handlers, display=True, number_to_display=10,
+                  number_to_bin=100):
     table = ChainOutputTable()
-    display_interval = math.floor(len(chain) / display_frequency)
+    display_interval = math.floor(len(chain) / number_to_display)
+    bin_interval = math.floor(len(chain) / number_to_bin)
     counter = 0
     for row in handle_chain(chain, handlers):
         if counter % display_interval == 0:
             if display:
                 print(f"Step {counter}")
                 print(row)
-        if counter % bin_frequency == 0:
+        if counter % bin_interval == 0:
             table.append(row)
         counter += 1
     return table

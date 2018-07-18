@@ -106,3 +106,19 @@ def color_quadrants(node, thresholds):
     x_color = 0 if x < thresholds[0] else 1
     y_color = 0 if y < thresholds[1] else 2
     return x_color + y_color
+
+
+def grid_size(parition):
+    ''' This is a hardcoded population function
+    for the grid class'''
+
+    L = parition.as_list_of_lists()
+    permit = [3, 4, 5]
+
+    sizes = [0, 0, 0, 0]
+
+    for i in range(len(L)):
+        for j in range(len(L[0])):
+            sizes[L[i][j]] += 1
+
+    return all(x in permit for x in sizes)
