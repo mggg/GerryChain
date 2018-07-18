@@ -31,6 +31,7 @@ def get_list_of_data(filepath, col_name, geoid=None):
     data = pd.DataFrame({geoid: df[geoid]})
     for i in col_name:
         data[i] = df[i]
+
     return data
 
 
@@ -59,18 +60,20 @@ def add_boundary_perimeters(graph, neighbors, df):
     """
     all_units = df['geometry']
     # creates one shape of the entire state to compare outer boundaries against
-    inter = gp.GeoSeries(cascaded_union(all_units).boundary)
+    boundary = gp.GeoSeries(cascaded_union(all_units).boundary)
 
     # finds if it intersects on outside and sets
     # a 'boundary_node' attribute to true if it does
     # if it is set to true, it also adds how much shared
     # perimiter they have to a 'boundary_perim' attribute
     for node in neighbors:
-        graph.node[node]['boundary_node'] = inter.intersects(
+        graph.node[node]['boundary_node'] = boundary.intersects(
             df.loc[node, "geometry"]).bool()
-        if inter.intersects(df.loc[node, "geometry"]).bool():
+
+        if boundary.intersects(df.loc[node, "geometry"]).bool():
             graph.node[node]['boundary_perim'] = float(
-                inter.intersection(df.loc[node, "geometry"]).length)
+                boundary.intersection(df.loc[node, "geometry"]).length)
+
     return graph
 
 
