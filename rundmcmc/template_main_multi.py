@@ -17,7 +17,8 @@ from rundmcmc.accept import always_accept
 
 from rundmcmc.chain import MarkovChain
 
-from rundmcmc.make_graph import (add_data_to_graph, construct_graph)
+from rundmcmc.make_graph import (add_data_to_graph, construct_graph,
+                                 get_assignment_dict_from_graph)
 
 from rundmcmc.partition import Partition
 
@@ -30,13 +31,16 @@ from rundmcmc.updaters import (Tally, boundary_nodes, cut_edges,
                                interior_boundaries)
 
 from rundmcmc.validity import (L1_reciprocal_polsby_popper,
-                               UpperBound,
+                               L_minus_1_polsby_popper,
+                               UpperBound, LowerBound,
                                Validator, no_vanishing_districts,
                                refuse_new_splits, single_flip_contiguous,
                                within_percent_of_ideal_population)
 
 from rundmcmc.scores import (efficiency_gap, mean_median,
-                             mean_thirdian)
+                             mean_thirdian, how_many_seats_value,
+                             population_range,
+                             number_cut_edges)
 
 from rundmcmc.run import pipe_to_table
 
@@ -52,7 +56,7 @@ random.seed(1835)
 
 # Make a folder for the output
 current = datetime.datetime.now()
-newdir = "./PAoutputs-" + str(current)[:10] + "-" + str(current)[11:13]\
+newdir = "./Outputs/PAoutputs-" + str(current)[:10] + "-" + str(current)[11:13]\
          + "-" + str(current)[14:16] + "-" + str(current)[17:19] + "/"
 
 os.makedirs(os.path.dirname(newdir + "init.txt"), exist_ok=True)
@@ -70,18 +74,18 @@ unique_label = "wes_id"
 # Names of graph columns go here
 pop_col = "population"
 area_col = "area"
-district_col = "rounded11"
+district_col = "Remedial"
 
 
 # This builds a graph
 graph = construct_graph(graph_path, data_source_type="json")
 
 # Write graph to file
-with open(newdir + state_name + 'graph_with_data.json', 'w') as outfile1:
+with open(newdir + state_name + '_graph_with_data.json', 'w') as outfile1:
     outfile1.write(json.dumps(json_graph.adjacency_data(graph)))
 
-# Put district on graph
-assignment = dict(zip(graph.nodes(), [graph.node[x][district_col] for x in graph.nodes()]))
+# Get assignment dictionary
+assignment = get_assignment_dict_from_graph(graph, district_col)
 
 
 # Input the shapefile with vote data here
@@ -90,7 +94,7 @@ vote_path = "./testData/wes_with_districtings.shp"
 
 # This inputs a shapefile with columns you want to add
 df = gp.read_file(vote_path)
-
+df = df.set_index(unique_label)
 
 # This is the number of elections you want to analyze
 num_elections = 2
@@ -102,8 +106,8 @@ election_columns = [['T16PRESD', 'T16PRESR'], ['T16SEND', 'T16SENR']]
 
 
 # This adds the data to the graph
-add_data_to_graph(df, graph, [cols for pair in election_columns for cols in pair],
-                  id_col=unique_label)
+add_data_to_graph(df, graph, [cols for pair in election_columns for cols in pair])
+# , id_col=unique_label)
 
 
 # Desired proposal method
@@ -115,7 +119,7 @@ acceptance_method = always_accept
 
 
 # Number of steps to run
-steps = 100
+steps = 1000
 
 print("loaded data")
 
@@ -147,18 +151,21 @@ initial_partition = Partition(graph, assignment, updaters)
 pop_limit = .01
 population_constraint = within_percent_of_ideal_population(initial_partition, pop_limit)
 
-compactness_limit = 1.01 * L1_reciprocal_polsby_popper(initial_partition)
-compactness_constraint = UpperBound(L1_reciprocal_polsby_popper, compactness_limit)
+compactness_limit_L1 = 1.01 * L1_reciprocal_polsby_popper(initial_partition)
+compactness_constraint_L1 = UpperBound(L1_reciprocal_polsby_popper, compactness_limit_L1)
+
+compactness_limit_Lm1 = .99 * L_minus_1_polsby_popper(initial_partition)
+compactness_constraint_Lm1 = LowerBound(L_minus_1_polsby_popper, compactness_limit_Lm1)
 
 validator = Validator([refuse_new_splits, no_vanishing_districts,
                        single_flip_contiguous, population_constraint,
-                       compactness_constraint])
+                       compactness_constraint_Lm1])
 
 # Names of validators for output
 # Necessary since bounds don't have __name__'s
 list_of_validators = [refuse_new_splits, no_vanishing_districts,
                       single_flip_contiguous, within_percent_of_ideal_population,
-                      L1_reciprocal_polsby_popper]
+                      L_minus_1_polsby_popper]
 
 
 # Add cyclic updaters :(
@@ -178,7 +185,14 @@ print("ran chain")
 # Post processing commands go below
 # Adds election Scores
 
-scores = {}
+scores = {
+    'L1 Reciprocal Polsby-Popper': L1_reciprocal_polsby_popper,
+    'L -1 Polsby-Popper': L_minus_1_polsby_popper,
+    'Population Range': population_range,
+    'Conflicted Edges': number_cut_edges,
+    }
+
+chain_stats = scores.copy()
 
 scores_for_plots = []
 
@@ -194,8 +208,11 @@ for i in range(num_elections):
         election_names[i]: functools.partial(efficiency_gap,
                                              col1=election_columns[i][0],
                                              col2=election_columns[i][1]),
-        'L1 Reciprocal Polsby-Popper' + "\n" +
-        election_names[i]: L1_reciprocal_polsby_popper}
+        'Number of Democratic Seats' + "\n" +
+        election_names[i]: functools.partial(how_many_seats_value,
+                                             col1=election_columns[i][0],
+                                             col2=election_columns[i][1])
+        }
 
     scores_for_plots.append(vscores)
 
@@ -204,19 +221,19 @@ for i in range(num_elections):
 # Compute the values of the intial state and the chain
 initial_scores = {key: score(initial_partition) for key, score in scores.items()}
 
-table = pipe_to_table(chain, scores, display=True, display_frequency=10,
-                      bin_frequency=1)
+table = pipe_to_table(chain, scores, display=True, number_to_display=10,
+                      number_to_bin=steps)
 
 
 # P-value reports
 pv_dict = {key: p_value_report(key, table[key], initial_scores[key]) for key in scores}
-print(pv_dict)
+# print(pv_dict)
 with open(newdir + 'pvals_report_multi.json', 'w') as fp:
     json.dump(pv_dict, fp)
 
 print("computed p-values")
 
-
+"""
 # Write flips to file
 
 allAssignments = {0: chain.state.assignment}
@@ -228,7 +245,7 @@ with open(newdir + "chain_flips_multi.json", "w") as fp:
     json.dump(allAssignments, fp)
 
 print("wrote flips")
-
+"""
 
 # Histogram and trace plotting paths
 hist_path = newdir + "chain_histogram_multi_"
@@ -247,6 +264,16 @@ for i in range(num_elections):
                           outputFile=trace_path + election_names[i] + ".png",
                           name=state_name + "\n" + election_names[i])
 
+
+# Plot for chain stats
+
+hist_of_table_scores(table, scores=chain_stats,
+                     outputFile=hist_path + "stats.png",
+                     num_bins=50, name=state_name + "\n" + district_col)
+
+trace_of_table_scores(table, scores=chain_stats,
+                      outputFile=trace_path + "stats.png",
+                      name=state_name + "\n" + district_col)
 
 print("plotted histograms")
 print("plotted traces")
@@ -280,7 +307,7 @@ with open(newdir + "parameters.txt", "w") as f:
     f.write("Acceptance Method: " + acceptance_method.__name__)
     f.write("\n")
     f.write("\n")
-    f.write("Validators: ")
+    f.write("Binary Constraints: ")
     f.write("\n")
     for v in list_of_validators:
         f.write(v.__name__ + "\n")

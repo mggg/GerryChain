@@ -1,3 +1,49 @@
+"""
+Collection of constraint functions for the validation step in RunDMCMC.
+
+=========================== ==============================================
+Helper classes
+==========================================================================
+Validator                   Collection of constraints
+Bounds                      Bounds on numeric constraints
+UpperBounds                 Upper bounds on numeric constraints
+LowerBounds                 Lower bounds on numeric constraints
+SelfConfiguringUpperBound   Automatic upper bounds on numeric constraints
+SelfConfiguringLowerBound   Automatic lower bounds on numeric constraints
+WithinPercentRangeOfBounds  Percentage bounds for numeric constraints
+==========================================================================
+
+|
+
+============================================== ==============================================
+Boolean constraint functions
+=============================================================================================
+no_worse_L1_reciprocal_polsby_popper            Lower bounded L1-reciprocal Polsby-Popper
+no_worse_L_minus_1_reciprocal_polsby_popper     Lower bounded L(-1)-reciprocal Polsby-Popper
+single_flip_contiguous                          Contiguity of districts after single flips
+contiguous                                      Contiguity of districts with NetworkX methods
+no_more_disconnected                            No more disconnected districts than initially
+no_vanishing_districts                          No districts may be completely consumed
+=============================================================================================
+
+Each new step proposed to the chain is passed off to the "validator" functions
+here to determine whether or not the step is valid. If it is invalid (breaks
+contiguity, for instance), then the step is immediately rejected.
+
+The signature of a validator function should be as follows::
+
+    def validator(partition):
+        # check if valid
+        # ...
+        return is_valid
+
+That is, validators take in a :class:`~rundmcmc.partition.Partition` instance,
+and should return whether or not the instance is valid according to their
+rules. Many top-level functions following this signature in this module are
+examples of this.
+
+"""
+
 import collections
 import logging
 import random
@@ -11,8 +57,127 @@ from rundmcmc.updaters import CountySplit
 logger = logging.getLogger(__name__)
 
 
+class Validator:
+    """
+    Collection of validity checks passed to
+    :class:`rundmcmc.chain.MarkovChain`.
+
+    This class is meant to be called as a function after instantiation; its
+    return is ``True`` if all validators pass, and ``False`` if any one fails.
+
+    """
+    def __init__(self, constraints):
+        """:constraints: List of validator functions that will check partitions."""
+        self.constraints = constraints
+
+    def __call__(self, partition):
+        """Determine if the given partition is valid.
+
+        :partition: :class:`Partition` class to check.
+
+        """
+        # check each constraint function and fail when a constraint test fails
+        for constraint in self.constraints:
+            if not constraint(partition):
+                return False
+
+        # all constraints are satisfied
+        return True
+
+
+class Bounds:
+    """
+    Wrapper for numeric-validators to enforce upper and lower limits.
+
+    This class is meant to be called as a function after instantiation; its
+    return is ``True`` if the numeric validator is within set limits, and
+    ``False`` otherwise.
+
+    """
+    def __init__(self, func, bounds):
+        """
+        :func: Numeric validator function. Should return an iterable of values.
+        :bounds: Tuple of (lower, upper) numeric bounds.
+        """
+        self.func = func
+        self.bounds = bounds
+
+    def __call__(self, *args, **kwargs):
+        lower, upper = self.bounds
+        values = self.func(*args, **kwargs)
+        return lower <= min(values) and max(values) <= upper
+
+    @property
+    def __name__(self):
+        return "Bounds({})".format(self.func.__name__)
+
+
+class UpperBound:
+    """
+    Wrapper for numeric-validators to enforce upper limits.
+
+    This class is meant to be called as a function after instantiation; its
+    return is ``True`` if the numeric validator is within a set upper limit,
+    and ``False`` otherwise.
+
+    """
+    def __init__(self, func, bound):
+        """
+        :func: Numeric validator function. Should return a comparable value.
+        :bounds: Comparable upper bound.
+        """
+        self.func = func
+        self.bound = bound
+
+    def __call__(self, *args, **kwargs):
+        return self.func(*args, **kwargs) <= self.bound
+
+    @property
+    def __name__(self):
+        return "UpperBound({})".format(self.func.__name__)
+
+
+class LowerBound:
+    """
+    Wrapper for numeric-validators to enforce lower limits.
+
+    This class is meant to be called as a function after instantiation; its
+    return is ``True`` if the numeric validator is within a set lower limit,
+    and ``False`` otherwise.
+
+    """
+    def __init__(self, func, bound):
+        """
+        :func: Numeric validator function. Should return a comparable value.
+        :bounds: Comparable lower bound.
+        """
+        self.func = func
+        self.bound = bound
+
+    def __call__(self, *args, **kwargs):
+        return self.func(*args, **kwargs) >= self.bound
+
+    @property
+    def __name__(self):
+        return "LowerBound({})".format(self.func.__name__)
+
+
 class SelfConfiguringUpperBound:
+    """
+    Wrapper for numeric-validators to enforce automatic upper limits.
+
+    When instantiated, the initial upper bound is set as the initial value of
+    the numeric-validator.
+
+    This class is meant to be called as a function after instantiation; its
+    return is ``True`` if the numeric validator is within a set upper limit,
+    and ``False`` otherwise.
+
+    """
     def __init__(self, func):
+        """
+        :func: Numeric validator function.
+        """
         self.func = func
         self.bound = None
 
@@ -25,7 +190,22 @@ class SelfConfiguringUpperBound:
 
 
 class SelfConfiguringLowerBound:
+    """
+    Wrapper for numeric-validators to enforce automatic lower limits.
+
+    When instantiated, the initial lower bound is set as the initial value of
+    the numeric-validator minus some configurable ε.
+
+    This class is meant to be called as a function after instantiation; its
+    return is ``True`` if the numeric validator is within a set lower limit,
+    and ``False`` otherwise.
+
+    """
     def __init__(self, func, epsilon=0.05):
+        """
+        :func: Numeric validator function.
+        :epsilon: Initial "wiggle room" that the validator allows.
+        """
         self.func = func
         self.bound = None
         self.epsilon = epsilon
@@ -36,19 +216,6 @@ class SelfConfiguringLowerBound:
             return self.__call__(partition)
         else:
             return self.func(partition) >= self.bound
-
-
-def L1_reciprocal_polsby_popper(partition):
-    return sum(1 / value for value in partition['polsby_popper'].values())
-
-
-def L_minus_1_polsby_popper(partition):
-    return len(partition.parts) / sum(1 / value for value in partition['polsby_popper'].values())
-
-
-no_worse_L_minus_1_polsby_popper = SelfConfiguringLowerBound(L_minus_1_polsby_popper)
-
-no_worse_L1_reciprocal_polsby_popper = SelfConfiguringUpperBound(L1_reciprocal_polsby_popper)
 
 
 class WithinPercentRangeOfBounds:
@@ -67,87 +234,44 @@ class WithinPercentRangeOfBounds:
             return self.lbound <= self.func(partition) <= self.ubound
 
 
+def L1_reciprocal_polsby_popper(partition):
+    return sum(1 / value for value in partition['polsby_popper'].values())
+
+
+def L_minus_1_polsby_popper(partition):
+    return len(partition.parts) / sum(1 / value for value in partition['polsby_popper'].values())
+
+
+no_worse_L_minus_1_polsby_popper = SelfConfiguringLowerBound(L_minus_1_polsby_popper)
+
+no_worse_L1_reciprocal_polsby_popper = SelfConfiguringUpperBound(L1_reciprocal_polsby_popper)
+
+
 def L1_reciprocal_discrete_polsby_popper(partition):
     return sum(1 / value for value in partition['discrete_polsby_popper'].values())
 
 
-def population(partition):
-    return partition['population'].values()
-
-
 def within_percent_of_ideal_population(initial_partition, percent=0.01):
     """
-    Slightly different implementation of the 'within 1%' rule, based on the text of
-    Moon's PA report.
+    Require that all districts are within a certain percent of "ideal" (i.e.,
+    uniform) population.
+
+    Ideal population is defined as "total population / number of districts."
+
+    :initial_partition: Starting partition from which to compute district information.
+    :percent: Allowed percentage deviation.
+    :returns: A :class:`.Bounds` instance.
+
     """
+    def population(partition):
+        return partition["population"].values()
+
     number_of_districts = len(initial_partition['population'].keys())
     total_population = sum(initial_partition['population'].values())
     ideal_population = total_population / number_of_districts
     bounds = ((1 - percent) * ideal_population, (1 + percent) * ideal_population)
-    return Bounds(func=population, bounds=bounds)
 
-
-class Bounds:
-    def __init__(self, func, bounds):
-        self.func = func
-        self.bounds = bounds
-
-    def __call__(self, *args, **kwargs):
-        lower, upper = self.bounds
-        values = self.func(*args, **kwargs)
-        return lower <= min(values) and max(values) <= upper
-
-    @property
-    def __name__(self):
-        return "Bound({})".format(self.func.__name__)
-
-
-class UpperBound:
-    def __init__(self, func, bound):
-        self.func = func
-        self.bound = bound
-
-    def __call__(self, *args, **kwargs):
-        return self.func(*args, **kwargs) <= self.bound
-
-    @property
-    def __name__(self):
-        return "UpperBound({})".format(self.func.__name__)
-
-
-class LowerBound:
-    def __init__(self, func, bound):
-        self.func = func
-        self.bound = bound
-
-    def __call__(self, *args, **kwargs):
-        return self.func(*args, **kwargs) >= self.bound
-
-    @property
-    def __name__(self):
-        return "LowerBound({})".format(self.func.__name__)
-
-
-class Validator:
-    def __init__(self, constraints):
-        """:constraints: List of validator functions that will check partitions."""
-        logger.info("validator", self, "created")
-        self.constraints = constraints
-
-    def __call__(self, partition):
-        """:partition: :class:`Partition` class to check."""
-
-        # check each constraint function and fail when a constraint test fails
-        for constraint in self.constraints:
-            if constraint(partition) is False:
-                name = constraint.__name__
-                logger.debug("{} constraint failed: {}".format(self, name))
-                return False
-
-            logger.debug("{} constraints passed".format(self))
-
-        # all constraints are satisfied
-        return True
+    return Bounds(population, bounds=bounds)
 
 
 def single_flip_contiguous(partition):
@@ -224,13 +348,14 @@ def single_flip_contiguous(partition):
 
 
 def contiguous(partition):
-    """
-    :parition: Current :class:`.Partition` object.
+    """Check if the assignment blocks of a partition are connected.
+
+    :parition: :class:`rundmcmc.partition.Partition` instance.
     :flips: Dictionary of proposed flips, with `(nodeid: new_assignment)`
-            pairs. If `flips` is `None`, then fallback to the
-            :func:`.contiguous` check.
+            pairs. If `flips` is `None`, then fallback :func:`.contiguous`.
 
     :returns: True if contiguous, False otherwise.
+
     """
     flips = partition.flips
     if not flips:
@@ -265,11 +390,11 @@ def contiguous(partition):
 
 def fast_connected(partition):
     """
-        Checks that a given partition's components are connected using
-        a simple breadth-first search.
-        :partition: Instance of Partition; contains connected components.
-        :flips: Dictionary of proposed flips.
-        :return: Boolean; Are the components of this partition connected?
+    Checks that a given partition's components are connected using a simple breadth-first search.
+
+    :partition: Instance of Partition; contains connected components.
+    :returns: Boolean; Are the components of this partition connected?
+
     """
     assignment = partition.assignment
 
@@ -284,7 +409,7 @@ def fast_connected(partition):
     # to check connectedness.
     for district in districts:
         adj = nx.to_dict_of_lists(partition.graph, districts[district])
-        if bfs(adj) is False:
+        if _bfs(adj) is False:
             return False
 
     return True
@@ -292,10 +417,10 @@ def fast_connected(partition):
 
 def non_bool_fast_connected(partition):
     """
-        Checks that a given partition's components are connected using
-        a simple breadth-first search.
-        :partition: Instance of Partition; contains connected components.
-        :return: int: number of contiguous districts
+    Return the number of non-connected assignment subgraphs.
+
+    :partition: Instance of Partition; contains connected components.
+    :return: int: number of contiguous districts
     """
     assignment = partition.assignment
 
@@ -311,7 +436,7 @@ def non_bool_fast_connected(partition):
     # to check connectedness.
     for district in districts:
         adj = nx.to_dict_of_lists(partition.graph, districts[district])
-        if bfs(adj):
+        if _bfs(adj):
             returns += 1
 
     return returns
@@ -320,13 +445,14 @@ def non_bool_fast_connected(partition):
 no_more_disconnected = SelfConfiguringLowerBound(non_bool_fast_connected)
 
 
-def bfs(graph):
+def _bfs(graph):
     """
-        Performs a breadth-first search on the provided graph and
-        returns true or false depending on whether the graph is
-        connected.
-        :graph: Dict-of-lists; an adjacency matrix.
-        :return: Boolean; is this graph connected?
+    Performs a breadth-first search on the provided graph and returns true or
+    false depending on whether the graph is connected.
+
+    :graph: Dict-of-lists; an adjacency matrix.
+    :returns: Boolean; is this graph connected?
+
     """
     q = [next(iter(graph))]
     visited = set()
@@ -350,24 +476,16 @@ def bfs(graph):
     return total_vertices == len(visited)
 
 
-def fast_local_connected(partition, flips=None):
-    """
-        Checks that a given partition's components are connected, but
-        uses a specific optimized method (with a forthcoming proof).
-        :partition: Instance of Partition; contains connected components.
-        :flips: Dictionary of proposed flips.
-        :return: Boolean; are the components of this partition connected?
-    """
-    pass
-
-
-# TODO make attrName and percentage configurable
 def districts_within_tolerance(partition, attribute_name="population", percentage=0.1):
     """
+    Check if all districts are within a certain percentage of the "smallest"
+    district, as defined by the given attribute.
+
     :partition: partition class instance
     :attrName: string that is the name of an updater in partition
     :percentage: what percent difference is allowed
     :return: boolean of if the districts are within specified tolerance
+
     """
     if percentage >= 1:
         percentage *= 0.01
@@ -379,16 +497,18 @@ def districts_within_tolerance(partition, attribute_name="population", percentag
     return within_tolerance
 
 
-# NOTE: this returns the maximum imbalance of popuation
 def population_balance(partition, attribute_name="population"):
+    """
+    Compute the ratio "range / minimum value" of the given attribute on
+    assignment blocks.
+    """
     values = partition[attribute_name].values()
     max_difference = max(values) - min(values)
     return max_difference / min(values)
 
 
 def refuse_new_splits(partition_county_field):
-    """
-    Refuse all proposals that split a county that was previous unsplit.
+    """Refuse all proposals that split a county that was previous unsplit.
 
     :partition_county_field: Name of field for county information generated by
                              :func:`.county_splits`.
@@ -405,6 +525,7 @@ def refuse_new_splits(partition_county_field):
 
 
 def no_vanishing_districts(partition):
+    """Require that no districts be completely consumed."""
     if not partition.parent:
         return True
     return len(partition) == len(partition.parent)
