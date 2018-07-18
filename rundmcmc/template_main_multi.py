@@ -38,8 +38,8 @@ from rundmcmc.validity import (L1_reciprocal_polsby_popper,
 
 from rundmcmc.scores import (efficiency_gap, mean_median,
                              mean_thirdian, how_many_seats_value,
-                             population_range, number_boundary_components,
-                             number_cut_edges, number_boundary_nodes)
+                             population_range,
+                             number_cut_edges)
 
 from rundmcmc.run import pipe_to_table
 
@@ -105,7 +105,8 @@ election_columns = [['T16PRESD', 'T16PRESR'], ['T16SEND', 'T16SENR']]
 
 
 # This adds the data to the graph
-add_data_to_graph(df, graph, [cols for pair in election_columns for cols in pair])#, id_col=unique_label)
+add_data_to_graph(df, graph, [cols for pair in election_columns for cols in pair])
+# , id_col=unique_label)
 
 
 # Desired proposal method
