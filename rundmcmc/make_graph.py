@@ -1,7 +1,7 @@
 import networkx
 import pandas as pd
 import geopandas as gp
-import pysal as ps
+import pysal
 import json
 from networkx.readwrite import json_graph
 from shapely.ops import cascaded_union
@@ -89,7 +89,7 @@ def construct_graph_from_df(df, id_column=None, cols_to_add=None):
         df = df.set_index(id_column)
 
     # Generate rook neighbor lists from dataframe.
-    neighbors = ps.weights.Rook.from_dataframe(
+    neighbors = pysal.weights.Rook.from_dataframe(
         df, geom_col="geometry").neighbors
 
     vtds = neighbors_with_shared_perimeters(neighbors, df)
