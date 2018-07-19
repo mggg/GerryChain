@@ -27,7 +27,7 @@ def mean_median(partition, proportion_column_name):
     if proportion_column_name[-1] != "%":
         proportion_column_name = proportion_column_name + "%"
     data = list(partition[proportion_column_name].values())
-    return numpy.median(data) - numpy.mean(data)
+    return numpy.mean(data) - numpy.median(data)
 
 
 def mean_thirdian(partition, proportion_column_name):
@@ -35,7 +35,7 @@ def mean_thirdian(partition, proportion_column_name):
         proportion_column_name = proportion_column_name + "%"
 
     data = list(partition[proportion_column_name].values())
-    return numpy.percentile(data, 33) - numpy.mean(data)
+    return numpy.mean(data) - numpy.percentile(data, 33)
 
 
 def normalized_efficiency_gap(partition, proportion_column_name):
@@ -129,31 +129,3 @@ def how_many_seats(col1, col2):
     def function(partition):
         return sum(partition[col1][part] > partition[col2][part] for part in partition.parts)
     return function
-
-
-def how_many_seats_value(partition, col1, col2):
-    return sum(partition[col1][part] > partition[col2][part] for part in partition.parts)
-
-
-def population_range(partition):
-    return (max(partition["population"].values()) - min(partition["population"].values()))
-
-
-def number_cut_edges(partition):
-    return len(partition["cut_edges"])
-
-
-def number_boundary_nodes(partition):
-    return len(partition["boundary_nodes"])
-
-
-def number_boundary_components(partition):
-    return len(partition["cut_edges_by_part"].values())
-
-
-def mean_pop(partition):
-    number_of_districts = len(partition['population'].keys())
-    total_population = sum(partition['population'].values())
-    mean_population = total_population / number_of_districts
-
-    return mean_population
