@@ -47,6 +47,8 @@ examples of this.
 from .validity import (L1_reciprocal_polsby_popper,
                        L1_reciprocal_discrete_polsby_popper,
                        L_minus_1_polsby_popper, Validator,
+                       no_worse_L_minus_1_polsby_popper,
+                       no_worse_L1_reciprocal_polsby_popper,
                        no_vanishing_districts, refuse_new_splits,
                        single_flip_contiguous, contiguous,
                        within_percent_of_ideal_population,
