@@ -35,7 +35,7 @@ def get_list_of_data(filepath, col_name, geoid=None):
     return data
 
 
-def add_data_to_graph(df, graph, col_names):
+def add_data_to_graph(df, graph, col_names, id_column=None):
     """Add columns of a dataframe to a graph using the the index as node ids.
 
     :df: Dataframe containing given columns.
@@ -44,7 +44,12 @@ def add_data_to_graph(df, graph, col_names):
     :returns: Nothing.
 
     """
-    column_dictionaries = df[col_names].to_dict('index')
+    if id_column:
+        indexed_df = df.set_index(id_column)
+    else:
+        indexed_df = df
+
+    column_dictionaries = indexed_df[col_names].to_dict('index')
     networkx.set_node_attributes(graph, column_dictionaries)
 
 
