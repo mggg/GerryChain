@@ -35,7 +35,7 @@ def get_list_of_data(filepath, col_name, geoid=None):
     return data
 
 
-def add_data_to_graph(df, graph, col_names):
+def add_data_to_graph(df, graph, col_names, id_column=None):
     """Add columns of a dataframe to a graph using the the index as node ids.
 
     :df: Dataframe containing given columns.
@@ -44,7 +44,12 @@ def add_data_to_graph(df, graph, col_names):
     :returns: Nothing.
 
     """
-    column_dictionaries = df[col_names].to_dict('index')
+    if id_column:
+        indexed_df = df.set_index(id_column)
+    else:
+        indexed_df = df
+
+    column_dictionaries = indexed_df[col_names].to_dict('index')
     networkx.set_node_attributes(graph, column_dictionaries)
 
 
@@ -58,23 +63,17 @@ def add_boundary_perimeters(graph, neighbors, df):
     :returns: The updated graph.
 
     """
-    all_units = df['geometry']
     # creates one shape of the entire state to compare outer boundaries against
-    boundary = gp.GeoSeries(cascaded_union(all_units).boundary)
+    boundary = cascaded_union(df["geometry"]).boundary
 
-    # finds if it intersects on outside and sets
-    # a 'boundary_node' attribute to true if it does
-    # if it is set to true, it also adds how much shared
-    # perimiter they have to a 'boundary_perim' attribute
-    for node in neighbors:
-        graph.node[node]['boundary_node'] = boundary.intersects(
-            df.loc[node, "geometry"]).bool()
+    intersections = df.intersection(boundary)
+    boundary_nodes = intersections[intersections.apply(bool)]
+    boundary_nodes = gp.GeoDataFrame(boundary_nodes.apply(lambda s: s.length))
+    boundary_nodes.columns = ["boundary_perim"]
+    boundary_nodes["boundary_node"] = gp.GeoSeries(True, index=boundary_nodes.index)
 
-        if boundary.intersects(df.loc[node, "geometry"]).bool():
-            graph.node[node]['boundary_perim'] = float(
-                boundary.intersection(df.loc[node, "geometry"]).length)
-
-    return graph
+    attribute_dict = boundary_nodes.to_dict("index")
+    networkx.set_node_attributes(graph, attribute_dict)
 
 
 def neighbors_with_shared_perimeters(neighbors, df):

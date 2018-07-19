@@ -14,3 +14,14 @@ def test_add_data_to_graph_can_handle_column_names_that_start_with_numbers():
     assert graph.nodes['01']['16SenDVote'] == 20
     assert graph.nodes['02']['16SenDVote'] == 30
     assert graph.nodes['03']['16SenDVote'] == 50
+
+
+def test_add_data_to_graph_can_handle_unset_index_when_id_col_is_passed():
+    graph = networkx.Graph([('01', '02'), ('02', '03'), ('03', '01')])
+    df = pandas.DataFrame({'16SenDVote': [20, 30, 50], 'node': ['01', '02', '03']})
+
+    add_data_to_graph(df, graph, ['16SenDVote'], id_column='node')
+
+    assert graph.nodes['01']['16SenDVote'] == 20
+    assert graph.nodes['02']['16SenDVote'] == 30
+    assert graph.nodes['03']['16SenDVote'] == 50
