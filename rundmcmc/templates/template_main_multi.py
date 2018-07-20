@@ -42,9 +42,15 @@ from rundmcmc.scores import (efficiency_gap, mean_median,
                              population_range,
                              number_cut_edges)
 
+<<<<<<< HEAD:rundmcmc/template_main_multi.py
 from rundmcmc.output import p_value_report, pipe_to_table
 
 from vis_output import (hist_of_table_scores, trace_of_table_scores)
+=======
+from rundmcmc.gui import pipe_to_table
+
+from rundmcmc.output import p_value_report, hist_of_table_scores, trace_of_table_scores
+>>>>>>> 1fbb45e04c2329776fbc41668915fa730b0fe20d:rundmcmc/templates/template_main_multi.py
 
 logging.basicConfig(filename="template.log", format="{name}:{lineno} {msg}",
                     style="{", filemode="w", level=logging.DEBUG)
@@ -65,7 +71,7 @@ with open(newdir + "init.txt", "w") as f:
 # Input the path to the graph (either JSON or shapefile) and the label column
 # This file should have at least population, area, and district plan
 state_name = "Pennsylvania"
-graph_path = "./testData/PA_rook.json"
+graph_path = "../testData/PA_rook.json"
 unique_label = "wes_id"
 
 
@@ -87,7 +93,7 @@ assignment = get_assignment_dict_from_graph(graph, district_col)
 
 
 # Input the shapefile with vote data here
-vote_path = "./testData/wes_with_districtings.shp"
+vote_path = "../testData/wes_with_districtings.shp"
 
 
 # This inputs a shapefile with columns you want to add

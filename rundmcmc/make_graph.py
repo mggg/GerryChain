@@ -17,7 +17,7 @@ def get_list_of_data(filepath, col_name, geoid=None):
 
     """
     # Checks if you have inputed a csv or shp file then captures the data
-    extension = os.path.splitext(filepath)
+    extension = os.path.splitext(filepath)[-1]
 
     if extension.lower() == "csv":
         df = pd.read_csv(filepath)
