@@ -1,5 +1,4 @@
-from rundmcmc.defaults import GridChain
-from rundmcmc.grid import Grid
+from rundmcmc.defaults import GridChain, Grid
 
 
 def test_grid_can_run_with_grid_chain():

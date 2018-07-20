@@ -1,4 +1,4 @@
-from rundmcmc.run import run
+from rundmcmc.gui import run
 
 
 class MockChain:
