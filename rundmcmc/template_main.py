@@ -35,9 +35,7 @@ from rundmcmc.validity import (L1_reciprocal_polsby_popper,
 from rundmcmc.scores import (efficiency_gap, mean_median,
                              mean_thirdian)
 
-from rundmcmc.run import pipe_to_table
-
-from rundmcmc.output import p_value_report
+from rundmcmc.output import p_value_report, pipe_to_table
 
 from vis_output import (hist_of_table_scores, trace_of_table_scores)
 
@@ -148,9 +146,7 @@ scores = {
 
 initial_scores = {key: score(initial_partition) for key, score in scores.items()}
 
-table = pipe_to_table(chain, scores, display=True, display_frequency=100,
-                      bin_frequency=1)
-
+table = pipe_to_table(chain, scores, display=True, number_to_display=100)
 
 # Histogram Plotting
 hist_path = "chain_histogram31.png"

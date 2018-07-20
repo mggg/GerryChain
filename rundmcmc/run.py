@@ -1,28 +1,6 @@
 import json
 import math
-from rundmcmc.output import ChainOutputTable
-
-
-def run(chain, loggers):
-    """run runs the chain.
-    All the `during` methods of each of the loggers are called for each step
-    in the chain. The `before` and `during` methods each take a `state` parameter,
-    which is an instance of the Partition class. After the random walk is
-    over, we call the `after` method of each logger for clean-up tasks, like
-    printing a summary or generating figures.
-
-    :chain: MarkovChain instance
-    :loggers: list of Loggers (objects with before, during, and after methods)
-    """
-
-    for logger in loggers:
-        logger.before(chain)
-
-    for state in chain:
-        for logger in loggers:
-            logger.during(state)
-
-    return [logger.after(chain.state) for logger in loggers]
+from rundmcmc.output import ChainOutputTable, handle_chain
 
 
 class PeriodicFlipsReport:
@@ -44,28 +22,6 @@ class PeriodicFlipsReport:
             return self.flips_since_last_report
         else:
             return None
-
-
-def handle_chain(chain, handlers):
-    for state in chain:
-        yield {key: handler(state) for key, handler in handlers.items()}
-
-
-def pipe_to_table(chain, handlers, display=True, number_to_display=10,
-                  number_to_bin=100):
-    table = ChainOutputTable()
-    display_interval = math.floor(len(chain) / number_to_display)
-    bin_interval = math.floor(len(chain) / number_to_bin)
-    counter = 0
-    for row in handle_chain(chain, handlers):
-        if counter % display_interval == 0:
-            if display:
-                print(f"Step {counter}")
-                print(row)
-        if counter % bin_interval == 0:
-            table.append(row)
-        counter += 1
-    return table
 
 
 def flips_to_dict(chain, handlers=None):

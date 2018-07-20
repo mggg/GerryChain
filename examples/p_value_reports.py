@@ -1,8 +1,7 @@
 import functools
 
 from rundmcmc.defaults import BasicChain, PA_partition
-from rundmcmc.output import p_value_report
-from rundmcmc.run import pipe_to_table
+from rundmcmc.output import p_value_report, pipe_to_table
 from rundmcmc.scores import efficiency_gap, mean_median, mean_thirdian
 
 

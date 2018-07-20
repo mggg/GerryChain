@@ -42,9 +42,7 @@ from rundmcmc.scores import (efficiency_gap, mean_median,
                              population_range,
                              number_cut_edges)
 
-from rundmcmc.run import pipe_to_table
-
-from rundmcmc.output import p_value_report
+from rundmcmc.output import p_value_report, pipe_to_table
 
 from vis_output import (hist_of_table_scores, trace_of_table_scores)
 
@@ -221,8 +219,7 @@ for i in range(num_elections):
 # Compute the values of the intial state and the chain
 initial_scores = {key: score(initial_partition) for key, score in scores.items()}
 
-table = pipe_to_table(chain, scores, display=True, number_to_display=10,
-                      number_to_bin=steps)
+table = pipe_to_table(chain, scores, display=True, number_to_display=10)
 
 
 # P-value reports
