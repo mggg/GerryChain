@@ -1,5 +1,5 @@
 import sys
-from rundmcmc.parse_config import read_basic_config
+from rundmcmc.gui import read_basic_config
 
 
 def main(args=None):

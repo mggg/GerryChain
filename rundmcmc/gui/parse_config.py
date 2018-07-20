@@ -12,18 +12,17 @@ import rundmcmc.scores as scores
 import rundmcmc.proposals as proposals
 import rundmcmc.accept as accepts
 import rundmcmc.output as outputs
-import rundmcmc.vis_output as visoutputs
 
 from rundmcmc.partition import Partition
 from rundmcmc.chain import MarkovChain
-from rundmcmc.run import handle_scores_separately
+from rundmcmc.gui import handle_scores_separately
 from rundmcmc.updaters import votes_updaters
 
 thismodule = sys.modules[__name__]
 
 
 def write_hists(a, b, c, filename=''):
-    visoutputs.hist_of_table_scores(a[0], a[2], filename)
+    outputs.hist_of_table_scores(a[0], a[2], filename)
 
 
 def write_flips(a, b, c, filename=''):
@@ -161,6 +160,7 @@ def gsource_gdata(config, graphSource, graphData):
 
     path = configGraphSource[graph_source_field]
     save_graph = False
+    load_graph = False
 
     if save_graph_field in configGraphSource:
         save_graph = True
@@ -168,8 +168,10 @@ def gsource_gdata(config, graphSource, graphData):
             print("trying to load graph from", path)
             path = configGraphSource[save_graph_field]
             save_graph = False
+            load_graph = True
 
-    graph = mgs.construct_graph(path, ID, [POP, AREA, CD])
+    type = "json" if load_graph else "fiona"
+    graph = mgs.construct_graph(path, ID, [POP, AREA, CD], data_source_type=type)
 
     if save_graph:
         print("saving graph to", configGraphSource[save_graph_field])
