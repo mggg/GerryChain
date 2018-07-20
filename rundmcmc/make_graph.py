@@ -67,12 +67,22 @@ def add_boundary_perimeters(graph, neighbors, df):
     boundary = cascaded_union(df["geometry"]).boundary
 
     intersections = df.intersection(boundary)
-    boundary_nodes = intersections[intersections.apply(bool)]
-    boundary_nodes = gp.GeoDataFrame(boundary_nodes.apply(lambda s: s.length))
-    boundary_nodes.columns = ["boundary_perim"]
-    boundary_nodes["boundary_node"] = gp.GeoSeries(True, index=boundary_nodes.index)
+    is_boundary = intersections.apply(bool)
 
-    attribute_dict = boundary_nodes.to_dict("index")
+    # Add boundary node information to the graph.
+    intersection_df = gp.GeoDataFrame(intersections)
+    intersection_df["boundary_node"] = is_boundary
+
+    # List-indexing here to get the correct dictionary format for NetworkX.
+    attr_dict = intersection_df[["boundary_node"]].to_dict("index")
+    networkx.set_node_attributes(graph, attr_dict)
+
+    # For the boundary nodes, set the boundary perimeter.
+    boundary_perims = intersections[is_boundary].apply(lambda s: s.length)
+    boundary_perims = gp.GeoDataFrame(boundary_perims)
+    boundary_perims.columns = ["boundary_perim"]
+
+    attribute_dict = boundary_perims.to_dict("index")
     networkx.set_node_attributes(graph, attribute_dict)
 
 
