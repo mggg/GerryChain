@@ -44,6 +44,9 @@ jobs:
           name: run tests
           command: |
             # source activate adj
+            # Direct matplotlib to use the Agg (non-graphical) backend during
+            # circleci runs.
+            echo "backend: Agg" > "matplotlibrc"
             pytest -v --cov=rundmcmc tests
             codecov
 
