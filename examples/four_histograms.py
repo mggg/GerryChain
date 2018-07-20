@@ -3,7 +3,7 @@ import functools
 import matplotlib.pyplot as plt
 
 from rundmcmc.defaults import BasicChain, PA_partition
-from rundmcmc.run import pipe_to_table
+from rundmcmc.output import pipe_to_table
 from rundmcmc.scores import efficiency_gap, mean_median, mean_thirdian
 from rundmcmc.validity import L1_reciprocal_polsby_popper
 

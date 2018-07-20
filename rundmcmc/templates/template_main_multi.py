@@ -42,9 +42,8 @@ from rundmcmc.scores import (efficiency_gap, mean_median,
                              population_range,
                              number_cut_edges)
 
-from rundmcmc.gui import pipe_to_table
-
-from rundmcmc.output import p_value_report, hist_of_table_scores, trace_of_table_scores
+from rundmcmc.output import (p_value_report, hist_of_table_scores,
+                             trace_of_table_scores, pipe_to_table)
 
 logging.basicConfig(filename="template.log", format="{name}:{lineno} {msg}",
                     style="{", filemode="w", level=logging.DEBUG)
