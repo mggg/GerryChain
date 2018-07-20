@@ -114,24 +114,6 @@ def get_chain_scores(chain, handlers):
             for state in chain)
 
 
-def pipe_to_table(chain, handlers, display=True, number_to_display=10,
-                  number_to_bin=100):
-    table = ChainOutputTable()
-    display_interval = math.floor(len(chain) / number_to_display)
-    bin_interval = math.floor(len(chain) / number_to_bin)
-    counter = 0
-
-    for row in get_chain_scores(chain, handlers):
-        if counter % display_interval == 0:
-            if display:
-                print(f"Step {counter}")
-                print(row)
-        if counter % bin_interval == 0:
-            table.append(row)
-        counter += 1
-    return table
-
-
 def handle_scores_separately(chain, handlers):
     table = ChainOutputTable()
 
