@@ -101,6 +101,27 @@ class ChainOutputTable:
         return get_from_each(self.data, district_id)
 
 
+def pipe_to_table(chain, handlers, display=True, number_to_display=10,
+                  number_to_bin=100):
+    table = ChainOutputTable()
+    display_interval = math.floor(len(chain) / number_to_display)
+    bin_interval = math.floor(len(chain) / number_to_bin)
+    counter = 0
+
+    rows = ({key: handler(state) for key, handler in handlers.items()}
+                                 for state in chain)
+
+    for row in rows:
+        if counter % display_interval == 0:
+            if display:
+                print(f"Step {counter}")
+                print(row)
+        if counter % bin_interval == 0:
+            table.append(row)
+        counter += 1
+    return table
+
+
 def get_from_each(table, key):
     return [{header: row[header][key] for header in row if key in row[header]}
             for row in table]
