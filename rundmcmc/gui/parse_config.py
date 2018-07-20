@@ -15,7 +15,6 @@ import rundmcmc.output as outputs
 
 from rundmcmc.partition import Partition
 from rundmcmc.chain import MarkovChain
-from rundmcmc.gui import handle_scores_separately
 from rundmcmc.updaters import votes_updaters
 
 thismodule = sys.modules[__name__]
@@ -225,7 +224,7 @@ def escores_edata(config, evalScores, evalScoresData):
 
             output_vis_type = lambda x, y, z: [a(x, y, z) for a in output_funcs]
 
-        chainfunc = functools.partial(handle_scores_separately, handlers=eval_scores)
+        chainfunc = functools.partial(outputs.handle_scores_separately, handlers=eval_scores)
 
     return eval_scores, chainfunc, eval_list, output_vis_type, output_file_name
 

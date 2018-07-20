@@ -101,6 +101,19 @@ class ChainOutputTable:
         return get_from_each(self.data, district_id)
 
 
+def get_chain_scores(chain, handlers):
+    """Yield scores from handlers on each state in the chain.
+
+    :chain: :class:`rundmcmc.chain.MarkovChain` instance.
+    :handlers: Dictionary of {name: func} pairs.
+    :returns: A generator yielding dictionaries of {name: result} pairs from
+              handlers.
+
+    """
+    return ({key: handler(state) for key, handler in handlers.items()}
+            for state in chain)
+
+
 def pipe_to_table(chain, handlers, display=True, number_to_display=10,
                   number_to_bin=100):
     table = ChainOutputTable()
@@ -108,10 +121,7 @@ def pipe_to_table(chain, handlers, display=True, number_to_display=10,
     bin_interval = math.floor(len(chain) / number_to_bin)
     counter = 0
 
-    rows = ({key: handler(state) for key, handler in handlers.items()}
-                                 for state in chain)
-
-    for row in rows:
+    for row in get_chain_scores(chain, handlers):
         if counter % display_interval == 0:
             if display:
                 print(f"Step {counter}")
@@ -121,6 +131,30 @@ def pipe_to_table(chain, handlers, display=True, number_to_display=10,
         counter += 1
     return table
 
+
+def handle_scores_separately(chain, handlers):
+    table = ChainOutputTable()
+
+    initialScores = {key: handler(chain.state) for
+            key, handler in handlers.items() if key != "flips"}
+    table.append(initialScores)
+
+    nhandlers = {key: value for key, value in handlers.items() if key != "flips"}
+
+    jsonToText = '{'
+    jsonSave = False
+    if "flips" in list(handlers.keys()):
+        jsonToText += '"0": ' + json.dumps(handlers['flips'](chain.state))
+        jsonSave = True
+
+    for row in get_chain_scores(chain, nhandlers):
+        table.append(row)
+        if jsonSave:
+            jsonToText += ", " + "\"" + str(chain.counter + 1) + "\"" \
+            + ": " + json.dumps(handlers["flips"](chain.state))
+    jsonToText += '}'
+
+    return (table, jsonToText, nhandlers)
 
 def get_from_each(table, key):
     return [{header: row[header][key] for header in row if key in row[header]}
