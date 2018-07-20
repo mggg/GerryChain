@@ -156,6 +156,7 @@ def handle_scores_separately(chain, handlers):
 
     return (table, jsonToText, nhandlers)
 
+
 def get_from_each(table, key):
     return [{header: row[header][key] for header in row if key in row[header]}
             for row in table]

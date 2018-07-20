@@ -1,8 +1,3 @@
-import json
-import math
-from rundmcmc.output import ChainOutputTable
-
-
 def run(chain, loggers):
     """run runs the chain.
     All the `during` methods of each of the loggers are called for each step
