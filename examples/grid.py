@@ -6,7 +6,7 @@ from rundmcmc.validity import Validator, single_flip_contiguous
 from rundmcmc.proposals import propose_random_flip
 from rundmcmc.accept import always_accept
 from rundmcmc.chain import MarkovChain
-from rundmcmc.grid import Grid
+from rundmcmc.defaults.grid import Grid
 import matplotlib.pyplot as plt
 
 is_valid = Validator([single_flip_contiguous])

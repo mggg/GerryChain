@@ -47,7 +47,7 @@ Now we can start playing with Markov chains! First we'll import some things.
 
 .. code-block:: python
 
-    from rundmcmc.grid import Grid
+    from rundmcmc.defaults.grid import Grid
 
 The `Grid` class is a little helper class for playing around with grid examples.
 
