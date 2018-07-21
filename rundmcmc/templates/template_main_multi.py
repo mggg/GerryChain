@@ -218,8 +218,7 @@ for i in range(num_elections):
 # Compute the values of the intial state and the chain
 initial_scores = {key: score(initial_partition) for key, score in scores.items()}
 
-table = pipe_to_table(chain, scores, display=True, number_to_display=10,
-                      number_to_bin=steps)
+table = pipe_to_table(chain, scores, display=True, number_to_display=10)
 
 
 # P-value reports

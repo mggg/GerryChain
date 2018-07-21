@@ -2,7 +2,7 @@ import os
 
 import matplotlib.pyplot as plt
 
-from rundmcmc.grid import Grid, grid_size
+from rundmcmc.defaults.grid import Grid, grid_size
 
 from rundmcmc.validity import (fast_connected, Validator, no_vanishing_districts,
                                within_percent_of_ideal_population)

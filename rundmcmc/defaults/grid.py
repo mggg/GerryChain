@@ -79,8 +79,11 @@ def create_grid_graph(dimensions, with_diagonals):
         diagonal_edges = nw_to_se + sw_to_ne
         graph.add_edges_from(diagonal_edges)
 
-    give_constant_attribute(graph, 'population', 1)
+    networkx.set_node_attributes(graph, 1, 'population')
+    networkx.set_node_attributes(graph, 1, 'area')
+
     tag_boundary_nodes(graph, dimensions)
+    networkx.set_edge_attributes(graph, 1, 'shared_perim')
 
     return graph
 
@@ -93,7 +96,21 @@ def give_constant_attribute(graph, attribute, value):
 def tag_boundary_nodes(graph, dimensions):
     m, n = dimensions
     for node in graph.nodes:
-        graph.nodes[node]['boundary_node'] = node[0] in [0, m - 1] or node[1] in [0, n - 1]
+        if node[0] in [0, m - 1] or node[1] in [0, n - 1]:
+            graph.nodes[node]['boundary_node'] = True
+            graph.nodes[node]['boundary_perim'] = get_boundary_perim(node, dimensions)
+        else:
+            graph.nodes[node]['boundary_node'] = False
+
+
+def get_boundary_perim(node, dimensions):
+    m, n = dimensions
+    if node in [(0, 0), (m, 0), (0, n), (m, n)]:
+        return 2
+    elif node[0] in [0, m] or node[1] in [0, n]:
+        return 1
+    else:
+        return 0
 
 
 def color_half(node, threshold=5):

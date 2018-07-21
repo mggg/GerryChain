@@ -114,24 +114,6 @@ def get_chain_scores(chain, handlers):
             for state in chain)
 
 
-def pipe_to_table(chain, handlers, display=True, number_to_display=10,
-                  number_to_bin=100):
-    table = ChainOutputTable()
-    display_interval = math.floor(len(chain) / number_to_display)
-    bin_interval = math.floor(len(chain) / number_to_bin)
-    counter = 0
-
-    for row in get_chain_scores(chain, handlers):
-        if counter % display_interval == 0:
-            if display:
-                print(f"Step {counter}")
-                print(row)
-        if counter % bin_interval == 0:
-            table.append(row)
-        counter += 1
-    return table
-
-
 def handle_scores_separately(chain, handlers):
     table = ChainOutputTable()
 
@@ -180,3 +162,28 @@ def log_table_to_file(table, scores, outputFile="output.txt"):
                 if table[key] is not None:
                     f.write(", ".join([str(x) for x in table[key]]))
                     f.write("\n")
+
+
+def pipe_to_table(chain, handlers, display=True, number_to_display=10,
+                  bin_interval=1):
+    table = ChainOutputTable()
+
+    if number_to_display > 0:
+        display_interval = math.floor(len(chain) / number_to_display)
+    else:
+        display_interval = 1
+
+    counter = 0
+    for row in handle_chain(chain, handlers):
+        if display and counter % display_interval == 0:
+            print(f"Step {counter}")
+            print(row)
+        if counter % bin_interval == 0:
+            table.append(row)
+        counter += 1
+    return table
+
+
+def handle_chain(chain, handlers):
+    for state in chain:
+        yield {key: handler(state) for key, handler in handlers.items()}

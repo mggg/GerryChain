@@ -146,9 +146,7 @@ scores = {
 
 initial_scores = {key: score(initial_partition) for key, score in scores.items()}
 
-table = pipe_to_table(chain, scores, display=True, display_frequency=100,
-                      bin_frequency=1)
-
+table = pipe_to_table(chain, scores, display=True, number_to_display=100)
 
 # Histogram Plotting
 hist_path = "chain_histogram31.png"
