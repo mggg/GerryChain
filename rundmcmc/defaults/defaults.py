@@ -24,7 +24,7 @@ default_constraints = [single_flip_contiguous,
                        no_vanishing_districts,
                        refuse_new_splits]
 
-FILE_PATH = os.path.dirname(os.path.abspath(__file__))
+FILE_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TEST_DATA_PATH = os.path.join(FILE_PATH, "testData/")
 
 
