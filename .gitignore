@@ -73,3 +73,5 @@ junit.xml
 
 # Pytest cache
 .pytest_cache/
+
+Outputs/

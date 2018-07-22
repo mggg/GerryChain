@@ -34,7 +34,7 @@ def mean_thirdian(partition, proportion_column_name):
     if proportion_column_name[-1] != "%":
         proportion_column_name = proportion_column_name + "%"
 
-    data = list(partition[proportion_column_name].values())
+    data = list(1 - value for value in partition[proportion_column_name].values())
     return numpy.mean(data) - numpy.percentile(data, 33)
 
 

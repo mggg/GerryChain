@@ -14,7 +14,7 @@ def put_edges_into_parts(edges, assignment):
 def new_cuts(partition):
     """The edges that were not cut, but now are"""
     return {tuple(sorted((node, neighbor))) for node in partition.flips
-            for neighbor in partition.graph[node]
+            for neighbor in partition.graph.neighbors(node)
             if partition.crosses_parts((node, neighbor))}
 
 
