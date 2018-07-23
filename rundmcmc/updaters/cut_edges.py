@@ -1,5 +1,4 @@
 import collections
-import functools
 
 from .flows import on_edge_flow
 

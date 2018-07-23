@@ -8,7 +8,7 @@ from rundmcmc.validity import (fast_connected, single_flip_contiguous,
                                Validator, no_vanishing_districts,
                                within_percent_of_ideal_population)
 
-from rundmcmc.proposals import reversible_chunk_flip, propose_random_flip_no_loops
+from rundmcmc.proposals import propose_random_flip_no_loops
 
 from rundmcmc.accept import always_accept
 
