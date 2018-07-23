@@ -53,6 +53,6 @@ from .validity import (L1_reciprocal_polsby_popper,
                        single_flip_contiguous, contiguous,
                        within_percent_of_ideal_population,
                        districts_within_tolerance,
-                       fast_connected)
+                       fast_connected, no_more_disconnected)
 
 from .bounds import UpperBound, LowerBound, SelfConfiguringLowerBound, SelfConfiguringUpperBound
