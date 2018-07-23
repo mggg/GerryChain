@@ -3,7 +3,10 @@ import math
 import networkx
 
 from rundmcmc.partition import Partition
-from rundmcmc.updaters import Tally, cut_edges, cut_edges_by_part
+from rundmcmc.updaters import (Tally, cut_edges, cut_edges_by_part,
+                              perimeters, polsby_popper,
+                              exterior_boundaries, interior_boundaries,
+                              boundary_nodes)
 
 
 class Grid(Partition):
@@ -38,6 +41,12 @@ class Grid(Partition):
             if not updaters:
                 updaters = {'cut_edges': cut_edges,
                             'population': Tally('population'),
+                             'perimeters': perimeters,
+                            'exterior_boundaries': exterior_boundaries,
+                            'interior_boundaries': interior_boundaries,
+                            'boundary_nodes': boundary_nodes,
+                            'areas': Tally('area', alias='areas'),
+                            'polsby_popper': polsby_popper,
                             'cut_edges_by_part': cut_edges_by_part}
 
             super().__init__(graph, assignment, updaters)
@@ -73,17 +82,20 @@ def create_grid_graph(dimensions, with_diagonals):
     m, n = dimensions
     graph = networkx.generators.lattice.grid_2d_graph(m, n)
 
+    networkx.set_edge_attributes(graph, 1, 'shared_perim')
+
     if with_diagonals:
         nw_to_se = [((i, j), (i + 1, j + 1)) for i in range(m - 1) for j in range(n - 1)]
         sw_to_ne = [((i, j + 1), (i + 1, j)) for i in range(m - 1) for j in range(n - 1)]
         diagonal_edges = nw_to_se + sw_to_ne
         graph.add_edges_from(diagonal_edges)
+        for edge in diagonal_edges:
+            graph.edges[edge]['shared_perim'] = 0
 
     networkx.set_node_attributes(graph, 1, 'population')
     networkx.set_node_attributes(graph, 1, 'area')
 
     tag_boundary_nodes(graph, dimensions)
-    networkx.set_edge_attributes(graph, 1, 'shared_perim')
 
     return graph
 
@@ -105,9 +117,9 @@ def tag_boundary_nodes(graph, dimensions):
 
 def get_boundary_perim(node, dimensions):
     m, n = dimensions
-    if node in [(0, 0), (m, 0), (0, n), (m, n)]:
+    if node in [(0, 0), (m - 1, 0), (0, n - 1), (m - 1, n - 1)]:
         return 2
-    elif node[0] in [0, m] or node[1] in [0, n]:
+    elif node[0] in [0, m - 1] or node[1] in [0, n - 1]:
         return 1
     else:
         return 0

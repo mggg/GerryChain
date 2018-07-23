@@ -34,8 +34,12 @@ def mean_thirdian(partition, proportion_column_name):
     if proportion_column_name[-1] != "%":
         proportion_column_name = proportion_column_name + "%"
 
-    data = list(partition[proportion_column_name].values())
-    return numpy.mean(data) - numpy.percentile(data, 33)
+    data = list(1 - value for value in partition[proportion_column_name].values())
+
+    thirdian_index = round(len(data) / 3)
+    thirdian = sorted(data)[thirdian_index]
+
+    return thirdian - numpy.mean(data)
 
 
 def normalized_efficiency_gap(partition, proportion_column_name):
