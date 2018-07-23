@@ -170,7 +170,8 @@ def gsource_gdata(config, graphSource, graphData):
             load_graph = True
 
     type = "json" if load_graph else "fiona"
-    graph = mgs.construct_graph(path, ID, pop_col=POP, area_col=AREA, district_col=CD, cols_to_add=[POP, AREA, CD], data_source_type=type)
+    graph = mgs.construct_graph(path, ID, pop_col=POP, area_col=AREA, district_col=CD,
+            cols_to_add=[POP, AREA, CD], data_source_type=type)
 
     if save_graph:
         print("saving graph to", configGraphSource[save_graph_field])

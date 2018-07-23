@@ -107,7 +107,12 @@ def neighbors_with_shared_perimeters(neighbors, df):
     return networkx.from_dict_of_dicts(vtds)
 
 
-def construct_graph_from_df(df, id_col=None, pop_col=None, area_col=None, district_col=None, cols_to_add=None):
+def construct_graph_from_df(df,
+        id_col=None,
+        pop_col=None,
+        area_col=None,
+        district_col=None,
+        cols_to_add=None):
     """Construct initial graph from information about neighboring VTDs.
 
     :df: Geopandas dataframe.
@@ -180,7 +185,12 @@ def construct_graph_from_json(json_file, pop_col=None, area_col=None, district_c
     return g
 
 
-def construct_graph_from_file(filename, id_col=None, pop_col=None, area_col=None, district_col=None, cols_to_add=None):
+def construct_graph_from_file(filename,
+        id_col=None,
+        pop_col=None,
+        area_col=None,
+        district_col=None,
+        cols_to_add=None):
     """Constuct initial graph from any file that fiona can read.
 
     This can load any file format supported by GeoPandas, which is everything
@@ -197,7 +207,13 @@ def construct_graph_from_file(filename, id_col=None, pop_col=None, area_col=None
     return construct_graph_from_df(df, id_col, pop_col, area_col, district_col, cols_to_add)
 
 
-def construct_graph(data_source, id_col=None, pop_col=None, area_col=None, district_col=None, data_cols=None, data_source_type="fiona"):
+def construct_graph(data_source,
+        id_col=None,
+        pop_col=None,
+        area_col=None,
+        district_col=None,
+        data_cols=None,
+        data_source_type="fiona"):
     """
     Construct initial graph from given data source.
 
@@ -220,13 +236,16 @@ def construct_graph(data_source, id_col=None, pop_col=None, area_col=None, distr
 
     """
     if data_source_type == "fiona":
-        return construct_graph_from_file(data_source, id_col, pop_col, area_col, district_col, data_cols)
+        return construct_graph_from_file(data_source, id_col, pop_col,
+                area_col, district_col, data_cols)
 
     elif data_source_type == "json":
-        return construct_graph_from_json(data_source, pop_col, area_col, district_col)
+        return construct_graph_from_json(data_source, pop_col,
+                area_col, district_col)
 
     elif data_source_type == "geo_data_frame":
-        return construct_graph_from_df(data_source, id_col, pop_col, area_col, district_col, data_cols)
+        return construct_graph_from_df(data_source, id_col, pop_col,
+                area_col, district_col, data_cols)
 
 
 def get_assignment_dict_from_df(df, key_col, val_col):
