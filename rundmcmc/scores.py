@@ -156,7 +156,8 @@ def L2_pop_dev(partition):
     total_population = sum(partition['population'].values())
     mean_population = total_population / number_of_districts
 
-    return math.sqrt(sum([((x - mean_population) / x)**2 for x in partition['population'].values()]))
+    return math.sqrt(
+        sum([((x - mean_population) / x)**2 for x in partition['population'].values()]))
 
 
 def worst_pop(partition):
@@ -164,7 +165,8 @@ def worst_pop(partition):
     total_population = sum(partition['population'].values())
     mean_population = total_population / number_of_districts
 
-    return max([abs(x-mean_population) / mean_population for x in partition['population'].values()])
+    return max([
+        abs(x - mean_population) / mean_population for x in partition['population'].values()])
 
 
 def worst_pp(partition):
