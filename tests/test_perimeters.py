@@ -30,3 +30,21 @@ def test_cut_edges_by_part_handles_flips_with_a_simple_grid():
 
     assert result[0] == {((1, 0), (2, 0)), ((1, 1), (2, 1)), ((0, 1), (0, 2)), ((1, 1), (1, 2))}
     assert result[1] == {((1, 0), (2, 0)), ((2, 0), (2, 1)), ((2, 1), (3, 1)), ((3, 1), (3, 2))}
+    assert result[2] == {((0, 1), (0, 2)), ((1, 1), (1, 2)), ((1, 2), (2, 2)), ((1, 3), (2, 3))}
+    assert result[3] == {((1, 1), (2, 1)), ((2, 0), (2, 1)), ((2, 1), (3, 1)),
+                          ((3, 1), (3, 2)), ((1, 2), (2, 2)), ((1, 3), (2, 3))}
+
+
+def test_cut_edges_by_part_agrees_with_cut_edges_on_a_simple_grid():
+    grid, flipped_grid = setup()
+
+    result = flipped_grid['cut_edges_by_part']
+
+    for edge in flipped_grid['cut_edges']:
+        source, target = edge
+        assert edge in result[flipped_grid.assignment[source]]
+        assert edge in result[flipped_grid.assignment[target]]
+
+    for part in result:
+        for edge in result[part]:
+            assert edge in flipped_grid['cut_edges']
