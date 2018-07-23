@@ -287,8 +287,6 @@ def proposed_changes_still_contiguous(partition):
     return True
 
 
-
-
 def _bfs(graph):
     """
     Performs a breadth-first search on the provided graph and returns true or
