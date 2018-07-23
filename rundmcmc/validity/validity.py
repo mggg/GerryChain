@@ -252,6 +252,43 @@ def non_bool_fast_connected(partition):
 no_more_disconnected = SelfConfiguringLowerBound(non_bool_fast_connected)
 
 
+def proposed_changes_still_contiguous(partition):
+    """
+        Checks whether the districts that are altered by a proposed change
+        (stored in partition.flips) remain contiguous under said changes.
+
+        :parition: Current :class:`.Partition` object.
+
+        :returns: True if changed districts are contiguous, False otherwise.
+    """
+
+    # Check whether this is the initial partition (parent=None)
+    # or one with proposed changes (parent != None).
+    districts_of_interest = set(partition.assignment.values())
+    if partition.parent:
+        if partition.flips.keys is not None:
+            districts_of_interest = set(partition.flips.values()).union(
+                    set(map(partition.parent.assignment.get, partition.flips)))
+        else:
+            districts_of_interest = []
+
+    # Inverts the assignment dictionary so that lists of VTDs are keyed
+    # by their congressional districts.
+    assignment = partition.assignment
+    districts = collections.defaultdict(set)
+    for vtd in assignment:
+        districts[assignment[vtd]].add(vtd)
+
+    for key in districts_of_interest:
+        adj = nx.to_dict_of_lists(partition.graph, districts[key])
+        if _bfs(adj) is False:
+            return False
+
+    return True
+
+
+
+
 def _bfs(graph):
     """
     Performs a breadth-first search on the provided graph and returns true or
