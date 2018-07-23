@@ -130,7 +130,7 @@ def on_edge_flow(initializer, alias):
         def wrapper(partition):
             if not partition.parent:
                 return initializer(partition)
-            edge_flows = compute_edge_flows(partition)
+            edge_flows = partition.edge_flows
             previous = partition.parent[alias]
             return {part: f(partition, previous[part], new_edges=edge_flows[part]['in'],
                             old_edges=edge_flows[part]['out'])

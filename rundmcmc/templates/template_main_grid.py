@@ -20,7 +20,7 @@ from rundmcmc.chain import MarkovChain
 grid = Grid((4, 4), with_diagonals=True)  # was (4,4)
 
 
-def perimeter_constraint(grid, threshold=12):
+def perimeter_constraint(grid, threshold=10):
     return all(perimeter <= threshold for perimeter in grid['perimeters'].values())
 
 
@@ -51,7 +51,6 @@ for partition in chain:
     plt.close()
     i += 1
     print(partition['perimeters'])
-    print(partition['cut_edges'])
 
 # To animate:
 # ffmpeg -framerate 5 -i g3_%04d.png -c:v libx264
