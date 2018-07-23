@@ -37,7 +37,7 @@ from rundmcmc.scores import (efficiency_gap, mean_median,
 
 from rundmcmc.output import p_value_report, pipe_to_table
 
-from vis_output import (hist_of_table_scores, trace_of_table_scores)
+from rundmcmc.output import (hist_of_table_scores, trace_of_table_scores)
 
 
 # Input the path to the graph (either JSON or shapefile) and the label column
@@ -52,7 +52,7 @@ district_col = "CD"
 
 
 # This builds a graph
-graph = construct_graph(graph_path, "json")
+graph = construct_graph(graph_path, data_source_type="json")
 
 # Write graph to file
 with open('graph_with_data.json', 'w') as outfile1:
@@ -77,7 +77,7 @@ vote_col2 = "voteB"
 # This adds the data to the graph
 data_list = [vote_col1, vote_col2]
 
-add_data_to_graph(df, graph, data_list, id_col=unique_label)
+add_data_to_graph(df, graph, data_list, id_column=unique_label)
 
 
 # Desired proposal method
