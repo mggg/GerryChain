@@ -1,5 +1,5 @@
 import numpy
-
+import math
 from rundmcmc.proposals import number_of_flips
 
 
@@ -151,9 +151,31 @@ def number_boundary_components(partition):
     return len(partition["cut_edges_by_part"].values())
 
 
-def mean_pop(partition):
+def L2_pop_dev(partition):
     number_of_districts = len(partition['population'].keys())
     total_population = sum(partition['population'].values())
     mean_population = total_population / number_of_districts
 
-    return mean_population
+    return math.sqrt(sum([ ((x-mean_population)/x)**2 for x in partition['population'].values()]))
+
+def worst_pop(partition):
+    number_of_districts = len(partition['population'].keys())
+    total_population = sum(partition['population'].values())
+    mean_population = total_population / number_of_districts
+
+    return max([abs(x-mean_population)/mean_population for x in partition['population'].values()])
+
+def worst_pp(partition):
+    return(min(partition["polsby_popper"].values()))
+
+def best_pp(partition):
+    return(max(partition["polsby_popper"].values()))
+
+def node_flipped(partition):
+    if partition.flips is not None:
+        return int(list(partition.flips.keys())[0])
+    else:
+        return -1
+
+
+
