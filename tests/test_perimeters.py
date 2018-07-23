@@ -48,3 +48,11 @@ def test_cut_edges_by_part_agrees_with_cut_edges_on_a_simple_grid():
     for part in result:
         for edge in result[part]:
             assert edge in flipped_grid['cut_edges']
+
+
+def test_tally_handles_flips_for_a_simple_grid():
+    grid, flipped_grid = setup()
+
+    result = flipped_grid['areas']
+
+    assert result == {0: 4, 1: 3, 2: 4, 3: 5}
