@@ -37,7 +37,7 @@ def mean_thirdian(partition, proportion_column_name):
     data = list(1 - value for value in partition[proportion_column_name].values())
 
     thirdian_index = round(len(data) / 3)
-    thirdian = data[thirdian_index]
+    thirdian = sorted(data)[thirdian_index]
 
     return thirdian - numpy.mean(data)
 
