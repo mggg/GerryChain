@@ -1,6 +1,7 @@
 import networkx
 import pandas as pd
 import geopandas as gp
+import warnings
 import pysal
 import json
 from networkx.readwrite import json_graph
@@ -136,14 +137,21 @@ def construct_graph_from_df(df,
     pops = 0
     if pop_col:
         pops = df[pop_col].to_dict()
+    else:
+        warnings.warn("No population column was given, assuming all 0")
 
-    areas = df['geometry'].area.to_dict()
     if area_col:
         areas = df[area_col].to_dict()
+    else:
+        # This may be slightly expensive, so only do it if we know we have to.
+        areas = df['geometry'].area.to_dict()
+        warnings.warn("No area column was given, computing from geometry")
 
     dists = 0
     if district_col:
         dists = df[district_col].to_dict()
+    else:
+        warnings.warn("No district assignment column was given, assuming all 0")
 
     # add new attribute to all nodes with value 0 used as dummy variable
     networkx.set_node_attributes(graph, name='population', values=pops)
@@ -243,9 +251,11 @@ def construct_graph(data_source,
         return construct_graph_from_json(data_source, pop_col,
                 area_col, district_col)
 
-    elif data_source_type == "geo_data_frame":
+    elif data_source_type == "geodataframe":
         return construct_graph_from_df(data_source, id_col, pop_col,
                 area_col, district_col, data_cols)
+
+    raise ValueError("unknown data source type: {}".format(data_source_type))
 
 
 def get_assignment_dict_from_df(df, key_col, val_col):
