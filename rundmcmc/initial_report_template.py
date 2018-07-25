@@ -1,17 +1,9 @@
-# Set random seed.
-import random
-random.seed(1769)
-
 # Imports for I/O processing
-
-import json
 import geopandas as gp
-from networkx.readwrite import json_graph
-import functools
 import os
 import datetime
-import logging
 import matplotlib.pyplot as plt
+import random
 
 # Imports for RunDMCMC components
 # You can look at the list of available functions in each
@@ -37,26 +29,14 @@ from rundmcmc.updaters import (Tally, boundary_nodes, cut_edges,
 from rundmcmc.validity import (L1_reciprocal_polsby_popper,
                                L_minus_1_polsby_popper,
                                UpperBound, LowerBound,
-                               Validator, no_vanishing_districts,
-                               refuse_new_splits, single_flip_contiguous,
+                               Validator, single_flip_contiguous,
                                within_percent_of_ideal_population,
                                SelfConfiguringLowerBound, no_more_disconnected)
 
-from rundmcmc.scores import (efficiency_gap, mean_median,
-                             mean_thirdian, how_many_seats_value,
-                             population_range,
-                             number_cut_edges, worst_pop,
-                             L2_pop_dev,compute_meta_graph_degree,
-                             worst_pp, best_pp,
-                             node_flipped)
-
-
-from rundmcmc.output import (p_value_report, hist_of_table_scores,
-                             trace_of_table_scores, pipe_to_table)
-
-
 from initial_report import write_initial_report
 
+# Set random seed.
+random.seed(1769)
 
 for district_col in ["GOV_4_1", "TS_4_1", "2011", "Remedial"]:
 
@@ -68,18 +48,15 @@ for district_col in ["GOV_4_1", "TS_4_1", "2011", "Remedial"]:
     with open(newdir + "init.txt", "w") as f:
         f.write("Created Folder")
 
-
     # Input the path to the graph (either JSON or shapefile) and the label column
     # This file should have at least population, area, and district plan
     state_name = "Pennsylvania"
     graph_path = "./testData/PA_rook.json"
     unique_label = "wes_id"
 
-
     # Names of graph columns go here
     pop_col = "population"
     area_col = "area"
-
 
     # This builds a graph
     graph = construct_graph(graph_path, data_source_type="json")
@@ -90,7 +67,6 @@ for district_col in ["GOV_4_1", "TS_4_1", "2011", "Remedial"]:
 
     # Get assignment dictionary
     assignment = get_assignment_dict_from_graph(graph, district_col)
-
 
     # Input the shapefile with vote data here
     vote_path = "./testData/wes_with_districtings.shp"
@@ -103,42 +79,29 @@ for district_col in ["GOV_4_1", "TS_4_1", "2011", "Remedial"]:
     # This is the number of elections you want to analyze
     num_elections = 2
 
-
     # Names of shapefile voting data columns go here
     election_names = ['2016_Presidential', '2016_Senate']
     election_columns = [['T16PRESD', 'T16PRESR'], ['T16SEND', 'T16SENR']]
-
 
     # This adds the data to the graph
     add_data_to_graph(df, graph, [cols for pair in election_columns for cols in pair])
     #add_data_to_graph(df, graph, ["County"])
 
     # Geojson for plotting
-    df_plot = gp.read_file("./testData/wes_for_plots.geojson" )
+    df_plot = gp.read_file("./testData/wes_for_plots.geojson")
     df_plot["initial"] = df_plot[unique_label].map(assignment)
-
-    df_plot.plot(column ="initial", cmap= 'tab20')
-
-
+    df_plot.plot(column="initial", cmap='tab20')
     plt.axis('off')
-    plt.savefig(newdir+"PaExpinitial.png")
+    plt.savefig(newdir + "PaExpinitial.png")
     plt.clf()
-
-
 
     # Desired proposal method
     proposal_method = propose_random_flip_no_loops
 
-
     # Desired acceptance method
     acceptance_method = always_accept
 
-
-    # Number of steps to run
-    steps = 100000
-
     print("loaded data")
-
 
     # Necessary updaters go here
     updaters = {'population': Tally(pop_col, alias='population'),
@@ -151,18 +114,13 @@ for district_col in ["GOV_4_1", "TS_4_1", "2011", "Remedial"]:
                 'polsby_popper': polsby_popper,
                 'cut_edges_by_part': cut_edges_by_part}
 
-
-
-
     # Add the vote updaters for multiple plans
 
     for i in range(num_elections):
         updaters = {**updaters, **votes_updaters(election_columns[i], election_names[i])}
 
-
     # This builds the partition object
     initial_partition = Partition(graph, assignment, updaters)
-
 
     # Desired validators go here
     # Can change constants and bounds
@@ -180,23 +138,13 @@ for district_col in ["GOV_4_1", "TS_4_1", "2011", "Remedial"]:
 
     compactness_PA = SelfConfiguringLowerBound(L_minus_1_polsby_popper, epsilon=0)
 
-    validator = Validator([single_flip_contiguous])#([ no_vanishing_districts,
-                           #single_flip_contiguous, population_constraint,
-                           #compactness_constraint_Lm1]) #refuse_new_splits,
-
     validator = Validator([single_flip_contiguous,population_constraint, 
-                           compactness_constraint_Lm1]) #population_constraint,refuse_new_splits, no_vanishing_districts,
-
-
+                           compactness_constraint_Lm1])
+    
     print("setup chain")
 
     outputName = newdir + "Initial_Report.html"
-
-    #for part in initial_partition.parts:
-    #    print(part)
         
-
-
     write_initial_report(newdir=newdir, outputName=outputName, partition=initial_partition,
                          df_to_plot=df_plot,
                          state_name=state_name, district_col=district_col,
@@ -204,23 +152,4 @@ for district_col in ["GOV_4_1", "TS_4_1", "2011", "Remedial"]:
                          election_columns=election_columns, df=df,
                          unique_label=unique_label, validator=validator)
 
-
     print("Wrote Report")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

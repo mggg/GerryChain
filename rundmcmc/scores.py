@@ -106,7 +106,8 @@ def MetaGraphDegreeReport(partition, validator):
     total_valid_flips = sum(num_valid_flips_report(edge, partition, validator)
                             for edge in partition['cut_edges'])
     return {'total': total_available_flips, 'valid': total_valid_flips}
-    
+
+
 def num_valid_flips_report(edge, partition, validator):
     """
     Takes an edge and a partition and returns the number of valid
