@@ -2,6 +2,9 @@ import collections
 import logging
 import random
 
+from heapq import heappush, heappop
+from itertools import count
+
 import networkx as nx
 import networkx.algorithms.shortest_paths.weighted as nx_path
 from networkx import NetworkXNoPath
@@ -81,6 +84,57 @@ def within_percent_of_ideal_population(initial_partition, percent=0.01):
     return Bounds(population, bounds=bounds)
 
 
+def are_reachable(G, source, avoid, targets):
+    """Check that source can reach targets while avoiding given edges.
+
+    :G: NetworkX graph.
+
+    :source: Starting node.
+
+    :weight: Function with (u, v, data) input that returns that edges weight.
+
+    :targets: Nodes required to find.
+
+    :returns:
+    -------
+    distance : dictionary
+        A mapping from node to shortest distance to that node from one
+        of the source nodes.
+
+    This function is a modified form of NetworkX's `_dijkstra_multisource()`.
+
+    """
+    G_succ = G._succ if G.is_directed() else G._adj
+
+    push = heappush
+    pop = heappop
+    dist = {}  # dictionary of final distances
+    seen = {}
+    # fringe is heapq with 3-tuples (distance,c,node)
+    # use the count c to avoid comparing nodes (may not be able to)
+    c = count()
+    fringe = []
+
+    seen[source] = 0
+    push(fringe, (0, next(c), source))
+
+    while not all(t in seen for t in targets) and fringe:
+        (d, _, v) = pop(fringe)
+        if v in dist:
+            continue  # already searched this node.
+        dist[v] = d
+        for u, e in G_succ[v].items():
+            if avoid(v, u, e):
+                continue
+
+            vu_dist = dist[v] + 1
+            if u not in seen or vu_dist < seen[u]:
+                seen[u] = vu_dist
+                push(fringe, (vu_dist, next(c), u))
+
+    return all(t in seen for t in targets)
+
+
 def single_flip_contiguous(partition):
     """
     Check if swapping the given node from its old assignment disconnects the
@@ -109,7 +163,7 @@ def single_flip_contiguous(partition):
     old_dict = parent.assignment
     assignment = partition.assignment
 
-    def partition_edge_weight(start_node, end_node, edge_attrs):
+    def partition_edge_avoid(start_node, end_node, edge_attrs):
         """
         Compute the district edge weight, which is 1 if the nodes have the same
         assignment, and infinity otherwise.
@@ -117,9 +171,9 @@ def single_flip_contiguous(partition):
         if assignment[start_node] != assignment[end_node]:
             # Fun fact: networkx actually refuses to take edges with None
             # weight.
-            return None
+            return True
 
-        return 1
+        return False
 
     for changed_node, _ in flips.items():
         old_assignment = partition.parent.assignment[changed_node]
@@ -134,14 +188,10 @@ def single_flip_contiguous(partition):
 
         start_neighbor = random.choice(old_neighbors)
 
-        for neighbor in old_neighbors:
-            try:
-                distance, _ = nx_path.single_source_dijkstra(graph, start_neighbor, neighbor,
-                                                             weight=partition_edge_weight)
-                if not (distance < float("inf")):
-                    return False
-            except NetworkXNoPath:
-                return False
+        connected = are_reachable(graph, start_neighbor, partition_edge_avoid, old_neighbors)
+
+        if not connected:
+            return False
 
     # All neighbors of all changed nodes are connected, so the new graph is
     # connected.
