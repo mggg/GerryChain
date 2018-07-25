@@ -32,7 +32,7 @@ def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
         f.write("<h2 width:100%>Initial Data</h2>\n")
         f.write("<b>Initial Districting Plan: </b>")
         f.write(district_col)
-        f.write("<br><br><b>Election Data:</b>")
+        f.write("<br><br><b>Election Data: </b>")
         for i in range(num_elections):
             f.write(election_names[i] + "  ")
                 
@@ -169,5 +169,21 @@ def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
                         str((partition["population"][i+1] - mean_population) / (
                             total_population)) + "</td><td>" +
                         str(partition["polsby_popper"][i+1]) + "</td></tr>")
+        #print(partition.parts.values())
 
+        node_lengths=[len(x) for x in partition.parts.values()]
+        f.write("<tr><td> Mean</td><td>" + str(sum(node_lengths) / num_districts) + "</td><td>" +
+                str(sum([len(x) for x in partition["cut_edges_by_part"].values()]) / num_districts) + "</td><td>" +
+                str(sum([(x-mean_population)/total_population for x in partition["population"].values()]) / num_districts) + "</td><td>" +
+                str(sum([x for x in partition["polsby_popper"].values()]) / num_districts) + "</td></tr>")
+        f.write("<tr><td> Max</td><td>" + str(max([len(x) for x in partition.parts.values()])) +
+                "</td><td>" + str(max([len(x) for x in partition["cut_edges_by_part"].values()])) +
+                "</td><td>" + str(max([(x-mean_population)/total_population for x in partition["population"].values()])) +
+                "</td><td>" + str(max([x for x in partition["polsby_popper"].values()])) +
+                "</td></tr>")
+        f.write("<tr><td> Min</td><td>" + str(min([len(x) for x in partition.parts.values()])) +
+                "</td><td>" + str(min([len(x) for x in partition["cut_edges_by_part"].values()])) +
+                "</td><td>" + str(min([(x-mean_population)/total_population for x in partition["population"].values()])) +
+                "</td><td>" + str(min([x for x in partition["polsby_popper"].values()])) +
+                "</td></tr>")
         f.write("</table>")
