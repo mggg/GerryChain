@@ -115,7 +115,9 @@ def single_flip_contiguous(partition):
         assignment, and infinity otherwise.
         """
         if assignment[start_node] != assignment[end_node]:
-            return float("inf")
+            # Fun fact: networkx actually refuses to take edges with None
+            # weight.
+            return None
 
         return 1
 
