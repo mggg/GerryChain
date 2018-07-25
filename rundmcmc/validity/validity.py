@@ -6,8 +6,6 @@ from heapq import heappush, heappop
 from itertools import count
 
 import networkx as nx
-import networkx.algorithms.shortest_paths.weighted as nx_path
-from networkx import NetworkXNoPath
 
 from rundmcmc.updaters import CountySplit
 from rundmcmc.validity.bounds import (SelfConfiguringLowerBound, SelfConfiguringUpperBound,
@@ -160,7 +158,6 @@ def single_flip_contiguous(partition):
         return contiguous(partition)
 
     graph = partition.graph
-    old_dict = parent.assignment
     assignment = partition.assignment
 
     def partition_edge_avoid(start_node, end_node, edge_attrs):
@@ -312,7 +309,7 @@ def proposed_changes_still_contiguous(partition):
     if partition.parent:
         if partition.flips.keys is not None:
             districts_of_interest = set(partition.flips.values()).union(
-                    set(map(partition.parent.assignment.get, partition.flips)))
+                                        set(map(partition.parent.assignment.get, partition.flips)))
         else:
             districts_of_interest = []
 
