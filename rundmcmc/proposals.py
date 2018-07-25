@@ -40,7 +40,7 @@ def propose_random_flip_metagraph(partition):
     if random.random() < 1.0 - (numEdges * 1.0 / partition.max_edge_cuts):
         return dict()
 
-    flip = propose_random_flip_no_loops(partition)
+    flip = propose_random_flip(partition)
 
     # checks for a frozen nodes field and self loops if the value has
     # been set to 1
@@ -181,9 +181,6 @@ def propose_random_flip(partition):
     flip = {flipped_node: partition.assignment[other_node]}
 
     return flip
-
-
-
 
 
 def propose_lowest_pop_single_flip(partition):
