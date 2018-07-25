@@ -1,6 +1,7 @@
 import networkx
 import pandas as pd
 import geopandas as gp
+import warnings
 import pysal
 import json
 from networkx.readwrite import json_graph
@@ -35,7 +36,7 @@ def get_list_of_data(filepath, col_name, geoid=None):
     return data
 
 
-def add_data_to_graph(df, graph, col_names, id_column=None):
+def add_data_to_graph(df, graph, col_names, id_col=None):
     """Add columns of a dataframe to a graph using the the index as node ids.
 
     :df: Dataframe containing given columns.
@@ -44,8 +45,8 @@ def add_data_to_graph(df, graph, col_names, id_column=None):
     :returns: Nothing.
 
     """
-    if id_column:
-        indexed_df = df.set_index(id_column)
+    if id_col:
+        indexed_df = df.set_index(id_col)
     else:
         indexed_df = df
 
@@ -107,15 +108,20 @@ def neighbors_with_shared_perimeters(neighbors, df):
     return networkx.from_dict_of_dicts(vtds)
 
 
-def construct_graph_from_df(df, id_column=None, cols_to_add=None):
+def construct_graph_from_df(df,
+        id_col=None,
+        pop_col=None,
+        area_col=None,
+        district_col=None,
+        cols_to_add=None):
     """Construct initial graph from information about neighboring VTDs.
 
     :df: Geopandas dataframe.
     :returns: NetworkX Graph.
 
     """
-    if id_column is not None:
-        df = df.set_index(id_column)
+    if id_col is not None:
+        df = df.set_index(id_col)
 
     # Generate rook neighbor lists from dataframe.
     neighbors = pysal.weights.Rook.from_dataframe(
@@ -128,10 +134,34 @@ def construct_graph_from_df(df, id_column=None, cols_to_add=None):
     if cols_to_add is not None:
         add_data_to_graph(df, graph, cols_to_add)
 
+    pops = 0
+    if pop_col:
+        pops = df[pop_col].to_dict()
+    else:
+        warnings.warn("No population column was given, assuming all 0")
+
+    if area_col:
+        areas = df[area_col].to_dict()
+    else:
+        # This may be slightly expensive, so only do it if we know we have to.
+        areas = df['geometry'].area.to_dict()
+        warnings.warn("No area column was given, computing from geometry")
+
+    dists = 0
+    if district_col:
+        dists = df[district_col].to_dict()
+    else:
+        warnings.warn("No district assignment column was given, assuming all 0")
+
+    # add new attribute to all nodes with value 0 used as dummy variable
+    networkx.set_node_attributes(graph, name='population', values=pops)
+    networkx.set_node_attributes(graph, name='areas', values=areas)
+    networkx.set_node_attributes(graph, name='CD', values=dists)
+
     return graph
 
 
-def construct_graph_from_json(json_file):
+def construct_graph_from_json(json_file, pop_col=None, area_col=None, district_col=None):
     """Construct initial graph from networkx.json_graph adjacency JSON format.
 
     :json_file: Path to JSON file.
@@ -141,32 +171,62 @@ def construct_graph_from_json(json_file):
     with open(json_file) as f:
         data = json.load(f)
 
-    return json_graph.adjacency_graph(data)
+    g = json_graph.adjacency_graph(data)
+
+    networkx.set_node_attributes(g, 'population', 0)
+    networkx.set_node_attributes(g, 'areas', 0)
+    networkx.set_node_attributes(g, 'CD', 0)
+
+    # add specific values for column names as specified.
+    if pop_col:
+        p_col = networkx.get_node_attributes(g, pop_col)
+        networkx.set_node_attributes(g, name='population', values=p_col)
+
+    if area_col:
+        a_col = networkx.get_node_attributes(g, area_col)
+        networkx.set_node_attributes(g, name='areas', values=a_col)
+
+    if district_col:
+        cd_col = networkx.get_node_attributes(g, district_col)
+        networkx.set_node_attributes(g, name='CD', values=cd_col)
+
+    return g
 
 
-def construct_graph_from_file(filename, id_column=None, cols_to_add=None):
+def construct_graph_from_file(filename,
+        id_col=None,
+        pop_col=None,
+        area_col=None,
+        district_col=None,
+        cols_to_add=None):
     """Constuct initial graph from any file that fiona can read.
 
     This can load any file format supported by GeoPandas, which is everything
     that the fiona library supports.
 
     :filename: File to read.
-    :id_column: Unique identifier column for the data units; used as node ids in the graph.
+    :id_col: Unique identifier column for the data units; used as node ids in the graph.
     :cols_to_add: List of column names from file of data to be added to each node.
     :returns: NetworkX Graph.
 
     """
     df = gp.read_file(filename)
 
-    return construct_graph_from_df(df, id_column, cols_to_add)
+    return construct_graph_from_df(df, id_col, pop_col, area_col, district_col, cols_to_add)
 
 
-def construct_graph(data_source, id_column=None, data_cols=None, data_source_type="fiona"):
+def construct_graph(data_source,
+        id_col=None,
+        pop_col=None,
+        area_col=None,
+        district_col=None,
+        data_cols=None,
+        data_source_type="fiona"):
     """
     Construct initial graph from given data source.
 
     :data_source: Data from which to create graph ("fiona", "geo_data_frame", or "json".).
-    :id_column: Name of unique identifier for basic data units.
+    :id_col: Name of unique identifier for basic data units.
     :data_cols: Any extra data contained in data_source to be added to nodes of graph.
     :data_source_type: String specifying the type of data_source;
                        can be one of "fiona", "json", or "geo_data_frame".
@@ -184,13 +244,18 @@ def construct_graph(data_source, id_column=None, data_cols=None, data_source_typ
 
     """
     if data_source_type == "fiona":
-        return construct_graph_from_file(data_source, id_column, data_cols)
+        return construct_graph_from_file(data_source, id_col, pop_col,
+                area_col, district_col, data_cols)
 
     elif data_source_type == "json":
-        return construct_graph_from_json(data_source)
+        return construct_graph_from_json(data_source, pop_col,
+                area_col, district_col)
 
-    elif data_source_type == "geo_data_frame":
-        return construct_graph_from_df(data_source, id_column, data_cols)
+    elif data_source_type == "geodataframe":
+        return construct_graph_from_df(data_source, id_col, pop_col,
+                area_col, district_col, data_cols)
+
+    raise ValueError("unknown data source type: {}".format(data_source_type))
 
 
 def get_assignment_dict_from_df(df, key_col, val_col):

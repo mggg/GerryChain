@@ -77,7 +77,7 @@ vote_col2 = "voteB"
 # This adds the data to the graph
 data_list = [vote_col1, vote_col2]
 
-add_data_to_graph(df, graph, data_list, id_column=unique_label)
+add_data_to_graph(df, graph, data_list, id_col=unique_label)
 
 
 # Desired proposal method
