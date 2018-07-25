@@ -42,7 +42,7 @@ random.seed(1835)
 # Input the path to the graph (either JSON or shapefile) and the label column
 # This file should have at least population, area, and district plan
 state_name = "Pennsylvania"
-graph_path = "../testData/PA_rook.json"
+graph_path = "../../testData/PA_rook.json"
 unique_label = "wes_id"
 
 
@@ -60,7 +60,7 @@ assignment = get_assignment_dict_from_graph(graph, district_col)
 
 
 # Input the shapefile with vote data here
-vote_path = "../testData/wes_with_districtings.shp"
+vote_path = "../../testData/wes_with_districtings.shp"
 
 
 # This inputs a shapefile with columns you want to add
