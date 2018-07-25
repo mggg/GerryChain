@@ -205,11 +205,10 @@ for i in range(num_elections):
         election_names[i]: functools.partial(efficiency_gap,
                                              col1=election_columns[i][0],
                                              col2=election_columns[i][1]),
-        'Number of Democratic Seats' + "\n" +
-        election_names[i]: functools.partial(how_many_seats_value,
-                                             col1=election_columns[i][0],
-                                             col2=election_columns[i][1])
-        }
+        'demseats' + election_names[i]: functools.partial(how_many_seats_value,
+                                                          col1=election_columns[i][0],
+                                                          col2=election_columns[i][1])
+    }
 
     scores_for_plots.append(vscores)
 
@@ -220,6 +219,11 @@ initial_scores = {key: score(initial_partition) for key, score in scores.items()
 
 table = pipe_to_table(chain, scores, display=True, number_to_display=10)
 
+results_df = table.to_dataframe()
+
+for name in election_names:
+    print(results_df["demseats" + name].describe())
+    print()
 
 # P-value reports
 pv_dict = {key: p_value_report(key, table[key], initial_scores[key]) for key in scores}
