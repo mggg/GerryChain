@@ -120,12 +120,10 @@ def single_flip_contiguous(partition):
         return 1
 
     for changed_node, _ in flips.items():
-        old_neighbors = []
         old_assignment = partition.parent.assignment[changed_node]
 
-        for node in graph.neighbors(changed_node):
-            if assignment[node] == old_assignment:
-                old_neighbors.append(node)
+        old_neighbors = [node for node in graph.neighbors(changed_node)
+                         if assignment[node] == old_assignment]
 
         if not old_neighbors:
             # Under our assumptions, if there are no old neighbors, then the
