@@ -28,11 +28,11 @@ def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
         write_header_styles(f)
 
         f.write("<body>\n")
-        f.write("<h1 width:100%>" + state_name + "Initial Report</h1>\n")
+        f.write("<h1 width:100%>" + state_name + " Initial Report</h1>\n")
         f.write("<h2 width:100%>Initial Data</h2>\n")
         f.write("<b>Initial Districting Plan: </b>")
         f.write(district_col)
-        f.write("<b>Election Data:</b>")
+        f.write("<br><br><b>Election Data:</b>")
         for i in range(num_elections):
             f.write(election_names[i] + "  ")
                 
