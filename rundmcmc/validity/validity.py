@@ -106,31 +106,25 @@ def single_flip_contiguous(partition):
         return contiguous(partition)
 
     graph = partition.graph
-    assignment_dict = parent.assignment
-
-    def proposed_assignment(node):
-        """Return the proposed assignment of the given node."""
-        if node in flips:
-            return flips[node]
-
-        return assignment_dict[node]
+    old_dict = parent.assignment
+    assignment = partition.assignment
 
     def partition_edge_weight(start_node, end_node, edge_attrs):
         """
         Compute the district edge weight, which is 1 if the nodes have the same
         assignment, and infinity otherwise.
         """
-        if proposed_assignment(start_node) != proposed_assignment(end_node):
+        if assignment[start_node] != assignment[end_node]:
             return float("inf")
 
         return 1
 
     for changed_node, _ in flips.items():
         old_neighbors = []
-        old_assignment = assignment_dict[changed_node]
+        old_assignment = partition.parent.assignment[changed_node]
 
         for node in graph.neighbors(changed_node):
-            if proposed_assignment(node) == old_assignment:
+            if assignment[node] == old_assignment:
                 old_neighbors.append(node)
 
         if not old_neighbors:
