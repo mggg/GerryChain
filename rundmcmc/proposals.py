@@ -1,5 +1,16 @@
 import random
 
+def propose_any_node_flip(partition):
+    """Propose to pick a random node to a
+    random part
+
+    """
+
+    node = random.choice(tuple(partition.assignment.keys()))
+    newpart = random.choice(tuple(partition.assignment.values()))
+
+    return {node:newpart}
+    
 
 def propose_random_flip_with_loops(partition):
     """Proposes a random boundary flip from the partition.
