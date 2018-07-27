@@ -15,7 +15,7 @@ def countyEntropyReport(partition, pop_col="POP100", county_col="COUNTYFP10"):
     county_stuff = []
     entropy = [[0.0 for x in range(len(weight_opts) + 1)] for y in range(len(function_opts) + 1)]
     statePop = 0
-    
+
     # assign each VTD to county dictionary
     countyDict = {}
     vtdList = partition.graph.nodes
@@ -27,7 +27,7 @@ def countyEntropyReport(partition, pop_col="POP100", county_col="COUNTYFP10"):
         
     # go through each county
     for county in countyDict.keys():
-        current_county_data = []  
+        current_county_data = []
 		# list containing [countyID, split boolean, county pop, [subpop1,subpop2...]]
         subpop_list = []
 
@@ -203,7 +203,7 @@ def countySplitDistrict(partition, pop_col="POP100", county_col="COUNTYFP10"):
                             entropy[a][b] += districtWeight * intersectionWeight * math.log(
 							1.0 / intersectionWeight)
 
-                        else:   
+                        else:
 
                             entropy[a][b] += districtWeight * intersectionWeight * (
 							1.0 / intersectionWeight)**(float(function))

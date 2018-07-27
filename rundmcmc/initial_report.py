@@ -8,21 +8,21 @@ from rundmcmc.scores import (efficiency_gap, mean_median,
 
 def write_header_styles(fstream):
     fstream.write("\n<style>\n")
-    fstream.write("table { font-family: arial, sans-serif;" + 
+    fstream.write("table { font-family: arial, sans-serif;" +
                   "border-collapse: collapse; width: 100%; }\n")
     fstream.write("td, th { border: 1px solid #dddddd; text-align: left;" +
                   "padding: 8px; }\n")
     fstream.write("tr:nth-child(even) { background-color: #dddddd; }\n")
     fstream.write("mycolor {#ff0000}\n")
     fstream.write("</style>\n\n")
-    
+
 
 def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
  district_col, num_elections, election_names, election_columns, df,
                          unique_label, validator, county_col=None,
                          report_entropy=None, entropy=None, county_data=None,
                          reverse_entropy=None):
- 
+
     num_districts = len(partition['cut_edges_by_part'])
 
     with open(outputName, "w") as f:
@@ -77,8 +77,8 @@ def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
                 
         f.write("</div>\n")
 
-        f.write("<table>\n <tr><td>Election</td><td>D Seats</td><td>R Seats</td><td> D Votes</td><td>R Votes</td>" + 
-                "<td>D Percent</td><td> R percent</td><td> Mean Median </td><td> Efficiency Gap</td> </tr>")
+        f.write("<table>\n <tr><td>Election</td><td>D Seats</td><td>R Seats</td><td> D Votes</td><td>R Votes</td>" +
+		"<td>D Percent</td><td> R percent</td><td> Mean Median </td><td> Efficiency Gap</td> </tr>")
 
         for i in range(num_elections):
                 f.write("<tr><td>" + election_names[i] + "</td><td>" +
@@ -160,7 +160,6 @@ def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
         f.write("<table>\n<td>District</td><td>Units</td><td>Conflicted Edges</td>" +
                 "<td>Population Deviation %</td><td>Polsby-Popper</td></tr>")
 
-        number_of_districts = len(partition['population'].keys())
         total_population = sum(partition['population'].values())
         mean_population = total_population / num_districts
 
@@ -171,7 +170,6 @@ def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
                         str((partition["population"][i+1] - mean_population) / (
                             mean_population)) + "</td><td>" +
                         str(partition["polsby_popper"][i+1]) + "</td></tr>")
-        #print(partition.parts.values())
 
         node_lengths=[len(x) for x in partition.parts.values()]
         f.write("<tr><td> Mean</td><td>" + str(sum(node_lengths) / num_districts) + "</td><td>" +
@@ -233,8 +231,8 @@ def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
                     if len(i[3])>1:
                         for j in range(len(i[3])):
                             f.write("<tr><td> Part " + str(j) + "</td><td></td><td>" + str(i[3][j]) + "</td></tr>")
-
-                f.write("</table>")     
+		
+                f.write("</table>")
                 f.write("<h2>District Splits by County</h2>")
                 f.write("<b>4/5 function regular weight: </b>" )
                 f.write(str(reverse_entropy[0][0]))

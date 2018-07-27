@@ -2,7 +2,6 @@ import geopandas as gp
 import os
 import datetime
 import matplotlib.pyplot as plt
-import random
 import pandas as pd
 
 from rundmcmc.accept import always_accept
@@ -45,7 +44,7 @@ county_col = "County"
 
 
 # This builds a graph
-graph = construct_graph(graph_path, id_col=unique_label, 
+graph = construct_graph(graph_path, id_col=unique_label,
 						pop_col=pop_col, data_cols=["GOV", "TS", "2011Plan", "Remedial",
                                    "538dem", "538cpct", "8thgrade", "8thgrade2", "Persily",
 								   county_col, 'T16PRESD', 'T16PRESR', 'T16SEND', 'T16SENR'],

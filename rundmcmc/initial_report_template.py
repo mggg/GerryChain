@@ -140,7 +140,7 @@ for district_col in ["GOV_4_1", "TS_4_1", "2011", "Remedial"]:
                            compactness_constraint_Lm1])
     print("setup chain")
     outputName = newdir + "Initial_Report.html"
-        
+
     write_initial_report(newdir=newdir, outputName=outputName, partition=initial_partition,
                          df_to_plot=df_plot,
                          state_name=state_name, district_col=district_col,
