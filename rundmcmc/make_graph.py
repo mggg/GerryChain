@@ -141,6 +141,7 @@ def construct_graph_from_df(df,
         pops = df[pop_col].to_dict()
     else:
         warnings.warn("No population column was given, assuming all 0")
+        pop_col = "population"
 
     if area_col:
         areas = df[area_col].to_dict()
@@ -148,17 +149,19 @@ def construct_graph_from_df(df,
         # This may be slightly expensive, so only do it if we know we have to.
         areas = df['geometry'].area.to_dict()
         warnings.warn("No area column was given, computing from geometry")
+        area_col = "areas"
 
     dists = 0
     if district_col:
         dists = df[district_col].to_dict()
     else:
         warnings.warn("No district assignment column was given, assuming all 0")
+        district_col = "CD"
 
     # add new attribute to all nodes with value 0 used as dummy variable
-    networkx.set_node_attributes(graph, name='population', values=pops)
-    networkx.set_node_attributes(graph, name='areas', values=areas)
-    networkx.set_node_attributes(graph, name='CD', values=dists)
+    networkx.set_node_attributes(graph, name=pop_col, values=pops)
+    networkx.set_node_attributes(graph, name=area_col, values=areas)
+    networkx.set_node_attributes(graph, name=district_col, values=dists)
 
     return graph
 
