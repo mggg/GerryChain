@@ -37,7 +37,7 @@ def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
         f.write("<br><br><b>Election Data: </b>")
         for i in range(num_elections):
             f.write(election_names[i] + "  ")
-  
+
         df_to_plot.plot(column="initial", cmap='tab20')
 
         plt.axis('off')

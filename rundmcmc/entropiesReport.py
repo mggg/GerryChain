@@ -24,7 +24,7 @@ def countyEntropyReport(partition, pop_col="POP100", county_col="COUNTYFP10"):
         statePop += float(vtdList[vtd1][pop_col])
         countyDict.setdefault(vtdList[vtd1][county_col], [])
         countyDict[vtdList[vtd1][county_col]].append(vtd1)
-        
+
     # go through each county
     for county in countyDict.keys():
         current_county_data = []
