@@ -50,6 +50,9 @@ def add_data_to_graph(df, graph, col_names, id_col=None):
     else:
         indexed_df = df
 
+    for name in col_names:
+        df[name]=pd.to_numeric(df[name], errors='coerce')
+
     column_dictionaries = indexed_df[col_names].to_dict('index')
     networkx.set_node_attributes(graph, column_dictionaries)
 
@@ -134,6 +137,7 @@ def construct_graph_from_df(df,
 
     pops = 0
     if pop_col:
+        df[pop_col]=pd.to_numeric(df[pop_col], errors='coerce')
         pops = df[pop_col].to_dict()
     else:
         warnings.warn("No population column was given, assuming all 0")

@@ -19,7 +19,8 @@ def write_header_styles(fstream):
 
 def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
  district_col, num_elections, election_names, election_columns, df,
-                         unique_label, validator):
+                         unique_label, validator, county_col=None,
+                         report_entropy=None, entropy=None, county_data=None):
  
     num_districts = len(partition['cut_edges_by_part'])
 
@@ -167,7 +168,7 @@ def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
                         str(len(partition.parts[i+1])) + "</td><td>" +
                         str(len(partition["cut_edges_by_part"][i+1])) + "</td><td>" +
                         str((partition["population"][i+1] - mean_population) / (
-                            total_population)) + "</td><td>" +
+                            mean_population)) + "</td><td>" +
                         str(partition["polsby_popper"][i+1]) + "</td></tr>")
         #print(partition.parts.values())
 
@@ -187,3 +188,51 @@ def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
                 "</td><td>" + str(min([x for x in partition["polsby_popper"].values()])) +
                 "</td></tr>")
         f.write("</table>")
+
+        if report_entropy is not None:
+                
+                f.write("<h2>Entropy Reporth</h2>")
+                f.write("<b>Number of Counties: </b>")
+                f.write(str(len(county_data)))
+                f.write("<br><b>Number of Split Counties: </b>")
+                f.write(str(sum([x[1] for x in county_data])))
+                f.write("<b>4/5 function regular weight: </b>" )
+                f.write(str(entropy[0][0]))
+                f.write("<br><b>4/5 function inverse weight: </b>" )
+                f.write(str(entropy[0][1]))
+                f.write("\n")
+                f.write("<br><b>4/5 function  no weight: </b>" )
+                f.write(str(entropy[0][2]))
+                f.write("\n")
+                f.write("<br><b>Linear function regular weight: </b>" )
+                f.write(str(entropy[1][0]))
+                f.write("\n")
+                f.write("<br><b>Linear function inverse weight: </b>" )
+                f.write(str(entropy[1][1]))
+                f.write("\n")
+                f.write("<br><b>Linear function  no weight: </b>" )
+                f.write(str(entropy[1][2]))
+                f.write("\n")
+                f.write("<br><b>Shannon function regular weight: </b>" )
+                f.write(str(entropy[2][0]))
+                f.write("\n")
+                f.write("<br><b>Shannon function inverse weight: </b>" )
+                f.write(str(entropy[2][1]))
+                f.write("\n")
+                f.write("<br><b>Shannon function  no weight: </b>" )
+                f.write(str(entropy[2][2]))
+
+                f.write("<h2>Splits by County</h2>")
+
+                f.write("<table><tr><td>County Label</td><td> Split?</td><td>Population</td></tr>")
+                yn_dict={0: "No", 1: "Yes"}
+                for i in county_data:
+                    f.write("<tr><td><b>County" + str(i[0]) + "</b></td><td>" + yn_dict[i[1]] + "</td><td>" +
+                            str(i[2]) + "</td></tr>")
+                    if len(i[3])>1:
+                        for j in range(len(i[3])):
+                            f.write("<tr><td> Part " + str(j) + "</td><td></td><td>" + str(i[3][j]) + "</td></tr>")
+                            
+                            
+                    
+                        
