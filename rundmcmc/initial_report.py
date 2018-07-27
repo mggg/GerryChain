@@ -20,7 +20,8 @@ def write_header_styles(fstream):
 def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
  district_col, num_elections, election_names, election_columns, df,
                          unique_label, validator, county_col=None,
-                         report_entropy=None, entropy=None, county_data=None):
+                         report_entropy=None, entropy=None, county_data=None,
+                         reverse_entropy=None):
  
     num_districts = len(partition['cut_edges_by_part'])
 
@@ -233,6 +234,29 @@ def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
                         for j in range(len(i[3])):
                             f.write("<tr><td> Part " + str(j) + "</td><td></td><td>" + str(i[3][j]) + "</td></tr>")
                             
-                            
-                    
-                        
+                f.write("<h2>District Splits by County</h2>")
+                f.write("<b>4/5 function regular weight: </b>" )
+                f.write(str(reverse_entropy[0][0]))
+                f.write("<br><b>4/5 function inverse weight: </b>" )
+                f.write(str(reverse_entropy[0][1]))
+                f.write("\n")
+                f.write("<br><b>4/5 function  no weight: </b>" )
+                f.write(str(reverse_entropy[0][2]))
+                f.write("\n")
+                f.write("<br><b>Linear function regular weight: </b>" )
+                f.write(str(reverse_entropy[1][0]))
+                f.write("\n")
+                f.write("<br><b>Linear function inverse weight: </b>" )
+                f.write(str(reverse_entropy[1][1]))
+                f.write("\n")
+                f.write("<br><b>Linear function  no weight: </b>" )
+                f.write(str(reverse_entropy[1][2]))
+                f.write("\n")
+                f.write("<br><b>Shannon function regular weight: </b>" )
+                f.write(str(reverse_entropy[2][0]))
+                f.write("\n")
+                f.write("<br><b>Shannon function inverse weight: </b>" )
+                f.write(str(reverse_entropy[2][1]))
+                f.write("\n")
+                f.write("<br><b>Shannon function  no weight: </b>" )
+                f.write(str(reverse_entropy[2][2]))
