@@ -51,7 +51,7 @@ def add_data_to_graph(df, graph, col_names, id_col=None):
         indexed_df = df
 
     for name in col_names:
-        indexed_df[name]=pd.to_numeric(indexed_df[name], errors='coerce')
+        indexed_df[name] = pd.to_numeric(indexed_df[name], errors='coerce')
 
     column_dictionaries = indexed_df[col_names].to_dict('index')
     networkx.set_node_attributes(graph, column_dictionaries)
