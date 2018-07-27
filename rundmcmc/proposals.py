@@ -1,29 +1,41 @@
 import random
 
 
-# def propose_random_flip(partition):
-#     """Proposes a random boundary flip from the partition.
-#     Uses the number of cut edges to determine self--loops.
+def propose_any_node_flip(partition):
+    """Propose to pick a random node to a
+    random part
 
-#     :partition: The current partition to propose a flip from.
-#     :returns: a dictionary with the flipped node mapped to its new assignment
+    """
 
-#     """
-#     # self loop
-#     numEdges = 2.0 * len(partition['cut_edges'])
-#     if random.random() < 1.0 - (numEdges * 1.0 / partition.max_edge_cuts):
-#         return dict()
+    node = random.choice(tuple(partition.assignment.keys()))
+    newpart = random.choice(tuple(partition.assignment.values()))
 
-#     flip = propose_random_flip_no_loops(partition)
+    return {node: newpart}
 
-#     # checks for a frozen nodes field and self loops if the value has
-#     # been set to 1
-#     flipped_node = list(flip.keys())[0]
-#     node_attrs = partition.graph.nodes[flipped_node]
-#     if "Frozen" in node_attrs and node_attrs["Frozen"]:
-#         return dict()
 
-#     return flip
+def propose_random_flip_with_loops(partition):
+    """Proposes a random boundary flip from the partition.
+    Uses the number of cut edges to determine self--loops.
+
+    :partition: The current partition to propose a flip from.
+    :returns: a dictionary with the flipped node mapped to its new assignment
+
+    """
+    # self loop
+    numEdges = 2.0 * len(partition['cut_edges'])
+    if random.random() < 1.0 - (numEdges * 1.0 / partition.max_edge_cuts):
+        return dict()
+
+    flip = propose_random_flip(partition)
+
+    # checks for a frozen nodes field and self loops if the value has
+    # been set to 1
+    flipped_node = list(flip.keys())[0]
+    node_attrs = partition.graph.nodes[flipped_node]
+    if "Frozen" in node_attrs and node_attrs["Frozen"]:
+        return dict()
+
+    return flip
 
 
 def propose_random_flip_metagraph(partition):
@@ -40,7 +52,7 @@ def propose_random_flip_metagraph(partition):
     if random.random() < 1.0 - (numEdges * 1.0 / partition.max_edge_cuts):
         return dict()
 
-    flip = propose_random_flip_no_loops(partition)
+    flip = propose_random_flip(partition)
 
     # checks for a frozen nodes field and self loops if the value has
     # been set to 1
@@ -166,7 +178,7 @@ def number_of_flips(partition, dict_of_flips, prev_partition):
         return dict_of_flips, prev_partition
 
 
-def propose_random_flip_no_loops(partition):
+def propose_random_flip(partition):
     """Proposes a random boundary flip from the partition.
 
     :partition: The current partition to propose a flip from.
@@ -181,9 +193,6 @@ def propose_random_flip_no_loops(partition):
     flip = {flipped_node: partition.assignment[other_node]}
 
     return flip
-
-
-propose_random_flip = propose_random_flip_no_loops
 
 
 def propose_lowest_pop_single_flip(partition):

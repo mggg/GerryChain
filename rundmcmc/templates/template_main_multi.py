@@ -22,7 +22,7 @@ from rundmcmc.make_graph import (add_data_to_graph, construct_graph,
 
 from rundmcmc.partition import Partition
 
-from rundmcmc.proposals import propose_random_flip_no_loops
+from rundmcmc.proposals import propose_random_flip
 
 from rundmcmc.updaters import (Tally, boundary_nodes, cut_edges,
                                cut_edges_by_part, exterior_boundaries,
@@ -108,7 +108,7 @@ add_data_to_graph(df, graph, [cols for pair in election_columns for cols in pair
 
 
 # Desired proposal method
-proposal_method = propose_random_flip_no_loops
+proposal_method = propose_random_flip
 
 
 # Desired acceptance method
@@ -205,11 +205,10 @@ for i in range(num_elections):
         election_names[i]: functools.partial(efficiency_gap,
                                              col1=election_columns[i][0],
                                              col2=election_columns[i][1]),
-        'Number of Democratic Seats' + "\n" +
-        election_names[i]: functools.partial(how_many_seats_value,
-                                             col1=election_columns[i][0],
-                                             col2=election_columns[i][1])
-        }
+        'demseats' + election_names[i]: functools.partial(how_many_seats_value,
+                                                          col1=election_columns[i][0],
+                                                          col2=election_columns[i][1])
+    }
 
     scores_for_plots.append(vscores)
 
@@ -220,6 +219,11 @@ initial_scores = {key: score(initial_partition) for key, score in scores.items()
 
 table = pipe_to_table(chain, scores, display=True, number_to_display=10)
 
+results_df = table.to_dataframe()
+
+for name in election_names:
+    print(results_df["demseats" + name].describe())
+    print()
 
 # P-value reports
 pv_dict = {key: p_value_report(key, table[key], initial_scores[key]) for key in scores}
