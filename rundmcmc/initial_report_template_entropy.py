@@ -146,9 +146,10 @@ for district_col in ["GOV", "TS", "2011Plan", "Remedial", "538dem", "538cpt", "8
     print("setup chain")
 
     outputName = newdir + "Initial_Report.html"
-    entropy, county_data = countyEntropyReport(initial_partition, pop_col, county_col)
+    entropy, county_data = countyEntropyReport(initial_partition,
+                                               pop_col=pop_col, county_col=county_col)
 
-    reverse_entropy = countySplitDistrict(partition,
+    reverse_entropy = countySplitDistrict(initial_partition,
                                           pop_col=pop_col, county_col=county_col)
 
     write_initial_report(newdir=newdir, outputName=outputName, partition=initial_partition,
