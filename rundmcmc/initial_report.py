@@ -233,7 +233,8 @@ def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
                     if len(i[3])>1:
                         for j in range(len(i[3])):
                             f.write("<tr><td> Part " + str(j) + "</td><td></td><td>" + str(i[3][j]) + "</td></tr>")
-                            
+
+                f.write("</table>")     
                 f.write("<h2>District Splits by County</h2>")
                 f.write("<b>4/5 function regular weight: </b>" )
                 f.write(str(reverse_entropy[0][0]))
