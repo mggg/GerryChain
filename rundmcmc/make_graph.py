@@ -137,7 +137,7 @@ def construct_graph_from_df(df,
 
     pops = 0
     if pop_col:
-        df[pop_col]=pd.to_numeric(df[pop_col], errors='coerce')
+        df[pop_col] = pd.to_numeric(df[pop_col], errors='coerce')
         pops = df[pop_col].to_dict()
     else:
         warnings.warn("No population column was given, assuming all 0")
