@@ -11,27 +11,25 @@ import random
 
 from rundmcmc.accept import always_accept
 
-from rundmcmc.chain import MarkovChain
-
 from rundmcmc.make_graph import (add_data_to_graph, construct_graph,
                                  get_assignment_dict_from_graph)
 
 from rundmcmc.partition import Partition
 
-from rundmcmc.proposals import propose_random_flip  #  _no_loops
+from rundmcmc.proposals import propose_random_flip
 
 from rundmcmc.updaters import (Tally, boundary_nodes, cut_edges,
                                cut_edges_by_part, exterior_boundaries,
                                perimeters, polsby_popper,
                                votes_updaters,
-                               interior_boundaries, MetagraphDegree)
+                               interior_boundaries)
 
 from rundmcmc.validity import (L1_reciprocal_polsby_popper,
                                L_minus_1_polsby_popper,
                                UpperBound, LowerBound,
                                Validator, single_flip_contiguous,
                                within_percent_of_ideal_population,
-                               SelfConfiguringLowerBound, no_more_disconnected)
+                               SelfConfiguringLowerBound)
 
 from initial_report import write_initial_report
 
@@ -70,7 +68,7 @@ for district_col in ["GOV_4_1", "TS_4_1", "2011", "Remedial"]:
 
     # Input the shapefile with vote data here
     vote_path = "./testData/wes_with_districtings.shp"
-    #vote_path = "./testData/FinalPA.shp"
+    # vote_path = "./testData/FinalPA.shp"
 
     # This inputs a shapefile with columns you want to add
     df = gp.read_file(vote_path)
@@ -85,7 +83,7 @@ for district_col in ["GOV_4_1", "TS_4_1", "2011", "Remedial"]:
 
     # This adds the data to the graph
     add_data_to_graph(df, graph, [cols for pair in election_columns for cols in pair])
-    #add_data_to_graph(df, graph, ["County"])
+    # add_data_to_graph(df, graph, ["County"])
 
     # Geojson for plotting
     df_plot = gp.read_file("./testData/wes_for_plots.geojson")
@@ -138,11 +136,9 @@ for district_col in ["GOV_4_1", "TS_4_1", "2011", "Remedial"]:
 
     compactness_PA = SelfConfiguringLowerBound(L_minus_1_polsby_popper, epsilon=0)
 
-    validator = Validator([single_flip_contiguous,population_constraint, 
+    validator = Validator([single_flip_contiguous, population_constraint,
                            compactness_constraint_Lm1])
-    
     print("setup chain")
-
     outputName = newdir + "Initial_Report.html"
         
     write_initial_report(newdir=newdir, outputName=outputName, partition=initial_partition,
