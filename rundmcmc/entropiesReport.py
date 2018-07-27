@@ -19,7 +19,7 @@ def countyEntropyReport(partition, pop_col="POP100", county_col="COUNTYFP10"):
     # assign each VTD to county dictionary
     countyDict = {}
     vtdList = partition.graph.nodes
-    
+
     for vtd1 in vtdList:
         statePop += float(vtdList[vtd1][pop_col])
         countyDict.setdefault(vtdList[vtd1][county_col], [])
