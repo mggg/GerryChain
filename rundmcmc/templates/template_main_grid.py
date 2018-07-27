@@ -17,7 +17,7 @@ from rundmcmc.chain import MarkovChain
 
 # Makes a simple grid and runs the MCMC. Mostly for testing proposals
 
-grid = Grid((4, 4), with_diagonals=True)  # was (4,4)
+grid = Grid((5, 5), with_diagonals=False)  # was (4,4)
 
 
 def perimeter_constraint(grid, threshold=10):
@@ -36,7 +36,7 @@ dumb_validator = Validator([fast_connected, no_vanishing_districts])
 
 
 chain = MarkovChain(propose_random_flip_no_loops, grid_validator2, always_accept,
-                    grid, total_steps=100)
+                    grid, total_steps=1000)
 
 # Outputs .pngs for animating
 newdir = "./Outputs/Grid_Plots/"
@@ -44,7 +44,7 @@ os.makedirs(os.path.dirname(newdir + "init.txt"), exist_ok=True)
 with open(newdir + "init.txt", "w") as f:
     f.write("Created Folder")
 
-i = 1
+ = 1
 for partition in chain:
     plt.matshow(partition.as_list_of_lists())
     plt.savefig(newdir + "g3_%04d.png" % i)
