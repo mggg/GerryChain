@@ -65,7 +65,7 @@ def add_boundary_perimeters(graph, neighbors, df):
 
     """
     # creates one shape of the entire state to compare outer boundaries against
-    boundary = cascaded_union(df["geometry"]).boundary
+    boundary = cascaded_union(df.geometry).boundary
 
     intersections = df.intersection(boundary)
     is_boundary = intersections.apply(bool)
@@ -79,7 +79,7 @@ def add_boundary_perimeters(graph, neighbors, df):
     networkx.set_node_attributes(graph, attr_dict)
 
     # For the boundary nodes, set the boundary perimeter.
-    boundary_perims = intersections[is_boundary].apply(lambda s: s.length)
+    boundary_perims = intersections[is_boundary].length
     boundary_perims = gp.GeoDataFrame(boundary_perims)
     boundary_perims.columns = ["boundary_perim"]
 
@@ -97,13 +97,11 @@ def neighbors_with_shared_perimeters(neighbors, df):
     """
     vtds = {}
 
+    geom = df.geometry
     for shape in neighbors:
-        vtds[shape] = {}
-
-        for neighbor in neighbors[shape]:
-            shared_perim = df.loc[shape, "geometry"].intersection(
-                df.loc[neighbor, "geometry"]).length
-            vtds[shape][neighbor] = {'shared_perim': shared_perim}
+        shared_perim = geom[neighbors[shape]].intersection(geom[shape]).length
+        shared_perim.name = "shared_perim"
+        vtds[shape] = pd.DataFrame(shared_perim).to_dict("index")
 
     return networkx.from_dict_of_dicts(vtds)
 
@@ -125,7 +123,7 @@ def construct_graph_from_df(df,
 
     # Generate rook neighbor lists from dataframe.
     neighbors = pysal.weights.Rook.from_dataframe(
-        df, geom_col="geometry").neighbors
+        df, geom_col=df.geometry.name).neighbors
 
     graph = neighbors_with_shared_perimeters(neighbors, df)
 

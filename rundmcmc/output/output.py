@@ -1,6 +1,7 @@
+from collections import Counter
+import pandas as pd
 import json
 import math
-from collections import Counter
 
 
 def p_value_report(score_name, ensemble_scores, initial_plan_score):
@@ -82,8 +83,15 @@ class ChainOutputTable:
     def append(self, row):
         self.data.append(row)
 
-    def json(self, row):
-        return json.dumps(self.data)
+    def to_json(self, filename=None):
+        if filename is None:
+            return json.dumps(self.data)
+
+        with open(filename, "w") as f:
+            json.dump(self.data, f)
+
+    def to_dataframe(self):
+        return pd.DataFrame(self.data)
 
     def __iter__(self):
         return self
