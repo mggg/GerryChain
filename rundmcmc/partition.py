@@ -59,7 +59,7 @@ class Partition:
         self.parent = parent
         self.flips = flips
 
-        self.assignment = {**parent.assignment, **flips}
+        self.assignment = collections.ChainMap(flips, parent.assignment)
 
         self.graph = parent.graph
         self.updaters = parent.updaters
