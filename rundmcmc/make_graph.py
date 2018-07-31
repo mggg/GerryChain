@@ -51,7 +51,7 @@ def add_data_to_graph(df, graph, col_names, id_col=None):
         indexed_df = df
 
     for name in col_names:
-        indexed_df[name] = pd.to_numeric(indexed_df[name], errors='coerce')
+        df[name] = pd.to_numeric(df[name], errors='coerce')
 
     column_dictionaries = indexed_df[col_names].to_dict('index')
     networkx.set_node_attributes(graph, column_dictionaries)
@@ -136,32 +136,36 @@ def construct_graph_from_df(df,
         add_data_to_graph(df, graph, cols_to_add)
 
     pops = 0
+    p_name = "population"
     if pop_col:
-        df[pop_col] = pd.to_numeric(df[pop_col], errors='coerce')
+        df[pop_col]=pd.to_numeric(df[pop_col], errors='coerce')
         pops = df[pop_col].to_dict()
+        p_name = pop_col
     else:
         warnings.warn("No population column was given, assuming all 0")
-        pop_col = "population"
 
+        
+    a_name  = "areas"    
     if area_col:
         areas = df[area_col].to_dict()
+        a_name = area_col
     else:
         # This may be slightly expensive, so only do it if we know we have to.
         areas = df['geometry'].area.to_dict()
         warnings.warn("No area column was given, computing from geometry")
-        area_col = "areas"
 
     dists = 0
+    d_name = "CD"
     if district_col:
         dists = df[district_col].to_dict()
+        d_name = district_col
     else:
         warnings.warn("No district assignment column was given, assuming all 0")
-        district_col = "CD"
 
     # add new attribute to all nodes with value 0 used as dummy variable
-    networkx.set_node_attributes(graph, name=pop_col, values=pops)
-    networkx.set_node_attributes(graph, name=area_col, values=areas)
-    networkx.set_node_attributes(graph, name=district_col, values=dists)
+    networkx.set_node_attributes(graph, name=p_name, values=pops)
+    networkx.set_node_attributes(graph, name=a_name, values=areas)
+    networkx.set_node_attributes(graph, name=d_name, values=dists)
 
     return graph
 
