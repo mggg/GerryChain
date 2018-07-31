@@ -138,14 +138,13 @@ def construct_graph_from_df(df,
     pops = 0
     p_name = "population"
     if pop_col:
-        df[pop_col]=pd.to_numeric(df[pop_col], errors='coerce')
+        df[pop_col] = pd.to_numeric(df[pop_col], errors='coerce')
         pops = df[pop_col].to_dict()
         p_name = pop_col
     else:
         warnings.warn("No population column was given, assuming all 0")
 
-        
-    a_name  = "areas"    
+    a_name = "areas"
     if area_col:
         areas = df[area_col].to_dict()
         a_name = area_col
