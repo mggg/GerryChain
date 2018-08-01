@@ -42,11 +42,11 @@ def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
 
         plt.axis('off')
         plt.title(state_name + " Plan: " + district_col)
-        plt.savefig(newdir + "initial_CD.png")
+        plt.savefig(newdir + district_col + "initial.png")
         plt.close()
 
         f.write("<div width=100%>\n")
-        f.write(f"    <img src='initial_CD.png' width=80%/>\n")
+        f.write(f"    <img src='" + district_col + "initial.png' width=80%/>\n")
         f.write("</div>\n")
 
         f.write("<h2>Statewide Stats</h2>\n\n")
@@ -119,10 +119,10 @@ def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
                 df_to_plot.plot(column="district_partisan", cmap="seismic")
                 plt.axis('off')
                 plt.title(election_names[i] + " District Winners")
-                plt.savefig(newdir + "district_partisan" + str(i)+ ".png")
+                plt.savefig(newdir + district_col + "district_partisan" + str(i)+ ".png")
                 plt.close()
 
-                f.write("<img src='district_partisan" + str(i) + ".png' width=40%/>\n")
+                f.write("<img src='" + district_col + "district_partisan" + str(i) + ".png' width=40%/>\n")
         f.write( "</div>\n")
 
         f.write("<table>\n <tr><td>District</td>")
@@ -150,11 +150,11 @@ def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
 
         plt.axis("off")
         plt.title("District Polsby-Popper Scores")
-        plt.savefig(newdir + "district_PP" + ".png")
+        plt.savefig(newdir + district_col + "district_PP" + ".png")
         plt.close()
 
         f.write("<div width=100%>\n")
-        f.write(f"    <img src='district_PP.png' width=80%/>\n")
+        f.write(f"    <img src='" + district_col + "district_PP.png' width=80%/>\n")
         f.write("</div>\n")
 
         f.write("<table>\n<td>District</td><td>Units</td><td>Conflicted Edges</td>" +
@@ -202,7 +202,7 @@ def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
                 plt.close()
 
                 f.write("<div width=100%>\n")
-                f.write(f"    <img src='initial_CD.png' width=40%/>\n")
+                f.write(f"    <img src='" + district_col + "initial.png' width=40%/>\n")
                 f.write(f"    <img src='counties.png' width=40%/>\n")
 
                 f.write("</div>\n")
