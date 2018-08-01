@@ -190,12 +190,28 @@ def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
 
         if report_entropy is not None:
                 
-                f.write("<h2>Entropy Reporth</h2>")
+                f.write("<h2>Entropy Report</h2>")
+
+                df_to_plot["county"] = df_to_plot[unique_label].map(df.to_dict()[county_col])
+
+                df_to_plot.plot(column="county", cmap="tab20")
+
+                plt.axis("off")
+                plt.title(state_name + " County Map")
+                plt.savefig(newdir + "counties" + ".png")
+                plt.close()
+
+                f.write("<div width=100%>\n")
+                f.write(f"    <img src='initial_CD.png' width=40%/>\n")
+                f.write(f"    <img src='counties.png' width=40%/>\n")
+
+                f.write("</div>\n")
+
                 f.write("<b>Number of Counties: </b>")
                 f.write(str(len(county_data)))
                 f.write("<br><b>Number of Split Counties: </b>")
                 f.write(str(sum([x[1] for x in county_data])))
-                f.write("<b>4/5 function regular weight: </b>" )
+                f.write("<br><b>4/5 function regular weight: </b>" )
                 f.write(str(entropy[0][0]))
                 f.write("<br><b>4/5 function inverse weight: </b>" )
                 f.write(str(entropy[0][1]))
