@@ -37,10 +37,6 @@ class Partition:
         self.graph = networkx.convert_node_labels_to_integers(
                                 graph, label_attribute="OLDID")
 
-        self.node_ids = list(map(
-                    networkx.get_node_attributes(self.graph, "OLDID").get,
-                    range(len(graph.nodes))))
-
         self.assignment = [0 for node in graph.nodes]
 
         if assignment:
@@ -130,3 +126,9 @@ class Partition:
         if key not in self._cache:
             self._cache[key] = self.updaters[key](self)
         return self._cache[key]
+
+    def assignment_by_nodeid(self):
+        node_ids = list(map(
+                    networkx.get_node_attributes(self.graph, "OLDID").get,
+                    range(len(graph.nodes))))
+        return dict(zip(node_ids, self.assignment))
