@@ -29,6 +29,7 @@ from rundmcmc.updaters import (Tally, boundary_nodes, cut_edges,
 from rundmcmc.validity import (L1_reciprocal_polsby_popper,
                                UpperBound,
                                Validator, no_vanishing_districts,
+                               proposed_changes_still_contiguous,
                                refuse_new_splits, single_flip_contiguous,
                                within_percent_of_ideal_population)
 
@@ -119,7 +120,7 @@ compactness_limit = L1_reciprocal_polsby_popper(initial_partition)
 compactness_constraint = UpperBound(L1_reciprocal_polsby_popper, compactness_limit)
 
 validator = Validator([refuse_new_splits, no_vanishing_districts,
-                       single_flip_contiguous, population_constraint,
+                       proposed_changes_still_contiguous, population_constraint,
                        compactness_constraint])
 
 # Add cyclic updaters :(

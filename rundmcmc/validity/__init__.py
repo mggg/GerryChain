@@ -52,6 +52,7 @@ from .validity import (L1_reciprocal_polsby_popper,
                        no_vanishing_districts, refuse_new_splits,
                        single_flip_contiguous, contiguous,
                        within_percent_of_ideal_population,
+                       proposed_changes_still_contiguous,
                        districts_within_tolerance,
                        fast_connected, no_more_disconnected)
 
