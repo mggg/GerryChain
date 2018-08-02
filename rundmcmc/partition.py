@@ -1,4 +1,5 @@
 import collections
+import networkx
 
 from rundmcmc.proposals import max_edge_cuts
 from rundmcmc.updaters import flows_from_changes, compute_edge_flows
@@ -33,11 +34,21 @@ class Partition:
         self.max_edge_cuts = max_edge_cuts(self)
 
     def _first_time(self, graph, assignment, updaters):
-        self.graph = graph
-        self.assignment = assignment
+        self.graph = networkx.convert_node_labels_to_integers(
+                                graph, label_attribute="OLDID")
 
-        if not assignment:
-            assignment = {node: 0 for node in graph.nodes}
+        self.node_ids = list(map(
+                    networkx.get_node_attributes(self.graph, "OLDID").get,
+                    range(len(graph.nodes))))
+
+        self.assignment = [0 for node in graph.nodes]
+
+        if assignment:
+            self.assignment = list(map(
+                        networkx.get_node_attributes(
+                            self.graph, assignment).get,
+                            range(len(graph.nodes))
+                        ))
 
         if not updaters:
             updaters = dict()
@@ -52,14 +63,16 @@ class Partition:
         self.max_edge_cuts = max_edge_cuts(self)
 
         self.parts = collections.defaultdict(set)
-        for node, part in self.assignment.items():
+        for node, part in enumerate(self.assignment):
             self.parts[part].add(node)
 
     def _from_parent(self, parent, flips):
         self.parent = parent
         self.flips = flips
 
-        self.assignment = {**parent.assignment, **flips}
+        self.assignment = [x for x in parent.assignment]
+        for key, val in flips.items():
+            self.assignment[key] = val
 
         self.graph = parent.graph
         self.updaters = parent.updaters

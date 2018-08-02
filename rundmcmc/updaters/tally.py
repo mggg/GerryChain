@@ -41,7 +41,7 @@ class Tally:
 
         """
         tally = collections.defaultdict(self.dtype)
-        for node, part in partition.assignment.items():
+        for node, part in enumerate(partition.assignment):
             add = self._get_tally_from_node(partition, node)
 
             if math.isnan(add):

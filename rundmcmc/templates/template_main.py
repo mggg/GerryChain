@@ -18,7 +18,7 @@ from rundmcmc.make_graph import (add_data_to_graph, construct_graph)
 
 from rundmcmc.partition import Partition
 
-from rundmcmc.proposals import propose_random_flip_no_loops
+from rundmcmc.proposals import propose_random_flip
 
 from rundmcmc.updaters import (Tally, boundary_nodes, cut_edges,
                                cut_edges_by_part, exterior_boundaries,
@@ -59,7 +59,7 @@ with open('graph_with_data.json', 'w') as outfile1:
     outfile1.write(json.dumps(json_graph.node_link_data(graph)))
 
 # Put district on graph
-assignment = dict(zip(graph.nodes(), [graph.node[x][district_col] for x in graph.nodes()]))
+assignment = "CD" #dict(zip(graph.nodes(), [graph.node[x][district_col] for x in graph.nodes()]))
 
 
 # Input the shapefile with vote data here
@@ -81,7 +81,7 @@ add_data_to_graph(df, graph, data_list, id_col=unique_label)
 
 
 # Desired proposal method
-proposal_method = propose_random_flip_no_loops
+proposal_method = propose_random_flip
 
 
 # Desired proposal method
@@ -146,7 +146,7 @@ scores = {
 
 initial_scores = {key: score(initial_partition) for key, score in scores.items()}
 
-table = pipe_to_table(chain, scores, display=True, number_to_display=100)
+table = pipe_to_table(chain, scores, display=False, number_to_display=100)
 
 # Histogram Plotting
 hist_path = "chain_histogram31.png"

@@ -250,8 +250,8 @@ def fast_connected(partition):
     # by their congressional districts.
     districts = collections.defaultdict(set)
 
-    for vtd in assignment:
-        districts[assignment[vtd]].add(vtd)
+    for vtd, cd in enumerate(assignment):
+        districts[cd].add(vtd)
 
     # Generates a subgraph for each district and perform a BFS on it
     # to check connectedness.
@@ -277,8 +277,8 @@ def non_bool_fast_connected(partition):
     districts = collections.defaultdict(set)
     returns = 0
 
-    for vtd in assignment:
-        districts[assignment[vtd]].add(vtd)
+    for vtd, cd in enumerate(assignment):
+        districts[cd].add(vtd)
 
     # Generates a subgraph for each district and perform a BFS on it
     # to check connectedness.
@@ -305,11 +305,13 @@ def proposed_changes_still_contiguous(partition):
 
     # Check whether this is the initial partition (parent=None)
     # or one with proposed changes (parent != None).
-    districts_of_interest = set(partition.assignment.values())
+    districts_of_interest = set(partition.assignment)
     if partition.parent:
         if partition.flips.keys is not None:
             districts_of_interest = set(partition.flips.values()).union(
-                                        set(map(partition.parent.assignment.get, partition.flips)))
+                                        set(map(partition.parent.assignment.__setitem__,
+                                            list(partition.flips.keys()),
+                                            list(partition.flips.values()))))
         else:
             districts_of_interest = []
 
@@ -317,8 +319,8 @@ def proposed_changes_still_contiguous(partition):
     # by their congressional districts.
     assignment = partition.assignment
     districts = collections.defaultdict(set)
-    for vtd in assignment:
-        districts[assignment[vtd]].add(vtd)
+    for vtd, cd in enumerate(assignment):
+        districts[cd].add(vtd)
 
     for key in districts_of_interest:
         adj = nx.to_dict_of_lists(partition.graph, districts[key])
