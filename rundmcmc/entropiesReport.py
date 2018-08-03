@@ -28,7 +28,7 @@ def countyEntropyReport(partition, pop_col="POP100", county_col="COUNTYFP10"):
     # go through each county
     for county in countyDict.keys():
         current_county_data = []
-		# list containing [countyID, split boolean, county pop, [subpop1,subpop2...]]
+    # list containing [countyID, split boolean, county pop, [subpop1,subpop2...]]
         subpop_list = []
 
         countyPop = 0
@@ -43,16 +43,16 @@ def countyEntropyReport(partition, pop_col="POP100", county_col="COUNTYFP10"):
                 countyDistrictDict[assignment] = []
 
             countyDistrictDict[partition.assignment[vtd2]].append(vtd2)
-        
+
         # calculate county weights
         countyWeight_list = []
         for weight_exp in weight_opts:
-            if weight_exp=="Infinity":
+            if weight_exp == "Infinity":
                 countyWeight = 1
             else:
-                countyWeight = ((countyPop*1.0) / (statePop * 1.0))**weight_exp
+                countyWeight = ((countyPop * 1.0) / (statePop * 1.0))**weight_exp
             countyWeight_list.append(countyWeight)
-                
+
         # for each district piece in current county
         for intersectionVTDs in countyDistrictDict.values():
             intersectionPop = 0
@@ -69,10 +69,10 @@ def countyEntropyReport(partition, pop_col="POP100", county_col="COUNTYFP10"):
                     if intersectionWeight != 0:
                         if function == "Shannon":
                             entropy[a][b] += countyWeight * intersectionWeight * math.log(
-							1.0 / intersectionWeight)
+                                                        1.0 / intersectionWeight)
                         else:
                             entropy[a][b] += countyWeight * intersectionWeight * (
-							1.0 / intersectionWeight)**(float(function))
+                                                        1.0 / intersectionWeight)**(float(function))
                     b += 1
                 a += 1
             # record intersection population
@@ -139,13 +139,13 @@ def countySplitDistrict(partition, pop_col="POP100", county_col="COUNTYFP10"):
     for vtd1 in vtdList:
 
         statePop += float(vtdList[vtd1][pop_col])
-		
+
         assignment = partition.assignment[vtd1]
-		
+
         if assignment not in districtDict:
-		
+
             districtDict[assignment] = []
-			
+
         districtDict[assignment].append(vtd1)
 
 
@@ -201,12 +201,12 @@ def countySplitDistrict(partition, pop_col="POP100", county_col="COUNTYFP10"):
                         if function == "Shannon":
 
                             entropy[a][b] += districtWeight * intersectionWeight * math.log(
-							1.0 / intersectionWeight)
+                                                        1.0 / intersectionWeight)
 
                         else:
 
                             entropy[a][b] += districtWeight * intersectionWeight * (
-							1.0 / intersectionWeight)**(float(function))
+                                                        1.0 / intersectionWeight)**(float(function))
 
                     b += 1
 

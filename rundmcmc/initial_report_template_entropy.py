@@ -45,18 +45,18 @@ county_col = "County"
 
 # This builds a graph
 graph = construct_graph(graph_path, id_col=unique_label,
-						pop_col=pop_col, data_cols=["GOV", "TS", "2011Plan", "Remedial",
-                                   "538dem", "538cpct", "8thgrade", "8thgrade2", "Persily",
-								   county_col, 'T16PRESD', 'T16PRESR', 'T16SEND', 'T16SENR'],
+                        pop_col=pop_col, data_cols=["GOV", "TS", "2011Plan", "Remedial",
+                        "538dem", "538cpct", "8thgrade", "8thgrade2", "Persily",
+                        county_col, 'T16PRESD', 'T16PRESR', 'T16SEND', 'T16SENR'],
                         data_source_type="fiona")
 
 
 df = gp.read_file(graph_path)
 
 for name in ["GOV", "TS", "2011Plan", "Remedial",
-                                   "538dem", "538cpct", "8thgrade", "8thgrade2",
-								   "Persily", county_col, 'T16PRESD', 'T16PRESR',
-								   'T16SEND', 'T16SENR']:
+             "538dem", "538cpct", "8thgrade", "8thgrade2",
+             "Persily", county_col, 'T16PRESD', 'T16PRESR',
+             'T16SEND', 'T16SENR']:
     df[name] = pd.to_numeric(df[name], errors='coerce')
 
 # This is the number of elections you want to analyze
@@ -67,7 +67,7 @@ election_names = ['2016_Presidential', '2016_Senate']
 election_columns = [['T16PRESD', 'T16PRESR'], ['T16SEND', 'T16SENR']]
 
 for district_col in ["GOV", "TS", "2011Plan", "Remedial", "538dem",
-					"538cpt", "8thgrade", "8thgrade2", "Persily"]:
+                     "538cpt", "8thgrade", "8thgrade2", "Persily"]:
     current = datetime.datetime.now()
     newdir = "./Outputs/PA_report-" + str(current)[:10] + "-" + str(current)[11:13]\
              + "-" + str(current)[14:16] + "-" + str(current)[17:19] + "/"
