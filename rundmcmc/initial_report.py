@@ -54,8 +54,8 @@ def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
         f.write("<b>Population Deviation: </b>" + str(L2_pop_dev(partition)) + "<br>")
         f.write("<b>Reciprocal Polsby-Popper L1: </b>" +
                 str(L1_reciprocal_polsby_popper(partition)) + "<br>")
-        f.write("<b>Polsby-Popper L(-1): </b>" + str(L_minus_1_polsby_popper(partition))
-                + "<br>")
+        f.write("<b>Polsby-Popper L(-1): </b>" + str(
+            L_minus_1_polsby_popper(partition)) + "<br>")
         f.write("<b>Conflicted Edges: </b>" + str(len(partition["cut_edges"])) + "<br>")
         f.write("<b>Boundary Nodes: </b>" + str(len(partition["boundary_nodes"])) + "<br>")
 
@@ -63,67 +63,69 @@ def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
         f.write("<div width=100%>\n")
 
         for i in range(num_elections):
-                df["Dperc"]=df[election_columns[i][1]] / (df[election_columns[i][0]]+ df[election_columns[i][1]])
-        
+                df["Dperc"] = df[election_columns[i][1]] / (
+                    df[election_columns[i][0]] + df[election_columns[i][1]])
+
                 df_to_plot["partisan"] = df_to_plot[unique_label].map(df.to_dict()["Dperc"])
 
-                df_to_plot.plot(column ="partisan", cmap="seismic")
+                df_to_plot.plot(column="partisan", cmap="seismic")
                 plt.axis('off')
                 plt.title(election_names[i] + " Vote Percentage")
-                plt.savefig(newdir + "partisan" + str(i)+".png")
+                plt.savefig(newdir + "partisan" + str(i) + ".png")
                 plt.close()
-                
+
                 f.write("<img src='partisan" + str(i)+".png' width=40%/>\n")
-                
+
         f.write("</div>\n")
 
         f.write("<table>\n <tr><td>Election</td><td>D Seats</td><td>R Seats</td><td> D Votes</td><td>R Votes</td>" +
-		"<td>D Percent</td><td> R percent</td><td> Mean Median </td><td> Efficiency Gap</td> </tr>")
+                "<td>D Percent</td><td> R percent</td><td> Mean Median </td><td> Efficiency Gap</td> </tr>")
 
         for i in range(num_elections):
                 f.write("<tr><td>" + election_names[i] + "</td><td>" +
-                        str(how_many_seats_value(partition,election_columns[i][0],
+                        str(how_many_seats_value(partition, election_columns[i][0],
                                                  election_columns[i][1])) + "</td><td>" +
-                        str(how_many_seats_value(partition,election_columns[i][1],
+                        str(how_many_seats_value(partition, election_columns[i][1],
                                                  election_columns[i][0])) + "</td><td>" +
                         str(sum(df[election_columns[i][0]])) + "</td><td>" +
                         str(sum(df[election_columns[i][1]])) + "</td><td>" +
-                        str(sum(df[election_columns[i][0]])/(sum(
-                                df[election_columns[i][0]])+sum(df[election_columns[i][1]])))
-                        + "</td><td>" +
-                        str(sum(df[election_columns[i][1]])/(sum(
-                                df[election_columns[i][0]])+sum(df[election_columns[i][1]])))
-                        + "</td><td>" +
-                        str(mean_median(partition,election_columns[i][0] + "%")) + "</td><td>" +
-                        str(efficiency_gap(partition,election_columns[i][0],election_columns[i][1]))
-                        +"</td></tr>")
+                        str(sum(df[election_columns[i][0]]) / (sum(
+                                df[election_columns[i][0]]) + sum(
+                                    df[election_columns[i][1]]))) + "</td><td>" +
+                        str(sum(df[election_columns[i][1]]) / (sum(
+                                df[election_columns[i][0]]) + sum(
+                                    df[election_columns[i][1]]))) + "</td><td>" +
+                        str(mean_median(partition, election_columns[i][0] + "%")) + "</td><td>" +
+                        str(efficiency_gap(partition, election_columns[i][0],
+                                           election_columns[i][1])) + "</td></tr>")
 
         f.write("</table>\n\n")
 
         f.write("<h2> District Partisan Measures</h2>")
         
-        win_dict = {0 : "D", 1 : "R"}
-        dw_list=[]
+        win_dict = {0: "D", 1: "R"}
+        dw_list = []
         f.write("<div width=100%>\n")
 
         for i in range(num_elections):
                 district_winners={}
 
                 for j in range(num_districts):
-                        district_winners[j+1] = int(partition[election_columns[i][1]][j+1]
-                                                         > partition[election_columns[i][0]][j+1])
+                        district_winners[j + 1] = int(
+                            partition[election_columns[i][1]][j + 1] > partition[election_columns[i][0]][j+1])
 
                 df_to_plot["district_partisan"] = df_to_plot[district_col].map(district_winners)
                 dw_list.append(district_winners)
-                
+
                 df_to_plot.plot(column="district_partisan", cmap="seismic")
                 plt.axis('off')
                 plt.title(election_names[i] + " District Winners")
-                plt.savefig(newdir + district_col + "district_partisan" + str(i)+ ".png")
+                plt.savefig(newdir + district_col + "district_partisan" + str(i) + ".png")
                 plt.close()
 
-                f.write("<img src='" + district_col + "district_partisan" + str(i) + ".png' width=40%/>\n")
-        f.write( "</div>\n")
+                f.write(
+                    "<img src='" + district_col + "district_partisan" + str(i) + ".png' width=40%/>\n")
+        f.write("</div>\n")
 
         f.write("<table>\n <tr><td>District</td>")
         for i in range(num_elections):
@@ -132,11 +134,11 @@ def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
         f.write("</tr>")
 
         for i in range(num_districts):
-                f.write("<tr><td>" + str(i+1) + "</td>")
+                f.write("<tr><td>" + str(i + 1) + "</td>")
                 for j in range(num_elections):
-                        f.write("<td>" + win_dict[dw_list[j][i+1]] + "</td><td>" +
-                                str(partition[election_columns[j][dw_list[j][i+1]] +
-                                              "%"][i+1]) +
+                        f.write("<td>" + win_dict[dw_list[j][i + 1]] + "</td><td>" +
+                                str(partition[election_columns[j][dw_list[j][i + 1]] +
+                                              "%"][i + 1]) +
                                 "</td>")
         f.write("</tr></table>")
 
@@ -164,32 +166,42 @@ def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
         mean_population = total_population / num_districts
 
         for i in range(num_districts):
-                f.write("<tr><td>" + str(i+1) + "</td><td>" +
-                        str(len(partition.parts[i+1])) + "</td><td>" +
+                f.write("<tr><td>" + str(i + 1) + "</td><td>" +
+                        str(len(partition.parts[i + 1])) + "</td><td>" +
                         str(len(partition["cut_edges_by_part"][i+1])) + "</td><td>" +
-                        str((partition["population"][i+1] - mean_population) / (
+                        str((partition["population"][i + 1] - mean_population) / (
                             mean_population)) + "</td><td>" +
-                        str(partition["polsby_popper"][i+1]) + "</td></tr>")
+                        str(partition["polsby_popper"][i + 1]) + "</td></tr>")
 
-        node_lengths=[len(x) for x in partition.parts.values()]
+        node_lengths = [len(x) for x in partition.parts.values()]
         f.write("<tr><td> Mean</td><td>" + str(sum(node_lengths) / num_districts) + "</td><td>" +
-                str(sum([len(x) for x in partition["cut_edges_by_part"].values()]) / num_districts) + "</td><td>" +
-                str(sum([(x-mean_population)/mean_population for x in partition["population"].values()]) / num_districts) + "</td><td>" +
+                str(sum(
+                    [len(x) for x in partition["cut_edges_by_part"].values()]) / num_districts) + "</td><td>" +
+                str(sum(
+                    [(x - mean_population) / mean_population
+                     for x in partition["population"].values()]) / num_districts) + "</td><td>" +
                 str(sum([x for x in partition["polsby_popper"].values()]) / num_districts) + "</td></tr>")
         f.write("<tr><td> Max</td><td>" + str(max([len(x) for x in partition.parts.values()])) +
-                "</td><td>" + str(max([len(x) for x in partition["cut_edges_by_part"].values()])) +
-                "</td><td>" + str(max([(x-mean_population)/mean_population for x in partition["population"].values()])) +
-                "</td><td>" + str(max([x for x in partition["polsby_popper"].values()])) +
+                "</td><td>" + str(max([len(x)
+                                       for x in partition["cut_edges_by_part"].values()])) +
+                "</td><td>" + str(max(
+                    [(x - mean_population)/mean_population
+                     for x in partition["population"].values()])) + "</td><td>" + str(
+                    max([x for x in partition["polsby_popper"].values()])) +
                 "</td></tr>")
         f.write("<tr><td> Min</td><td>" + str(min([len(x) for x in partition.parts.values()])) +
-                "</td><td>" + str(min([len(x) for x in partition["cut_edges_by_part"].values()])) +
-                "</td><td>" + str(min([(x-mean_population)/mean_population for x in partition["population"].values()])) +
-                "</td><td>" + str(min([x for x in partition["polsby_popper"].values()])) +
+                "</td><td>" + str(
+                    min([len(x) for x in partition["cut_edges_by_part"].values()])) +
+                "</td><td>" + str(
+                    min([(x - mean_population) / mean_population
+                         for x in partition["population"].values()])) +
+                "</td><td>" + str(
+                    min([x for x in partition["polsby_popper"].values()])) +
                 "</td></tr>")
         f.write("</table>")
 
         if report_entropy is not None:
-                
+
                 f.write("<h2>Entropy Report</h2>")
 
                 df_to_plot["county"] = df_to_plot[unique_label].map(df.to_dict()[county_col])
@@ -211,67 +223,68 @@ def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
                 f.write(str(len(county_data)))
                 f.write("<br><b>Number of Split Counties: </b>")
                 f.write(str(sum([x[1] for x in county_data])))
-                f.write("<br><b>4/5 function regular weight: </b>" )
+                f.write("<br><b>4/5 function regular weight: </b>")
                 f.write(str(entropy[0][0]))
-                f.write("<br><b>4/5 function inverse weight: </b>" )
+                f.write("<br><b>4/5 function inverse weight: </b>")
                 f.write(str(entropy[0][1]))
                 f.write("\n")
-                f.write("<br><b>4/5 function  no weight: </b>" )
+                f.write("<br><b>4/5 function  no weight: </b>")
                 f.write(str(entropy[0][2]))
                 f.write("\n")
-                f.write("<br><b>Linear function regular weight: </b>" )
+                f.write("<br><b>Linear function regular weight: </b>")
                 f.write(str(entropy[1][0]))
                 f.write("\n")
-                f.write("<br><b>Linear function inverse weight: </b>" )
+                f.write("<br><b>Linear function inverse weight: </b>")
                 f.write(str(entropy[1][1]))
                 f.write("\n")
-                f.write("<br><b>Linear function  no weight: </b>" )
+                f.write("<br><b>Linear function  no weight: </b>")
                 f.write(str(entropy[1][2]))
                 f.write("\n")
-                f.write("<br><b>Shannon function regular weight: </b>" )
+                f.write("<br><b>Shannon function regular weight: </b>")
                 f.write(str(entropy[2][0]))
                 f.write("\n")
-                f.write("<br><b>Shannon function inverse weight: </b>" )
+                f.write("<br><b>Shannon function inverse weight: </b>")
                 f.write(str(entropy[2][1]))
                 f.write("\n")
-                f.write("<br><b>Shannon function  no weight: </b>" )
+                f.write("<br><b>Shannon function  no weight: </b>")
                 f.write(str(entropy[2][2]))
 
                 f.write("<h2>Splits by County</h2>")
 
                 f.write("<table><tr><td>County Label</td><td> Split?</td><td>Population</td></tr>")
-                yn_dict={0: "No", 1: "Yes"}
+                yn_dict = {0: "No", 1: "Yes"}
                 for i in county_data:
-                    f.write("<tr><td><b>County" + str(i[0]) + "</b></td><td>" + yn_dict[i[1]] + "</td><td>" +
+                    f.write("<tr><td><b>County" + str(i[0]) +
+                            "</b></td><td>" + yn_dict[i[1]] + "</td><td>" +
                             str(i[2]) + "</td></tr>")
                     if len(i[3])>1:
                         for j in range(len(i[3])):
                             f.write("<tr><td> Part " + str(j) + "</td><td></td><td>" + str(i[3][j]) + "</td></tr>")
-		
+
                 f.write("</table>")
                 f.write("<h2>District Splits by County</h2>")
-                f.write("<b>4/5 function regular weight: </b>" )
+                f.write("<b>4/5 function regular weight: </b>")
                 f.write(str(reverse_entropy[0][0]))
-                f.write("<br><b>4/5 function inverse weight: </b>" )
+                f.write("<br><b>4/5 function inverse weight: </b>")
                 f.write(str(reverse_entropy[0][1]))
                 f.write("\n")
-                f.write("<br><b>4/5 function  no weight: </b>" )
+                f.write("<br><b>4/5 function  no weight: </b>")
                 f.write(str(reverse_entropy[0][2]))
                 f.write("\n")
-                f.write("<br><b>Linear function regular weight: </b>" )
+                f.write("<br><b>Linear function regular weight: </b>")
                 f.write(str(reverse_entropy[1][0]))
                 f.write("\n")
-                f.write("<br><b>Linear function inverse weight: </b>" )
+                f.write("<br><b>Linear function inverse weight: </b>")
                 f.write(str(reverse_entropy[1][1]))
                 f.write("\n")
-                f.write("<br><b>Linear function  no weight: </b>" )
+                f.write("<br><b>Linear function  no weight: </b>")
                 f.write(str(reverse_entropy[1][2]))
                 f.write("\n")
-                f.write("<br><b>Shannon function regular weight: </b>" )
+                f.write("<br><b>Shannon function regular weight: </b>")
                 f.write(str(reverse_entropy[2][0]))
                 f.write("\n")
-                f.write("<br><b>Shannon function inverse weight: </b>" )
+                f.write("<br><b>Shannon function inverse weight: </b>")
                 f.write(str(reverse_entropy[2][1]))
                 f.write("\n")
-                f.write("<br><b>Shannon function  no weight: </b>" )
+                f.write("<br><b>Shannon function  no weight: </b>")
                 f.write(str(reverse_entropy[2][2]))
