@@ -148,7 +148,6 @@ def countySplitDistrict(partition, pop_col="POP100", county_col="COUNTYFP10"):
 
         districtDict[assignment].append(vtd1)
 
-
     for district in districtDict.keys():
 
         districtPop = 0

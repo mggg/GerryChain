@@ -74,12 +74,14 @@ def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
                 plt.savefig(newdir + "partisan" + str(i) + ".png")
                 plt.close()
 
-                f.write("<img src='partisan" + str(i)+".png' width=40%/>\n")
+                f.write("<img src='partisan" + str(i) + ".png' width=40%/>\n")
 
         f.write("</div>\n")
 
-        f.write("<table>\n <tr><td>Election</td><td>D Seats</td><td>R Seats</td><td> D Votes</td><td>R Votes</td>" +
-                "<td>D Percent</td><td> R percent</td><td> Mean Median </td><td> Efficiency Gap</td> </tr>")
+        f.write("<table>\n <tr><td>Election</td><td>D Seats</td><td>R Seats</td>" +
+                "<td> D Votes</td><td>R Votes</td>" +
+                "<td>D Percent</td><td> R percent</td><td> Mean Median </td>" +
+                "<td> Efficiency Gap</td> </tr>")
 
         for i in range(num_elections):
                 f.write("<tr><td>" + election_names[i] + "</td><td>" +
@@ -102,17 +104,18 @@ def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
         f.write("</table>\n\n")
 
         f.write("<h2> District Partisan Measures</h2>")
-        
+
         win_dict = {0: "D", 1: "R"}
         dw_list = []
         f.write("<div width=100%>\n")
 
         for i in range(num_elections):
-                district_winners={}
+                district_winners = {}
 
                 for j in range(num_districts):
                         district_winners[j + 1] = int(
-                            partition[election_columns[i][1]][j + 1] > partition[election_columns[i][0]][j+1])
+                            partition[election_columns[i][1]][j + 1] >
+                            partition[election_columns[i][0]][j + 1])
 
                 df_to_plot["district_partisan"] = df_to_plot[district_col].map(district_winners)
                 dw_list.append(district_winners)
@@ -124,7 +127,8 @@ def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
                 plt.close()
 
                 f.write(
-                    "<img src='" + district_col + "district_partisan" + str(i) + ".png' width=40%/>\n")
+                    "<img src='" +
+                    district_col + "district_partisan" + str(i) + ".png' width=40%/>\n")
         f.write("</div>\n")
 
         f.write("<table>\n <tr><td>District</td>")
@@ -168,7 +172,7 @@ def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
         for i in range(num_districts):
                 f.write("<tr><td>" + str(i + 1) + "</td><td>" +
                         str(len(partition.parts[i + 1])) + "</td><td>" +
-                        str(len(partition["cut_edges_by_part"][i+1])) + "</td><td>" +
+                        str(len(partition["cut_edges_by_part"][i + 1])) + "</td><td>" +
                         str((partition["population"][i + 1] - mean_population) / (
                             mean_population)) + "</td><td>" +
                         str(partition["polsby_popper"][i + 1]) + "</td></tr>")
@@ -176,16 +180,18 @@ def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
         node_lengths = [len(x) for x in partition.parts.values()]
         f.write("<tr><td> Mean</td><td>" + str(sum(node_lengths) / num_districts) + "</td><td>" +
                 str(sum(
-                    [len(x) for x in partition["cut_edges_by_part"].values()]) / num_districts) + "</td><td>" +
+                    [len(x) for x in partition["cut_edges_by_part"].values()]) /
+                    num_districts) + "</td><td>" +
                 str(sum(
                     [(x - mean_population) / mean_population
                      for x in partition["population"].values()]) / num_districts) + "</td><td>" +
-                str(sum([x for x in partition["polsby_popper"].values()]) / num_districts) + "</td></tr>")
+                str(sum([x for x in partition["polsby_popper"].values()]) /
+                    num_districts) + "</td></tr>")
         f.write("<tr><td> Max</td><td>" + str(max([len(x) for x in partition.parts.values()])) +
                 "</td><td>" + str(max([len(x)
                                        for x in partition["cut_edges_by_part"].values()])) +
                 "</td><td>" + str(max(
-                    [(x - mean_population)/mean_population
+                    [(x - mean_population) / mean_population
                      for x in partition["population"].values()])) + "</td><td>" + str(
                     max([x for x in partition["polsby_popper"].values()])) +
                 "</td></tr>")
@@ -257,9 +263,10 @@ def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
                     f.write("<tr><td><b>County" + str(i[0]) +
                             "</b></td><td>" + yn_dict[i[1]] + "</td><td>" +
                             str(i[2]) + "</td></tr>")
-                    if len(i[3])>1:
+                    if len(i[3]) > 1:
                         for j in range(len(i[3])):
-                            f.write("<tr><td> Part " + str(j) + "</td><td></td><td>" + str(i[3][j]) + "</td></tr>")
+                            f.write("<tr><td> Part " + str(j) + "</td><td></td><td>" +
+                                    str(i[3][j]) + "</td></tr>")
 
                 f.write("</table>")
                 f.write("<h2>District Splits by County</h2>")
