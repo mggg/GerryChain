@@ -29,6 +29,7 @@ def metagraph_accept(partition):
     :returns: True if accepted, False to remain in place
 
     """
+    # Doesn't work currently
     bound = 1
 
     if partition.parent is not None:
