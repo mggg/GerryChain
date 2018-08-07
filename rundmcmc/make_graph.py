@@ -156,7 +156,7 @@ def construct_graph_from_df(df,
     dists = 0
     d_name = "CD"
     if district_col:
-        df[district_col] = pd.to_numeric(df[pdistrict_col], errors='coerce')
+        df[district_col] = pd.to_numeric(df[district_col], errors='coerce')
 
         dists = df[district_col].to_dict()
         d_name = district_col
