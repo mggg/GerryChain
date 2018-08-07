@@ -299,6 +299,7 @@ def non_bool_fast_connected(partition):
 
     return returns
 
+
 def non_bool_where(partition):
     """
     Return the number of non-connected assignment subgraphs.
@@ -327,10 +328,13 @@ def non_bool_where(partition):
             nx.draw(partition.graph.subgraph(districts[district]))
             plt.show()
             print(districts[district])
-            
+            for subdistrict in nx.connected_components(
+                partition.graph.subgraph(districts[district])):
+                nx.draw(partition.graph.subgraph(subdistrict),with_labels=True)
+                plt.show()
+                print(subdistrict)
 
     return returns
-
 
 
 no_more_disconnected = SelfConfiguringLowerBound(non_bool_fast_connected)

@@ -4,10 +4,8 @@ import os
 import random
 import json
 import geopandas as gp
-from networkx.readwrite import json_graph
 import functools
 import datetime
-import logging
 import matplotlib.pyplot as plt
 
 # Imports for RunDMCMC components
@@ -18,7 +16,7 @@ from rundmcmc.accept import always_accept
 
 from rundmcmc.chain import MarkovChain
 
-from rundmcmc.make_graph import (add_data_to_graph, construct_graph,
+from rundmcmc.make_graph import (construct_graph,
                                  get_assignment_dict_from_graph)
 
 from rundmcmc.partition import Partition
@@ -35,21 +33,17 @@ from rundmcmc.validity import (L_minus_1_polsby_popper,
                                L1_reciprocal_polsby_popper,
                                Validator, single_flip_contiguous,
                                within_percent_of_ideal_population,
-                               SelfConfiguringLowerBound,
-                               non_bool_where)
+                               SelfConfiguringLowerBound)
 
 from rundmcmc.scores import (efficiency_gap, mean_median,
                              mean_thirdian, how_many_seats_value,
-                             population_range,
                              number_cut_edges, worst_pop,
-                             L2_pop_dev,compute_meta_graph_degree,
+                             L2_pop_dev,
                              worst_pp, best_pp,
                              node_flipped, flipped_to)
 
-# Set random seed
-random.seed(1769)
-
-from rundmcmc.output import p_value_report, hist_of_table_scores, trace_of_table_scores, pipe_to_table
+from rundmcmc.output import (p_value_report, hist_of_table_scores,
+                             trace_of_table_scores, pipe_to_table)
 
 
 # Here is where you have to input a few things again
@@ -113,8 +107,8 @@ with open(newdir + "init.txt", "w") as f:
 # This builds a graph
 graph = construct_graph(graph_path, id_col=unique_label, area_col=area_col,
                         pop_col=pop_col, district_col=district_col,
-                        data_cols=[county_col]
-                        + [cols for pair in election_columns for cols in pair],
+                        data_cols=[county_col] + [cols
+                                                  for pair in election_columns for cols in pair],
                         data_source_type="json")
 
 
@@ -150,16 +144,13 @@ population_constraint = within_percent_of_ideal_population(initial_partition, po
 
 compactness_constraint_Lm1 = SelfConfiguringLowerBound(L_minus_1_polsby_popper, epsilon=.1)
 
-validator = Validator([single_flip_contiguous, population_constraint, 
-                       compactness_constraint_Lm1]) 
+validator = Validator([single_flip_contiguous, population_constraint,
+                       compactness_constraint_Lm1])
 
 # Names of validators for output
 # Necessary since bounds don't have __name__'s
 list_of_validators = [single_flip_contiguous, within_percent_of_ideal_population,
                       L_minus_1_polsby_popper] 
-
-
-
 
 # Geojson for plotting
 df_plot = gp.read_file(plot_path)
@@ -327,7 +318,7 @@ counters = assignment.copy()
 plot_assignment = assignment.copy()
 
 for label in list(counters.keys()):
-    counters[label]=0
+    counters[label] = 0
 
 num_steps = 0
 plot_interval = steps / num_plots
@@ -336,9 +327,9 @@ post_flips = table["Node Flipped:"]
 for z in range(steps):
     counters[table[z]["Node Flipped:"]] += 1
     plot_assignment[table[z]["Node Flipped:"]] = table[z]["Flipped to:"]
-    
+
     if num_steps % plot_interval == 0:
-        
+
         print("Drawing step ", num_steps, " Figure")
 
         df_plot[str(num_steps) + "_steps"] = df_plot[unique_label].map(plot_assignment)
@@ -357,7 +348,7 @@ plt.axis('off')
 plt.savefig(newdir + state_name + "_node_flips.png")
 plt.close()
 
-plt.hist(df_plot["num_flips"],bins=100)
+plt.hist(df_plot["num_flips"], bins=100)
 plt.savefig(newdir + state_name + "_node_flips_hist.png")
 plt.close()
 
