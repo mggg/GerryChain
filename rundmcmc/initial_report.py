@@ -111,9 +111,8 @@ def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
         dw_list = []
         f.write("<div width=100%>\n")
 
-
         df_to_plot[district_col] = pd.to_numeric(df_to_plot[district_col], errors='coerce')
-        
+
         for i in range(num_elections):
                 district_winners = {}
 

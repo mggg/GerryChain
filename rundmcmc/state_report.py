@@ -54,7 +54,7 @@ election_names = ['2016_Senate', '2016_Presedential']
 
 # Type the columns of the corresponding elections here
 # ordered like [Republican, Democratic]
-election_columns = [['ARV2016S_1','ARV2016SEN'], ['ARV2016PRE','ARV2016P_1']]
+election_columns = [['ARV2016S_1', 'ARV2016SEN'], ['ARV2016PRE', 'ARV2016P_1']]
 
 
 # That was it. You don't have to touch anything below!
@@ -86,7 +86,7 @@ for district_col in district_cols:
     # This adds the data to the graph
     add_data_to_graph(df, graph, [cols for pair in election_columns for cols in pair])
     add_data_to_graph(df, graph, [county_col])
-    
+
     # Write graph to file so it never has to be built again!
     with open(newdir + state_name + '_graph_with_data.json', 'w') as outfile1:
         outfile1.write(json.dumps(json_graph.adjacency_data(graph)))
@@ -123,7 +123,7 @@ for district_col in district_cols:
     print("setup partition")
 
     outputName = newdir + "Initial_Report.html"
-    if county_report == True:
+    if county_report is True:
 
         entropy, county_data = countyEntropyReport(initial_partition,
                                                pop_col=pop_col, county_col=county_col)
@@ -139,7 +139,6 @@ for district_col in district_cols:
                              unique_label=unique_label, validator=None,
                              county_col=county_col, report_entropy=True, entropy=entropy,
                              county_data=county_data, reverse_entropy=reverse_entropy)
-    
 
     else:
         write_initial_report(newdir=newdir, outputName=outputName, partition=initial_partition,
@@ -147,6 +146,6 @@ for district_col in district_cols:
                          state_name=state_name, district_col=district_col,
                          num_elections=num_elections, election_names=election_names,
                          election_columns=election_columns, df=df,
-                         unique_label=unique_label, validator=validator)
+                         unique_label=unique_label, validator=None)
 
     print("Wrote Report")

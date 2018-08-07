@@ -1,19 +1,12 @@
-import os
-#os.environ["PYTHONHASHSEED"] = "0"
-
-# Set random seed.
-import random
-random.seed(1769)
-
 # Imports for I/O processing
-
+import os
 import json
 import geopandas as gp
 from networkx.readwrite import json_graph
 import functools
 import datetime
-import logging
 import matplotlib.pyplot as plt
+import random
 
 # Imports for RunDMCMC components
 # You can look at the list of available functions in each
@@ -38,27 +31,24 @@ from rundmcmc.updaters import (Tally, boundary_nodes, cut_edges,
 
 from rundmcmc.validity import (L1_reciprocal_polsby_popper,
                                L_minus_1_polsby_popper,
-                               UpperBound, LowerBound,
-                               Validator, no_vanishing_districts,
-                               refuse_new_splits, single_flip_contiguous,
+                               Validator, single_flip_contiguous,
                                within_percent_of_ideal_population,
-                               SelfConfiguringLowerBound, no_more_disconnected)
+                               SelfConfiguringLowerBound)
 
 from rundmcmc.scores import (efficiency_gap, mean_median,
                              mean_thirdian, how_many_seats_value,
-                             population_range,
                              number_cut_edges, worst_pop,
-                             L2_pop_dev,compute_meta_graph_degree,
+                             L2_pop_dev,
                              worst_pp, best_pp,
                              node_flipped)
 
 
-from rundmcmc.output import p_value_report, hist_of_table_scores, trace_of_table_scores, pipe_to_table
+from rundmcmc.output import (p_value_report, hist_of_table_scores,
+                             trace_of_table_scores, pipe_to_table)
 
 from initial_report import write_initial_report
 
 from entropiesReport import countyEntropyReport, countySplitDistrict
-
 
 
 # Make a folder for the output
@@ -86,8 +76,8 @@ district_col = "Remedial"
 
 # This builds a graph
 print("building graph ... slowly")
-graph = construct_graph(graph_path, id_col = unique_label, 
-                        pop_col = pop_col, district_col = district_col,
+graph = construct_graph(graph_path, id_col=unique_label,
+                        pop_col=pop_col, district_col=district_col,
                         data_source_type="fiona")
 
 
@@ -97,23 +87,24 @@ assignment = get_assignment_dict_from_graph(graph, district_col)
 
 # Input the shapefile with vote data here
 vote_path = "./Data/final_PA_vtds.shp"
-      
+
 # This inputs a shapefile with columns you want to add
 print("adding elections")
 df = gp.read_file(vote_path)
 df = df.set_index(unique_label)
-county_col="COUNTY"
+county_col = "COUNTY"
 
 # This is the number of elections you want to analyze
 num_elections = 9
 
 
 # Names of shapefile voting data columns go here
-election_names = ["Governor_2010", "Senate_2010", "AttorneyGeneral_2012", "President_2012", 
-    "Senate_2012", "Governor_2014", "AttorneyGeneral_2016", "Presdent_2016","Senate_2016"]
-election_columns = [["GOV10R", "GOV10D"], ["SEN10R","SEN10D"], ["ATG12R","ATG12D"], 
-    ["PRES12R", "PRES12D"], ["USS12R","USS12D"], ["F2014GovR","F2014GovD"], 
-    ["T16ATGR", "T16ATGD"],["T16PRESR","T16PRESD"], ["T16SENR", "T16SEND"]]
+election_names = ["Governor_2010", "Senate_2010", "AttorneyGeneral_2012", "President_2012",
+                  "Senate_2012", "Governor_2014", "AttorneyGeneral_2016",
+                  "Presdent_2016", "Senate_2016"]
+election_columns = [["GOV10R", "GOV10D"], ["SEN10R", "SEN10D"], ["ATG12R", "ATG12D"],
+    ["PRES12R", "PRES12D"], ["USS12R", "USS12D"], ["F2014GovR", "F2014GovD"],
+    ["T16ATGR", "T16ATGD"], ["T16PRESR", "T16PRESD"], ["T16SENR", "T16SEND"]]
 
 
 # This adds the data to the graph
@@ -129,10 +120,10 @@ with open(newdir + state_name + '_graph_with_data.json', 'w') as outfile1:
 df_plot = gp.read_file("./Data/final_PA_vtds.geojson" )
 df_plot["initial"] = df_plot[unique_label].map(assignment)
 
-df_plot.plot(column ="initial", cmap= 'tab20')
+df_plot.plot(column="initial", cmap='tab20')
 
 plt.axis('off')
-plt.savefig(newdir+"PaExpinitial.png")
+plt.savefig(newdir + "PaExpinitial.png")
 plt.clf()
 
 
@@ -179,7 +170,7 @@ population_constraint = within_percent_of_ideal_population(initial_partition, po
 
 compactness_PA = SelfConfiguringLowerBound(L_minus_1_polsby_popper, epsilon=.1)
 
-validator = Validator([single_flip_contiguous, population_constraint, 
+validator = Validator([single_flip_contiguous, population_constraint,
                        compactness_PA])
 
 # Names of validators for output
@@ -189,7 +180,7 @@ list_of_validators = [single_flip_contiguous, within_percent_of_ideal_population
 
 
 print("setup chain")
-      
+
 outputName = newdir + "Initial_Report.html"
 
 entropy, county_data = countyEntropyReport(initial_partition,
@@ -236,7 +227,7 @@ scores2 = {
 chain_stats = scores.copy()
 
 
-scores= {**scores, **scores2}
+scores = {**scores, **scores2}
 scores_for_plots = []
 
 for i in range(num_elections):
@@ -356,9 +347,9 @@ for part in chain:
 
     Last_assn = part.assignment
     df_plot["final"] = df_plot[unique_label].map(Last_assn)
-    df_plot.plot(column ="final", cmap= 'tab20')
+    df_plot.plot(column="final", cmap='tab20')
     plt.axis('off')
-    plt.savefig(newdir+"PaExpfinal.png")
+    plt.savefig(newdir + "PaExpfinal.png")
     plt.close()
     break
 
