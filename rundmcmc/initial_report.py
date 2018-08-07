@@ -1,4 +1,6 @@
 import matplotlib.pyplot as plt
+import pandas as pd
+
 from rundmcmc.validity import (L1_reciprocal_polsby_popper,
                                L_minus_1_polsby_popper)
 from rundmcmc.scores import (efficiency_gap, mean_median,
@@ -109,6 +111,8 @@ def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
         dw_list = []
         f.write("<div width=100%>\n")
 
+        df_to_plot[district_col] = pd.to_numeric(df_to_plot[district_col], errors='coerce')
+
         for i in range(num_elections):
                 district_winners = {}
 
@@ -140,7 +144,7 @@ def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
         for i in range(num_districts):
                 f.write("<tr><td>" + str(i + 1) + "</td>")
                 for j in range(num_elections):
-                        f.write("<td>" + win_dict[dw_list[j][i + 1]] + "</td><td>" +
+                    f.write("<td>" + win_dict[dw_list[j][i + 1]] + "</td><td>" +
                                 str(partition[election_columns[j][dw_list[j][i + 1]] +
                                               "%"][i + 1]) +
                                 "</td>")
