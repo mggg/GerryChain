@@ -28,7 +28,7 @@ from rundmcmc.validity import (L1_reciprocal_polsby_popper,
 
 from initial_report import write_initial_report
 
-from rundmcmc.entropiesReport import countyEntropyReport, countySplitDistrict
+from entropiesReport import countyEntropyReport, countySplitDistrict
 
 # Input the path to the graph (either JSON or shapefile) and the label column
 # This file should have at least population, area, and district plan
