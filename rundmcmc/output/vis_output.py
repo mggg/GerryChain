@@ -37,6 +37,7 @@ def hist_of_table_scores(table, scores=None, outputFile="output.png",
             axes[quadrant].axvline(x=initial_scores[key], color='r')
     if outputFile:
         plt.savefig(outputFile)
+        plt.close()
     else:
         plt.show()
 
@@ -77,5 +78,6 @@ def trace_of_table_scores(table, scores=None, outputFile="output.png",
             axes[quadrant].axhline(y=initial_scores[key], color='r')
     if outputFile:
         plt.savefig(outputFile)
+        plt.close()
     else:
         plt.show()
