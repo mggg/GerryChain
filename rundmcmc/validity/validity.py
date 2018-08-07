@@ -292,6 +292,34 @@ def non_bool_fast_connected(partition):
 
 no_more_disconnected = SelfConfiguringLowerBound(non_bool_fast_connected)
 
+def dict_of_lists(G, nodelist):
+    if nodelist is None:
+        nodelist=G
+
+    d = dict(zip(nodelist, [[y for y in G.neighbors(x) if y in nodelist] for x in nodelist]))
+    """
+    d = {}
+    for n in nodelist:
+        d[n]=[nbr for nbr in G.neighbors(n) if nbr in nodelist]
+    """
+    return d
+
+
+def _listbfs(nodes, nbrs):
+    q = [next(iter(nodes))]
+    visited = set()
+    tot_v = len(nodes)
+    if tot_v <= 1:
+        return True
+    while len(q) is not 0:
+        current = q.pop(0)
+        neighbors = nbrs[current]
+        for neighbor in neighbors:
+            if (neighbor in nodes) and (neighbor not in visited):
+                visited.add(neighbor)
+                q += [neighbor]
+    return tot_v == len(visited)
+
 
 def proposed_changes_still_contiguous(partition):
     """
@@ -307,24 +335,16 @@ def proposed_changes_still_contiguous(partition):
     # or one with proposed changes (parent != None).
     districts_of_interest = set(partition.assignment)
     if partition.parent:
-        if partition.flips.keys is not None:
-            districts_of_interest = set(partition.flips.values()).union(
-                                        set(map(partition.parent.assignment.__setitem__,
-                                            list(partition.flips.keys()),
-                                            list(partition.flips.values()))))
+        if len(partition.flips) > 0:
+            districts_of_interest = list(partition.flips.values()) + [
+                            partition.parent.assignment[x]
+                            for x in partition.flips]
         else:
             districts_of_interest = []
-
-    # Inverts the assignment dictionary so that lists of VTDs are keyed
-    # by their congressional districts.
-    assignment = partition.assignment
-    districts = collections.defaultdict(set)
-    for vtd, cd in enumerate(assignment):
-        districts[cd].add(vtd)
-
     for key in districts_of_interest:
-        adj = nx.to_dict_of_lists(partition.graph, districts[key])
-        if _bfs(adj) is False:
+        #adj = dict_of_lists(partition.graph, partition.parts[key])
+        #if _bfs(adj) is False:
+        if _listbfs(partition.parts[key], {x:partition.graph.neighbors(x) for x in partition.parts[key]}) is False:
             return False
 
     return True
