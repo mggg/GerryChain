@@ -206,6 +206,7 @@ def node_flipped(partition):
     else:
         return -1
 
+
 def flipped_to(partition):
     if partition.flips is not None:
         return int(list(partition.flips.values())[0])

@@ -329,8 +329,8 @@ def non_bool_where(partition):
             plt.show()
             print(districts[district])
             for subdistrict in nx.connected_components(
-                partition.graph.subgraph(districts[district])):
-                nx.draw(partition.graph.subgraph(subdistrict),with_labels=True)
+                    partition.graph.subgraph(districts[district])):
+                nx.draw(partition.graph.subgraph(subdistrict), with_labels=True)
                 plt.show()
                 print(subdistrict)
 

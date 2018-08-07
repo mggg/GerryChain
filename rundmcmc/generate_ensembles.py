@@ -48,6 +48,9 @@ from rundmcmc.output import (p_value_report, hist_of_table_scores,
 
 # Here is where you have to input a few things again
 
+# Set Random Seed
+random.seed(1769)
+
 # Type the name of your state
 state_name = "Arkansas"
 
@@ -150,7 +153,7 @@ validator = Validator([single_flip_contiguous, population_constraint,
 # Names of validators for output
 # Necessary since bounds don't have __name__'s
 list_of_validators = [single_flip_contiguous, within_percent_of_ideal_population,
-                      L_minus_1_polsby_popper] 
+                      L_minus_1_polsby_popper]
 
 # Geojson for plotting
 df_plot = gp.read_file(plot_path)
@@ -188,7 +191,7 @@ scores2 = {
 scores3 = {
     "Flipped to:": flipped_to
     }
-    
+
 chain_stats = scores.copy()
 
 
