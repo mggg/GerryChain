@@ -6,7 +6,6 @@ from networkx.readwrite import json_graph
 import functools
 import datetime
 import matplotlib.pyplot as plt
-import random
 
 # Imports for RunDMCMC components
 # You can look at the list of available functions in each
@@ -117,7 +116,7 @@ with open(newdir + state_name + '_graph_with_data.json', 'w') as outfile1:
     outfile1.write(json.dumps(json_graph.adjacency_data(graph)))
 
 # Geojson for plotting
-df_plot = gp.read_file("./Data/final_PA_vtds.geojson" )
+df_plot = gp.read_file("./Data/final_PA_vtds.geojson")
 df_plot["initial"] = df_plot[unique_label].map(assignment)
 
 df_plot.plot(column="initial", cmap='tab20')
@@ -125,7 +124,6 @@ df_plot.plot(column="initial", cmap='tab20')
 plt.axis('off')
 plt.savefig(newdir + "PaExpinitial.png")
 plt.clf()
-
 
 
 # Desired proposal method
@@ -176,7 +174,7 @@ validator = Validator([single_flip_contiguous, population_constraint,
 # Names of validators for output
 # Necessary since bounds don't have __name__'s
 list_of_validators = [single_flip_contiguous, within_percent_of_ideal_population,
-                      L_minus_1_polsby_popper] 
+                      L_minus_1_polsby_popper]
 
 
 print("setup chain")
@@ -223,7 +221,7 @@ scores2 = {
     "Best PP score:": best_pp,
     "Node Flipped": node_flipped
     }
-    
+
 chain_stats = scores.copy()
 
 
