@@ -55,12 +55,14 @@ district_col = "CD"
 # This builds a graph
 graph = construct_graph(graph_path, data_source_type="json")
 
+
 # Write graph to file
 with open('graph_with_data.json', 'w') as outfile1:
     outfile1.write(json.dumps(json_graph.node_link_data(graph)))
 
+
 # Put district on graph
-assignment = "CD" #dict(zip(graph.nodes(), [graph.node[x][district_col] for x in graph.nodes()]))
+assignment = "CD"
 
 
 # Input the shapefile with vote data here
