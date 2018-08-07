@@ -70,7 +70,7 @@ def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
 
                 df_to_plot["partisan"] = df_to_plot[unique_label].map(df.to_dict()["Dperc"])
 
-                df_to_plot.plot(column="partisan", cmap="seismic")
+                df_to_plot.plot(column="partisan", cmap="seismic", vmin=0, vmax=1)
                 plt.axis('off')
                 plt.title(election_names[i] + " Vote Percentage")
                 plt.savefig(newdir + "partisan" + str(i) + ".png")
@@ -124,7 +124,7 @@ def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
                 df_to_plot["district_partisan"] = df_to_plot[district_col].map(district_winners)
                 dw_list.append(district_winners)
 
-                df_to_plot.plot(column="district_partisan", cmap="seismic")
+                df_to_plot.plot(column="district_partisan", cmap="seismic", vmin=0, vmax=1)
                 plt.axis('off')
                 plt.title(election_names[i] + " District Winners")
                 plt.savefig(newdir + district_col + "district_partisan" + str(i) + ".png")

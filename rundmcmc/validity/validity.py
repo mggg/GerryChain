@@ -7,6 +7,7 @@ from heapq import heappush, heappop
 from itertools import count
 
 import networkx as nx
+import matplotlib.pyplot as plt
 
 from rundmcmc.updaters import CountySplit
 from rundmcmc.validity.bounds import (SelfConfiguringLowerBound, SelfConfiguringUpperBound,
@@ -297,6 +298,39 @@ def non_bool_fast_connected(partition):
             returns += 1
 
     return returns
+
+def non_bool_where(partition):
+    """
+    Return the number of non-connected assignment subgraphs.
+
+    :partition: Instance of Partition; contains connected components.
+    :return: int: number of contiguous districts
+    """
+    assignment = partition.assignment
+
+    # Inverts the assignment dictionary so that lists of VTDs are keyed
+    # by their congressional districts.
+    districts = collections.defaultdict(set)
+    returns = 0
+
+    for vtd in assignment:
+        districts[assignment[vtd]].add(vtd)
+
+    # Generates a subgraph for each district and perform a BFS on it
+    # to check connectedness.
+    for district in districts:
+        adj = nx.to_dict_of_lists(partition.graph, districts[district])
+        if _bfs(adj):
+            returns += 1
+        else:
+            print(district)
+            nx.draw(partition.graph.subgraph(districts[district]))
+            plt.show()
+            print(districts[district])
+            
+
+    return returns
+
 
 
 no_more_disconnected = SelfConfiguringLowerBound(non_bool_fast_connected)
