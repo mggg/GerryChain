@@ -1,11 +1,13 @@
 import collections
 import logging
 import random
+import math
 
 from heapq import heappush, heappop
 from itertools import count
 
 import networkx as nx
+import matplotlib.pyplot as plt
 
 from rundmcmc.updaters import CountySplit
 from rundmcmc.validity.bounds import (SelfConfiguringLowerBound, SelfConfiguringUpperBound,
@@ -44,6 +46,14 @@ class Validator:
 
 def L1_reciprocal_polsby_popper(partition):
     return sum(1 / value for value in partition['polsby_popper'].values())
+
+
+def L1_polsby_popper(partition):
+    return sum(value for value in partition['polsby_popper'].values())
+
+
+def L2_polsby_popper(partition):
+    return math.sqrt(sum(value**2 for value in partition['polsby_popper'].values()))
 
 
 def L_minus_1_polsby_popper(partition):
@@ -286,6 +296,43 @@ def non_bool_fast_connected(partition):
         adj = nx.to_dict_of_lists(partition.graph, districts[district])
         if _bfs(adj):
             returns += 1
+
+    return returns
+
+
+def non_bool_where(partition):
+    """
+    Return the number of non-connected assignment subgraphs.
+
+    :partition: Instance of Partition; contains connected components.
+    :return: int: number of contiguous districts
+    """
+    assignment = partition.assignment
+
+    # Inverts the assignment dictionary so that lists of VTDs are keyed
+    # by their congressional districts.
+    districts = collections.defaultdict(set)
+    returns = 0
+
+    for vtd in assignment:
+        districts[assignment[vtd]].add(vtd)
+
+    # Generates a subgraph for each district and perform a BFS on it
+    # to check connectedness.
+    for district in districts:
+        adj = nx.to_dict_of_lists(partition.graph, districts[district])
+        if _bfs(adj):
+            returns += 1
+        else:
+            print(district)
+            nx.draw(partition.graph.subgraph(districts[district]))
+            plt.show()
+            print(districts[district])
+            for subdistrict in nx.connected_components(
+                    partition.graph.subgraph(districts[district])):
+                nx.draw(partition.graph.subgraph(subdistrict), with_labels=True)
+                plt.show()
+                print(subdistrict)
 
     return returns
 
