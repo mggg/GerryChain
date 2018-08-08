@@ -326,9 +326,7 @@ for label in list(counters.keys()):
 num_steps = 0
 plot_interval = steps / num_plots
 
-#post_flips = table["Node Flipped:"]
-#post_dists = table["Flipped to:"]
-for num_steps in range(1,steps):
+for num_steps in range(1, steps):
     counters[table[num_steps]["Node Flipped:"]] += 1
     plot_assignment[table[num_steps]["Node Flipped:"]] = table[num_steps]["Flipped to:"]
 
