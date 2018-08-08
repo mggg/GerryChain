@@ -86,7 +86,7 @@ steps = 10000
 
 # For outputs type the number of times you would like the values written to the console,
 # the frequency to collect stats about the run, and the number of plots to generate
-number_to_display = 100
+number_to_display = 10
 bin_interval = 1
 num_plots = 100
 
@@ -185,7 +185,7 @@ scores2 = {
     "L2 population deviation": L2_pop_dev,
     "Worst PP score:": worst_pp,
     "Best PP score:": best_pp,
-    "Node Flipped": node_flipped
+    "Node Flipped:": node_flipped
     }
 
 scores3 = {
@@ -326,14 +326,15 @@ for label in list(counters.keys()):
 num_steps = 0
 plot_interval = steps / num_plots
 
-post_flips = table["Node Flipped:"]
-for z in range(steps):
-    counters[table[z]["Node Flipped:"]] += 1
-    plot_assignment[table[z]["Node Flipped:"]] = table[z]["Flipped to:"]
+#post_flips = table["Node Flipped:"]
+#post_dists = table["Flipped to:"]
+for num_steps in range(1,steps):
+    counters[table[num_steps]["Node Flipped:"]] += 1
+    plot_assignment[table[num_steps]["Node Flipped:"]] = table[num_steps]["Flipped to:"]
 
     if num_steps % plot_interval == 0:
 
-        print("Drawing step ", num_steps, " Figure")
+        print("Drawing step", num_steps, "Figure")
 
         df_plot[str(num_steps) + "_steps"] = df_plot[unique_label].map(plot_assignment)
 
