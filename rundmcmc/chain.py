@@ -54,15 +54,24 @@ class MarkovChain:
                 else:
                     continue
 
-            self.state.parent = None
+            # Please delete this comment
             proposed_next_state = self.state.merge(proposal)
 
             if self.is_valid(proposed_next_state):
                 if self.accept(proposed_next_state):
-                    self.state = proposed_next_state
+                    self.commit(proposed_next_state)
                 self.counter += 1
                 return proposed_next_state
         raise StopIteration
+        
+    def commit(self, next_state):
+        self.state.assignment = self.state.parent.assignment
+        for node, part in self.state.flips.items():
+            self.state.assignment[node] = part
+
+        self.state.parent = None
+
+        self.state = next_state
 
     def __len__(self):
         return self.total_steps
