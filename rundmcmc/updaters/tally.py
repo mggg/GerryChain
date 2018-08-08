@@ -66,7 +66,7 @@ class Tally:
         flips = partition.flips
 
         old_tally = parent[self.alias]
-        new_tally = dict()
+        new_tally = dict(old_tally)
 
         graph = partition.graph
 
@@ -75,7 +75,7 @@ class Tally:
             in_flow = compute_in_flow(graph, self.fields, flow)
             new_tally[part] = old_tally[part] - out_flow + in_flow
 
-        return {**old_tally, **new_tally}
+        return new_tally
 
     def _get_tally_from_node(self, partition, node):
         return sum(partition.graph.nodes[node][field] for field in self.fields)
