@@ -55,6 +55,7 @@ from .validity import (L1_reciprocal_polsby_popper,
                        districts_within_tolerance,
                        fast_connected, no_more_disconnected,
                        non_bool_fast_connected, L1_polsby_popper,
-                       L2_polsby_popper, proposed_changes_still_contiguous)
+                       L2_polsby_popper, proposed_changes_still_contiguous,
+                       non_bool_where)
 
 from .bounds import UpperBound, LowerBound, SelfConfiguringLowerBound, SelfConfiguringUpperBound

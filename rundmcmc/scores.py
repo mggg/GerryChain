@@ -205,3 +205,10 @@ def node_flipped(partition):
         return int(list(partition.flips.keys())[0])
     else:
         return -1
+
+
+def flipped_to(partition):
+    if partition.flips is not None:
+        return int(list(partition.flips.values())[0])
+    else:
+        return -1
