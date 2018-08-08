@@ -25,6 +25,7 @@ class Validator:
     return is ``True`` if all validators pass, and ``False`` if any one fails.
 
     """
+
     def __init__(self, constraints):
         """:constraints: List of validator functions that will check partitions."""
         self.constraints = constraints
@@ -37,8 +38,13 @@ class Validator:
         """
         # check each constraint function and fail when a constraint test fails
         for constraint in self.constraints:
-            if not constraint(partition):
+            is_valid = constraint(partition)
+            if is_valid is False:
                 return False
+            elif is_valid is True:
+                pass
+            else:
+                raise TypeError(f"Constraint {constraint.__name__} returned a non-boolean.")
 
         # all constraints are satisfied
         return True

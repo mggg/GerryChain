@@ -15,13 +15,12 @@ from rundmcmc.updaters import (Tally, boundary_nodes, county_splits, cut_edges,
                                interior_boundaries)
 from rundmcmc.validity import (L1_reciprocal_polsby_popper, UpperBound,
                                Validator, no_vanishing_districts,
-                               refuse_new_splits, single_flip_contiguous,
+                               single_flip_contiguous,
                                within_percent_of_ideal_population)
 import os
 
 default_constraints = [single_flip_contiguous,
-                       no_vanishing_districts,
-                       refuse_new_splits]
+                       no_vanishing_districts]
 
 FILE_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TEST_DATA_PATH = os.path.join(FILE_PATH, "testData/")

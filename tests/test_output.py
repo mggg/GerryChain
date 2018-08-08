@@ -62,6 +62,13 @@ class TestPipeToTable:
 
         assert all(table[key] == values[key] for key in values)
 
+    def test_first_row_of_table_is_initial_scores(self):
+        mock_chain, handlers, values = self.setup()
+
+        table = pipe_to_table(mock_chain, handlers, display=False)
+
+        assert all(table[0][key] == values[key][0] for key in values)
+
 
 def test_p_value_report_gives_the_right_value_when_the_whole_ensemble_is_lower_than_initial():
     mock_ensemble_scores = [1] * 199 + [17] * 1

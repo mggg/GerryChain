@@ -1,3 +1,5 @@
+from unittest.mock import MagicMock
+
 from rundmcmc.chain import MarkovChain
 
 
@@ -7,7 +9,7 @@ class MockState:
 
 
 def mock_proposal(state):
-    return state
+    return {1: 2}
 
 
 def mock_accept(state):
@@ -19,13 +21,27 @@ def mock_is_valid(state):
 
 
 def test_MarkovChain_runs_only_total_steps_times():
-    initial = MockState()
+    for total_steps in range(1, 11):
+        initial = MockState()
+        chain = MarkovChain(mock_proposal, mock_is_valid, mock_accept, initial, total_steps)
+        counter = 0
+        for state in chain:
+            assert isinstance(state, MockState)
+            if counter >= total_steps:
+                assert False
+            counter += 1
+        if counter < total_steps:
+            assert False
+
+
+def test_MarkovChain_returns_the_initial_state_first():
+    initial = MagicMock()
     chain = MarkovChain(mock_proposal, mock_is_valid, mock_accept, initial, total_steps=10)
+
     counter = 0
     for state in chain:
-        assert isinstance(state, MockState)
-        if counter >= 10:
-            assert False
+        if counter == 0:
+            assert state is initial
+        else:
+            assert state is not initial
         counter += 1
-    if counter < 10:
-        assert False

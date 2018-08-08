@@ -63,14 +63,10 @@ class MarkovChain:
                 self.counter += 1
                 return proposed_next_state
         raise StopIteration
-        
+
     def commit(self, next_state):
-        self.state.assignment = self.state.parent.assignment
-        for node, part in self.state.flips.items():
-            self.state.assignment[node] = part
-
+        # Erase the parent of the parent, to avoid memory leak
         self.state.parent = None
-
         self.state = next_state
 
     def __len__(self):
