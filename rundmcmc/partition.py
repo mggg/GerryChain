@@ -40,11 +40,11 @@ class Partition:
         self.assignment = [0 for node in graph.nodes]
 
         if assignment:
-            self.assignment = list(map(
-                        networkx.get_node_attributes(
-                            self.graph, assignment).get,
-                            range(len(graph.nodes))
-                        ))
+            # get original node labels from graph
+            node_asg = networkx.get_node_attributes(self.graph, "OLDID")
+            node_asg = {val: key for key, val in node_asg.items()}
+
+            self.assignment = {node_asg[x]: y for x, y in assignment.items()}
 
         if not updaters:
             updaters = dict()

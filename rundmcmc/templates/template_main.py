@@ -4,6 +4,7 @@ import json
 import geopandas as gp
 from networkx.readwrite import json_graph
 import functools
+import networkx
 
 
 # Imports for RunDMCMC components
@@ -62,7 +63,7 @@ with open('graph_with_data.json', 'w') as outfile1:
 
 
 # Put district on graph
-assignment = "CD"
+assignment = networkx.get_node_attributes(graph, district_col)
 
 
 # Input the shapefile with vote data here
