@@ -34,16 +34,12 @@ class Partition:
         self.max_edge_cuts = max_edge_cuts(self)
 
     def _first_time(self, graph, assignment, updaters):
-        self.graph = networkx.convert_node_labels_to_integers(
-                                graph, label_attribute="OLDID")
+        self.graph = graph
 
         self.assignment = [0 for node in graph.nodes]
 
         if assignment:
-            # get original node labels from graph
-            node_asg = networkx.get_node_attributes(self.graph, "OLDID")
-            self.assignment = [assignment[node_asg[x]]
-                    for x in range(len(assignment))]
+            self.assignment = [assignment[x] for x in self.graph.nodes]
 
         if not updaters:
             updaters = dict()
@@ -125,9 +121,3 @@ class Partition:
         if key not in self._cache:
             self._cache[key] = self.updaters[key](self)
         return self._cache[key]
-
-    def assignment_by_nodeid(self):
-        node_ids = list(map(
-                    networkx.get_node_attributes(self.graph, "OLDID").get,
-                    range(len(graph.nodes))))
-        return dict(zip(node_ids, self.assignment))

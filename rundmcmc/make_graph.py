@@ -54,6 +54,11 @@ def add_data_to_graph(df, graph, col_names, id_col=None):
         df[name] = pd.to_numeric(df[name], errors='coerce')
 
     column_dictionaries = indexed_df[col_names].to_dict('index')
+    node_id_to_index = {val: key for key, val in
+            get_assignment_dict_from_graph(graph, "ORIG_ID").items()}
+    column_dictionaries = {node_id_to_index[x]: y
+            for x, y in column_dictionaries.items()}
+
     networkx.set_node_attributes(graph, column_dictionaries)
 
 
@@ -132,9 +137,6 @@ def construct_graph_from_df(df,
 
     add_boundary_perimeters(graph, neighbors, df)
 
-    if cols_to_add is not None:
-        add_data_to_graph(df, graph, cols_to_add)
-
     pops = 0
     p_name = "population"
     if pop_col:
@@ -168,6 +170,12 @@ def construct_graph_from_df(df,
     networkx.set_node_attributes(graph, name=a_name, values=areas)
     networkx.set_node_attributes(graph, name=d_name, values=dists)
 
+    graph = networkx.convert_node_labels_to_integers(graph, label_attribute="ORIG_ID")
+
+    if cols_to_add is not None:
+        add_data_to_graph(df, graph, cols_to_add)
+
+
     return graph
 
 
@@ -200,6 +208,7 @@ def construct_graph_from_json(json_file, pop_col=None, area_col=None, district_c
         cd_col = networkx.get_node_attributes(g, district_col)
         networkx.set_node_attributes(g, name='CD', values=cd_col)
 
+    g = networkx.convert_node_labels_to_integers(g, label_attribute="ORIG_ID")
     return g
 
 
