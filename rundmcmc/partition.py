@@ -42,9 +42,8 @@ class Partition:
         if assignment:
             # get original node labels from graph
             node_asg = networkx.get_node_attributes(self.graph, "OLDID")
-            node_asg = {val: key for key, val in node_asg.items()}
-
-            self.assignment = {node_asg[x]: y for x, y in assignment.items()}
+            self.assignment = [assignment[node_asg[x]]
+                    for x in range(len(assignment))]
 
         if not updaters:
             updaters = dict()
