@@ -85,11 +85,11 @@ for district_col in district_cols:
 
     # This adds the data to the graph
     add_data_to_graph(df, graph, [cols for pair in election_columns for cols in pair])
-    add_data_to_graph(df, graph, [county_col])
+    add_data_to_graph(df, graph, [county_col, pop_col])
 
     # Write graph to file so it never has to be built again!
-    with open(newdir + state_name + '_graph_with_data.json', 'w') as outfile1:
-        outfile1.write(json.dumps(json_graph.adjacency_data(graph)))
+    #with open(newdir + state_name + '_graph_with_data.json', 'w') as outfile1:
+    #    outfile1.write(json.dumps(json_graph.adjacency_data(graph)))
 
     # Geojson for plotting
     df_plot = gp.read_file(plot_path)
@@ -118,7 +118,7 @@ for district_col in district_cols:
         updaters = {**updaters, **votes_updaters(election_columns[i], election_names[i])}
 
     # This builds the partition object
-    initial_partition = Partition(graph, assignment, updaters)
+    initial_partition = Partition(graph, district_col, updaters)
 
     print("setup partition")
 
