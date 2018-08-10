@@ -1,5 +1,5 @@
 from rundmcmc.validity import (Validator, no_vanishing_districts,
-                               refuse_new_splits, single_flip_contiguous)
+                               Wsingle_flip_contiguous)
 from rundmcmc.updaters import cut_edges, MetagraphDegree
 from rundmcmc.proposals import propose_random_flip
 from rundmcmc.make_graph import construct_graph
@@ -15,7 +15,7 @@ graph = construct_graph(path)
 # Gross!
 assignment = dict(zip(graph.nodes(), [graph.node[x]['CD'] for x in graph.nodes()]))
 
-validator = Validator([refuse_new_splits, no_vanishing_districts, single_flip_contiguous])
+validator = Validator([no_vanishing_districts, single_flip_contiguous])
 
 updaters = {'cut_edges': cut_edges,
             'metagraph_degree': MetagraphDegree(validator, "metagraph_degree")}
