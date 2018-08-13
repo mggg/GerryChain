@@ -30,8 +30,6 @@ class Partition:
 
         self._update()
 
-        self.max_edge_cuts = max_edge_cuts(self)
-
     def _first_time(self, graph, assignment, updaters):
         self.graph = graph
         self.assignment = assignment
@@ -80,7 +78,7 @@ class Partition:
         self.flows = flows_from_changes(self.parent.assignment, self.flips)
         self.edge_flows = compute_edge_flows(self)
 
-        # Parts must ontinue to be a defaultdict, so that new parts can appear.
+        # Parts must continue to be a defaultdict, so that new parts can appear.
         self.parts = collections.defaultdict(set, self.parent.parts)
 
         for part, flow in self.flows.items():
