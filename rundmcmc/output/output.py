@@ -184,7 +184,7 @@ def pipe_to_table(chain, handlers, display=True, number_to_display=10,
     counter = 0
     for row in handle_chain(chain, handlers):
         if display and counter % display_interval == 0:
-            print(f"Step {counter}")
+            print("Step {counter}".format(counter))
             print(row)
         if counter % bin_interval == 0:
             table.append(row)
