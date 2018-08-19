@@ -47,11 +47,11 @@ class Partition:
         self.flows = None
         self.edge_flows = None
 
-        self.max_edge_cuts = max_edge_cuts(self)
-
         self.parts = collections.defaultdict(set)
         for node, part in self.assignment.items():
             self.parts[part].add(node)
+
+        self.max_edge_cuts = max_edge_cuts(self)
 
     def _from_parent(self, parent, flips):
         self.parent = parent
@@ -62,9 +62,9 @@ class Partition:
         self.graph = parent.graph
         self.updaters = parent.updaters
 
-        self.max_edge_cuts = parent.max_edge_cuts
-
         self._update_parts()
+
+        self.max_edge_cuts = parent.max_edge_cuts
 
     def __repr__(self):
         number_of_parts = len(self)
