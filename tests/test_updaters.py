@@ -3,6 +3,7 @@ import math
 import random
 
 import geopandas as gp
+import pytest
 import networkx
 
 from rundmcmc.chain import MarkovChain
@@ -69,6 +70,7 @@ def test_Partition_can_update_stats():
 
 
 # TODO: Make a smaller, easier to check test.
+@pytest.mark.skip("Will no longer include testData")
 def test_single_flip_contiguity_equals_contiguity():
     import random
     random.seed(1887)
