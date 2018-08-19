@@ -34,9 +34,6 @@ class Partition:
         self.graph = graph
         self.assignment = assignment
 
-        if not assignment:
-            assignment = {node: 0 for node in graph.nodes}
-
         if not updaters:
             updaters = dict()
 
