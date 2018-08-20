@@ -33,12 +33,12 @@ def votes_updaters(columns, election_name=''):
     def name_count(party):
         """Return the Partition attribute name where we'll save the total
         vote count for a party"""
-        return f"{party}"
+        return str(party)
 
     def name_proportion(party):
         """Returns the Partition attribute name where we'll save the percentage
         of the total vote count for the given party"""
-        return f"{party}%"
+        return str(party) + "%"
 
     tallies = {name_count(column): Tally(column, alias=name_count(column))
                for column in columns}

@@ -66,7 +66,7 @@ class Partition:
     def __repr__(self):
         number_of_parts = len(self)
         s = "s" if number_of_parts > 1 else ""
-        return f"Partition of a graph into {str(number_of_parts)} part{s}"
+        return "Partition of a graph into {} part{}".format(number_of_parts, s)
 
     def __len__(self):
         return len(self.parts)

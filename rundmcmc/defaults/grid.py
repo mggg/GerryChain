@@ -64,7 +64,7 @@ class Grid(Partition):
         dims = "x".join(str(d) for d in self.dimensions)
         number_of_parts = len(self.parts)
         s = "s" if number_of_parts > 1 else ""
-        return f"{dims} Grid\nPartitioned into {str(number_of_parts)} part{s}"
+        return "{} Grid\nPartitioned into {} part{}".format(dims, number_of_parts, s)
 
     def as_list_of_lists(self):
         """

@@ -18,7 +18,7 @@ from rundmcmc.make_graph import (add_data_to_graph, construct_graph,
 
 from rundmcmc.partition import Partition
 
-from rundmcmc.proposals import propose_random_flip_no_loops
+from rundmcmc.proposals import propose_random_flip
 
 from rundmcmc.updaters import (Tally, boundary_nodes, cut_edges,
                                cut_edges_by_part, exterior_boundaries,
@@ -81,7 +81,7 @@ add_data_to_graph(df, graph, [cols for pair in election_columns for cols in pair
 
 
 # Desired proposal method
-proposal_method = propose_random_flip_no_loops
+proposal_method = propose_random_flip
 
 
 # Desired acceptance method
