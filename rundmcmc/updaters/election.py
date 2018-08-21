@@ -12,6 +12,15 @@ class ElectionDataView:
 
 class Election:
     def __init__(self, name, parties_to_columns, alias=None):
+        """
+        :name: The name of the election.
+        :parties_to_columns: A dictionary matching party names to their
+            data columns, either as actual columns (list-like, indexed by nodes)
+            or as string keys for the node attributes that hold the party's
+            vote totals.
+        :alias: (optional) Alias that the election is registered under
+            in the Partition's dictionary of updaters.
+        """
         self.name = name
 
         if alias is None:
@@ -31,8 +40,12 @@ class Election:
                         for party in self.parties}
 
     def __str__(self):
-        return "Election \"{}\" with vote totals from columns {}.".format(
-            self.name, str(self.columns))
+        return "Election \"{}\" with vote totals for parties {} from columns {}.".format(
+            self.name, str(self.parties), str(self.columns))
+
+    def __repr__(self):
+        return "Election(parties={}, columns={}, alias={})".format(
+            str(self.parties), str(self.columns), str(self.alias))
 
     def get_previous_values(self, partition):
         parent = partition.parent
