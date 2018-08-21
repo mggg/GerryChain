@@ -1,7 +1,7 @@
 import collections
 
 from rundmcmc.proposals import max_edge_cuts
-from rundmcmc.updaters import flows_from_changes, compute_edge_flows
+from rundmcmc.updaters import flows_from_changes, compute_edge_flows, cut_edges
 
 
 class Partition:
@@ -11,6 +11,7 @@ class Partition:
     aggregations and calculations that we want to optimize.
 
     """
+    default_updaters = {'cut_edges': cut_edges}
 
     def __init__(self, graph=None, assignment=None, updaters=None,
                  parent=None, flips=None):
@@ -37,7 +38,7 @@ class Partition:
         if not updaters:
             updaters = dict()
 
-        self.updaters = updaters
+        self.updaters = {**self.default_updaters, **updaters}
 
         self.parent = None
         self.flips = None
@@ -59,7 +60,7 @@ class Partition:
         self.graph = parent.graph
         self.updaters = parent.updaters
 
-        self._update_parts()
+        self._update_parts_and_flows()
 
         self.max_edge_cuts = parent.max_edge_cuts
 
@@ -71,7 +72,7 @@ class Partition:
     def __len__(self):
         return len(self.parts)
 
-    def _update_parts(self):
+    def _update_parts_and_flows(self):
         self.flows = flows_from_changes(self.parent.assignment, self.flips)
         self.edge_flows = compute_edge_flows(self)
 
