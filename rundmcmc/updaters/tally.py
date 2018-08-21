@@ -6,11 +6,25 @@ from .flows import flows_from_changes, on_flow
 
 
 class DataTally:
-    def __init__(self, data):
+    def __init__(self, data, alias):
         self.data = data
+        self.alias = alias
 
-        @on_flow
-        def update_tally(partition, previous, old_nodes, new_nodes):
+        def initialize_tally(partition):
+            tally = collections.defaultdict(int)
+            for node, part in partition.assignment.items():
+                add = self.data[node]
+
+                if math.isnan(add):
+                    warnings.warn(
+                        "ignoring nan encountered at node '{}' for attribute '{}'".format(
+                            node, self.alias))
+                else:
+                    tally[part] += add
+            return tally
+
+        @on_flow(initialize_tally, alias=alias)
+        def update_tally(partition, previous, new_nodes, old_nodes):
             inflow = sum(self.data[node] for node in new_nodes)
             outflow = sum(self.data[node] for node in old_nodes)
             return previous + inflow - outflow
@@ -19,6 +33,14 @@ class DataTally:
 
     def __call__(self, partition):
         return self._call(partition)
+
+    @classmethod
+    def from_node_attribute(cls, graph, attribute, alias=None):
+        if alias is None:
+            alias = attribute
+
+        data = {node: graph.nodes[node][attribute] for node in graph.nodes}
+        return cls(data, alias)
 
 
 class Tally:
