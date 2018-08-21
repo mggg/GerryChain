@@ -2,7 +2,23 @@ import collections
 import warnings
 import math
 
-from .flows import flows_from_changes
+from .flows import flows_from_changes, on_flow
+
+
+class DataTally:
+    def __init__(self, data):
+        self.data = data
+
+        @on_flow
+        def update_tally(partition, previous, old_nodes, new_nodes):
+            inflow = sum(self.data[node] for node in new_nodes)
+            outflow = sum(self.data[node] for node in old_nodes)
+            return previous + inflow - outflow
+
+        self._call = update_tally
+
+    def __call__(self, partition):
+        return self._call(partition)
 
 
 class Tally:
