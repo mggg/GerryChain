@@ -6,11 +6,26 @@ from .flows import flows_from_changes, on_flow
 
 
 class DataTally:
+    """
+    An updater for tallying numerical data that is not necessarily stored as
+    node attributes
+    """
+
     def __init__(self, data, alias):
+        """
+        :data: a dict or Series indexed by the graph's nodes,
+            or the string key for a node attribute containing the Tally's data.
+        :alias: the name of the tally in the Partition's `updaters` dictionary
+        """
         self.data = data
         self.alias = alias
 
         def initialize_tally(partition):
+            if isinstance(self.data, str):
+                nodes = partition.graph.nodes
+                attribute = self.data
+                self.data = {node: nodes[node][attribute] for node in nodes}
+
             tally = collections.defaultdict(int)
             for node, part in partition.assignment.items():
                 add = self.data[node]
@@ -31,16 +46,8 @@ class DataTally:
 
         self._call = update_tally
 
-    def __call__(self, partition):
-        return self._call(partition)
-
-    @classmethod
-    def from_node_attribute(cls, graph, attribute, alias=None):
-        if alias is None:
-            alias = attribute
-
-        data = {node: graph.nodes[node][attribute] for node in graph.nodes}
-        return cls(data, alias)
+    def __call__(self, partition, previous=None):
+        return self._call(partition, previous)
 
 
 class Tally:

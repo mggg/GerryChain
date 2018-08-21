@@ -32,10 +32,11 @@ def test_data_tally_gives_expected_value(three_by_three_grid):
     assert new_partition['tally'][1] == partition['tally'][1] - 1
 
 
-def test_from_node_attribute_method_mimics_old_tally(graph_with_random_data_factory):
+def test_data_tally_mimics_old_tally_usage(graph_with_random_data_factory):
     graph = graph_with_random_data_factory(['total'])
 
-    updaters = {'total': DataTally.from_node_attribute(graph, 'total', alias='total')}
+    # Make a DataTally the same way you make a Tally
+    updaters = {'total': DataTally('total', alias='total')}
     assignment = {i: 1 if i in range(4) else 2 for i in range(9)}
 
     partition = Partition(graph, assignment, updaters)

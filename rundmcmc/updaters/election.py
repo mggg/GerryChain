@@ -1,6 +1,6 @@
 import math
 
-from .tally import Tally
+from .tally import Tally, DataTally
 
 
 class ElectionDataView:
@@ -11,8 +11,12 @@ class ElectionDataView:
 
 
 class Election:
-    def __init__(self, name, parties_to_columns):
+    def __init__(self, name, parties_to_columns, alias=None):
         self.name = name
+
+        if alias is None:
+            alias = name
+        self.alias = alias
 
         if isinstance(parties_to_columns, dict):
             self.parties = list(parties_to_columns.keys())
@@ -23,20 +27,34 @@ class Election:
             self.columns = parties_to_columns
             self.parties_to_columns = dict(zip(self.parties, self.columns))
 
-        self.tallies = {party: Tally(self.parties_to_columns[party], party)
+        self.tallies = {party: DataTally(self.parties_to_columns[party], party)
                         for party in self.parties}
 
     def __str__(self):
         return "Election \"{}\" with vote totals from columns {}.".format(
             self.name, str(self.columns))
 
+    def get_previous_values(self, partition):
+        parent = partition.parent
+        if parent is None:
+            previous_totals_for_party = {party: None for party in self.parties}
+        else:
+            previous_totals_for_party = partition.parent[self.alias].totals_for_party
+        return previous_totals_for_party
+
     def __call__(self, partition):
-        totals_for_party = {party: self.tallies[party](partition)
-                            for party in self.parties}
+        previous_totals_for_party = self.get_previous_values(partition)
+
+        totals_for_party = {
+            party: self.tallies[party](partition, previous=previous_totals_for_party[party])
+            for party in self.parties
+        }
+
         totals = {
             part: sum(totals_for_party[party][part] for party in self.parties)
             for part in partition.parts
         }
+
         percents_for_party = {
             party: get_proportion(totals_for_party[party], totals)
             for party in self.parties

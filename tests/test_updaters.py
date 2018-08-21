@@ -14,7 +14,7 @@ from rundmcmc.updaters import (Tally, boundary_nodes, cut_edges,
                                cut_edges_by_part, exterior_boundaries,
                                interior_boundaries,
                                exterior_boundaries_as_a_set,
-                               perimeters, votes_updaters, Election)
+                               perimeters, Election)
 from rundmcmc.validity import (Validator, contiguous, no_vanishing_districts,
                                single_flip_contiguous)
 
@@ -32,7 +32,11 @@ def random_assignment(graph, num_districts):
 def partition_with_election(graph_with_d_and_r_cols):
     graph = graph_with_d_and_r_cols
     assignment = random_assignment(graph, 3)
-    election = Election("Mock Election", ['D', 'R'])
+    parties_to_columns = {
+        'D': {node: graph.nodes[node]['D'] for node in graph.nodes},
+        'R': {node: graph.nodes[node]['R'] for node in graph.nodes}
+    }
+    election = Election("Mock Election", parties_to_columns)
     updaters = {"Mock Election": election}
     return Partition(graph, assignment, updaters)
 
@@ -104,29 +108,30 @@ def test_vote_totals_are_nonnegative(partition_with_election):
 def test_vote_proportion_updater_returns_percentage_or_nan(partition_with_election):
     partition = partition_with_election
 
-    election = partition['Mock Election']
+    election_view = partition['Mock Election']
 
     # The first update gives a percentage
     assert all(is_percentage_or_nan(value)
-               for party_percents in election.percents_for_party.values()
+               for party_percents in election_view.percents_for_party.values()
                for value in party_percents.values())
 
 
 def test_vote_proportion_returns_nan_if_total_votes_is_zero(three_by_three_grid):
-    election = Election("Mock Election", ['D', 'R'])
+    election = Election("Mock Election", ['D', 'R'], alias='election')
     graph = three_by_three_grid
 
     for node in graph.nodes:
         for col in election.columns:
             graph.nodes[node][col] = 0
 
-    updaters = votes_updaters(election)
+    updaters = {'election': election}
     assignment = random_assignment(graph, 3)
 
     partition = Partition(graph, assignment, updaters)
 
-    assert all(math.isnan(value) for value in partition['D%'].values())
-    assert all(math.isnan(value) for value in partition['R%'].values())
+    assert all(math.isnan(value)
+               for party_percents in partition['election'].percents_for_party.values()
+               for value in party_percents.values())
 
 
 def is_percentage_or_nan(value):
@@ -134,24 +139,30 @@ def is_percentage_or_nan(value):
 
 
 def test_vote_proportion_updater_returns_percentage_or_nan_on_later_steps(partition_with_election):
-    partition_with_election.updaters['cut_edges'] = cut_edges
-
     chain = MarkovChain(propose_random_flip, Validator([no_vanishing_districts]),
                         lambda x: True, partition_with_election, total_steps=10)
+
     for partition in chain:
-        assert all(is_percentage_or_nan(value) for value in partition['D%'].values())
-        assert all(is_percentage_or_nan(value) for value in partition['R%'].values())
+        election_view = partition['Mock Election']
+        assert all(is_percentage_or_nan(value)
+                   for party_percents in election_view.percents_for_party.values()
+                   for value in party_percents.values())
 
 
 def test_vote_proportion_field_has_key_for_each_district(partition_with_election):
     partition = partition_with_election
-    assert set(partition['D%'].keys()) == set(partition.parts.keys())
+    for percents in partition['Mock Election'].percents_for_party.values():
+        assert set(percents.keys()) == set(partition.parts.keys())
 
 
 def test_vote_proportions_sum_to_one(partition_with_election):
     partition = partition_with_election
-    assert all(abs(1 - partition['D%'][i] - partition['R%'][i]) < 0.001
-               for i in partition['D%'])
+    election_view = partition['Mock Election']
+
+    for part in partition.parts:
+        total_percent = sum(percents[part]
+                            for percents in election_view.percents_for_party.values())
+        assert abs(1 - total_percent) < 0.001
 
 
 def test_exterior_boundaries_as_a_set(three_by_three_grid):
