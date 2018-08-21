@@ -12,7 +12,7 @@ from rundmcmc.proposals import propose_random_flip
 from rundmcmc.updaters import (Tally, boundary_nodes, county_splits, cut_edges,
                                cut_edges_by_part, exterior_boundaries,
                                perimeters, polsby_popper, votes_updaters,
-                               interior_boundaries)
+                               interior_boundaries, Election)
 from rundmcmc.validity import (L1_reciprocal_polsby_popper, UpperBound,
                                Validator, no_vanishing_districts,
                                single_flip_contiguous,
@@ -61,9 +61,10 @@ def PA_partition(path=None):
     # add_data_to_graph(data, graph, ['Frozen'], 'wes_id')
 
     assignment = dict(zip(graph.nodes(), [graph.node[x]['CD'] for x in graph.nodes()]))
+    election = Election("PA Election", ["VoteA", "VoteB"])
 
     updaters = {
-            **votes_updaters(['VoteA', 'VoteB']),
+            **votes_updaters(election),
             'population': Tally('POP100', alias='population'),
             'perimeters': perimeters,
             'exterior_boundaries': exterior_boundaries,
