@@ -20,16 +20,8 @@ from rundmcmc.validity import (Validator, contiguous, no_vanishing_districts,
 
 
 @pytest.fixture
-def graph_with_d_and_r_cols(three_by_three_grid):
-    graph = three_by_three_grid
-    attach_random_data(graph, ['D', 'R'])
-    return graph
-
-
-def attach_random_data(graph, columns):
-    for node in graph.nodes:
-        for col in columns:
-            graph.nodes[node][col] = random.randint(1, 1000)
+def graph_with_d_and_r_cols(graph_with_random_data_factory):
+    return graph_with_random_data_factory(['D', 'R'])
 
 
 def random_assignment(graph, num_districts):
@@ -41,7 +33,7 @@ def partition_with_election(graph_with_d_and_r_cols):
     graph = graph_with_d_and_r_cols
     assignment = random_assignment(graph, 3)
     election = Election("Mock Election", ['D', 'R'])
-    updaters = votes_updaters(election)
+    updaters = {"Mock Election": election}
     return Partition(graph, assignment, updaters)
 
 
@@ -112,9 +104,12 @@ def test_vote_totals_are_nonnegative(partition_with_election):
 def test_vote_proportion_updater_returns_percentage_or_nan(partition_with_election):
     partition = partition_with_election
 
+    election = partition['Mock Election']
+
     # The first update gives a percentage
-    assert all(is_percentage_or_nan(value) for value in partition['D%'].values())
-    assert all(is_percentage_or_nan(value) for value in partition['R%'].values())
+    assert all(is_percentage_or_nan(value)
+               for party_percents in election.percents_for_party.values()
+               for value in party_percents.values())
 
 
 def test_vote_proportion_returns_nan_if_total_votes_is_zero(three_by_three_grid):
