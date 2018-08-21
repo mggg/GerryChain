@@ -3,14 +3,13 @@ import pytest
 
 from rundmcmc.partition import Partition
 from rundmcmc.proposals import propose_random_flip
-from rundmcmc.updaters import cut_edges
 
 
 @pytest.fixture
 def example_partition():
     graph = networkx.complete_graph(3)
     assignment = {0: 1, 1: 1, 2: 2}
-    partition = Partition(graph, assignment, updaters={'cut_edges': cut_edges})
+    partition = Partition(graph, assignment)
     return partition
 
 

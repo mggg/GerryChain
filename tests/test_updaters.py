@@ -20,19 +20,6 @@ from rundmcmc.validity import (Validator, contiguous, no_vanishing_districts,
 
 
 @pytest.fixture
-def three_by_three_grid():
-    """Returns a graph that looks like this:
-    0 1 2
-    3 4 5
-    6 7 8
-    """
-    graph = networkx.Graph()
-    graph.add_edges_from([(0, 1), (0, 3), (1, 2), (1, 4), (2, 5), (3, 4),
-                         (3, 6), (4, 5), (4, 7), (5, 8), (6, 7), (7, 8)])
-    return graph
-
-
-@pytest.fixture
 def graph_with_d_and_r_cols(three_by_three_grid):
     graph = three_by_three_grid
     attach_random_data(graph, ['D', 'R'])
@@ -49,10 +36,6 @@ def random_assignment(graph, num_districts):
     return {node: random.choice(range(num_districts)) for node in graph.nodes}
 
 
-def edge_set_equal(set1, set2):
-    return {(y, x) for x, y in set1} | set1 == {(y, x) for x, y in set2} | set2
-
-
 @pytest.fixture
 def partition_with_election(graph_with_d_and_r_cols):
     graph = graph_with_d_and_r_cols
@@ -60,22 +43,6 @@ def partition_with_election(graph_with_d_and_r_cols):
     election = Election("Mock Election", ['D', 'R'])
     updaters = votes_updaters(election)
     return Partition(graph, assignment, updaters)
-
-
-def test_implementation_of_cut_edges_matches_naive_method(three_by_three_grid):
-    graph = three_by_three_grid
-    assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
-    updaters = {'cut_edges': cut_edges}
-    partition = Partition(graph, assignment, updaters)
-
-    flip = {4: 2}
-    new_partition = Partition(parent=partition, flips=flip)
-    result = cut_edges(new_partition)
-
-    naive_cut_edges = {edge for edge in graph.edges
-                       if new_partition.crosses_parts(edge)}
-
-    assert edge_set_equal(result, naive_cut_edges)
 
 
 def test_Partition_can_update_stats():
@@ -192,81 +159,6 @@ def test_vote_proportions_sum_to_one(partition_with_election):
                for i in partition['D%'])
 
 
-def test_cut_edges_doesnt_duplicate_edges_with_different_order_of_nodes(three_by_three_grid):
-    graph = three_by_three_grid
-    assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
-    updaters = {'cut_edges': cut_edges}
-    partition = Partition(graph, assignment, updaters)
-    # 112    111
-    # 112 -> 121
-    # 222    222
-    flip = {4: 2, 2: 1, 5: 1}
-
-    new_partition = Partition(parent=partition, flips=flip)
-
-    result = new_partition['cut_edges']
-
-    for edge in result:
-        assert (edge[1], edge[0]) not in result
-
-
-def test_cut_edges_can_handle_multiple_flips(three_by_three_grid):
-    graph = three_by_three_grid
-    assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
-    updaters = {'cut_edges': cut_edges}
-    partition = Partition(graph, assignment, updaters)
-    # 112    111
-    # 112 -> 121
-    # 222    222
-    flip = {4: 2, 2: 1, 5: 1}
-
-    new_partition = Partition(parent=partition, flips=flip)
-
-    result = new_partition['cut_edges']
-
-    naive_cut_edges = {tuple(sorted(edge)) for edge in graph.edges
-                       if new_partition.crosses_parts(edge)}
-    assert result == naive_cut_edges
-
-
-def test_cut_edges_by_part_doesnt_duplicate_edges_with_opposite_order_of_nodes(three_by_three_grid):
-    graph = three_by_three_grid
-    assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
-    updaters = {'cut_edges_by_part': cut_edges_by_part}
-    partition = Partition(graph, assignment, updaters)
-    # 112    111
-    # 112 -> 121
-    # 222    222
-    flip = {4: 2, 2: 1, 5: 1}
-
-    new_partition = Partition(parent=partition, flips=flip)
-
-    result = new_partition['cut_edges_by_part']
-
-    for part in result:
-        for edge in result[part]:
-            assert (edge[1], edge[0]) not in result
-
-
-def test_cut_edges_by_part_gives_same_total_edges_as_naive_method(three_by_three_grid):
-    graph = three_by_three_grid
-    assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
-    updaters = {'cut_edges_by_part': cut_edges_by_part}
-    partition = Partition(graph, assignment, updaters)
-    # 112    111
-    # 112 -> 121
-    # 222    222
-    flip = {4: 2, 2: 1, 5: 1}
-
-    new_partition = Partition(parent=partition, flips=flip)
-
-    result = new_partition['cut_edges_by_part']
-    naive_cut_edges = {tuple(sorted(edge)) for edge in graph.edges
-                       if new_partition.crosses_parts(edge)}
-
-    assert naive_cut_edges == {tuple(sorted(edge)) for part in result for edge in result[part]}
-
-
 def test_exterior_boundaries_as_a_set(three_by_three_grid):
     graph = three_by_three_grid
 
@@ -294,8 +186,8 @@ def test_exterior_boundaries_as_a_set(three_by_three_grid):
     assert result[1] == {0, 1, 2, 3, 5} and result[2] == {6, 7, 8}
 
 
-def test_exterior_boundaries():
-    graph = three_by_three_grid()
+def test_exterior_boundaries(three_by_three_grid):
+    graph = three_by_three_grid
 
     for i in [0, 1, 2, 3, 5, 6, 7, 8]:
         graph.nodes[i]['boundary_node'] = True
