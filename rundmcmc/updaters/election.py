@@ -1,6 +1,6 @@
 import math
 
-from .tally import Tally, DataTally
+from .tally import DataTally
 
 
 class ElectionDataView:
@@ -69,61 +69,14 @@ class Election:
         }
 
         percents_for_party = {
-            party: get_proportion(totals_for_party[party], totals)
+            party: self.get_percents(totals_for_party[party], totals)
             for party in self.parties
         }
         return ElectionDataView(totals_for_party, totals, percents_for_party)
 
 
-def get_proportion(counts, totals):
+def get_percents(counts, totals):
     return {part: counts[part] / totals[part]
             if totals[part] > 0
             else math.nan
             for part in totals}
-
-
-class Proportion:
-    def __init__(self, tally_name, total_name):
-        self.tally_name = tally_name
-        self.total_name = total_name
-
-    def __call__(self, partition):
-        return get_proportion(partition[self.tally_name], partition[self.total_name])
-
-
-def votes_updaters(election):
-    """
-    Returns a dictionary of updaters that tally total votes and compute
-    vote share. Example: `votes_updaters(['D','R'], election_name='08')` would
-    have entries `'R'`, `'D'`, `'total_votes'` (the tallies) as well as
-    `'R%'`, `'D%'` (the percentages of the total vote).
-
-    :columns: the names of the node attributes storing vote counts for each
-        party that you are interested in
-    :election_name: an optional identifier that will be appended to the names of the
-        returned updaters. This is in order to support computing scores
-        for multiple elections at the same time, so that the names of the
-        updaters don't collide.
-    """
-
-    def name_count(party):
-        """Return the Partition attribute name where we'll save the total
-        vote count for a party"""
-        return str(party)
-
-    def name_proportion(party):
-        """Returns the Partition attribute name where we'll save the percentage
-        of the total vote count for the given party"""
-        return str(party) + "%"
-
-    tallies = {name_count(column): Tally(column, alias=name_count(column))
-               for column in election.columns}
-
-    total_name = 'total_votes' + election.name
-
-    tallies[total_name] = Tally(election.columns, alias=total_name)
-
-    proportions = {name_proportion(column): Proportion(
-        name_count(column), total_name) for column in election.columns}
-
-    return {**tallies, **proportions}
