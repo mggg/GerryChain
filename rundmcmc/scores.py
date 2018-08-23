@@ -3,26 +3,6 @@ import math
 from rundmcmc.proposals import number_of_flips
 
 
-class DukeGerrymanderingIndex:
-    def __init__(self, initial_plan, vote_shares_column):
-        self.column = vote_shares_column
-        self.initial_plan_data = self.sorted_vote_shares(initial_plan)
-        self.N = len(self.initial_plan_data)
-
-    def sorted_vote_shares(self, partition, column='PR_DV08%'):
-        return sorted(list(partition[self.column].values()))
-
-    def __call__(self, chain):
-        data = [self.sorted_vote_shares(state) for state in chain]
-
-        medians = [numpy.median([data_row[i] for data_row in data]) for i in range(self.N)]
-
-        terms_in_the_sum = [median_plan - plan
-                            for median_plan, plan in zip(medians, self.initial_plan_data)]
-
-        return numpy.sqrt(sum(term ** 2 for term in terms_in_the_sum))
-
-
 def mean_median(partition, proportion_column_name):
     if proportion_column_name[-1] != "%":
         proportion_column_name = proportion_column_name + "%"
@@ -72,10 +52,24 @@ def wasted_votes(party1_votes, party2_votes):
     return party1_waste, party2_waste
 
 
-def final_report():
-    with open('../tests/test_run.txt') as f:
-        f = f.read()
-        print(f)
+class DukeGerrymanderingIndex:
+    def __init__(self, initial_plan, vote_shares_column):
+        self.column = vote_shares_column
+        self.initial_plan_data = self.sorted_vote_shares(initial_plan)
+        self.N = len(self.initial_plan_data)
+
+    def sorted_vote_shares(self, partition, column='PR_DV08%'):
+        return sorted(list(partition[self.column].values()))
+
+    def __call__(self, chain):
+        data = [self.sorted_vote_shares(state) for state in chain]
+
+        medians = [numpy.median([data_row[i] for data_row in data]) for i in range(self.N)]
+
+        terms_in_the_sum = [median_plan - plan
+                            for median_plan, plan in zip(medians, self.initial_plan_data)]
+
+        return numpy.sqrt(sum(term ** 2 for term in terms_in_the_sum))
 
 
 class MetaGraphDegree:
