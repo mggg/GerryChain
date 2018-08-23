@@ -18,7 +18,7 @@ from rundmcmc.make_graph import (add_data_to_graph, construct_graph)
 
 from rundmcmc.partition import Partition
 
-from rundmcmc.proposals import propose_random_flip_no_loops
+from rundmcmc.proposals import propose_random_flip
 
 from rundmcmc.updaters import (Tally, boundary_nodes, cut_edges,
                                cut_edges_by_part, exterior_boundaries,
@@ -29,7 +29,7 @@ from rundmcmc.updaters import (Tally, boundary_nodes, cut_edges,
 from rundmcmc.validity import (L1_reciprocal_polsby_popper,
                                UpperBound,
                                Validator, no_vanishing_districts,
-                               refuse_new_splits, single_flip_contiguous,
+                               single_flip_contiguous,
                                within_percent_of_ideal_population)
 
 from rundmcmc.scores import (efficiency_gap, mean_median,
@@ -44,12 +44,10 @@ from rundmcmc.output import (hist_of_table_scores, trace_of_table_scores)
 graph_path = "./testData/PA_graph_with_data.json"
 unique_label = "wes_id"
 
-
 # Names of graph columns go here
 pop_col = "POP100"
 area_col = "ALAND10"
 district_col = "CD"
-
 
 # This builds a graph
 graph = construct_graph(graph_path, data_source_type="json")
@@ -61,14 +59,11 @@ with open('graph_with_data.json', 'w') as outfile1:
 # Put district on graph
 assignment = dict(zip(graph.nodes(), [graph.node[x][district_col] for x in graph.nodes()]))
 
-
 # Input the shapefile with vote data here
 vote_path = "./testData/wes_merged_data.shp"
 
-
 # This inputs a shapefile with columns you want to add
 df = gp.read_file(vote_path)
-
 
 # Names of shapefile data columns go here
 vote_col1 = "voteA"
@@ -79,20 +74,16 @@ data_list = [vote_col1, vote_col2]
 
 add_data_to_graph(df, graph, data_list, id_col=unique_label)
 
-
 # Desired proposal method
-proposal_method = propose_random_flip_no_loops
-
+proposal_method = propose_random_flip
 
 # Desired proposal method
 acceptance_method = always_accept
 
-
 # Number of steps to run
-steps = 1000
+steps = 10000
 
 print("loaded data")
-
 
 # Necessary updaters go here
 updaters = {
@@ -110,7 +101,6 @@ updaters = {
 # This builds the partition object
 initial_partition = Partition(graph, assignment, updaters)
 
-
 # Desired validators go here
 pop_limit = .02
 population_constraint = within_percent_of_ideal_population(initial_partition, pop_limit)
@@ -118,9 +108,8 @@ population_constraint = within_percent_of_ideal_population(initial_partition, po
 compactness_limit = L1_reciprocal_polsby_popper(initial_partition)
 compactness_constraint = UpperBound(L1_reciprocal_polsby_popper, compactness_limit)
 
-validator = Validator([refuse_new_splits, no_vanishing_districts,
-                       single_flip_contiguous, population_constraint,
-                       compactness_constraint])
+validator = Validator([single_flip_contiguous, compactness_constraint,
+                    population_constraint, no_vanishing_districts])
 
 # Add cyclic updaters :(
 # updaters['metagraph_degree'] = MetagraphDegree(validator, "metagraph_degree")
@@ -132,7 +121,7 @@ print("setup chain")
 
 # This builds the chain object for us to iterate over
 chain = MarkovChain(proposal_method, validator, acceptance_method,
-                  initial_partition, total_steps=steps)
+                initial_partition, total_steps=steps)
 
 print("ran chain")
 
@@ -155,7 +144,6 @@ hist_of_table_scores(table, scores, outputFile=hist_path, num_bins=50)
 
 print("plotted histograms")
 
-
 # Trace Plotting
 trace_path = "chain_traces31.png"
 
@@ -170,7 +158,6 @@ with open('pvals_report31.json', 'w') as fp:
     json.dump(pv_dict, fp)
 
 print("computed p-values")
-
 
 # Write flips to file
 

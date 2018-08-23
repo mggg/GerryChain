@@ -54,13 +54,16 @@ class MarkovChain:
                 else:
                     continue
 
-            self.state.parent = None
             proposed_next_state = self.state.merge(proposal)
+            # Erase the parent of the parent, to avoid memory leak
+            self.state.parent = None
 
             if self.is_valid(proposed_next_state):
-                if self.accept(proposed_next_state):
+                proposed_next_state.accepted = self.accept(proposed_next_state)
+                if proposed_next_state.accepted:
                     self.state = proposed_next_state
                 self.counter += 1
+                # Yield the proposed state, even if not accepted
                 return proposed_next_state
         raise StopIteration
 

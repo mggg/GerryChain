@@ -1,6 +1,9 @@
-import networkx as nx
+from unittest.mock import MagicMock
 
-from rundmcmc.validity import (contiguous, districts_within_tolerance,
+import networkx as nx
+import pytest
+
+from rundmcmc.validity import (Validator, contiguous, districts_within_tolerance,
                                fast_connected, single_flip_contiguous, SelfConfiguringLowerBound)
 
 
@@ -92,3 +95,19 @@ def test_self_configuring_lower_bound_always_allows_the_first_argument_it_gets()
     assert bound(mock_partition)
     assert bound(mock_partition)
     assert bound(mock_partition)
+
+
+def test_validator_raises_TypeError_if_constraint_returns_non_boolean():
+    def function():
+        pass
+
+    mock_partition = MagicMock()
+
+    mock_constraint = MagicMock()
+    mock_constraint.return_value = function
+    mock_constraint.__name__ = "mock_constraint"
+
+    validator = Validator([mock_constraint])
+
+    with pytest.raises(TypeError):
+        validator(mock_partition)
