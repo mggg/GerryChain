@@ -7,6 +7,7 @@ class Bounds:
     ``False`` otherwise.
 
     """
+
     def __init__(self, func, bounds):
         """
         :func: Numeric validator function. Should return an iterable of values.
@@ -34,6 +35,7 @@ class UpperBound:
     and ``False`` otherwise.
 
     """
+
     def __init__(self, func, bound):
         """
         :func: Numeric validator function. Should return a comparable value.
@@ -59,6 +61,7 @@ class LowerBound:
     and ``False`` otherwise.
 
     """
+
     def __init__(self, func, bound):
         """
         :func: Numeric validator function. Should return a comparable value.
@@ -87,6 +90,7 @@ class SelfConfiguringUpperBound:
     and ``False`` otherwise.
 
     """
+
     def __init__(self, func):
         """
         :func: Numeric validator function.
@@ -114,6 +118,7 @@ class SelfConfiguringLowerBound:
     and ``False`` otherwise.
 
     """
+
     def __init__(self, func, epsilon=0.05):
         """
         :func: Numeric validator function.
@@ -122,6 +127,7 @@ class SelfConfiguringLowerBound:
         self.func = func
         self.bound = None
         self.epsilon = epsilon
+        self.__name__ = func.__name__
 
     def __call__(self, partition):
         if not self.bound:
