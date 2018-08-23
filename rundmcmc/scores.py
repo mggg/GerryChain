@@ -101,25 +101,6 @@ class MetaGraphDegree:
         return flip_valid + reverse_valid
 
 
-def MetaGraphDegreeReport(partition, validator):
-    total_available_flips = 2 * len(partition['cut_edges'])
-    total_valid_flips = sum(num_valid_flips_report(edge, partition, validator)
-                            for edge in partition['cut_edges'])
-    return {'total': total_available_flips, 'valid': total_valid_flips}
-
-
-def num_valid_flips_report(edge, partition, validator):
-    """
-    Takes an edge and a partition and returns the number of valid
-    flips the partition can make across this edge (0, 1, or 2).
-    """
-    flip = {edge[0]: partition.assignment[edge[1]]}
-    reverse_flip = {edge[1]: partition.assignment[edge[0]]}
-    flip_valid = 1 if validator(partition.merge(flip)) else 0
-    reverse_valid = 1 if validator(partition.merge(reverse_flip)) else 0
-    return flip_valid + reverse_valid
-
-
 def compute_meta_graph_degree(chain):
     degree = MetaGraphDegree(chain)
     data = []
