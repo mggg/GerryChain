@@ -1,7 +1,7 @@
 import collections
 
 from rundmcmc.proposals import max_edge_cuts
-from rundmcmc.updaters import flows_from_changes, compute_edge_flows
+from rundmcmc.updaters import flows_from_changes, compute_edge_flows, cut_edges
 
 
 class Partition:
@@ -11,6 +11,7 @@ class Partition:
     aggregations and calculations that we want to optimize.
 
     """
+    default_updaters = {'cut_edges': cut_edges}
 
     def __init__(self, graph=None, assignment=None, updaters=None,
                  parent=None, flips=None):
@@ -30,30 +31,25 @@ class Partition:
 
         self._update()
 
-        self.max_edge_cuts = max_edge_cuts(self)
-
     def _first_time(self, graph, assignment, updaters):
         self.graph = graph
         self.assignment = assignment
 
-        if not assignment:
-            assignment = {node: 0 for node in graph.nodes}
-
         if not updaters:
             updaters = dict()
 
-        self.updaters = updaters
+        self.updaters = {**self.default_updaters, **updaters}
 
         self.parent = None
         self.flips = None
         self.flows = None
         self.edge_flows = None
 
-        self.max_edge_cuts = max_edge_cuts(self)
-
         self.parts = collections.defaultdict(set)
         for node, part in self.assignment.items():
             self.parts[part].add(node)
+
+        self.max_edge_cuts = max_edge_cuts(self)
 
     def _from_parent(self, parent, flips):
         self.parent = parent
@@ -64,23 +60,23 @@ class Partition:
         self.graph = parent.graph
         self.updaters = parent.updaters
 
-        self.max_edge_cuts = parent.max_edge_cuts
+        self._update_parts_and_flows()
 
-        self._update_parts()
+        self.max_edge_cuts = parent.max_edge_cuts
 
     def __repr__(self):
         number_of_parts = len(self)
         s = "s" if number_of_parts > 1 else ""
-        return f"Partition of a graph into {str(number_of_parts)} part{s}"
+        return "Partition of a graph into {} part{}".format(number_of_parts, s)
 
     def __len__(self):
         return len(self.parts)
 
-    def _update_parts(self):
+    def _update_parts_and_flows(self):
         self.flows = flows_from_changes(self.parent.assignment, self.flips)
         self.edge_flows = compute_edge_flows(self)
 
-        # Parts must ontinue to be a defaultdict, so that new parts can appear.
+        # Parts must continue to be a defaultdict, so that new parts can appear.
         self.parts = collections.defaultdict(set, self.parent.parts)
 
         for part, flow in self.flows.items():

@@ -45,11 +45,12 @@ def on_flow(initializer, alias):
     """
     def decorator(function):
         @functools.wraps(function)
-        def wrapped(partition):
-            if not partition.parent:
+        def wrapped(partition, previous=None):
+            if partition.parent is None:
                 return initializer(partition)
 
-            previous = partition.parent[alias]
+            if previous is None:
+                previous = partition.parent[alias]
 
             new_values = dict()
 

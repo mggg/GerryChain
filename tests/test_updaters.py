@@ -5,6 +5,7 @@ import random
 import geopandas as gp
 import pytest
 import networkx
+import pytest
 
 from rundmcmc.chain import MarkovChain
 from rundmcmc.make_graph import get_assignment_dict_from_df
@@ -14,41 +15,32 @@ from rundmcmc.updaters import (Tally, boundary_nodes, cut_edges,
                                cut_edges_by_part, exterior_boundaries,
                                interior_boundaries,
                                exterior_boundaries_as_a_set,
-                               perimeters, votes_updaters)
+                               perimeters, Election)
+from rundmcmc.updaters.election import ElectionResults
 from rundmcmc.validity import (Validator, contiguous, no_vanishing_districts,
                                single_flip_contiguous)
 
 
-def three_by_three_grid():
-    """Returns a graph that looks like this:
-    0 1 2
-    3 4 5
-    6 7 8
-    """
-    graph = networkx.Graph()
-    graph.add_edges_from([(0, 1), (0, 3), (1, 2), (1, 4), (2, 5), (3, 4),
-                         (3, 6), (4, 5), (4, 7), (5, 8), (6, 7), (7, 8)])
-    return graph
+@pytest.fixture
+def graph_with_d_and_r_cols(graph_with_random_data_factory):
+    return graph_with_random_data_factory(['D', 'R'])
 
 
-def edge_set_equal(set1, set2):
-    return {(y, x) for x, y in set1} | set1 == {(y, x) for x, y in set2} | set2
+def random_assignment(graph, num_districts):
+    return {node: random.choice(range(num_districts)) for node in graph.nodes}
 
 
-def test_implementation_of_cut_edges_matches_naive_method():
-    graph = three_by_three_grid()
-    assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
-    updaters = {'cut_edges': cut_edges}
-    partition = Partition(graph, assignment, updaters)
-
-    flip = {4: 2}
-    new_partition = Partition(parent=partition, flips=flip)
-    result = cut_edges(new_partition)
-
-    naive_cut_edges = {edge for edge in graph.edges
-                       if new_partition.crosses_parts(edge)}
-
-    assert edge_set_equal(result, naive_cut_edges)
+@pytest.fixture
+def partition_with_election(graph_with_d_and_r_cols):
+    graph = graph_with_d_and_r_cols
+    assignment = random_assignment(graph, 3)
+    parties_to_columns = {
+        'D': {node: graph.nodes[node]['D'] for node in graph.nodes},
+        'R': {node: graph.nodes[node]['R'] for node in graph.nodes}
+    }
+    election = Election("Mock Election", parties_to_columns)
+    updaters = {"Mock Election": election}
+    return Partition(graph, assignment, updaters)
 
 
 def test_Partition_can_update_stats():
@@ -99,30 +91,9 @@ def test_single_flip_contiguity_equals_contiguity():
     list(chain)
 
 
-def random_assignment(graph, num_districts):
-    return {node: random.choice(range(num_districts)) for node in graph.nodes}
+def test_tally_multiple_columns(graph_with_d_and_r_cols):
+    graph = graph_with_d_and_r_cols
 
-
-def setup_for_proportion_updaters(columns):
-    graph = three_by_three_grid()
-
-    attach_random_data(graph, columns)
-
-    assignment = random_assignment(graph, 3)
-
-    updaters = votes_updaters(columns)
-    return Partition(graph, assignment, updaters)
-
-
-def attach_random_data(graph, columns):
-    for node in graph.nodes:
-        for col in columns:
-            graph.nodes[node][col] = random.randint(1, 1000)
-
-
-def test_tally_multiple_columns():
-    graph = three_by_three_grid()
-    attach_random_data(graph, ['D', 'R'])
     updaters = {'total': Tally(['D', 'R'], alias='total')}
     assignment = {i: 1 if i in range(4) else 2 for i in range(9)}
 
@@ -132,142 +103,93 @@ def test_tally_multiple_columns():
     assert partition['total'][1] == expected_total_in_district_one
 
 
-def test_vote_totals_are_nonnegative():
-    partition = setup_for_proportion_updaters(['D', 'R'])
-    assert all(count >= 0 for count in partition['total_votes'].values())
+def test_vote_totals_are_nonnegative(partition_with_election):
+    partition = partition_with_election
+    assert all(count >= 0 for count in partition['Mock Election'].totals.values())
 
 
-def test_vote_proportion_updater_returns_percentage_or_nan():
-    partition = setup_for_proportion_updaters(['D', 'R'])
+def test_vote_proportion_updater_returns_percentage_or_nan(partition_with_election):
+    partition = partition_with_election
+
+    election_view = partition['Mock Election']
 
     # The first update gives a percentage
-    assert all(is_percentage_or_nan(value) for value in partition['D%'].values())
-    assert all(is_percentage_or_nan(value) for value in partition['R%'].values())
+    assert all(is_percentage_or_nan(value)
+               for party_percents in election_view.percents_for_party.values()
+               for value in party_percents.values())
 
 
-def test_vote_proportion_returns_nan_if_total_votes_is_zero():
-    columns = ['D', 'R']
-    graph = three_by_three_grid()
+def test_vote_proportion_returns_nan_if_total_votes_is_zero(three_by_three_grid):
+    election = Election("Mock Election", ['D', 'R'], alias='election')
+    graph = three_by_three_grid
+
     for node in graph.nodes:
-        for col in columns:
+        for col in election.columns:
             graph.nodes[node][col] = 0
-    updaters = votes_updaters(columns)
+
+    updaters = {'election': election}
     assignment = random_assignment(graph, 3)
 
     partition = Partition(graph, assignment, updaters)
 
-    assert all(math.isnan(value) for value in partition['D%'].values())
-    assert all(math.isnan(value) for value in partition['R%'].values())
+    assert all(math.isnan(value)
+               for party_percents in partition['election'].percents_for_party.values()
+               for value in party_percents.values())
 
 
 def is_percentage_or_nan(value):
     return (0 <= value and value <= 1) or math.isnan(value)
 
 
-def test_vote_proportion_updater_returns_percentage_or_nan_on_later_steps():
-    columns = ['D', 'R']
-    graph = three_by_three_grid()
-    attach_random_data(graph, columns)
-    assignment = random_assignment(graph, 3)
-    updaters = {**votes_updaters(columns), 'cut_edges': cut_edges}
-
-    initial_partition = Partition(graph, assignment, updaters)
-
+def test_vote_proportion_updater_returns_percentage_or_nan_on_later_steps(partition_with_election):
     chain = MarkovChain(propose_random_flip, Validator([no_vanishing_districts]),
-                        lambda x: True, initial_partition, total_steps=10)
+                        lambda x: True, partition_with_election, total_steps=10)
+
     for partition in chain:
-        assert all(is_percentage_or_nan(value) for value in partition['D%'].values())
-        assert all(is_percentage_or_nan(value) for value in partition['R%'].values())
+        election_view = partition['Mock Election']
+        assert all(is_percentage_or_nan(value)
+                   for party_percents in election_view.percents_for_party.values()
+                   for value in party_percents.values())
 
 
-def test_vote_proportion_field_has_key_for_each_district():
-    partition = setup_for_proportion_updaters(['D', 'R'])
-    assert set(partition['D%'].keys()) == set(partition.parts.keys())
+def test_vote_proportion_field_has_key_for_each_district(partition_with_election):
+    partition = partition_with_election
+    for percents in partition['Mock Election'].percents_for_party.values():
+        assert set(percents.keys()) == set(partition.parts.keys())
 
 
-def test_vote_proportions_sum_to_one():
-    partition = setup_for_proportion_updaters(['D', 'R'])
+def test_vote_proportions_sum_to_one(partition_with_election):
+    partition = partition_with_election
+    election_view = partition['Mock Election']
 
-    assert all(abs(1 - partition['D%'][i] - partition['R%'][i]) < 0.001 for i in partition['D%'])
-
-
-def test_cut_edges_doesnt_duplicate_edges_with_different_order_of_nodes():
-    graph = three_by_three_grid()
-    assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
-    updaters = {'cut_edges': cut_edges}
-    partition = Partition(graph, assignment, updaters)
-    # 112    111
-    # 112 -> 121
-    # 222    222
-    flip = {4: 2, 2: 1, 5: 1}
-
-    new_partition = Partition(parent=partition, flips=flip)
-
-    result = new_partition['cut_edges']
-
-    for edge in result:
-        assert (edge[1], edge[0]) not in result
+    for part in partition.parts:
+        total_percent = sum(percents[part]
+                            for percents in election_view.percents_for_party.values())
+        assert abs(1 - total_percent) < 0.001
 
 
-def test_cut_edges_can_handle_multiple_flips():
-    graph = three_by_three_grid()
-    assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
-    updaters = {'cut_edges': cut_edges}
-    partition = Partition(graph, assignment, updaters)
-    # 112    111
-    # 112 -> 121
-    # 222    222
-    flip = {4: 2, 2: 1, 5: 1}
-
-    new_partition = Partition(parent=partition, flips=flip)
-
-    result = new_partition['cut_edges']
-
-    naive_cut_edges = {tuple(sorted(edge)) for edge in graph.edges
-                       if new_partition.crosses_parts(edge)}
-    assert result == naive_cut_edges
-
-
-def test_cut_edges_by_part_doesnt_duplicate_edges_with_different_order_of_nodes():
-    graph = three_by_three_grid()
-    assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
-    updaters = {'cut_edges_by_part': cut_edges_by_part}
-    partition = Partition(graph, assignment, updaters)
-    # 112    111
-    # 112 -> 121
-    # 222    222
-    flip = {4: 2, 2: 1, 5: 1}
-
-    new_partition = Partition(parent=partition, flips=flip)
-
-    result = new_partition['cut_edges_by_part']
-
-    for part in result:
-        for edge in result[part]:
-            assert (edge[1], edge[0]) not in result
+def test_election_result_has_a_cute_str_method():
+    election = Election("2008 Presidential", {"Democratic": [3, 1, 2], "Republican": [1, 2, 1]})
+    results = ElectionResults(election,
+        {"Democratic": {0: 3, 1: 1, 2: 2}, "Republican": {0: 1, 1: 2, 2: 1}},
+        {0: 4, 1: 3, 2: 3},
+        {"Democratic": {0: 0.75, 1: 0.33, 2: 0.66}, "Republican": {0: 0.25, 1: 0.66, 2: 0.33}}
+    )
+    expected = "Election Results for 2008 Presidential\n" \
+        "0:\n" \
+        "  Democratic: 0.75\n" \
+        "  Republican: 0.25\n" \
+        "1:\n" \
+        "  Democratic: 0.33\n" \
+        "  Republican: 0.66\n" \
+        "2:\n" \
+        "  Democratic: 0.66\n" \
+        "  Republican: 0.33"
+    assert str(results) == expected
 
 
-def test_cut_edges_by_part_gives_same_total_edges_as_naive_method():
-    graph = three_by_three_grid()
-    assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
-    updaters = {'cut_edges_by_part': cut_edges_by_part}
-    partition = Partition(graph, assignment, updaters)
-    # 112    111
-    # 112 -> 121
-    # 222    222
-    flip = {4: 2, 2: 1, 5: 1}
-
-    new_partition = Partition(parent=partition, flips=flip)
-
-    result = new_partition['cut_edges_by_part']
-    naive_cut_edges = {tuple(sorted(edge)) for edge in graph.edges
-                       if new_partition.crosses_parts(edge)}
-
-    assert naive_cut_edges == {tuple(sorted(edge)) for part in result for edge in result[part]}
-
-
-def test_exterior_boundaries_as_a_set():
-    graph = three_by_three_grid()
+def test_exterior_boundaries_as_a_set(three_by_three_grid):
+    graph = three_by_three_grid
 
     for i in [0, 1, 2, 3, 5, 6, 7, 8]:
         graph.nodes[i]['boundary_node'] = True
@@ -293,8 +215,8 @@ def test_exterior_boundaries_as_a_set():
     assert result[1] == {0, 1, 2, 3, 5} and result[2] == {6, 7, 8}
 
 
-def test_exterior_boundaries():
-    graph = three_by_three_grid()
+def test_exterior_boundaries(three_by_three_grid):
+    graph = three_by_three_grid
 
     for i in [0, 1, 2, 3, 5, 6, 7, 8]:
         graph.nodes[i]['boundary_node'] = True
@@ -321,9 +243,8 @@ def test_exterior_boundaries():
     assert result[1] == 10 and result[2] == 6
 
 
-def test_perimeters():
-    graph = three_by_three_grid()
-
+def test_perimeters(three_by_three_grid):
+    graph = three_by_three_grid
     for i in [0, 1, 2, 3, 5, 6, 7, 8]:
         graph.nodes[i]['boundary_node'] = True
         graph.nodes[i]['boundary_perim'] = 1

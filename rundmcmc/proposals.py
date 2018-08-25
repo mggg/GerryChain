@@ -290,5 +290,5 @@ def max_edge_cuts(partition):
     """
     # TODO need number of frozen edges of graph
     numFrozen = 0
-    numDists = len(set(partition.assignment.values()))
+    numDists = len(partition)
     return 2 * (2 * len(partition.graph.nodes) + (numDists - numFrozen) - 6)

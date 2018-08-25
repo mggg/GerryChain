@@ -1,49 +1,113 @@
 import math
 
-from .tally import Tally
+from rundmcmc.updaters.tally import DataTally
 
 
-class Proportion:
-    def __init__(self, tally_name, total_name):
-        self.tally_name = tally_name
-        self.total_name = total_name
+class Election:
+    def __init__(self, name, parties_to_columns, alias=None):
+        """
+        :name: The name of the election.
+        :parties_to_columns: A dictionary matching party names to their
+            data columns, either as actual columns (list-like, indexed by nodes)
+            or as string keys for the node attributes that hold the party's
+            vote totals. Or, a list of strings which will serve as both
+            the party names and the node attribute keys.
+        :alias: (optional) Alias that the election is registered under
+            in the Partition's dictionary of updaters.
+        """
+        self.name = name
+
+        if alias is None:
+            alias = name
+        self.alias = alias
+
+        if isinstance(parties_to_columns, dict):
+            self.parties = list(parties_to_columns.keys())
+            self.columns = list(parties_to_columns.values())
+            self.parties_to_columns = parties_to_columns
+        elif isinstance(parties_to_columns, list):
+            self.parties = parties_to_columns
+            self.columns = parties_to_columns
+            self.parties_to_columns = dict(zip(self.parties, self.columns))
+        else:
+            raise TypeError("Election expects parties_to_columns to be a dict or list")
+
+        self.tallies = {party: DataTally(self.parties_to_columns[party], party)
+                        for party in self.parties}
+
+        self.updater = ElectionUpdater(self)
+
+    def __str__(self):
+        return 'Election \'{}\' with vote totals for parties {} from columns {}.'.format(
+            self.name, str(self.parties), str(self.columns))
+
+    def __repr__(self):
+        return 'Election(parties={}, columns={}, alias={})'.format(
+            str(self.parties), str(self.columns), str(self.alias))
+
+    def __call__(self, *args, **kwargs):
+        return self.updater(*args, **kwargs)
+
+
+class ElectionUpdater:
+    def __init__(self, election):
+        self.election = election
 
     def __call__(self, partition):
-        return {part: partition[self.tally_name][part] / partition[self.total_name][part]
-                if partition[self.total_name][part] > 0
-                else math.nan
-                for part in partition.parts}
+        previous_totals_for_party = self.get_previous_values(partition)
+        parties = self.election.parties
+        tallies = self.election.tallies
+
+        totals_for_party = {
+            party: tallies[party](partition, previous=previous_totals_for_party[party])
+            for party in parties
+        }
+
+        totals = {
+            part: sum(totals_for_party[party][part] for party in parties)
+            for part in partition.parts
+        }
+
+        percents_for_party = {
+            party: get_percents(totals_for_party[party], totals)
+            for party in parties
+        }
+        return ElectionResults(self, totals_for_party, totals, percents_for_party)
+
+    def get_previous_values(self, partition):
+        parent = partition.parent
+        if parent is None:
+            previous_totals_for_party = {party: None for party in self.election.parties}
+        else:
+            previous_totals_for_party = partition.parent[self.election.alias].totals_for_party
+        return previous_totals_for_party
 
 
-def votes_updaters(columns, election_name=''):
-    """
-    Returns a dictionary of updaters that tally total votes and compute
-    vote share. Example: `votes_updaters(['D','R'], election_name='08')` would
-    have entries `'R'`, `'D'`, `'total_votes'` (the tallies) as well as
-    `'R%'`, `'D%'` (the percentages of the total vote).
+def get_percents(counts, totals):
+    return {part: counts[part] / totals[part]
+            if totals[part] > 0
+            else math.nan
+            for part in totals}
 
-    :columns: the names of the node attributes storing vote counts for each
-        party that you are interested in
-    :election_name: an optional identifier that will be appended to the names of the
-        returned updaters. This is in order to support computing scores
-        for multiple elections at the same time, so that the names of the
-        updaters don't collide.
-    """
 
-    def name_count(party):
-        """Return the Partition attribute name where we'll save the total
-        vote count for a party"""
-        return f"{party}"
+class ElectionResults:
+    def __init__(self, election, totals_for_party, totals, percents_for_party):
+        self.election = election
+        self.totals_for_party = totals_for_party
+        self.totals = totals
+        self.percents_for_party = percents_for_party
 
-    def name_proportion(party):
-        """Returns the Partition attribute name where we'll save the percentage
-        of the total vote count for the given party"""
-        return f"{party}%"
+    def __str__(self):
+        results_by_part = '\n'.join(
+            format_part_results(self.percents_for_party, part)
+            for part in self.totals)
+        return 'Election Results for {name}\n{results}'.format(
+            name=self.election.name, results=results_by_part)
 
-    tallies = {name_count(column): Tally(column, alias=name_count(column))
-               for column in columns}
-    total_name = 'total_votes' + election_name
-    tallies[total_name] = Tally(columns, alias=total_name)
-    proportions = {name_proportion(column): Proportion(
-        name_count(column), total_name) for column in columns}
-    return {**tallies, **proportions}
+
+def format_part_results(percents_for_party, part):
+    heading = '{part}:\n'.format(part=str(part))
+    body = '\n'.join("  {party}: {percent}".format(
+        party=str(party), percent=percents_for_party[party][part])
+        for party in percents_for_party)
+    return heading + body
