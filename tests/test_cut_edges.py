@@ -1,3 +1,4 @@
+import pytest
 
 from rundmcmc.defaults import PA_partition, BasicChain
 from rundmcmc.updaters import cut_edges, cut_edges_by_part
@@ -17,6 +18,7 @@ def invalid_cut_edges(partition):
     return invalid
 
 
+@pytest.mark.skip("We got rid of testData")
 def test_cut_edges_only_returns_edges_that_are_actually_cut():
     partition = PA_partition()
     chain = BasicChain(partition, 100)

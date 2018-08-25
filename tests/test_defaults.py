@@ -1,6 +1,8 @@
 import rundmcmc.defaults
+import pytest
 
 
+@pytest.mark.skip("We don't have this data any more")
 def test_the_chain_runs():
     partition = rundmcmc.defaults.PA_partition('./rundmcmc/testData/PA_graph_with_data.json')
     chain = rundmcmc.defaults.BasicChain(partition, total_steps=100)
