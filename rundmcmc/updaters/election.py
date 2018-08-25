@@ -5,7 +5,7 @@ from rundmcmc.updaters.tally import DataTally
 
 class Election:
     def __init__(self, name, parties_to_columns, alias=None):
-        '''
+        """
         :name: The name of the election.
         :parties_to_columns: A dictionary matching party names to their
             data columns, either as actual columns (list-like, indexed by nodes)
@@ -14,7 +14,7 @@ class Election:
             the party names and the node attribute keys.
         :alias: (optional) Alias that the election is registered under
             in the Partition's dictionary of updaters.
-        '''
+        """
         self.name = name
 
         if alias is None:
