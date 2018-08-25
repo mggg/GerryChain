@@ -29,6 +29,8 @@ class Election:
             self.parties = parties_to_columns
             self.columns = parties_to_columns
             self.parties_to_columns = dict(zip(self.parties, self.columns))
+        else:
+            raise TypeError("Election expects parties_to_columns to be a dict or list")
 
         self.tallies = {party: DataTally(self.parties_to_columns[party], party)
                         for party in self.parties}
