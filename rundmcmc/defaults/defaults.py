@@ -11,7 +11,7 @@ from rundmcmc.partition import Partition
 from rundmcmc.proposals import propose_random_flip
 from rundmcmc.updaters import (Tally, boundary_nodes, county_splits, cut_edges,
                                cut_edges_by_part, exterior_boundaries,
-                               perimeters, polsby_popper, votes_updaters,
+                               perimeters, polsby_popper,
                                interior_boundaries, Election)
 from rundmcmc.validity import (L1_reciprocal_polsby_popper, UpperBound,
                                Validator, no_vanishing_districts,
@@ -40,7 +40,10 @@ def example_partition():
                       id_col='GEOID10')
 
     updaters = {
-        **votes_updaters(['PR_DV08', 'PR_RV08'], election_name='08'),
+        'election08': Election(
+            '2008 Presidential Election',
+            {'Democratic': 'PR_DV08', 'Republican': 'PR_RV08'},
+            alias="election"),
         'population': Tally('POP100', alias='population'),
         'counties': county_splits('counties', 'COUNTYFP10'),
         'cut_edges': cut_edges,
@@ -61,10 +64,10 @@ def PA_partition(path=None):
     # add_data_to_graph(data, graph, ['Frozen'], 'wes_id')
 
     assignment = dict(zip(graph.nodes(), [graph.node[x]['CD'] for x in graph.nodes()]))
-    election = Election("PA Election", ["VoteA", "VoteB"])
+    election = Election("PA Election", ["VoteA", "VoteB"], alias="election")
 
     updaters = {
-            **votes_updaters(election),
+            'election': election,
             'population': Tally('POP100', alias='population'),
             'perimeters': perimeters,
             'exterior_boundaries': exterior_boundaries,

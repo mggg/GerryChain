@@ -3,13 +3,6 @@ import math
 from .tally import DataTally
 
 
-class ElectionDataView:
-    def __init__(self, totals_for_party, totals, percents_for_party):
-        self.totals_for_party = totals_for_party
-        self.totals = totals
-        self.percents_for_party = percents_for_party
-
-
 class Election:
     def __init__(self, name, parties_to_columns, alias=None):
         """
@@ -17,7 +10,8 @@ class Election:
         :parties_to_columns: A dictionary matching party names to their
             data columns, either as actual columns (list-like, indexed by nodes)
             or as string keys for the node attributes that hold the party's
-            vote totals.
+            vote totals. Or, a list of strings which will serve as both
+            the party names and the node attribute keys.
         :alias: (optional) Alias that the election is registered under
             in the Partition's dictionary of updaters.
         """
@@ -69,7 +63,7 @@ class Election:
         }
 
         percents_for_party = {
-            party: self.get_percents(totals_for_party[party], totals)
+            party: get_percents(totals_for_party[party], totals)
             for party in self.parties
         }
         return ElectionDataView(totals_for_party, totals, percents_for_party)
@@ -80,3 +74,10 @@ def get_percents(counts, totals):
             if totals[part] > 0
             else math.nan
             for part in totals}
+
+
+class ElectionDataView:
+    def __init__(self, totals_for_party, totals, percents_for_party):
+        self.totals_for_party = totals_for_party
+        self.totals = totals
+        self.percents_for_party = percents_for_party
