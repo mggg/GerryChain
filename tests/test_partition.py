@@ -2,6 +2,7 @@ import networkx
 import pytest
 
 from rundmcmc.partition import Partition
+from rundmcmc.partition import GeographicPartition
 from rundmcmc.proposals import propose_random_flip
 
 
@@ -65,3 +66,20 @@ def test_partition_has_no_empty_parts(example_partition):
     parts = new_partition.parts
 
     assert all(len(parts[part]) > 0 for part in parts)
+
+
+@pytest.fixture
+def example_geographic_partition():
+    graph = networkx.complete_graph(3)
+    assignment = {0: 1, 1: 1, 2: 2}
+    for node in graph.nodes:
+        graph.node[node]['boundary_node'] = False
+        graph.node[node]['area'] = 1
+    for edge in graph.edges:
+        graph.edges[edge]['shared_perim'] = 1
+    return GeographicPartition(graph, assignment, None, None, None)
+
+
+def test_geographic_partition_can_be_instantiated(example_geographic_partition):
+    partition = example_geographic_partition
+    assert partition.updaters == GeographicPartition.default_updaters
