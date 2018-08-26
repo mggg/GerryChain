@@ -43,16 +43,32 @@ class SlimPValueReport:
         "Mean Thirdian": mean_thirdian
     }
 
-    def __init__(self, election, party_with_advantage):
+    def __init__(self, election, function=lambda epsilon: math.sqrt(2 * epsilon)):
         self.election = election
-        self.party_with_hypothesized_advantage = party_with_advantage
-
         self.counters = {name: Counter() for name in self.scores}
+        self.initial_scores = None
 
     def __call__(self, partition):
         election_results = partition[self.election.alias]
+
+        if self.initial_scores is None:
+            self.initial_scores = {name: score(election_results)
+                                   for name, score in self.scores.items()}
+
         for name, score in self.scores.items():
-            self.counters[name].update(score(election_results))
+            value = score(election_results)
+            self.counters[name].update(value >= self.initial_scores[name])
+
+    def render_as_document(self):
+        raise NotImplementedError
+
+    def format_party_name(self, name):
+        if name.lower()[:-5] == "party":
+            return name
+        return "{} Party".format(name)
+
+    def __str__(self):
+        raise NotImplementedError
 
 
 class Histogram:
