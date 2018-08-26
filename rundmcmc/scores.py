@@ -9,6 +9,7 @@ def mean_median(election_results):
     """
     first_party_results, *others = election_results.percents_for_party.values()
     data = list(first_party_results.values())
+
     return numpy.median(data) - numpy.mean(data)
 
 
@@ -37,7 +38,7 @@ def efficiency_gap(election_results):
     wasted_votes_by_part = {part: wasted_votes(party1[part], party2[part])
                             for part in party1}
     total_votes = sum(party1.values()) + sum(party2.values())
-    numerator = sum(waste1 - waste2 for waste1, waste2 in wasted_votes_by_part.values())
+    numerator = sum(waste2 - waste1 for waste1, waste2 in wasted_votes_by_part.values())
     return numerator / total_votes
 
 
