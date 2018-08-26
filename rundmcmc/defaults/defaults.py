@@ -26,6 +26,19 @@ FILE_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TEST_DATA_PATH = os.path.join(FILE_PATH, "testData/")
 
 
+class DefaultChain(MarkovChain):
+    """
+    A MarkovChain with propose_random_flips proposal and always_accept
+    acceptance function. Also instantiates a Validator for you from a
+    list of constraints.
+    """
+
+    def __init__(self, partition, constraints, total_steps):
+        validator = Validator(constraints)
+        super().__init__(self, propose_random_flip, validator,
+                         always_accept, partition)
+
+
 def example_partition():
     df = gp.read_file(os.path.join(TEST_DATA_PATH, "mo_cleaned_vtds.shp"))
 

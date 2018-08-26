@@ -39,14 +39,15 @@ def p_value_report(score_name, ensemble_scores, initial_plan_score):
 class SlimPValueReport:
     scores = {
         "Efficiency Gap": efficiency_gap,
-        "Mean Median": mean_median,
-        "Mean Thirdian": mean_thirdian
+        "Mean-Median": mean_median,
+        "Mean-Thirdian": mean_thirdian
     }
 
     def __init__(self, election, function=lambda epsilon: math.sqrt(2 * epsilon)):
         self.election = election
         self.counters = {name: Counter() for name in self.scores}
         self.initial_scores = None
+        self.function = function
 
     def __call__(self, partition):
         election_results = partition[self.election.alias]
@@ -59,16 +60,47 @@ class SlimPValueReport:
             value = score(election_results)
             self.counters[name].update(value >= self.initial_scores[name])
 
-    def render_as_document(self):
-        raise NotImplementedError
+    def render(self):
+        return {"election": self.election.name,
+                "analysis": [self.render_score_analysis(score)
+                            for score in self.scores]}
 
-    def format_party_name(self, name):
-        if name.lower()[:-5] == "party":
-            return name
-        return "{} Party".format(name)
+    def compute_p_value(self, score_name):
+        return self.function(self.fraction_as_high(score_name))
+
+    def compute_opposite_p_value(self, score_name):
+        return self.function(self.fraction_as_low(score_name))
+
+    def fraction_as_high(self, score_name):
+        size_of_ensemble = sum(self.counters[score_name].values())
+        if size_of_ensemble == 0:
+            return math.nan
+        number_as_high = self.counters[score_name][True]
+        return number_as_high / size_of_ensemble
+
+    def fraction_as_low(self, score_name):
+        size_of_ensemble = sum(self.counters[score_name].values())
+        if size_of_ensemble == 0:
+            return math.nan
+        number_as_low = 1 + self.counters[score_name][False]
+        return number_as_low / size_of_ensemble
+
+    def render_score_analysis(self, score):
+        first_party, *others = self.election.parties_to_columns
+        party_name = format_party_name(first_party)
+        return {"score": score,
+                "interpretation": "Positive values mean an advantage for {}".format(party_name),
+                "fraction_as_high_as_original": self.fraction_as_high(score),
+                "p": self.compute_p_value(score)}
 
     def __str__(self):
-        raise NotImplementedError
+        return json.dumps(self.render(), indent=2)
+
+
+def format_party_name(name):
+    if name.lower()[:-5] == "party":
+        return name
+    return "{} Party".format(name)
 
 
 class Histogram:
