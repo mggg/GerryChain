@@ -1,18 +1,25 @@
 import numpy
 
 
-def mean_median(partition, proportion_column_name):
-    if proportion_column_name[-1] != "%":
-        proportion_column_name = proportion_column_name + "%"
-    data = list(partition[proportion_column_name].values())
-    return numpy.mean(data) - numpy.median(data)
+def mean_median(election_results):
+    """
+    Computes the Mean-Median score for the given ElectionResults.
+    A positive value indicates an advantage for the first party listed
+    in the Election's parties_to_columns dictionary.
+    """
+    first_party_results, *others = election_results.percents_for_party.values()
+    data = list(first_party_results.values())
+    return numpy.median(data) - numpy.mean(data)
 
 
-def mean_thirdian(partition, proportion_column_name):
-    if proportion_column_name[-1] != "%":
-        proportion_column_name = proportion_column_name + "%"
-
-    data = list(1 - value for value in partition[proportion_column_name].values())
+def mean_thirdian(election_results):
+    """
+    Computes the Mean-Median score for the given ElectionResults.
+    A positive value indicates an advantage for the first party listed
+    in the Election's parties_to_columns dictionary.
+    """
+    first_party_results, *others = election_results.percents_for_party.values()
+    data = list(first_party_results.values())
 
     thirdian_index = round(len(data) / 3)
     thirdian = sorted(data)[thirdian_index]
@@ -20,9 +27,13 @@ def mean_thirdian(partition, proportion_column_name):
     return thirdian - numpy.mean(data)
 
 
-def efficiency_gap(partition, col1='PR_DV08', col2='PR_RV08'):
-    party1 = partition[col1]
-    party2 = partition[col2]
+def efficiency_gap(election_results):
+    """
+    Computes the efficiency gap for the given ElectionResults.
+    A positive value indicates an advantage for the first party listed
+    in the Election's parties_to_columns dictionary.
+    """
+    party1, party2 = election_results.totals_for_party.values()
     wasted_votes_by_part = {part: wasted_votes(party1[part], party2[part])
                             for part in party1}
     total_votes = sum(party1.values()) + sum(party2.values())
@@ -31,6 +42,11 @@ def efficiency_gap(partition, col1='PR_DV08', col2='PR_RV08'):
 
 
 def wasted_votes(party1_votes, party2_votes):
+    """
+    Computes the wasted votes for each party in the given race.
+    :party1_votes: the number of votes party1 received in the race
+    :party2_votes: the number of votes party2 received in the race
+    """
     total_votes = party1_votes + party2_votes
     if party1_votes > party2_votes:
         party1_waste = party1_votes - total_votes / 2
@@ -39,130 +55,3 @@ def wasted_votes(party1_votes, party2_votes):
         party2_waste = party2_votes - total_votes / 2
         party1_waste = party1_votes
     return party1_waste, party2_waste
-
-
-# class MetaGraphDegree:
-#     def __init__(self, chain):
-#         self.is_valid = chain.is_valid
-#         self.data = []
-
-#     def __call__(self, partition):
-#         total_available_flips = 2 * len(partition['cut_edges'])
-#         total_valid_flips = sum(self.num_valid_flips(edge, partition)
-#                                 for edge in partition['cut_edges'])
-#         return {'total': total_available_flips, 'valid': total_valid_flips}
-
-#     def num_valid_flips(self, edge, partition):
-#         """
-#         Takes an edge and a partition and returns the number of valid
-#         flips the partition can make across this edge (0, 1, or 2).
-#         """
-#         flip = {edge[0]: partition.assignment[edge[1]]}
-#         reverse_flip = {edge[1]: partition.assignment[edge[0]]}
-#         flip_valid = 1 if self.is_valid(partition.merge(flip)) else 0
-#         reverse_valid = 1 if self.is_valid(partition.merge(reverse_flip)) else 0
-#         return flip_valid + reverse_valid
-
-
-# def MetaGraphDegreeReport(partition, validator):
-#     total_available_flips = 2 * len(partition['cut_edges'])
-#     total_valid_flips = sum(num_valid_flips_report(edge, partition, validator)
-#                             for edge in partition['cut_edges'])
-#     return {'total': total_available_flips, 'valid': total_valid_flips}
-
-
-# def num_valid_flips_report(edge, partition, validator):
-#     """
-#     Takes an edge and a partition and returns the number of valid
-#     flips the partition can make across this edge (0, 1, or 2).
-#     """
-#     flip = {edge[0]: partition.assignment[edge[1]]}
-#     reverse_flip = {edge[1]: partition.assignment[edge[0]]}
-#     flip_valid = 1 if validator(partition.merge(flip)) else 0
-#     reverse_valid = 1 if validator(partition.merge(reverse_flip)) else 0
-#     return flip_valid + reverse_valid
-
-
-# def compute_meta_graph_degree(chain):
-#     degree = MetaGraphDegree(chain)
-#     data = []
-
-#     previous_assignment = None
-#     for state in chain:
-#         if state.assignment != previous_assignment:
-#             d = degree(state)
-#             data.append(d)
-#             print(state.flips)
-#             print(d)
-#             previous_assignment = state.assignment
-
-#     print("Local average degree of the metagraph:")
-#     print(numpy.mean([row['valid'] for row in data]))
-
-#     return data
-
-
-# def how_many_seats(col1, col2):
-#     def function(partition):
-#         return sum(partition[col1][part] > partition[col2][part] for part in partition.parts)
-#     return function
-
-
-# def how_many_seats_value(partition, col1, col2):
-#     return sum(partition[col1][part] > partition[col2][part] for part in partition.parts)
-
-
-# def population_range(partition):
-#     return (max(partition["population"].values()) - min(partition["population"].values()))
-
-
-# def number_cut_edges(partition):
-#     return len(partition["cut_edges"])
-
-
-# def number_boundary_nodes(partition):
-#     return len(partition["boundary_nodes"])
-
-
-# def number_boundary_components(partition):
-#     return len(partition["cut_edges_by_part"].values())
-
-
-# def L2_pop_dev(partition):
-#     number_of_districts = len(partition['population'].keys())
-#     total_population = sum(partition['population'].values())
-#     mean_population = total_population / number_of_districts
-
-#     return math.sqrt(
-#         sum([((x - mean_population) / x)**2 for x in partition['population'].values()]))
-
-
-# def worst_pop(partition):
-#     number_of_districts = len(partition['population'].keys())
-#     total_population = sum(partition['population'].values())
-#     mean_population = total_population / number_of_districts
-
-#     return max([
-#         abs(x - mean_population) / mean_population for x in partition['population'].values()])
-
-
-# def worst_pp(partition):
-#     return(min(partition["polsby_popper"].values()))
-
-
-# def best_pp(partition):
-#     return(max(partition["polsby_popper"].values()))
-
-
-# def node_flipped(partition):
-#     if partition.flips is not None:
-#         return int(list(partition.flips.keys())[0])
-#     else:
-#         return -1
-
-
-# def flipped_to(partition):
-#     if partition.flips is not None:
-#         return int(list(partition.flips.values())[0])
-#     else:
-#         return -1

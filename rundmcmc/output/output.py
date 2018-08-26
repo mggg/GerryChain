@@ -3,6 +3,8 @@ import pandas as pd
 import json
 import math
 
+from rundmcmc.scores import efficiency_gap, mean_median, mean_thirdian
+
 
 def p_value_report(score_name, ensemble_scores, initial_plan_score):
     """
@@ -32,6 +34,25 @@ def p_value_report(score_name, ensemble_scores, initial_plan_score):
               'p_value': p_value,
               'opposite_p_value': opposite_p_value}
     return report
+
+
+class SlimPValueReport:
+    scores = {
+        "Efficiency Gap": efficiency_gap,
+        "Mean Median": mean_median,
+        "Mean Thirdian": mean_thirdian
+    }
+
+    def __init__(self, election, party_with_advantage):
+        self.election = election
+        self.party_with_hypothesized_advantage = party_with_advantage
+
+        self.counters = {name: Counter() for name in self.scores}
+
+    def __call__(self, partition):
+        election_results = partition[self.election.alias]
+        for name, score in self.scores.items():
+            self.counters[name].update(score(election_results))
 
 
 class Histogram:
