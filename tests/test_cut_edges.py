@@ -1,6 +1,3 @@
-import pytest
-
-from rundmcmc.defaults import PA_partition, BasicChain
 from rundmcmc.updaters import cut_edges, cut_edges_by_part
 from rundmcmc.partition import Partition
 
@@ -16,14 +13,6 @@ def invalid_cut_edges(partition):
     invalid = [edge for edge in partition['cut_edges']
                if partition.assignment[edge[0]] == partition.assignment[edge[1]]]
     return invalid
-
-
-@pytest.mark.skip("We got rid of testData")
-def test_cut_edges_only_returns_edges_that_are_actually_cut():
-    partition = PA_partition()
-    chain = BasicChain(partition, 100)
-    for state in chain:
-        assert invalid_cut_edges(state) == []
 
 
 def test_cut_edges_doesnt_duplicate_edges_with_different_order_of_nodes(three_by_three_grid):

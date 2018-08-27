@@ -118,13 +118,13 @@ class Histogram:
         self.bin_size = (right - left) / number_of_bins
 
         self.bins = self.generate_bins()
+        self.counter = Counter()
 
-    def count(self, values):
+    def record(self, value):
         """
-        :values: iterable
-        :returns: a Counter counting how many values appeared in each bin.
+        :value: value to record in the histogram
         """
-        return Counter(self.find_bin(value) for value in values)
+        return self.counter.update(self.find_bin(value))
 
     def find_bin_index(self, value):
         """
@@ -140,6 +140,12 @@ class Histogram:
         left = self.bounds[0]
         for n in range(self.number_of_bins):
             yield (left + n * self.bin_size, left + (n + 1) * self.bin_size)
+
+    def csv(self):
+        header = "left,right,count\n"
+        rows = ",".join((left, right, count) for (left, right), count in self.counter.items())
+        body = "\n".join(rows)
+        return header + body
 
 
 class ChainOutputTable:
@@ -208,7 +214,7 @@ def handle_scores_separately(chain, handlers):
     for row in get_chain_scores(chain, nhandlers):
         table.append(row)
         if jsonSave:
-            jsonToText += ", " + "\"" + str(chain.counter + 1) + "\"" \
+            jsonToText += ", " + "\"" + str(chain.counter + 1) + "\""
             + ": " + json.dumps(handlers["flips"](chain.state))
     jsonToText += '}'
 
