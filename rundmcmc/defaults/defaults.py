@@ -19,6 +19,8 @@ class DefaultChain(MarkovChain):
     """
 
     def __init__(self, partition, constraints, total_steps):
+        if no_vanishing_districts not in constraints:
+            constraints.append(no_vanishing_districts)
         validator = Validator(constraints)
         super().__init__(self, propose_random_flip, validator,
                          always_accept, partition)
