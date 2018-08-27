@@ -1,24 +1,18 @@
-import json
 import math
 import random
 
-import geopandas as gp
-import pytest
 import networkx
 import pytest
 
 from rundmcmc.chain import MarkovChain
-from rundmcmc.make_graph import get_assignment_dict_from_df
 from rundmcmc.partition import Partition
 from rundmcmc.proposals import propose_random_flip
-from rundmcmc.updaters import (Tally, boundary_nodes, cut_edges,
+from rundmcmc.updaters import (Election, Tally, boundary_nodes,
                                cut_edges_by_part, exterior_boundaries,
-                               interior_boundaries,
                                exterior_boundaries_as_a_set,
-                               perimeters, Election)
+                               interior_boundaries, perimeters)
 from rundmcmc.updaters.election import ElectionResults
-from rundmcmc.validity import (Validator, contiguous, no_vanishing_districts,
-                               single_flip_contiguous)
+from rundmcmc.validity import Validator, no_vanishing_districts
 
 
 @pytest.fixture
@@ -59,36 +53,6 @@ def test_Partition_can_update_stats():
 
     new_partition = partition.merge(flip)
     assert new_partition['total_stat'][2] == 5
-
-
-# TODO: Make a smaller, easier to check test.
-@pytest.mark.skip("Will no longer include testData")
-def test_single_flip_contiguity_equals_contiguity():
-    import random
-    random.seed(1887)
-
-    def equality_validator(partition):
-        val = partition["contiguous"] == partition["flip_check"]
-        assert val
-        return partition["contiguous"]
-
-    df = gp.read_file("rundmcmc/testData/mo_cleaned_vtds.shp")
-
-    with open("rundmcmc/testData/MO_graph.json") as f:
-        graph_json = json.load(f)
-
-    graph = networkx.readwrite.json_graph.adjacency_graph(graph_json)
-    assignment = get_assignment_dict_from_df(df, "GEOID10", "CD")
-
-    validator = Validator([equality_validator])
-    updaters = {"contiguous": contiguous, "cut_edges": cut_edges,
-        "flip_check": single_flip_contiguous}
-
-    initial_partition = Partition(graph, assignment, updaters)
-    accept = lambda x: True
-
-    chain = MarkovChain(propose_random_flip, validator, accept, initial_partition, total_steps=100)
-    list(chain)
 
 
 def test_tally_multiple_columns(graph_with_d_and_r_cols):

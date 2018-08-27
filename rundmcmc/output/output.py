@@ -1,5 +1,4 @@
 from collections import Counter
-import pandas as pd
 import json
 import math
 
@@ -159,8 +158,8 @@ class ChainOutputTable:
         with open(filename, "w") as f:
             json.dump(self.data, f)
 
-    def to_dataframe(self):
-        return pd.DataFrame(self.data)
+    # def to_dataframe(self):
+    #     return pd.DataFrame(self.data)
 
     def __iter__(self):
         return self
