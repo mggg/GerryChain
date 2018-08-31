@@ -10,7 +10,7 @@ def parts_adjacency_matrix(partition):
     for edge in partition['cut_edges']:
         source, destination = (partition.assignment[node] for node in edge)
         parts_graph.add_edge(source, destination)
-    nodelist = sorted(list(partition.parts.keys()))
+    nodelist = sorted(partition.parts)
     return networkx.to_numpy_matrix(parts_graph, nodelist=nodelist)
 
 
