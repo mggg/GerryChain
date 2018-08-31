@@ -147,6 +147,9 @@ class Histogram:
         body = "\n".join(rows)
         return header + body
 
+    def json(self):
+        return [[[left, right], count] for (left, right), count in self.counter.items()]
+
 
 class ChainOutputTable:
     def __init__(self, data=None):
