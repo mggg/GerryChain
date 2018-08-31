@@ -25,10 +25,11 @@ class Partition:
         """
         if parent:
             self._from_parent(parent, flips)
+            self._update()
         else:
             self._first_time(graph, assignment, updaters)
-
-        self._update()
+            self._update()
+            self.parts = tuple(self.parts.keys())
 
     def _first_time(self, graph, assignment, updaters):
         self.graph = graph
@@ -74,15 +75,7 @@ class Partition:
     def _update_parts(self):
         self.flows = flows_from_changes(self.parent.assignment, self.flips)
         self.edge_flows = compute_edge_flows(self)
-
-        # Parts must continue to be a defaultdict, so that new parts can appear.
-        self.parts = collections.defaultdict(set, self.parent.parts)
-
-        for part, flow in self.flows.items():
-            self.parts[part] = (self.parent.parts[part] | flow['in']) - flow['out']
-
-        # We do not want empty parts.
-        self.parts = {part: nodes for part, nodes in self.parts.items() if len(nodes) > 0}
+        self.parts = self.parent.parts
 
     def _update(self):
         self._cache = dict()
