@@ -21,7 +21,11 @@ def graph_with_d_and_r_cols(graph_with_random_data_factory):
 
 
 def random_assignment(graph, num_districts):
-    return {node: random.choice(range(num_districts)) for node in graph.nodes}
+    assignment = {node: random.choice(range(num_districts)) for node in graph.nodes}
+    # Make sure that there are cut edges:
+    while len(set(assignment.values())) == 1:
+        assignment = {node: random.choice(range(num_districts)) for node in graph.nodes}
+    return assignment
 
 
 @pytest.fixture
@@ -119,7 +123,7 @@ def test_vote_proportion_updater_returns_percentage_or_nan_on_later_steps(partit
 def test_vote_proportion_field_has_key_for_each_district(partition_with_election):
     partition = partition_with_election
     for percents in partition['Mock Election'].percents_for_party.values():
-        assert set(percents.keys()) == set(partition.parts.keys())
+        assert set(percents.keys()) == set(partition.parts)
 
 
 def test_vote_proportions_sum_to_one(partition_with_election):

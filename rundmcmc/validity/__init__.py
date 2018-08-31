@@ -45,7 +45,6 @@ examples of this.
 """
 
 from .validity import (L1_reciprocal_polsby_popper,
-                       L1_reciprocal_discrete_polsby_popper,
                        L_minus_1_polsby_popper, Validator,
                        no_worse_L_minus_1_polsby_popper,
                        no_worse_L1_reciprocal_polsby_popper,
