@@ -58,9 +58,10 @@ class Partition:
         self.assignment = {**parent.assignment, **flips}
 
         self.graph = parent.graph
+        self.parts = parent.parts
         self.updaters = parent.updaters
 
-        self._update_parts()
+        self._update_flows()
 
         self.max_edge_cuts = parent.max_edge_cuts
 
@@ -72,10 +73,9 @@ class Partition:
     def __len__(self):
         return len(self.parts)
 
-    def _update_parts(self):
+    def _update_flows(self):
         self.flows = flows_from_changes(self.parent.assignment, self.flips)
         self.edge_flows = compute_edge_flows(self)
-        self.parts = self.parent.parts
 
     def _update(self):
         self._cache = dict()
