@@ -71,10 +71,6 @@ no_worse_L_minus_1_polsby_popper = SelfConfiguringLowerBound(L_minus_1_polsby_po
 no_worse_L1_reciprocal_polsby_popper = SelfConfiguringUpperBound(L1_reciprocal_polsby_popper)
 
 
-def L1_reciprocal_discrete_polsby_popper(partition):
-    return sum(1 / value for value in partition['discrete_polsby_popper'].values())
-
-
 def within_percent_of_ideal_population(initial_partition, percent=0.01):
     """
     Require that all districts are within a certain percent of "ideal" (i.e.,

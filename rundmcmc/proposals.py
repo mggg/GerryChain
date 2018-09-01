@@ -220,7 +220,7 @@ def propose_single_lowest_pop_or_random(partition):
 
 def propose_chunk_swap(partition):
     proposal = dict()
-    dists = list(partition.parts.keys())
+    dists = list(partition.parts)
 
     while len(dists) != 0:
         dist = dists[0]

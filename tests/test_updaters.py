@@ -98,7 +98,11 @@ def test_single_flip_contiguity_equals_contiguity():
 
 
 def random_assignment(graph, num_districts):
-    return {node: random.choice(range(num_districts)) for node in graph.nodes}
+    assignment = {node: random.choice(range(num_districts)) for node in graph.nodes}
+    # Make sure that there are cut edges:
+    while len(set(assignment.values())) == 1:
+        assignment = {node: random.choice(range(num_districts)) for node in graph.nodes}
+    return assignment
 
 
 def setup_for_proportion_updaters(columns):
@@ -167,6 +171,7 @@ def test_vote_proportion_updater_returns_percentage_or_nan_on_later_steps():
     graph = three_by_three_grid()
     attach_random_data(graph, columns)
     assignment = random_assignment(graph, 3)
+
     updaters = {**votes_updaters(columns), 'cut_edges': cut_edges}
 
     initial_partition = Partition(graph, assignment, updaters)
@@ -180,7 +185,7 @@ def test_vote_proportion_updater_returns_percentage_or_nan_on_later_steps():
 
 def test_vote_proportion_field_has_key_for_each_district():
     partition = setup_for_proportion_updaters(['D', 'R'])
-    assert set(partition['D%'].keys()) == set(partition.parts.keys())
+    assert set(partition['D%'].keys()) == set(partition.parts)
 
 
 def test_vote_proportions_sum_to_one():
