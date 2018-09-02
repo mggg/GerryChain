@@ -49,13 +49,12 @@ def add_data_to_graph(df, graph, col_names, id_col=None):
         indexed_df = df.set_index(id_col)
     else:
         indexed_df = df
-		
 
     for name in col_names:
         df[name] = pd.to_numeric(df[name], errors='coerce')
-	
+
     df.fillna(0)
-	
+
     column_dictionaries = indexed_df[col_names].to_dict('index')
     networkx.set_node_attributes(graph, column_dictionaries)
 
@@ -126,7 +125,6 @@ def construct_graph_from_df(df,
     """
     if id_col is not None:
         df = df.set_index(id_col)
-		
 
     # Generate rook neighbor lists from dataframe.
     neighbors = pysal.weights.Rook.from_dataframe(
