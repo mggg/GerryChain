@@ -202,7 +202,7 @@ def best_pp(partition):
 
 def node_flipped(partition):
     if partition.flips is not None:
-        return list(partition.flips.keys())[0]#int(list(partition.flips.keys())[0])
+        return list(partition.flips.keys())[0]
     else:
         return -1
 
@@ -212,6 +212,7 @@ def flipped_to(partition):
         return int(list(partition.flips.values())[0])
     else:
         return -1
-		
-def bvap_vector(partition,column):
+
+
+def bvap_vector(partition, column):
     return sorted(partition[column].values())

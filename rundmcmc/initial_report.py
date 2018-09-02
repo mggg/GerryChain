@@ -148,8 +148,6 @@ def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
                     "<td>" + election_names[i] + " Win %</td>")
         f.write("</tr>")
 
-        #print(election_columns[0][dw_list[0][0 + 1]] +"%")
-        #print(partition[election_columns[0][dw_list[0][0 + 1]] +"%"])
         for i in dist_list:
             f.write("<tr><td>" + str(i) + "</td>")
             for j in range(num_elections):

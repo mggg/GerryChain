@@ -53,7 +53,7 @@ def countyEntropyReport(partition, pop_col="POP100", county_col="COUNTYFP10"):
                 if countyPop > 0:
                     countyWeight = ((countyPop * 1.0) / (statePop * 1.0))**weight_exp
                 else:
-                    countyWeigt = 0
+                    countyWeight = 0
             countyWeight_list.append(countyWeight)
 
         # for each district piece in current county
