@@ -180,16 +180,19 @@ def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
 
         total_population = sum(partition['population'].values())
         mean_population = total_population / num_districts
+# str(len(partition.parts[i]))
 
+        node_lengths = []
         for i in dist_list:
+            node_lengths.append(sum(x == i for x in partition.assignment.values()))
             f.write("<tr><td>" + str(i) + "</td><td>" +
-                    str(len(partition.parts[i])) + "</td><td>" +
+                    str(node_lengths[-1]) + "</td><td>" +
                     str(len(partition["cut_edges_by_part"][i])) + "</td><td>" +
                     str((partition["population"][i] - mean_population) / (
                         mean_population)) + "</td><td>" +
                     str(partition["polsby_popper"][i]) + "</td></tr>")
 
-        node_lengths = [len(x) for x in partition.parts.values()]
+        # node_lengths = [len(x) for x in partition.parts.values()]
         f.write("<tr><td> Mean</td><td>" + str(sum(node_lengths) / num_districts) + "</td><td>" +
                 str(sum(
                     [len(x) for x in partition["cut_edges_by_part"].values()]) /
@@ -199,7 +202,7 @@ def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
                      for x in partition["population"].values()]) / num_districts) + "</td><td>" +
                 str(sum([x for x in partition["polsby_popper"].values()]) /
                     num_districts) + "</td></tr>")
-        f.write("<tr><td> Max</td><td>" + str(max([len(x) for x in partition.parts.values()])) +
+        f.write("<tr><td> Max</td><td>" + str(max(node_lengths)) +
                 "</td><td>" + str(max([len(x)
                                        for x in partition["cut_edges_by_part"].values()])) +
                 "</td><td>" + str(max(
@@ -207,7 +210,7 @@ def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
                      for x in partition["population"].values()])) + "</td><td>" + str(
                     max([x for x in partition["polsby_popper"].values()])) +
                 "</td></tr>")
-        f.write("<tr><td> Min</td><td>" + str(min([len(x) for x in partition.parts.values()])) +
+        f.write("<tr><td> Min</td><td>" + str(min(node_lengths)) +
                 "</td><td>" + str(
                     min([len(x) for x in partition["cut_edges_by_part"].values()])) +
                 "</td><td>" + str(

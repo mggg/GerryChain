@@ -38,9 +38,7 @@ from rundmcmc.scores import (efficiency_gap, mean_median,
                              mean_thirdian, how_many_seats_value,
                              number_cut_edges, worst_pop,
                              L2_pop_dev,
-                             worst_pp, best_pp,
-                             node_flipped)
-
+                             worst_pp, best_pp)
 
 from rundmcmc.output import (p_value_report, hist_of_table_scores,
                              trace_of_table_scores, pipe_to_table)
@@ -161,6 +159,7 @@ for i in range(num_elections):
 # This builds the partition object
 initial_partition = Partition(graph, assignment, updaters)
 
+
 # Desired validators go here
 # Can change constants and bounds
 pop_limit = .01
@@ -219,7 +218,6 @@ scores2 = {
     "L2 population deviation": L2_pop_dev,
     "Worst PP score:": worst_pp,
     "Best PP score:": best_pp,
-    "Node Flipped": node_flipped
     }
 
 chain_stats = scores.copy()
