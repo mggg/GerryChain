@@ -50,7 +50,7 @@ def countyEntropyReport(partition, pop_col="POP100", county_col="COUNTYFP10"):
             if weight_exp == "Infinity":
                 countyWeight = 1
             else:
-                if countyPop >0:
+                if countyPop > 0:
                     countyWeight = ((countyPop * 1.0) / (statePop * 1.0))**weight_exp
                 else:
                     countyWeigt = 0
@@ -62,7 +62,7 @@ def countyEntropyReport(partition, pop_col="POP100", county_col="COUNTYFP10"):
             for vtd3 in intersectionVTDs:
                 intersectionPop += float(vtdList[vtd3][pop_col])
 
-            if countyPop >0:
+            if countyPop > 0:
                 intersectionWeight = (intersectionPop * 1.0) / (countyPop * 1.0)
             else:
                 intersectionWeight = 1
@@ -195,7 +195,6 @@ def countySplitDistrict(partition, pop_col="POP100", county_col="COUNTYFP10"):
                 intersectionPop += float(vtdList[vtd3][pop_col])
 
             if districtPop > 0:
-                
 
                 intersectionWeight = (intersectionPop * 1.0) / (districtPop * 1.0)
 
