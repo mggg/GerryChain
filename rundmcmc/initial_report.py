@@ -40,7 +40,7 @@ def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
         for i in range(num_elections):
             f.write(election_names[i] + "  ")
 
-        df_to_plot.plot(column="initial", cmap='tab20')
+        df_to_plot.plot(column="initial", cmap='nipy_spectral')
 
         plt.axis('off')
         plt.title(state_name + " Plan: " + district_col)
@@ -109,6 +109,7 @@ def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
 
         win_dict = {0: "D", 1: "R"}
         dw_list = []
+        dist_list=list(set(df[district_col]))
         f.write("<div width=100%>\n")
 
         df_to_plot[district_col] = pd.to_numeric(df_to_plot[district_col], errors='coerce')
@@ -116,13 +117,16 @@ def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
         for i in range(num_elections):
                 district_winners = {}
 
-                for j in range(num_districts):
-                        district_winners[j + 1] = int(
-                            partition[election_columns[i][1]][j + 1] >
-                            partition[election_columns[i][0]][j + 1])
+                for j in dist_list:
+                        district_winners[j] = int(
+                            partition[election_columns[i][1]][j] >
+                            partition[election_columns[i][0]][j])
 
-                df_to_plot["district_partisan"] = df_to_plot[district_col].map(district_winners)
+                df_to_plot["district_partisan"] = df_to_plot["initial"].map(district_winners) ##was df_to_plot
                 dw_list.append(district_winners)
+				
+                #print(district_winners)
+                #print(df_to_plot["district_partisan"])
 
                 df_to_plot.plot(column="district_partisan", cmap="seismic", vmin=0, vmax=1)
                 plt.axis('off')
@@ -136,17 +140,22 @@ def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
         f.write("</div>\n")
 
         f.write("<table>\n <tr><td>District</td>")
+		
+        #print(dw_list)
         for i in range(num_elections):
                 f.write("<td>" + election_names[i] + " Winner</td>" +
                         "<td>" + election_names[i] + " Win %</td>")
         f.write("</tr>")
-
-        for i in range(num_districts):
-                f.write("<tr><td>" + str(i + 1) + "</td>")
+		
+        #print(election_columns[0][dw_list[0][0 + 1]] +"%")
+        #print(partition[election_columns[0][dw_list[0][0 + 1]] +"%"])
+        for i in dist_list:
+                f.write("<tr><td>" + str(i) + "</td>")
                 for j in range(num_elections):
-                    f.write("<td>" + win_dict[dw_list[j][i + 1]] + "</td><td>" +
-                                str(partition[election_columns[j][dw_list[j][i + 1]] +
-                                              "%"][i + 1]) +
+
+                    f.write("<td>" + win_dict[dw_list[j][i]] + "</td><td>" +
+                                str(partition[election_columns[j][dw_list[j][i]] +
+                                              "%"][i]) +
                                 "</td>")
         f.write("</tr></table>")
 
@@ -154,9 +163,9 @@ def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
 
         f.write("<h2> District Measures </h2>")
 
-        df_to_plot["PP"] = df_to_plot[district_col].map(partition["polsby_popper"])
+        df_to_plot["PP"] = df_to_plot["initial"].map(partition["polsby_popper"]) #was df_to_plot
 
-        df_to_plot.plot(column="PP", cmap="cool")
+        df_to_plot.plot(column="PP", cmap="gist_rainbow")
 
         plt.axis("off")
         plt.title("District Polsby-Popper Scores")
@@ -173,13 +182,13 @@ def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
         total_population = sum(partition['population'].values())
         mean_population = total_population / num_districts
 
-        for i in range(num_districts):
-                f.write("<tr><td>" + str(i + 1) + "</td><td>" +
-                        str(len(partition.parts[i + 1])) + "</td><td>" +
-                        str(len(partition["cut_edges_by_part"][i + 1])) + "</td><td>" +
-                        str((partition["population"][i + 1] - mean_population) / (
+        for i in dist_list:
+                f.write("<tr><td>" + str(i) + "</td><td>" +
+                        str(len(partition.parts[i])) + "</td><td>" +
+                        str(len(partition["cut_edges_by_part"][i])) + "</td><td>" +
+                        str((partition["population"][i] - mean_population) / (
                             mean_population)) + "</td><td>" +
-                        str(partition["polsby_popper"][i + 1]) + "</td></tr>")
+                        str(partition["polsby_popper"][i]) + "</td></tr>")
 
         node_lengths = [len(x) for x in partition.parts.values()]
         f.write("<tr><td> Mean</td><td>" + str(sum(node_lengths) / num_districts) + "</td><td>" +
@@ -187,7 +196,7 @@ def write_initial_report(newdir, outputName, partition, df_to_plot, state_name,
                     [len(x) for x in partition["cut_edges_by_part"].values()]) /
                     num_districts) + "</td><td>" +
                 str(sum(
-                    [(x - mean_population) / mean_population
+                    [abs((x - mean_population) / mean_population)
                      for x in partition["population"].values()]) / num_districts) + "</td><td>" +
                 str(sum([x for x in partition["polsby_popper"].values()]) /
                     num_districts) + "</td></tr>")
