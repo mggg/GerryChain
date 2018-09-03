@@ -51,14 +51,12 @@ def on_flow(initializer, alias):
 
             previous = partition.parent[alias]
 
-            new_values = dict()
+            new_values = previous.copy()
 
             for part, flow in partition.flows.items():
                 new_values[part] = function(partition, previous[part], flow['in'], flow['out'])
 
-            result = {**previous, **new_values}
-
-            return result
+            return new_values
         return wrapped
     return decorator
 
@@ -132,8 +130,12 @@ def on_edge_flow(initializer, alias):
                 return initializer(partition)
             edge_flows = partition.edge_flows
             previous = partition.parent[alias]
-            return {part: f(partition, previous[part], new_edges=edge_flows[part]['in'],
-                            old_edges=edge_flows[part]['out'])
-                    for part in partition.parts}
+
+            new_values = previous.copy()
+            for part in partition.edge_flows:
+                new_values[part] = f(partition, previous[part],
+                                     new_edges=edge_flows[part]['in'],
+                                     old_edges=edge_flows[part]['out'])
+            return new_values
         return wrapper
     return decorator
