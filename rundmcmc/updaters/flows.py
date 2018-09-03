@@ -63,15 +63,17 @@ def on_flow(initializer, alias):
 
 def compute_edge_flows(partition):
     edge_flows = collections.defaultdict(create_flow)
+    assignment = partition.assignment
+    old_assignment = partition.parent.assignment
     for node in partition.flips:
         for neighbor in partition.graph.neighbors(node):
             edge = tuple(sorted((node, neighbor)))
 
-            old_source = partition.parent.assignment[node]
-            old_target = partition.parent.assignment[neighbor]
+            old_source = old_assignment[node]
+            old_target = old_assignment[neighbor]
 
-            new_source = partition.assignment[node]
-            new_target = partition.assignment[neighbor]
+            new_source = assignment[node]
+            new_target = assignment[neighbor]
 
             cut = new_source != new_target
             was_cut = old_source != old_target
