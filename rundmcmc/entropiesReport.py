@@ -50,7 +50,10 @@ def countyEntropyReport(partition, pop_col="POP100", county_col="COUNTYFP10"):
             if weight_exp == "Infinity":
                 countyWeight = 1
             else:
-                countyWeight = ((countyPop * 1.0) / (statePop * 1.0))**weight_exp
+                if countyPop > 0:
+                    countyWeight = ((countyPop * 1.0) / (statePop * 1.0))**weight_exp
+                else:
+                    countyWeight = 0
             countyWeight_list.append(countyWeight)
 
         # for each district piece in current county
@@ -59,7 +62,10 @@ def countyEntropyReport(partition, pop_col="POP100", county_col="COUNTYFP10"):
             for vtd3 in intersectionVTDs:
                 intersectionPop += float(vtdList[vtd3][pop_col])
 
-            intersectionWeight = (intersectionPop * 1.0) / (countyPop * 1.0)
+            if countyPop > 0:
+                intersectionWeight = (intersectionPop * 1.0) / (countyPop * 1.0)
+            else:
+                intersectionWeight = 1
 
             # for each county weight option and each function option calculate entropy
             a = 0
@@ -172,8 +178,11 @@ def countySplitDistrict(partition, pop_col="POP100", county_col="COUNTYFP10"):
                 districtWeight = 1
 
             else:
+                if districtPop > 0:
 
-                districtWeight = ((districtPop * 1.0) / (statePop * 1.0))**weight_exp
+                    districtWeight = ((districtPop * 1.0) / (statePop * 1.0))**weight_exp
+                else:
+                    districtWeight = 0
 
             districtWeight_list.append(districtWeight)
 
@@ -185,7 +194,12 @@ def countySplitDistrict(partition, pop_col="POP100", county_col="COUNTYFP10"):
 
                 intersectionPop += float(vtdList[vtd3][pop_col])
 
-            intersectionWeight = (intersectionPop * 1.0) / (districtPop * 1.0)
+            if districtPop > 0:
+
+                intersectionWeight = (intersectionPop * 1.0) / (districtPop * 1.0)
+
+            else:
+                intersectionWeight = 1
 
             a = 0
 
