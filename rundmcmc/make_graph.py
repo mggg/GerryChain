@@ -1,12 +1,33 @@
+import json
+import os.path
+import warnings
+from collections import Counter
+
+import geopandas as gp
 import networkx
 import pandas as pd
-import geopandas as gp
-import warnings
 import pysal
-import json
 from networkx.readwrite import json_graph
 from shapely.ops import cascaded_union
-import os.path
+
+import utm
+
+
+def utm_of_point(point):
+    return utm.from_latlon(point.y, point.x)[2]
+
+
+def identify_utm_zone(df):
+    df = df.to_crs("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
+    utm_counts = Counter(utm_of_point(point) for point in df['geometry'].centroid)
+    # most_common returns a list of tuples, and we want the 0,0th entry
+    most_common = utm_counts.most_common(1)[0][0]
+    return most_common
+
+
+def reprojected(df):
+    utm = identify_utm_zone(df)
+    return df.to_crs(f"+proj=utm +zone={utm} +ellps=WGS84 +datum=WGS84 +units=m +no_defs")
 
 
 def get_list_of_data(filepath, col_name, geoid=None):
@@ -84,7 +105,7 @@ def add_boundary_perimeters(graph, neighbors, df):
     networkx.set_node_attributes(graph, attr_dict)
 
     # For the boundary nodes, set the boundary perimeter.
-    boundary_perims = intersections[is_boundary].length
+    boundary_perims = reprojected(intersections[is_boundary]).length
     boundary_perims = gp.GeoDataFrame(boundary_perims)
     boundary_perims.columns = ["boundary_perim"]
 
@@ -152,7 +173,7 @@ def construct_graph_from_df(df,
         a_name = area_col
     else:
         # This may be slightly expensive, so only do it if we know we have to.
-        areas = df['geometry'].area.to_dict()
+        areas = reprojected(df)['geometry'].area.to_dict()
         warnings.warn("No area column was given, computing from geometry")
 
     dists = 0
