@@ -90,6 +90,8 @@ class SlimPValueReport:
         return {"score": score,
                 "interpretation": "Positive values mean an advantage for {}".format(party_name),
                 "fraction_as_high_as_original": self.fraction_as_high(score),
+                "number_as_high_as_original": self.counters[score][True],
+                "number_lower_than_original": self.counters[score][False],
                 "p": self.compute_p_value(score)}
 
     def __str__(self):
