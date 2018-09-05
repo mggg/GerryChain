@@ -18,8 +18,8 @@ def utm_of_point(point):
 
 
 def identify_utm_zone(df):
-    df = df.to_crs("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
-    utm_counts = Counter(utm_of_point(point) for point in df['geometry'].centroid)
+    wgs_df = df.to_crs("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
+    utm_counts = Counter(utm_of_point(point) for point in wgs_df['geometry'].centroid)
     # most_common returns a list of tuples, and we want the 0,0th entry
     most_common = utm_counts.most_common(1)[0][0]
     return most_common
@@ -105,7 +105,7 @@ def add_boundary_perimeters(graph, neighbors, df):
     networkx.set_node_attributes(graph, attr_dict)
 
     # For the boundary nodes, set the boundary perimeter.
-    boundary_perims = reprojected(intersections[is_boundary]).length
+    boundary_perims = intersections[is_boundary].length
     boundary_perims = gp.GeoDataFrame(boundary_perims)
     boundary_perims.columns = ["boundary_perim"]
 
@@ -132,7 +132,7 @@ def neighbors_with_shared_perimeters(neighbors, df):
     return networkx.from_dict_of_dicts(vtds)
 
 
-def construct_graph_from_df(df,
+def construct_graph_from_df(df_unprojected,
         id_col=None,
         pop_col=None,
         area_col=None,
@@ -144,6 +144,8 @@ def construct_graph_from_df(df,
     :returns: NetworkX Graph.
 
     """
+    df = reprojected(df_unprojected)
+
     if id_col is not None:
         df = df.set_index(id_col)
 
