@@ -8,7 +8,8 @@ requirements = [
 #    "geopandas",
 #    "pysal",
 #    "matplotlib",
-#    "psutil"
+#    "psutil",
+#    "utm"
 ]
 
 setup(
