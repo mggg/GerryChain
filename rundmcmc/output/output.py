@@ -57,7 +57,7 @@ class SlimPValueReport:
 
         for name, score in self.scores.items():
             value = score(election_results)
-            self.counters[name].update(value >= self.initial_scores[name])
+            self.counters[name].update([value >= self.initial_scores[name]])
 
     def render(self):
         return {"election": self.election.name,
