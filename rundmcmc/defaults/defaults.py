@@ -7,8 +7,7 @@ from rundmcmc.validity import (L1_reciprocal_polsby_popper, UpperBound,
                                single_flip_contiguous,
                                within_percent_of_ideal_population)
 
-default_constraints = [single_flip_contiguous,
-                       no_vanishing_districts]
+default_constraints = [single_flip_contiguous]
 
 
 class DefaultChain(MarkovChain):
@@ -19,8 +18,6 @@ class DefaultChain(MarkovChain):
     """
 
     def __init__(self, partition, constraints, total_steps):
-        if no_vanishing_districts not in constraints:
-            constraints.append(no_vanishing_districts)
         validator = Validator(constraints)
         super().__init__(self, propose_random_flip, validator,
                          always_accept, partition)

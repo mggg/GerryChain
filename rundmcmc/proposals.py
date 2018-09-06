@@ -185,6 +185,9 @@ def propose_random_flip(partition):
     :returns: a dictionary with the flipped node mapped to its new assignment
 
     """
+    if len(partition['cut_edges']) == 0:
+        return dict()
+
     edge = random.choice(tuple(partition['cut_edges']))
     index = random.choice((0, 1))
 

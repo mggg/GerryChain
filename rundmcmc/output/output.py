@@ -42,11 +42,16 @@ class SlimPValueReport:
         "Mean-Thirdian": mean_thirdian
     }
 
-    def __init__(self, election, function=lambda epsilon: math.sqrt(2 * epsilon)):
+    def __init__(self, election, function=lambda epsilon: math.sqrt(2 * epsilon), scores=None):
+        if scores is not None:
+            self.scores = scores
+
         self.election = election
-        self.counters = {name: Counter() for name in self.scores}
-        self.initial_scores = None
         self.function = function
+
+        self.counters = {name: Counter() for name in self.scores}
+        self.histograms = {name: Histogram((0, 1), 10000) for name in self.scores}
+        self.initial_scores = None
 
     def __call__(self, partition):
         election_results = partition[self.election.alias]
@@ -58,8 +63,15 @@ class SlimPValueReport:
         for name, score in self.scores.items():
             value = score(election_results)
             self.counters[name].update([value >= self.initial_scores[name]])
+            self.histograms[name].record(value)
 
     def render(self):
+        output = self.render_without_histograms()
+        for record in output["analysis"]:
+            record["histogram"] = self.render_histogram(record["score"])
+        return output
+
+    def render_without_histograms(self):
         return {"election": self.election.name,
                 "analysis": [self.render_score_analysis(score)
                             for score in self.scores]}
@@ -94,6 +106,9 @@ class SlimPValueReport:
                 "number_lower_than_original": self.counters[score][False],
                 "p": self.compute_p_value(score)}
 
+    def render_histogram(self, score):
+        return self.histograms[score].json()
+
     def __str__(self):
         return json.dumps(self.render(), indent=2)
 
@@ -119,29 +134,18 @@ class Histogram:
         left, right = bounds
         self.bin_size = (right - left) / number_of_bins
 
-        self.bins = self.generate_bins()
         self.counter = Counter()
 
     def record(self, value):
         """
         :value: value to record in the histogram
         """
-        return self.counter.update(self.find_bin(value))
-
-    def find_bin_index(self, value):
-        """
-        find_bin conducts a binary search to find the right bin for the given value.
-        """
-        left = self.bounds[0]
-        return math.floor((value - left) / self.bin_size)
+        return self.counter.update([self.find_bin(value)])
 
     def find_bin(self, value):
-        return self.bins[self.find_bin_index(value)]
-
-    def generate_bins(self):
         left = self.bounds[0]
-        for n in range(self.number_of_bins):
-            yield (left + n * self.bin_size, left + (n + 1) * self.bin_size)
+        bin_index = math.floor((value - left) / self.bin_size)
+        return (self.bin_size * bin_index, self.bin_size * (bin_index + 1))
 
     def csv(self):
         header = "left,right,count\n"
