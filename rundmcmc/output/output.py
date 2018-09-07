@@ -132,7 +132,7 @@ class Histogram:
         self.number_of_bins = number_of_bins
 
         left, right = bounds
-        self.bin_size = (right - left) / number_of_bins
+        self.bin_size = abs(right - left) / number_of_bins
 
         self.counter = Counter()
 
@@ -140,21 +140,23 @@ class Histogram:
         """
         :value: value to record in the histogram
         """
-        return self.counter.update([self.find_bin(value)])
+        return self.counter.update([self.find_bin_index(value)])
 
-    def find_bin(self, value):
+    def find_bin_index(self, value):
         left = self.bounds[0]
         bin_index = math.floor((value - left) / self.bin_size)
-        return (self.bin_size * bin_index, self.bin_size * (bin_index + 1))
+        return bin_index
 
     def csv(self):
         header = "left,right,count\n"
-        rows = ",".join((left, right, count) for (left, right), count in self.counter.items())
+        rows = ",".join((left, right, count) for (left, right), count in self.json())
         body = "\n".join(rows)
         return header + body
 
     def json(self):
-        return [[[left, right], count] for (left, right), count in self.counter.items()]
+        def get_bin(bin_index):
+            return (self.bin_size * bin_index, self.bin_size * (bin_index + 1))
+        return [(get_bin(index), count) for index, count in self.counter.items()]
 
 
 class ChainOutputTable:
