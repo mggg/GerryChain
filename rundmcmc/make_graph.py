@@ -1,12 +1,33 @@
+import json
+import os.path
+import warnings
+from collections import Counter
+
+import geopandas as gp
 import networkx
 import pandas as pd
-import geopandas as gp
-import warnings
 import pysal
-import json
 from networkx.readwrite import json_graph
 from shapely.ops import cascaded_union
-import os.path
+
+import utm
+
+
+def utm_of_point(point):
+    return utm.from_latlon(point.y, point.x)[2]
+
+
+def identify_utm_zone(df):
+    wgs_df = df.to_crs("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
+    utm_counts = Counter(utm_of_point(point) for point in wgs_df['geometry'].centroid)
+    # most_common returns a list of tuples, and we want the 0,0th entry
+    most_common = utm_counts.most_common(1)[0][0]
+    return most_common
+
+
+def reprojected(df):
+    utm = identify_utm_zone(df)
+    return df.to_crs(f"+proj=utm +zone={utm} +ellps=WGS84 +datum=WGS84 +units=m +no_defs")
 
 
 def get_list_of_data(filepath, col_name, geoid=None):
@@ -111,7 +132,7 @@ def neighbors_with_shared_perimeters(neighbors, df):
     return networkx.from_dict_of_dicts(vtds)
 
 
-def construct_graph_from_df(df,
+def construct_graph_from_df(df_unprojected,
         id_col=None,
         pop_col=None,
         area_col=None,
@@ -123,6 +144,8 @@ def construct_graph_from_df(df,
     :returns: NetworkX Graph.
 
     """
+    df = reprojected(df_unprojected)
+
     if id_col is not None:
         df = df.set_index(id_col)
 
@@ -152,7 +175,7 @@ def construct_graph_from_df(df,
         a_name = area_col
     else:
         # This may be slightly expensive, so only do it if we know we have to.
-        areas = df['geometry'].area.to_dict()
+        areas = reprojected(df)['geometry'].area.to_dict()
         warnings.warn("No area column was given, computing from geometry")
 
     dists = 0
