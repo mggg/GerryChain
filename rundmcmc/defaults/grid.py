@@ -16,6 +16,15 @@ class Grid(Partition):
 
     Example usage: `grid = Grid((10,10))`
     """
+    default_updaters = {'cut_edges': cut_edges,
+                        'population': Tally('population'),
+                        'perimeters': perimeters,
+                        'exterior_boundaries': exterior_boundaries,
+                        'interior_boundaries': interior_boundaries,
+                        'boundary_nodes': boundary_nodes,
+                        'areas': Tally('area', alias='areas'),
+                        'polsby_popper': polsby_popper,
+                        'cut_edges_by_part': cut_edges_by_part}
 
     def __init__(self, dimensions=None, with_diagonals=False, assignment=None,
                  updaters=None, parent=None, flips=None):
@@ -39,15 +48,8 @@ class Grid(Partition):
                 assignment = {node: color_quadrants(node, thresholds) for node in graph.nodes}
 
             if not updaters:
-                updaters = {'cut_edges': cut_edges,
-                            'population': Tally('population'),
-                             'perimeters': perimeters,
-                            'exterior_boundaries': exterior_boundaries,
-                            'interior_boundaries': interior_boundaries,
-                            'boundary_nodes': boundary_nodes,
-                            'areas': Tally('area', alias='areas'),
-                            'polsby_popper': polsby_popper,
-                            'cut_edges_by_part': cut_edges_by_part}
+                updaters = dict()
+            updaters.update(self.default_updaters)
 
             super().__init__(graph, assignment, updaters)
         elif parent:
