@@ -1,5 +1,7 @@
 from rundmcmc.updaters import cut_edges, cut_edges_by_part
 from rundmcmc.partition import Partition
+from rundmcmc.validity import single_flip_contiguous, no_vanishing_districts
+from rundmcmc.defaults import DefaultChain, Grid
 
 # This is copied and pasted, but should be done with some proper
 # pytest configuration instead:
@@ -101,3 +103,15 @@ def test_implementation_of_cut_edges_matches_naive_method(three_by_three_grid):
                        if new_partition.crosses_parts(edge)}
 
     assert edge_set_equal(result, naive_cut_edges)
+
+
+def test_cut_edges_matches_naive_cut_edges_at_every_step():
+    partition = Grid((10, 10), with_diagonals=True)
+
+    chain = DefaultChain(partition, [single_flip_contiguous, no_vanishing_districts], 1000)
+
+    for state in chain:
+        naive_cut_edges = {edge for edge in state.graph.edges
+                           if state.crosses_parts(edge)}
+
+        assert naive_cut_edges == state['cut_edges']

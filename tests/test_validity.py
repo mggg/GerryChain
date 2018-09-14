@@ -4,7 +4,8 @@ import networkx as nx
 import pytest
 
 from rundmcmc.validity import (Validator, contiguous, districts_within_tolerance,
-                               fast_connected, single_flip_contiguous, SelfConfiguringLowerBound)
+                               fast_connected, single_flip_contiguous, SelfConfiguringLowerBound,
+                               no_vanishing_districts)
 
 
 class MockContiguousPartition:
@@ -111,3 +112,13 @@ def test_validator_raises_TypeError_if_constraint_returns_non_boolean():
 
     with pytest.raises(TypeError):
         validator(mock_partition)
+
+
+def test_no_vanishing_districts_works():
+    parent = MagicMock()
+    parent.assignment = {1: 1, 2: 2}
+    partition = MagicMock()
+    partition.parent = parent
+    partition.assignment = {1: 2, 2: 2}
+
+    assert not no_vanishing_districts(partition)

@@ -68,3 +68,24 @@ def test_slim_p_value_renders_without_histograms_if_requested(mock_election):
 
     rendered_report = report.render_without_histograms()
     assert all("histogram" not in item for item in rendered_report["analysis"])
+
+
+def test_slim_p_value_computes_the_right_p_value(mock_election):
+    mock_score = MagicMock()
+    initial_score = 100
+    mock_score.side_effect = [initial_score] + [initial_score, 99, 90, 80, 70, 60, 50, 40, 30, 20]
+    # Number as high = 1, number lower = 9,
+    # so epsilon = 0.1 and sqrt(2 epsilon) is around 0.44
+    report = SlimPValueReport(mock_election, scores={"mock_score": mock_score})
+
+    for i in range(10):
+        mock_results = MagicMock()
+        report(mock_results)
+
+    as_high = report.counters["mock_score"][True]
+    lower = report.counters["mock_score"][False]
+    assert as_high == 1
+    assert lower == 9
+
+    p = report.compute_p_value("mock_score")
+    assert abs(p - 0.4472) < 0.0001

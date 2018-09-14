@@ -6,7 +6,10 @@ from .cut_edges import on_edge_flow
 
 
 def compute_polsby_popper(area, perimeter):
-    return 4 * math.pi * area / perimeter**2
+    try:
+        return 4 * math.pi * area / perimeter**2
+    except ZeroDivisionError:
+        return math.nan
 
 
 def polsby_popper(partition):
@@ -35,9 +38,11 @@ def exterior_boundaries_as_a_set(partition, previous, inflow, outflow):
 
 def initialize_exterior_boundaries(partition):
     graph_boundary = partition['boundary_nodes']
-    return {part: sum(partition.graph.nodes[node]['boundary_perim']
-                      for node in partition.parts[part] & graph_boundary)
-                      for part in partition.parts}
+    boundaries = collections.defaultdict(lambda: 0)
+    for node in graph_boundary:
+        part = partition.assignment[node]
+        boundaries[part] += partition.graph.nodes[node]['boundary_perim']
+    return boundaries
 
 
 @on_flow(initialize_exterior_boundaries, alias='exterior_boundaries')

@@ -1,7 +1,11 @@
+from collections import defaultdict
 import random
 
 from rundmcmc.updaters.tally import DataTally
 from rundmcmc.partition import Partition
+# from rundmcmc.updaters import cut_edges
+from rundmcmc.validity import single_flip_contiguous, no_vanishing_districts
+from rundmcmc.defaults import DefaultChain, Grid
 
 
 def random_assignment(graph, num_districts):
@@ -43,3 +47,20 @@ def test_data_tally_mimics_old_tally_usage(graph_with_random_data_factory):
     expected_total_in_district_one = sum(
         graph.nodes[i]['total'] for i in range(4))
     assert partition['total'][1] == expected_total_in_district_one
+
+
+def test_tally_matches_naive_tally_at_every_step():
+    partition = Grid((10, 10), with_diagonals=True)
+
+    chain = DefaultChain(partition, [single_flip_contiguous, no_vanishing_districts], 1000)
+
+    def get_expected_tally(partition):
+        expected = defaultdict(int)
+        for node in partition.graph.nodes:
+            part = partition.assignment[node]
+            expected[part] += partition.graph.nodes[node]['population']
+        return expected
+
+    for state in chain:
+        expected = get_expected_tally(state)
+        assert expected == state['population']
