@@ -460,4 +460,4 @@ def no_vanishing_districts(partition):
     """Require that no districts be completely consumed."""
     if not partition.parent:
         return True
-    return len(partition) == len(partition.parent)
+    return len(set(partition.assignment.values())) == len(set(partition.parent.assignment.values()))

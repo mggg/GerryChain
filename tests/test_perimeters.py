@@ -1,6 +1,6 @@
 from collections import defaultdict
 from rundmcmc.defaults import Grid, DefaultChain
-from validity import single_flip_contiguous, no_vanishing_districts
+from rundmcmc.validity import single_flip_contiguous, no_vanishing_districts
 
 
 def setup():
