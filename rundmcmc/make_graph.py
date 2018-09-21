@@ -209,7 +209,7 @@ def construct_graph_from_json(json_file, pop_col=None, area_col=None, district_c
     g = json_graph.adjacency_graph(data)
 
     networkx.set_node_attributes(g, 'population', 0)
-    networkx.set_node_attributes(g, 'areas', 0)
+    networkx.set_node_attributes(g, 'area', 0)
     networkx.set_node_attributes(g, 'CD', 0)
 
     # add specific values for column names as specified.
@@ -219,7 +219,7 @@ def construct_graph_from_json(json_file, pop_col=None, area_col=None, district_c
 
     if area_col:
         a_col = networkx.get_node_attributes(g, area_col)
-        networkx.set_node_attributes(g, name='areas', values=a_col)
+        networkx.set_node_attributes(g, name='area', values=a_col)
 
     if district_col:
         cd_col = networkx.get_node_attributes(g, district_col)

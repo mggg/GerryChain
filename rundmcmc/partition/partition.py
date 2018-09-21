@@ -1,4 +1,7 @@
 import collections
+import json
+
+import networkx
 
 from rundmcmc.proposals import max_edge_cuts
 from rundmcmc.updaters import flows_from_changes, compute_edge_flows, cut_edges
@@ -106,3 +109,21 @@ class Partition:
         if key not in self._cache:
             self._cache[key] = self.updaters[key](self)
         return self._cache[key]
+
+    @classmethod
+    def from_json_graph(cls, graph_path, assignment, updaters=None):
+        with open(graph_path) as f:
+            graph_data = json.load(f)
+        graph = networkx.readwrite.adjacency_graph(graph_data)
+
+        if isinstance(assignment, str):
+            assignment = {node: graph.nodes[node][assignment]
+                          for node in graph.nodes}
+        elif not isinstance(assignment, dict):
+            raise TypeError("Assignment must be a dict or a node attribute key")
+
+        if updaters is None:
+            updaters = dict()
+
+        updaters = cls.default_updaters.update(updaters)
+        return cls(graph, assignment, updaters)

@@ -72,7 +72,7 @@ class ElectionUpdater:
             party: get_percents(totals_for_party[party], totals)
             for party in parties
         }
-        return ElectionResults(self, totals_for_party, totals, percents_for_party)
+        return ElectionResults(self.election, totals_for_party, totals, percents_for_party)
 
     def get_previous_values(self, partition):
         parent = partition.parent

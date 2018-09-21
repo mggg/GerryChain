@@ -10,7 +10,7 @@ from rundmcmc.proposals import propose_random_flip
 from rundmcmc.updaters import (Election, Tally, boundary_nodes,
                                cut_edges_by_part, exterior_boundaries,
                                exterior_boundaries_as_a_set,
-                               interior_boundaries, perimeters)
+                               interior_boundaries, perimeter)
 from rundmcmc.updaters.election import ElectionResults
 from rundmcmc.validity import Validator, no_vanishing_districts
 
@@ -211,7 +211,7 @@ def test_exterior_boundaries(three_by_three_grid):
     assert result[1] == 10 and result[2] == 6
 
 
-def test_perimeters(three_by_three_grid):
+def test_perimeter(three_by_three_grid):
     graph = three_by_three_grid
     for i in [0, 1, 2, 3, 5, 6, 7, 8]:
         graph.nodes[i]['boundary_node'] = True
@@ -225,14 +225,14 @@ def test_perimeters(three_by_three_grid):
     updaters = {'exterior_boundaries': exterior_boundaries,
         'interior_boundaries': interior_boundaries,
         'cut_edges_by_part': cut_edges_by_part,
-        'boundary_nodes': boundary_nodes, 'perimeters': perimeters}
+        'boundary_nodes': boundary_nodes, 'perimeter': perimeter}
     partition = Partition(graph, assignment, updaters)
 
     # 112
     # 112
     # 222
 
-    result = partition['perimeters']
+    result = partition['perimeter']
 
     assert result[1] == 3 + 4  # 3 nodes + 4 edges
     assert result[2] == 5 + 4  # 5 nodes + 4 edges

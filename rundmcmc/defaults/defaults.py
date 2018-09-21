@@ -18,7 +18,10 @@ class DefaultChain(MarkovChain):
     """
 
     def __init__(self, partition, constraints, total_steps):
-        validator = Validator(constraints)
+        if len(constraints) > 0:
+            validator = Validator(constraints)
+        else:
+            validator = lambda x: True
         super().__init__(propose_random_flip, validator,
                          always_accept, partition, total_steps)
 

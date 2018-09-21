@@ -13,7 +13,7 @@ def compute_polsby_popper(area, perimeter):
 
 
 def polsby_popper(partition):
-    return {part: compute_polsby_popper(partition['areas'][part], partition['perimeters'][part])
+    return {part: compute_polsby_popper(partition['area'][part], partition['perimeter'][part])
             for part in partition.parts}
 
 
@@ -84,5 +84,5 @@ def perimeter_of_part(partition, part):
     return exterior_perimeter + interior_perimeter
 
 
-def perimeters(partition):
+def perimeter(partition):
     return {part: perimeter_of_part(partition, part) for part in partition.parts}

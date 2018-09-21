@@ -4,7 +4,7 @@ import networkx
 
 from rundmcmc.partition import Partition
 from rundmcmc.updaters import (Tally, cut_edges, cut_edges_by_part,
-                              perimeters, polsby_popper,
+                              perimeter, polsby_popper,
                               exterior_boundaries, interior_boundaries,
                               boundary_nodes)
 
@@ -18,11 +18,11 @@ class Grid(Partition):
     """
     default_updaters = {'cut_edges': cut_edges,
                         'population': Tally('population'),
-                        'perimeters': perimeters,
+                        'perimeter': perimeter,
                         'exterior_boundaries': exterior_boundaries,
                         'interior_boundaries': interior_boundaries,
                         'boundary_nodes': boundary_nodes,
-                        'areas': Tally('area', alias='areas'),
+                        'area': Tally('area', alias='area'),
                         'polsby_popper': polsby_popper,
                         'cut_edges_by_part': cut_edges_by_part}
 
