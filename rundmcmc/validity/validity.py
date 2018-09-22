@@ -193,7 +193,11 @@ def single_flip_contiguous(partition):
         if not old_neighbors:
             # Under our assumptions, if there are no old neighbors, then the
             # old_assignment district has vanished. It is trivially connected.
-            return True
+
+            # However, we actually don't want any districts to disappear because
+            # it ends up breaking a lot of our other updaters. So we consider
+            # the empty district to be disconnected.
+            return False
 
         start_neighbor = random.choice(old_neighbors)
 
