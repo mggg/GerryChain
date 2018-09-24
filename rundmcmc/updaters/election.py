@@ -58,21 +58,12 @@ class ElectionUpdater:
         parties = self.election.parties
         tallies = self.election.tallies
 
-        totals_for_party = {
+        counts = {
             party: tallies[party](partition, previous=previous_totals_for_party[party])
             for party in parties
         }
 
-        totals = {
-            part: sum(totals_for_party[party][part] for party in parties)
-            for part in partition.parts
-        }
-
-        percents_for_party = {
-            party: get_percents(totals_for_party[party], totals)
-            for party in parties
-        }
-        return ElectionResults(self.election, totals_for_party, totals, percents_for_party)
+        return ElectionResults(self.election, counts, races=partition.parts)
 
     def get_previous_values(self, partition):
         parent = partition.parent
@@ -91,11 +82,20 @@ def get_percents(counts, totals):
 
 
 class ElectionResults:
-    def __init__(self, election, totals_for_party, totals, percents_for_party):
+    def __init__(self, election, counts, races):
         self.election = election
-        self.totals_for_party = totals_for_party
-        self.totals = totals
-        self.percents_for_party = percents_for_party
+        self.totals_for_party = counts
+        self.races = races
+
+        self.totals = {
+            race: sum(counts[party][race] for party in self.election.parties)
+            for race in self.races
+        }
+
+        self.percents_for_party = {
+            party: get_percents(counts[party], self.totals)
+            for party in election.parties
+        }
 
     def __str__(self):
         results_by_part = '\n'.join(
@@ -103,6 +103,28 @@ class ElectionResults:
             for part in self.totals)
         return 'Election Results for {name}\n{results}'.format(
             name=self.election.name, results=results_by_part)
+
+    def seats(self, party):
+        return sum(self.won(party, race) for race in self.races)
+
+    def wins(self, party):
+        return self.seats(party)
+
+    def percent(self, party, race=None):
+        if race is not None:
+            return self.percents_for_party[party][race]
+        return self.votes(party) / sum(self.totals[race] for race in self.races)
+
+    def votes(self, party, race=None):
+        if race is not None:
+            return self.totals_for_party[party][race]
+        return sum(self.totals_for_party[party][race] for race in self.races)
+
+    def won(self, party, race):
+        return all(
+            self.totals_for_party[party][race] >= self.totals_for_party[opponent][race]
+            for opponent in self.election.parties
+        )
 
 
 def format_part_results(percents_for_party, part):
