@@ -6,7 +6,7 @@ from rundmcmc.updaters.tally import DataTally
 class Election:
     def __init__(self, name, parties_to_columns, alias=None):
         """
-        :name: The name of the election.
+        :name: The name of the election. (e.g. "2008 Presidential")
         :parties_to_columns: A dictionary matching party names to their
             data columns, either as actual columns (list-like, indexed by nodes)
             or as string keys for the node attributes that hold the party's
@@ -50,6 +50,12 @@ class Election:
 
 
 class ElectionUpdater:
+    """
+    The updater for computing the election results in each part of the partition after
+    each step in the Markov chain. The actual results are returned to the user as
+    an :class:`ElectionResults` instance.
+    """
+
     def __init__(self, election):
         self.election = election
 
@@ -82,6 +88,11 @@ def get_percents(counts, totals):
 
 
 class ElectionResults:
+    """
+    Represents the results of an election. Provides helpful methods to answer
+    common questions you might have about an election (Who won? How many seats?, etc.).
+    """
+
     def __init__(self, election, counts, races):
         self.election = election
         self.totals_for_party = counts
@@ -105,22 +116,45 @@ class ElectionResults:
             name=self.election.name, results=results_by_part)
 
     def seats(self, party):
+        """
+        Returns the number of races that `party` won.
+        """
         return sum(self.won(party, race) for race in self.races)
 
     def wins(self, party):
+        """
+        An alias for :meth:`wins`.
+        """
         return self.seats(party)
 
     def percent(self, party, race=None):
+        """
+        Returns the percentage of the vote that `party` received in a given race
+        (part of the partition). If `race` is omitted, returns the overall vote
+        share of `party`.
+        :party: Party ID.
+        :race: ID of the part of the partition whose votes we want to tally.
+        """
         if race is not None:
             return self.percents_for_party[party][race]
         return self.votes(party) / sum(self.totals[race] for race in self.races)
 
     def votes(self, party, race=None):
+        """
+        Returns the total number of votes that `party` received in a given race
+        (part of the partition). If `race` is omitted, returns the overall vote
+        total of `party`.
+        :party: Party ID.
+        :race: ID of the part of the partition whose votes we want to tally.
+        """
         if race is not None:
             return self.totals_for_party[party][race]
         return sum(self.totals_for_party[party][race] for race in self.races)
 
     def won(self, party, race):
+        """
+        Answers "Did `party` win the race in part `race`?" with `True` or `False`.
+        """
         return all(
             self.totals_for_party[party][race] >= self.totals_for_party[opponent][race]
             for opponent in self.election.parties
