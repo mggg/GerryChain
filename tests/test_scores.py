@@ -1,20 +1,20 @@
 import pytest
+from unittest.mock import MagicMock
 from rundmcmc.scores import efficiency_gap, wasted_votes, mean_median
 from rundmcmc.updaters.election import ElectionResults
 
 
 @pytest.fixture
 def mock_election():
-    return ElectionResults(None,
+    election = MagicMock()
+    election.parties = ['B', 'A']
+
+    return ElectionResults(election,
     {
         'B': {1: 5, 2: 60, 3: 25, 4: 55, 5: 55},
         'A': {1: 95, 2: 40, 3: 75, 4: 45, 5: 45}
     },
-    {1: 100, 2: 100, 3: 100, 4: 100, 5: 100},
-    {
-        'B': {1: 0.05, 2: 0.60, 3: 0.25, 4: 0.55, 5: 0.55},
-        'A': {1: 0.95, 2: 0.40, 3: 0.75, 4: 0.45, 5: 0.45}
-    })
+    [1, 2, 3, 4, 5])
 
 
 def test_efficiency_gap(mock_election):

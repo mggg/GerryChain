@@ -130,6 +130,6 @@ class ElectionResults:
 def format_part_results(percents_for_party, part):
     heading = '{part}:\n'.format(part=str(part))
     body = '\n'.join("  {party}: {percent}".format(
-        party=str(party), percent=percents_for_party[party][part])
+        party=str(party), percent=round(percents_for_party[party][part], 4))
         for party in percents_for_party)
     return heading + body

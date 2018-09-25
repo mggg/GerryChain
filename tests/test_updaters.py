@@ -140,19 +140,18 @@ def test_election_result_has_a_cute_str_method():
     election = Election("2008 Presidential", {"Democratic": [3, 1, 2], "Republican": [1, 2, 1]})
     results = ElectionResults(election,
         {"Democratic": {0: 3, 1: 1, 2: 2}, "Republican": {0: 1, 1: 2, 2: 1}},
-        {0: 4, 1: 3, 2: 3},
-        {"Democratic": {0: 0.75, 1: 0.33, 2: 0.66}, "Republican": {0: 0.25, 1: 0.66, 2: 0.33}}
+        [0, 1, 2]
     )
     expected = "Election Results for 2008 Presidential\n" \
         "0:\n" \
         "  Democratic: 0.75\n" \
         "  Republican: 0.25\n" \
         "1:\n" \
-        "  Democratic: 0.33\n" \
-        "  Republican: 0.66\n" \
+        "  Democratic: 0.3333\n" \
+        "  Republican: 0.6667\n" \
         "2:\n" \
-        "  Democratic: 0.66\n" \
-        "  Republican: 0.33"
+        "  Democratic: 0.6667\n" \
+        "  Republican: 0.3333"
     assert str(results) == expected
 
 
