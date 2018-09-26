@@ -3,13 +3,13 @@ import versioneer
 
 requirements = [
     # package requirements go here
-#    'pandas',
+    "pandas",
     "networkx",
-#    "geopandas",
-#    "pysal",
+    "geopandas",
+    "pysal",
 #    "matplotlib",
-#    "psutil",
-#    "utm"
+    # "psutil",
+    "utm"
 ]
 
 setup(
