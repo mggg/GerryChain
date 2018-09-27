@@ -1,7 +1,8 @@
 from collections import Counter
-import pandas as pd
 import json
 import math
+
+from rundmcmc.scores import efficiency_gap, mean_median, mean_thirdian
 
 
 def p_value_report(score_name, ensemble_scores, initial_plan_score):
@@ -34,6 +35,90 @@ def p_value_report(score_name, ensemble_scores, initial_plan_score):
     return report
 
 
+class SlimPValueReport:
+    scores = {
+        "Efficiency Gap": efficiency_gap,
+        "Mean-Median": mean_median,
+        "Mean-Thirdian": mean_thirdian
+    }
+
+    def __init__(self, election, function=lambda epsilon: math.sqrt(2 * epsilon), scores=None):
+        if scores is not None:
+            self.scores = scores
+
+        self.election = election
+        self.function = function
+
+        self.counters = {name: Counter() for name in self.scores}
+        self.histograms = {name: Histogram((0, 1), 10000) for name in self.scores}
+        self.initial_scores = None
+
+    def __call__(self, partition):
+        election_results = partition[self.election.alias]
+
+        if self.initial_scores is None:
+            self.initial_scores = {name: score(election_results)
+                                   for name, score in self.scores.items()}
+
+        for name, score in self.scores.items():
+            value = score(election_results)
+            self.counters[name].update([value >= self.initial_scores[name]])
+            self.histograms[name].record(value)
+
+    def render(self):
+        output = self.render_without_histograms()
+        for record in output["analysis"]:
+            record["histogram"] = self.render_histogram(record["score"])
+        return output
+
+    def render_without_histograms(self):
+        return {"election": self.election.name,
+                "analysis": [self.render_score_analysis(score)
+                            for score in self.scores]}
+
+    def compute_p_value(self, score_name):
+        return self.function(self.fraction_as_high(score_name))
+
+    def compute_opposite_p_value(self, score_name):
+        return self.function(self.fraction_as_low(score_name))
+
+    def fraction_as_high(self, score_name):
+        size_of_ensemble = sum(self.counters[score_name].values())
+        if size_of_ensemble == 0:
+            return math.nan
+        number_as_high = self.counters[score_name][True]
+        return number_as_high / size_of_ensemble
+
+    def fraction_as_low(self, score_name):
+        size_of_ensemble = sum(self.counters[score_name].values())
+        if size_of_ensemble == 0:
+            return math.nan
+        number_as_low = 1 + self.counters[score_name][False]
+        return number_as_low / size_of_ensemble
+
+    def render_score_analysis(self, score):
+        first_party, *others = self.election.parties_to_columns
+        party_name = format_party_name(first_party)
+        return {"score": score,
+                "interpretation": "Positive values mean an advantage for {}".format(party_name),
+                "fraction_as_high_as_original": self.fraction_as_high(score),
+                "number_as_high_as_original": self.counters[score][True],
+                "number_lower_than_original": self.counters[score][False],
+                "p": self.compute_p_value(score)}
+
+    def render_histogram(self, score):
+        return self.histograms[score].json()
+
+    def __str__(self):
+        return json.dumps(self.render(), indent=2)
+
+
+def format_party_name(name):
+    if name.lower()[:-5] == "party":
+        return name
+    return "{} Party".format(name)
+
+
 class Histogram:
     """
     A histogram with fixed bins, determined by the number of bins and the
@@ -47,31 +132,31 @@ class Histogram:
         self.number_of_bins = number_of_bins
 
         left, right = bounds
-        self.bin_size = (right - left) / number_of_bins
+        self.bin_size = abs(right - left) / number_of_bins
 
-        self.bins = self.generate_bins()
+        self.counter = Counter()
 
-    def count(self, values):
+    def record(self, value):
         """
-        :values: iterable
-        :returns: a Counter counting how many values appeared in each bin.
+        :value: value to record in the histogram
         """
-        return Counter(self.find_bin(value) for value in values)
+        return self.counter.update([self.find_bin_index(value)])
 
     def find_bin_index(self, value):
-        """
-        find_bin conducts a binary search to find the right bin for the given value.
-        """
         left = self.bounds[0]
-        return math.floor((value - left) / self.bin_size)
+        bin_index = math.floor((value - left) / self.bin_size)
+        return bin_index
 
-    def find_bin(self, value):
-        return self.bins[self.find_bin_index(value)]
+    def csv(self):
+        header = "left,right,count\n"
+        rows = ",".join((left, right, count) for (left, right), count in self.json())
+        body = "\n".join(rows)
+        return header + body
 
-    def generate_bins(self):
-        left = self.bounds[0]
-        for n in range(self.number_of_bins):
-            yield (left + n * self.bin_size, left + (n + 1) * self.bin_size)
+    def json(self):
+        def get_bin(bin_index):
+            return (self.bin_size * bin_index, self.bin_size * (bin_index + 1))
+        return [(get_bin(index), count) for index, count in self.counter.items()]
 
 
 class ChainOutputTable:
@@ -90,8 +175,8 @@ class ChainOutputTable:
         with open(filename, "w") as f:
             json.dump(self.data, f)
 
-    def to_dataframe(self):
-        return pd.DataFrame(self.data)
+    # def to_dataframe(self):
+    #     return pd.DataFrame(self.data)
 
     def __iter__(self):
         return self
@@ -140,7 +225,7 @@ def handle_scores_separately(chain, handlers):
     for row in get_chain_scores(chain, nhandlers):
         table.append(row)
         if jsonSave:
-            jsonToText += ", " + "\"" + str(chain.counter + 1) + "\"" \
+            jsonToText += ", " + "\"" + str(chain.counter + 1) + "\""
             + ": " + json.dumps(handlers["flips"](chain.state))
     jsonToText += '}'
 

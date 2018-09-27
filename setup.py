@@ -7,9 +7,8 @@ requirements = [
     "networkx",
     "geopandas",
     "pysal",
-    "matplotlib",
-    "psutil",
-    "utm"
+    # "matplotlib",
+    # "psutil",
 ]
 
 setup(

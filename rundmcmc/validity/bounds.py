@@ -23,7 +23,7 @@ class Bounds:
 
     @property
     def __name__(self):
-        return "Bounds({})".format(self.func.__name__)
+        return "Bounds({},{})".format(self.func.__name__, str(self.bounds))
 
 
 class UpperBound:
@@ -49,7 +49,7 @@ class UpperBound:
 
     @property
     def __name__(self):
-        return "UpperBound({})".format(self.func.__name__)
+        return "UpperBound({},{})".format(self.func.__name__, self.bound)
 
 
 class LowerBound:
@@ -75,7 +75,7 @@ class LowerBound:
 
     @property
     def __name__(self):
-        return "LowerBound({})".format(self.func.__name__)
+        return "LowerBound({},{})".format(self.func.__name__, self.bound)
 
 
 class SelfConfiguringUpperBound:

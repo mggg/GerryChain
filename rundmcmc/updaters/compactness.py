@@ -6,11 +6,14 @@ from .cut_edges import on_edge_flow
 
 
 def compute_polsby_popper(area, perimeter):
-    return 4 * math.pi * area / perimeter**2
+    try:
+        return 4 * math.pi * area / perimeter**2
+    except ZeroDivisionError:
+        return math.nan
 
 
 def polsby_popper(partition):
-    return {part: compute_polsby_popper(partition['areas'][part], partition['perimeters'][part])
+    return {part: compute_polsby_popper(partition['area'][part], partition['perimeter'][part])
             for part in partition.parts}
 
 
@@ -35,9 +38,11 @@ def exterior_boundaries_as_a_set(partition, previous, inflow, outflow):
 
 def initialize_exterior_boundaries(partition):
     graph_boundary = partition['boundary_nodes']
-    return {part: sum(partition.graph.nodes[node]['boundary_perim']
-                      for node in partition.parts[part] & graph_boundary)
-                      for part in partition.parts}
+    boundaries = collections.defaultdict(lambda: 0)
+    for node in graph_boundary:
+        part = partition.assignment[node]
+        boundaries[part] += partition.graph.nodes[node]['boundary_perim']
+    return boundaries
 
 
 @on_flow(initialize_exterior_boundaries, alias='exterior_boundaries')
@@ -79,5 +84,5 @@ def perimeter_of_part(partition, part):
     return exterior_perimeter + interior_perimeter
 
 
-def perimeters(partition):
+def perimeter(partition):
     return {part: perimeter_of_part(partition, part) for part in partition.parts}

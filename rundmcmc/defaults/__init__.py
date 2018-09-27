@@ -1,2 +1,2 @@
 from .grid import Grid
-from .defaults import GridChain, PA_partition, BasicChain
+from .defaults import GridChain, BasicChain, DefaultChain
