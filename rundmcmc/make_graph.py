@@ -10,11 +10,11 @@ import pysal
 from networkx.readwrite import json_graph
 from shapely.ops import cascaded_union
 
-import utm
+from rundmcmc.utm import from_latlon
 
 
 def utm_of_point(point):
-    return utm.from_latlon(point.y, point.x)[2]
+    return from_latlon(point.y, point.x)[2]
 
 
 def identify_utm_zone(df):
