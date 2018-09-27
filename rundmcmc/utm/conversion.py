@@ -4,12 +4,14 @@ from utm.error import OutOfRangeError
 # from math, except it also works on numpy arrays
 try:
     import numpy as mathlib
+
     use_numpy = True
 except ImportError:
     import math as mathlib
+
     use_numpy = False
 
-__all__ = ['to_latlon', 'from_latlon']
+__all__ = ["to_latlon", "from_latlon"]
 
 K0 = 0.9996
 
@@ -25,15 +27,15 @@ _E3 = _E2 * _E
 _E4 = _E3 * _E
 _E5 = _E4 * _E
 
-M1 = (1 - E / 4 - 3 * E2 / 64 - 5 * E3 / 256)
-M2 = (3 * E / 8 + 3 * E2 / 32 + 45 * E3 / 1024)
-M3 = (15 * E2 / 256 + 45 * E3 / 1024)
-M4 = (35 * E3 / 3072)
+M1 = 1 - E / 4 - 3 * E2 / 64 - 5 * E3 / 256
+M2 = 3 * E / 8 + 3 * E2 / 32 + 45 * E3 / 1024
+M3 = 15 * E2 / 256 + 45 * E3 / 1024
+M4 = 35 * E3 / 3072
 
-P2 = (3. / 2 * _E - 27. / 32 * _E3 + 269. / 512 * _E5)
-P3 = (21. / 16 * _E2 - 55. / 32 * _E4)
-P4 = (151. / 96 * _E3 - 417. / 128 * _E5)
-P5 = (1097. / 512 * _E4)
+P2 = 3. / 2 * _E - 27. / 32 * _E3 + 269. / 512 * _E5
+P3 = 21. / 16 * _E2 - 55. / 32 * _E4
+P4 = 151. / 96 * _E3 - 417. / 128 * _E5
+P5 = 1097. / 512 * _E4
 
 R = 6378137
 
@@ -52,13 +54,13 @@ def in_bounds(x, lower, upper, upper_strict=False):
 
 def check_valid_zone(zone_number, zone_letter):
     if not 1 <= zone_number <= 60:
-        raise OutOfRangeError('zone number out of range (must be between 1 and 60)')
+        raise OutOfRangeError("zone number out of range (must be between 1 and 60)")
 
     if zone_letter:
         zone_letter = zone_letter.upper()
 
-        if not 'C' <= zone_letter <= 'X' or zone_letter in ['I', 'O']:
-            raise OutOfRangeError('zone letter out of range (must be between C and X)')
+        if not "C" <= zone_letter <= "X" or zone_letter in ["I", "O"]:
+            raise OutOfRangeError("zone letter out of range (must be between C and X)")
 
 
 def mixed_signs(x):
@@ -71,7 +73,9 @@ def negative(x):
     return x < 0
 
 
-def to_latlon(easting, northing, zone_number, zone_letter=None, northern=None, strict=True):
+def to_latlon(
+    easting, northing, zone_number, zone_letter=None, northern=None, strict=True
+):
     """This function convert an UTM coordinate into Latitude and Longitude
 
         Parameters
@@ -98,22 +102,26 @@ def to_latlon(easting, northing, zone_number, zone_letter=None, northern=None, s
 
     """
     if not zone_letter and northern is None:
-        raise ValueError('either zone_letter or northern needs to be set')
+        raise ValueError("either zone_letter or northern needs to be set")
 
     elif zone_letter and northern is not None:
-        raise ValueError('set either zone_letter or northern, but not both')
+        raise ValueError("set either zone_letter or northern, but not both")
 
     if strict:
         if not in_bounds(easting, 100000, 1000000, upper_strict=True):
-            raise OutOfRangeError('easting out of range (must be between 100.000 m and 999.999 m)')
+            raise OutOfRangeError(
+                "easting out of range (must be between 100.000 m and 999.999 m)"
+            )
         if not in_bounds(northing, 0, 10000000):
-            raise OutOfRangeError('northing out of range (must be between 0 m and 10.000.000 m)')
-    
+            raise OutOfRangeError(
+                "northing out of range (must be between 0 m and 10.000.000 m)"
+            )
+
     check_valid_zone(zone_number, zone_letter)
-    
+
     if zone_letter:
         zone_letter = zone_letter.upper()
-        northern = (zone_letter >= 'N')
+        northern = zone_letter >= "N"
 
     x = easting - 500000
     y = northing
@@ -124,11 +132,13 @@ def to_latlon(easting, northing, zone_number, zone_letter=None, northern=None, s
     m = y / K0
     mu = m / (R * M1)
 
-    p_rad = (mu +
-             P2 * mathlib.sin(2 * mu) +
-             P3 * mathlib.sin(4 * mu) +
-             P4 * mathlib.sin(6 * mu) +
-             P5 * mathlib.sin(8 * mu))
+    p_rad = (
+        mu +
+        P2 * mathlib.sin(2 * mu) +
+        P3 * mathlib.sin(4 * mu) +
+        P4 * mathlib.sin(6 * mu) +
+        P5 * mathlib.sin(8 * mu)
+    )
 
     p_sin = mathlib.sin(p_rad)
     p_sin2 = p_sin * p_sin
@@ -145,7 +155,7 @@ def to_latlon(easting, northing, zone_number, zone_letter=None, northern=None, s
     n = R / ep_sin_sqrt
     r = (1 - E) / ep_sin
 
-    c = _E * p_cos**2
+    c = _E * p_cos ** 2
     c2 = c * c
 
     d = x / (n * K0)
@@ -155,17 +165,23 @@ def to_latlon(easting, northing, zone_number, zone_letter=None, northern=None, s
     d5 = d4 * d
     d6 = d5 * d
 
-    latitude = (p_rad - (p_tan / r) *
-                (d2 / 2 -
-                 d4 / 24 * (5 + 3 * p_tan2 + 10 * c - 4 * c2 - 9 * E_P2)) +
-                 d6 / 720 * (61 + 90 * p_tan2 + 298 * c + 45 * p_tan4 - 252 * E_P2 - 3 * c2))
+    latitude = (
+        p_rad -
+        (p_tan / r) *
+        (d2 / 2 - d4 / 24 * (5 + 3 * p_tan2 + 10 * c - 4 * c2 - 9 * E_P2)) +
+        d6 / 720 * (61 + 90 * p_tan2 + 298 * c + 45 * p_tan4 - 252 * E_P2 - 3 * c2)
+    )
 
-    longitude = (d -
-                 d3 / 6 * (1 + 2 * p_tan2 + c) +
-                 d5 / 120 * (5 - 2 * c + 28 * p_tan2 - 3 * c2 + 8 * E_P2 + 24 * p_tan4)) / p_cos
+    longitude = (
+        d -
+        d3 / 6 * (1 + 2 * p_tan2 + c) +
+        d5 / 120 * (5 - 2 * c + 28 * p_tan2 - 3 * c2 + 8 * E_P2 + 24 * p_tan4)
+    ) / p_cos
 
-    return (mathlib.degrees(latitude),
-            mathlib.degrees(longitude) + zone_number_to_central_longitude(zone_number))
+    return (
+        mathlib.degrees(latitude),
+        mathlib.degrees(longitude) + zone_number_to_central_longitude(zone_number),
+    )
 
 
 def from_latlon(latitude, longitude, force_zone_number=None, force_zone_letter=None):
@@ -187,9 +203,13 @@ def from_latlon(latitude, longitude, force_zone_number=None, force_zone_letter=N
        .. _[1]: http://www.jaworski.ca/utmzones.htm
     """
     if not in_bounds(latitude, -80.0, 84.0):
-        raise OutOfRangeError('latitude out of range (must be between 80 deg S and 84 deg N)')
+        raise OutOfRangeError(
+            "latitude out of range (must be between 80 deg S and 84 deg N)"
+        )
     if not in_bounds(longitude, -180.0, 180.0):
-        raise OutOfRangeError('longitude out of range (must be between 180 deg W and 180 deg E)')
+        raise OutOfRangeError(
+            "longitude out of range (must be between 180 deg W and 180 deg E)"
+        )
     if force_zone_number is not None:
         check_valid_zone(force_zone_number, force_zone_letter)
 
@@ -215,8 +235,8 @@ def from_latlon(latitude, longitude, force_zone_number=None, force_zone_letter=N
     central_lon = zone_number_to_central_longitude(zone_number)
     central_lon_rad = mathlib.radians(central_lon)
 
-    n = R / mathlib.sqrt(1 - E * lat_sin**2)
-    c = E_P2 * lat_cos**2
+    n = R / mathlib.sqrt(1 - E * lat_sin ** 2)
+    c = E_P2 * lat_cos ** 2
 
     a = lat_cos * (lon_rad - central_lon_rad)
     a2 = a * a
@@ -225,18 +245,31 @@ def from_latlon(latitude, longitude, force_zone_number=None, force_zone_letter=N
     a5 = a4 * a
     a6 = a5 * a
 
-    m = R * (M1 * lat_rad -
-             M2 * mathlib.sin(2 * lat_rad) +
-             M3 * mathlib.sin(4 * lat_rad) -
-             M4 * mathlib.sin(6 * lat_rad))
+    m = R * (
+        M1 * lat_rad -
+        M2 * mathlib.sin(2 * lat_rad) +
+        M3 * mathlib.sin(4 * lat_rad) -
+        M4 * mathlib.sin(6 * lat_rad)
+    )
 
-    easting = K0 * n * (a +
-                        a3 / 6 * (1 - lat_tan2 + c) +
-                        a5 / 120 * (5 - 18 * lat_tan2 + lat_tan4 + 72 * c - 58 * E_P2)) + 500000
+    easting = (
+        K0 *
+        n *
+        (
+            a +
+            a3 / 6 * (1 - lat_tan2 + c) +
+            a5 / 120 * (5 - 18 * lat_tan2 + lat_tan4 + 72 * c - 58 * E_P2)
+        ) + 500000
+    )
 
-    northing = K0 * (m + n * lat_tan * (a2 / 2 +
-                                        a4 / 24 * (5 - lat_tan2 + 9 * c + 4 * c**2) +
-                                        a6 / 720 * (61 - 58 * lat_tan2 + lat_tan4 + 600 * c - 330 * E_P2)))
+    northing = K0 * (
+        m +
+        n *
+        lat_tan * (
+            a2 / 2 + a4 / 24 * (5 - lat_tan2 + 9 * c + 4 * c ** 2) +
+            a6 / 720 * (61 - 58 * lat_tan2 + lat_tan4 + 600 * c - 330 * E_P2)
+        )
+    )
 
     if mixed_signs(latitude):
         raise ValueError("latitudes must all have the same sign")
