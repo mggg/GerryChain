@@ -1,4 +1,6 @@
-from rundmcmc.defaults import Grid
+from collections import defaultdict
+from rundmcmc.defaults import Grid, DefaultChain
+from rundmcmc.validity import single_flip_contiguous, no_vanishing_districts
 
 
 def setup():
@@ -56,3 +58,37 @@ def test_tally_handles_flips_for_a_simple_grid():
     result = flipped_grid['areas']
 
     assert result == {0: 4, 1: 3, 2: 4, 3: 5}
+
+
+def test_perimeters_match_naive_perimeters_at_every_step():
+    partition = Grid((10, 10), with_diagonals=True)
+
+    chain = DefaultChain(partition, [single_flip_contiguous, no_vanishing_districts], 1000)
+
+    def get_exterior_boundaries(partition):
+        graph_boundary = partition['boundary_nodes']
+        exterior = defaultdict(lambda: 0)
+        for node in graph_boundary:
+            part = partition.assignment[node]
+            exterior[part] += partition.graph.nodes[node]['boundary_perim']
+        return exterior
+
+    def get_interior_boundaries(partition):
+        cut_edges = {edge for edge in partition.graph.edges
+                       if partition.crosses_parts(edge)}
+        interior = defaultdict(int)
+        for edge in cut_edges:
+            for node in edge:
+                interior[partition.assignment[node]] += partition.graph.edges[edge]['shared_perim']
+        return interior
+
+    def expected_perimeters(partition):
+        interior_boundaries = get_interior_boundaries(partition)
+        exterior_boundaries = get_exterior_boundaries(partition)
+        expected = {part: interior_boundaries[part] + exterior_boundaries[part]
+                    for part in partition.parts}
+        return expected
+
+    for state in chain:
+        expected = expected_perimeters(state)
+        assert expected == state['perimeters']
