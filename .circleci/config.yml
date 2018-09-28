@@ -11,17 +11,17 @@ jobs:
 
       - restore_cache:
           keys:
-          - v2-dependencies-{{ checksum "setup.py" }}
-          - v2-dependencies-
+            - v2-dependencies-{{ checksum "setup.py" }}
+            - v2-dependencies-
 
       - run:
           name: run linter
           command: |
-              pip install flake8-colors
-              flake8 --format="$FORMAT" --config=./setup.cfg --show-source
+            pip install flake8-colors
+            flake8 --format="$FORMAT" --config=./setup.cfg --show-source
 
           environment:
-              FORMAT: '${cyan}%(path)s${reset}:${yellow_bold}%(row)d${reset}:${green_bold}%(col)d${reset}: ${red_bold}%(code)s${reset} %(text)s'
+            FORMAT: "${cyan}%(path)s${reset}:${yellow_bold}%(row)d${reset}:${green_bold}%(col)d${reset}: ${red_bold}%(code)s${reset} %(text)s"
 
       - run:
           name: install dependencies
@@ -34,6 +34,7 @@ jobs:
             conda build --no-test .
             conda install --use-local rundmcmc
             pip install codecov
+            pip install utm
 
       - save_cache:
           paths:

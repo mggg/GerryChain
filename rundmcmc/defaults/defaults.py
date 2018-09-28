@@ -26,6 +26,19 @@ class DefaultChain(MarkovChain):
                          always_accept, partition, total_steps)
 
 
+class DefaultChain(MarkovChain):
+    """
+    A MarkovChain with propose_random_flips proposal and always_accept
+    acceptance function. Also instantiates a Validator for you from a
+    list of constraints.
+    """
+
+    def __init__(self, partition, constraints, total_steps):
+        validator = Validator(constraints)
+        super().__init__(propose_random_flip, validator,
+                         always_accept, partition, total_steps)
+
+
 class BasicChain(MarkovChain):
     """
     The standard MarkovChain for replicating the Pennsylvania analysis. The proposal
