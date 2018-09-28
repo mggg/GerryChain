@@ -19,13 +19,12 @@ class Partition:
     def __init__(self, graph=None, assignment=None, updaters=None,
                  parent=None, flips=None):
         """
-        :graph: Underlying graph; a NetworkX object.
-        :assignment: Dictionary assigning nodes to districts. If None,
-                     initialized to assign all nodes to district 0.
-        :updaters: Dictionary of functions to track data about the partition.
-                   The keys are stored as attributes on the partition class,
-                   which the functions compute.
-
+        :param graph: Underlying graph; a NetworkX object.
+        :param assignment: Dictionary assigning nodes to districts. If None,
+            initialized to assign all nodes to district 0.
+        :param updaters: Dictionary of functions to track data about the partition.
+            The keys are stored as attributes on the partition class,
+            which the functions compute.
         """
         if parent:
             self._from_parent(parent, flips)
@@ -89,22 +88,29 @@ class Partition:
                 self._cache[key] = self.updaters[key](self)
 
     def merge(self, flips):
-        """
-        :flips: dict assigning nodes of the graph to their new districts
-        :returns: A new instance representing the partition obtained by performing the given flips
-                  on this partition.
+        """Returns the new partition obtained by performing the given `flips`
+        on this partition.
 
+        :param flips: dictionary assigning nodes of the graph to their new districts
+        :return: the new :class:`Partition`
+        :rtype: Partition
         """
         return self.__class__(parent=self, flips=flips)
 
     def crosses_parts(self, edge):
+        """Answers the question "Does this edge cross from one part of the
+        partition to another?
+
+        :param edge: tuple of node IDs
+        :rtype: bool
+        """
         return self.assignment[edge[0]] != self.assignment[edge[1]]
 
     def __getitem__(self, key):
-        """Allows keying on a Partition instance.
+        """Allows accessing the values of updaters computed for this
+        Partition instance.
 
-        :key: Property to access.
-
+        :param key: Property to access.
         """
         if key not in self._cache:
             self._cache[key] = self.updaters[key](self)
@@ -112,6 +118,17 @@ class Partition:
 
     @classmethod
     def from_json_graph(cls, graph_path, assignment, updaters=None):
+        """Creates a :class:`Partition` from a json file containing a
+        serialized NetworkX `adjacency_data` object. Files of this
+        kind for each state are available in the @gerrymandr/vtd-adjacency-graphs
+        GitHub repository.
+
+        :param graph_path: String filename for the json file
+        :param assignment: String key for the node attribute giving a district
+            assignment, or a dictionary mapping node IDs to district IDs.
+        :param updaters: (optional) Dictionary of updater functions to
+            attach to the partition, in addition to the default_updaters of `cls`.
+        """
         with open(graph_path) as f:
             graph_data = json.load(f)
         graph = networkx.readwrite.adjacency_graph(graph_data)

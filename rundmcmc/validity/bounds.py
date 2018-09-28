@@ -10,8 +10,8 @@ class Bounds:
 
     def __init__(self, func, bounds):
         """
-        :func: Numeric validator function. Should return an iterable of values.
-        :bounds: Tuple of (lower, upper) numeric bounds.
+        :param func: Numeric validator function. Should return an iterable of values.
+        :param bounds: Tuple of (lower, upper) numeric bounds.
         """
         self.func = func
         self.bounds = bounds
@@ -38,8 +38,8 @@ class UpperBound:
 
     def __init__(self, func, bound):
         """
-        :func: Numeric validator function. Should return a comparable value.
-        :bounds: Comparable upper bound.
+        :param func: Numeric validator function. Should return a comparable value.
+        :param bounds: Comparable upper bound.
         """
         self.func = func
         self.bound = bound
@@ -64,8 +64,8 @@ class LowerBound:
 
     def __init__(self, func, bound):
         """
-        :func: Numeric validator function. Should return a comparable value.
-        :bounds: Comparable lower bound.
+        :param func: Numeric validator function. Should return a comparable value.
+        :param bounds: Comparable lower bound.
         """
         self.func = func
         self.bound = bound
@@ -93,7 +93,7 @@ class SelfConfiguringUpperBound:
 
     def __init__(self, func):
         """
-        :func: Numeric validator function.
+        :param func: Numeric validator function.
         """
         self.func = func
         self.bound = None
@@ -121,8 +121,8 @@ class SelfConfiguringLowerBound:
 
     def __init__(self, func, epsilon=0.05):
         """
-        :func: Numeric validator function.
-        :epsilon: Initial "wiggle room" that the validator allows.
+        :param func: Numeric validator function.
+        :param epsilon: Initial "wiggle room" that the validator allows.
         """
         self.func = func
         self.bound = None

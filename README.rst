@@ -16,7 +16,9 @@ RunDMCMC
 
 This code implements Monte-Carlo exploration of districting plans, exploring
 the space around an initial districting plan to give some idea of the degree of
-gerrymandering. It is a Python rewrite of the chain C++ program
+gerrymandering.
+
+This package began as a Python rewrite of the chain C++ program
 (https://github.com/gerrymandr/cfp_mcmc), originally by Maria Chikina, Alan
 Frieze and Wesley Pegden, for their paper, "Assessing significance in a Markov
 chain without mixing" (http://www.pnas.org/content/114/11/2860).
@@ -34,6 +36,23 @@ installing a development version manually::
     git clone https://github.com/gerrymandr/RunDMCMC.git
     cd RunDMCMC
     python3 setup.py develop
+
+
+Example
+=======
+
+.. code-block:: python
+
+    from rundmcmc import GeographicPartition, DefaultChain
+
+    initial_plan = PoliticalPartition.from_census(
+        "./tiger.shp",
+        districts="CD",
+        elections=elections
+    )
+
+    
+
 
 
 Using in an interactive python session
