@@ -123,7 +123,7 @@ class ElectionResults:
 
     def wins(self, party):
         """
-        An alias for :meth:`wins`.
+        An alias for :meth:`seats`.
         """
         return self.seats(party)
 
@@ -139,7 +139,10 @@ class ElectionResults:
             return self.percents_for_party[party][race]
         return self.votes(party) / sum(self.totals[race] for race in self.races)
 
-    def votes(self, party, race=None):
+    def percents(self, party):
+        return tuple(self.percents_for_party[party][race] for race in self.races)
+
+    def count(self, party, race=None):
         """
         Returns the total number of votes that `party` received in a given race
         (part of the partition). If `race` is omitted, returns the overall vote
@@ -151,6 +154,9 @@ class ElectionResults:
             return self.totals_for_party[party][race]
         return sum(self.totals_for_party[party][race] for race in self.races)
 
+    def counts(self, party):
+        return tuple(self.totals_for_party[party][race] for race in self.races)
+
     def won(self, party, race):
         """
         Answers "Did `party` win the race in part `race`?" with `True` or `False`.
@@ -159,6 +165,9 @@ class ElectionResults:
             self.totals_for_party[party][race] >= self.totals_for_party[opponent][race]
             for opponent in self.election.parties
         )
+
+    def total_votes(self):
+        return sum(self.totals.values())
 
 
 def format_part_results(percents_for_party, part):

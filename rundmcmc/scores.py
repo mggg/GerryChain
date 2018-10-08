@@ -7,8 +7,8 @@ def mean_median(election_results):
     A positive value indicates an advantage for the first party listed
     in the Election's parties_to_columns dictionary.
     """
-    first_party_results, *others = election_results.percents_for_party.values()
-    data = list(first_party_results.values())
+    first_party = election_results.election.parties[0]
+    data = election_results.percents(first_party)
 
     return numpy.median(data) - numpy.mean(data)
 
@@ -18,9 +18,12 @@ def mean_thirdian(election_results):
     Computes the Mean-Median score for the given ElectionResults.
     A positive value indicates an advantage for the first party listed
     in the Election's parties_to_columns dictionary.
+
+    The motivation for this score is that the minority party in many
+    states struggles to win even a third of the seats.
     """
-    first_party_results, *others = election_results.percents_for_party.values()
-    data = list(first_party_results.values())
+    first_party = election_results.election.parties[0]
+    data = election_results.percents(first_party)
 
     thirdian_index = round(len(data) / 3)
     thirdian = sorted(data)[thirdian_index]
@@ -28,17 +31,16 @@ def mean_thirdian(election_results):
     return thirdian - numpy.mean(data)
 
 
-def efficiency_gap(election_results):
+def efficiency_gap(results):
     """
     Computes the efficiency gap for the given ElectionResults.
     A positive value indicates an advantage for the first party listed
     in the Election's parties_to_columns dictionary.
     """
-    party1, party2 = election_results.totals_for_party.values()
-    wasted_votes_by_part = {part: wasted_votes(party1[part], party2[part])
-                            for part in party1}
-    total_votes = sum(party1.values()) + sum(party2.values())
-    numerator = sum(waste2 - waste1 for waste1, waste2 in wasted_votes_by_part.values())
+    party1, party2 = [results.counts(party) for party in results.election.parties]
+    wasted_votes_by_part = map(wasted_votes, party1, party2)
+    total_votes = results.total_votes()
+    numerator = sum(waste2 - waste1 for waste1, waste2 in wasted_votes_by_part)
     return numerator / total_votes
 
 
