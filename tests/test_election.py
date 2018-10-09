@@ -1,8 +1,8 @@
 # import random
 
-# from rundmcmc.defaults import DefaultChain, Grid
-# from rundmcmc.updaters.election import Election
-# from rundmcmc.validity import single_flip_contiguous, no_vanishing_districts
+# from gerrychain.defaults import DefaultChain, Grid
+# from gerrychain.updaters.election import Election
+# from gerrychain.validity import single_flip_contiguous, no_vanishing_districts
 
 # def test_election_results_match_the_naive_values():
 #     election = Election("election", {"Democratic": "D", "Republican": "R"})

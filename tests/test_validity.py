@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 import networkx as nx
 import pytest
 
-from rundmcmc.validity import (Validator, contiguous, districts_within_tolerance,
+from gerrychain.validity import (Validator, contiguous, districts_within_tolerance,
                                fast_connected, single_flip_contiguous, SelfConfiguringLowerBound,
                                no_vanishing_districts)
 

@@ -8,7 +8,7 @@ class MetagraphDegree:
 
     def __init__(self, validator, alias):
         """
-        :validator: :class:`~rundmcmc.validty.Validator` instance.
+        :validator: :class:`~gerrychain.validty.Validator` instance.
 
         """
         self.validator = validator

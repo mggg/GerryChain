@@ -1,4 +1,4 @@
-from rundmcmc.validity import within_percent_of_ideal_population
+from gerrychain.validity import within_percent_of_ideal_population
 
 
 def test_within_percent_fails_when_deviation_too_large():

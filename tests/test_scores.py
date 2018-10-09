@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import MagicMock
-from rundmcmc.scores import efficiency_gap, wasted_votes, mean_median
-from rundmcmc.updaters.election import ElectionResults
+from gerrychain.scores import efficiency_gap, wasted_votes, mean_median
+from gerrychain.updaters.election import ElectionResults
 
 
 @pytest.fixture

@@ -1,11 +1,10 @@
 from collections import defaultdict
 import random
 
-from rundmcmc.updaters.tally import DataTally
-from rundmcmc.partition import Partition
-# from rundmcmc.updaters import cut_edges
-from rundmcmc.validity import single_flip_contiguous, no_vanishing_districts
-from rundmcmc.defaults import DefaultChain, Grid
+from gerrychain.updaters.tally import DataTally
+from gerrychain.partition import Partition
+from gerrychain.validity import single_flip_contiguous, no_vanishing_districts
+from gerrychain.defaults import DefaultChain, Grid
 
 
 def random_assignment(graph, num_districts):

@@ -2,8 +2,8 @@ import math
 
 import networkx
 
-from rundmcmc.partition import Partition
-from rundmcmc.updaters import (Tally, cut_edges, cut_edges_by_part,
+from gerrychain.partition import Partition
+from gerrychain.updaters import (Tally, cut_edges, cut_edges_by_part,
                               perimeter, polsby_popper,
                               exterior_boundaries, interior_boundaries,
                               boundary_nodes)

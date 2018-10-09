@@ -9,8 +9,8 @@ from itertools import count
 import networkx as nx
 import matplotlib.pyplot as plt
 
-from rundmcmc.updaters import CountySplit
-from rundmcmc.validity.bounds import (SelfConfiguringLowerBound, SelfConfiguringUpperBound,
+from gerrychain.updaters import CountySplit
+from gerrychain.validity.bounds import (SelfConfiguringLowerBound, SelfConfiguringUpperBound,
                                       Bounds)
 
 logger = logging.getLogger(__name__)
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 class Validator:
     """
     Collection of validity checks passed to
-    :class:`rundmcmc.chain.MarkovChain`.
+    :class:`gerrychain.chain.MarkovChain`.
 
     This class is meant to be called as a function after instantiation; its
     return is ``True`` if all validators pass, and ``False`` if any one fails.
@@ -214,7 +214,7 @@ def single_flip_contiguous(partition):
 def contiguous(partition):
     """Check if the assignment blocks of a partition are connected.
 
-    :parition: :class:`rundmcmc.partition.Partition` instance.
+    :parition: :class:`gerrychain.partition.Partition` instance.
     :flips: Dictionary of proposed flips, with `(nodeid: new_assignment)`
             pairs. If `flips` is `None`, then fallback :func:`.contiguous`.
 

@@ -1,9 +1,9 @@
 import networkx
 import pytest
 
-from rundmcmc.partition import Partition
-from rundmcmc.partition import GeographicPartition
-from rundmcmc.proposals import propose_random_flip
+from gerrychain.partition import Partition
+from gerrychain.partition import GeographicPartition
+from gerrychain.proposals import propose_random_flip
 
 
 @pytest.fixture

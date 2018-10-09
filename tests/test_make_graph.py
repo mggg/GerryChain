@@ -1,7 +1,7 @@
 import networkx
 import pandas
 
-from rundmcmc.make_graph import add_data_to_graph
+from gerrychain.make_graph import add_data_to_graph
 
 
 def test_add_data_to_graph_can_handle_column_names_that_start_with_numbers():

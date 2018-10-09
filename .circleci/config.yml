@@ -32,7 +32,7 @@ jobs:
             #   only list deps for test/coverage here.
             conda install -qy pytest pytest-cov conda-build
             conda build --no-test .
-            conda install --use-local rundmcmc
+            conda install --use-local gerrychain
             pip install codecov
             pip install utm
 
@@ -48,7 +48,7 @@ jobs:
             # Direct matplotlib to use the Agg (non-graphical) backend during
             # circleci runs.
             echo "backend: Agg" > "matplotlibrc"
-            pytest -v --cov=rundmcmc tests
+            pytest -v --cov=gerrychain tests
             codecov
 
       - store_artifacts:

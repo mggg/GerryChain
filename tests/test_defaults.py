@@ -1,5 +1,5 @@
-import rundmcmc.defaults
+import gerrychain.defaults
 
 
 def test_defaults_are_importable():
-    assert rundmcmc.defaults
+    assert gerrychain.defaults

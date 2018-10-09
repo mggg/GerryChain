@@ -25,9 +25,9 @@ sys.path.insert(0, os.path.abspath("../"))
 
 # -- Project information -----------------------------------------------------
 
-project = 'RunDMCMC'
-copyright = '2018, Gerrymandr'
-author = 'Gerrymandr'
+project = 'GerryChain'
+copyright = '2018, Metric Geometry and Gerrymandering Group'
+author = 'Metric Geometry and Gerrymandering Group'
 
 # The short X.Y version
 version = ''
@@ -110,7 +110,7 @@ html_static_path = ['_static']
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'RunDMCMCdoc'
+htmlhelp_basename = 'GerryChaindoc'
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -137,8 +137,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'RunDMCMC.tex', 'RunDMCMC Documentation',
-     'Gerrymandr', 'manual'),
+    (master_doc, 'GerryChain.tex', 'GerryChain Documentation',
+     'Metric Geometry and Gerrymandering Group', 'manual'),
 ]
 
 
@@ -147,7 +147,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'rundmcmc', 'RunDMCMC Documentation',
+    (master_doc, 'gerrychain', 'GerryChain Documentation',
      [author], 1)
 ]
 
@@ -158,8 +158,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'RunDMCMC', 'RunDMCMC Documentation',
-     author, 'RunDMCMC', 'One line description of project.',
+    (master_doc, 'GerryChain', 'GerryChain Documentation',
+     author, 'GerryChain', 'One line description of project.',
      'Miscellaneous'),
 ]
 

@@ -37,7 +37,7 @@ The signature of a validator function should be as follows::
         # ...
         return is_valid
 
-That is, validators take in a :class:`~rundmcmc.partition.Partition` instance,
+That is, validators take in a :class:`~gerrychain.partition.Partition` instance,
 and should return whether or not the instance is valid according to their
 rules. Many top-level functions following this signature in this module are
 examples of this.

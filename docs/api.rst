@@ -1,7 +1,7 @@
 Developer Interface
 ===================
 
-.. module:: rundmcmc
+.. module:: gerrychain
 
 This part of the documentation details the interface that developers will use
 with the chain. For a high-level overview of the code's structure, see
@@ -14,28 +14,28 @@ introduction <introduction>`.
 Chain and related classes
 -------------------------
 
-.. autoclass:: rundmcmc.chain.MarkovChain
+.. autoclass:: gerrychain.chain.MarkovChain
 
-.. autoclass:: rundmcmc.partition.Partition
+.. autoclass:: gerrychain.partition.Partition
 
-.. autoclass:: rundmcmc.validity.Validator
+.. autoclass:: gerrychain.validity.Validator
 
 Proposals
 ---------
 
-.. automodule:: rundmcmc.proposals
+.. automodule:: gerrychain.proposals
 
 Validators
 ----------
 
-.. automodule:: rundmcmc.validity
+.. automodule:: gerrychain.validity
 
 Updaters
 --------
 
-.. automodule:: rundmcmc.updaters
+.. automodule:: gerrychain.updaters
 
 Graph constructors and data handlers
 ------------------------------------
 
-.. automodule:: rundmcmc.make_graph
+.. automodule:: gerrychain.make_graph

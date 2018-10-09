@@ -41,8 +41,8 @@ def get_config():
     cfg.VCS = "git"
     cfg.style = ""
     cfg.tag_prefix = ""
-    cfg.parentdir_prefix = "rundmcmc-"
-    cfg.versionfile_source = "rundmcmc/_version.py"
+    cfg.parentdir_prefix = "gerrychain-"
+    cfg.versionfile_source = "gerrychain/_version.py"
     cfg.verbose = False
     return cfg
 

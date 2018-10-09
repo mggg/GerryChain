@@ -2,7 +2,7 @@ from collections import Counter
 import json
 import math
 
-from rundmcmc.scores import efficiency_gap, mean_median, mean_thirdian
+from gerrychain.scores import efficiency_gap, mean_median, mean_thirdian
 
 
 def p_value_report(score_name, ensemble_scores, initial_plan_score):
@@ -197,7 +197,7 @@ class ChainOutputTable:
 def get_chain_scores(chain, handlers):
     """Yield scores from handlers on each state in the chain.
 
-    :chain: :class:`rundmcmc.chain.MarkovChain` instance.
+    :chain: :class:`gerrychain.chain.MarkovChain` instance.
     :handlers: Dictionary of {name: func} pairs.
     :returns: A generator yielding dictionaries of {name: result} pairs from
               handlers.

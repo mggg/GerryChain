@@ -1,2 +1,2 @@
 include versioneer.py
-include rundmcmc/_version.py
+include gerrychain/_version.py

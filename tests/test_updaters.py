@@ -4,15 +4,15 @@ import random
 import networkx
 import pytest
 
-from rundmcmc.chain import MarkovChain
-from rundmcmc.partition import Partition
-from rundmcmc.proposals import propose_random_flip
-from rundmcmc.updaters import (Election, Tally, boundary_nodes,
+from gerrychain.chain import MarkovChain
+from gerrychain.partition import Partition
+from gerrychain.proposals import propose_random_flip
+from gerrychain.updaters import (Election, Tally, boundary_nodes,
                                cut_edges_by_part, exterior_boundaries,
                                exterior_boundaries_as_a_set,
                                interior_boundaries, perimeter)
-from rundmcmc.updaters.election import ElectionResults
-from rundmcmc.validity import Validator, no_vanishing_districts
+from gerrychain.updaters.election import ElectionResults
+from gerrychain.validity import Validator, no_vanishing_districts
 
 
 @pytest.fixture

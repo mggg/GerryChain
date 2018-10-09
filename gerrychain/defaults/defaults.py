@@ -1,8 +1,8 @@
-from rundmcmc.accept import always_accept
-from rundmcmc.chain import MarkovChain
+from gerrychain.accept import always_accept
+from gerrychain.chain import MarkovChain
 
-from rundmcmc.proposals import propose_random_flip
-from rundmcmc.validity import (L1_reciprocal_polsby_popper, UpperBound,
+from gerrychain.proposals import propose_random_flip
+from gerrychain.validity import (L1_reciprocal_polsby_popper, UpperBound,
                                Validator, no_vanishing_districts,
                                single_flip_contiguous,
                                within_percent_of_ideal_population)

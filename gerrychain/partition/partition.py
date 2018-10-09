@@ -3,7 +3,7 @@ import json
 
 import networkx
 
-from rundmcmc.updaters import flows_from_changes, compute_edge_flows, cut_edges
+from gerrychain.updaters import flows_from_changes, compute_edge_flows, cut_edges
 
 
 class Partition:

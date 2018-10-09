@@ -12,17 +12,17 @@ requirements = [
 ]
 
 setup(
-    name='RunDMCMC',
+    name='GerryChain',
     description="Short description",
     author="Metric Geometry and Gerrymandering Group",
     author_email='gerrymandr@gmail.com',
-    url='https://github.com/gerrymandr/RunDMCMC',
+    url='https://github.com/mggg/GerryChain',
     packages=find_packages(exclude=("tests",)),
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
     entry_points={
         'console_scripts': [
-            'rundmcmc=rundmcmc.__main__:main'
+            'gerrychain=gerrychain.__main__:main'
         ]
     },
     install_requires=requirements,

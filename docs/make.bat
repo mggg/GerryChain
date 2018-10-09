@@ -9,7 +9,7 @@ if "%SPHINXBUILD%" == "" (
 )
 set SOURCEDIR=.
 set BUILDDIR=_build
-set SPHINXPROJ=RunDMCMC
+set SPHINXPROJ=GerryChain
 
 if "%1" == "" goto help
 

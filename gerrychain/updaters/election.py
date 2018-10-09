@@ -1,6 +1,6 @@
 import math
 
-from rundmcmc.updaters.tally import DataTally
+from gerrychain.updaters.tally import DataTally
 
 
 class Election:

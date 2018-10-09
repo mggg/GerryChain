@@ -10,7 +10,7 @@ import pysal
 from networkx.readwrite import json_graph
 from shapely.ops import cascaded_union
 
-from rundmcmc.utm import from_latlon
+from gerrychain.utm import from_latlon
 
 
 def utm_of_point(point):

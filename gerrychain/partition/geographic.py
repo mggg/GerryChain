@@ -1,5 +1,5 @@
-from rundmcmc.partition import Partition
-from rundmcmc.updaters import (boundary_nodes, cut_edges, exterior_boundaries,
+from gerrychain.partition import Partition
+from gerrychain.updaters import (boundary_nodes, cut_edges, exterior_boundaries,
                                interior_boundaries, perimeter, polsby_popper,
                                Tally, cut_edges_by_part)
 

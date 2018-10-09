@@ -4,7 +4,7 @@
 # You can set these variables from the command line.
 SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
-SPHINXPROJ    = RunDMCMC
+SPHINXPROJ    = GerryChain
 SOURCEDIR     = .
 BUILDDIR      = _build
 

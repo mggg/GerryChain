@@ -2,7 +2,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from rundmcmc.output.output import SlimPValueReport
+from gerrychain.output.output import SlimPValueReport
 
 
 @pytest.fixture

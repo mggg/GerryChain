@@ -1,7 +1,7 @@
-from rundmcmc.updaters import cut_edges, cut_edges_by_part
-from rundmcmc.partition import Partition
-from rundmcmc.validity import single_flip_contiguous, no_vanishing_districts
-from rundmcmc.defaults import DefaultChain, Grid
+from gerrychain.updaters import cut_edges, cut_edges_by_part
+from gerrychain.partition import Partition
+from gerrychain.validity import single_flip_contiguous, no_vanishing_districts
+from gerrychain.defaults import DefaultChain, Grid
 
 # This is copied and pasted, but should be done with some proper
 # pytest configuration instead:
