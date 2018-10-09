@@ -54,9 +54,9 @@ Example
 Installation
 ============
 
-To install RunDMCMC, we currently recommend cloning the repository and
+To install GerryChain, we currently recommend cloning the repository and
 installing a development version manually::
 
-    git clone https://github.com/gerrymandr/RunDMCMC.git
-    cd RunDMCMC
+    git clone https://github.com/mggg/gerrychain.git
+    cd gerrychain
     python3 setup.py develop
