@@ -3,11 +3,11 @@
 Overview of the Chain
 =====================
 
-RunDMCMC helps in analyzing districting plans via random walks. This is done
+GerryChain helps in analyzing districting plans via random walks. This is done
 via a simple, but extendable, Markov chain. This is a brief, non-technical
 overview of the chain.
 
-The intended purpose of RunDMCMC is to analyze districting plans for
+The intended purpose of GerryChain is to analyze districting plans for
 gerrymandering. Given an initial districting plan, making small, random changes
 to the plan gives some sense of what the initial plan looks like *in context*.
 The hope is that partisan gerrymandering can be detected by observing that
@@ -17,7 +17,7 @@ certain plans are extreme outliers in context with related plans.
 Parts of the chain
 ------------------
 
-RunDMCMC performs a random walk over all partitions of a graph.  It does this
+GerryChain performs a random walk over all partitions of a graph.  It does this
 with a simple Markov chain. The chain's behavior is entirely directed by four
 modular layers: **proposals**, **updaters**, **validators**, and **acceptance
 functions**. These layers are merely functions provided by the user, so the
