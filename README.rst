@@ -31,7 +31,7 @@ Example
 =======
 
 
-..code-block:: python
+.. code-block:: python
     from gerrychain import MarkovChain, GeographicPartition
     from gerrychain.validity import single_flip_contiguous
     from gerrychain.accept import always_accept
@@ -49,6 +49,7 @@ Example
 
     for partition in chain:
         print(polsby_popper(partition))
+
 
 Installation
 ============
