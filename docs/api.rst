@@ -18,8 +18,6 @@ Chain and related classes
 
 .. autoclass:: gerrychain.partition.Partition
 
-.. autoclass:: gerrychain.validity.Validator
-
 Proposals
 ---------
 
