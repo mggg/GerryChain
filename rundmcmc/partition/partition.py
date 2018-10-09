@@ -3,7 +3,6 @@ import json
 
 import networkx
 
-from rundmcmc.proposals import max_edge_cuts
 from rundmcmc.updaters import flows_from_changes, compute_edge_flows, cut_edges
 
 
@@ -41,7 +40,7 @@ class Partition:
         if not updaters:
             updaters = dict()
 
-        self.updaters = {**self.default_updaters, **updaters}
+        self.updaters = self.default_updaters.update(updaters)
 
         self.parent = None
         self.flips = None
@@ -51,8 +50,6 @@ class Partition:
         self.parts = collections.defaultdict(set)
         for node, part in self.assignment.items():
             self.parts[part].add(node)
-
-        self.max_edge_cuts = max_edge_cuts(self)
 
     def _from_parent(self, parent, flips):
         self.parent = parent
@@ -65,8 +62,6 @@ class Partition:
         self.updaters = parent.updaters
 
         self._update_flows()
-
-        self.max_edge_cuts = parent.max_edge_cuts
 
     def __repr__(self):
         number_of_parts = len(self)
@@ -99,7 +94,7 @@ class Partition:
 
     def crosses_parts(self, edge):
         """Answers the question "Does this edge cross from one part of the
-        partition to another?
+        partition to another?"
 
         :param edge: tuple of node IDs
         :rtype: bool

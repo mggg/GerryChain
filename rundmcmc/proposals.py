@@ -1,16 +1,16 @@
 import random
 
 
-# def propose_any_node_flip(partition):
-#     """Propose to pick a random node to a
-#     random part
+def propose_any_node_flip(partition):
+    """Propose to pick a random node to a
+    random part
 
-#     """
+    """
 
-#     node = random.choice(tuple(partition.assignment.keys()))
-#     newpart = random.choice(tuple(partition.assignment.values()))
+    node = random.choice(tuple(partition.assignment.keys()))
+    newpart = random.choice(partition.parts)
 
-#     return {node: newpart}
+    return {node: newpart}
 
 
 # def propose_random_flip_with_loops(partition):
@@ -82,72 +82,48 @@ import random
 #     return proposal
 
 
-# def propose_flip_every_district(partition):
-#     """Proposes a random boundary flip for each district in the partition.
+def propose_flip_every_district(partition):
+    """Proposes a random boundary flip for each district in the partition.
 
-#     :partition: The current partition to propose a flip from.
-#     :returns: a dictionary with the flipped nodes mapped to their new assignments
+    :partition: The current partition to propose a flip from.
+    :returns: a dictionary with the flipped nodes mapped to their new assignments
 
-#     """
-#     proposal = dict()
+    """
+    proposal = dict()
 
-#     for dist_edges in partition['cut_edges_by_part'].values():
-#         edge = random.choice(list(dist_edges))
+    for dist_edges in partition['cut_edges_by_part'].values():
+        edge = random.choice(list(dist_edges))
 
-#         index = random.choice((0, 1))
-#         flipped_node, other_node = edge[index], edge[1 - index]
-#         flip = {flipped_node: partition.assignment[other_node]}
+        index = random.choice((0, 1))
+        flipped_node, other_node = edge[index], edge[1 - index]
+        flip = {flipped_node: partition.assignment[other_node]}
 
-#         proposal.update(flip)
+        proposal.update(flip)
 
-#     return proposal
-
-
-# def propose_chunk_flip(partition):
-#     """Chooses a random boundary node and proposes to flip it and all of its neighbors
-
-#     :partition: The current partition to propose a flip from.
-#     :returns: a dictionary with the flipped nodes mapped to their new assignments
-
-#     """
-#     proposal = dict()
-
-#     edge = random.choice(tuple(partition['cut_edges']))
-#     index = random.choice((0, 1))
-
-#     flipped_node = edge[index]
-
-#     valid_flips = [nbr for nbr in partition.graph.neighbors(
-#         flipped_node) if partition.assignment[nbr] != partition.assignment[flipped_node]]
-
-#     for flipped_neighbor in valid_flips:
-#         proposal.update({flipped_neighbor: partition.assignment[flipped_node]})
-
-#     return proposal
+    return proposal
 
 
-# def propose_flip_every_edge_of_district(partition):
-#     """Chooses a random district to manipulate. Each edge on the boundary is
-#        incident to a node in this district and a node outside of it. For each
-#        edge, toss a fair coin. If tails, do nothing. If heads, toss a second
-#        fair coin. If heads, add the node outside of this district to it. If
-#        tails, add the node inside of this district to the other one.
+def propose_chunk_flip(partition):
+    """Chooses a random boundary node and proposes to flip it and all of its neighbors
 
-#     :partition: The current partition to propose a flip from.
-#     :returns: a dictionary with the flipped nodes mapped to their new assignments
+    :partition: The current partition to propose a flip from.
+    :returns: a dictionary with the flipped nodes mapped to their new assignments
 
-#     """
-#     proposal = dict()
+    """
+    proposal = dict()
 
-#     edges = random.choice(list(partition['cut_edges_by_part'].values()))
+    edge = random.choice(tuple(partition['cut_edges']))
+    index = random.choice((0, 1))
 
-#     for edge in edges:
-#         if(random.random() > .5):
-#             index = random.choice((0, 1))
-#             flipped_node, other_node = edge[index], edge[1 - index]
-#             proposal.update({flipped_node: partition.assignment[other_node]})
+    flipped_node = edge[index]
 
-#     return proposal
+    valid_flips = [nbr for nbr in partition.graph.neighbors(
+        flipped_node) if partition.assignment[nbr] != partition.assignment[flipped_node]]
+
+    for flipped_neighbor in valid_flips:
+        proposal.update({flipped_neighbor: partition.assignment[flipped_node]})
+
+    return proposal
 
 
 # def propose_single_or_chunk(partition):
