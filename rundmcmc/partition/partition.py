@@ -40,7 +40,7 @@ class Partition:
         if not updaters:
             updaters = dict()
 
-        self.updaters = self.default_updaters.update(updaters)
+        self.updaters = {**self.default_updaters, **updaters}
 
         self.parent = None
         self.flips = None
@@ -94,7 +94,7 @@ class Partition:
 
     def crosses_parts(self, edge):
         """Answers the question "Does this edge cross from one part of the
-        partition to another?"
+        partition to another?
 
         :param edge: tuple of node IDs
         :rtype: bool
