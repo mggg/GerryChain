@@ -23,7 +23,7 @@ def propose_any_node_flip(partition):
 #     """
 #     # self loop
 #     numEdges = 2.0 * len(partition['cut_edges'])
-#     if random.random() < 1.0 - (numEdges * 1.0 / partition.max_edge_cuts):
+#     if random.random() < 1.0 - (numEdges * 1.0 / max_edge_cuts(partition)):
 #         return dict()
 
 #     flip = propose_random_flip(partition)
@@ -49,7 +49,7 @@ def propose_any_node_flip(partition):
 #     """
 #     # self loop
 #     numEdges = partition["metagraph_degree"]
-#     if random.random() < 1.0 - (numEdges * 1.0 / partition.max_edge_cuts):
+#     if random.random() < 1.0 - (numEdges * 1.0 / max_edge_cuts(partition)):
 #         return dict()
 
 #     flip = propose_random_flip(partition)
