@@ -24,6 +24,13 @@ def identify_utm_zone(df):
 
 
 def reprojected(df):
+    """Returns a copy of `df`, projected into the coordinate reference system of a suitable
+        `Universal Transverse Mercator`_ zone.
+    :param df: :class:`geopandas.GeoDataFrame`
+    :rtype: :class:`geopandas.GeoDataFrame`
+
+    .. _`Universal Transverse Mercator`: https://en.wikipedia.org/wiki/UTM_coordinate_system
+    """
     utm = identify_utm_zone(df)
     return df.to_crs(
         f"+proj=utm +zone={utm} +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
@@ -49,15 +56,29 @@ class Graph(networkx.Graph):
 
     @classmethod
     def from_geodataframe(cls, dataframe, cols_to_add=None, reproject=True):
-        """Construct initial graph from information about neighboring VTDs.
+        """Creates the adjacency :class:`Graph` of geometries described by `dataframe`.
+        The areas of the polygons are included as node attributes (with key `area`).
+        The shared perimeter of neighboring polygons are included as edge attributes
+        (with key `shared_perim`).
+        Nodes corresponding to polygons on the boundary of the union of all the geometries
+        (e.g., the state, if your dataframe describes VTDs) have a `boundary_node` attribute
+        (set to `True`) and a `boundary_perim` attribute with the length of this "exterior"
+        boundary.
 
-        :df: Geopandas dataframe.
-        :returns: NetworkX Graph.
+        By default, areas and lengths are computed in a UTM projection suitable for the
+        geometries. This prevents the bizarro area and perimeter values that show up when
+        you accidentally do computations in Longitude-Latitude coordinates. If the user
+        specifies `reproject=False`, then the areas and lengths will be computed in the
+        GeoDataFrame's current coordinate reference system. This option is for users who
+        have a preferred CRS they would like to use.
+
+        :param dataframe: :class:`geopandas.GeoDataFrame`
+        :param cols_to_add: The columns of `dataframe` that you want to add as
+        :return: The adjacency graph of the geometries from `dataframe`.
+        :rtype: :class:`Graph`
         """
         # Project the dataframe to an appropriate UTM projection unless
-        # explicitly told not to. This will prevent the bizarro area and
-        # perimeter values that show up when you do computations in
-        # Long-Lat coordinates.
+        # explicitly told not to.
         if reproject:
             df = reprojected(dataframe)
         else:

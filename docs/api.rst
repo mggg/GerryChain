@@ -11,8 +11,8 @@ introduction <introduction>`.
 .. contents:: Table of Contents
     :local:
 
-Graphs
-------
+Adjacency Graphs
+----------------
 
 .. automodule:: gerrychain.graph
 

@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 GerryChain
-========
+==========
 
 GerryChain is a library for using `Markov Chain Monte Carlo`_ methods to study the problem
 of political redistricting. It was created by the `Metric Geometry and
