@@ -18,5 +18,8 @@ class GeographicPartition(Partition):
 
     @classmethod
     def from_file(cls, filename, assignment, updaters, columns=None):
+        """Create a :class:`GeographicPartition` from an ESRI Shapefile, a GeoPackage,
+        a GeoJSON file, or any other file that the `fiona` library can handle.
+        """
         graph = Graph.from_file(filename, columns)
         cls(graph, assignment, updaters)

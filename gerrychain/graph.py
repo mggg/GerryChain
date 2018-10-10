@@ -1,4 +1,6 @@
+import enum
 import json
+import warnings
 from collections import Counter
 
 import geopandas as gp
@@ -37,6 +39,31 @@ def reprojected(df):
     )
 
 
+class Adjacency(enum.Enum):
+    """There are two concepts of "adjacency" that one can apply when constructing
+    an adjacency graph.
+
+    - **Rook adjacency**: Two polygons are adjacent if they share one or more *edges*.
+    - **Queen adjacency**: Two polygons are adjacent if they share one or more *vertices*.
+
+    All Rook edges are Queen edges, but not the other way around. Many congressional
+    districts are only Queen-contiguous (i.e., they consist of two polygons connected
+    at a single corner).
+    """
+    Rook = "rook"
+    Queen = "queen"
+
+
+adjacency_functions = {
+    Adjacency.Rook: pysal.weights.Rook.from_dataframe,
+    Adjacency.Queen: pysal.weights.Queen.from_dataframe,
+}
+
+
+def get_neighbors(df, adjacency):
+    return adjacency_functions[adjacency](df, geom_col=df.geometry.name).neighbors
+
+
 class Graph(networkx.Graph):
     @classmethod
     def from_json(cls, json_file):
@@ -55,7 +82,7 @@ class Graph(networkx.Graph):
         return cls.from_geodataframe(df, cols_to_add, reproject)
 
     @classmethod
-    def from_geodataframe(cls, dataframe, cols_to_add=None, reproject=True):
+    def from_geodataframe(cls, dataframe, adj=Adjacency.Rook, reproject=True):
         """Creates the adjacency :class:`Graph` of geometries described by `dataframe`.
         The areas of the polygons are included as node attributes (with key `area`).
         The shared perimeter of neighboring polygons are included as edge attributes
@@ -73,7 +100,8 @@ class Graph(networkx.Graph):
         have a preferred CRS they would like to use.
 
         :param dataframe: :class:`geopandas.GeoDataFrame`
-        :param cols_to_add: The columns of `dataframe` that you want to add as
+        :param adj: (optional) The adjacency type to use. Default is `Adjacency.Rook`.
+            Other options are `Adjacency.Queen`, "rook" or "queen".
         :return: The adjacency graph of the geometries from `dataframe`.
         :rtype: :class:`Graph`
         """
@@ -85,9 +113,7 @@ class Graph(networkx.Graph):
             df = dataframe
 
         # Generate rook neighbor lists from dataframe.
-        neighbors = pysal.weights.Rook.from_dataframe(
-            df, geom_col=df.geometry.name
-        ).neighbors
+        neighbors = get_neighbors(df, adj)
 
         # Add shared ("interior") perimeters to edges between nodes
         adjacency_dict = neighbors_with_shared_perimeters(neighbors, df)
@@ -100,10 +126,6 @@ class Graph(networkx.Graph):
         areas = df["geometry"].area.to_dict()
         networkx.set_node_attributes(graph, name="area", values=areas)
 
-        # Add the other data
-        if cols_to_add is not None:
-            graph.add_data(df, cols_to_add)
-
         return graph
 
     def add_data(self, df, columns=None):
@@ -114,9 +136,13 @@ class Graph(networkx.Graph):
         :param columns: (optional) List of dataframe column names to add.
         :return: Nothing.
         """
+
         if columns is None:
             columns = df.columns
-        column_dictionaries = df[columns].to_dict("index")
+
+        check_dataframe(df[columns])
+
+        column_dictionaries = df.to_dict("index")
         networkx.set_node_attributes(self, column_dictionaries)
 
     def assignment(self, node_attribute_key):
@@ -151,6 +177,8 @@ class Graph(networkx.Graph):
 
         if columns is not None:
             df = df[columns]
+
+        check_dataframe(df)
 
         column_dictionaries = df.to_dict()
 
@@ -210,7 +238,7 @@ def neighbors_with_shared_perimeters(neighbors, df):
     :df: Geodataframe containing geometry information.
     :returns: A dict of dicts of the following form::
 
-        { node: { neighbor: { shared_perim: <value> }}}`
+        { node: { neighbor: { shared_perim: <value> }}}
 
     """
     adjacencies = {}
@@ -222,3 +250,9 @@ def neighbors_with_shared_perimeters(neighbors, df):
         adjacencies[shape] = pd.DataFrame(shared_perim).to_dict("index")
 
     return adjacencies
+
+
+def check_dataframe(df):
+    for column in df.columns:
+        if sum(df[column]) > 0:
+            warnings.warn("NA values found in column {}!".format(column))
