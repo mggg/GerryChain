@@ -1,4 +1,4 @@
-Developer Interface
+API Reference
 ===================
 
 .. module:: gerrychain
@@ -11,20 +11,29 @@ introduction <introduction>`.
 .. contents:: Table of Contents
     :local:
 
-Chain and related classes
+Graphs
+------
+
+.. automodule:: gerrychain.graph
+
+Partitions
+----------
+
+.. automodule:: gerrychain.partition
+
+
+Markov Chains
 -------------------------
 
 .. autoclass:: gerrychain.chain.MarkovChain
-
-.. autoclass:: gerrychain.partition.Partition
 
 Proposals
 ---------
 
 .. automodule:: gerrychain.proposals
 
-Validators
-----------
+Binary constraints
+------------------
 
 .. automodule:: gerrychain.validity
 
@@ -32,8 +41,3 @@ Updaters
 --------
 
 .. automodule:: gerrychain.updaters
-
-Graph constructors and data handlers
-------------------------------------
-
-.. automodule:: gerrychain.make_graph

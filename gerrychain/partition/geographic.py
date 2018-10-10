@@ -1,3 +1,4 @@
+# from gerrychain.graph import Graph
 from gerrychain.partition import Partition
 from gerrychain.updaters import (Tally, boundary_nodes, cut_edges,
                                  cut_edges_by_part, exterior_boundaries,
@@ -17,10 +18,12 @@ class GeographicPartition(Partition):
 
     # @classmethod
     # def from_file(cls, filename, assignment, columns_to_tally=None):
-    #     raise NotImplementedError
+    #     graph = construct_graph_from_file(filename, cols_to_add=columns_to_tally)
 
-    #     # if isinstance(assignment, str):
-    #     #     assignment = {node: graph.nodes[node][assignment]
-    #     #                   for node in graph.nodes}
-    #     # elif not isinstance(assignment, dict):
-    #     #     raise TypeError("Assignment must be a dict or a node attribute key")
+    #     if isinstance(assignment, str):
+    #         assignment = {node: graph.nodes[node][assignment]
+    #                       for node in graph.nodes}
+    #     elif not isinstance(assignment, dict):
+    #         raise TypeError("Assignment must be a dict or a node attribute key")
+
+    # def from_geodataframe(cls, df, assignment):
