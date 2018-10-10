@@ -49,6 +49,11 @@ class Adjacency(enum.Enum):
     All Rook edges are Queen edges, but not the other way around. Many congressional
     districts are only Queen-contiguous (i.e., they consist of two polygons connected
     at a single corner).
+
+    The names Rook and Queen come from the way Rook and Queen pieces in Chess_ are
+    allowed to move about the board.
+
+    .. _Chess: https://en.wikipedia.org/wiki/Chess
     """
     Rook = "rook"
     Queen = "queen"
