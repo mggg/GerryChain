@@ -5,14 +5,14 @@ import networkx
 import pytest
 
 from gerrychain.chain import MarkovChain
+from gerrychain.constraints import Validator, no_vanishing_districts
 from gerrychain.partition import Partition
 from gerrychain.proposals import propose_random_flip
 from gerrychain.updaters import (Election, Tally, boundary_nodes,
-                               cut_edges_by_part, exterior_boundaries,
-                               exterior_boundaries_as_a_set,
-                               interior_boundaries, perimeter)
+                                 cut_edges_by_part, exterior_boundaries,
+                                 exterior_boundaries_as_a_set,
+                                 interior_boundaries, perimeter)
 from gerrychain.updaters.election import ElectionResults
-from gerrychain.validity import Validator, no_vanishing_districts
 
 
 @pytest.fixture

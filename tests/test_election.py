@@ -2,7 +2,7 @@
 
 # from gerrychain.defaults import DefaultChain, Grid
 # from gerrychain.updaters.election import Election
-# from gerrychain.validity import single_flip_contiguous, no_vanishing_districts
+# from gerrychain.constraints import single_flip_contiguous, no_vanishing_districts
 
 # def test_election_results_match_the_naive_values():
 #     election = Election("election", {"Democratic": "D", "Republican": "R"})

@@ -7,9 +7,9 @@ GerryChain
 ==========
 
 GerryChain is a library for using `Markov Chain Monte Carlo`_ methods to study the problem
-of political redistricting. It was created by the `Metric Geometry and
-Gerrymandering Group`_ (MGGG) in their `Voting Rights Data Institute`_ (VRDI)
-program. The project is hosted in the `MGGG/GerryChain`_ GitHub repo.
+of political redistricting. Development of the library began during the
+`Voting Rights Data Institute`_ (VRDI). The project is hosted in the `MGGG/GerryChain`_ GitHub
+repository.
 
 .. _`Markov Chain Monte Carlo`: https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo
 .. _`Metric Geometry and Gerrymandering Group`: https://www.mggg.org/
@@ -30,14 +30,13 @@ later parts describe how to customize parts of the chain.
     user/quickstart
     user/examples
 
-Developers' Guide
+API Reference
 -----------------
 
-These documents provide detailed references for classes and functions in
+This document provides detailed references for classes and functions in
 GerryChain.
 
 .. toctree::
     :maxdepth: 2
 
-    dev/layer_api
     api

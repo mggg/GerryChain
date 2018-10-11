@@ -1,10 +1,11 @@
-from collections import defaultdict
 import random
+from collections import defaultdict
 
-from gerrychain.updaters.tally import DataTally
-from gerrychain.partition import Partition
-from gerrychain.validity import single_flip_contiguous, no_vanishing_districts
+from gerrychain.constraints import (no_vanishing_districts,
+                                    single_flip_contiguous)
 from gerrychain.defaults import DefaultChain, Grid
+from gerrychain.partition import Partition
+from gerrychain.updaters.tally import DataTally
 
 
 def random_assignment(graph, num_districts):

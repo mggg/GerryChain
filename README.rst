@@ -33,7 +33,7 @@ Example
 
 .. code-block:: python
     from gerrychain import MarkovChain, GeographicPartition
-    from gerrychain.validity import single_flip_contiguous
+    from gerrychain.constraints import single_flip_contiguous
     from gerrychain.accept import always_accept
     from gerrychain.proposals import propose_random_flip
     from gerrychain.updaters.compactness import polsby_popper

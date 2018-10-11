@@ -35,7 +35,7 @@ Proposals
 Binary constraints
 ------------------
 
-.. automodule:: gerrychain.validity
+.. automodule:: gerrychain.constraints
 
 Updaters
 --------

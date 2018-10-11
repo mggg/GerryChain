@@ -3,9 +3,10 @@ from unittest.mock import MagicMock
 import networkx as nx
 import pytest
 
-from gerrychain.validity import (Validator, contiguous, districts_within_tolerance,
-                               fast_connected, single_flip_contiguous, SelfConfiguringLowerBound,
-                               no_vanishing_districts)
+from gerrychain.constraints import (SelfConfiguringLowerBound, Validator,
+                                    contiguous, districts_within_tolerance,
+                                    fast_connected, no_vanishing_districts,
+                                    single_flip_contiguous)
 
 
 class MockContiguousPartition:

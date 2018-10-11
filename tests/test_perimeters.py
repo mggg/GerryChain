@@ -1,8 +1,9 @@
 import math
 from collections import defaultdict
 
+from gerrychain.constraints import (no_vanishing_districts,
+                                    single_flip_contiguous)
 from gerrychain.defaults import DefaultChain, Grid
-from gerrychain.validity import no_vanishing_districts, single_flip_contiguous
 from gerrychain.updaters.compactness import compute_polsby_popper
 
 
