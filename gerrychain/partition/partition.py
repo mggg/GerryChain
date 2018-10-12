@@ -1,9 +1,8 @@
 import collections
-import json
 
-import networkx
-
-from gerrychain.updaters import flows_from_changes, compute_edge_flows, cut_edges
+from gerrychain.graph import Graph
+from gerrychain.updaters import (compute_edge_flows, cut_edges,
+                                 flows_from_changes)
 
 
 class Partition:
@@ -35,12 +34,17 @@ class Partition:
 
     def _first_time(self, graph, assignment, updaters):
         self.graph = graph
+
+        if isinstance(assignment, str):
+            assignment = graph.assignment(assignment)
+        elif not isinstance(assignment, dict):
+            raise TypeError("Assignment must be a dict or a node attribute key")
         self.assignment = assignment
 
-        if not updaters:
+        if updaters is None:
             updaters = dict()
-
-        self.updaters = {**self.default_updaters, **updaters}
+        self.updaters = self.default_updaters.copy()
+        self.updaters.update(updaters)
 
         self.parent = None
         self.flips = None
@@ -55,7 +59,8 @@ class Partition:
         self.parent = parent
         self.flips = flips
 
-        self.assignment = {**parent.assignment, **flips}
+        self.assignment = parent.assignment.copy()
+        self.assignment.update(flips)
 
         self.graph = parent.graph
         self.parts = parent.parts
@@ -124,18 +129,5 @@ class Partition:
         :param updaters: (optional) Dictionary of updater functions to
             attach to the partition, in addition to the default_updaters of `cls`.
         """
-        with open(graph_path) as f:
-            graph_data = json.load(f)
-        graph = networkx.readwrite.adjacency_graph(graph_data)
-
-        if isinstance(assignment, str):
-            assignment = {node: graph.nodes[node][assignment]
-                          for node in graph.nodes}
-        elif not isinstance(assignment, dict):
-            raise TypeError("Assignment must be a dict or a node attribute key")
-
-        if updaters is None:
-            updaters = dict()
-
-        updaters = cls.default_updaters.update(updaters)
+        graph = Graph.from_json(graph_path)
         return cls(graph, assignment, updaters)

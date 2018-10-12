@@ -1,7 +1,8 @@
-from gerrychain.updaters import cut_edges, cut_edges_by_part
-from gerrychain.partition import Partition
-from gerrychain.validity import single_flip_contiguous, no_vanishing_districts
+from gerrychain.constraints import (no_vanishing_districts,
+                                    single_flip_contiguous)
 from gerrychain.defaults import DefaultChain, Grid
+from gerrychain.partition import Partition
+from gerrychain.updaters import cut_edges, cut_edges_by_part
 
 # This is copied and pasted, but should be done with some proper
 # pytest configuration instead:
