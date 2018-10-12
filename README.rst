@@ -3,14 +3,8 @@ GerryChain
 ===============================
 
 
-.. image:: https://circleci.com/gh/gerrymandr/RunDMCMC.svg?style=svg
-    :target: https://circleci.com/gh/gerrymandr/RunDMCMC
-.. image:: https://codecov.io/gh/gerrymandr/RunDMCMC/branch/master/graph/badge.svg
-   :target: https://codecov.io/gh/gerrymandr/RunDMCMC
-.. image:: https://api.codacy.com/project/badge/Grade/b02dfe3d778b40f3890d228889feee52
-   :target: https://www.codacy.com/app/msarahan/RunDMCMC?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=gerrymandr/RunDMCMC&amp;utm_campaign=Badge_Grade
-.. image:: https://readthedocs.org/projects/rundmcmc/badge/?version=latest
-   :target: https://rundmcmc.readthedocs.io/en/latest
+.. image:: https://readthedocs.org/projects/gerrychain/badge/?version=latest
+   :target: https://gerrychain.readthedocs.io/en/latest
    :alt: Documentation Status
 
 
@@ -18,37 +12,41 @@ This code implements exploration of districting plans, exploring
 the space around an initial districting plan to give some idea of the degree of
 gerrymandering.
 
-This package began as a Python rewrite of the chain C++ program
-(https://github.com/gerrymandr/cfp_mcmc), originally by Maria Chikina, Alan
-Frieze and Wesley Pegden, for their paper, "Assessing significance in a Markov
-chain without mixing" (http://www.pnas.org/content/114/11/2860).
+The development of this package began at the `Voting Rights Data Institute`_
+as a Python rewrite of the chain_ C++ program, originally by Maria Chikina, Alan
+Frieze and Wesley Pegden, for their paper, `"Assessing significance in a Markov
+chain without mixing"`_.
 
-- **Website (with documentation):** https://rundmcmc.readthedocs.io/en/latest/
-- **Bug reports:** https://github.com/gerrymandr/RunDMCMC/issues
+- **Website (with documentation):** https://gerrychain.readthedocs.io/en/latest/
+- **Bug reports:** https://github.com/mggg/gerrychain/issues
 
+
+.. _`Voting Rights Data Institute` http://gerrydata.org/
+.. _chain https://github.com/gerrymandr/cfp_mcmc
+.. _`"Assessing significance in a Markov chain without mixing"` http://www.pnas.org/content/114/11/2860)
 
 Example
 =======
 
-
 .. code-block:: python
-    from gerrychain import MarkovChain, GeographicPartition
-    from gerrychain.constraints import single_flip_contiguous
-    from gerrychain.accept import always_accept
+    from gerrychain import Graph, MarkovChain, GeographicPartition, Election
     from gerrychain.proposals import propose_random_flip
-    from gerrychain.updaters.compactness import polsby_popper
+    from gerrychain.accept import always_accept
+    from gerrychain.constraints import single_flip_contiguous    
+    from gerrychain.updaters.compactness import polsby_poppers
 
     pennsylvania = GeographicPartition.from_json_graph("./21/rook.json", assignment="CD113")
+    
     chain = MarkovChain(
-        propose_random_flip
-        single_flip_contiguous,
-        always_accept,
-        pennsylvania,
+        proposal=propose_random_flip,
+        is_valid=single_flip_contiguous,
+        accept=always_accept,
+        initial_state=pennsylvania,
         total_steps=1000
     )
 
-    for partition in chain:
-        print(polsby_popper(partition))
+    for districting_plan in chain:
+        print(polsby_popper(districting_plan))
 
 
 Installation

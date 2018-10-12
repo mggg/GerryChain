@@ -259,5 +259,5 @@ def neighbors_with_shared_perimeters(neighbors, df):
 
 def check_dataframe(df):
     for column in df.columns:
-        if sum(df[column]) > 0:
+        if sum(df[column].isna()) > 0:
             warnings.warn("NA values found in column {}!".format(column))
