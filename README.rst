@@ -22,14 +22,23 @@ The development of this package began at the `Voting Rights Data Institute`_
 as a Python rewrite of the chain_ C++ program, originally by Maria Chikina, Alan
 Frieze and Wesley Pegden, for their paper `"Assessing significance in a Markov chain without mixing"`_.
 
-- **Website (with documentation):** https://gerrychain.readthedocs.io/en/latest/
-- **Bug reports:** https://github.com/mggg/gerrychain/issues
-- **Contributions welcome!** https://github.com/mggg/gerrychain/pulls
+.. _`Voting Rights Data Institute`: http://gerrydata.org/
+.. _chain: https://github.com/gerrymandr/cfp_mcmc
+.. _`"Assessing significance in a Markov chain without mixing"`: http://www.pnas.org/content/114/11/2860
+.. _`Markov chain Monte Carlo`: https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo
 
-.. _Voting Rights Data Institute: http://gerrydata.org/
-.. _chain: https://github.com/gerrymandr/cfp_mcmc/
-.. _"Assessing significance in a Markov chain without mixing": http://www.pnas.org/content/114/11/2860
-.. _Markov chain Monte Carlo: https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo
+
+Useful links
+============
+
+- `Documentation`_ <https://gerrychain.readthedocs.io/en/latest/>`_
+- `Bug reports and feature requests`_ <https://github.com/mggg/gerrychain/issues>`_
+- `Contributions welcome!`_
+
+.. _`Documentation`: https://gerrychain.readthedocs.io/en/latest/
+.. _`Bug reports and feature requests`: https://github.com/mggg/gerrychain/issues
+.. _`Contributions welcome!`: https://github.com/mggg/gerrychain/pulls
+
 
 Example
 =======
