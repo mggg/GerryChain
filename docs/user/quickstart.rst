@@ -8,7 +8,7 @@ This guide shows you how to start generating ensembles with GerryChain, **assumi
 a cleaned shapefile with all the necessary data**. This is an enormous assumption; collecting and cleaning
 geospatial data is a challenging process with many possible points of failure.
 
-Suppose we have a shapefile called ``vtds.shp`` containing the `2010 Tiger/Line Voting Tabulation District (VTD)`_
+Suppose we have a shapefile called ``vtds.shp`` containing the 2010 Tiger/Line Voting Tabulation District (VTD)_
 geometries of our favorite state or municipality, along with the following data columns:
 
 - ``POP10``: Population counts for each VTD
@@ -79,9 +79,8 @@ when your adjacency graph and districting plan data are coming from two separate
 Running a chain
 ===============
 
-Now that we have our initial partition, we can configure and run a
-:class:`~gerrychain.MarkovChain <Markov Chain>`. Let's configure a Markov chain
-of just a thousand steps, to make sure everything works properly:
+Now that we have our initial partition, we can configure and run a :class:`~gerrychain.MarkovChain<Markov Chain>`. Let's configure a Markov chain
+of just a thousand steps, to make sure everything works properly::
 
     from gerrychain import MarkovChain
     from gerrychain.constraints import Validator, single_flip_contiguous

@@ -15,29 +15,34 @@ Adjacency Graphs
 ----------------
 
 .. automodule:: gerrychain.graph
+   :members:
 
 Partitions
 ----------
 
 .. automodule:: gerrychain.partition
-
+   :members:
 
 Markov Chains
 -------------------------
 
 .. autoclass:: gerrychain.chain.MarkovChain
+   :members:
 
 Proposals
 ---------
 
 .. automodule:: gerrychain.proposals
+   :members:
 
 Binary constraints
 ------------------
 
 .. automodule:: gerrychain.constraints
+   :members:
 
 Updaters
 --------
 
 .. automodule:: gerrychain.updaters
+   :members:
