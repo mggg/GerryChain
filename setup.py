@@ -14,7 +14,7 @@ requirements = [
 ]
 
 setup(
-    name="GerryChain",
+    name="gerrychain",
     description="Use Markov chain Monte Carlo to analyze districting plans and gerrymanders",
     author="Metric Geometry and Gerrymandering Group",
     author_email="gerrymandr@gmail.com",
@@ -24,11 +24,11 @@ setup(
     packages=find_packages(exclude=("tests",)),
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
-    entry_points={"console_scripts": ["gerrychain=gerrychain.__main__:main"]},
     install_requires=requirements,
     keywords="GerryChain",
     classifiers=[
-        "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3.6",
+        "Operating System :: OS Independent",
+        "License :: OSI Approved :: GNU Affero General Public License v3",
     ],
 )
