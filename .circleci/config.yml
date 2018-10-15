@@ -34,7 +34,6 @@ jobs:
             conda build --no-test .
             conda install --use-local gerrychain
             pip install codecov
-            pip install utm
 
       - save_cache:
           paths:
