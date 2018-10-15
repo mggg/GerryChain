@@ -1,5 +1,7 @@
 from setuptools import find_packages, setup
 
+import versioneer
+
 with open("./README.rst") as f:
     long_description = f.read()
 
@@ -20,7 +22,8 @@ setup(
     long_description_content_type="text/x-rst",
     url="https://github.com/mggg/GerryChain",
     packages=find_packages(exclude=("tests",)),
-    version="0.2.0",
+    version=versioneer.get_version(),
+    cmdclass=versioneer.get_cmdclass(),
     install_requires=requirements,
     keywords="GerryChain",
     classifiers=[
