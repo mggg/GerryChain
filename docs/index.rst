@@ -25,10 +25,9 @@ later parts describe how to customize parts of the chain.
 .. toctree::
     :maxdepth: 1
 
-    user/intro
-    user/install
     user/quickstart
-    user/examples
+    user/install
+    user/intro
 
 API Reference
 -----------------
