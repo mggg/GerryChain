@@ -56,9 +56,6 @@ Useful links
 Installation
 ============
 
-To install GerryChain, we currently recommend cloning the repository and
-installing a development version manually::
+To install GerryChain from PyPI_, just run ``pip install gerrychain``.
 
-    git clone https://github.com/mggg/gerrychain.git
-    cd gerrychain
-    python3 setup.py develop
+.. _PyPI: https://pypi.org/

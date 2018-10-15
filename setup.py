@@ -14,7 +14,7 @@ requirements = [
 ]
 
 setup(
-    name="GerryChain",
+    name="gerrychain",
     description="Use Markov chain Monte Carlo to analyze districting plans and gerrymanders",
     author="Metric Geometry and Gerrymandering Group",
     author_email="gerrymandr@gmail.com",
