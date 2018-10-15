@@ -3,31 +3,53 @@ import math
 import networkx
 
 from gerrychain.partition import Partition
-from gerrychain.updaters import (Tally, cut_edges, cut_edges_by_part,
-                              perimeter, polsby_popper,
-                              exterior_boundaries, interior_boundaries,
-                              boundary_nodes)
+from gerrychain.updaters import (
+    Tally,
+    boundary_nodes,
+    cut_edges,
+    cut_edges_by_part,
+    exterior_boundaries,
+    interior_boundaries,
+    perimeter,
+    polsby_popper,
+)
 
 
 class Grid(Partition):
     """
-    Grid represents a grid partitioned into districts. It is useful for running
-    little experiments with the MarkovChain.
+    The :class:`Grid` class represents a grid partitioned into districts.
+    It is useful for running little experiments with GerryChain without needing to do
+    any data processing or cleaning to get started.
 
-    Example usage: `grid = Grid((10,10))`
+    Example usage::
+
+        grid = Grid((10,10))
+
+    The nodes of ``grid.graph`` are labelled by tuples ``(i,j)``, for ``0 <= i <= 10``
+    and ``0 <= j <= 10``. Each node has an ``area`` of 1 and each edge has ``shared_perim`` 1.
     """
-    default_updaters = {'cut_edges': cut_edges,
-                        'population': Tally('population'),
-                        'perimeter': perimeter,
-                        'exterior_boundaries': exterior_boundaries,
-                        'interior_boundaries': interior_boundaries,
-                        'boundary_nodes': boundary_nodes,
-                        'area': Tally('area', alias='area'),
-                        'polsby_popper': polsby_popper,
-                        'cut_edges_by_part': cut_edges_by_part}
 
-    def __init__(self, dimensions=None, with_diagonals=False, assignment=None,
-                 updaters=None, parent=None, flips=None):
+    default_updaters = {
+        "cut_edges": cut_edges,
+        "population": Tally("population"),
+        "perimeter": perimeter,
+        "exterior_boundaries": exterior_boundaries,
+        "interior_boundaries": interior_boundaries,
+        "boundary_nodes": boundary_nodes,
+        "area": Tally("area", alias="area"),
+        "polsby_popper": polsby_popper,
+        "cut_edges_by_part": cut_edges_by_part,
+    }
+
+    def __init__(
+        self,
+        dimensions=None,
+        with_diagonals=False,
+        assignment=None,
+        updaters=None,
+        parent=None,
+        flips=None,
+    ):
         """
         :dimensions: tuple (m,n) of the desired dimensions of the grid.
         :with_diagonals: (optional, defaults to False) whether to include diagonals
@@ -45,7 +67,9 @@ class Grid(Partition):
 
             if not assignment:
                 thresholds = tuple(math.floor(n / 2) for n in self.dimensions)
-                assignment = {node: color_quadrants(node, thresholds) for node in graph.nodes}
+                assignment = {
+                    node: color_quadrants(node, thresholds) for node in graph.nodes
+                }
 
             if not updaters:
                 updaters = dict()
@@ -84,18 +108,22 @@ def create_grid_graph(dimensions, with_diagonals):
     m, n = dimensions
     graph = networkx.generators.lattice.grid_2d_graph(m, n)
 
-    networkx.set_edge_attributes(graph, 1, 'shared_perim')
+    networkx.set_edge_attributes(graph, 1, "shared_perim")
 
     if with_diagonals:
-        nw_to_se = [((i, j), (i + 1, j + 1)) for i in range(m - 1) for j in range(n - 1)]
-        sw_to_ne = [((i, j + 1), (i + 1, j)) for i in range(m - 1) for j in range(n - 1)]
+        nw_to_se = [
+            ((i, j), (i + 1, j + 1)) for i in range(m - 1) for j in range(n - 1)
+        ]
+        sw_to_ne = [
+            ((i, j + 1), (i + 1, j)) for i in range(m - 1) for j in range(n - 1)
+        ]
         diagonal_edges = nw_to_se + sw_to_ne
         graph.add_edges_from(diagonal_edges)
         for edge in diagonal_edges:
-            graph.edges[edge]['shared_perim'] = 0
+            graph.edges[edge]["shared_perim"] = 0
 
-    networkx.set_node_attributes(graph, 1, 'population')
-    networkx.set_node_attributes(graph, 1, 'area')
+    networkx.set_node_attributes(graph, 1, "population")
+    networkx.set_node_attributes(graph, 1, "area")
 
     tag_boundary_nodes(graph, dimensions)
 
@@ -111,10 +139,10 @@ def tag_boundary_nodes(graph, dimensions):
     m, n = dimensions
     for node in graph.nodes:
         if node[0] in [0, m - 1] or node[1] in [0, n - 1]:
-            graph.nodes[node]['boundary_node'] = True
-            graph.nodes[node]['boundary_perim'] = get_boundary_perim(node, dimensions)
+            graph.nodes[node]["boundary_node"] = True
+            graph.nodes[node]["boundary_perim"] = get_boundary_perim(node, dimensions)
         else:
-            graph.nodes[node]['boundary_node'] = False
+            graph.nodes[node]["boundary_node"] = False
 
 
 def get_boundary_perim(node, dimensions):
@@ -140,8 +168,8 @@ def color_quadrants(node, thresholds):
 
 
 def grid_size(parition):
-    ''' This is a hardcoded population function
-    for the grid class'''
+    """ This is a hardcoded population function
+    for the grid class"""
 
     L = parition.as_list_of_lists()
     permit = [3, 4, 5]

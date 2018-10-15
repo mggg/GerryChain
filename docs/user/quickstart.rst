@@ -8,7 +8,7 @@ This guide shows you how to start generating ensembles with GerryChain, **assumi
 a cleaned shapefile with all the necessary data**. This is an enormous assumption; collecting and cleaning
 geospatial data is a challenging process with many possible points of failure.
 
-Suppose we have a shapefile called ``vtds.shp`` containing the `2010 Tiger/Line Voting Tabulation District (VTD)`_
+Suppose we have a shapefile called ``vtds.shp`` containing the 2010 Tiger/Line Voting Tabulation District (VTD)_
 geometries of our favorite state or municipality, along with the following data columns:
 
 - ``POP10``: Population counts for each VTD
@@ -41,7 +41,7 @@ GerryChain provides a :class:`~gerrychain.graph.Graph` class that encapsulates t
 
     vtds_graph = Graph.from_file("./vtds.shp", adjacency="queen")
 
-There are :class:`gerrychain.graph.Adjacency <two notions of adjacency>` that we can
+There are :class:`two notions of adjacency <gerrychain.graph.Adjacency>` that we can
 use to construct our graphs. Many actual U.S. Congressional Districts are only Queen-contiguous,
 so we use choose Queen contiguity in the above code example.
 
@@ -79,9 +79,8 @@ when your adjacency graph and districting plan data are coming from two separate
 Running a chain
 ===============
 
-Now that we have our initial partition, we can configure and run a
-:class:`~gerrychain.MarkovChain <Markov Chain>`. Let's configure a Markov chain
-of just a thousand steps, to make sure everything works properly:
+Now that we have our initial partition, we can configure and run a :class:`Markov chain <gerrychain.MarkovChain`. Let's configure a Markov chain
+of just a thousand steps, to make sure everything works properly::
 
     from gerrychain import MarkovChain
     from gerrychain.constraints import Validator, single_flip_contiguous
@@ -96,7 +95,7 @@ of just a thousand steps, to make sure everything works properly:
         total_steps=1000
     )
 
-For more information on the parameters we passed, see :module:`gerrychain.chain <the documentation>`.
+For more information on the parameters we passed, see :module:`the documentation <gerrychain.chain>`.
 
 Now we're ready to actually run the chain. The GerryChain :class:`~gerrychain.MarkovChain` is
 an iterator that yields each state in the ensemble as it is created. This lets the user loop over

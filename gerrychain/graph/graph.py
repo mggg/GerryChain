@@ -1,7 +1,5 @@
-import enum
 import json
 import warnings
-from collections import Counter
 
 import geopandas as gp
 import networkx
@@ -9,88 +7,8 @@ import pandas as pd
 from networkx.readwrite import json_graph
 from shapely.ops import cascaded_union
 
-from gerrychain.utm import from_latlon
-
-try:
-    import libpysal
-except ImportError:
-    try:
-        import pysal.lib as libpysal
-    except ImportError:
-        import pysal as libpysal
-
-
-def utm_of_point(point):
-    return from_latlon(point.y, point.x)[2]
-
-
-def identify_utm_zone(df):
-    wgs_df = df.to_crs("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
-    utm_counts = Counter(utm_of_point(point) for point in wgs_df["geometry"].centroid)
-    # most_common returns a list of tuples, and we want the 0,0th entry
-    most_common = utm_counts.most_common(1)[0][0]
-    return most_common
-
-
-def reprojected(df):
-    """Returns a copy of `df`, projected into the coordinate reference system of a suitable
-        `Universal Transverse Mercator`_ zone.
-    :param df: :class:`geopandas.GeoDataFrame`
-    :rtype: :class:`geopandas.GeoDataFrame`
-
-    .. _`Universal Transverse Mercator`: https://en.wikipedia.org/wiki/UTM_coordinate_system
-    """
-    utm = identify_utm_zone(df)
-    return df.to_crs(
-        f"+proj=utm +zone={utm} +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
-    )
-
-
-class Adjacency(enum.Enum):
-    """There are two concepts of "adjacency" that one can apply when constructing
-    an adjacency graph.
-
-    - **Rook adjacency**: Two polygons are adjacent if they share one or more *edges*.
-    - **Queen adjacency**: Two polygons are adjacent if they share one or more *vertices*.
-
-    All Rook edges are Queen edges, but not the other way around. Many congressional
-    districts are only Queen-contiguous (i.e., they consist of two polygons connected
-    at a single corner).
-
-    The names Rook and Queen come from the way Rook and Queen pieces in Chess_ are
-    allowed to move about the board.
-
-    .. _Chess: https://en.wikipedia.org/wiki/Chess
-    """
-
-    Rook = "rook"
-    Queen = "queen"
-
-
-class UnrecognizedAdjacencyError(Exception):
-    pass
-
-
-adjacencies = {
-    "rook": libpysal.weights.Rook,
-    "queen": libpysal.weights.Queen,
-    Adjacency.Rook: libpysal.weights.Rook,
-    Adjacency.Queen: libpysal.weights.Queen,
-}
-
-
-def get_neighbors(df, adjacency):
-    if not isinstance(adjacency, libpysal.weights.W):
-        try:
-            adjacency = adjacencies[adjacency]
-        except KeyError:
-            raise UnrecognizedAdjacencyError(
-                "The adjacency parameter provided is not supported. Note: If you wish "
-                "to use spatial weights other than Rook or Queen, you may pass any "
-                "pysal weight (e.g., libpysal.weights.KNN for K-nearest neighbors) as "
-                "the adjacency parameter."
-            )
-    return adjacency.from_dataframe(df).neighbors
+from .adjacency import Adjacency, get_neighbors
+from .geo import reprojected
 
 
 class Graph(networkx.Graph):
@@ -129,8 +47,9 @@ class Graph(networkx.Graph):
         have a preferred CRS they would like to use.
 
         :param dataframe: :class:`geopandas.GeoDataFrame`
-        :param adj: (optional) The adjacency type to use. Default is `Adjacency.Rook`.
-            Other options are `Adjacency.Queen`, "rook" or "queen".
+        :param adjacency: (optional) The adjacency type to use. Default is `Adjacency.Rook`.
+            Other options are `Adjacency.Queen`, "rook" or "queen". The user may also pass
+            in any :module:`pysal` weight (e.g., libpysal.weights.KNN for K-nearest neighbors).
         :return: The adjacency graph of the geometries from `dataframe`.
         :rtype: :class:`Graph`
         """

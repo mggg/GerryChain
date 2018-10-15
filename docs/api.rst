@@ -14,30 +14,46 @@ introduction <introduction>`.
 Adjacency Graphs
 ----------------
 
-.. automodule:: gerrychain.graph
+.. autoclass:: gerrychain.Graph
+
+.. autoclass:: gerrychain.graph.Adjacency
+   :members:
 
 Partitions
 ----------
 
 .. automodule:: gerrychain.partition
-
+   :members:
 
 Markov Chains
 -------------------------
 
 .. autoclass:: gerrychain.chain.MarkovChain
+   :members:
 
 Proposals
 ---------
 
 .. automodule:: gerrychain.proposals
+   :members:
 
 Binary constraints
 ------------------
 
 .. automodule:: gerrychain.constraints
+   :members:
 
 Updaters
 --------
 
 .. automodule:: gerrychain.updaters
+   :members:
+
+Grids
+-----
+
+To make it easier to play around with GerryChain, we have provided a :class:`~gerrychain.defaults.Grid`
+class representing a partition of a grid graph. This is especially useful if you want to start experimenting
+but do not yet have a clean set of data and geometries to build your graph from.
+
+.. autoclass:: gerrychain.defaults.Grid

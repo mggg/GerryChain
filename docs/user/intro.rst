@@ -45,7 +45,7 @@ The layers function as follows:
     Acceptance functions
         Decide whether or not the chain *should* move to a new, valid state.
         This is useful for implementing techniques such as the
-        `Metropolis-Hastings`_ algorithm.
+        Metropolis-Hastings_ algorithm.
 
 
-.. _`Metropolis-Hastings`: <https://en.wikipedia.org/wiki/Metropolis%E2%80%93Hastings_algorithm>`
+.. _`Metropolis-Hastings`: https://en.wikipedia.org/wiki/Metropolis%E2%80%93Hastings_algorithm
