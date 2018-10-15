@@ -47,8 +47,9 @@ class Graph(networkx.Graph):
         have a preferred CRS they would like to use.
 
         :param dataframe: :class:`geopandas.GeoDataFrame`
-        :param adj: (optional) The adjacency type to use. Default is `Adjacency.Rook`.
-            Other options are `Adjacency.Queen`, "rook" or "queen".
+        :param adjacency: (optional) The adjacency type to use. Default is `Adjacency.Rook`.
+            Other options are `Adjacency.Queen`, "rook" or "queen". The user may also pass
+            in any :module:`pysal` weight (e.g., libpysal.weights.KNN for K-nearest neighbors).
         :return: The adjacency graph of the geometries from `dataframe`.
         :rtype: :class:`Graph`
         """
