@@ -1,6 +1,10 @@
+import math
 from collections import defaultdict
-from rundmcmc.defaults import Grid, DefaultChain
-from rundmcmc.validity import single_flip_contiguous, no_vanishing_districts
+
+from gerrychain.constraints import (no_vanishing_districts,
+                                    single_flip_contiguous)
+from gerrychain.defaults import DefaultChain, Grid
+from gerrychain.updaters.compactness import compute_polsby_popper
 
 
 def setup():
@@ -9,15 +13,15 @@ def setup():
     return grid, flipped_grid
 
 
-def test_perimeters_handles_flips_with_a_simple_grid():
+def test_perimeter_handles_flips_with_a_simple_grid():
     grid, flipped_grid = setup()
 
-    result = sorted(flipped_grid['perimeters'].values())
+    result = sorted(flipped_grid['perimeter'].values())
 
     assert result == [8, 8, 8, 10]
 
 
-def test_interior_perimeters_handles_flips_with_a_simple_grid():
+def test_interior_perimeter_handles_flips_with_a_simple_grid():
     grid, flipped_grid = setup()
 
     result = sorted(flipped_grid['interior_boundaries'].values())
@@ -55,12 +59,12 @@ def test_cut_edges_by_part_agrees_with_cut_edges_on_a_simple_grid():
 def test_tally_handles_flips_for_a_simple_grid():
     grid, flipped_grid = setup()
 
-    result = flipped_grid['areas']
+    result = flipped_grid['area']
 
     assert result == {0: 4, 1: 3, 2: 4, 3: 5}
 
 
-def test_perimeters_match_naive_perimeters_at_every_step():
+def test_perimeter_match_naive_perimeter_at_every_step():
     partition = Grid((10, 10), with_diagonals=True)
 
     chain = DefaultChain(partition, [single_flip_contiguous, no_vanishing_districts], 1000)
@@ -82,7 +86,7 @@ def test_perimeters_match_naive_perimeters_at_every_step():
                 interior[partition.assignment[node]] += partition.graph.edges[edge]['shared_perim']
         return interior
 
-    def expected_perimeters(partition):
+    def expected_perimeter(partition):
         interior_boundaries = get_interior_boundaries(partition)
         exterior_boundaries = get_exterior_boundaries(partition)
         expected = {part: interior_boundaries[part] + exterior_boundaries[part]
@@ -90,5 +94,11 @@ def test_perimeters_match_naive_perimeters_at_every_step():
         return expected
 
     for state in chain:
-        expected = expected_perimeters(state)
-        assert expected == state['perimeters']
+        expected = expected_perimeter(state)
+        assert expected == state['perimeter']
+
+
+def test_polsby_popper_returns_nan_when_perimeter_is_0():
+    area = 10
+    perimeter = 0
+    assert compute_polsby_popper(area, perimeter) is math.nan

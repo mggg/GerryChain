@@ -19,23 +19,22 @@ jobs:
           command: |
             pip install flake8-colors
             flake8 --format="$FORMAT" --config=./setup.cfg --show-source
-
           environment:
             FORMAT: "${cyan}%(path)s${reset}:${yellow_bold}%(row)d${reset}:${green_bold}%(col)d${reset}: ${red_bold}%(code)s${reset} %(text)s"
 
       - run:
           name: install dependencies
           command: |
-            conda config --set auto_update_conda false
-            conda config --set always_yes true
-            # deps from requirements.txt are picked up by conda-build
-            #   only list deps for test/coverage here.
-            conda install -qy pytest pytest-cov conda-build
-            conda build --no-test .
-            conda install --use-local rundmcmc
+            # conda config --set auto_update_conda false
+            # conda update -n base conda
+            # conda config --set always_yes true
+            # # deps from requirements.txt are picked up by conda-build
+            # #   only list deps for test/coverage here.
+            # conda install -qy pytest pytest-cov conda-build
+            # conda build --no-test .
+            pip install pytest pytest-cov
             pip install codecov
-            pip install utm
-
+            python setup.py install
       - save_cache:
           paths:
             - /opt/conda
@@ -48,9 +47,8 @@ jobs:
             # Direct matplotlib to use the Agg (non-graphical) backend during
             # circleci runs.
             echo "backend: Agg" > "matplotlibrc"
-            pytest -v --cov=rundmcmc tests
+            pytest -v --cov=gerrychain tests
             codecov
-
       - store_artifacts:
           path: test-reports
-          destination: test-reports
+destination: test-reports

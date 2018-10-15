@@ -1,20 +1,20 @@
-.. RunDMCMC documentation master file, created by
+.. GerryChain documentation master file, created by
    sphinx-quickstart on Mon Jun 11 14:55:33 2018.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-RunDMCMC
-========
+GerryChain
+==========
 
-RunDMCMC is a project to randomly sample congressional district plans using
-`Markov Chain Monte Carlo`_ methods. It was created by the `Metric Geometry and
-Gerrymandering Group`_ (MG3) in their `Voting Rights Data Institute`_ (VRDI)
-program. The project is hosted in the `Gerrymandr/RunDMCMC`_ GitHub repo.
+GerryChain is a library for using `Markov Chain Monte Carlo`_ methods to study the problem
+of political redistricting. Development of the library began during the
+`Voting Rights Data Institute`_ (VRDI). The project is hosted in the `MGGG/GerryChain`_ GitHub
+repository.
 
 .. _`Markov Chain Monte Carlo`: https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo
-.. _`Metric Geometry and Gerrymandering Group`: http://sites.tufts.edu/gerrymandr/
+.. _`Metric Geometry and Gerrymandering Group`: https://www.mggg.org/
 .. _`Voting Rights Data Institute`: http://gerrydata.org/
-.. _`Gerrymandr/RunDMCMC`: https://github.com/gerrymandr/RunDMCMC
+.. _`MGGG/GerryChain`: https://github.com/mggg/GerryChain
 
 User Guide
 ----------
@@ -30,14 +30,13 @@ later parts describe how to customize parts of the chain.
     user/quickstart
     user/examples
 
-Developers' Guide
+API Reference
 -----------------
 
-These documents provide detailed references for classes and functions in
-RunDMCMC.
+This document provides detailed references for classes and functions in
+GerryChain.
 
 .. toctree::
     :maxdepth: 2
 
-    dev/layer_api
     api

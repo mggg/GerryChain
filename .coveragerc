@@ -1,6 +1,7 @@
 [report]
 omit =
     setup.py
-    rundmcmc/__main__.py
-    rundmcmc/_version.py
+    gerrychain/__main__.py
+    gerrychain/_version.py
+    gerrychain/utm/*
     tests/*

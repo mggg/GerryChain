@@ -1,7 +1,7 @@
 {% set data = load_setup_py_data() %}
 
 package:
-  name: rundmcmc
+  name: gerrychain
   version: {{ data['version'] }}
 
 source:
@@ -26,7 +26,6 @@ requirements:
 test:
   source_files:
     - tests
-    - rundmcmc/testData
   requires:
     - pytest
     - pytest-cov
@@ -34,5 +33,5 @@ test:
     - pytest tests
 
 about:
-  home: https://github.com/gerrymandr/RunDMCMC
-  summary: Monte-Carlo exploration of districting plans for gerrymandering analysis
+  home: https://github.com/mggg/GerryChain
+  summary: Exploration of districting plans for gerrymandering analysis using MCMC

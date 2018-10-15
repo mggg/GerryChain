@@ -1,7 +1,7 @@
-Developer Interface
+API Reference
 ===================
 
-.. module:: rundmcmc
+.. module:: gerrychain
 
 This part of the documentation details the interface that developers will use
 with the chain. For a high-level overview of the code's structure, see
@@ -11,31 +11,33 @@ introduction <introduction>`.
 .. contents:: Table of Contents
     :local:
 
-Chain and related classes
+Adjacency Graphs
+----------------
+
+.. automodule:: gerrychain.graph
+
+Partitions
+----------
+
+.. automodule:: gerrychain.partition
+
+
+Markov Chains
 -------------------------
 
-.. autoclass:: rundmcmc.chain.MarkovChain
-
-.. autoclass:: rundmcmc.partition.Partition
-
-.. autoclass:: rundmcmc.validity.Validator
+.. autoclass:: gerrychain.chain.MarkovChain
 
 Proposals
 ---------
 
-.. automodule:: rundmcmc.proposals
+.. automodule:: gerrychain.proposals
 
-Validators
-----------
+Binary constraints
+------------------
 
-.. automodule:: rundmcmc.validity
+.. automodule:: gerrychain.constraints
 
 Updaters
 --------
 
-.. automodule:: rundmcmc.updaters
-
-Graph constructors and data handlers
-------------------------------------
-
-.. automodule:: rundmcmc.make_graph
+.. automodule:: gerrychain.updaters

@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock
 
-from rundmcmc.chain import MarkovChain
+from gerrychain.chain import MarkovChain
 
 
 class MockState:
