@@ -34,7 +34,7 @@ jobs:
             # conda build --no-test .
             pip install pytest pytest-cov
             pip install codecov
-            pip install gerrychain
+            python setup.py install
       - save_cache:
           paths:
             - /opt/conda
