@@ -26,6 +26,7 @@ jobs:
       - run:
           name: install dependencies
           command: |
+            conda install conda-build
             conda config --set auto_update_conda false
             conda config --set always_yes true
             # deps from requirements.txt are picked up by conda-build
