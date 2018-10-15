@@ -50,7 +50,7 @@ Example
     from gerrychain.constraints import single_flip_contiguous    
     from gerrychain.updaters.compactness import polsby_poppers
 
-    pennsylvania = GeographicPartition.from_json_graph("./21/rook.json", assignment="CD113")
+    pennsylvania = GeographicPartition.from_file("my_vtds.shp", assignment="DISTRICT")
     
     chain = MarkovChain(
         proposal=propose_random_flip,

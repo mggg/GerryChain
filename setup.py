@@ -1,4 +1,5 @@
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
+
 import versioneer
 
 requirements = [
@@ -6,29 +7,23 @@ requirements = [
     "pandas",
     "networkx",
     "geopandas",
-    "pysal",
-    # "matplotlib",
-    # "psutil",
+    "libpysal",
 ]
 
 setup(
-    name='GerryChain',
+    name="GerryChain",
     description="Short description",
     author="Metric Geometry and Gerrymandering Group",
-    author_email='gerrymandr@gmail.com',
-    url='https://github.com/mggg/GerryChain',
+    author_email="gerrymandr@gmail.com",
+    url="https://github.com/mggg/GerryChain",
     packages=find_packages(exclude=("tests",)),
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
-    entry_points={
-        'console_scripts': [
-            'gerrychain=gerrychain.__main__:main'
-        ]
-    },
+    entry_points={"console_scripts": ["gerrychain=gerrychain.__main__:main"]},
     install_requires=requirements,
-    keywords='RunDMCMC',
+    keywords="RunDMCMC",
     classifiers=[
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3.6',
-    ]
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3.6",
+    ],
 )

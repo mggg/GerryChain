@@ -6,11 +6,18 @@ from collections import Counter
 import geopandas as gp
 import networkx
 import pandas as pd
-import pysal
 from networkx.readwrite import json_graph
 from shapely.ops import cascaded_union
 
 from gerrychain.utm import from_latlon
+
+try:
+    import libpysal
+except ImportError:
+    try:
+        import pysal.lib as libpysal
+    except ImportError:
+        import pysal as libpysal
 
 
 def utm_of_point(point):
@@ -55,18 +62,35 @@ class Adjacency(enum.Enum):
 
     .. _Chess: https://en.wikipedia.org/wiki/Chess
     """
+
     Rook = "rook"
     Queen = "queen"
 
 
-adjacency_functions = {
-    Adjacency.Rook: pysal.weights.Rook.from_dataframe,
-    Adjacency.Queen: pysal.weights.Queen.from_dataframe,
+class UnrecognizedAdjacencyError(Exception):
+    pass
+
+
+adjacencies = {
+    "rook": libpysal.weights.Rook,
+    "queen": libpysal.weights.Queen,
+    Adjacency.Rook: libpysal.weights.Rook,
+    Adjacency.Queen: libpysal.weights.Queen,
 }
 
 
 def get_neighbors(df, adjacency):
-    return adjacency_functions[adjacency](df, geom_col=df.geometry.name).neighbors
+    if not isinstance(adjacency, libpysal.weights.W):
+        try:
+            adjacency = adjacencies[adjacency]
+        except KeyError:
+            raise UnrecognizedAdjacencyError(
+                "The adjacency parameter provided is not supported. Note: If you wish "
+                "to use spatial weights other than Rook or Queen, you may pass any "
+                "pysal weight (e.g., libpysal.weights.KNN for K-nearest neighbors) as "
+                "the adjacency parameter."
+            )
+    return adjacency.from_dataframe(df).neighbors
 
 
 class Graph(networkx.Graph):
@@ -87,7 +111,7 @@ class Graph(networkx.Graph):
         return cls.from_geodataframe(df, cols_to_add, reproject)
 
     @classmethod
-    def from_geodataframe(cls, dataframe, adj=Adjacency.Rook, reproject=True):
+    def from_geodataframe(cls, dataframe, adjacency=Adjacency.Rook, reproject=True):
         """Creates the adjacency :class:`Graph` of geometries described by `dataframe`.
         The areas of the polygons are included as node attributes (with key `area`).
         The shared perimeter of neighboring polygons are included as edge attributes
@@ -118,11 +142,11 @@ class Graph(networkx.Graph):
             df = dataframe
 
         # Generate rook neighbor lists from dataframe.
-        neighbors = get_neighbors(df, adj)
+        neighbors = get_neighbors(df, adjacency)
 
         # Add shared ("interior") perimeters to edges between nodes
-        adjacency_dict = neighbors_with_shared_perimeters(neighbors, df)
-        graph = cls.from_dict_of_dicts(adjacency_dict)
+        adjacencies = neighbors_with_shared_perimeters(neighbors, df)
+        graph = cls(adjacencies)
 
         # Add "exterior" perimeters to the boundary nodes
         add_boundary_perimeters(graph, neighbors, df)
