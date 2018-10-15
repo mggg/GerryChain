@@ -32,8 +32,9 @@ jobs:
             # #   only list deps for test/coverage here.
             # conda install -qy pytest pytest-cov conda-build
             # conda build --no-test .
-            pip install gerrychain
+            pip install pytest pytest-cov
             pip install codecov
+            pip install gerrychain
       - save_cache:
           paths:
             - /opt/conda
