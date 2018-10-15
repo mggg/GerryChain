@@ -16,13 +16,11 @@ logger = logging.getLogger(__name__)
 
 
 class Validator:
-    """
-    Collection of constraints checks passed to
+    """Collection of constraints checks passed to
     :class:`gerrychain.chain.MarkovChain`.
 
     This class is meant to be called as a function after instantiation; its
     return is ``True`` if all validators pass, and ``False`` if any one fails.
-
     """
 
     def __init__(self, constraints):
@@ -43,36 +41,41 @@ class Validator:
             elif is_valid is True:
                 pass
             else:
-                raise TypeError(f"Constraint {constraint.__name__} returned a non-boolean.")
+                raise TypeError(
+                    f"Constraint {constraint.__name__} returned a non-boolean."
+                )
 
         # all constraints are satisfied
         return True
 
 
 def L1_reciprocal_polsby_popper(partition):
-    return sum(1 / value for value in partition['polsby_popper'].values())
+    return sum(1 / value for value in partition["polsby_popper"].values())
 
 
 def L1_polsby_popper(partition):
-    return sum(value for value in partition['polsby_popper'].values())
+    return sum(value for value in partition["polsby_popper"].values())
 
 
 def L2_polsby_popper(partition):
-    return math.sqrt(sum(value**2 for value in partition['polsby_popper'].values()))
+    return math.sqrt(sum(value ** 2 for value in partition["polsby_popper"].values()))
 
 
 def L_minus_1_polsby_popper(partition):
-    return len(partition.parts) / sum(1 / value for value in partition['polsby_popper'].values())
+    return len(partition.parts) / sum(
+        1 / value for value in partition["polsby_popper"].values()
+    )
 
 
 no_worse_L_minus_1_polsby_popper = SelfConfiguringLowerBound(L_minus_1_polsby_popper)
 
-no_worse_L1_reciprocal_polsby_popper = SelfConfiguringUpperBound(L1_reciprocal_polsby_popper)
+no_worse_L1_reciprocal_polsby_popper = SelfConfiguringUpperBound(
+    L1_reciprocal_polsby_popper
+)
 
 
 def within_percent_of_ideal_population(initial_partition, percent=0.01):
-    """
-    Require that all districts are within a certain percent of "ideal" (i.e.,
+    """Require that all districts are within a certain percent of "ideal" (i.e.,
     uniform) population.
 
     Ideal population is defined as "total population / number of districts."
@@ -82,11 +85,12 @@ def within_percent_of_ideal_population(initial_partition, percent=0.01):
     :returns: A :class:`.Bounds` instance.
 
     """
+
     def population(partition):
         return partition["population"].values()
 
-    number_of_districts = len(initial_partition['population'].keys())
-    total_population = sum(initial_partition['population'].values())
+    number_of_districts = len(initial_partition["population"].keys())
+    total_population = sum(initial_partition["population"].values())
     ideal_population = total_population / number_of_districts
     bounds = ((1 - percent) * ideal_population, (1 + percent) * ideal_population)
 
@@ -95,23 +99,16 @@ def within_percent_of_ideal_population(initial_partition, percent=0.01):
 
 def are_reachable(G, source, avoid, targets):
     """Check that source can reach targets while avoiding given edges.
+    This function is a modified form of NetworkX's ``_dijkstra_multisource()``.
 
-    :G: NetworkX graph.
-
-    :source: Starting node.
-
-    :weight: Function with (u, v, data) input that returns that edges weight.
-
-    :targets: Nodes required to find.
-
-    :returns:
-    -------
-    distance : dictionary
+    :param G: NetworkX graph.
+    :param source: Starting node.
+    :param weight: Function with (u, v, data) input that returns that edges weight.
+    :param targets: Nodes required to find.
+    :return:
         A mapping from node to shortest distance to that node from one
         of the source nodes.
-
-    This function is a modified form of NetworkX's `_dijkstra_multisource()`.
-
+    :rtype: dict
     """
     G_succ = G._succ if G.is_directed() else G._adj
 
@@ -145,17 +142,13 @@ def are_reachable(G, source, avoid, targets):
 
 
 def single_flip_contiguous(partition):
-    """
-    Check if swapping the given node from its old assignment disconnects the
+    """Check if swapping the given node from its old assignment disconnects the
     old assignment class.
 
-    :parition: Current :class:`.Partition` object.
+    :param partition: The proposed next :class:`~gerrychain.partition.Partition`
 
-    :flips: Dictionary of proposed flips, with `(nodeid: new_assignment)`
-            pairs. If `flips` is `None`, then fallback to the
-            :func:`.contiguous` check.
-
-    :returns: True if contiguous, and False otherwise.
+    :return: whether the partition is contiguous
+    :rtype: bool
 
     We assume that `removed_node` belonged to an assignment class that formed a
     connected subgraph. To see if its removal left the subgraph connected, we
@@ -172,8 +165,7 @@ def single_flip_contiguous(partition):
     assignment = partition.assignment
 
     def partition_edge_avoid(start_node, end_node, edge_attrs):
-        """
-        Compute the district edge weight, which is 1 if the nodes have the same
+        """Compute the district edge weight, which is 1 if the nodes have the same
         assignment, and infinity otherwise.
         """
         if assignment[start_node] != assignment[end_node]:
@@ -186,8 +178,11 @@ def single_flip_contiguous(partition):
     for changed_node, _ in flips.items():
         old_assignment = partition.parent.assignment[changed_node]
 
-        old_neighbors = [node for node in graph.neighbors(changed_node)
-                         if assignment[node] == old_assignment]
+        old_neighbors = [
+            node
+            for node in graph.neighbors(changed_node)
+            if assignment[node] == old_assignment
+        ]
 
         if not old_neighbors:
             # Under our assumptions, if there are no old neighbors, then the
@@ -200,7 +195,9 @@ def single_flip_contiguous(partition):
 
         start_neighbor = random.choice(old_neighbors)
 
-        connected = are_reachable(graph, start_neighbor, partition_edge_avoid, old_neighbors)
+        connected = are_reachable(
+            graph, start_neighbor, partition_edge_avoid, old_neighbors
+        )
 
         if not connected:
             return False
@@ -213,12 +210,10 @@ def single_flip_contiguous(partition):
 def contiguous(partition):
     """Check if the assignment blocks of a partition are connected.
 
-    :parition: :class:`gerrychain.partition.Partition` instance.
-    :flips: Dictionary of proposed flips, with `(nodeid: new_assignment)`
-            pairs. If `flips` is `None`, then fallback :func:`.contiguous`.
+    :param partition: The proposed next :class:`~gerrychain.partition.Partition`
 
-    :returns: True if contiguous, False otherwise.
-
+    :return: whether the partition is contiguous
+    :rtype: bool
     """
     flips = partition.flips
     if not flips:
@@ -227,6 +222,7 @@ def contiguous(partition):
     def proposed_assignment(node):
         """Return the proposed assignment of the given node."""
         return partition.assignment[node]
+
     # TODO
 
     # Creates a dictionary where the key is the district and the value is
@@ -252,8 +248,8 @@ def contiguous(partition):
 
 
 def fast_connected(partition):
-    """
-    Checks that a given partition's components are connected using a simple breadth-first search.
+    """Checks that a given partition's components are connected using a simple
+    breadth-first search.
 
     :param partition: Instance of Partition; contains connected components.
     :return: Whether the components of this partition are connected
@@ -279,8 +275,7 @@ def fast_connected(partition):
 
 
 def non_bool_fast_connected(partition):
-    """
-    Return the number of non-connected assignment subgraphs.
+    """Return the number of non-connected assignment subgraphs.
 
     :param partition: Instance of Partition; contains connected components.
     :return: number of contiguous districts
@@ -307,8 +302,7 @@ def non_bool_fast_connected(partition):
 
 
 def non_bool_where(partition):
-    """
-    Return the number of non-connected assignment subgraphs.
+    """Return the number of non-connected assignment subgraphs.
 
     :param partition: Instance of Partition; contains connected components.
     :return: number of contiguous districts
@@ -336,7 +330,8 @@ def non_bool_where(partition):
             plt.show()
             print(districts[district])
             for subdistrict in nx.connected_components(
-                    partition.graph.subgraph(districts[district])):
+                partition.graph.subgraph(districts[district])
+            ):
                 nx.draw(partition.graph.subgraph(subdistrict), with_labels=True)
                 plt.show()
                 print(subdistrict)
@@ -348,8 +343,7 @@ no_more_disconnected = SelfConfiguringLowerBound(non_bool_fast_connected)
 
 
 def proposed_changes_still_contiguous(partition):
-    """
-    Checks whether the districts that are altered by a proposed change
+    """Checks whether the districts that are altered by a proposed change
     (stored in partition.flips) remain contiguous under said changes.
 
     :param partition: Current :class:`.Partition` object.
@@ -363,7 +357,8 @@ def proposed_changes_still_contiguous(partition):
     if partition.parent:
         if partition.flips.keys is not None:
             districts_of_interest = set(partition.flips.values()).union(
-                                        set(map(partition.parent.assignment.get, partition.flips)))
+                set(map(partition.parent.assignment.get, partition.flips))
+            )
         else:
             districts_of_interest = []
 
@@ -383,8 +378,7 @@ def proposed_changes_still_contiguous(partition):
 
 
 def _bfs(graph):
-    """
-    Performs a breadth-first search on the provided graph and returns true or
+    """Performs a breadth-first search on the provided graph and returns true or
     false depending on whether the graph is connected.
 
     :param graph: Dict-of-lists; an adjacency matrix.
@@ -414,8 +408,7 @@ def _bfs(graph):
 
 
 def districts_within_tolerance(partition, attribute_name="population", percentage=0.1):
-    """
-    Check if all districts are within a certain percentage of the "smallest"
+    """Check if all districts are within a certain percentage of the "smallest"
     district, as defined by the given attribute.
 
     :param partition: partition class instance
@@ -435,8 +428,7 @@ def districts_within_tolerance(partition, attribute_name="population", percentag
 
 
 def population_balance(partition, attribute_name="population"):
-    """
-    Compute the ratio "range / minimum value" of the given attribute on
+    """Compute the ratio "range / minimum value" of the given attribute on
     assignment blocks.
     """
     values = partition[attribute_name].values()
@@ -451,6 +443,7 @@ def refuse_new_splits(partition_county_field):
                              :func:`.county_splits`.
 
     """
+
     def _refuse_new_splits(partition):
         for county_info in partition[partition_county_field].values():
             if county_info.split == CountySplit.NEW_SPLIT:
@@ -465,4 +458,6 @@ def no_vanishing_districts(partition):
     """Require that no districts be completely consumed."""
     if not partition.parent:
         return True
-    return len(set(partition.assignment.values())) == len(set(partition.parent.assignment.values()))
+    return len(set(partition.assignment.values())) == len(
+        set(partition.parent.assignment.values())
+    )

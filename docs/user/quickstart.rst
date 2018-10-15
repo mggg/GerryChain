@@ -80,4 +80,42 @@ Running a chain
 ===============
 
 Now that we have our initial partition, we can configure and run a
-:class:`~gerrychain.MarkovChain <Markov Chain>`.
+:class:`~gerrychain.MarkovChain <Markov Chain>`. Let's configure a Markov chain
+of just a thousand steps, to make sure everything works properly:
+
+    from gerrychain import MarkovChain
+    from gerrychain.constraints import Validator, single_flip_contiguous
+    from gerrychain.proposals import propose_random_flip
+    from gerrychain.accept import always_accept
+
+    chain = MarkovChain(
+        proposal=propose_random_flip,
+        is_valid=Validator([single_flip_contiguous]),
+        accept=always_accept,
+        initial_state=initial_partition,
+        total_steps=1000
+    )
+
+For more information on the parameters we passed, see :module:`gerrychain.chain <the documentation>`.
+
+Now we're ready to actually run the chain. The GerryChain :class:`~gerrychain.MarkovChain` is
+an iterator that yields each state in the ensemble as it is created. This lets the user loop over
+the chain and handle each state however they want---by printing to the console, making plots, recording
+data, etc. For this example, let's print the perimeters of the districts in the districting plan,
+for each plan in the ensemble::
+
+    for partition in chain:
+        print(partition["perimeter"])
+
+This example also shows how you can access the data you've attached to the partition. Since our partition
+is a :class:`~gerrychain.GeographicPartition`, it comes pre-configured with ``area`` and ``perimeter``
+attributes that are re-calculated at each step in the chain. We access the value of the ``perimeter`` attribute
+the same way we would access an item in a dictionary: ``partition["perimeter"]``. From the printed output,
+we see that the value of the ``perimeter`` attribute is itself a dictionary mapping each district's ID to
+the perimeter of the district.
+
+Under the hood, these attributes are computed by "updater" functions. The user can pass their own
+``updaters``dictionary when instantiating a ``Partition``, and the values will be accessible just like
+the ``perimeter`` attribute above. For more details, see :module:`gerrychain.updaters`.
+
+.. TODO: Elections

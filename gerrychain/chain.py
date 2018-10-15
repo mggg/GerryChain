@@ -16,11 +16,11 @@ class MarkovChain:
     def __init__(self, proposal, is_valid, accept, initial_state, total_steps=1000):
         """
         :proposal: Function proposing the next state from the current state.
-        :is_valid: A function with signature `Partition -> bool` determining whether
+        :is_valid: A function with signature ``Partition -> bool`` determining whether
             the proposed next state is valid (passes all binary constraints). Usually
             this is a :class:`~gerrychain.constraints.Validator` class instance.
         :accept: Function accepting or rejecting the proposed state. In the most basic
-            use case, this always returns `True`. But if the user wanted to use a
+            use case, this always returns ``True``. But if the user wanted to use a
             Metropolis-Hastings acceptance rule, this is where you would implement it.
         :initial_state: Initial :class:`gerrychain.partition.Partition` class.
         :total_steps: Number of steps to run.
@@ -28,9 +28,14 @@ class MarkovChain:
         """
         if not is_valid(initial_state):
             failed = [
-                constraint for constraint in is_valid.constraints if not constraint(initial_state)]
-            message = 'The given initial_state is not valid according is_valid. ' \
-                      'The failed constraints were: ' + ','.join([f.__name__ for f in failed])
+                constraint
+                for constraint in is_valid.constraints
+                if not constraint(initial_state)
+            ]
+            message = (
+                "The given initial_state is not valid according is_valid. "
+                "The failed constraints were: " + ",".join([f.__name__ for f in failed])
+            )
             raise ValueError(message)
 
         self.proposal = proposal
