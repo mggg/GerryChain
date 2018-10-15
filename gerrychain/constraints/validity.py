@@ -16,11 +16,17 @@ logger = logging.getLogger(__name__)
 
 
 class Validator:
-    """Collection of constraints checks passed to
-    :class:`gerrychain.chain.MarkovChain`.
+    """A single callable for checking that a partition passes a collection of
+    constraints. Intended to be passed as the ``is_valid`` parameter when
+    instantiating :class:`~gerrychain.MarkovChain`.
 
     This class is meant to be called as a function after instantiation; its
     return is ``True`` if all validators pass, and ``False`` if any one fails.
+
+    Example usage::
+
+        is_valid = Validator([constraint1, constraint2, constraint3])
+        chain = MarkovChain(proposal, is_valid, accept, initial_state, total_steps)
     """
 
     def __init__(self, constraints):

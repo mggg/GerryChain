@@ -3,16 +3,9 @@ import math
 import networkx
 
 from gerrychain.partition import Partition
-from gerrychain.updaters import (
-    Tally,
-    boundary_nodes,
-    cut_edges,
-    cut_edges_by_part,
-    exterior_boundaries,
-    interior_boundaries,
-    perimeter,
-    polsby_popper,
-)
+from gerrychain.updaters import (Tally, boundary_nodes, cut_edges,
+                                 cut_edges_by_part, exterior_boundaries,
+                                 interior_boundaries, perimeter, polsby_popper)
 
 
 class Grid(Partition):
@@ -51,15 +44,15 @@ class Grid(Partition):
         flips=None,
     ):
         """
-        :dimensions: tuple (m,n) of the desired dimensions of the grid.
-        :with_diagonals: (optional, defaults to False) whether to include diagonals
-        as edges of the graph (i.e., whether to use 'queen' adjacency rather than
-        'rook' adjacency).
-        :assignment: (optional) dict matching nodes to their districts. If not
-        provided, partitions the grid into 4 quarters of roughly equal size.
-        :updaters: (optional) dict matching names of attributes of the Partition
-        to functions that compute their values. If not provided, the Grid
-        configures the cut_edges updater for convenience.
+        :param dimensions: tuple (m,n) of the desired dimensions of the grid.
+        :param with_diagonals: (optional, defaults to False) whether to include diagonals
+            as edges of the graph (i.e., whether to use 'queen' adjacency rather than
+            'rook' adjacency).
+        :param assignment: (optional) dict matching nodes to their districts. If not
+            provided, partitions the grid into 4 quarters of roughly equal size.
+        :param updaters: (optional) dict matching names of attributes of the Partition
+            to functions that compute their values. If not provided, the Grid
+            configures the cut_edges updater for convenience.
         """
         if dimensions:
             self.dimensions = dimensions

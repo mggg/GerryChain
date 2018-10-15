@@ -95,7 +95,7 @@ of just a thousand steps, to make sure everything works properly::
         total_steps=1000
     )
 
-For more information on the parameters we passed, see :module:`the documentation <gerrychain.chain>`.
+For more information on the parameters we passed, see :mod:`the documentation <gerrychain.chain>`.
 
 Now we're ready to actually run the chain. The GerryChain :class:`~gerrychain.MarkovChain` is
 an iterator that yields each state in the ensemble as it is created. This lets the user loop over
@@ -115,6 +115,6 @@ the perimeter of the district.
 
 Under the hood, these attributes are computed by "updater" functions. The user can pass their own
 ``updaters``dictionary when instantiating a ``Partition``, and the values will be accessible just like
-the ``perimeter`` attribute above. For more details, see :module:`gerrychain.updaters`.
+the ``perimeter`` attribute above. For more details, see :mod:`gerrychain.updaters`.
 
 .. TODO: Elections

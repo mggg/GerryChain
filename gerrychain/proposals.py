@@ -91,7 +91,7 @@ def propose_flip_every_district(partition):
     """
     proposal = dict()
 
-    for dist_edges in partition['cut_edges_by_part'].values():
+    for dist_edges in partition["cut_edges_by_part"].values():
         edge = random.choice(list(dist_edges))
 
         index = random.choice((0, 1))
@@ -112,13 +112,16 @@ def propose_chunk_flip(partition):
     """
     proposal = dict()
 
-    edge = random.choice(tuple(partition['cut_edges']))
+    edge = random.choice(tuple(partition["cut_edges"]))
     index = random.choice((0, 1))
 
     flipped_node = edge[index]
 
-    valid_flips = [nbr for nbr in partition.graph.neighbors(
-        flipped_node) if partition.assignment[nbr] != partition.assignment[flipped_node]]
+    valid_flips = [
+        nbr
+        for nbr in partition.graph.neighbors(flipped_node)
+        if partition.assignment[nbr] != partition.assignment[flipped_node]
+    ]
 
     for flipped_neighbor in valid_flips:
         proposal.update({flipped_neighbor: partition.assignment[flipped_node]})
@@ -161,10 +164,10 @@ def propose_random_flip(partition):
     :returns: a dictionary with the flipped node mapped to its new assignment
 
     """
-    if len(partition['cut_edges']) == 0:
+    if len(partition["cut_edges"]) == 0:
         return dict()
 
-    edge = random.choice(tuple(partition['cut_edges']))
+    edge = random.choice(tuple(partition["cut_edges"]))
     index = random.choice((0, 1))
 
     flipped_node, other_node = edge[index], edge[1 - index]
@@ -258,15 +261,15 @@ def propose_random_flip(partition):
 
 
 def max_edge_cuts(partition):
-    """returns wes computation for max number of edge cuts... not well documented,
-    and a vague upper bound (to be made smaller if possible)
+    # """returns wes computation for max number of edge cuts... not well documented,
+    # and a vague upper bound (to be made smaller if possible)
 
-    inputs:
-    :partition: a partition instance.
+    # inputs:
+    # :partition: a partition instance.
 
-    returns: an integer value
+    # returns: an integer value
 
-    """
+    # """
     # TODO need number of frozen edges of graph
     numFrozen = 0
     numDists = len(partition)
