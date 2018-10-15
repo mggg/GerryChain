@@ -2,7 +2,12 @@
 GerryChain
 ===============================
 
-
+.. image:: https://circleci.com/gh/mggg/GerryChain.svg?style=svg
+    :target: https://circleci.com/gh/mggg/GerryChain
+    :alt: Build Status
+.. image:: https://codecov.io/gh/mggg/GerryChain/branch/master/graph/badge.svg
+   :target: https://codecov.io/gh/mggg/GerryChain
+   :alt: Code Coverage
 .. image:: https://readthedocs.org/projects/gerrychain/badge/?version=latest
    :target: https://gerrychain.readthedocs.io/en/latest
    :alt: Documentation Status
