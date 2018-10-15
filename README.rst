@@ -28,40 +28,24 @@ Frieze and Wesley Pegden for their paper `"Assessing significance in a Markov ch
 .. _`Markov chain Monte Carlo`: https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo
 
 
+Getting started
+===============
+
+See our `Getting started guide`_ for the basics of using GerryChain.
+
+.. _`Getting started guide`: https://gerrychain.readthedocs.io/en/latest/quickstart
+
+
 Useful links
 ============
 
-- `Documentation`_ <https://gerrychain.readthedocs.io/en/latest/>`_
-- `Bug reports and feature requests`_ <https://github.com/mggg/gerrychain/issues>`_
+- `Documentation`_
+- `Bug reports and feature requests`_
 - `Contributions welcome!`_
 
 .. _`Documentation`: https://gerrychain.readthedocs.io/en/latest/
 .. _`Bug reports and feature requests`: https://github.com/mggg/gerrychain/issues
 .. _`Contributions welcome!`: https://github.com/mggg/gerrychain/pulls
-
-
-Example
-=======
-
-.. code-block:: python
-    from gerrychain import Graph, MarkovChain, GeographicPartition, Election
-    from gerrychain.proposals import propose_random_flip
-    from gerrychain.accept import always_accept
-    from gerrychain.constraints import single_flip_contiguous    
-    from gerrychain.updaters.compactness import polsby_poppers
-
-    pennsylvania = GeographicPartition.from_file("my_vtds.shp", assignment="DISTRICT")
-    
-    chain = MarkovChain(
-        proposal=propose_random_flip,
-        is_valid=single_flip_contiguous,
-        accept=always_accept,
-        initial_state=pennsylvania,
-        total_steps=1000
-    )
-
-    for districting_plan in chain:
-        print(polsby_popper(districting_plan))
 
 
 Installation
