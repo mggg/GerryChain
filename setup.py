@@ -7,7 +7,7 @@ requirements = [
     "pandas",
     "networkx",
     "geopandas",
-    "libpysal",
+    "pysal",
 ]
 
 setup(
@@ -21,7 +21,7 @@ setup(
     cmdclass=versioneer.get_cmdclass(),
     entry_points={"console_scripts": ["gerrychain=gerrychain.__main__:main"]},
     install_requires=requirements,
-    keywords="RunDMCMC",
+    keywords="GerryChain",
     classifiers=[
         "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3.6",
