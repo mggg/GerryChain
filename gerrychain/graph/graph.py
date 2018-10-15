@@ -21,8 +21,8 @@ class Graph(networkx.Graph):
     @classmethod
     def from_json(cls, json_file):
         """Load a graph from a JSON file in the NetworkX json_graph format.
-        :json_file: Path to JSON file.
-        :returns: Graph
+        :param json_file: Path to JSON file.
+        :return: Graph
         """
         with open(json_file) as f:
             data = json.load(f)
@@ -88,7 +88,6 @@ class Graph(networkx.Graph):
 
         :param df: Dataframe containing given columns.
         :param columns: (optional) List of dataframe column names to add.
-        :return: Nothing.
         """
 
         if columns is None:
@@ -156,11 +155,10 @@ class Graph(networkx.Graph):
 def add_boundary_perimeters(graph, neighbors, df):
     """Add shared perimeter between nodes and the total geometry boundary.
 
-    :graph: NetworkX graph.
-    :neighbors: Adjacency information generated from pysal.
-    :df: Geodataframe containing geometry information.
-    :returns: The updated graph.
-
+    :param graph: NetworkX graph.
+    :param neighbors: Adjacency information generated from pysal.
+    :param df: Geodataframe containing geometry information.
+    :return: The updated graph.
     """
     # creates one shape of the entire state to compare outer boundaries against
     boundary = cascaded_union(df.geometry).boundary
