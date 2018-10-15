@@ -14,22 +14,23 @@ introduction <introduction>`.
 Adjacency Graphs
 ----------------
 
+
 .. autoclass:: gerrychain.Graph
 
 .. autoclass:: gerrychain.graph.Adjacency
-   :members:
 
 Partitions
 ----------
 
 .. automodule:: gerrychain.partition
-   :members:
+    :members:
+    :show-inheritance:
 
 Markov Chains
 -------------------------
 
-.. autoclass:: gerrychain.chain.MarkovChain
-   :members:
+.. autoclass:: gerrychain.MarkovChain
+    :members:
 
 Proposals
 ---------
@@ -41,13 +42,15 @@ Binary constraints
 ------------------
 
 .. automodule:: gerrychain.constraints
-   :members:
+    :members:
+
+.. autoclass:: gerrychain.constraints.Validator
 
 Updaters
 --------
 
 .. automodule:: gerrychain.updaters
-   :members:
+    :members:
 
 Grids
 -----

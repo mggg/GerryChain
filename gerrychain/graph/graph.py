@@ -12,6 +12,12 @@ from .geo import reprojected
 
 
 class Graph(networkx.Graph):
+    """Represents a graph to be partitioned. It is based on :class:`networkx.Graph`.
+
+    We have added some classmethods to help construct graphs from shapefiles, and
+    to save and load graphs as JSON files.
+    """
+
     @classmethod
     def from_json(cls, json_file):
         """Load a graph from a JSON file in the NetworkX json_graph format.
@@ -49,7 +55,7 @@ class Graph(networkx.Graph):
         :param dataframe: :class:`geopandas.GeoDataFrame`
         :param adjacency: (optional) The adjacency type to use. Default is `Adjacency.Rook`.
             Other options are `Adjacency.Queen`, "rook" or "queen". The user may also pass
-            in any :module:`pysal` weight (e.g., libpysal.weights.KNN for K-nearest neighbors).
+            in any :mod:`pysal` weight (e.g., libpysal.weights.KNN for K-nearest neighbors).
         :return: The adjacency graph of the geometries from `dataframe`.
         :rtype: :class:`Graph`
         """

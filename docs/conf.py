@@ -9,7 +9,10 @@
 import os
 import sys
 
-import mock
+try:
+    import mock
+except ImportError:
+    import unittest.mock as mock
 
 # -- Path setup --------------------------------------------------------------
 
@@ -193,15 +196,19 @@ MOCK_MODULES = [
     "numpy",
     "pandas",
     "geopandas",
+    "libpysal",
     "pysal",
+    "pysal.lib",
     "matplotlib",
-    "networkx",
-    "networkx.readwrite",
-    "networkx.algorithms",
-    "networkx.algorithms.shortest_paths",
-    "networkx.algorithms.shortest_paths.weighted",
+    "matplotlib.pyplot",
+    # "networkx",
+    # "networkx.readwrite",
+    # "networkx.algorithms",
+    # "networkx.algorithms.shortest_paths",
+    # "networkx.algorithms.shortest_paths.weighted",
     "shapely",
     "shapely.ops",
+    "gerrychain.utm",
 ]
 
 for module in MOCK_MODULES:
@@ -211,3 +218,4 @@ for module in MOCK_MODULES:
 
 # Prepend the module name of classes.
 add_module_names = True
+autodoc_inherit_docstrings = False
