@@ -79,8 +79,8 @@ when your adjacency graph and districting plan data are coming from two separate
 Running a chain
 ===============
 
-Now that we have our initial partition, we can configure and run a :class:`Markov chain <gerrychain.MarkovChain`. Let's configure a Markov chain
-of just a thousand steps, to make sure everything works properly::
+Now that we have our initial partition, we can configure and run a :class:`Markov chain <gerrychain.MarkovChain>`.
+Let's configure a Markov chain of just a thousand steps, to make sure everything works properly::
 
     from gerrychain import MarkovChain
     from gerrychain.constraints import Validator, single_flip_contiguous
@@ -114,7 +114,7 @@ we see that the value of the ``perimeter`` attribute is itself a dictionary mapp
 the perimeter of the district.
 
 Under the hood, these attributes are computed by "updater" functions. The user can pass their own
-``updaters``dictionary when instantiating a ``Partition``, and the values will be accessible just like
+``updaters`` dictionary when instantiating a ``Partition``, and the values will be accessible just like
 the ``perimeter`` attribute above. For more details, see :mod:`gerrychain.updaters`.
 
 .. TODO: Elections
