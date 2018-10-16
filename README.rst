@@ -16,17 +16,12 @@ GerryChain is a Python library for building ensembles of districting plans
 using `Markov chain Monte Carlo`_. It is developed and maintained by the `Metric
 Geometry and Gerrymandering Group`_ and our network of volunteers.
 
-The basic workflow is to start with the geometry of an initial plan, perhaps one
-that is currently enacted in your state or municipality, and generate a large
+The basic workflow is to start with the geometry of an initial plan and generate a large
 collection of sample plans for comparison. Usually, we will constrain these
 sampled plans in such a way that they perform at least as well as the initial
 plan according to traditional districting principles, such as population balance
 or compactness. Comparing the initial plan to the ensemble provides quantitative
-tools for measuring whether or not it is an outlier similar plans.
-
-The development of this package began at the `Voting Rights Data Institute`_
-as a Python rewrite of the chain_ C++ program, originally by Maria Chikina, Alan
-Frieze and Wesley Pegden for their paper `"Assessing significance in a Markov chain without mixing."`_
+tools for measuring whether or not it is an outlier among the sampled plans.
 
 .. _`Voting Rights Data Institute`: http://gerrydata.org/
 .. _chain: https://github.com/gerrymandr/cfp_mcmc
