@@ -40,7 +40,7 @@ Getting started
 
 See our `Getting started guide`_ for the basics of using GerryChain.
 
-.. _`Getting started guide`: https://gerrychain.readthedocs.io/en/latest/quickstart
+.. _`Getting started guide`: https://gerrychain.readthedocs.io/en/latest/user/quickstart.html
 
 
 Useful links
