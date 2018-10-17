@@ -19,8 +19,8 @@ class Election:
 
     Example usage::
 
-        # Assuming your nodes have attributes "2008_D", "2008_R" with (for example) 2008 senate
-        # election vote totals
+        # Assuming your nodes have attributes "2008_D", "2008_R"
+        # with (for example) 2008 senate election vote totals
         election = Election(
             "2008 Senate",
             {"Democratic": "2008_D", "Republican": "2008_R"},
@@ -30,9 +30,10 @@ class Election:
         # Assuming you already have a graph and assignment:
         partition = Partition(graph, assignment, updaters={"2008_Sen": election})
 
-        # The updater returns an ElectionResults instance, which we can use (for example)
-        # to see how many seats a given party would win in this partition using this
-        # election's vote distribution:
+        # The updater returns an ElectionResults instance, which
+        # we can use (for example) to see how many seats a given
+        # party would win in this partition using this election's
+        # vote distribution:
         partition["2008_Sen"].wins("Republican")
 
     """
