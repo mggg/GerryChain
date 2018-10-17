@@ -28,7 +28,11 @@ class Election:
         )
 
         # Assuming you already have a graph and assignment:
-        partition = Partition(graph, assignment, updaters={"2008_Sen": election})
+        partition = Partition(
+            graph,
+            assignment,
+            updaters={"2008_Sen": election}
+        )
 
         # The updater returns an ElectionResults instance, which
         # we can use (for example) to see how many seats a given
