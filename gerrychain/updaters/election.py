@@ -4,15 +4,53 @@ from gerrychain.updaters.tally import DataTally
 
 
 class Election:
+    """Represents the data of one election, with races conducted in each part of
+    the partition.
+
+    As we vary the districting plan, we can use the same node-level vote totals
+    to tabulate hypothetical elections. To do this manually with tallies, we would
+    have to maintain tallies for each party, as well as the total number of votes,
+    and then compute the electoral results and percentages from scratch every time.
+    To make this simpler, this class provides an :class:`ElectionUpdater` to manage
+    these tallies. The updater returns an :class:`ElectionResults` class giving
+    a convenient view of the election results, with methods like
+    :meth:`~ElectionResults.wins` or :meth:`~ElectionResults.percent` for common queries
+    the user might make on election results.
+
+    Example usage::
+
+        # Assuming your nodes have attributes "2008_D", "2008_R"
+        # with (for example) 2008 senate election vote totals
+        election = Election(
+            "2008 Senate",
+            {"Democratic": "2008_D", "Republican": "2008_R"},
+            alias="2008_Sen"
+        )
+
+        # Assuming you already have a graph and assignment:
+        partition = Partition(
+            graph,
+            assignment,
+            updaters={"2008_Sen": election}
+        )
+
+        # The updater returns an ElectionResults instance, which
+        # we can use (for example) to see how many seats a given
+        # party would win in this partition using this election's
+        # vote distribution:
+        partition["2008_Sen"].wins("Republican")
+
+    """
+
     def __init__(self, name, parties_to_columns, alias=None):
         """
-        :name: The name of the election. (e.g. "2008 Presidential")
-        :parties_to_columns: A dictionary matching party names to their
+        :param name: The name of the election. (e.g. "2008 Presidential")
+        :param parties_to_columns: A dictionary matching party names to their
             data columns, either as actual columns (list-like, indexed by nodes)
             or as string keys for the node attributes that hold the party's
             vote totals. Or, a list of strings which will serve as both
             the party names and the node attribute keys.
-        :alias: (optional) Alias that the election is registered under
+        :param alias: (optional) Alias that the election is registered under
             in the Partition's dictionary of updaters.
         """
         self.name = name
@@ -32,18 +70,22 @@ class Election:
         else:
             raise TypeError("Election expects parties_to_columns to be a dict or list")
 
-        self.tallies = {party: DataTally(self.parties_to_columns[party], party)
-                        for party in self.parties}
+        self.tallies = {
+            party: DataTally(self.parties_to_columns[party], party)
+            for party in self.parties
+        }
 
         self.updater = ElectionUpdater(self)
 
     def __str__(self):
-        return 'Election \'{}\' with vote totals for parties {} from columns {}.'.format(
-            self.name, str(self.parties), str(self.columns))
+        return "Election '{}' with vote totals for parties {} from columns {}.".format(
+            self.name, str(self.parties), str(self.columns)
+        )
 
     def __repr__(self):
-        return 'Election(parties={}, columns={}, alias={})'.format(
-            str(self.parties), str(self.columns), str(self.alias))
+        return "Election(parties={}, columns={}, alias={})".format(
+            str(self.parties), str(self.columns), str(self.alias)
+        )
 
     def __call__(self, *args, **kwargs):
         return self.updater(*args, **kwargs)
@@ -76,15 +118,17 @@ class ElectionUpdater:
         if parent is None:
             previous_totals_for_party = {party: None for party in self.election.parties}
         else:
-            previous_totals_for_party = partition.parent[self.election.alias].totals_for_party
+            previous_totals_for_party = partition.parent[
+                self.election.alias
+            ].totals_for_party
         return previous_totals_for_party
 
 
 def get_percents(counts, totals):
-    return {part: counts[part] / totals[part]
-            if totals[part] > 0
-            else math.nan
-            for part in totals}
+    return {
+        part: counts[part] / totals[part] if totals[part] > 0 else math.nan
+        for part in totals
+    }
 
 
 class ElectionResults:
@@ -109,15 +153,16 @@ class ElectionResults:
         }
 
     def __str__(self):
-        results_by_part = '\n'.join(
-            format_part_results(self.percents_for_party, part)
-            for part in self.totals)
-        return 'Election Results for {name}\n{results}'.format(
-            name=self.election.name, results=results_by_part)
+        results_by_part = "\n".join(
+            format_part_results(self.percents_for_party, part) for part in self.totals
+        )
+        return "Election Results for {name}\n{results}".format(
+            name=self.election.name, results=results_by_part
+        )
 
     def seats(self, party):
         """
-        Returns the number of races that `party` won.
+        Returns the number of races that ``party`` won.
         """
         return sum(self.won(party, race) for race in self.races)
 
@@ -129,26 +174,33 @@ class ElectionResults:
 
     def percent(self, party, race=None):
         """
-        Returns the percentage of the vote that `party` received in a given race
-        (part of the partition). If `race` is omitted, returns the overall vote
-        share of `party`.
-        :party: Party ID.
-        :race: ID of the part of the partition whose votes we want to tally.
+        Returns the percentage of the vote that ``party`` received in a given race
+        (part of the partition). If ``race`` is omitted, returns the overall vote
+        share of ``party``.
+
+        :param party: Party ID.
+        :param race: ID of the part of the partition whose votes we want to tally.
         """
         if race is not None:
             return self.percents_for_party[party][race]
         return self.votes(party) / sum(self.totals[race] for race in self.races)
 
     def percents(self, party):
+        """
+        :param party: The party
+        :return: The tuple of the percentage of votes that ``party`` received
+            in each part of the partition
+        """
         return tuple(self.percents_for_party[party][race] for race in self.races)
 
     def count(self, party, race=None):
         """
-        Returns the total number of votes that `party` received in a given race
-        (part of the partition). If `race` is omitted, returns the overall vote
-        total of `party`.
-        :party: Party ID.
-        :race: ID of the part of the partition whose votes we want to tally.
+        Returns the total number of votes that ``party`` received in a given race
+        (part of the partition). If ``race`` is omitted, returns the overall vote
+        total of ``party``.
+
+        :param party: Party ID.
+        :param race: ID of the part of the partition whose votes we want to tally.
         """
         if race is not None:
             return self.totals_for_party[party][race]
@@ -159,7 +211,7 @@ class ElectionResults:
 
     def won(self, party, race):
         """
-        Answers "Did `party` win the race in part `race`?" with `True` or `False`.
+        Answers "Did ``party`` win the race in part ``race``?" with ``True`` or ``False``.
         """
         return all(
             self.totals_for_party[party][race] >= self.totals_for_party[opponent][race]
@@ -171,8 +223,11 @@ class ElectionResults:
 
 
 def format_part_results(percents_for_party, part):
-    heading = '{part}:\n'.format(part=str(part))
-    body = '\n'.join("  {party}: {percent}".format(
-        party=str(party), percent=round(percents_for_party[party][part], 4))
-        for party in percents_for_party)
+    heading = "{part}:\n".format(part=str(part))
+    body = "\n".join(
+        "  {party}: {percent}".format(
+            party=str(party), percent=round(percents_for_party[party][part], 4)
+        )
+        for party in percents_for_party
+    )
     return heading + body

@@ -30,9 +30,19 @@ class Graph(networkx.Graph):
         return cls(g)
 
     @classmethod
-    def from_file(cls, filename, cols_to_add=None, reproject=True):
+    def from_file(
+        cls, filename, adjacency=Adjacency.Rook, cols_to_add=None, reproject=True
+    ):
+        """Create a :class:`Graph` from a shapefile (or GeoPackage, or GeoJSON, or
+        any other library that :mod:`geopandas` can read. See :meth:`from_geodataframe`
+        for more details.
+
+        :param cols_to_add: (optional) The names of the columns that you want to
+            add to the graph as node attributes. By default, all columns are added.
+        """
         df = gp.read_file(filename)
-        return cls.from_geodataframe(df, cols_to_add, reproject)
+        graph = cls.from_geodataframe(df, adjacency, reproject)
+        graph.add_data(df, columns=cols_to_add)
 
     @classmethod
     def from_geodataframe(cls, dataframe, adjacency=Adjacency.Rook, reproject=True):

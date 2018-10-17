@@ -29,6 +29,9 @@ class Adjacency(enum.Enum):
     Rook = "rook"
     Queen = "queen"
 
+    def __repr__(self):
+        return "<%s.%s>" % (self.__class__.__name__, self.name)
+
 
 class UnrecognizedAdjacencyError(Exception):
     pass
