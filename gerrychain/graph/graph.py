@@ -30,9 +30,9 @@ class Graph(networkx.Graph):
         return cls(g)
 
     @classmethod
-    def from_file(cls, filename, cols_to_add=None, reproject=True):
+    def from_file(cls, filename, adjacency=Adjacency.Rook, cols_to_add=None, reproject=True):
         df = gp.read_file(filename)
-        return cls.from_geodataframe(df, cols_to_add, reproject)
+        return cls.from_geodataframe(df, adjacency, cols_to_add, reproject)
 
     @classmethod
     def from_geodataframe(cls, dataframe, adjacency=Adjacency.Rook, reproject=True):
