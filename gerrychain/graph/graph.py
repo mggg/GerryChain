@@ -119,7 +119,7 @@ class Graph(networkx.Graph):
         :param node_attribute_key: Attribute available on all nodes.
         :return: Dictionary of {node_id: attribute} pairs.
         """
-        return networkx.get_node_attributes(self, node_attribute_key)
+        return {node: data[node_attribute_key] for node, data in self.nodes.items()}
 
     def join(self, dataframe, columns=None, left_index=None, right_index=None):
         """Add data from a dataframe to the graph, matching nodes to rows when
