@@ -114,7 +114,7 @@ we see that the value of the ``perimeter`` attribute is itself a dictionary mapp
 the perimeter of the district.
 
 Under the hood, these attributes are computed by "updater" functions. The user can pass their own
-``updaters`` dictionary when instantiating a ``Partition``, and the values will be accessible just like
-the ``perimeter`` attribute above. For more details, see :mod:`gerrychain.updaters`.
+``updaters`` dictionary when instantiating a partition, and the values will be accessible by key using the
+same syntax as the ``perimeter`` attribute above. For more details, see :mod:`gerrychain.updaters`.
 
 .. TODO: Elections
