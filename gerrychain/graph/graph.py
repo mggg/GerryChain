@@ -43,6 +43,7 @@ class Graph(networkx.Graph):
         df = gp.read_file(filename)
         graph = cls.from_geodataframe(df, adjacency, reproject)
         graph.add_data(df, columns=cols_to_add)
+        return graph
 
     @classmethod
     def from_geodataframe(cls, dataframe, adjacency=Adjacency.Rook, reproject=True):
@@ -108,11 +109,14 @@ class Graph(networkx.Graph):
         column_dictionaries = df.to_dict("index")
         networkx.set_node_attributes(self, column_dictionaries)
 
-    def assignment(self, node_attribute_key):
-        """Create an assignment dictionary using an attribute of the nodes
-        of the graph. For example, if you created your graph from Census data
+    def node_attribute(self, node_attribute_key):
+        """Create a dictionary of the form ``{node: <attribute value>}`` for
+        the given attribute key, over all nodes of the graph.
+
+        This is useful for creating an assignment dictionary from an attribute
+        from a source data file. For example, if you created your graph from Census data
         and each node has a `CD` attribute that gives the congressional district
-        the node belongs to, then `graph.assignment("CD")` would return the
+        the node belongs to, then `graph.node_attribute("CD")` would return the
         desired assignment of nodes to CDs.
 
         :param graph: NetworkX graph.

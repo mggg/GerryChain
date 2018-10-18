@@ -1,8 +1,7 @@
 import collections
 
 from gerrychain.graph import Graph
-from gerrychain.updaters import (compute_edge_flows, cut_edges,
-                                 flows_from_changes)
+from gerrychain.updaters import compute_edge_flows, cut_edges, flows_from_changes
 
 
 class Partition:
@@ -12,10 +11,12 @@ class Partition:
     aggregations and calculations that we want to optimize.
 
     """
-    default_updaters = {'cut_edges': cut_edges}
 
-    def __init__(self, graph=None, assignment=None, updaters=None,
-                 parent=None, flips=None):
+    default_updaters = {"cut_edges": cut_edges}
+
+    def __init__(
+        self, graph=None, assignment=None, updaters=None, parent=None, flips=None
+    ):
         """
         :param graph: Underlying graph; a NetworkX object.
         :param assignment: Dictionary assigning nodes to districts. If None,
@@ -36,7 +37,7 @@ class Partition:
         self.graph = graph
 
         if isinstance(assignment, str):
-            assignment = graph.assignment(assignment)
+            assignment = graph.node_attribute(assignment)
         elif not isinstance(assignment, dict):
             raise TypeError("Assignment must be a dict or a node attribute key")
         self.assignment = assignment

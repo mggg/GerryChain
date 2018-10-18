@@ -1,3 +1,6 @@
+import pathlib
+from tempfile import TemporaryDirectory
+
 import geopandas as gp
 import pandas
 import pytest
@@ -13,8 +16,15 @@ def geodataframe():
     c = Polygon([(1, 0), (1, 1), (2, 1), (2, 0)])
     d = Polygon([(1, 1), (1, 2), (2, 2), (2, 1)])
     df = gp.GeoDataFrame({"ID": ["a", "b", "c", "d"], "geometry": [a, b, c, d]})
-    df.crs = "+init=epsg:4326"
+    df.crs = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
     return df
+
+
+@pytest.fixture
+def gdf_with_data(geodataframe):
+    geodataframe["data"] = list(range(len(geodataframe)))
+    geodataframe["data2"] = list(range(len(geodataframe)))
+    return geodataframe
 
 
 @pytest.fixture
@@ -30,7 +40,7 @@ def geodataframe_with_boundary():
     d = Polygon([(1, 1), (1, 2), (2, 2), (2, 1)])
     e = Polygon([(2, 0), (2, 1), (2, 2), (2, 3), (3, 3), (3, 2), (3, 1), (3, 0)])
     df = gp.GeoDataFrame({"ID": ["a", "b", "c", "d", "e"], "geometry": [a, b, c, d, e]})
-    df.crs = "+init=epsg:4326"
+    df.crs = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
     return df
 
 
@@ -142,3 +152,21 @@ def test_computes_boundary_perims(geodataframe_with_boundary):
 
 def edge_set_equal(set1, set2):
     return {(y, x) for x, y in set1} | set1 == {(y, x) for x, y in set2} | set2
+
+
+def test_from_file_adds_all_data_by_default(gdf_with_data):
+    with TemporaryDirectory() as d:
+        filepath = pathlib.Path(d) / "temp.shp"
+        filename = str(filepath.absolute())
+        gdf_with_data.to_file(filename)
+        graph = Graph.from_file(filename)
+
+    assert all("data" in node_data for node_data in graph.nodes.values())
+    assert all("data2" in node_data for node_data in graph.nodes.values())
+
+
+def test_graph_assignment_raises_if_data_is_missing():
+    graph = Graph([(1, 2), (2, 3), (3, 1)])
+
+    with pytest.raises(KeyError):
+        graph.node_attribute("missing_data_key")
