@@ -65,13 +65,13 @@ Partitioning the graph with an initial districting plan
 
 Now that we have a graph, we can partition it into districts. Our shapefile has a data
 column called ``"DISTRICT"`` assigning a district ID to each node in our adjacency graph.
-We can use this assignment to instantiate a :class:`~gerrychain.Partition` object::
+We can use this assignment to instantiate a :class:`~gerrychain.GeographicPartition` object::
 
-    from gerrychain import Partition
+    from gerrychain import GeographicPartition
 
-    initial_partition = Partition(vtds_graph, assignment="DISTRICT")
+    initial_partition = GeographicPartition(vtds_graph, assignment="DISTRICT")
 
-We set ``assignment="DISTRICT"`` to tell the :class:`~gerrychain.Partition` object to use
+We set ``assignment="DISTRICT"`` to tell the :class:`~gerrychain.GeographicPartition` object to use
 the ``"DISTRICT"`` node attribute to assign nodes into districts. The ``assignment``
 parameter could also have been a dictionary from node ID to district ID. This is useful
 when your adjacency graph and districting plan data are coming from two separate sources.
