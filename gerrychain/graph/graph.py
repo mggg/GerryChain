@@ -29,6 +29,14 @@ class Graph(networkx.Graph):
         g = json_graph.adjacency_graph(data)
         return cls(g)
 
+    def to_json(self, json_file):
+        """Save a graph to a JSON file in the NetworkX json_graph format.
+        :param json_file: Path to target JSON file.
+        """
+        with open(json_file, "w") as f:
+            data = json_graph.adjacency_data(self)
+            json.dump(data, f)
+
     @classmethod
     def from_file(
         cls, filename, adjacency=Adjacency.Rook, cols_to_add=None, reproject=True
