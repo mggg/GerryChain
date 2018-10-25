@@ -136,6 +136,7 @@ class Partition:
 
     def to_json(self, json_path, save_assignment_as=None):
         """Save the partition to a JSON file in the NetworkX json_graph format.
+
         :param json_file: Path to target JSON file.
         :param save_assignment_as: (optional) The string to use as a node attribute
             key holding the current assignment. By default, does not save the
