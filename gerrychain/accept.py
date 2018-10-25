@@ -42,22 +42,20 @@ def cut_edge_accept(partition):
     return random.random() < bound
 
 
-def metagraph_accept(partition):
-    """Always accepts the flip if the metagraph degree increases.
-    Otherwise, uses the Metropolis criterion to decide.
+# def metagraph_accept(partition):
+#     """Always accepts the flip if the metagraph degree increases.
+#     Otherwise, uses the Metropolis criterion to decide.
 
-    :param partition: The current partition to accept a flip from.
-    :return: True if accepted, False to remain in place
+#     :param partition: The current partition to accept a flip from.
+#     :return: True if accepted, False to remain in place
 
-    """
-    # Doesn't work currently
-    bound = 1
+#     """
+#     # Doesn't work currently
+#     bound = 1
 
-    if partition.parent is not None:
-        bound = min(
-            1,
-            len(partition.parent["metagraph_degree"])
-            / len(partition["metagraph_degree"]),
-        )
+#     if partition.parent is not None:
+#         bound = min(1, len(partition.parent["metagraph_degree"])
+#             / len(partition["metagraph_degree"]),
+#         )
 
-    return random.random() < bound
+#     return random.random() < bound
