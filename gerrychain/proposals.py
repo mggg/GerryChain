@@ -17,8 +17,8 @@ def propose_any_node_flip(partition):
 #     """Proposes a random boundary flip from the partition.
 #     Uses the number of cut edges to determine self--loops.
 
-#     :partition: The current partition to propose a flip from.
-#     :returns: a dictionary with the flipped node mapped to its new assignment
+#     :param partition: The current partition to propose a flip from.
+#     :return: a dictionary with the flipped node mapped to its new assignment
 
 #     """
 #     # self loop
@@ -43,8 +43,8 @@ def propose_any_node_flip(partition):
 #     Uses the metagraph degree to determine self--loops.
 #     Very slow.
 
-#     :partition: The current partition to propose a flip from.
-#     :returns: a dictionary with the flipped node mapped to its new assignment
+#     :param partition: The current partition to propose a flip from.
+#     :return: a dictionary with the flipped node mapped to its new assignment
 
 #     """
 #     # self loop
@@ -68,8 +68,8 @@ def propose_any_node_flip(partition):
 #     """Proposes between 2 and 7 random boundary flips from the partition.
 #        Calls the propose_random_flip() method from this file.
 
-#     :partition: The current partition to propose a flip from.
-#     :returns: a dictionary with the flipped nodes mapped to their new assignments
+#     :param partition: The current partition to propose a flip from.
+#     :return: a dictionary with the flipped nodes mapped to their new assignments
 
 #     """
 #     number_of_flips = random.randint(2, 7)
@@ -85,8 +85,8 @@ def propose_any_node_flip(partition):
 def propose_flip_every_district(partition):
     """Proposes a random boundary flip for each district in the partition.
 
-    :partition: The current partition to propose a flip from.
-    :returns: a dictionary with the flipped nodes mapped to their new assignments
+    :param partition: The current partition to propose a flip from.
+    :return: a dictionary with the flipped nodes mapped to their new assignments
 
     """
     proposal = dict()
@@ -106,8 +106,8 @@ def propose_flip_every_district(partition):
 def propose_chunk_flip(partition):
     """Chooses a random boundary node and proposes to flip it and all of its neighbors
 
-    :partition: The current partition to propose a flip from.
-    :returns: a dictionary with the flipped nodes mapped to their new assignments
+    :param partition: The current partition to propose a flip from.
+    :return: a dictionary with the flipped nodes mapped to their new assignments
 
     """
     proposal = dict()
@@ -137,8 +137,8 @@ def propose_chunk_flip(partition):
 #        methods from this file.
 
 
-#     :partition: The current partition to propose a flip from.
-#     :returns: a dictionary with the flipped nodes mapped to their new assignments
+#     :param partition: The current partition to propose a flip from.
+#     :return: a dictionary with the flipped nodes mapped to their new assignments
 
 #     """
 #     if(random.random() > .1):
@@ -160,8 +160,8 @@ def propose_chunk_flip(partition):
 def propose_random_flip(partition):
     """Proposes a random boundary flip from the partition.
 
-    :partition: The current partition to propose a flip from.
-    :returns: a dictionary with the flipped node mapped to its new assignment
+    :param partition: The current partition to propose a flip from.
+    :return: a dictionary with the flipped node mapped to its new assignment
 
     """
     if len(partition["cut_edges"]) == 0:
@@ -265,7 +265,7 @@ def max_edge_cuts(partition):
     # and a vague upper bound (to be made smaller if possible)
 
     # inputs:
-    # :partition: a partition instance.
+    # :param partition: a partition instance.
 
     # returns: an integer value
 

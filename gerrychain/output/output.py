@@ -1,6 +1,6 @@
-from collections import Counter
 import json
 import math
+from collections import Counter
 
 from gerrychain.scores import efficiency_gap, mean_median, mean_thirdian
 
@@ -197,9 +197,9 @@ class ChainOutputTable:
 def get_chain_scores(chain, handlers):
     """Yield scores from handlers on each state in the chain.
 
-    :chain: :class:`gerrychain.chain.MarkovChain` instance.
-    :handlers: Dictionary of {name: func} pairs.
-    :returns: A generator yielding dictionaries of {name: result} pairs from
+    :param chain: :class:`gerrychain.chain.MarkovChain` instance.
+    :param handlers: Dictionary of {name: func} pairs.
+    :return: A generator yielding dictionaries of {name: result} pairs from
               handlers.
 
     """

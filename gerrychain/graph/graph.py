@@ -29,6 +29,14 @@ class Graph(networkx.Graph):
         g = json_graph.adjacency_graph(data)
         return cls(g)
 
+    def to_json(self, json_file):
+        """Save a graph to a JSON file in the NetworkX json_graph format.
+        :param json_file: Path to target JSON file.
+        """
+        with open(json_file, "w") as f:
+            data = json_graph.adjacency_data(self)
+            json.dump(data, f)
+
     @classmethod
     def from_file(
         cls, filename, adjacency=Adjacency.Rook, cols_to_add=None, reproject=True
@@ -200,9 +208,9 @@ def add_boundary_perimeters(graph, neighbors, df):
 def neighbors_with_shared_perimeters(neighbors, df):
     """Construct a graph with shared perimeter between neighbors on the edges.
 
-    :neighbors: Adjacency information generated from pysal.
-    :df: Geodataframe containing geometry information.
-    :returns: A dict of dicts of the following form::
+    :param neighbors: Adjacency information generated from pysal.
+    :param df: Geodataframe containing geometry information.
+    :return: A dict of dicts of the following form::
 
         { node: { neighbor: { shared_perim: <value> }}}
 

@@ -43,7 +43,7 @@ GerryChain provides a :class:`~gerrychain.graph.Graph` class that encapsulates t
 
 There are :class:`two notions of adjacency <gerrychain.graph.Adjacency>` that we can
 use to construct our graphs. Many actual U.S. Congressional Districts are only Queen-contiguous,
-so we use choose Queen contiguity in the above code example.
+so we use Queen contiguity in the above code example.
 
 Depending on the size of the state, the process of generating an adjacency graph can take
 a long time. To avoid having to repeat this process, we can save our graph as a JSON file::
@@ -95,7 +95,7 @@ Let's configure a Markov chain of just a thousand steps, to make sure everything
         total_steps=1000
     )
 
-For more information on the parameters we passed, see :mod:`the documentation <gerrychain.chain>`.
+For more information on the parameters we passed, see the :ref:`api`.
 
 Now we're ready to actually run the chain. The GerryChain :class:`~gerrychain.MarkovChain` is
 an iterator that yields each state in the ensemble as it is created. This lets the user loop over
@@ -114,7 +114,7 @@ we see that the value of the ``perimeter`` attribute is itself a dictionary mapp
 the perimeter of the district.
 
 Under the hood, these attributes are computed by "updater" functions. The user can pass their own
-``updaters`` dictionary when instantiating a partition, and the values will be accessible by key using the
-same syntax as the ``perimeter`` attribute above. For more details, see :mod:`gerrychain.updaters`.
+``updaters`` dictionary when instantiating a partition, and the values will be accessible using the
+same dictionary-like syntax as the ``perimeter`` attribute above. For more details, see :mod:`gerrychain.updaters`.
 
 .. TODO: Elections
