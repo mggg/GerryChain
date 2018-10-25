@@ -18,6 +18,7 @@ Adjacency Graphs
 .. autoclass:: gerrychain.Graph
 
 .. autoclass:: gerrychain.graph.Adjacency
+    :members: Rook Queen
 
 Partitions
 ----------
