@@ -118,37 +118,33 @@ class Partition:
         return self._cache[key]
 
     @classmethod
-    def from_json_graph(cls, graph_path, assignment=None, updaters=None):
+    def from_json(cls, graph_path, assignment, updaters=None):
         """Creates a :class:`Partition` from a json file containing a
         serialized NetworkX `adjacency_data` object. Files of this
         kind for each state are available in the @gerrymandr/vtd-adjacency-graphs
         GitHub repository.
 
         :param graph_path: String filename for the json file
-        :param assignment: (optional) String key for the node attribute giving a district
-            assignment, or a dictionary mapping node IDs to district IDs. Defaults
-            to ``"__assignment"`` to facilitate reloading partitions saved with :meth:`to_json`.
+        :param assignment: String key for the node attribute giving a district
+            assignment, or a dictionary mapping node IDs to district IDs.
         :param updaters: (optional) Dictionary of updater functions to
             attach to the partition, in addition to the default_updaters of `cls`.
         """
         graph = Graph.from_json(graph_path)
-
-        if assignment is None:
-            assignment = "__assignment"
 
         return cls(graph, assignment, updaters)
 
     def to_json(self, json_path, save_assignment_as=None):
         """Save the partition to a JSON file in the NetworkX json_graph format.
         :param json_file: Path to target JSON file.
-        :param save_assignment_as: (optional) The attribute key to save the assignment under
+        :param save_assignment_as: (optional) The string to use as a node attribute
+            key holding the current assignment. By default, does not save the
+            assignment as an attribute.
         """
-        if save_assignment_as is not None:
-            save_assignment_as = "__assignment"
-
         graph = Graph(self.graph)
 
-        for node in graph.nodes:
-            graph.nodes[node][save_assignment_as] = self.assignment[node]
+        if save_assignment_as is not None:
+            for node in graph.nodes:
+                graph.nodes[node][save_assignment_as] = self.assignment[node]
 
         graph.to_json(json_path)
