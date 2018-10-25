@@ -208,9 +208,9 @@ def add_boundary_perimeters(graph, neighbors, df):
 def neighbors_with_shared_perimeters(neighbors, df):
     """Construct a graph with shared perimeter between neighbors on the edges.
 
-    :neighbors: Adjacency information generated from pysal.
-    :df: Geodataframe containing geometry information.
-    :returns: A dict of dicts of the following form::
+    :param neighbors: Adjacency information generated from pysal.
+    :param df: Geodataframe containing geometry information.
+    :return: A dict of dicts of the following form::
 
         { node: { neighbor: { shared_perim: <value> }}}
 

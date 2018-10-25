@@ -13,19 +13,17 @@ class CountySplit(Enum):
 def county_splits(partition_name, county_field_name):
     """Track county splits.
 
-    :partition_name: Name that the :class:`.Partition` instance will store.
-    :county_field_name: Name of county ID field on the graph.
-
-    :returns: The tracked data is a dictionary keyed on the county ID. The
+    :param partition_name: Name that the :class:`.Partition` instance will store.
+    :param county_field_name: Name of county ID field on the graph.
+    :return: The tracked data is a dictionary keyed on the county ID. The
               stored values are tuples of the form `(split, nodes, seen)`.
               `split` is a :class:`.CountySplit` enum, `nodes` is a list of
               node IDs, and `seen` is a list of assignment IDs that are
               contained in the county.
-
     """
+
     def _get_county_splits(partition):
-        return compute_county_splits(partition, county_field_name,
-                                     partition_name)
+        return compute_county_splits(partition, county_field_name, partition_name)
 
     return _get_county_splits
 
