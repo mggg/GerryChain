@@ -26,7 +26,6 @@ later parts describe how to customize parts of the chain.
     :maxdepth: 1
 
     user/quickstart
-    user/install
     user/intro
 
 API Reference
