@@ -29,12 +29,23 @@ class Graph(networkx.Graph):
         g = json_graph.adjacency_graph(data)
         return cls(g)
 
-    def to_json(self, json_file):
+    def to_json(self, json_file, *, include_geometries_as_geojson=False):
         """Save a graph to a JSON file in the NetworkX json_graph format.
         :param json_file: Path to target JSON file.
+        :param bool include_geometry_as_geojson: (optional) Whether to include any
+            :mod:`shapely` geometry objects encountered in the graph's node attributes
+            as GeoJSON. The default (``False``) behavior is to remove all geometry
+            objects because they are not serializable. Including the GeoJSON will result
+            in a much larger JSON file.
         """
+        data = json_graph.adjacency_data(self)
+
+        if include_geometries_as_geojson:
+            convert_geometries_to_geojson(data)
+        else:
+            remove_geometries(data)
+
         with open(json_file, "w") as f:
-            data = json_graph.adjacency_data(self)
             json.dump(data, f)
 
     @classmethod
@@ -230,3 +241,43 @@ def check_dataframe(df):
     for column in df.columns:
         if sum(df[column].isna()) > 0:
             warnings.warn("NA values found in column {}!".format(column))
+
+
+def remove_geometries(data):
+    """Remove geometry attributes from NetworkX adjacency data object,
+    because they are not serializable. Mutates the ``data`` object.
+
+    Does nothing if no geometry attributes are found.
+
+    :param data: an adjacency data object (returned by
+        :func:`networkx.readwrite.json_graph.adjacency_data`)
+    """
+    for node in data["nodes"]:
+        bad_keys = []
+        for key in node:
+            # having a ``__geo_interface__``` property identifies the object
+            # as being a ``shapely`` geometry object
+            if hasattr(node[key], "__geo_interface__"):
+                bad_keys.append(key)
+        for key in bad_keys:
+            del node[key]
+
+
+def convert_geometries_to_geojson(data):
+    """Convert geometry attributes in a NetworkX adjacency data object
+    to GeoJSON, so that they can be serialized. Mutates the ``data`` object.
+
+    Does nothing if no geometry attributes are found.
+
+    :param data: an adjacency data object (returned by
+        :func:`networkx.readwrite.json_graph.adjacency_data`)
+    """
+    for node in data["nodes"]:
+        for key in node:
+            # having a ``__geo_interface__``` property identifies the object
+            # as being a ``shapely`` geometry object
+            if hasattr(node[key], "__geo_interface__"):
+                # The ``__geo_interface__`` property is essentially GeoJSON.
+                # This is what :func:`geopandas.GeoSeries.to_json` uses under
+                # the hood.
+                node[key] = node.__geo_interface__

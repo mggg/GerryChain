@@ -53,6 +53,14 @@ def shapefile(gdf_with_data):
         yield filename
 
 
+@pytest.fixture
+def target_file():
+    with TemporaryDirectory() as d:
+        filepath = pathlib.Path(d) / "temp.shp"
+        filename = str(filepath.absolute())
+        yield filename
+
+
 def test_add_data_to_graph_can_handle_column_names_that_start_with_numbers():
     graph = Graph([("01", "02"), ("02", "03"), ("03", "01")])
     df = pandas.DataFrame({"16SenDVote": [20, 30, 50], "node": ["01", "02", "03"]})
@@ -168,6 +176,24 @@ def test_from_file_adds_all_data_by_default(shapefile):
 
     assert all("data" in node_data for node_data in graph.nodes.values())
     assert all("data2" in node_data for node_data in graph.nodes.values())
+
+
+def test_from_file_and_then_to_json_does_not_error(shapefile, target_file):
+    graph = Graph.from_file(shapefile)
+
+    # Even the geometry column is copied to the graph
+    assert all("geometry" in node_data for node_data in graph.nodes.values())
+
+    graph.to_json(target_file)
+
+
+def test_from_file_and_then_to_json_with_geometries(shapefile, target_file):
+    graph = Graph.from_file(shapefile)
+
+    # Even the geometry column is copied to the graph
+    assert all("geometry" in node_data for node_data in graph.nodes.values())
+
+    graph.to_json(target_file, include_geometries_as_geojson=True)
 
 
 def test_graph_assignment_raises_if_data_is_missing():
