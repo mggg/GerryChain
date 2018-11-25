@@ -1,17 +1,24 @@
-# import random
+from unittest.mock import MagicMock
 
-# from gerrychain.defaults import DefaultChain, Grid
-# from gerrychain.updaters.election import Election
-# from gerrychain.constraints import single_flip_contiguous, no_vanishing_districts
+import pytest
 
-# def test_election_results_match_the_naive_values():
-#     election = Election("election", {"Democratic": "D", "Republican": "R"})
-#     partition = Grid((10, 10), with_diagonals=True)
+from gerrychain.updaters.election import ElectionResults
 
-#     for node in partition.graph.nodes:
-#         partition.graph.nodes[node]['D'] = random.randint(1,1000)
-#         partition.graph.nodes[node]['R'] = random.randint(1,1000)
 
-#     chain = DefaultChain(partition, [single_flip_contiguous, no_vanishing_districts], 10)
+@pytest.fixture
+def mock_election():
+    election = MagicMock()
+    election.parties = ["B", "A"]
 
-#     for state in chain:
+    return ElectionResults(
+        election,
+        {
+            "B": {1: 5, 2: 60, 3: 25, 4: 55, 5: 55},
+            "A": {1: 95, 2: 40, 3: 75, 4: 45, 5: 45},
+        },
+        [1, 2, 3, 4, 5],
+    )
+
+
+def test_election_results_can_compute_percents(mock_election):
+    assert mock_election.percent("A") > 0

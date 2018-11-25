@@ -6,6 +6,7 @@ import pandas
 import pytest
 from shapely.geometry import Polygon
 
+from gerrychain import Partition
 from gerrychain.graph import Adjacency, Graph
 
 
@@ -42,6 +43,23 @@ def geodataframe_with_boundary():
     df = gp.GeoDataFrame({"ID": ["a", "b", "c", "d", "e"], "geometry": [a, b, c, d, e]})
     df.crs = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
     return df
+
+
+@pytest.fixture
+def shapefile(gdf_with_data):
+    with TemporaryDirectory() as d:
+        filepath = pathlib.Path(d) / "temp.shp"
+        filename = str(filepath.absolute())
+        gdf_with_data.to_file(filename)
+        yield filename
+
+
+@pytest.fixture
+def target_file():
+    with TemporaryDirectory() as d:
+        filepath = pathlib.Path(d) / "temp.shp"
+        filename = str(filepath.absolute())
+        yield filename
 
 
 def test_add_data_to_graph_can_handle_column_names_that_start_with_numbers():
@@ -154,15 +172,49 @@ def edge_set_equal(set1, set2):
     return {(y, x) for x, y in set1} | set1 == {(y, x) for x, y in set2} | set2
 
 
-def test_from_file_adds_all_data_by_default(gdf_with_data):
-    with TemporaryDirectory() as d:
-        filepath = pathlib.Path(d) / "temp.shp"
-        filename = str(filepath.absolute())
-        gdf_with_data.to_file(filename)
-        graph = Graph.from_file(filename)
+def test_from_file_adds_all_data_by_default(shapefile):
+    graph = Graph.from_file(shapefile)
 
     assert all("data" in node_data for node_data in graph.nodes.values())
     assert all("data2" in node_data for node_data in graph.nodes.values())
+
+
+def test_from_file_and_then_to_json_does_not_error(shapefile, target_file):
+    graph = Graph.from_file(shapefile)
+
+    # Even the geometry column is copied to the graph
+    assert all("geometry" in node_data for node_data in graph.nodes.values())
+
+    graph.to_json(target_file)
+
+
+def test_from_file_and_then_to_json_with_geometries(shapefile, target_file):
+    graph = Graph.from_file(shapefile)
+
+    # Even the geometry column is copied to the graph
+    assert all("geometry" in node_data for node_data in graph.nodes.values())
+
+    graph.to_json(target_file, include_geometries_as_geojson=True)
+
+
+def test_from_file_and_then_to_json_with_Partition(shapefile, target_file):
+    partition = Partition.from_file(shapefile, assignment="data")
+
+    # Even the geometry column is copied to the graph
+    assert all("geometry" in node_data for node_data in partition.graph.nodes.values())
+
+    partition.to_json(target_file)
+
+
+def test_from_file_and_then_to_json_with_geometries_with_Partition(
+    shapefile, target_file
+):
+    partition = Partition.from_file(shapefile, assignment="data")
+
+    # Even the geometry column is copied to the graph
+    assert all("geometry" in node_data for node_data in partition.graph.nodes.values())
+
+    partition.to_json(target_file, include_geometries_as_geojson=True)
 
 
 def test_graph_assignment_raises_if_data_is_missing():

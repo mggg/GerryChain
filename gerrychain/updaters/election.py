@@ -183,7 +183,7 @@ class ElectionResults:
         """
         if race is not None:
             return self.percents_for_party[party][race]
-        return self.votes(party) / sum(self.totals[race] for race in self.races)
+        return sum(self.votes(party)) / sum(self.totals[race] for race in self.races)
 
     def percents(self, party):
         """
@@ -207,7 +207,18 @@ class ElectionResults:
         return sum(self.totals_for_party[party][race] for race in self.races)
 
     def counts(self, party):
+        """
+        :param party: Party ID
+        :return: tuple of the total votes cast for ``party`` in each part of
+            the partition
+        """
         return tuple(self.totals_for_party[party][race] for race in self.races)
+
+    def votes(self, party):
+        """
+        An alias for :meth:`counts`.
+        """
+        return self.counts(party)
 
     def won(self, party, race):
         """

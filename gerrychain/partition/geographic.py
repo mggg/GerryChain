@@ -1,4 +1,3 @@
-from gerrychain.graph import Graph
 from gerrychain.partition import Partition
 from gerrychain.updaters import (
     Tally,
@@ -26,11 +25,3 @@ class GeographicPartition(Partition):
         "area": Tally("area", alias="area"),
         "cut_edges_by_part": cut_edges_by_part,
     }
-
-    @classmethod
-    def from_file(cls, filename, assignment, updaters, columns=None):
-        """Create a :class:`GeographicPartition` from an ESRI Shapefile, a GeoPackage,
-        a GeoJSON file, or any other file that the `fiona` library can handle.
-        """
-        graph = Graph.from_file(filename, columns)
-        cls(graph, assignment, updaters)
