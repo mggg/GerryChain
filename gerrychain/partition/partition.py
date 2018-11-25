@@ -1,7 +1,8 @@
 import collections
 
 from gerrychain.graph import Graph
-from gerrychain.updaters import compute_edge_flows, cut_edges, flows_from_changes
+from gerrychain.updaters import (compute_edge_flows, cut_edges,
+                                 flows_from_changes)
 
 
 class Partition:
@@ -134,13 +135,20 @@ class Partition:
 
         return cls(graph, assignment, updaters)
 
-    def to_json(self, json_path, save_assignment_as=None):
+    def to_json(
+        self, json_path, *, save_assignment_as=None, include_geometries_as_geojson=False
+    ):
         """Save the partition to a JSON file in the NetworkX json_graph format.
 
         :param json_file: Path to target JSON file.
-        :param save_assignment_as: (optional) The string to use as a node attribute
+        :param str save_assignment_as: (optional) The string to use as a node attribute
             key holding the current assignment. By default, does not save the
             assignment as an attribute.
+        :param bool include_geometries_as_geojson: (optional) Whether to include any
+            :mod:`shapely` geometry objects encountered in the graph's node attributes
+            as GeoJSON. The default (``False``) behavior is to remove all geometry
+            objects because they are not serializable. Including the GeoJSON will result
+            in a much larger JSON file.
         """
         graph = Graph(self.graph)
 
@@ -148,4 +156,14 @@ class Partition:
             for node in graph.nodes:
                 graph.nodes[node][save_assignment_as] = self.assignment[node]
 
-        graph.to_json(json_path)
+        graph.to_json(
+            json_path, include_geometries_as_geojson=include_geometries_as_geojson
+        )
+
+    @classmethod
+    def from_file(cls, filename, assignment, updaters=None, columns=None):
+        """Create a :class:`Partition` from an ESRI Shapefile, a GeoPackage,
+        a GeoJSON file, or any other file that the `fiona` library can handle.
+        """
+        graph = Graph.from_file(filename, cols_to_add=columns)
+        return cls(graph, assignment, updaters)

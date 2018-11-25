@@ -280,4 +280,4 @@ def convert_geometries_to_geojson(data):
                 # The ``__geo_interface__`` property is essentially GeoJSON.
                 # This is what :func:`geopandas.GeoSeries.to_json` uses under
                 # the hood.
-                node[key] = node.__geo_interface__
+                node[key] = node[key].__geo_interface__

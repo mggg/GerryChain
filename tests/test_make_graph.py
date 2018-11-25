@@ -6,6 +6,7 @@ import pandas
 import pytest
 from shapely.geometry import Polygon
 
+from gerrychain import Partition
 from gerrychain.graph import Adjacency, Graph
 
 
@@ -194,6 +195,26 @@ def test_from_file_and_then_to_json_with_geometries(shapefile, target_file):
     assert all("geometry" in node_data for node_data in graph.nodes.values())
 
     graph.to_json(target_file, include_geometries_as_geojson=True)
+
+
+def test_from_file_and_then_to_json_with_Partition(shapefile, target_file):
+    partition = Partition.from_file(shapefile, assignment="data")
+
+    # Even the geometry column is copied to the graph
+    assert all("geometry" in node_data for node_data in partition.graph.nodes.values())
+
+    partition.to_json(target_file)
+
+
+def test_from_file_and_then_to_json_with_geometries_with_Partition(
+    shapefile, target_file
+):
+    partition = Partition.from_file(shapefile, assignment="data")
+
+    # Even the geometry column is copied to the graph
+    assert all("geometry" in node_data for node_data in partition.graph.nodes.values())
+
+    partition.to_json(target_file, include_geometries_as_geojson=True)
 
 
 def test_graph_assignment_raises_if_data_is_missing():
