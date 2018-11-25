@@ -44,6 +44,15 @@ def geodataframe_with_boundary():
     return df
 
 
+@pytest.fixture
+def shapefile(gdf_with_data):
+    with TemporaryDirectory() as d:
+        filepath = pathlib.Path(d) / "temp.shp"
+        filename = str(filepath.absolute())
+        gdf_with_data.to_file(filename)
+        yield filename
+
+
 def test_add_data_to_graph_can_handle_column_names_that_start_with_numbers():
     graph = Graph([("01", "02"), ("02", "03"), ("03", "01")])
     df = pandas.DataFrame({"16SenDVote": [20, 30, 50], "node": ["01", "02", "03"]})
@@ -154,12 +163,8 @@ def edge_set_equal(set1, set2):
     return {(y, x) for x, y in set1} | set1 == {(y, x) for x, y in set2} | set2
 
 
-def test_from_file_adds_all_data_by_default(gdf_with_data):
-    with TemporaryDirectory() as d:
-        filepath = pathlib.Path(d) / "temp.shp"
-        filename = str(filepath.absolute())
-        gdf_with_data.to_file(filename)
-        graph = Graph.from_file(filename)
+def test_from_file_adds_all_data_by_default(shapefile):
+    graph = Graph.from_file(shapefile)
 
     assert all("data" in node_data for node_data in graph.nodes.values())
     assert all("data2" in node_data for node_data in graph.nodes.values())
