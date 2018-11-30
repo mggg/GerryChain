@@ -85,27 +85,54 @@ no_worse_L1_reciprocal_polsby_popper = SelfConfiguringUpperBound(
 )
 
 
-def within_percent_of_ideal_population(initial_partition, percent=0.01):
+def within_percent_of_ideal_population(
+    initial_partition, percent=0.01, pop_key="population"
+):
     """Require that all districts are within a certain percent of "ideal" (i.e.,
     uniform) population.
 
     Ideal population is defined as "total population / number of districts."
 
     :param initial_partition: Starting partition from which to compute district information.
-    :param percent: Allowed percentage deviation.
-    :return: A :class:`.Bounds` instance.
-
+    :param percent: (optional) Allowed percentage deviation. Default is 1%.
+    :param pop_key: (optional) The name of the population
+        :class:`Tally <gerrychain.updaters.Tally>`. Default is ``"population"``.
+    :return: A :class:`.Bounds` constraint on the population attribute identified
+        by ``pop_key``.
     """
 
     def population(partition):
-        return partition["population"].values()
+        return partition[pop_key].values()
 
-    number_of_districts = len(initial_partition["population"].keys())
-    total_population = sum(initial_partition["population"].values())
+    number_of_districts = len(initial_partition[pop_key].keys())
+    total_population = sum(initial_partition[pop_key].values())
     ideal_population = total_population / number_of_districts
     bounds = ((1 - percent) * ideal_population, (1 + percent) * ideal_population)
 
     return Bounds(population, bounds=bounds)
+
+
+def deviation_from_ideal(partition, attribute="population"):
+    """Computes the deviation of the given ``attribute`` from exact equality
+    among parts of the partition. Usually ``attribute`` is the population, and
+    this function is used to compute how far a districting plan is from exact population
+    equality.
+
+    By "deviation" we mean ``actual_value - ideal_value`` (not the absolute value of
+    the difference).
+
+    :param partition: A partition.
+    :param attribute: (optional) The :class:`Tally <gerrychain.updaters.Tally>` to
+        compute deviation for. Default is ``"population"``.
+    :return: dictionary from parts to their deviation
+    """
+    number_of_districts = len(partition[attribute].keys())
+    total_population = sum(partition[attribute].values())
+    ideal_population = total_population / number_of_districts
+
+    return {
+        part: value - ideal_population for part, value in partition[attribute].items()
+    }
 
 
 def are_reachable(G, source, avoid, targets):
