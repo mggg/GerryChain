@@ -4,83 +4,95 @@
 Getting started
 ===============
 
-This guide shows you how to start generating ensembles with GerryChain, **assuming that you already have 
-a cleaned shapefile with all the necessary data**. This is an enormous assumption; collecting and cleaning
-geospatial data is a challenging process with many possible points of failure.
+This guide will show you how to start generating ensembles with GerryChain, using MGGG's own
+`Massachusetts shapefile`_.
 
-Suppose we have a shapefile called ``vtds.shp`` containing the 2010 Tiger/Line Voting Tabulation District (VTD)_
-geometries of our favorite state or municipality, along with the following data columns:
+.. `Massachusetts shapefile`: https://github.com/mggg-states/MA-shapefiles/
 
-- ``POP10``: Population counts for each VTD
-- ``DISTRICT``: The district each VTD belongs to, in some districting plan
-- ``D_VOTES``: The number of Democratic votes cast in each precinct, in some election
-- ``R_VOTES``: The number of Republican votes cast in each precinct, in some election
+What you'll need
+================
 
-In order to run a Markov chain on the districting plans for our state, we need an
-adjacency :class:`~gerrychain.Graph` of our VTD geometries and a
+Before we can start running Markov chains, you'll need to:
+
+* Install ``gerrychain`` from PyPI by running ``pip install gerrychain`` in a terminal.
+* Download and unzip MGGG's `shapefile of Massachusetts's 2002-2010 precincts`_ from GitHub.
+* Open your favorite python environment (JupyterLab, ipython, or just a ``.py`` file in
+    your favorite editor) in the directory containing the ``MA_precincts_02_10.shp`` file
+    from the ``.zip`` that you downloaded and unzipped.
+
+.. `shapefile of Massachusetts's 2002-2010 precincts`: https://github.com/mggg-states/MA-shapefiles/blob/master/MA_precincts_02_10.zip
+
+.. TODO: conda instructions
+
+Creating the initial partition
+==============================
+
+In order to run a Markov chain, we need an
+adjacency :class:`~gerrychain.Graph` of our VTD geometries and
 :class:`~gerrychain.Partition` of our adjacency graph into districts. This Partition
 will be the initial state of our Markov chain.
 
-.. `2010 Tiger/Line Voting Tabulation District (VTD)`: https://www2.census.gov/geo/tiger/TIGER2010/VTD/2010/
+.. code-block:: python
 
-Creating an adjacency graph
-===========================
+    from gerrychain import Graph, Partition
+    from gerrychain.updaters import Tally
 
-We construct the *adjacency graph* on our set of VTDs (the *nodes* of our graph)
-by drawing an edge between any two VTDs that are adjacent.
+    graph = Graph.from_file("./MA_precincts_02_10.shp")
 
-.. note::
+    graph.to_json("./MA_precincts_02_10_graph.json")
+
+    initial_partition = Partition(
+        graph,
+        assignment="CD",
+        updaters={
+            "population": Tally("POP2000", alias="population")
+        }
+    )
+
+Here's what's happening in this code block.
+
+The :meth:`Graph.from_file() <gerrychain.Graph.from_file>` classmethod creates a
+:class:`~gerrychain.Graph` of the precincts in our shapefile. By default, this method
+copies all of the data columns from the shapefile's attribute table to the ``graph`` object
+as node attributes. The contents of this particular shapefile's attribute table are
+summarized in the `mggg-states/MA-shapefiles <https://github.com/mggg-states/MA-shapefiles#metadata>`_
+GitHub repo.
     
-    An adjacency graph is different from the *dual graph* of the VTD geometries, which we would
-    construct by drawing an edge between two VTDs *for each edge that they share*.
-    An adjacency graph, by contrast, never has multiple edges between two nodes.
+Depending on the size of the state, the process of generating an adjacency graph can
+take a long time. To avoid having to repeat this process in the future, we call 
+:meth:`graph.to_json() <gerrychain.Graph.to_json>` to save the graph
+in the NetworkX ``json_graph`` format under the name ``"MA_precincts_02_10_graph.json``.
 
-GerryChain provides a :class:`~gerrychain.graph.Graph` class that encapsulates this process::
+Finally, we create a :class:`~gerrychain.Partition` of the graph.
+This will be the starting point for our Markov chain. The :class:`~gerrychain.Partition` class
+takes three arguments:
 
-    from gerrychain import Graph
+1. A ``graph``.
+2. An ``assignment`` of the nodes of the graph into parts of the partition. This can be either
+    a dictionary mapping node IDs to part IDs, or the string key of a node attribute that holds
+    each node's assignment. In this example we've written ``assignment="CD"`` to tell the :class:`~gerrychain.Partition`
+    to assign nodes by their ``"CD"`` attribute that we copied from the shapefile. This attributes holds the
+    assignments of precincts to Congressional Districts from the 2000 Redistricting cycle.
+3. An optional ``updaters`` dictionary. Here we've provided a single updater named ``"population"`` that
+    computes the total population of each district in the partition, based on the ``"POP2000"`` node attribute
+    from our shapefile.
 
-    vtds_graph = Graph.from_file("./vtds.shp", adjacency="queen")
+With the ``"population"`` updater configured, we can see the total population in each of our Congressional Districts.
 
-There are :class:`two notions of adjacency <gerrychain.graph.Adjacency>` that we can
-use to construct our graphs. Many actual U.S. Congressional Districts are only Queen-contiguous,
-so we use Queen contiguity in the above code example.
+.. code-block:: python
+    >>> print(initial_partition["population"])
+    {
 
-Depending on the size of the state, the process of generating an adjacency graph can take
-a long time. To avoid having to repeat this process, we can save our graph as a JSON file::
 
-    vtds_graph.to_json("./vtds_graph.json")
-
-The next time we want to use our graph, we can just load it from the `vtds_graph.json` file::
-
-    vtds_graph = Graph.from_json("./vtds_graph.json")
-
-.. note:: 
-
-    The GerryChain :class:`~gerrychain.Graph` is based on the :class:`~networkx.Graph`
-    from the NetworkX library.
-    We recommend reading the NetworkX documentation to learn how to work with it.
-
-Partitioning the graph with an initial districting plan
-=======================================================
-
-Now that we have a graph, we can partition it into districts. Our shapefile has a data
-column called ``"DISTRICT"`` assigning a district ID to each node in our adjacency graph.
-We can use this assignment to instantiate a :class:`~gerrychain.GeographicPartition` object::
-
-    from gerrychain import GeographicPartition
-
-    initial_partition = GeographicPartition(vtds_graph, assignment="DISTRICT")
-
-We set ``assignment="DISTRICT"`` to tell the :class:`~gerrychain.GeographicPartition` object to use
-the ``"DISTRICT"`` node attribute to assign nodes into districts. The ``assignment``
-parameter could also have been a dictionary from node ID to district ID. This is useful
-when your adjacency graph and districting plan data are coming from two separate sources.
+For more information on updaters, see :doc:`updaters` and the :mod:`gerrychain.updaters` documentation.
 
 Running a chain
 ===============
 
 Now that we have our initial partition, we can configure and run a :class:`Markov chain <gerrychain.MarkovChain>`.
-Let's configure a Markov chain of just a thousand steps, to make sure everything works properly::
+Let's configure a short Markov chain to make sure everything works properly.
+
+.. code-block:: python
 
     from gerrychain import MarkovChain
     from gerrychain.constraints import Validator, single_flip_contiguous
@@ -95,26 +107,7 @@ Let's configure a Markov chain of just a thousand steps, to make sure everything
         total_steps=1000
     )
 
-For more information on the parameters we passed, see the :ref:`api`.
+Let's 
 
-Now we're ready to actually run the chain. The GerryChain :class:`~gerrychain.MarkovChain` is
-an iterator that yields each state in the ensemble as it is created. This lets the user loop over
-the chain and handle each state however they want---by printing to the console, making plots, recording
-data, etc. For this example, let's print the perimeters of the districts in the districting plan,
-for each plan in the ensemble::
-
-    for partition in chain:
-        print(partition["perimeter"])
-
-This example also shows how you can access the data you've attached to the partition. Since our partition
-is a :class:`~gerrychain.GeographicPartition`, it comes pre-configured with ``area`` and ``perimeter``
-attributes that are re-calculated at each step in the chain. We access the value of the ``perimeter`` attribute
-the same way we would access an item in a dictionary: ``partition["perimeter"]``. From the printed output,
-we see that the value of the ``perimeter`` attribute is itself a dictionary mapping each district's ID to
-the perimeter of the district.
-
-Under the hood, these attributes are computed by "updater" functions. The user can pass their own
-``updaters`` dictionary when instantiating a partition, and the values will be accessible using the
-same dictionary-like syntax as the ``perimeter`` attribute above. For more details, see :mod:`gerrychain.updaters`.
-
-.. TODO: Elections
+Computing election results
+==========================
