@@ -7,7 +7,7 @@ import pytest
 from shapely.geometry import Polygon
 
 from gerrychain import Partition
-from gerrychain.graph import Adjacency, Graph
+from gerrychain.graph import Graph
 
 
 @pytest.fixture
@@ -107,7 +107,7 @@ def test_make_graph_from_dataframe_gives_correct_graph(geodataframe):
 
 def test_make_graph_works_with_queen_adjacency(geodataframe):
     df = geodataframe.set_index("ID")
-    graph = Graph.from_geodataframe(df, adjacency=Adjacency.Queen)
+    graph = Graph.from_geodataframe(df, adjacency="queen")
 
     assert edge_set_equal(
         set(graph.edges),

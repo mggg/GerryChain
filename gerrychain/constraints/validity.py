@@ -118,8 +118,7 @@ def deviation_from_ideal(partition, attribute="population"):
     this function is used to compute how far a districting plan is from exact population
     equality.
 
-    By "deviation" we mean ``actual_value - ideal_value`` (not the absolute value of
-    the difference).
+    By "deviation" we mean ``(actual_value - ideal)/ideal`` (not the absolute value).
 
     :param partition: A partition.
     :param attribute: (optional) The :class:`Tally <gerrychain.updaters.Tally>` to
@@ -127,11 +126,11 @@ def deviation_from_ideal(partition, attribute="population"):
     :return: dictionary from parts to their deviation
     """
     number_of_districts = len(partition[attribute].keys())
-    total_population = sum(partition[attribute].values())
-    ideal_population = total_population / number_of_districts
+    total = sum(partition[attribute].values())
+    ideal = total / number_of_districts
 
     return {
-        part: value - ideal_population for part, value in partition[attribute].items()
+        part: (value - ideal) / ideal for part, value in partition[attribute].items()
     }
 
 

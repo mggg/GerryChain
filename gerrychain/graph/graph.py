@@ -3,11 +3,10 @@ import warnings
 
 import geopandas as gp
 import networkx
-import pandas as pd
 from networkx.readwrite import json_graph
 from shapely.ops import cascaded_union
 
-from .adjacency import Adjacency, get_neighbors
+from .adjacency import neighbors
 from .geo import reprojected
 
 
@@ -49,9 +48,7 @@ class Graph(networkx.Graph):
             json.dump(data, f)
 
     @classmethod
-    def from_file(
-        cls, filename, adjacency=Adjacency.Rook, cols_to_add=None, reproject=True
-    ):
+    def from_file(cls, filename, adjacency="rook", cols_to_add=None, reproject=True):
         """Create a :class:`Graph` from a shapefile (or GeoPackage, or GeoJSON, or
         any other library that :mod:`geopandas` can read. See :meth:`from_geodataframe`
         for more details.
@@ -65,7 +62,7 @@ class Graph(networkx.Graph):
         return graph
 
     @classmethod
-    def from_geodataframe(cls, dataframe, adjacency=Adjacency.Rook, reproject=True):
+    def from_geodataframe(cls, dataframe, adjacency="rook", reproject=True):
         """Creates the adjacency :class:`Graph` of geometries described by `dataframe`.
         The areas of the polygons are included as node attributes (with key `area`).
         The shared perimeter of neighboring polygons are included as edge attributes
@@ -83,9 +80,8 @@ class Graph(networkx.Graph):
         have a preferred CRS they would like to use.
 
         :param dataframe: :class:`geopandas.GeoDataFrame`
-        :param adjacency: (optional) The adjacency type to use. Default is `Adjacency.Rook`.
-            Other options are `Adjacency.Queen`, "rook" or "queen". The user may also pass
-            in any :mod:`pysal` weight (e.g., libpysal.weights.KNN for K-nearest neighbors).
+        :param adjacency: (optional) The adjacency type to use ("rook" or "queen").
+            Default is "rook".
         :return: The adjacency graph of the geometries from `dataframe`.
         :rtype: :class:`Graph`
         """
@@ -96,15 +92,13 @@ class Graph(networkx.Graph):
         else:
             df = dataframe
 
-        # Generate rook neighbor lists from dataframe.
-        neighbors = get_neighbors(df, adjacency)
-
-        # Add shared ("interior") perimeters to edges between nodes
-        adjacencies = neighbors_with_shared_perimeters(neighbors, df)
+        # Generate dict of dicts of dicts with shared perimeters according
+        # to the requested adjacency rule
+        adjacencies = neighbors(df, adjacency)
         graph = cls(adjacencies)
 
         # Add "exterior" perimeters to the boundary nodes
-        add_boundary_perimeters(graph, neighbors, df)
+        add_boundary_perimeters(graph, df)
 
         # Add area data to the nodes
         areas = df["geometry"].area.to_dict()
@@ -185,11 +179,10 @@ class Graph(networkx.Graph):
         networkx.set_node_attributes(self, node_attributes)
 
 
-def add_boundary_perimeters(graph, neighbors, df):
+def add_boundary_perimeters(graph, df):
     """Add shared perimeter between nodes and the total geometry boundary.
 
     :param graph: NetworkX graph.
-    :param neighbors: Adjacency information generated from pysal.
     :param df: Geodataframe containing geometry information.
     :return: The updated graph.
     """
@@ -214,27 +207,6 @@ def add_boundary_perimeters(graph, neighbors, df):
 
     attribute_dict = boundary_perims.to_dict("index")
     networkx.set_node_attributes(graph, attribute_dict)
-
-
-def neighbors_with_shared_perimeters(neighbors, df):
-    """Construct a graph with shared perimeter between neighbors on the edges.
-
-    :param neighbors: Adjacency information generated from pysal.
-    :param df: Geodataframe containing geometry information.
-    :return: A dict of dicts of the following form::
-
-        { node: { neighbor: { shared_perim: <value> }}}
-
-    """
-    adjacencies = {}
-
-    geom = df.geometry
-    for shape in neighbors:
-        shared_perim = geom[neighbors[shape]].intersection(geom[shape]).length
-        shared_perim.name = "shared_perim"
-        adjacencies[shape] = pd.DataFrame(shared_perim).to_dict("index")
-
-    return adjacencies
 
 
 def check_dataframe(df):

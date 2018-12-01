@@ -1,59 +1,49 @@
-import enum
+from shapely.strtree import STRtree
 
-try:
-    import libpysal
-except ImportError:
+
+def neighbors(df, adjacency):
+    if adjacency not in ("rook", "queen"):
+        raise ValueError(
+            "The adjacency parameter provided is not supported. "
+            'We support "queen" or "rook" adjacency.'
+        )
+
+    return adjacencies[adjacency](df.geometry)
+
+
+def neighboring_geometries(geometries):
+    for i in geometries.index:
+        geometries[i].id = i
+
     try:
-        import pysal.lib as libpysal
-    except ImportError:
-        import pysal as libpysal
+        tree = STRtree(geometries)
+    except AttributeError:
+        tree = STRtree(geometries)
+
+    def get_neighbors(geometry):
+        possible = tree.query(geometry)
+        actual = [p for p in possible if (not p.is_empty) and p.id != geometry.id]
+        return actual
+
+    return geometries.apply(get_neighbors)
 
 
-class Adjacency(enum.Enum):
-    """There are two concepts of "adjacency" that one can apply when constructing
-    an adjacency graph.
-
-    - **Rook adjacency**: Two polygons are adjacent if they share one or more *edges*.
-    - **Queen adjacency**: Two polygons are adjacent if they share one or more *vertices*.
-
-    All Rook edges are Queen edges, but not the other way around. Many congressional
-    districts are only Queen-contiguous (i.e., they consist of two polygons connected
-    at a single corner).
-
-    The names Rook and Queen come from the way Rook and Queen pieces in Chess_ are
-    allowed to move about the board.
-
-    .. _Chess: https://en.wikipedia.org/wiki/Chess
-    """
-
-    Rook = "rook"
-    Queen = "queen"
-
-    def __repr__(self):
-        return "<%s.%s>" % (self.__class__.__name__, self.name)
+def queen(geometries):
+    neighbors = neighboring_geometries(geometries)
+    return {
+        i: {
+            neighbor.id: {"shared_perim": geometries[i].intersection(neighbor).length}
+            for neighbor in neighbors[i]
+        }
+        for i in geometries.index
+    }
 
 
-class UnrecognizedAdjacencyError(Exception):
-    pass
+def rook(geometries):
+    return {
+        i: {j: data for j, data in neighbors.items() if data["shared_perim"] > 0}
+        for i, neighbors in queen(geometries).items()
+    }
 
 
-adjacencies = {
-    "rook": libpysal.weights.Rook,
-    "queen": libpysal.weights.Queen,
-    Adjacency.Rook: libpysal.weights.Rook,
-    Adjacency.Queen: libpysal.weights.Queen,
-}
-
-
-def get_neighbors(df, adjacency):
-    if not isinstance(adjacency, libpysal.weights.W):
-        try:
-            adjacency = adjacencies[adjacency]
-        except KeyError:
-            raise UnrecognizedAdjacencyError(
-                "The adjacency parameter provided is not supported. Note: If you wish "
-                "to use spatial weights other than Rook or Queen, you may pass any "
-                "pysal weight (e.g., libpysal.weights.KNN for K-nearest neighbors) as "
-                "the adjacency parameter."
-            )
-    return adjacency.from_dataframe(df).neighbors
+adjacencies = {"rook": rook, "queen": queen}

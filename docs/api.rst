@@ -11,8 +11,6 @@ Adjacency Graphs
 
 .. autoclass:: gerrychain.Graph
 
-.. autoclass:: gerrychain.graph.Adjacency
-
 Partitions
 ----------
 
