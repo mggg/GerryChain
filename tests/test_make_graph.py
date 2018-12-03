@@ -7,7 +7,7 @@ import pytest
 from shapely.geometry import Polygon
 
 from gerrychain import Partition
-from gerrychain.graph import Adjacency, Graph
+from gerrychain.graph import Graph
 
 
 @pytest.fixture
@@ -107,7 +107,7 @@ def test_make_graph_from_dataframe_gives_correct_graph(geodataframe):
 
 def test_make_graph_works_with_queen_adjacency(geodataframe):
     df = geodataframe.set_index("ID")
-    graph = Graph.from_geodataframe(df, adjacency=Adjacency.Queen)
+    graph = Graph.from_geodataframe(df, adjacency="queen")
 
     assert edge_set_equal(
         set(graph.edges),
@@ -222,3 +222,19 @@ def test_graph_assignment_raises_if_data_is_missing():
 
     with pytest.raises(KeyError):
         graph.node_attribute("missing_data_key")
+
+
+def test_graph_warns_for_islands():
+    graph = Graph()
+    graph.add_node(0)
+
+    with pytest.warns(Warning):
+        graph.warn_for_islands()
+
+
+def test_graph_warns_for_leaves():
+    # 0 is a leaf
+    graph = Graph([(0, 1), (1, 2), (1, 3), (3, 2)])
+
+    with pytest.warns(Warning):
+        graph.warn_for_leaves()

@@ -10,7 +10,7 @@ requirements = [
     "pandas",
     "networkx",
     "geopandas",
-    "pysal",
+    "shapely",
 ]
 
 setup(
