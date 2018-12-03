@@ -7,7 +7,7 @@ Getting started
 This guide will show you how to start generating ensembles with GerryChain, using MGGG's own
 `Massachusetts shapefile`_.
 
-.. `Massachusetts shapefile`: https://github.com/mggg-states/MA-shapefiles/
+.. _Massachusetts shapefile: https://github.com/mggg-states/MA-shapefiles/
 
 What you'll need
 ================
@@ -20,7 +20,7 @@ Before we can start running Markov chains, you'll need to:
     your favorite editor) in the directory containing the ``MA_precincts_02_10.shp`` file
     from the ``.zip`` that you downloaded and unzipped.
 
-.. `shapefile of Massachusetts's 2002-2010 precincts`: https://github.com/mggg-states/MA-shapefiles/blob/master/MA_precincts_02_10.zip
+.. _`shapefile of Massachusetts's 2002-2010 precincts`: https://github.com/mggg-states/MA-shapefiles/blob/master/MA_precincts_02_10.zip
 
 .. TODO: conda instructions
 
@@ -67,13 +67,13 @@ Finally, we create a :class:`~gerrychain.Partition` of the graph.
 This will be the starting point for our Markov chain. The :class:`~gerrychain.Partition` class
 takes three arguments:
 
-1. A ``graph``.
-2. An ``assignment`` of the nodes of the graph into parts of the partition. This can be either
+:graph: A graph.
+:assignment: An assignment of the nodes of the graph into parts of the partition. This can be either
     a dictionary mapping node IDs to part IDs, or the string key of a node attribute that holds
     each node's assignment. In this example we've written ``assignment="CD"`` to tell the :class:`~gerrychain.Partition`
     to assign nodes by their ``"CD"`` attribute that we copied from the shapefile. This attributes holds the
     assignments of precincts to Congressional Districts from the 2000 Redistricting cycle.
-3. An optional ``updaters`` dictionary. Here we've provided a single updater named ``"population"`` that
+:updaters: An optional dictionary of "updater" functions. Here we've provided a single updater named ``"population"`` that
     computes the total population of each district in the partition, based on the ``"POP2000"`` node attribute
     from our shapefile.
 
@@ -121,43 +121,35 @@ Let's configure a short Markov chain to make sure everything works properly.
 
 To configure a chain, we need to specify five objects.
 
-1. ``proposal``: a function that takes the current state and returns new district assignments ("flips") for one
+:proposal: A function that takes the current state and returns new district assignments ("flips") for one
     or more nodes. This comes in the form of a dictionary mapping one or more node IDs to their new district IDs.
     Here we've used the ``propose_random_flip`` proposal, which proposes that a random node on the boundary of one
     district be flipped into the neighboring district.
-2. ``is_valid``: a function that takes a proposed state and returns ``True`` or ``False`` depending on whether
+:is_valid: A function that takes a proposed state and returns ``True`` or ``False`` depending on whether
     the state satisfies all the constraints that we want to impose. Here we've used just a single constraint,
     called ``single_flip_contiguous``, which checks that each district is contiguous. This particular constraint is
     optimized for the single-flip proposal function we are using (hence the name).
-3. ``accept``: a function that takes a valid proposed state and returns ``True`` or ``False`` to signal whether
+:accept: A function that takes a valid proposed state and returns ``True`` or ``False`` to signal whether
     the random walk should indeed move to the proposed state. ``always_accept`` always accepts valid proposed states.
     If you want to implement Metropolis-Hastings or any other more sophisticated acceptance criterion, you can
     specify your own custom acceptance function here.
-4. ``initial_state``: The first state of the random walk.
-5. ``total_steps``: The total number of steps to take. Invalid proposals are not counted toward this total, but
+:initial_state: The first state of the random walk.
+:total_steps: The total number of steps to take. Invalid proposals are not counted toward this total, but
     rejected (by ``accept``) valid states are.
+
+For more information on the details of our Markov chain implementation, consult
+the :class:`gerrychain.MarkovChain` documentation and source code.
 
 The above code configures a Markov chain called ``chain``, but does *not* run it yet. We run the chain
 by iterating through all of the states using a ``for`` loop. As an example, let's iterate through
 this chain and print out the district populations, sorted, for each step in the chain.
 
 .. code-block:: python
+
     for partition in chain:
         print(sorted(partition["population"].values()))
 
-Congratulations: you've run a MarkovChain using GerryChain!
-
-.. admonition::
-    :caption: What's happening under the hood
-    The :class:`~gerrychain.MarkovChain` is implemented as a generator. This is a language feature
-    of Python that lets us loop through the states of the chain without having to compute them all
-    ahead of time. So, in the above example, the next state of the chain is computed just-in-time
-    right before the next iteration of the ``for`` loop is executed. This lets us reason about the
-    chain in a natural way (i.e., ``for state in chain:``) and handle the output however we want,
-    without filling up your computers memory with the pre-computed states.
-    
-    For more information on the details of the
-    implementation, consult the :class:`gerrychain.MarkovChain` documentation and source code.
+That's all: you've run a Markov chain!
 
 Next steps
 ==========
