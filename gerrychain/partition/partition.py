@@ -1,8 +1,7 @@
 import collections
 
 from gerrychain.graph import Graph
-from gerrychain.updaters import (compute_edge_flows, cut_edges,
-                                 flows_from_changes)
+from gerrychain.updaters import compute_edge_flows, cut_edges, flows_from_changes
 
 
 class Partition:

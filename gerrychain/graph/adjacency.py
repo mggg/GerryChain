@@ -1,3 +1,5 @@
+import warnings
+
 from shapely.strtree import STRtree
 
 
@@ -49,16 +51,36 @@ def intersections_with_neighbors(geometries):
         yield (i, intersections)
 
 
+def warn_for_overlaps(intersection_pairs):
+    overlaps = set()
+    for i, intersections in intersection_pairs:
+        overlaps.update(
+            set(
+                tuple(sorted([i, j]))
+                for j, intersection in intersections.items()
+                if intersection.area > 0
+            )
+        )
+        yield (i, intersections)
+    if len(overlaps) > 0:
+        warnings.warn(
+            "Found overlaps among the given polygons. Indices of overlaps: {}".format(
+                overlaps
+            )
+        )
+
+
 def queen(geometries):
     """Return queen adjacency dictionary for the given collection of polygons."""
-    # TODO: Handle overlaps!
+    intersection_pairs = warn_for_overlaps(intersections_with_neighbors(geometries))
+
     return {
         i: {
             j: {"shared_perim": intersection.length}
             for j, intersection in intersections.items()
-            if not intersection.is_empty
+            if (not intersection.is_empty)
         }
-        for i, intersections in intersections_with_neighbors(geometries)
+        for i, intersections in intersection_pairs
     }
 
 

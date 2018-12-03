@@ -97,6 +97,9 @@ class Graph(networkx.Graph):
         adjacencies = neighbors(df, adjacency)
         graph = cls(adjacencies)
 
+        graph.warn_for_islands()
+        graph.warn_for_leaves()
+
         # Add "exterior" perimeters to the boundary nodes
         add_boundary_perimeters(graph, df)
 
@@ -177,6 +180,20 @@ class Graph(networkx.Graph):
         }
 
         networkx.set_node_attributes(self, node_attributes)
+
+    def warn_for_islands(self):
+        islands = set(node for node in self if self.degree[node] == 0)
+        if len(islands) > 0:
+            warnings.warn("Found islands. Indices of islands: {}".format(islands))
+
+    def warn_for_leaves(self):
+        donuts = set(node for node in self if self.degree[node] == 1)
+        if len(donuts) > 0:
+            warnings.warn(
+                "Found leaves (degree-1 nodes, a.k.a. donuts). Indices of donuts: {}".format(
+                    donuts
+                )
+            )
 
 
 def add_boundary_perimeters(graph, df):
