@@ -4,7 +4,6 @@ import warnings
 import geopandas as gp
 import networkx
 from networkx.readwrite import json_graph
-from shapely.ops import cascaded_union
 
 from .adjacency import neighbors
 from .geo import reprojected
@@ -101,10 +100,10 @@ class Graph(networkx.Graph):
         graph.warn_for_leaves()
 
         # Add "exterior" perimeters to the boundary nodes
-        add_boundary_perimeters(graph, df)
+        add_boundary_perimeters(graph, df.geometry)
 
         # Add area data to the nodes
-        areas = df["geometry"].area.to_dict()
+        areas = df.geometry.area.to_dict()
         networkx.set_node_attributes(graph, name="area", values=areas)
 
         return graph
@@ -196,34 +195,26 @@ class Graph(networkx.Graph):
             )
 
 
-def add_boundary_perimeters(graph, df):
+def add_boundary_perimeters(graph, geometries):
     """Add shared perimeter between nodes and the total geometry boundary.
 
-    :param graph: NetworkX graph.
+    :param graph: NetworkX graph. Must be using rook or queen adjacency!
     :param df: Geodataframe containing geometry information.
     :return: The updated graph.
     """
-    # creates one shape of the entire state to compare outer boundaries against
-    boundary = cascaded_union(df.geometry).boundary
+    for node in graph:
+        total_perimeter = geometries[node].boundary.length
+        shared_perimeter = sum(
+            neighbor_data["shared_perim"] for neighbor_data in graph[node].values()
+        )
+        boundary_perimeter = total_perimeter - shared_perimeter
 
-    intersections = df.intersection(boundary)
-    is_boundary = intersections.apply(bool)
-
-    # Add boundary node information to the graph.
-    intersection_df = gp.GeoDataFrame(intersections)
-    intersection_df["boundary_node"] = is_boundary
-
-    # List-indexing here to get the correct dictionary format for NetworkX.
-    attr_dict = intersection_df[["boundary_node"]].to_dict("index")
-    networkx.set_node_attributes(graph, attr_dict)
-
-    # For the boundary nodes, set the boundary perimeter.
-    boundary_perims = intersections[is_boundary].length
-    boundary_perims = gp.GeoDataFrame(boundary_perims)
-    boundary_perims.columns = ["boundary_perim"]
-
-    attribute_dict = boundary_perims.to_dict("index")
-    networkx.set_node_attributes(graph, attribute_dict)
+        # Any perimeter less than 1e-9 is assumed to be floating point precision error
+        if boundary_perimeter > 1e-9:
+            graph.nodes[node]["boundary_node"] = True
+            graph.nodes[node]["boundary_perim"] = boundary_perimeter
+        else:
+            graph.nodes[node]["boundary_node"] = False
 
 
 def check_dataframe(df):
