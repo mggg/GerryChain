@@ -78,3 +78,8 @@ class MarkovChain:
 
     def __len__(self):
         return self.total_steps
+
+    def with_progress_bar(self):
+        from tqdm.auto import tqdm
+
+        return tqdm(self)
