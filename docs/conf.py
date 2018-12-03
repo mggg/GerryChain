@@ -205,7 +205,7 @@ MOCK_MODULES = [
     # "networkx.algorithms.shortest_paths.weighted",
     "shapely",
     "shapely.ops",
-    "gerrychain.utm",
+    "gerrychain.vendor.utm",
 ]
 
 for module in MOCK_MODULES:

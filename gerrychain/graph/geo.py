@@ -1,6 +1,6 @@
 from collections import Counter
 
-from gerrychain.utm import from_latlon
+from gerrychain.vendor.utm import from_latlon
 
 
 def utm_of_point(point):
