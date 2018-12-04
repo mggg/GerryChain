@@ -4,6 +4,8 @@ import warnings
 import geopandas as gp
 import networkx
 from networkx.readwrite import json_graph
+from shapely.ops import cascaded_union
+from shapely.prepared import prep
 
 from .adjacency import neighbors
 from .geo import reprojected
@@ -198,23 +200,23 @@ class Graph(networkx.Graph):
 def add_boundary_perimeters(graph, geometries):
     """Add shared perimeter between nodes and the total geometry boundary.
 
-    :param graph: NetworkX graph. Must be using rook or queen adjacency!
+    :param graph: NetworkX graph
     :param df: Geodataframe containing geometry information.
     :return: The updated graph.
     """
-    for node in graph:
-        total_perimeter = geometries[node].boundary.length
-        shared_perimeter = sum(
-            neighbor_data["shared_perim"] for neighbor_data in graph[node].values()
-        )
-        boundary_perimeter = total_perimeter - shared_perimeter
+    prepared_boundary = prep(cascaded_union(geometries).boundary)
 
-        # Any perimeter less than 1e-9 is assumed to be floating point precision error
-        if boundary_perimeter > 1e-9:
-            graph.nodes[node]["boundary_node"] = True
+    boundary_nodes = geometries.boundary.apply(prepared_boundary.intersects)
+
+    for node in graph:
+        graph.nodes[node]["boundary_node"] = bool(boundary_nodes[node])
+        if boundary_nodes[node]:
+            total_perimeter = geometries[node].boundary.length
+            shared_perimeter = sum(
+                neighbor_data["shared_perim"] for neighbor_data in graph[node].values()
+            )
+            boundary_perimeter = total_perimeter - shared_perimeter
             graph.nodes[node]["boundary_perim"] = boundary_perimeter
-        else:
-            graph.nodes[node]["boundary_node"] = False
 
 
 def check_dataframe(df):
