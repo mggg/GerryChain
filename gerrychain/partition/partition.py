@@ -40,13 +40,13 @@ class Assignment:
             self.parts[part] = (self.parts[part] - flow["out"]) | flow["in"]
 
     def items(self):
-        for part in self.parts:
-            for node in self.parts[part]:
+        for part, nodes in self.parts.items():
+            for node in nodes:
                 yield (node, part)
 
     def update_parts(self, new_parts):
-        for part in new_parts:
-            self.parts[part] = frozenset(new_parts[part])
+        for part, nodes in new_parts.items():
+            self.parts[part] = frozenset(nodes)
 
 
 class Partition:
