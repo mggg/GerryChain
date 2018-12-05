@@ -8,11 +8,8 @@ from itertools import count
 import matplotlib.pyplot as plt
 import networkx as nx
 
-from gerrychain.constraints.bounds import (
-    Bounds,
-    SelfConfiguringLowerBound,
-    SelfConfiguringUpperBound,
-)
+from gerrychain.constraints.bounds import (Bounds, SelfConfiguringLowerBound,
+                                           SelfConfiguringUpperBound)
 from gerrychain.updaters import CountySplit
 
 logger = logging.getLogger(__name__)
