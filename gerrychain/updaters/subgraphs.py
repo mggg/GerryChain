@@ -1,5 +1,10 @@
 class Subgraphs:
+    """Updater providing the subgraphs of each part of the partition.
+    """
     def __init__(self, graph):
+        """
+        :param graph: The underlying adjacency graph of the partition.
+        """
         self._nodes_cache = {}
         self._subgraphs_cache = {}
         self.graph = graph
