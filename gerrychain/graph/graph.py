@@ -191,7 +191,7 @@ class Graph(networkx.Graph):
     @property
     def leaves(self):
         """The set of degree-1 nodes."""
-        return set(node for node in self if self.degree[node] == 0)
+        return set(node for node in self if self.degree[node] == 1)
 
     def warn_for_islands(self):
         """Issue a warning if the graph has any islands (degree-0 nodes)."""
