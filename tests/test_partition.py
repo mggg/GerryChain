@@ -1,16 +1,16 @@
 import networkx
 import pytest
 
-from gerrychain.partition import Partition
-from gerrychain.partition import GeographicPartition
+from gerrychain.partition import GeographicPartition, Partition
 from gerrychain.proposals import propose_random_flip
+from gerrychain.updaters import cut_edges
 
 
 @pytest.fixture
 def example_partition():
     graph = networkx.complete_graph(3)
     assignment = {0: 1, 1: 1, 2: 2}
-    partition = Partition(graph, assignment)
+    partition = Partition(graph, assignment, {"cut_edges": cut_edges})
     return partition
 
 

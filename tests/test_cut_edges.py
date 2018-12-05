@@ -1,5 +1,4 @@
-from gerrychain.constraints import (no_vanishing_districts,
-                                    single_flip_contiguous)
+from gerrychain.constraints import no_vanishing_districts, single_flip_contiguous
 from gerrychain.defaults import DefaultChain, Grid
 from gerrychain.partition import Partition
 from gerrychain.updaters import cut_edges, cut_edges_by_part
@@ -13,15 +12,20 @@ def edge_set_equal(set1, set2):
 
 
 def invalid_cut_edges(partition):
-    invalid = [edge for edge in partition['cut_edges']
-               if partition.assignment[edge[0]] == partition.assignment[edge[1]]]
+    invalid = [
+        edge
+        for edge in partition["cut_edges"]
+        if partition.assignment[edge[0]] == partition.assignment[edge[1]]
+    ]
     return invalid
 
 
-def test_cut_edges_doesnt_duplicate_edges_with_different_order_of_nodes(three_by_three_grid):
+def test_cut_edges_doesnt_duplicate_edges_with_different_order_of_nodes(
+    three_by_three_grid
+):
     graph = three_by_three_grid
     assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
-    partition = Partition(graph, assignment)
+    partition = Partition(graph, assignment, {"cut_edges": cut_edges})
     # 112    111
     # 112 -> 121
     # 222    222
@@ -29,7 +33,7 @@ def test_cut_edges_doesnt_duplicate_edges_with_different_order_of_nodes(three_by
 
     new_partition = Partition(parent=partition, flips=flip)
 
-    result = new_partition['cut_edges']
+    result = new_partition["cut_edges"]
 
     for edge in result:
         assert (edge[1], edge[0]) not in result
@@ -38,7 +42,7 @@ def test_cut_edges_doesnt_duplicate_edges_with_different_order_of_nodes(three_by
 def test_cut_edges_can_handle_multiple_flips(three_by_three_grid):
     graph = three_by_three_grid
     assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
-    partition = Partition(graph, assignment)
+    partition = Partition(graph, assignment, {"cut_edges": cut_edges})
     # 112    111
     # 112 -> 121
     # 222    222
@@ -46,17 +50,20 @@ def test_cut_edges_can_handle_multiple_flips(three_by_three_grid):
 
     new_partition = Partition(parent=partition, flips=flip)
 
-    result = new_partition['cut_edges']
+    result = new_partition["cut_edges"]
 
-    naive_cut_edges = {tuple(sorted(edge)) for edge in graph.edges
-                       if new_partition.crosses_parts(edge)}
+    naive_cut_edges = {
+        tuple(sorted(edge)) for edge in graph.edges if new_partition.crosses_parts(edge)
+    }
     assert result == naive_cut_edges
 
 
-def test_cut_edges_by_part_doesnt_duplicate_edges_with_opposite_order_of_nodes(three_by_three_grid):
+def test_cut_edges_by_part_doesnt_duplicate_edges_with_opposite_order_of_nodes(
+    three_by_three_grid
+):
     graph = three_by_three_grid
     assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
-    updaters = {'cut_edges_by_part': cut_edges_by_part}
+    updaters = {"cut_edges_by_part": cut_edges_by_part}
     partition = Partition(graph, assignment, updaters)
     # 112    111
     # 112 -> 121
@@ -65,7 +72,7 @@ def test_cut_edges_by_part_doesnt_duplicate_edges_with_opposite_order_of_nodes(t
 
     new_partition = Partition(parent=partition, flips=flip)
 
-    result = new_partition['cut_edges_by_part']
+    result = new_partition["cut_edges_by_part"]
 
     for part in result:
         for edge in result[part]:
@@ -75,7 +82,7 @@ def test_cut_edges_by_part_doesnt_duplicate_edges_with_opposite_order_of_nodes(t
 def test_cut_edges_by_part_gives_same_total_edges_as_naive_method(three_by_three_grid):
     graph = three_by_three_grid
     assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
-    updaters = {'cut_edges_by_part': cut_edges_by_part}
+    updaters = {"cut_edges_by_part": cut_edges_by_part}
     partition = Partition(graph, assignment, updaters)
     # 112    111
     # 112 -> 121
@@ -84,24 +91,28 @@ def test_cut_edges_by_part_gives_same_total_edges_as_naive_method(three_by_three
 
     new_partition = Partition(parent=partition, flips=flip)
 
-    result = new_partition['cut_edges_by_part']
-    naive_cut_edges = {tuple(sorted(edge)) for edge in graph.edges
-                       if new_partition.crosses_parts(edge)}
+    result = new_partition["cut_edges_by_part"]
+    naive_cut_edges = {
+        tuple(sorted(edge)) for edge in graph.edges if new_partition.crosses_parts(edge)
+    }
 
-    assert naive_cut_edges == {tuple(sorted(edge)) for part in result for edge in result[part]}
+    assert naive_cut_edges == {
+        tuple(sorted(edge)) for part in result for edge in result[part]
+    }
 
 
 def test_implementation_of_cut_edges_matches_naive_method(three_by_three_grid):
     graph = three_by_three_grid
     assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
-    partition = Partition(graph, assignment)
+    partition = Partition(graph, assignment, {"cut_edges": cut_edges})
 
     flip = {4: 2}
     new_partition = Partition(parent=partition, flips=flip)
     result = cut_edges(new_partition)
 
-    naive_cut_edges = {edge for edge in graph.edges
-                       if new_partition.crosses_parts(edge)}
+    naive_cut_edges = {
+        edge for edge in graph.edges if new_partition.crosses_parts(edge)
+    }
 
     assert edge_set_equal(result, naive_cut_edges)
 
@@ -109,10 +120,13 @@ def test_implementation_of_cut_edges_matches_naive_method(three_by_three_grid):
 def test_cut_edges_matches_naive_cut_edges_at_every_step():
     partition = Grid((10, 10), with_diagonals=True)
 
-    chain = DefaultChain(partition, [single_flip_contiguous, no_vanishing_districts], 1000)
+    chain = DefaultChain(
+        partition, [single_flip_contiguous, no_vanishing_districts], 1000
+    )
 
     for state in chain:
-        naive_cut_edges = {edge for edge in state.graph.edges
-                           if state.crosses_parts(edge)}
+        naive_cut_edges = {
+            edge for edge in state.graph.edges if state.crosses_parts(edge)
+        }
 
-        assert naive_cut_edges == state['cut_edges']
+        assert naive_cut_edges == state["cut_edges"]

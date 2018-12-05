@@ -1,7 +1,7 @@
 import collections
 
 from gerrychain.graph import Graph
-from gerrychain.updaters import compute_edge_flows, cut_edges, flows_from_changes
+from gerrychain.updaters import compute_edge_flows, flows_from_changes
 
 
 class Partition:
@@ -12,7 +12,7 @@ class Partition:
 
     """
 
-    default_updaters = {"cut_edges": cut_edges}
+    default_updaters = {}
 
     def __init__(
         self, graph=None, assignment=None, updaters=None, parent=None, flips=None
