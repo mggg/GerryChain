@@ -390,7 +390,7 @@ def proposed_changes_still_contiguous(partition):
 
     # Check whether this is the initial partition (parent=None)
     # or one with proposed changes (parent != None).
-    districts_of_interest = set(partition.assignment.values())
+    districts_of_interest = partition.parts
     if partition.parent:
         if partition.flips.keys is not None:
             districts_of_interest = set(partition.flips.values()).union(
@@ -494,6 +494,4 @@ def no_vanishing_districts(partition):
     """Require that no districts be completely consumed."""
     if not partition.parent:
         return True
-    return len(set(partition.assignment.values())) == len(
-        set(partition.parent.assignment.values())
-    )
+    return all(len(part) > 0 for part in partition.assignment.parts.values())

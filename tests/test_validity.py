@@ -3,10 +3,16 @@ from unittest.mock import MagicMock
 import networkx as nx
 import pytest
 
-from gerrychain.constraints import (SelfConfiguringLowerBound, Validator,
-                                    contiguous, districts_within_tolerance,
-                                    fast_connected, no_vanishing_districts,
-                                    single_flip_contiguous)
+from gerrychain.constraints import (
+    SelfConfiguringLowerBound,
+    Validator,
+    contiguous,
+    districts_within_tolerance,
+    fast_connected,
+    no_vanishing_districts,
+    single_flip_contiguous,
+)
+from gerrychain.partition.partition import get_assignment
 
 
 class MockContiguousPartition:
@@ -69,29 +75,31 @@ def test_discontiguous_with_contiguity_flips_is_false():
 
 def test_districts_within_tolerance_returns_false_if_districts_are_not_within_tolerance():
     # 100 and 1 are not within 1% of each other, so we should expect False
-    mock_partition = {'population': {0: 100.0, 1: 1.0}}
+    mock_partition = {"population": {0: 100.0, 1: 1.0}}
 
     result = districts_within_tolerance(
-        mock_partition, attribute_name='population', percentage=0.01)
+        mock_partition, attribute_name="population", percentage=0.01
+    )
 
     assert result is False
 
 
 def test_districts_within_tolerance_returns_true_if_districts_are_within_tolerance():
     # 100 and 100.1 are not within 1% of each other, so we should expect True
-    mock_partition = {'population': {0: 100.0, 1: 100.1}}
+    mock_partition = {"population": {0: 100.0, 1: 100.1}}
 
     result = districts_within_tolerance(
-        mock_partition, attribute_name='population', percentage=0.01)
+        mock_partition, attribute_name="population", percentage=0.01
+    )
 
     assert result is True
 
 
 def test_self_configuring_lower_bound_always_allows_the_first_argument_it_gets():
-    mock_partition = {'value': 1}
+    mock_partition = {"value": 1}
 
     def mock_func(partition):
-        return partition['value']
+        return partition["value"]
 
     bound = SelfConfiguringLowerBound(mock_func)
     assert bound(mock_partition)
@@ -117,9 +125,11 @@ def test_validator_raises_TypeError_if_constraint_returns_non_boolean():
 
 def test_no_vanishing_districts_works():
     parent = MagicMock()
-    parent.assignment = {1: 1, 2: 2}
+    parent.assignment = get_assignment({1: 1, 2: 2}, MagicMock())
+
     partition = MagicMock()
     partition.parent = parent
-    partition.assignment = {1: 2, 2: 2}
+    partition.assignment = parent.assignment.copy()
+    partition.assignment.update({2: 1})
 
     assert not no_vanishing_districts(partition)

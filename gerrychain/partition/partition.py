@@ -4,6 +4,51 @@ from gerrychain.graph import Graph
 from gerrychain.updaters import compute_edge_flows, flows_from_changes
 
 
+def level_sets(mapping: dict):
+    sets = collections.defaultdict(set)
+    for source, target in mapping.items():
+        sets[target].add(source)
+    return sets
+
+
+class Assignment:
+    def __init__(self, parts):
+        self.parts = parts
+
+    @classmethod
+    def from_dict(cls, assignment: dict):
+        parts = {
+            part: frozenset(nodes) for part, nodes in level_sets(assignment).items()
+        }
+        return cls(parts)
+
+    def __getitem__(self, node):
+        for part, nodes in self.parts.items():
+            if node in nodes:
+                return part
+        raise KeyError(node)
+
+    def copy(self):
+        # This .copy() does not duplicate the frozensets
+        return Assignment(self.parts.copy())
+
+    def update(self, mapping: dict):
+        flows = flows_from_changes(self, mapping)
+        for part, flow in flows.items():
+            # Union between frozenset and set returns an object whose type
+            # matches the object on the left, which here is a frozenset
+            self.parts[part] = (self.parts[part] - flow["out"]) | flow["in"]
+
+    def items(self):
+        for part in self.parts:
+            for node in self.parts[part]:
+                yield (node, part)
+
+    def update_parts(self, new_parts):
+        for part in new_parts:
+            self.parts[part] = frozenset(new_parts[part])
+
+
 class Partition:
     """
     Partition represents a partition of the nodes of the graph. It will perform
@@ -36,11 +81,7 @@ class Partition:
     def _first_time(self, graph, assignment, updaters):
         self.graph = graph
 
-        if isinstance(assignment, str):
-            assignment = graph.node_attribute(assignment)
-        elif not isinstance(assignment, dict):
-            raise TypeError("Assignment must be a dict or a node attribute key")
-        self.assignment = assignment
+        self.assignment = get_assignment(assignment, graph)
 
         if updaters is None:
             updaters = dict()
@@ -52,9 +93,7 @@ class Partition:
         self.flows = None
         self.edge_flows = None
 
-        self.parts = collections.defaultdict(set)
-        for node, part in self.assignment.items():
-            self.parts[part].add(node)
+        self.parts = level_sets(self.assignment)
 
     def _from_parent(self, parent, flips):
         self.parent = parent
@@ -67,7 +106,8 @@ class Partition:
         self.parts = parent.parts
         self.updaters = parent.updaters
 
-        self._update_flows()
+        self.flows = flows_from_changes(parent.assignment, flips)
+        self.edge_flows = compute_edge_flows(self)
 
     def __repr__(self):
         number_of_parts = len(self)
@@ -76,10 +116,6 @@ class Partition:
 
     def __len__(self):
         return len(self.parts)
-
-    def _update_flows(self):
-        self.flows = flows_from_changes(self.parent.assignment, self.flips)
-        self.edge_flows = compute_edge_flows(self)
 
     def _update(self):
         self._cache = dict()
@@ -166,3 +202,14 @@ class Partition:
         """
         graph = Graph.from_file(filename, cols_to_add=columns)
         return cls(graph, assignment, updaters)
+
+
+def get_assignment(assignment, graph):
+    if isinstance(assignment, str):
+        return Assignment.from_dict(graph.node_attribute(assignment))
+    elif isinstance(assignment, dict):
+        return Assignment.from_dict(assignment)
+    elif isinstance(assignment, Assignment):
+        return assignment
+    else:
+        raise TypeError("Assignment must be a dict or a node attribute key")
