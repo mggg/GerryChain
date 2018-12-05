@@ -27,7 +27,9 @@ class Graph(networkx.Graph):
         with open(json_file) as f:
             data = json.load(f)
         g = json_graph.adjacency_graph(data)
-        return cls(g)
+        graph = cls(g)
+        graph.issue_warnings()
+        return graph
 
     def to_json(self, json_file, *, include_geometries_as_geojson=False):
         """Save a graph to a JSON file in the NetworkX json_graph format.
@@ -98,8 +100,7 @@ class Graph(networkx.Graph):
         adjacencies = neighbors(df, adjacency)
         graph = cls(adjacencies)
 
-        graph.warn_for_islands()
-        graph.warn_for_leaves()
+        graph.issue_warnings()
 
         # Add "exterior" perimeters to the boundary nodes
         add_boundary_perimeters(graph, df.geometry)
@@ -182,19 +183,42 @@ class Graph(networkx.Graph):
 
         networkx.set_node_attributes(self, node_attributes)
 
+    @property
+    def islands(self):
+        """The set of degree-0 nodes."""
+        return set(node for node in self if self.degree[node] == 0)
+
+    @property
+    def leaves(self):
+        """The set of degree-1 nodes."""
+        return set(node for node in self if self.degree[node] == 0)
+
     def warn_for_islands(self):
-        islands = set(node for node in self if self.degree[node] == 0)
-        if len(islands) > 0:
-            warnings.warn("Found islands. Indices of islands: {}".format(islands))
+        """Issue a warning if the graph has any islands (degree-0 nodes)."""
+        islands = self.islands
+        if len(self.islands) > 0:
+            warnings.warn(
+                "Found islands (degree-0 nodes). Indices of islands: {}".format(islands)
+            )
 
     def warn_for_leaves(self):
-        donuts = set(node for node in self if self.degree[node] == 1)
+        """Issue a warning if the graph has any leaves (degree-1 nodes).
+
+        Leaves are redundant for the purposes of flip-based random walks, so it is often
+        desirable to absorb them into their neighbors before running Markov chains.
+        """
+        donuts = self.leaves
         if len(donuts) > 0:
             warnings.warn(
-                "Found leaves (degree-1 nodes, a.k.a. donuts). Indices of donuts: {}".format(
+                "Found leaves (degree-1 nodes, a.k.a. donuts). Indices of leaves: {}".format(
                     donuts
                 )
             )
+
+    def issue_warnings(self):
+        """Issue warnings if the graph has islands or leaves."""
+        self.warn_for_islands()
+        self.warn_for_leaves()
 
 
 def add_boundary_perimeters(graph, geometries):
