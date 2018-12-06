@@ -21,9 +21,7 @@ Boolean constraint functions
 =================================================================================================
 ``no_worse_L1_reciprocal_polsby_popper``            Lower bounded L1-reciprocal Polsby-Popper
 ``no_worse_L_minus_1_reciprocal_polsby_popper``     Lower bounded L(-1)-reciprocal Polsby-Popper
-``single_flip_contiguous``                          Contiguity of districts after single flips
 ``contiguous``                                      Contiguity of districts with NetworkX methods
-``no_more_disconnected``                            No more disconnected districts than initially
 ``no_vanishing_districts``                          No districts may be completely consumed
 ================================================== ==============================================
 
@@ -44,23 +42,22 @@ from .bounds import (
     SelfConfiguringUpperBound,
     UpperBound,
 )
+from .contiguity import (
+    contiguous,
+    contiguous_bfs,
+    no_more_discontiguous,
+    single_flip_contiguous,
+)
 from .validity import (
     L1_polsby_popper,
     L1_reciprocal_polsby_popper,
     L2_polsby_popper,
     L_minus_1_polsby_popper,
     Validator,
-    contiguous,
     districts_within_tolerance,
-    fast_connected,
-    no_more_disconnected,
     no_vanishing_districts,
     no_worse_L1_reciprocal_polsby_popper,
     no_worse_L_minus_1_polsby_popper,
-    non_bool_fast_connected,
-    non_bool_where,
-    proposed_changes_still_contiguous,
     refuse_new_splits,
-    single_flip_contiguous,
     within_percent_of_ideal_population,
 )

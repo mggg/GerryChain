@@ -1,5 +1,5 @@
+from ..updaters.flows import flows_from_changes
 from ..utils import level_sets
-from .updaters.flows import flows_from_changes
 
 
 class Assignment:
@@ -12,6 +12,7 @@ class Assignment:
     An :class:`Assignment` has a ``parts`` property that is a dictionary of the form
     ``{part: <frozenset of nodes in part>}``.
     """
+
     def __init__(self, parts: dict):
         self.parts = parts
 
@@ -63,9 +64,19 @@ class Assignment:
         for part, nodes in new_parts.items():
             self.parts[part] = frozenset(nodes)
 
+    def get(self, key, default=None):
+        try:
+            return self[key]
+        except KeyError:
+            return default
 
-def get_assignment(assignment, graph):
+
+def get_assignment(assignment, graph=None):
     if isinstance(assignment, str):
+        if graph is None:
+            raise TypeError(
+                "You must provide a graph when using a node attribute for the assignment"
+            )
         return Assignment.from_dict(graph.node_attribute(assignment))
     elif isinstance(assignment, dict):
         return Assignment.from_dict(assignment)

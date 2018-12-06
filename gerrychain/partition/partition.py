@@ -1,8 +1,7 @@
-from gerrychain.graph import Graph
-from gerrychain.updaters import compute_edge_flows, flows_from_changes
-
-from ..utils import level_sets
+from ..graph import Graph
+from ..updaters import compute_edge_flows, flows_from_changes
 from .assignment import get_assignment
+from .subgraphs import SubgraphView
 
 
 class Partition:
@@ -28,11 +27,11 @@ class Partition:
         """
         if parent:
             self._from_parent(parent, flips)
-            self._update()
         else:
             self._first_time(graph, assignment, updaters)
-            self._update()
-            self.parts = tuple(self.parts.keys())
+
+        self._update()
+        self.subgraphs = SubgraphView(self.graph, self.parts)
 
     def _first_time(self, graph, assignment, updaters):
         self.graph = graph
@@ -49,8 +48,6 @@ class Partition:
         self.flows = None
         self.edge_flows = None
 
-        self.parts = level_sets(self.assignment)
-
     def _from_parent(self, parent, flips):
         self.parent = parent
         self.flips = flips
@@ -59,7 +56,6 @@ class Partition:
         self.assignment.update(flips)
 
         self.graph = parent.graph
-        self.parts = parent.parts
         self.updaters = parent.updaters
 
         self.flows = flows_from_changes(parent.assignment, flips)
@@ -108,6 +104,10 @@ class Partition:
         if key not in self._cache:
             self._cache[key] = self.updaters[key](self)
         return self._cache[key]
+
+    @property
+    def parts(self):
+        return self.assignment.parts
 
     @classmethod
     def from_json(cls, graph_path, assignment, updaters=None):

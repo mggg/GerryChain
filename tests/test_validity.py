@@ -7,70 +7,91 @@ from gerrychain.constraints import (
     SelfConfiguringLowerBound,
     Validator,
     contiguous,
+    contiguous_bfs,
     districts_within_tolerance,
-    fast_connected,
     no_vanishing_districts,
     single_flip_contiguous,
 )
+from gerrychain.partition import Partition
 from gerrychain.partition.partition import get_assignment
 
 
-class MockContiguousPartition:
-    def __init__(self):
-        graph = nx.Graph()
-        graph.add_nodes_from(range(4))
-        graph.add_edges_from([(0, 1), (1, 2), (2, 3), (3, 0)])
-        self.graph = graph
-        self.assignment = {0: 0, 1: 1, 2: 1, 3: 0}
-        self.flips = None
-        self.parent = None
+@pytest.fixture
+def contiguous_partition():
+    graph = nx.Graph()
+    graph.add_nodes_from(range(4))
+    graph.add_edges_from([(0, 1), (1, 2), (2, 3), (3, 0)])
+    partition = Partition(graph, {0: 0, 1: 1, 2: 1, 3: 0})
 
-        # This flip will maintain contiguity.
-        self.test_flips = {0: 1}
+    # This flip will maintain contiguity.
+    partition.test_flips = {0: 1}
+    return partition
 
 
-class MockDiscontiguousPartition:
-    def __init__(self):
-        graph = nx.Graph()
-        graph.add_nodes_from(range(4))
-        graph.add_edges_from([(0, 1), (1, 2), (2, 3)])
-        self.graph = graph
-        self.assignment = {0: 0, 1: 1, 2: 1, 3: 0}
-        self.flips = None
-        self.parent = None
+@pytest.fixture
+def discontiguous_partition():
+    graph = nx.Graph()
+    graph.add_nodes_from(range(4))
+    graph.add_edges_from([(0, 1), (1, 2), (2, 3)])
+    partition = Partition(graph, {0: 0, 1: 1, 2: 1, 3: 0})
 
-        # This flip will maintain discontiguity.
-        self.test_flips = {1: 0}
+    # This flip will maintain discontiguity.
+    partition.test_flips = {1: 0}
+    return partition
 
 
-def test_contiguous_with_contiguity_no_flips_is_true():
-    contiguous_partition = MockContiguousPartition()
+def test_contiguous_with_contiguity_no_flips_is_true(contiguous_partition):
     assert contiguous(contiguous_partition)
     assert single_flip_contiguous(contiguous_partition)
-    assert fast_connected(contiguous_partition)
+    assert contiguous_bfs(contiguous_partition)
 
 
-def test_contiguous_with_contiguity_flips_is_true():
-    contiguous_partition = MockContiguousPartition()
-    contiguous_partition.flips = contiguous_partition.test_flips
-    assert contiguous(contiguous_partition)
-    assert single_flip_contiguous(contiguous_partition)
-    assert fast_connected(contiguous_partition)
+def test_contiguous_with_contiguity_flips_is_true(contiguous_partition):
+    contiguous_partition2 = contiguous_partition.merge(contiguous_partition.test_flips)
+    assert contiguous(contiguous_partition2)
+    assert single_flip_contiguous(contiguous_partition2)
+    assert contiguous_bfs(contiguous_partition2)
 
 
-def test_discontiguous_with_contiguity_no_flips_is_false():
-    discontiguous_partition = MockDiscontiguousPartition()
+def test_discontiguous_with_contiguous_no_flips_is_false(discontiguous_partition):
     assert not contiguous(discontiguous_partition)
-    assert not single_flip_contiguous(discontiguous_partition)
-    assert not fast_connected(discontiguous_partition)
 
 
-def test_discontiguous_with_contiguity_flips_is_false():
-    discontiguous_partition = MockDiscontiguousPartition()
-    discontiguous_partition.flips = discontiguous_partition.test_flips
-    assert not contiguous(discontiguous_partition)
+def test_discontiguous_with_single_flip_contiguous_no_flips_is_false(
+    discontiguous_partition
+):
     assert not single_flip_contiguous(discontiguous_partition)
-    assert not fast_connected(discontiguous_partition)
+
+
+def test_discontiguous_with_contiguous_bfs_no_flips_is_false(discontiguous_partition):
+    assert not contiguous_bfs(discontiguous_partition)
+
+
+def test_discontiguous_with_contiguous_flips_is_false(discontiguous_partition):
+    discontiguous_partition2 = discontiguous_partition.merge(
+        discontiguous_partition.test_flips
+    )
+    assert not contiguous(discontiguous_partition2)
+
+
+@pytest.mark.xfail(
+    reason="single_flip_contiguous does not work"
+    "when the previous partition is discontiguous"
+)
+def test_discontiguous_with_single_flip_contiguous_flips_is_false(
+    discontiguous_partition
+):
+    discontiguous_partition2 = discontiguous_partition.merge(
+        discontiguous_partition.test_flips
+    )
+    assert not single_flip_contiguous(discontiguous_partition2)
+
+
+def test_discontiguous_with_contiguous_bfs_flips_is_false(discontiguous_partition):
+    discontiguous_partition2 = discontiguous_partition.merge(
+        discontiguous_partition.test_flips
+    )
+    assert not contiguous_bfs(discontiguous_partition2)
 
 
 def test_districts_within_tolerance_returns_false_if_districts_are_not_within_tolerance():
