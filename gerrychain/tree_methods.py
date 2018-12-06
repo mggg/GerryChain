@@ -190,8 +190,8 @@ def partition_spanning_tree_single(partition):
             qedge = random.choice(templ)
             # print("tried an edge",[partition.assignment[qedge[0]],partition.assignment[qedge[1]]])
             if (
-                edge[1] == partition.assignment[qedge[0]] or
-                edge[1] == partition.assignment[qedge[1]]
+                edge[1] == partition.assignment[qedge[0]]
+                or edge[1] == partition.assignment[qedge[1]]
             ):
                 tempo = 1
                 e_to_add.append(qedge)
@@ -229,6 +229,22 @@ def partition_spanning_tree_all(partition):
 # Tree Splitting
 
 
+def predecessors(h, root):
+    return {a: b for a, b in nx.bfs_predecessors(h, root)}
+
+
+def random_spanning_tree(graph):
+    for edge in graph.edges:
+        graph.edges[edge]["weight"] = random.random()
+
+    return tree.maximum_spanning_tree(graph, algorithm="kruskal")
+
+
+def and_its_complement(subset, total_set):
+    complement = set(total_set) - set(subset)
+    return {1: subset, -1: complement}
+
+
 def tree_part2(partition, graph, pop_col, pop_target, epsilon, node_repeats):
     """This function finds a balanced 2 partition of a graph by drawing a
     spanning tree and finding an edge to cut that leaves at most an epsilon
@@ -236,27 +252,17 @@ def tree_part2(partition, graph, pop_col, pop_target, epsilon, node_repeats):
     are tried until node_repeats in which case a new tree is drawn.
     """
 
-    w = graph.copy()
-    for ed in w.edges():
-        w.add_edge(ed[0], ed[1], weight=random.random())
+    def constraint(pop):
+        return abs(pop - pop_target) < pop_target * epsilon
 
-    T = tree.maximum_spanning_edges(w, algorithm="kruskal", data=False)
-    ST = nx.Graph()
-    ST.add_edges_from(list(T))
-    # nx.draw(ST)
+    ST = random_spanning_tree(graph)
     h = ST.copy()
 
-    # nx.draw(ST,layout='tree')
-
-    # root = random.choice(list(h.nodes()))
     root = random.choice(
         [x for x in ST.nodes() if ST.degree(x) > 1]
     )  # this used to be greater than 2 but failed on small grids:(
-    # print(root)
-    predbfs = nx.bfs_predecessors(h, root)  # was dfs
-    pred = {}
-    for ed in predbfs:
-        pred[ed[0]] = ed[1]
+
+    pred = predecessors(h, root)
 
     pops = {x: [{x}, partition.graph.nodes[x][pop_col]] for x in graph.nodes()}
 
@@ -267,33 +273,13 @@ def tree_part2(partition, graph, pop_col, pop_target, epsilon, node_repeats):
     restarts = 0
     while 1 == 1:
         if restarts == node_repeats:
-
-            w = graph.copy()
-            for ed in w.edges():
-                w.add_edge(ed[0], ed[1], weight=random.random())
-
-            T = tree.maximum_spanning_edges(w, algorithm="kruskal", data=False)
-            ST = nx.Graph()
-            ST.add_edges_from(list(T))
-            # nx.draw(ST)
+            ST = random_spanning_tree(graph)
             h = ST.copy()
 
-            # nx.draw(ST,layout='tree')
+            root = random.choice([x for x in ST.nodes() if ST.degree(x) > 1])
+            pred = predecessors(h, root)
 
-            # root = random.choice(list(h.nodes()))
-            root = random.choice(
-                [x for x in ST.nodes() if ST.degree(x) > 1]
-            )  # this used to be greater than 2 but failed on small grids:(
-            # print(root)
-            predbfs = nx.bfs_predecessors(h, root)  # was dfs
-            pred = {}
-            for ed in predbfs:
-                pred[ed[0]] = ed[1]
-
-            pops = {
-                x: [{x}, partition.graph.nodes[x][pop_col]]
-                for x in graph.nodes()
-            }
+            pops = {x: [{x}, partition.graph.nodes[x][pop_col]] for x in graph.nodes()}
 
             leaves = []
             t = 0
@@ -301,46 +287,32 @@ def tree_part2(partition, graph, pop_col, pop_target, epsilon, node_repeats):
             restarts = 0
             # print("Bad tree -- rebuilding")
 
-        if len(list(h.nodes())) == 1:
+        if len(h) == 1:
             h = ST.copy()
             root = random.choice(
                 [x for x in ST.nodes() if ST.degree(x) > 1]
             )  # this used to be greater than 2 but failed on small grids:(
-            # print(root)
-            # pred=nx.bfs_predecessors(h, root)#was dfs
-            predbfs = nx.bfs_predecessors(h, root)  # was dfs
-            pred = {}
-            for ed in predbfs:
-                pred[ed[0]] = ed[1]
-            pops = {
-                x: [{x}, partition.graph.nodes[x][pop_col]]
-                for x in graph.nodes()
-            }
+
+            pred = predecessors(h, root)
+            pops = {x: [{x}, partition.graph.nodes[x][pop_col]] for x in graph.nodes()}
             # print("bad root --- restarting",restarts)
             restarts += 1
             layer = 0
             leaves = []
 
         if leaves == []:
-
-            leaves = [x for x in h.nodes() if h.degree(x) == 1]
+            leaves = [x for x in h if h.degree(x) == 1]
             layer = layer + 1
 
-            if len(leaves) == len(list(h.nodes())) - 1:
+            if len(leaves) == len(h) - 1:
                 tsum = pops[root][1]
                 for r in range(2, len(leaves)):
                     for s in itertools.combinations(leaves, r):
                         for node in s:
                             tsum += pops[node][1]
-                    if abs(tsum - pop_target) < epsilon * pop_target:
+                    if constraint(tsum):
                         print(1, pops[leaf][1] / pop_target)
-                        clusters = {}
-                        clusters[1] = list(pops[leaf][0])
-                        clusters[-1] = []
-                        for nh in graph.nodes():
-                            if nh not in clusters[1]:
-                                clusters[-1].append(nh)
-                        return clusters
+                        return and_its_complement(pops[leaf][0])
 
             if (
                 root in leaves
@@ -351,21 +323,8 @@ def tree_part2(partition, graph, pop_col, pop_target, epsilon, node_repeats):
             # print("Layer",layer)
 
         for leaf in leaves:
-            if layer > 1 and abs(pops[leaf][1] - pop_target) < pop_target * epsilon:
-                # print(pops[leaf][1]/pop_target)
-                # ST.remove_edge(leaf,pred[leaf])#One option but slow
-                # parts=list(nx.connected_components(h)) #ST here too
-                # print(layer, len(parts))
-
-                # part=parts[random.random()<.5]
-                # print(2,pops[leaf][1]/pop_target)#added this new but seems to be the working one
-                clusters = {}
-                clusters[1] = list(pops[leaf][0])
-                clusters[-1] = []
-                for nh in graph.nodes():
-                    if nh not in clusters[1]:
-                        clusters[-1].append(nh)
-                return clusters
+            if layer > 1 and constraint(pops[leaf[1]]):
+                return and_its_complement(pops[leaf][0])
 
             parent = pred[leaf]
 
