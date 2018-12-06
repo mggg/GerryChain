@@ -8,7 +8,7 @@ from gerrychain.chain import MarkovChain
 from gerrychain.constraints import Validator, no_vanishing_districts
 from gerrychain.partition import Partition
 from gerrychain.proposals import propose_random_flip
-from gerrychain.updaters import (Election, Tally, boundary_nodes,
+from gerrychain.updaters import (Election, Tally, boundary_nodes, cut_edges,
                                  cut_edges_by_part, exterior_boundaries,
                                  exterior_boundaries_as_a_set,
                                  interior_boundaries, perimeter)
@@ -37,7 +37,7 @@ def partition_with_election(graph_with_d_and_r_cols):
         'R': {node: graph.nodes[node]['R'] for node in graph.nodes}
     }
     election = Election("Mock Election", parties_to_columns)
-    updaters = {"Mock Election": election}
+    updaters = {"Mock Election": election, "cut_edges": cut_edges}
     return Partition(graph, assignment, updaters)
 
 

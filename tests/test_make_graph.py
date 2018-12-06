@@ -230,11 +230,3 @@ def test_graph_warns_for_islands():
 
     with pytest.warns(Warning):
         graph.warn_for_islands()
-
-
-def test_graph_warns_for_leaves():
-    # 0 is a leaf
-    graph = Graph([(0, 1), (1, 2), (1, 3), (3, 2)])
-
-    with pytest.warns(Warning):
-        graph.warn_for_leaves()

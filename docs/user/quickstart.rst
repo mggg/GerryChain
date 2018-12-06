@@ -35,7 +35,7 @@ will be the initial state of our Markov chain.
 .. code-block:: python
 
     from gerrychain import Graph, Partition
-    from gerrychain.updaters import Tally
+    from gerrychain.updaters import Tally, cut_edges
 
     graph = Graph.from_file("./MA_precincts_02_10.shp")
 
@@ -45,6 +45,7 @@ will be the initial state of our Markov chain.
         graph,
         assignment="CD",
         updaters={
+            "cut_edges": cut_edges,
             "population": Tally("POP2000", alias="population")
         }
     )
@@ -73,9 +74,10 @@ takes three arguments:
     each node's assignment. In this example we've written ``assignment="CD"`` to tell the :class:`~gerrychain.Partition`
     to assign nodes by their ``"CD"`` attribute that we copied from the shapefile. This attributes holds the
     assignments of precincts to Congressional Districts from the 2000 Redistricting cycle.
-:updaters: An optional dictionary of "updater" functions. Here we've provided a single updater named ``"population"`` that
+:updaters: An optional dictionary of "updater" functions. Here we've provided an updater named ``"population"`` that
     computes the total population of each district in the partition, based on the ``"POP2000"`` node attribute
-    from our shapefile.
+    from our shapefile. We've also provided a ``cut_edges`` updater. This returns all of the edges in the graph
+    that cross from one part to another, and is used by ``propose_random_flip`` to find a random boundary flip.
 
 With the ``"population"`` updater configured, we can see the total population in each of our Congressional Districts.
 In an interactive Python session, we can print out the populations like this:

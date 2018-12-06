@@ -4,6 +4,8 @@ import warnings
 import geopandas as gp
 import networkx
 from networkx.readwrite import json_graph
+from shapely.ops import cascaded_union
+from shapely.prepared import prep
 
 from .adjacency import neighbors
 from .geo import reprojected
@@ -25,7 +27,9 @@ class Graph(networkx.Graph):
         with open(json_file) as f:
             data = json.load(f)
         g = json_graph.adjacency_graph(data)
-        return cls(g)
+        graph = cls(g)
+        graph.issue_warnings()
+        return graph
 
     def to_json(self, json_file, *, include_geometries_as_geojson=False):
         """Save a graph to a JSON file in the NetworkX json_graph format.
@@ -96,8 +100,7 @@ class Graph(networkx.Graph):
         adjacencies = neighbors(df, adjacency)
         graph = cls(adjacencies)
 
-        graph.warn_for_islands()
-        graph.warn_for_leaves()
+        graph.issue_warnings()
 
         # Add "exterior" perimeters to the boundary nodes
         add_boundary_perimeters(graph, df.geometry)
@@ -180,41 +183,44 @@ class Graph(networkx.Graph):
 
         networkx.set_node_attributes(self, node_attributes)
 
-    def warn_for_islands(self):
-        islands = set(node for node in self if self.degree[node] == 0)
-        if len(islands) > 0:
-            warnings.warn("Found islands. Indices of islands: {}".format(islands))
+    @property
+    def islands(self):
+        """The set of degree-0 nodes."""
+        return set(node for node in self if self.degree[node] == 0)
 
-    def warn_for_leaves(self):
-        donuts = set(node for node in self if self.degree[node] == 1)
-        if len(donuts) > 0:
+    def warn_for_islands(self):
+        """Issue a warning if the graph has any islands (degree-0 nodes)."""
+        islands = self.islands
+        if len(self.islands) > 0:
             warnings.warn(
-                "Found leaves (degree-1 nodes, a.k.a. donuts). Indices of donuts: {}".format(
-                    donuts
-                )
+                "Found islands (degree-0 nodes). Indices of islands: {}".format(islands)
             )
+
+    def issue_warnings(self):
+        """Issue warnings if the graph has any red flags (right now, only islands)."""
+        self.warn_for_islands()
 
 
 def add_boundary_perimeters(graph, geometries):
     """Add shared perimeter between nodes and the total geometry boundary.
 
-    :param graph: NetworkX graph. Must be using rook or queen adjacency!
+    :param graph: NetworkX graph
     :param df: Geodataframe containing geometry information.
     :return: The updated graph.
     """
-    for node in graph:
-        total_perimeter = geometries[node].boundary.length
-        shared_perimeter = sum(
-            neighbor_data["shared_perim"] for neighbor_data in graph[node].values()
-        )
-        boundary_perimeter = total_perimeter - shared_perimeter
+    prepared_boundary = prep(cascaded_union(geometries).boundary)
 
-        # Any perimeter less than 1e-9 is assumed to be floating point precision error
-        if boundary_perimeter > 1e-9:
-            graph.nodes[node]["boundary_node"] = True
+    boundary_nodes = geometries.boundary.apply(prepared_boundary.intersects)
+
+    for node in graph:
+        graph.nodes[node]["boundary_node"] = bool(boundary_nodes[node])
+        if boundary_nodes[node]:
+            total_perimeter = geometries[node].boundary.length
+            shared_perimeter = sum(
+                neighbor_data["shared_perim"] for neighbor_data in graph[node].values()
+            )
+            boundary_perimeter = total_perimeter - shared_perimeter
             graph.nodes[node]["boundary_perim"] = boundary_perimeter
-        else:
-            graph.nodes[node]["boundary_node"] = False
 
 
 def check_dataframe(df):

@@ -206,6 +206,7 @@ MOCK_MODULES = [
     "shapely",
     "shapely.ops",
     "shapely.strtree",
+    "shapely.prep",
     "gerrychain.vendor.utm",
 ]
 
