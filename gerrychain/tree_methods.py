@@ -4,42 +4,261 @@ import geopandas as gp
 from networkx.algorithms import tree
 import itertools
 from functools import partial
+from tree_proposals import *
 
-def recursive_tree_part(partition,graph, parts, pop_col, epsilon,node_repeats=20,):
-    newlabels={}
-    pop_target=0
-    for node in graph.nodes():
-        pop_target+=partition.graph.node_attribute(pop_col)[node]
-    pop_target=pop_target/parts
-    
-    remaining_nodes=list(graph.nodes())
-    for n in newlabels.keys():
-        remaining_nodes.remove(n)
-		
-    sgraph=nx.subgraph(graph,remaining_nodes)
-    
-    for i in range(parts-1):
-        update=tree_part2(partition, sgraph, pop_col, pop_target, epsilon,node_repeats)#should be part2
-        print("updated")
-        for x in list(update[1]):
-            newlabels[x]=i
-        #update pop_target?
-        remaining_nodes=list(graph.nodes())
-        for n in newlabels.keys():
-            remaining_nodes.remove(n)
-        
-        sgraph=nx.subgraph(graph,remaining_nodes)
-        #print("Built District #", i)
-        
-    td=set(newlabels.keys())
-    for nh in graph.nodes():
-        if nh not in td:
-            newlabels[nh]=parts-1#was +1 for initial testing
-    return newlabels
-	
+
+##### Spanning Tree Generation
+
+def get_spanning_tree_u_ab(graph):
+    '''Generates a uniform spanning tree using
+    the Aldous-Broder approach
+    '''
+    w=graph.copy()
+
+    node_set=set(w.nodes())
+    x0=random.choice(tuple(node_set))
+
+    node_set.remove(x0)
+
+    current=x0
+    tedges=[]
+
+    while node_set != set():
+        next=random.choice(list(w.neighbors(current)))
+        if next in node_set:
+            node_set.remove(next)
+            tedges.append((current, next))
+        current=next
+
+
+    return tedges
+
+
+def get_spanning_tree_u_w(graph):
+    ''' Generates a uniform spanning tree
+    using Wilson's algorithm
+    '''
+    w=graph.copy()
+    node_set=set(w.nodes())
+    x0=random.choice(tuple(node_set))
+    x1=x0
+    while x1==x0:
+        x1=random.choice(tuple(node_set))
+    node_set.remove(x1)
+    tnodes ={x1}
+    tedges=[]
+    current=x0
+    current_path=[x0]
+    #print(x0,x1)
+    current_edges=[]
+    while node_set != set():
+        #print("path started")
+        next=random.choice(list(w.neighbors(current)))
+        current_edges.append((current,next))
+        current = next
+        current_path.append(next)
+
+        if next in tnodes:
+            #print(current_path,current_edges)
+            for x in current_path[:-1]:
+                node_set.remove(x)
+                tnodes.add(x)
+            for ed in current_edges:
+                tedges.append(ed)
+            current_edges = []
+            if node_set != set():
+                current=random.choice(tuple(node_set))
+            current_path=[current]
+
+
+        if next in current_path[:-1]:
+            #print("cp:",current_path,"ce:",current_edges)
+            current_path.pop()
+            current_edges.pop()
+            for i in range(len(current_path)):
+                if current_edges !=[]:
+                    current_edges.pop()
+                if current_path.pop() == next:
+                    break
+            #print("cp:",current_path,"ce:",current_edges)
+            if len(current_path)>0:
+                current=current_path[-1]
+            else:
+                current=random.choice(tuple(node_set))
+                current_path=[current]
+
+
+
+
+    return tedges
+
+
+
+
+
+def get_spanning_tree_k(graph):
+    ''' Generates a non -uniform spanning
+    tree using Karger/Kruskal
+    '''
+    w=graph.copy()
+    for ed in w.edges():
+        w.add_edge(ed[0],ed[1],weight=random.random())
+
+    T = tree.maximum_spanning_edges(w, algorithm='kruskal', data=False)
+    return T
+			
+			
+##### Helper functions for Ents
+
+
+def tree_cycle_walk_all(partition, tree):
+    ''' This function takes one step of 
+    the cycle walk on spanning trees by adding
+    an arbitrary edge from the graph
+    '''
+
+    tempo=0
+    tedges=set(tree.edges())
+    while tempo==0:
+
+        edge = random.choice(tuple(partition.graph.edges()))
+        if (edge[0],edge[1]) not in tedges and (edge[1],edge[0]) not in tedges:
+            tempo=1
+            tree.add_edge(edge[0],edge[1])
+            ncycle=nx.find_cycle(tree,edge[0])
+            print("length of tree cycle:", len(ncycle))
+            cutedge=random.choice(tuple(ncycle))
+            tree.remove_edge(cutedge[0],cutedge[1])
+            return tree
+
+
+def tree_cycle_walk_cut(partition, tree):
+    ''' This function takes one step of 
+    the cycle walk on spanning trees by 
+    adding a cut edge to the graph    
+    '''
+
+
+    tempo=0
+    tedges=set(tree.edges())
+    while tempo==0:
+        edge = random.choice(tuple(partition["cut_edges"]))
+        #print("picked an edge")
+        if (edge[0],edge[1]) not in tedges and (edge[1],edge[0]) not in tedges:
+            tempo=1
+            tree.add_edge(edge[0],edge[1])
+            ncycle=nx.find_cycle(tree,edge[0])
+            print("length of tree cycle:", len(ncycle))
+            cutedge=random.choice(tuple(ncycle))
+            tree.remove_edge(cutedge[0],cutedge[1])
+            return tree
+
+
+
+def partition_spanning_tree_single(partition):
+    ''' This function builds a spanning tree for
+    the ent walk on the entire graph
+    '''
+    graph=partition.graph
+
+    tgraph=nx.Graph()
+    sgn={}
+    for label in partition.parts:
+        #print(label)
+        sgn[label]=[]#make this a dictionary
+    for n in graph.nodes():
+
+        sgn[partition.assignment[n]].append(n)
+    for label in partition.parts:
+        sgraph = nx.subgraph(graph, sgn[label])
+        tempT = get_spanning_tree_u_w(sgraph)#get_spanning_tree_k(sgraph)
+        tgraph.add_edges_from(tempT)
+
+        #print("done with inividual") #pretty fast anyway
+
+
+
+
+
+    el=set()
+    for edge in partition["cut_edges"]:
+        el.add((partition.assignment[edge[0]],partition.assignment[edge[1]]))
+    #print("set f edges")
+    w=nx.Graph()
+    w.add_edges_from(list(el))
+    #print("built district graph")
+    for ed in w.edges():
+        w.add_edge(ed[0],ed[1],weight=random.random())
+
+    T = tree.maximum_spanning_edges(w, algorithm='kruskal', data=False)
+    ST= nx.Graph()
+    ST.add_edges_from(list(T))
+    #print("built district tree")
+
+
+    e_to_add=[]
+
+    for edge in ST.edges():
+        tempo=0
+        templ=tuple(partition["cut_edges_by_part"][edge[0]])
+        #print(edge[0],edge[1])
+        #rint("new district edge")
+        while tempo==0:
+            qedge = random.choice(templ)
+            #print("tried an edge",[partition.assignment[qedge[0]],partition.assignment[qedge[1]]])
+            if edge[1] == partition.assignment[qedge[0]] or edge[1] == partition.assignment[qedge[1]]:
+                tempo = 1
+                e_to_add.append(qedge)
+
+
+
+    tgraph.add_edges_from(e_to_add)
+
+    return tgraph
+
+
+
+def partition_spanning_tree_all(partition):
+    '''This function builds a spanning tree for
+    the ent walk on the entire graph
+    '''
+    graph=partition.graph
+
+    tgraph=nx.Graph()
+
+    for label in partition.parts:
+        sgn=[]
+        for n in graph.nodes():
+            if partition.assignment[n] ==label:#[2,3]: #[1,3]
+                sgn.append(n)
+        sgraph = nx.subgraph(graph,sgn)
+        tempT= get_spanning_tree_k(sgraph)
+        tgraph.add_edges_from(tempT)
+
+
+
+
+    tgraph.add_edges_from(list(partition["cut_edges"]))
+
+    t2graph=nx.Graph()
+    t2graph.add_edges_from(get_spanning_tree_k(tgraph))
+
+
+    return t2graph
+
+
+
+
+##### Tree Splitting
+
 	
 	
 def tree_part2(partition, graph, pop_col, pop_target, epsilon,node_repeats):
+    '''This function finds a balanced 2 partition of a graph by drawing a
+    spanning tree and finding an edge to cut that leaves at most an epsilon 
+    imbalance between the populations of the parts. If a root fails, new roots
+    are tried until node_repeats in which case a new tree is drawn. 
+    '''
     
     w=graph.copy()
     for ed in w.edges():
@@ -64,6 +283,7 @@ def tree_part2(partition, graph, pop_col, pop_target, epsilon,node_repeats):
     pops={x:[{x},partition.graph.node_attribute(pop_col)[x]] for x in graph.nodes()}
     
     leaves=[]
+    leaf = 0  #  Just to keep linter from complaining
     t=0
     layer=0
     restarts=0
@@ -152,7 +372,7 @@ def tree_part2(partition, graph, pop_col, pop_target, epsilon,node_repeats):
                 #print(layer, len(parts))
 
                 #part=parts[random.random()<.5]
-                print(2,pops[leaf][1]/pop_target)#added this new but seems to be the working one
+                #print(2,pops[leaf][1]/pop_target)#added this new but seems to be the working one
                 clusters={}
                 clusters[1]=list(pops[leaf][0])
                 clusters[-1]=[]
@@ -172,231 +392,10 @@ def tree_part2(partition, graph, pop_col, pop_target, epsilon,node_repeats):
             #if t%1000==0:
             #    print(t)
 
-##### Spanning Tree Generation
-			
-
-def get_spanning_tree_u_ab(graph):
-    w=graph.copy()
-
-    node_set=set(w.nodes())
-    x0=random.choice(tuple(node_set))
-
-    node_set.remove(x0)
-
-    current=x0
-    tedges=[]
-
-    while node_set != set():
-        next=random.choice(list(w.neighbors(current)))
-        if next in node_set:
-            node_set.remove(next)
-            tedges.append((current, next))
-        current=next
-
-
-    return tedges
-
-
-def get_spanning_tree_u_w(graph):
-    w=graph.copy()
-    node_set=set(w.nodes())
-    x0=random.choice(tuple(node_set))
-    x1=x0
-    while x1==x0:
-        x1=random.choice(tuple(node_set))
-    node_set.remove(x1)
-    tnodes ={x1}
-    tedges=[]
-    current=x0
-    current_path=[x0]
-    #print(x0,x1)
-    current_edges=[]
-    while node_set != set():
-        #print("path started")
-        next=random.choice(list(w.neighbors(current)))
-        current_edges.append((current,next))
-        current = next
-        current_path.append(next)
-
-        if next in tnodes:
-            #print(current_path,current_edges)
-            for x in current_path[:-1]:
-                node_set.remove(x)
-                tnodes.add(x)
-            for ed in current_edges:
-                tedges.append(ed)
-            current_edges = []
-            if node_set != set():
-                current=random.choice(tuple(node_set))
-            current_path=[current]
-
-
-        if next in current_path[:-1]:
-            #print("cp:",current_path,"ce:",current_edges)
-            current_path.pop()
-            current_edges.pop()
-            for i in range(len(current_path)):
-                if current_edges !=[]:
-                    current_edges.pop()
-                if current_path.pop() == next:
-                    break
-            #print("cp:",current_path,"ce:",current_edges)
-            if len(current_path)>0:
-                current=current_path[-1]
-            else:
-                current=random.choice(tuple(node_set))
-                current_path=[current]
-
-
-
-
-    return tedges
-
-
-
-
-
-def get_spanning_tree_k(graph):
-    w=graph.copy()
-    for ed in w.edges():
-        w.add_edge(ed[0],ed[1],weight=random.random())
-
-    T = tree.maximum_spanning_edges(w, algorithm='kruskal', data=False)
-    return T
-			
-			
-##### Helper functions for Ents
-
-
-def tree_cycle_walk_all(partition, tree):
-
-    tempo=0
-    tedges=set(tree.edges())
-    while tempo==0:
-
-        edge = random.choice(tuple(partition.graph.edges()))
-        if (edge[0],edge[1]) not in tedges and (edge[1],edge[0]) not in tedges:
-            tempo=1
-            tree.add_edge(edge[0],edge[1])
-            ncycle=nx.find_cycle(tree,edge[0])
-            print("length of tree cycle:", len(ncycle))
-            cutedge=random.choice(tuple(ncycle))
-            tree.remove_edge(cutedge[0],cutedge[1])
-            return tree
-
-
-def tree_cycle_walk_cut(partition, tree):
-
-
-    tempo=0
-    tedges=set(tree.edges())
-    while tempo==0:
-        edge = random.choice(tuple(partition["cut_edges"]))
-        #print("picked an edge")
-        if (edge[0],edge[1]) not in tedges and (edge[1],edge[0]) not in tedges:
-            tempo=1
-            tree.add_edge(edge[0],edge[1])
-            ncycle=nx.find_cycle(tree,edge[0])
-            print("length of tree cycle:", len(ncycle))
-            cutedge=random.choice(tuple(ncycle))
-            tree.remove_edge(cutedge[0],cutedge[1])
-            return tree
-
-
-
-def partition_spanning_tree_single(partition):
-
-    graph=partition.graph
-
-    tgraph=nx.Graph()
-    sgn={}
-    for label in partition.parts:
-        #print(label)
-        sgn[label]=[]#make this a dictionary
-    for n in graph.nodes():
-
-        sgn[partition.assignment[n]].append(n)
-    for label in partition.parts:
-        sgraph = nx.subgraph(graph, sgn[label])
-        tempT = get_spanning_tree_u_w(sgraph)#get_spanning_tree_k(sgraph)
-        tgraph.add_edges_from(tempT)
-
-        #print("done with inividual") #pretty fast anyway
-
-
-
-
-
-    el=set()
-    for edge in partition["cut_edges"]:
-        el.add((partition.assignment[edge[0]],partition.assignment[edge[1]]))
-    #print("set f edges")
-    w=nx.Graph()
-    w.add_edges_from(list(el))
-    #print("built district graph")
-    for ed in w.edges():
-        w.add_edge(ed[0],ed[1],weight=random.random())
-
-    T = tree.maximum_spanning_edges(w, algorithm='kruskal', data=False)
-    ST= nx.Graph()
-    ST.add_edges_from(list(T))
-    #print("built district tree")
-
-
-    e_to_add=[]
-
-    for edge in ST.edges():
-        tempo=0
-        templ=tuple(partition["cut_edges_by_part"][edge[0]])
-        #print(edge[0],edge[1])
-        #rint("new district edge")
-        while tempo==0:
-            qedge = random.choice(templ)
-            #print("tried an edge",[partition.assignment[qedge[0]],partition.assignment[qedge[1]]])
-            if edge[1] == partition.assignment[qedge[0]] or edge[1] == partition.assignment[qedge[1]]:
-                tempo = 1
-                e_to_add.append(qedge)
-
-
-
-    tgraph.add_edges_from(e_to_add)
-
-    return tgraph
-
-
-
-def partition_spanning_tree_all(partition):
-    graph=partition.graph
-
-    tgraph=nx.Graph()
-
-    for label in partition.parts:
-        sgn=[]
-        for n in graph.nodes():
-            if partition.assignment[n] ==label:#[2,3]: #[1,3]
-                sgn.append(n)
-        sgraph = nx.subgraph(graph,sgn)
-        tempT= get_spanning_tree_k(sgraph)
-        tgraph.add_edges_from(tempT)
-
-
-
-
-    tgraph.add_edges_from(list(partition["cut_edges"]))
-
-    t2graph=nx.Graph()
-    t2graph.add_edges_from(get_spanning_tree_k(tgraph))
-
-
-    return t2graph
-
-
-
-
-##### Tree Splitting
 
 def tree_cut_delta(partition,ST, pop_col, pop_target, epsilon, node_repeats=5):
-
+    '''This function tries to k-balanced cut a spanning tree
+    '''
 
 
     graph=partition.graph
@@ -496,6 +495,8 @@ def tree_cut_delta(partition,ST, pop_col, pop_target, epsilon, node_repeats=5):
             #    print(t)
 
 def recursive_tree_full(partition,ST, parts, pop_col, epsilon, node_repeats=5):
+    ''' This function tries to partition an entire tree at once 
+    '''
     graph=partition.graph
     newlabels={}
     pop_target=0
@@ -537,163 +538,8 @@ def recursive_tree_full(partition,ST, parts, pop_col, epsilon, node_repeats=5):
     print("finished whole tree")
     return newlabels
 
+##### Recursive wrapper for tree walking
 
 
 
-##### Mixed proposals 
 
-def tree_mixed_proposal(partition):
-
-    if random.random() <.05:
-        flips=propose_bounce_single_cut(partition)
-    else:
-        flips = propose_random_flip(partition)
-
-    return flips
-
-def merge_mixed_proposal(partition):
-
-    if random.random() <.05:
-        flips=propose_merge2_tree(partition)
-    else:
-        flips = propose_random_flip(partition)
-
-    return flips
-			
-			
-			
-			
-##### (Uniform?) Full-Tree Methods
-
-
-def propose_allk_tree(partition):
-    tree=nx.Graph()
-    tree.add_edges_from(list(get_spanning_tree_k(partition.graph)))
-
-    clusters = recursive_tree_full(partition,tree,len(partition.parts),"POP10",.02,5)
-
-    return clusters
-	
-	
-def propose_allk_tree(partition):
-    tree=nx.Graph()
-    tree.add_edges_from(list(get_spanning_tree_u_w(partition.graph)))
-
-    clusters = recursive_tree_full(partition,tree,len(partition.parts),"POP10",.02,5)
-
-    return clusters
-	
-	
-	
-
-			
-			
-##### These are different experiments for the ent walk
-
-def propose_bounce_single_all(partition):
-
-    tree = partition_spanning_tree_single(partition)
-
-    tree = tree_cycle_walk_all(partition, tree)
-
-    clusters = recursive_tree_full(partition,tree,len(partition.parts),"population",.02,5)
-
-    return clusters
-
-def propose_bounce_single_cut(partition):
-    tree = partition_spanning_tree_single(partition)
-
-    tree = tree_cycle_walk_cut(partition, tree)
-
-    clusters = recursive_tree_full(partition,tree,len(partition.parts),"population",.05,2)
-
-    return clusters
-
-def propose_bounce_allcut_all(partition):
-    tree = partition_spanning_tree_all(partition)
-
-    tree = tree_cycle_walk_all(partition, tree)
-
-    clusters = recursive_tree_full(partition,tree,len(partition.parts),"POP10",.2,10)
-
-    return clusters
-
-def propose_bounce_allcut_cut(partition):
-
-    tree = partition_spanning_tree_all(partition)
-
-    tree = tree_cycle_walk_cut(partition, tree)
-
-    clusters = recursive_tree_full(partition,tree,len(partition.parts),"population",.2,10)
-
-    return clusters
-
-	
-	
-	
-##### Merge Proposal
-
-
-def propose_merge2_tree(partition):
-    edge = random.choice(tuple(partition['cut_edges']))
-    #print(edge)
-    et=[partition.assignment[edge[0]],partition.assignment[edge[1]]]
-    #print(et)
-    sgn=[]
-    for n in partition.graph.nodes():
-        if partition.assignment[n] in et:
-            sgn.append(n)
-
-    #print(len(sgn))
-    sgraph = nx.subgraph(partition.graph,sgn)
-
-    edd={0:et[0],1:et[1]}
-
-    #print(edd)
-
-    clusters = recursive_tree_part(partition,sgraph,2,"POP10",.05,10)
-    print("finished rtp")
-    #print(len(clusters))
-    flips={}
-    for val in clusters.keys():
-        flips[val]=edd[clusters[val]]
-
-    #print(len(flips))
-    #print(partition.assignment)
-    #print(flips)
-    return flips
-	
-	
-##### Partial Func
-
-def propose_merge2_tree_partial(partition,pop_col,epsilon,node_repeats):
-    edge = random.choice(tuple(partition['cut_edges']))
-    #print(edge)
-    et=[partition.assignment[edge[0]],partition.assignment[edge[1]]]
-    #print(et)
-    sgn=[]
-    for n in partition.graph.nodes():
-        if partition.assignment[n] in et:
-            sgn.append(n)
-
-    #print(len(sgn))
-    sgraph = nx.subgraph(partition.graph,sgn)
-
-    edd={0:et[0],1:et[1]}
-
-    #print(edd)
-
-    clusters = recursive_tree_part(partition,sgraph,2,pop_col=pop_col,epsilon=epsilon,node_repeats=node_repeats)
-    print("finished rtp")
-    #print(len(clusters))
-    flips={}
-    for val in clusters.keys():
-        flips[val]=edd[clusters[val]]
-
-    #print(len(flips))
-    #print(partition.assignment)
-    #print(flips)
-    return flips
-	
-
-#merge_prop = partial(propose_merge2_tree_partial,pop_col="POP10",epsilon=.05,node_repeats=10)
