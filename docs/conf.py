@@ -196,9 +196,6 @@ MOCK_MODULES = [
     "numpy",
     "pandas",
     "geopandas",
-    "libpysal",
-    "pysal",
-    "pysal.lib",
     "matplotlib",
     "matplotlib.pyplot",
     # "networkx",
@@ -208,7 +205,8 @@ MOCK_MODULES = [
     # "networkx.algorithms.shortest_paths.weighted",
     "shapely",
     "shapely.ops",
-    "gerrychain.utm",
+    "shapely.strtree",
+    "gerrychain.vendor.utm",
 ]
 
 for module in MOCK_MODULES:
