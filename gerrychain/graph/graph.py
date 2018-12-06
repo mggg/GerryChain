@@ -188,11 +188,6 @@ class Graph(networkx.Graph):
         """The set of degree-0 nodes."""
         return set(node for node in self if self.degree[node] == 0)
 
-    @property
-    def leaves(self):
-        """The set of degree-1 nodes."""
-        return set(node for node in self if self.degree[node] == 1)
-
     def warn_for_islands(self):
         """Issue a warning if the graph has any islands (degree-0 nodes)."""
         islands = self.islands
@@ -201,24 +196,9 @@ class Graph(networkx.Graph):
                 "Found islands (degree-0 nodes). Indices of islands: {}".format(islands)
             )
 
-    def warn_for_leaves(self):
-        """Issue a warning if the graph has any leaves (degree-1 nodes).
-
-        Leaves are redundant for the purposes of flip-based random walks, so it is often
-        desirable to absorb them into their neighbors before running Markov chains.
-        """
-        donuts = self.leaves
-        if len(donuts) > 0:
-            warnings.warn(
-                "Found leaves (degree-1 nodes, a.k.a. donuts). Indices of leaves: {}".format(
-                    donuts
-                )
-            )
-
     def issue_warnings(self):
-        """Issue warnings if the graph has islands or leaves."""
+        """Issue warnings if the graph has any red flags (right now, only islands)."""
         self.warn_for_islands()
-        self.warn_for_leaves()
 
 
 def add_boundary_perimeters(graph, geometries):
