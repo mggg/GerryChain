@@ -258,7 +258,7 @@ def tree_part2(partition, graph, pop_col, pop_target, epsilon, node_repeats):
     for ed in predbfs:
         pred[ed[0]] = ed[1]
 
-    pops = {x: [{x}, partition.graph.node_attribute(pop_col)[x]] for x in graph.nodes()}
+    pops = {x: [{x}, partition.graph.nodes[x][pop_col]] for x in graph.nodes()}
 
     leaves = []
     leaf = 0
@@ -291,7 +291,7 @@ def tree_part2(partition, graph, pop_col, pop_target, epsilon, node_repeats):
                 pred[ed[0]] = ed[1]
 
             pops = {
-                x: [{x}, partition.graph.node_attribute(pop_col)[x]]
+                x: [{x}, partition.graph.nodes[x][pop_col]]
                 for x in graph.nodes()
             }
 
@@ -313,7 +313,7 @@ def tree_part2(partition, graph, pop_col, pop_target, epsilon, node_repeats):
             for ed in predbfs:
                 pred[ed[0]] = ed[1]
             pops = {
-                x: [{x}, partition.graph.node_attribute(pop_col)[x]]
+                x: [{x}, partition.graph.nodes[x][pop_col]]
                 for x in graph.nodes()
             }
             # print("bad root --- restarting",restarts)

@@ -3,17 +3,11 @@ import random
 import networkx as nx
 
 from proposals import propose_random_flip
-from tree_methods import (
-    get_spanning_tree_k,
-    get_spanning_tree_u_w,
-    partition_spanning_tree_all,
-    partition_spanning_tree_single,
-    propose_merge2_tree,
-    recursive_tree_full,
-    tree_cycle_walk_all,
-    tree_cycle_walk_cut,
-    tree_part2,
-)
+from tree_methods import (get_spanning_tree_k, get_spanning_tree_u_w,
+                          partition_spanning_tree_all,
+                          partition_spanning_tree_single, propose_merge2_tree,
+                          recursive_tree_full, tree_cycle_walk_all,
+                          tree_cycle_walk_cut, tree_part2)
 
 # Mixed proposals
 
