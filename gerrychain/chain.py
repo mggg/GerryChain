@@ -1,3 +1,6 @@
+from .constraints import Validator
+
+
 class MarkovChain:
     """
     MarkovChain is an iterator that allows the user to iterate over the states
@@ -13,10 +16,10 @@ class MarkovChain:
 
     """
 
-    def __init__(self, proposal, is_valid, accept, initial_state, total_steps=1000):
+    def __init__(self, proposal, constraints, accept, initial_state, total_steps=1000):
         """
         :param proposal: Function proposing the next state from the current state.
-        :param is_valid: A function with signature ``Partition -> bool`` determining whether
+        :param constraints: A function with signature ``Partition -> bool`` determining whether
             the proposed next state is valid (passes all binary constraints). Usually
             this is a :class:`~gerrychain.constraints.Validator` class instance.
         :param accept: Function accepting or rejecting the proposed state. In the most basic
@@ -26,6 +29,11 @@ class MarkovChain:
         :param total_steps: Number of steps to run.
 
         """
+        if callable(constraints):
+            is_valid = constraints
+        else:
+            is_valid = Validator(constraints)
+
         if not is_valid(initial_state):
             failed = [
                 constraint

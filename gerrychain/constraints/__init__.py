@@ -17,11 +17,13 @@ Helper classes
 |
 
 ================================================== ==============================================
-Boolean constraint functions
+Binary constraint functions
 =================================================================================================
 ``no_worse_L1_reciprocal_polsby_popper``            Lower bounded L1-reciprocal Polsby-Popper
 ``no_worse_L_minus_1_reciprocal_polsby_popper``     Lower bounded L(-1)-reciprocal Polsby-Popper
-``contiguous``                                      Contiguity of districts with NetworkX methods
+``contiguous``                                      Districts are contiguous (with NetworkX methods)
+``contiguous_bf``                                   Districts are contiguous (with a breadth-first search)
+``single_flip_contiguous``                          Districts are contiguous (optimized for ``propose_random_flip`` proposal)
 ``no_vanishing_districts``                          No districts may be completely consumed
 ================================================== ==============================================
 
