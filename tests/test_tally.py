@@ -1,8 +1,7 @@
 import random
 from collections import defaultdict
 
-from gerrychain.constraints import (no_vanishing_districts,
-                                    single_flip_contiguous)
+from gerrychain.constraints import no_vanishing_districts, single_flip_contiguous
 from gerrychain.defaults import DefaultChain, Grid
 from gerrychain.partition import Partition
 from gerrychain.updaters.tally import DataTally
@@ -15,10 +14,11 @@ def random_assignment(graph, num_districts):
 def test_data_tally_works_as_an_updater(three_by_three_grid):
     assignment = random_assignment(three_by_three_grid, 4)
     data = {node: random.randint(1, 100) for node in three_by_three_grid.nodes}
+    parts = tuple(set(assignment.values()))
     updaters = {"tally": DataTally(data, alias="tally")}
     partition = Partition(three_by_three_grid, assignment, updaters)
 
-    flip = {random.choice(list(partition.graph.nodes)): random.choice(range(4))}
+    flip = {random.choice(list(partition.graph.nodes)): random.choice(parts)}
     new_partition = partition.merge(flip)
 
     assert new_partition["tally"]
