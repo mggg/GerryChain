@@ -135,19 +135,3 @@ class SelfConfiguringLowerBound:
             return self.__call__(partition)
         else:
             return self.func(partition) >= self.bound
-
-
-class WithinPercentRangeOfBounds:
-    def __init__(self, func, percent):
-        self.func = func
-        self.percent = float(percent) / 100.
-        self.lbound = None
-        self.ubound = None
-
-    def __call__(self, partition):
-        if not (self.lbound and self.ubound):
-            self.lbound = self.func(partition) * (1.0 - self.percent)
-            self.ubound = self.func(partition) * (1.0 + self.percent)
-            return True
-        else:
-            return self.lbound <= self.func(partition) <= self.ubound
