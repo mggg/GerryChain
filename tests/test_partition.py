@@ -49,16 +49,16 @@ def test_geographic_partition_can_be_instantiated(example_geographic_partition):
     assert partition.updaters == GeographicPartition.default_updaters
 
 
-def test_Partition_parts_is_a_dictionary_of_parts_to_nodes():
-    partition = example_partition()
+def test_Partition_parts_is_a_dictionary_of_parts_to_nodes(example_partition):
+    partition = example_partition
     flip = {1: 2}
     new_partition = partition.merge(flip)
     assert all(isinstance(nodes, frozenset) for nodes in new_partition.parts.values())
     assert all(isinstance(nodes, frozenset) for nodes in partition.parts.values())
 
 
-def test_Partition_has_subgraphs():
-    partition = example_partition()
+def test_Partition_has_subgraphs(example_partition):
+    partition = example_partition
     assert set(partition.subgraphs[1].nodes) == {0, 1}
     assert set(partition.subgraphs[2].nodes) == {2}
     assert len(list(partition.subgraphs)) == 2
