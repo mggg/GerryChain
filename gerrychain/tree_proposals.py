@@ -1,6 +1,6 @@
 import random
 
-from tree_methods import tree_part2
+from .tree_methods import tree_part2
 
 
 def recom(partition, pop_col, pop_target, epsilon, node_repeats):

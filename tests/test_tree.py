@@ -1,9 +1,15 @@
+import functools
+
 import networkx
 import pytest
 
+from gerrychain import MarkovChain
+from gerrychain.constraints import (contiguous,
+                                    within_percent_of_ideal_population)
 from gerrychain.partition import Partition
 from gerrychain.tree_methods import random_spanning_tree, tree_part2
-from gerrychain.updaters import Tally
+from gerrychain.tree_proposals import recom
+from gerrychain.updaters import Tally, cut_edges
 
 
 @pytest.fixture
@@ -18,7 +24,7 @@ def partition_with_pop(graph_with_pop):
     return Partition(
         graph_with_pop,
         {0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 1, 6: 1, 7: 1, 8: 1},
-        updaters={"pop": Tally("pop")},
+        updaters={"pop": Tally("pop"), "cut_edges": cut_edges},
     )
 
 
@@ -61,3 +67,17 @@ def test_tree_part2_returns_a_tree(graph_with_pop):
     assert networkx.is_tree(
         tree.subgraph({node for node in tree if node not in result})
     )
+
+
+def test_recom_works_as_a_proposal(partition_with_pop):
+    graph = partition_with_pop.graph
+    ideal_pop = sum(graph.nodes[node]["pop"] for node in graph) / 2
+    proposal = functools.partial(
+        recom, pop_col="pop", pop_target=ideal_pop, epsilon=0.25, node_repeats=5
+    )
+    constraints = [within_percent_of_ideal_population(partition_with_pop, 0.25, "pop")]
+
+    chain = MarkovChain(proposal, constraints, lambda x: True, partition_with_pop, 100)
+
+    for state in chain:
+        assert contiguous(state)
