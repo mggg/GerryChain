@@ -13,7 +13,7 @@ def get_spanning_tree_u_ab(graph):
     """
     w = graph.copy()
 
-    node_set = set(w.nodes())
+    node_set = set(w.nodes)
     x0 = random.choice(tuple(node_set))
 
     node_set.remove(x0)
@@ -36,7 +36,7 @@ def get_spanning_tree_u_w(graph):
     using Wilson's algorithm
     """
     w = graph.copy()
-    node_set = set(w.nodes())
+    node_set = set(w.nodes)
     x0 = random.choice(tuple(node_set))
     x1 = x0
     while x1 == x0:
@@ -154,7 +154,7 @@ def partition_spanning_tree_single(partition):
     for label in partition.parts:
         # print(label)
         sgn[label] = []  # make this a dictionary
-    for n in graph.nodes():
+    for n in graph.nodes:
 
         sgn[partition.assignment[n]].append(n)
     for label in partition.parts:
@@ -211,7 +211,7 @@ def partition_spanning_tree_all(partition):
 
     for label in partition.parts:
         sgn = []
-        for n in graph.nodes():
+        for n in graph.nodes:
             if partition.assignment[n] == label:  # [2,3]: #[1,3]
                 sgn.append(n)
         sgraph = nx.subgraph(graph, sgn)
@@ -233,109 +233,92 @@ def predecessors(h, root):
     return {a: b for a, b in nx.bfs_predecessors(h, root)}
 
 
-def random_spanning_tree(graph):
+def random_spanning_tree(graph, pop_col):
     for edge in graph.edges:
         graph.edges[edge]["weight"] = random.random()
 
-    return tree.maximum_spanning_tree(graph, algorithm="kruskal")
+    edges = tree.maximum_spanning_edges(graph, algorithm="kruskal", data=False)
+    spanning_tree = nx.Graph(edges)
+    for node in graph:
+        spanning_tree.nodes[node][pop_col] = graph.nodes[node][pop_col]
+    return spanning_tree
 
 
-def and_its_complement(subset, total_set):
-    complement = set(total_set) - set(subset)
-    return {1: subset, -1: complement}
-
-
-def tree_part2(partition, graph, pop_col, pop_target, epsilon, node_repeats):
+def tree_part2(
+    graph,
+    pop_col,
+    pop_target,
+    epsilon,
+    node_repeats,
+    restarts=0,
+    spanning_tree=None,
+    choice=random.choice,
+):
     """This function finds a balanced 2 partition of a graph by drawing a
     spanning tree and finding an edge to cut that leaves at most an epsilon
     imbalance between the populations of the parts. If a root fails, new roots
     are tried until node_repeats in which case a new tree is drawn.
+
+    Builds up a connected subgraph with a connected complement whose population
+    is ``epsilon * pop_target`` away from ``pop_target``.
+
+    Returns a subset of nodes of ``graph`` (whose induced subgraph is connected).
+    The other part of the partition is the complement of this subset.
+
+    :param graph: The graph to partition
+    :param pop_col: The node attribute holding the population of each node
+    :param pop_target: The target population for the returned subset of nodes
+    :param epsilon: The allowable deviation from  ``pop_target`` (as a percentage of
+        ``pop_target``) for the subgraph's population
+    :param node_repeats: A parameter for the algorithm: how many different choices
+        of root to use before drawing a new spanning tree.
+    :param restarts: Number of iterations (used when the algorithm chooses a new root)
+    :param spanning_tree: The spanning tree for the algorithm to use (used when the
+        algorithm chooses a new root and for testing)
+    :param choice: :func:`random.choice`. Can be substituted for testing.
     """
 
-    def constraint(pop):
-        return abs(pop - pop_target) < pop_target * epsilon
+    if spanning_tree is None:
+        spanning_tree = random_spanning_tree(graph, pop_col)
 
-    ST = random_spanning_tree(graph)
-    h = ST.copy()
+    h = spanning_tree.copy()
 
-    root = random.choice(
-        [x for x in ST.nodes() if ST.degree(x) > 1]
-    )  # this used to be greater than 2 but failed on small grids:(
+    # this used to be greater than 2 but failed on small grids:(
+    root = choice([x for x in spanning_tree.nodes if spanning_tree.degree(x) > 1])
 
+    # BFS predecessors for iteratively contracting leaves
     pred = predecessors(h, root)
 
-    pops = {x: [{x}, partition.graph.nodes[x][pop_col]] for x in graph.nodes()}
+    # As we contract leaves, we keep track of which nodes merged together in
+    # this dictionary:
+    subsets = {x: {x} for x in graph}
 
-    leaves = []
-    leaf = 0
-    t = 0
-    layer = 0
-    restarts = 0
-    while 1 == 1:
-        if restarts == node_repeats:
-            ST = random_spanning_tree(graph)
-            h = ST.copy()
-
-            root = random.choice([x for x in ST.nodes() if ST.degree(x) > 1])
-            pred = predecessors(h, root)
-
-            pops = {x: [{x}, partition.graph.nodes[x][pop_col]] for x in graph.nodes()}
-
-            leaves = []
-            t = 0
-            layer = 0
-            restarts = 0
-            # print("Bad tree -- rebuilding")
-
-        if len(h) == 1:
-            h = ST.copy()
-            root = random.choice(
-                [x for x in ST.nodes() if ST.degree(x) > 1]
-            )  # this used to be greater than 2 but failed on small grids:(
-
-            pred = predecessors(h, root)
-            pops = {x: [{x}, partition.graph.nodes[x][pop_col]] for x in graph.nodes()}
-            # print("bad root --- restarting",restarts)
-            restarts += 1
-            layer = 0
-            leaves = []
-
-        if leaves == []:
-            leaves = [x for x in h if h.degree(x) == 1]
-            layer = layer + 1
-
-            if len(leaves) == len(h) - 1:
-                tsum = pops[root][1]
-                for r in range(2, len(leaves)):
-                    for s in itertools.combinations(leaves, r):
-                        for node in s:
-                            tsum += pops[node][1]
-                    if constraint(tsum):
-                        print(1, pops[leaf][1] / pop_target)
-                        return and_its_complement(pops[leaf][0])
-
-            if (
-                root in leaves
-            ):  # this was in an else before but is still apparently necessary?
-                leaves.remove(root)
-
-            # if layer %10==0:
-            # print("Layer",layer)
+    while len(h) > 1:
+        leaves = [x for x in h if h.degree(x) == 1 and x != root]
 
         for leaf in leaves:
-            if layer > 1 and constraint(pops[leaf[1]]):
-                return and_its_complement(pops[leaf][0])
-
+            if abs(h.nodes[leaf][pop_col] - pop_target) < epsilon * pop_target:
+                return subsets[leaf]
+            # Contract the leaf:
             parent = pred[leaf]
-
-            pops[parent][1] += pops[leaf][1]
-            pops[parent][0] = pops[parent][0].union(pops[leaf][0])
-            # h = nx.contracted_edge(h,(parent,leaf),self_loops = False)#too slow on big graphs
+            h.nodes[parent][pop_col] += h.nodes[leaf][pop_col]
+            subsets[parent] |= subsets[leaf]
             h.remove_node(leaf)
-            leaves.remove(leaf)
-            t = t + 1
-            # if t%1000==0:
-            #    print(t)
+
+    if restarts < node_repeats:
+        # Try again with new root, same tree
+        return tree_part2(
+            graph,
+            pop_col,
+            pop_target,
+            epsilon,
+            node_repeats,
+            restarts + 1,
+            spanning_tree,
+        )
+    else:
+        # If restarts == node_repeats, start over completely with a new tree
+        return tree_part2(graph, pop_col, pop_target, epsilon, node_repeats)
 
 
 def tree_cut_delta(partition, ST, pop_col, pop_target, epsilon, node_repeats=5):
@@ -347,9 +330,9 @@ def tree_cut_delta(partition, ST, pop_col, pop_target, epsilon, node_repeats=5):
 
     # nx.draw(ST,layout='tree')
 
-    # root = random.choice(list(h.nodes()))
+    # root = random.choice(list(h.nodes))
     root = random.choice(
-        [x for x in ST.nodes() if ST.degree(x) > 2]
+        [x for x in ST.nodes if ST.degree(x) > 2]
     )  # probably should be 2 maybe doesn't matter?
     # print(root)
     predbfs = nx.bfs_predecessors(h, root)  # was dfs
@@ -357,7 +340,7 @@ def tree_cut_delta(partition, ST, pop_col, pop_target, epsilon, node_repeats=5):
     for ed in predbfs:
         pred[ed[0]] = ed[1]
 
-    pops = {x: [{x}, graph.nodes[x][pop_col]] for x in graph.nodes()}
+    pops = {x: [{x}, graph.nodes[x][pop_col]] for x in graph.nodes}
 
     leaf = 0
     leaves = []
@@ -369,16 +352,16 @@ def tree_cut_delta(partition, ST, pop_col, pop_target, epsilon, node_repeats=5):
 
             return {}
 
-        if len(list(h.nodes())) == 1:
+        if len(list(h.nodes)) == 1:
             h = ST.copy()
-            root = random.choice([x for x in ST.nodes() if ST.degree(x) > 2])
+            root = random.choice([x for x in ST.nodes if ST.degree(x) > 2])
             # print(root)
             # pred=nx.bfs_predecessors(h, root)#was dfs
             predbfs = nx.bfs_predecessors(h, root)  # was dfs
             pred = {}
             for ed in predbfs:
                 pred[ed[0]] = ed[1]
-            pops = {x: [{x}, graph.nodes[x][pop_col]] for x in graph.nodes()}
+            pops = {x: [{x}, graph.nodes[x][pop_col]] for x in graph.nodes}
             # print("bad root --- restarting",restarts)
             restarts += 1
             layer = 0
@@ -386,10 +369,10 @@ def tree_cut_delta(partition, ST, pop_col, pop_target, epsilon, node_repeats=5):
 
         if leaves == []:
 
-            leaves = [x for x in h.nodes() if h.degree(x) == 1]
+            leaves = [x for x in h.nodes if h.degree(x) == 1]
             layer = layer + 1
 
-            if len(leaves) == len(list(h.nodes())) - 1:
+            if len(leaves) == len(list(h.nodes)) - 1:
                 tsum = pops[root][1]
                 for r in range(2, len(leaves)):
                     for s in itertools.combinations(leaves, r):
@@ -400,7 +383,7 @@ def tree_cut_delta(partition, ST, pop_col, pop_target, epsilon, node_repeats=5):
                         clusters = {}
                         clusters[1] = list(pops[leaf][0])
                         clusters[-1] = []
-                        for nh in graph.nodes():
+                        for nh in graph.nodes:
                             if nh not in clusters[1]:
                                 clusters[-1].append(nh)
                         return clusters
@@ -424,7 +407,7 @@ def tree_cut_delta(partition, ST, pop_col, pop_target, epsilon, node_repeats=5):
                 clusters = {}
                 clusters[1] = list(pops[leaf][0])
                 clusters[-1] = []
-                for nh in graph.nodes():
+                for nh in graph.nodes:
                     if nh not in clusters[1]:
                         clusters[-1].append(nh)
                 return clusters
@@ -446,16 +429,16 @@ def recursive_tree_full(partition, ST, parts, pop_col, epsilon, node_repeats=5):
     graph = partition.graph
     newlabels = {}
     pop_target = 0
-    for node in graph.nodes():
+    for node in graph.nodes:
         pop_target += graph.node_attribute(pop_col)[node]
     pop_target = pop_target / parts
 
-    # remaining_nodes=list(graph.nodes())
+    # remaining_nodes=list(graph.nodes)
     # for n in newlabels.keys():
     #    remaining_nodes.remove(n)
     # sgraph=nx.subgraph(ST, remaining_nodes)
     # print("built subgraph")
-    remaining_nodes = list(graph.nodes())
+    remaining_nodes = list(graph.nodes)
     sgraph = ST
     for i in range(parts - 1):
         update = tree_cut_delta(
@@ -471,7 +454,7 @@ def recursive_tree_full(partition, ST, parts, pop_col, epsilon, node_repeats=5):
                 newlabels[x] = i
                 remaining_nodes.remove(x)
         # update pop_target?
-        # remaining_nodes=list(graph.nodes())
+        # remaining_nodes=list(graph.nodes)
         # for n in newlabels.keys():
         # remaining_nodes.remove(n)
         # Moved these three lines up above into the x for loop does it work?
@@ -480,7 +463,7 @@ def recursive_tree_full(partition, ST, parts, pop_col, epsilon, node_repeats=5):
         # print("Built  #", i)
 
     td = set(newlabels.keys())
-    for nh in graph.nodes():
+    for nh in graph.nodes:
         if nh not in td:
             newlabels[nh] = parts - 1  # was parts+1
 
