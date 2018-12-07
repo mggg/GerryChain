@@ -70,6 +70,9 @@ class Assignment:
         except KeyError:
             return default
 
+    def __call__(self, key):
+        return self[key]
+
 
 def get_assignment(assignment, graph=None):
     if isinstance(assignment, str):
