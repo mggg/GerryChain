@@ -50,10 +50,12 @@ class MarkovChain:
         self.is_valid = is_valid
         self.accept = accept
         self.total_steps = total_steps
+        self.initial_state = initial_state
         self.state = initial_state
 
     def __iter__(self):
         self.counter = 0
+        self.state = self.initial_state
         return self
 
     def __next__(self):
