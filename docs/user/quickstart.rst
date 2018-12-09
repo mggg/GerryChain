@@ -1,8 +1,8 @@
 .. _quickstart:
 
-===============
-Getting started
-===============
+===============================
+Getting started with GerryChain
+===============================
 
 This guide will show you how to start generating ensembles with GerryChain, using MGGG's
 `Pennsylvania shapefile`_.
@@ -203,6 +203,8 @@ one thousand plans created by single flips.)
 Next steps
 ==========
 
-To learn more about the specific components of GerryChain, see the :ref:`api`.
+To see a more elaborate example that uses the ReCom proposal, see :doc:`./recom`.
+
+To learn more about the specific components of GerryChain, see the :doc:`/api`.
 
 .. proposals (recom), updaters, acceptance rules, scores

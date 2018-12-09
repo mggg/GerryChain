@@ -30,12 +30,14 @@ To install GerryChain from PyPI_, just run ``pip install gerrychain``.
 User Guide
 ----------
 
-This document gives a brief introduction to using GerryChain. It is a work in progress.
+This document gives a brief introduction to using GerryChain.
 
 .. toctree::
     :maxdepth: 1
 
     user/quickstart
+    user/recom
+
 
 API Reference
 -----------------
