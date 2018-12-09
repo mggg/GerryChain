@@ -11,6 +11,7 @@ requirements = [
     "networkx",
     "geopandas",
     "shapely",
+    "matplotlib",
 ]
 
 setup(
