@@ -4,10 +4,10 @@
 Getting started
 ===============
 
-This guide will show you how to start generating ensembles with GerryChain, using MGGG's own
-`Massachusetts shapefile`_.
+This guide will show you how to start generating ensembles with GerryChain, using MGGG's
+`Pennsylvania shapefile`_.
 
-.. _Massachusetts shapefile: https://github.com/mggg-states/MA-shapefiles/
+.. _Pennsylvania shapefile: https://github.com/mggg-states/PA-shapefiles/
 
 What you'll need
 ================
@@ -15,12 +15,12 @@ What you'll need
 Before we can start running Markov chains, you'll need to:
 
 * Install ``gerrychain`` from PyPI by running ``pip install gerrychain`` in a terminal.
-* Download and unzip MGGG's `shapefile of Massachusetts's 2002-2010 precincts`_ from GitHub.
+* Download and unzip MGGG's `shapefile of Pennsylvania's VTDs`_ from GitHub.
 * Open your favorite Python environment (JupyterLab, IPython, or just a ``.py`` file in
-    your favorite editor) in the directory containing the ``MA_precincts_02_10.shp`` file
+    your favorite editor) in the directory containing the ``PA_VTD.shp`` file
     from the ``.zip`` that you downloaded and unzipped.
 
-.. _`shapefile of Massachusetts's 2002-2010 precincts`: https://github.com/mggg-states/MA-shapefiles/blob/master/MA_precincts_02_10.zip
+.. _`shapefile of Pennsylvania's VTDs`: https://github.com/mggg-states/PA-shapefiles/blob/master/PA/PA_VTD.zip
 
 .. TODO: conda instructions
 
@@ -30,23 +30,24 @@ Creating the initial partition
 In order to run a Markov chain, we need an
 adjacency :class:`~gerrychain.Graph` of our VTD geometries and
 :class:`~gerrychain.Partition` of our adjacency graph into districts. This Partition
-will be the initial state of our Markov chain.
+will be the initial state of our Markov chain. ::
 
-.. code-block:: python
-
-    from gerrychain import Graph, Partition
+    from gerrychain import Graph, Partition, Election
     from gerrychain.updaters import Tally, cut_edges
 
-    graph = Graph.from_file("./MA_precincts_02_10.shp")
+    graph = Graph.from_file("./PA_VTD.shp")
 
-    graph.to_json("./MA_precincts_02_10_graph.json")
+    graph.to_json("./PA_VTD.json")
+
+    election = Election("SEN12", {"Dem": "USS12D", "Rep": "USS12R"})
 
     initial_partition = Partition(
         graph,
-        assignment="CD",
+        assignment="2011_PLA_1",
         updaters={
             "cut_edges": cut_edges,
-            "population": Tally("POP2000", alias="population")
+            "population": Tally("TOT_POP", alias="population"),
+            "SEN12": election
         }
     )
 
@@ -56,13 +57,19 @@ The :meth:`Graph.from_file() <gerrychain.Graph.from_file>` classmethod creates a
 :class:`~gerrychain.Graph` of the precincts in our shapefile. By default, this method
 copies all of the data columns from the shapefile's attribute table to the ``graph`` object
 as node attributes. The contents of this particular shapefile's attribute table are
-summarized in the `mggg-states/MA-shapefiles <https://github.com/mggg-states/MA-shapefiles#metadata>`_
+summarized in the `mggg-states/PA-shapefiles <https://github.com/mggg-states/PA-shapefiles#metadata>`_
 GitHub repo.
     
 Depending on the size of the state, the process of generating an adjacency graph can
-take a long time. To avoid having to repeat this process in the future, we call 
+take a bit of time. To avoid having to repeat this process in the future, we call 
 :meth:`graph.to_json() <gerrychain.Graph.to_json>` to save the graph
-in the NetworkX ``json_graph`` format under the name ``"MA_precincts_02_10_graph.json``.
+in the NetworkX ``json_graph`` format under the name ``"PA_VTD.json``.
+
+Next, we configure an :class:`~gerrychain.Election` object representing the 2012 Senate election,
+using the ``USS12D`` and ``USS12R`` vote total columns from our shapefile. The first argument
+is a name for the election (``"SEN12"``), and the second argument is a dictionary matching political
+parties to their vote total columns in our shapefile. This will let us compute
+hypothetical election results for each districting plan in the ensemble.
 
 Finally, we create a :class:`~gerrychain.Partition` of the graph.
 This will be the starting point for our Markov chain. The :class:`~gerrychain.Partition` class
@@ -72,41 +79,49 @@ takes three arguments:
 :assignment: An assignment of the nodes of the graph into parts of the partition. This can be either
     a dictionary mapping node IDs to part IDs, or the string key of a node attribute that holds
     each node's assignment. In this example we've written ``assignment="CD"`` to tell the :class:`~gerrychain.Partition`
-    to assign nodes by their ``"CD"`` attribute that we copied from the shapefile. This attributes holds the
-    assignments of precincts to Congressional Districts from the 2000 Redistricting cycle.
+    to assign nodes by their ``"2011_PLA_1"`` attribute that we copied from the shapefile. This attributes holds the
+    assignments of precincts to congressional districts from the 2010 redistricting cycle.
 :updaters: An optional dictionary of "updater" functions. Here we've provided an updater named ``"population"`` that
-    computes the total population of each district in the partition, based on the ``"POP2000"`` node attribute
-    from our shapefile. We've also provided a ``cut_edges`` updater. This returns all of the edges in the graph
-    that cross from one part to another, and is used by ``propose_random_flip`` to find a random boundary flip.
+    computes the total population of each district in the partition, based on the ``"TOT_POP"`` node attribute
+    from our shapefile, and a "SEN12" updater that will output the election results for the ``election`` that we
+    set up. We've also provided a ``cut_edges`` updater. This returns all of the edges in the graph
+    that cross from one part to another, and is used by ``propose_random_flip`` to find a random boundary node to
+    flip.
 
-With the ``"population"`` updater configured, we can see the total population in each of our Congressional Districts.
-In an interactive Python session, we can print out the populations like this:
+With the ``"population"`` updater configured, we can see the total population in each of our congressional districts.
+In an interactive Python session, we can print out the populations like this::
 
-.. code-block:: python
     >>> for district, pop in initial_partition["population"].items():
     ...     print("District {}: {}".format(district, pop))
-    District 02: 686362
-    District 01: 719068
-    District 04: 706137
-    District 05: 709963
-    District 08: 702683
-    District 07: 701696
-    District 09: 712662
-    District 03: 698459
-    District 06: 711373
+    District 3: 706653
+    District 10: 706992
+    District 9: 702500
+    District 5: 695917
+    District 15: 705549
+    District 6: 705782
+    District 11: 705115
+    District 8: 705689
+    District 4: 705669
+    District 18: 705847
+    District 12: 706232
+    District 17: 699133
+    District 7: 712463
+    District 16: 699557
+    District 14: 705526
+    District 13: 705028
+    District 2: 705689
+    District 1: 705588
 
-From this example, note that ``partition["population"]`` is a dictionary mapping the ID of each district to its total
+Notice that ``partition["population"]`` is a dictionary mapping the ID of each district to its total
 population (that's why we can call the ``.items()`` method on it). Most updaters output values in this dictionary format.
 
-For more information on updaters, see :doc:`updaters` and the :mod:`gerrychain.updaters` documentation.
+For more information on updaters, see the :mod:`gerrychain.updaters` documentation.
 
 Running a chain
 ===============
 
 Now that we have our initial partition, we can configure and run a :class:`Markov chain <gerrychain.MarkovChain>`.
-Let's configure a short Markov chain to make sure everything works properly.
-
-.. code-block:: python
+Let's configure a short Markov chain to make sure everything works properly. ::
 
     from gerrychain import MarkovChain
     from gerrychain.constraints import single_flip_contiguous
@@ -115,7 +130,7 @@ Let's configure a short Markov chain to make sure everything works properly.
 
     chain = MarkovChain(
         proposal=propose_random_flip,
-        is_valid=single_flip_contiguous),
+        constraints=[single_flip_contiguous],
         accept=always_accept,
         initial_state=initial_partition,
         total_steps=1000
@@ -127,10 +142,12 @@ To configure a chain, we need to specify five objects.
     or more nodes. This comes in the form of a dictionary mapping one or more node IDs to their new district IDs.
     Here we've used the ``propose_random_flip`` proposal, which proposes that a random node on the boundary of one
     district be flipped into the neighboring district.
-:is_valid: A function that takes a proposed state and returns ``True`` or ``False`` depending on whether
-    the state satisfies all the constraints that we want to impose. Here we've used just a single constraint,
-    called ``single_flip_contiguous``, which checks that each district is contiguous. This particular constraint is
-    optimized for the single-flip proposal function we are using (hence the name).
+:constraints: A list of binary constraints (functions that take a partition and return ``True`` or ``False``) that
+    together define which districting plans. are valid. Here we've used just a single constraint, ``single_flip_contiguous``,
+    which checks that each district in  the plan is contiguous. This particular constraint is
+    optimized for the single-flip proposal function we are using (hence the name). We could add more
+    constraints to require that districts have nearly-equal population, to impose a bound on the compactness of
+    the districts according to some score, or to prevent districts from splitting more counties than the original plan.
 :accept: A function that takes a valid proposed state and returns ``True`` or ``False`` to signal whether
     the random walk should indeed move to the proposed state. ``always_accept`` always accepts valid proposed states.
     If you want to implement Metropolis-Hastings or any other more sophisticated acceptance criterion, you can
@@ -144,20 +161,48 @@ the :class:`gerrychain.MarkovChain` documentation and source code.
 
 The above code configures a Markov chain called ``chain``, but does *not* run it yet. We run the chain
 by iterating through all of the states using a ``for`` loop. As an example, let's iterate through
-this chain and print out the district populations, sorted, for each step in the chain.
-
-.. code-block:: python
+this chain and print out the sorted vector of Democratic vote percentages in each district for each
+step in the chain. ::
 
     for partition in chain:
-        print(sorted(partition["population"].values()))
+        print(sorted(partition["SEN12"].percents("Dem")))
 
 That's all: you've run a Markov chain!
+
+To analyze the Republican vote percentages for each districting plan in our ensemble,
+we'll want to actually collect the data, and not just print it out. We can use a list
+comprehension to store these vote percentages, and then convert it into a :mod:`pandas`
+:class:`~pandas.DataFrame`. ::
+
+    import pandas
+
+    d_percents = [sorted(partition["SEN12"].percents("Dem")) for partition in chain]
+
+    data = pandas.DataFrame(d_percents)
+
+This code will collect data from a different ensemble than our ``for`` loop above. Each time
+we iterate through the ``chain`` object, we run a fresh new Markov chain (using the same
+configuration that we defined when instantiating ``chain``).
+
+The `pandas`_ :class:`DataFrame` object has many helpful methods for analyzing and plotting
+data. For example, we can produce a boxplot of our ensemble's Democratic vote percentage
+vectors, with the initial 2011 districting plan plotted in red, in just a few lines of code::
+
+    import matplotlib.pyplot as plt
+    
+    ax = data.boxplot()
+    data.iloc[0].plot(style="ro", ax=ax)
+
+    plt.show()
+
+.. _`pandas`: https://pandas.pydata.org/
+
+(Before you over-analyze this data, keep in mind that this is a toy ensemble of just
+one thousand plans created by single flips.)
 
 Next steps
 ==========
 
-* Updaters
-* Proposals
-* Constraints
-* Acceptance rules
-* Computing election results
+To learn more about the specific components of GerryChain, see the :ref:`api`.
+
+.. proposals (recom), updaters, acceptance rules, scores
