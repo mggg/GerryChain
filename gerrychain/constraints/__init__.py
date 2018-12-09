@@ -43,6 +43,7 @@ from .bounds import (
     SelfConfiguringLowerBound,
     SelfConfiguringUpperBound,
     UpperBound,
+    WithinPercentRangeOfBounds,
 )
 from .contiguity import (
     contiguous,
