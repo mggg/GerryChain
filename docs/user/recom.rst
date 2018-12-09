@@ -165,7 +165,7 @@ Now we'll create a box plot similar to those appearing the Virginia report. ::
     ax.axhline(0.5, color="#cccccc")
 
     # Draw boxplot
-    data.boxplot(ax=ax, positions=range(0, len(data.columns)))
+    data.boxplot(ax=ax, positions=range(len(data.columns)))
 
     # Draw initial plan's Democratic vote %s (.iloc[0] gives the first row)
     data.iloc[0].plot(style="ro", ax=ax)
