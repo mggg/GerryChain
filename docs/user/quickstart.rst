@@ -16,9 +16,9 @@ Before we can start running Markov chains, you'll need to:
 
 * Install ``gerrychain`` from PyPI by running ``pip install gerrychain`` in a terminal.
 * Download and unzip MGGG's `shapefile of Pennsylvania's VTDs`_ from GitHub.
-* Open your favorite Python environment (JupyterLab, IPython, or just a ``.py`` file in
-    your favorite editor) in the directory containing the ``PA_VTD.shp`` file
-    from the ``.zip`` that you downloaded and unzipped.
+* Open your preferred Python environment (e.g. JupyterLab, IPython, or a ``.py`` file
+  in your favorite editor) in the directory containing the ``PA_VTD.shp`` file
+  from the ``.zip`` that you downloaded and unzipped.
 
 .. _`shapefile of Pennsylvania's VTDs`: https://github.com/mggg-states/PA-shapefiles/blob/master/PA/PA_VTD.zip
 
