@@ -230,3 +230,10 @@ def test_graph_warns_for_islands():
 
     with pytest.warns(Warning):
         graph.warn_for_islands()
+
+
+def test_graph_raises_if_crs_is_missing(geodataframe):
+    del geodataframe.crs
+
+    with pytest.raises(ValueError):
+        Graph.from_geodataframe(geodataframe)
