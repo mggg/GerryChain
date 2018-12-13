@@ -25,12 +25,12 @@ class Partition:
             The keys are stored as attributes on the partition class,
             which the functions compute.
         """
-        if parent:
-            self._from_parent(parent, flips)
-        else:
+        if parent is None:
             self._first_time(graph, assignment, updaters)
+        else:
+            self._from_parent(parent, flips)
 
-        self._update()
+        self._cache = dict()
         self.subgraphs = SubgraphView(self.graph, self.parts)
 
     def _first_time(self, graph, assignment, updaters):
@@ -68,13 +68,6 @@ class Partition:
 
     def __len__(self):
         return len(self.parts)
-
-    def _update(self):
-        self._cache = dict()
-
-        for key in self.updaters:
-            if key not in self._cache:
-                self._cache[key] = self.updaters[key](self)
 
     def merge(self, flips):
         """Returns the new partition obtained by performing the given `flips`
