@@ -25,10 +25,10 @@ class Partition:
             The keys are stored as attributes on the partition class,
             which the functions compute.
         """
-        if parent:
-            self._from_parent(parent, flips)
-        else:
+        if parent is None:
             self._first_time(graph, assignment, updaters)
+        else:
+            self._from_parent(parent, flips)
 
         self._cache = dict()
         self.subgraphs = SubgraphView(self.graph, self.parts)
