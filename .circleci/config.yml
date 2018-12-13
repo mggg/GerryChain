@@ -49,6 +49,8 @@ jobs:
             echo "backend: Agg" > "matplotlibrc"
             pytest -v --cov=gerrychain tests
             codecov
+          environment:
+            PYTHONHASHSEED: "0"
       - store_artifacts:
           path: test-reports
 destination: test-reports
