@@ -1,7 +1,3 @@
-import pytest
-
-
-@pytest.mark.xfail(reason="Setting random.seed is not sufficient")
 def test_repeatable(three_by_three_grid):
     from gerrychain import (
         MarkovChain,
@@ -27,25 +23,25 @@ def test_repeatable(three_by_three_grid):
     # Note: these might not even be the actual expected flips
     expected_flips = [
         None,
-        {5: 1},
-        {3: 2},
-        {3: 1},
-        {3: 2},
-        {3: 1},
-        {6: 1},
-        {8: 1},
-        {8: 2},
-        {6: 2},
+        {2: 2},
         {4: 2},
-        {4: 1},
-        {5: 2},
-        {4: 2},
-        {4: 1},
-        {3: 2},
-        {4: 2},
-        {0: 2},
         {1: 2},
+        {0: 2},
+        {0: 1},
+        {1: 1},
+        {4: 1},
+        {6: 1},
+        {2: 1},
+        {7: 1},
+        {8: 1},
+        {2: 2},
         {5: 1},
+        {1: 2},
+        {1: 1},
+        {1: 2},
+        {5: 2},
+        {1: 1},
+        {4: 2},
     ]
     flips = [partition.flips for partition in chain]
     print(flips)
