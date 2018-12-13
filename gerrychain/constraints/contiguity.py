@@ -1,10 +1,10 @@
-import random
 from heapq import heappop, heappush
 from itertools import count
 
 import matplotlib.pyplot as plt
 import networkx as nx
 
+from ..random import random
 from .bounds import SelfConfiguringLowerBound
 
 

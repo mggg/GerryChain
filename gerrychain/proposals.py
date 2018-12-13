@@ -1,4 +1,4 @@
-import random
+from .random import random
 
 
 def propose_any_node_flip(partition):
