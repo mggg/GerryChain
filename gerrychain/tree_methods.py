@@ -1,7 +1,7 @@
-import random
-
 import networkx as nx
 from networkx.algorithms import tree
+
+from .random import random
 
 
 def predecessors(h, root):

@@ -1,4 +1,4 @@
-import random
+from .random import random
 
 
 def mpaccept(partition):
@@ -7,19 +7,19 @@ def mpaccept(partition):
     val = 1
     # if (partition["POPB%"][3] > .5) and (partition["POPB%"][4] > .5):
     # return True
-    if (partition["POPB%"][1] < .44) and partition["POPB%"][1] < partition.parent[
+    if (partition["POPB%"][1] < 0.44) and partition["POPB%"][1] < partition.parent[
         "POPB%"
     ][1]:
         val = 0
-    if (partition["POPB%"][3] < .44) and partition["POPB%"][3] < partition.parent[
+    if (partition["POPB%"][3] < 0.44) and partition["POPB%"][3] < partition.parent[
         "POPB%"
     ][3]:
         val = 0
-    if (partition["POPB%"][4] < .44) and partition["POPB%"][4] < partition.parent[
+    if (partition["POPB%"][4] < 0.44) and partition["POPB%"][4] < partition.parent[
         "POPB%"
     ][4]:
         val = 0
-    return (val + .05) > random.random()
+    return (val + 0.05) > random.random()
 
 
 def always_accept(partition):
