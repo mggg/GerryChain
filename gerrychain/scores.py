@@ -88,10 +88,12 @@ def partisan_gini(election_results):
     # delta, the vote share for that party swings by that delta in each
     # district.
     # We calculate the necessary delta to shift the district with the highest
-    # vote share for the party to a vote share of 0.5.
-    # This gives the proportion of votes yielding 0 seats to that party.
+    # vote share for the party to a vote share of 0.5. This delta, subtracted
+    # from the original popular vote share, gives the minimum popular vote
+    # share that yields 1 seat to the party.
     # We repeat this process for the district with the second-highest vote
-    # share, which gives the proportion of votes yielding 1 seat, and so on.
+    # share, which gives the minimuum popular vote share yielding 2 seats,
+    # and so on.
     overall_result = election_results.percent(party)
     race_results = sorted(election_results.percents(party), reverse=True)
     seats_votes = [overall_result - r + 0.5 for r in race_results]
