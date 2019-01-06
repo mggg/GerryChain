@@ -92,7 +92,7 @@ def partisan_gini(election_results):
     # from the original popular vote share, gives the minimum popular vote
     # share that yields 1 seat to the party.
     # We repeat this process for the district with the second-highest vote
-    # share, which gives the minimuum popular vote share yielding 2 seats,
+    # share, which gives the minimum popular vote share yielding 2 seats,
     # and so on.
     overall_result = election_results.percent(party)
     race_results = sorted(election_results.percents(party), reverse=True)
