@@ -85,7 +85,7 @@ def partisan_gini(election_results):
     """
     # For two parties, the Gini score is symmetric--it does not vary by party.
     party = election_results.election.parties[0]
-    
+
     # To find seats as a function of votes, we assume uniform partisan swing.
     # That is, if the statewide popular vote share for a party swings by some
     # delta, the vote share for that party swings by that delta in each
