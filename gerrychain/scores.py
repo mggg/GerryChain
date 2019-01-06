@@ -66,9 +66,6 @@ def partisan_bias(election_results):
     The partisan bias is defined as the number of districts with above-mean
     vote share by the first party divided by the total number of districts,
     minus 1/2.
-
-    :election_results: the ElectionResults to compute partisan bias against.
-    :party: the party to compute partisan bias against.
     """
     first_party = election_results.election.parties[0]
     party_shares = numpy.array(election_results.percents(first_party))
