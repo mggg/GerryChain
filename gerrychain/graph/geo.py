@@ -32,15 +32,15 @@ def reprojected(df):
     # We verify that all geometries are valid and  make a best-effort attempt
     # to repair invalid geometries.
     repaired = []
-    for idx, row in reproj_df.iterrows():
+    for idx, geom in enumerate(reproj_df.geometry):
         try:
-            row.geometry.intersection(row.geometry)
+            geom.intersection(geom)
         except TopologicalError:
-            buffered = row.geometry.buffer(0)
+            buffered = geom.buffer(0)
             buffered.intersection(buffered)
             repaired.append(idx)
-            row.geometry = buffered
+            reproj_df.at[idx, 'geometry'] = buffered
     if len(repaired) > 0:
-        warnings.warn("Repaired invalid geometries after reprojection"
+        warnings.warn("Repaired invalid geometries after reprojection "
                       "at indices {}.".format(repaired))
     return reproj_df
