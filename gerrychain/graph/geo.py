@@ -1,7 +1,6 @@
 from collections import Counter
+
 from gerrychain.vendor.utm import from_latlon
-from shapely.errors import TopologicalError
-import warnings
 
 
 def utm_of_point(point):
@@ -25,22 +24,6 @@ def reprojected(df):
     .. _`Universal Transverse Mercator`: https://en.wikipedia.org/wiki/UTM_coordinate_system
     """
     utm = identify_utm_zone(df)
-    reproj_df = df.to_crs(
+    return df.to_crs(
         f"+proj=utm +zone={utm} +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
     )
-    # Some precincts contain self-intersecting edges after reprojection.
-    # We verify that all geometries are valid and  make a best-effort attempt
-    # to repair invalid geometries.
-    repaired = []
-    for idx, geom in enumerate(reproj_df.geometry):
-        try:
-            geom.intersection(geom)
-        except TopologicalError:
-            buffered = geom.buffer(0)
-            buffered.intersection(buffered)
-            repaired.append(idx)
-            reproj_df.at[idx, 'geometry'] = buffered
-    if len(repaired) > 0:
-        warnings.warn("Repaired invalid geometries after reprojection "
-                      "at indices {}.".format(repaired))
-    return reproj_df
