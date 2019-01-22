@@ -29,8 +29,14 @@ jobs:
   - script: python -m pip install --upgrade pip
     displayName: 'Upgrade pip'
     
+  - script: |
+      sudo apt update
+      sudo apt upgrade
+      sudo apt install python3-numpy python3-scipy python3-matplotlib
+    displayName: 'Install numpy, scipy, matplotlib'
+
   - script: python setup.py install
-    displayName: 'Install dependencies'
+    displayName: 'Install package'
 
   - script: |
       pip install pytest
