@@ -18,6 +18,26 @@ as a `GitHub`_ repository, and not as a ``.zip`` file on your personal website. 
 .. _`desktop client`: https://desktop.github.com/
 
 
+Use the same versions of all of your dependencies
+-------------------------------------------------
+
+You will want to make sure that anyone who tries to repeat your analysis by
+running your code will have the exact same versions of all of the software and packages
+that you use, including the same version of Python.
+
+The easiest way to do this is to use `conda`_ to manage all of your dependencies.
+You can use conda to export an ``environment.yml`` file that anyone can use to replicate your
+environment by running the command ``conda env create -f environment.yml``. For instructions on
+how to do this, see `Sharing your environment`_ and `Creating an environment from an environment.yml file`_
+in the conda documentation.
+
+If you've published your code on GitHub, it is a good idea to include your ``environment.yml``
+file in the root folder of your code repository.
+
+.. _`Sharing your environment`: https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#sharing-an-environment
+.. _`Creating an environment from an environment.yml file`: https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-from-an-environment-yml-file
+
+
 Import ``random`` from ``gerrychain.random``
 --------------------------------------------
 
@@ -63,23 +83,3 @@ before running your code.
 .. _`environment variable`: https://en.wikipedia.org/wiki/Environment_variable
 .. _conda: https://conda.io/en/master/
 .. _`save environment variables in your conda environment`: https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#saving-environment-variables
-
-
-Pin all of your dependencies
-----------------------------
-
-You will want to make sure that anyone who tries to repeat your analysis by
-running your code will have the exact same versions of all of the software and packages
-that you use.
-
-The easiest way to do this is to use `conda`_ to manage all of your dependencies.
-You can use conda to export an ``environment.yml`` file that anyone can use to replicate your
-environment by running the command ``conda env create -f environment.yml``. For instructions on
-how to do this, see `Sharing your environment`_ and `Creating an environment from an environment.yml file`_
-in the conda documentation.
-
-If you've published your code on GitHub, it is a good idea to include your ``environment.yml``
-file in the root folder of your code repository.
-
-.. _`Sharing your environment`: https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#sharing-an-environment
-.. _`Creating an environment from an environment.yml file`: https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-from-an-environment-yml-file
