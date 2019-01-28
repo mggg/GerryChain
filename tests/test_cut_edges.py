@@ -1,6 +1,11 @@
+import functools
+
+import pytest
+
+from gerrychain import MarkovChain, Partition, proposals, tree_proposals
+from gerrychain.accept import always_accept
 from gerrychain.constraints import no_vanishing_districts, single_flip_contiguous
-from gerrychain.defaults import DefaultChain, Grid
-from gerrychain.partition import Partition
+from gerrychain.grid import Grid
 from gerrychain.updaters import cut_edges, cut_edges_by_part
 
 # This is copied and pasted, but should be done with some proper
@@ -117,11 +122,31 @@ def test_implementation_of_cut_edges_matches_naive_method(three_by_three_grid):
     assert edge_set_equal(result, naive_cut_edges)
 
 
-def test_cut_edges_matches_naive_cut_edges_at_every_step():
+@pytest.mark.parametrize(
+    "proposal,number_of_steps",
+    [
+        (proposals.propose_random_flip, 1000),
+        (
+            functools.partial(
+                tree_proposals.recom,
+                pop_col="population",
+                pop_target=25,
+                epsilon=0.5,
+                node_repeats=0,
+            ),
+            10,
+        ),
+    ],
+)
+def test_cut_edges_matches_naive_cut_edges_at_every_step(proposal, number_of_steps):
     partition = Grid((10, 10), with_diagonals=True)
 
-    chain = DefaultChain(
-        partition, [single_flip_contiguous, no_vanishing_districts], 1000
+    chain = MarkovChain(
+        proposal,
+        [single_flip_contiguous, no_vanishing_districts],
+        always_accept,
+        partition,
+        number_of_steps,
     )
 
     for state in chain:

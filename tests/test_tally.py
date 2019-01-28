@@ -1,8 +1,10 @@
 from collections import defaultdict
 
+from gerrychain import MarkovChain, Partition
+from gerrychain.accept import always_accept
 from gerrychain.constraints import no_vanishing_districts, single_flip_contiguous
-from gerrychain.defaults import DefaultChain, Grid
-from gerrychain.partition import Partition
+from gerrychain.grid import Grid
+from gerrychain.proposals import propose_random_flip
 from gerrychain.random import random
 from gerrychain.updaters.tally import DataTally
 
@@ -54,8 +56,12 @@ def test_data_tally_mimics_old_tally_usage(graph_with_random_data_factory):
 def test_tally_matches_naive_tally_at_every_step():
     partition = Grid((10, 10), with_diagonals=True)
 
-    chain = DefaultChain(
-        partition, [single_flip_contiguous, no_vanishing_districts], 1000
+    chain = MarkovChain(
+        propose_random_flip,
+        [single_flip_contiguous, no_vanishing_districts],
+        always_accept,
+        partition,
+        1000,
     )
 
     def get_expected_tally(partition):

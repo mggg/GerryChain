@@ -4,7 +4,7 @@ import pytest
 
 
 @pytest.mark.skipif(
-    int(os.environ.get("PYTHONHASHSEED")) != 0,
+    os.environ.get("PYTHONHASHSEED") != "0",
     reason="Need to fix the PYTHONHASHSEED for reproducibility",
 )
 def test_repeatable(three_by_three_grid):
