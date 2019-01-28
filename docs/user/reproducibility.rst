@@ -22,13 +22,13 @@ Import ``random`` from ``gerrychain.random``
 --------------------------------------------
 
 The submodule ``gerrychain.random`` is the single place where GerryChain imports the built-in Python
-module ``random`` and sets a random seed. This makes sure that all randomness is used _after_ the seed
+module ``random`` and sets a random seed. This makes sure that all randomness is used *after* the seed
 is set. If you use the ``random`` module anywhere in your own code (say, in your own proposal function),
 replace the line ``import random`` with ``from gerrychain.random import random``. This will ensure
 that your code uses the same random seed as GerryChain.
 
 GerryChain sets a random seed of ``2018`` after it imports ``random``. If you wish to use a different
-random seed, set it immediately after importing ``random`` from ``gerrychain.random``, and _before_ you
+random seed, set it immediately after importing ``random`` from ``gerrychain.random``, and *before* you
 import anything else. That will look like this:
 
 
