@@ -1,3 +1,5 @@
+import os
 import random
 
-random.seed(2018)
+seed = os.environ.get("GERRYCHAIN_RANDOM_SEED", 2018)
+random.seed(seed)
