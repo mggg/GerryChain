@@ -28,8 +28,8 @@ To install GerryChain from PyPI_, just run ``pip install gerrychain``.
 .. _PyPI: https://pypi.org/
 
 
-Getting started
----------------
+User Guide
+----------
 
 These guides show you how to get started using GerryChain:
 
@@ -38,6 +38,7 @@ These guides show you how to get started using GerryChain:
 
     user/quickstart
     user/recom
+    user/reproducibility
 
 We also strongly recommend the resources prepared by Daryl R. DeFord of MGGG for the
 2019 MIT IAP course `Computational Approaches for Political Redistricting`_.
@@ -47,7 +48,7 @@ We also strongly recommend the resources prepared by Daryl R. DeFord of MGGG for
 
 
 API Reference
------------------
+-------------
 
 This document provides detailed documentation for classes and functions in
 GerryChain.
