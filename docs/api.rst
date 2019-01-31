@@ -53,8 +53,8 @@ Elections
 Grids
 -----
 
-To make it easier to play around with GerryChain, we have provided a :class:`~gerrychain.defaults.Grid`
+To make it easier to play around with GerryChain, we have provided a :class:`~gerrychain.grid.Grid`
 class representing a partition of a grid graph. This is especially useful if you want to start experimenting
 but do not yet have a clean set of data and geometries to build your graph from.
 
-.. autoclass:: gerrychain.defaults.Grid
+.. autoclass:: gerrychain.grid.Grid
