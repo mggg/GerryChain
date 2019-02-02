@@ -4,7 +4,7 @@ import warnings
 import geopandas as gp
 import networkx
 from networkx.readwrite import json_graph
-from shapely.ops import cascaded_union
+from shapely.ops import unary_union
 from shapely.prepared import prep
 
 from .adjacency import neighbors
@@ -221,7 +221,7 @@ def add_boundary_perimeters(graph, geometries):
     :param df: Geodataframe containing geometry information.
     :return: The updated graph.
     """
-    prepared_boundary = prep(cascaded_union(geometries).boundary)
+    prepared_boundary = prep(unary_union(geometries).boundary)
 
     boundary_nodes = geometries.boundary.apply(prepared_boundary.intersects)
 

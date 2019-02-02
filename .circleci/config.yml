@@ -2,17 +2,12 @@ version: 2
 jobs:
   build:
     docker:
-      - image: continuumio/miniconda3
+      - image: python:3.7
 
     working_directory: ~/repo
 
     steps:
       - checkout
-
-      - restore_cache:
-          keys:
-            - v2-dependencies-{{ checksum "setup.py" }}
-            - v2-dependencies-
 
       - run:
           name: run linter
@@ -25,32 +20,23 @@ jobs:
       - run:
           name: install dependencies
           command: |
-            # conda config --set auto_update_conda false
-            # conda update -n base conda
-            # conda config --set always_yes true
-            # # deps from requirements.txt are picked up by conda-build
-            # #   only list deps for test/coverage here.
-            # conda install -qy pytest pytest-cov conda-build
-            # conda build --no-test .
             pip install pytest pytest-cov
             pip install codecov
             python setup.py install
-      - save_cache:
-          paths:
-            - /opt/conda
-          key: v2-dependencies-{{ checksum "setup.py" }}
 
       - run:
           name: run tests
           command: |
-            # source activate adj
             # Direct matplotlib to use the Agg (non-graphical) backend during
             # circleci runs.
             echo "backend: Agg" > "matplotlibrc"
-            pytest -v --cov=gerrychain tests
+            pytest -v --cov=gerrychain --junitxml=test-reports/junit.xml tests
             codecov
           environment:
             PYTHONHASHSEED: "0"
+
+      - store_test_results:
+          path: test-reports
+
       - store_artifacts:
           path: test-reports
-destination: test-reports

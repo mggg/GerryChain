@@ -1,10 +1,7 @@
 import math
 
-from gerrychain.constraints.bounds import (
-    Bounds,
-    SelfConfiguringLowerBound,
-    SelfConfiguringUpperBound,
-)
+from gerrychain.constraints.bounds import (Bounds, SelfConfiguringLowerBound,
+                                           SelfConfiguringUpperBound)
 from gerrychain.updaters import CountySplit
 
 
@@ -43,7 +40,7 @@ class Validator:
                 pass
             else:
                 raise TypeError(
-                    f"Constraint {constraint.__name__} returned a non-boolean."
+                    "Constraint {} returned a non-boolean.".format(constraint.__name__)
                 )
 
         # all constraints are satisfied

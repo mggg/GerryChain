@@ -191,5 +191,5 @@ There you go! To build on this, here are some possible next steps:
 * Compute partisan symmetry scores like Efficiency Gap or Mean-Median, and
   create a histogram of the scores of the ensemble.
 * Perform the same analysis using a different election than the 2012 Senate election
-* Collect Democratic vote percentages for _all_ the elections we set up, instead
+* Collect Democratic vote percentages for *all* the elections we set up, instead
   of just the 2012 Senate election.
