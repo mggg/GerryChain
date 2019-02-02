@@ -45,12 +45,12 @@ def reprojected(df):
         )
     )
 
-    
+
 class GeometryError(Exception):
     """
     Wrapper error class for projection failures.
     Changing a map's projection may create invalid geometries, which may
     or may not be repairable using the `.buffer(0)`_ trick.
-    
+
     .. _`.buffer(0)`: https://shapely.readthedocs.io/en/stable/manual.html#constructive-methods
     """
