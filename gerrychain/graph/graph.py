@@ -8,7 +8,7 @@ from shapely.ops import cascaded_union
 from shapely.prepared import prep
 
 from .adjacency import neighbors
-from .geo import reprojected
+from .geo import reprojected, invalid_geometries, GeometryError
 
 
 class Graph(networkx.Graph):
@@ -88,10 +88,23 @@ class Graph(networkx.Graph):
         :return: The adjacency graph of the geometries from `dataframe`.
         :rtype: :class:`Graph`
         """
+        # Validate geometries before reprojection
+        invalid = invalid_geometries(dataframe)
+        if invalid:
+            raise GeometryError("Invalid geometries at rows {} before "
+                  "reprojection. Consider repairing the affected geometries with "
+                  "`.buffer(0)`.".format(invalid))
+
         # Project the dataframe to an appropriate UTM projection unless
         # explicitly told not to.
         if reproject:
             df = reprojected(dataframe)
+            invalid_reproj = invalid_geometries(df)
+            if invalid_reproj:
+                raise GeometryError("Invalid geometries at rows {} after "
+                      "reprojection. Consider reloading the GeoDataFrame with "
+                      "`reproject=False` or repairing the affected geometries "
+                      "with `.buffer(0)`.".format(invalid_reproj))
         else:
             df = dataframe
 

@@ -1,5 +1,5 @@
 from collections import Counter
-
+from shapely.validation import explain_validity
 from gerrychain.vendor.utm import from_latlon
 
 
@@ -15,6 +15,21 @@ def identify_utm_zone(df):
     return most_common
 
 
+def invalid_geometries(df):
+    """Given a GeoDataFrame, returns a list of row indices
+    with invalid geometries.
+
+    :param df: :class:`geopandas.GeoDataFrame`
+    :rtype: list of int
+    """
+    invalid = []
+    for idx, row in df.iterrows():
+        validity = explain_validity(row.geometry)
+        if validity != "Valid Geometry":
+            invalid.append(idx)
+    return invalid
+
+
 def reprojected(df):
     """Returns a copy of `df`, projected into the coordinate reference system of a suitable
         `Universal Transverse Mercator`_ zone.
@@ -27,3 +42,13 @@ def reprojected(df):
     return df.to_crs(
         f"+proj=utm +zone={utm} +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
     )
+
+    
+class GeometryError(Exception):
+    """
+    Wrapper error class for projection failures.
+    Changing a map's projection may create invalid geometries, which may
+    or may not be repairable using the `.buffer(0)`_ trick.
+    
+    .. _`.buffer(0)`: https://shapely.readthedocs.io/en/stable/manual.html#constructive-methods
+    """
