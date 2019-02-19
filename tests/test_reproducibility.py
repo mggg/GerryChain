@@ -4,10 +4,8 @@ import pytest
 
 
 @pytest.mark.skipif(
-    True or int(os.environ.get("PYTHONHASHSEED", 1)) != 0,
+    os.environ.get("PYTHONHASHSEED", 1) != "0",
     reason="Need to fix the PYTHONHASHSEED for reproducibility."
-    "Also need to update this test, because the expected_flips are"
-    "no longer correct.",
 )
 def test_repeatable(three_by_three_grid):
     from gerrychain import (
@@ -34,24 +32,24 @@ def test_repeatable(three_by_three_grid):
     # Note: these might not even be the actual expected flips
     expected_flips = [
         None,
-        {4: 2},
         {2: 2},
-        {4: 1},
-        {4: 2},
-        {4: 1},
         {4: 2},
         {6: 1},
-        {6: 2},
         {1: 2},
-        {1: 1},
-        {4: 1},
-        {4: 2},
-        {1: 2},
-        {1: 1},
-        {4: 1},
-        {2: 1},
+        {7: 1},
+        {0: 2},
         {3: 2},
-        {5: 1},
+        {7: 2},
+        {3: 1},
+        {4: 1},
+        {7: 1},
+        {8: 1},
+        {8: 2},
+        {8: 1},
+        {8: 2},
+        {3: 2},
+        {4: 2},
+        {7: 2},
         {3: 1},
     ]
     flips = [partition.flips for partition in chain]
