@@ -19,6 +19,8 @@ setup(
     description="Use Markov chain Monte Carlo to analyze districting plans and gerrymanders",
     author="Metric Geometry and Gerrymandering Group",
     author_email="gerrymandr@gmail.com",
+    maintainer="Max Hully",
+    maintainer_email="max@mggg.org",
     long_description=long_description,
     long_description_content_type="text/x-rst",
     url="https://github.com/mggg/GerryChain",
@@ -29,7 +31,8 @@ setup(
     keywords="GerryChain",
     classifiers=[
         "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
         "Operating System :: OS Independent",
-        "License :: OSI Approved :: GNU Affero General Public License v3",
+        "License :: OSI Approved :: BSD 3-Clause License",
     ],
 )

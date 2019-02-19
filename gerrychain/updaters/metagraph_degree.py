@@ -29,8 +29,8 @@ class MetagraphDegree:
 
         # XXX: This is really awful.
         del partition.updaters[self.alias]
-        flip_valid = self.validator(partition.merge(flip))
-        reverse_valid = self.validator(partition.merge(reverse_flip))
+        flip_valid = self.validator(partition.flip(flip))
+        reverse_valid = self.validator(partition.flip(reverse_flip))
         partition.updaters[self.alias] = self
 
         return flip_valid + reverse_valid

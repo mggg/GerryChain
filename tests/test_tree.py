@@ -7,8 +7,8 @@ from gerrychain import MarkovChain
 from gerrychain.constraints import (contiguous,
                                     within_percent_of_ideal_population)
 from gerrychain.partition import Partition
+from gerrychain.proposals import recom
 from gerrychain.tree_methods import random_spanning_tree, tree_part2
-from gerrychain.tree_proposals import recom
 from gerrychain.updaters import Tally, cut_edges
 
 

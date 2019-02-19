@@ -23,7 +23,7 @@ The first step is to import everything we'll need::
     import matplotlib.pyplot as plt
     from gerrychain import (GeographicPartition, Partition, Graph, MarkovChain,
                             proposals, updaters, constraints, accept, Election)
-    from gerrychain.tree_proposals import recom
+    from gerrychain.proposals import recom
     from functools import partial
     import pandas
 

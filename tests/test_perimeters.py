@@ -3,7 +3,8 @@ from collections import defaultdict
 
 from gerrychain import MarkovChain
 from gerrychain.accept import always_accept
-from gerrychain.constraints import no_vanishing_districts, single_flip_contiguous
+from gerrychain.constraints import (no_vanishing_districts,
+                                    single_flip_contiguous)
 from gerrychain.grid import Grid
 from gerrychain.proposals import propose_random_flip
 from gerrychain.updaters.compactness import compute_polsby_popper
@@ -11,7 +12,7 @@ from gerrychain.updaters.compactness import compute_polsby_popper
 
 def setup():
     grid = Grid((4, 4), with_diagonals=False)
-    flipped_grid = grid.merge({(2, 1): 3})
+    flipped_grid = grid.flip({(2, 1): 3})
     return grid, flipped_grid
 
 

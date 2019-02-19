@@ -2,7 +2,8 @@ from collections import defaultdict
 
 from gerrychain import MarkovChain, Partition
 from gerrychain.accept import always_accept
-from gerrychain.constraints import no_vanishing_districts, single_flip_contiguous
+from gerrychain.constraints import (no_vanishing_districts,
+                                    single_flip_contiguous)
 from gerrychain.grid import Grid
 from gerrychain.proposals import propose_random_flip
 from gerrychain.random import random
@@ -21,7 +22,7 @@ def test_data_tally_works_as_an_updater(three_by_three_grid):
     partition = Partition(three_by_three_grid, assignment, updaters)
 
     flip = {random.choice(list(partition.graph.nodes)): random.choice(parts)}
-    new_partition = partition.merge(flip)
+    new_partition = partition.flip(flip)
 
     assert new_partition["tally"]
 
@@ -36,7 +37,7 @@ def test_data_tally_gives_expected_value(three_by_three_grid):
     partition = Partition(three_by_three_grid, assignment, updaters)
 
     flip = {first_node: 1}
-    new_partition = partition.merge(flip)
+    new_partition = partition.flip(flip)
 
     assert new_partition["tally"][1] == partition["tally"][1] + 1
 

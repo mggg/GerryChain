@@ -16,7 +16,7 @@ def example_partition():
 
 def test_Partition_can_be_flipped(example_partition):
     flip = {1: 2}
-    new_partition = example_partition.merge(flip)
+    new_partition = example_partition.flip(flip)
     assert new_partition.assignment[1] == 2
 
 
@@ -26,10 +26,10 @@ def test_Partition_knows_cut_edges_K3(example_partition):
     assert (0, 2) in partition["cut_edges"] or (2, 0) in partition["cut_edges"]
 
 
-def test_propose_random_flip_proposes_a_dict(example_partition):
+def test_propose_random_flip_proposes_a_partition(example_partition):
     partition = example_partition
     proposal = propose_random_flip(partition)
-    assert isinstance(proposal, dict)
+    assert isinstance(proposal, partition.__class__)
 
 
 @pytest.fixture
@@ -52,7 +52,7 @@ def test_geographic_partition_can_be_instantiated(example_geographic_partition):
 def test_Partition_parts_is_a_dictionary_of_parts_to_nodes(example_partition):
     partition = example_partition
     flip = {1: 2}
-    new_partition = partition.merge(flip)
+    new_partition = partition.flip(flip)
     assert all(isinstance(nodes, frozenset) for nodes in new_partition.parts.values())
     assert all(isinstance(nodes, frozenset) for nodes in partition.parts.values())
 
