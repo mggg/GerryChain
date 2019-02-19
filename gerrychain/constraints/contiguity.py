@@ -230,7 +230,7 @@ def _bfs(graph):
         return True
 
     # bfs!
-    while len(q) is not 0:
+    while len(q) > 0:
         current = q.pop(0)
         neighbors = graph[current]
 
