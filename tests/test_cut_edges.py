@@ -2,9 +2,10 @@ import functools
 
 import pytest
 
-from gerrychain import MarkovChain, Partition, proposals, tree_proposals
+from gerrychain import MarkovChain, Partition, proposals
 from gerrychain.accept import always_accept
-from gerrychain.constraints import no_vanishing_districts, single_flip_contiguous
+from gerrychain.constraints import (no_vanishing_districts,
+                                    single_flip_contiguous)
 from gerrychain.grid import Grid
 from gerrychain.updaters import cut_edges, cut_edges_by_part
 
@@ -128,7 +129,7 @@ def test_implementation_of_cut_edges_matches_naive_method(three_by_three_grid):
         (proposals.propose_random_flip, 1000),
         (
             functools.partial(
-                tree_proposals.recom,
+                proposals.recom,
                 pop_col="population",
                 pop_target=25,
                 epsilon=0.5,

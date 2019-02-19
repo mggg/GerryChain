@@ -1,6 +1,5 @@
-import random
-
-from .tree_methods import tree_part2
+from ..random import random
+from ..tree_methods import tree_part2
 
 
 def recom(partition, pop_col, pop_target, epsilon, node_repeats):
@@ -17,7 +16,7 @@ def recom(partition, pop_col, pop_target, epsilon, node_repeats):
 
         from functools import partial
         from gerrychain import MarkovChain
-        from gerrychain.tree_proposals import recom
+        from gerrychain.proposals import recom
 
         # ...define constraints, accept, partition, total_steps here...
 
