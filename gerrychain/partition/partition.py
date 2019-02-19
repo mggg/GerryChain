@@ -69,7 +69,7 @@ class Partition:
     def __len__(self):
         return len(self.parts)
 
-    def merge(self, flips):
+    def flip(self, flips):
         """Returns the new partition obtained by performing the given `flips`
         on this partition.
 

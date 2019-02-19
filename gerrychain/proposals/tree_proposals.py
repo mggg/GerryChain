@@ -46,7 +46,7 @@ def recom(partition, pop_col, pop_target, epsilon, node_repeats):
         node_repeats=node_repeats,
     )
 
-    return flips
+    return partition.flip(flips)
 
 
 def recursive_tree_part(graph, parts, pop_target, pop_col, epsilon, node_repeats=20):

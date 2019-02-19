@@ -1,5 +1,6 @@
+from collections import defaultdict
+
 from ..updaters.flows import flows_from_changes
-from ..utils import level_sets
 
 
 class Assignment:
@@ -87,3 +88,12 @@ def get_assignment(assignment, graph=None):
         return assignment
     else:
         raise TypeError("Assignment must be a dict or a node attribute key")
+
+
+def level_sets(mapping: dict, container=set):
+    """Inverts a dictionary. ``{key: value}`` becomes
+    ``{value: <container of keys that map to value>}``."""
+    sets = defaultdict(container)
+    for source, target in mapping.items():
+        sets[target].add(source)
+    return sets

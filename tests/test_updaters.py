@@ -66,7 +66,7 @@ def test_Partition_can_update_stats():
     assert partition["total_stat"][2] == 3
     flip = {1: 2}
 
-    new_partition = partition.merge(flip)
+    new_partition = partition.flip(flip)
     assert new_partition["total_stat"][2] == 5
 
 

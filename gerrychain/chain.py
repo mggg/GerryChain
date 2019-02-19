@@ -64,16 +64,7 @@ class MarkovChain:
             return self.state
 
         while self.counter < self.total_steps:
-            proposal = self.proposal(self.state)
-
-            if not proposal:
-                if self.accept(self.state):
-                    self.counter += 1
-                    return self.state
-                else:
-                    continue
-
-            proposed_next_state = self.state.merge(proposal)
+            proposed_next_state = self.proposal(self.state)
             # Erase the parent of the parent, to avoid memory leak
             self.state.parent = None
 
