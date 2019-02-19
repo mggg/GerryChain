@@ -98,6 +98,9 @@ class Partition:
             self._cache[key] = self.updaters[key](self)
         return self._cache[key]
 
+    def __getattr__(self, key):
+        return self[key]
+
     @property
     def parts(self):
         return self.assignment.parts

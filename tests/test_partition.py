@@ -67,3 +67,7 @@ def test_Partition_has_subgraphs(example_partition):
 def test_Partition_caches_subgraphs(example_partition):
     subgraph = example_partition.subgraphs[1]
     assert subgraph is example_partition.subgraphs[1]
+
+
+def test_partition_implements_getattr_for_updater_access(example_partition):
+    assert example_partition.cut_edges
