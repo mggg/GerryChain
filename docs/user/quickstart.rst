@@ -71,7 +71,7 @@ takes three arguments:
 :graph: A graph.
 :assignment: An assignment of the nodes of the graph into parts of the partition. This can be either
     a dictionary mapping node IDs to part IDs, or the string key of a node attribute that holds
-    each node's assignment. In this example we've written ``assignment="CD"`` to tell the :class:`~gerrychain.Partition`
+    each node's assignment. In this example we've written ``assignment="2011_PLA_1"`` to tell the :class:`~gerrychain.Partition`
     to assign nodes by their ``"2011_PLA_1"`` attribute that we copied from the shapefile. This attributes holds the
     assignments of precincts to congressional districts from the 2010 redistricting cycle.
 :updaters: An optional dictionary of "updater" functions. Here we've provided an updater named ``"population"`` that
