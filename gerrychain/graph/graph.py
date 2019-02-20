@@ -91,9 +91,11 @@ class Graph(networkx.Graph):
         # Validate geometries before reprojection
         invalid = invalid_geometries(dataframe)
         if invalid:
-            raise GeometryError("Invalid geometries at rows {} before "
-                  "reprojection. Consider repairing the affected geometries with "
-                  "`.buffer(0)`.".format(invalid))
+            raise GeometryError(
+                "Invalid geometries at rows {} before "
+                "reprojection. Consider repairing the affected geometries with "
+                "`.buffer(0)`.".format(invalid)
+            )
 
         # Project the dataframe to an appropriate UTM projection unless
         # explicitly told not to.
@@ -101,10 +103,12 @@ class Graph(networkx.Graph):
             df = reprojected(dataframe)
             invalid_reproj = invalid_geometries(df)
             if invalid_reproj:
-                raise GeometryError("Invalid geometries at rows {} after "
-                      "reprojection. Consider reloading the GeoDataFrame with "
-                      "`reproject=False` or repairing the affected geometries "
-                      "with `.buffer(0)`.".format(invalid_reproj))
+                raise GeometryError(
+                    "Invalid geometries at rows {} after "
+                    "reprojection. Consider reloading the GeoDataFrame with "
+                    "`reproject=False` or repairing the affected geometries "
+                    "with `.buffer(0)`.".format(invalid_reproj)
+                )
         else:
             df = dataframe
 
@@ -139,7 +143,6 @@ class Graph(networkx.Graph):
 
         column_dictionaries = df.to_dict("index")
         networkx.set_node_attributes(self, column_dictionaries)
-
 
     def join(self, dataframe, columns=None, left_index=None, right_index=None):
         """Add data from a dataframe to the graph, matching nodes to rows when
