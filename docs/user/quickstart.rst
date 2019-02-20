@@ -37,8 +37,6 @@ will be the initial state of our Markov chain. ::
 
     graph = Graph.from_file("./PA_VTD.shp")
 
-    graph.to_json("./PA_VTD.json")
-
     election = Election("SEN12", {"Dem": "USS12D", "Rep": "USS12R"})
 
     initial_partition = Partition(
@@ -60,11 +58,6 @@ as node attributes. The contents of this particular shapefile's attribute table 
 summarized in the `mggg-states/PA-shapefiles <https://github.com/mggg-states/PA-shapefiles#metadata>`_
 GitHub repo.
     
-Depending on the size of the state, the process of generating an adjacency graph can
-take a bit of time. To avoid having to repeat this process in the future, we call 
-:meth:`graph.to_json() <gerrychain.Graph.to_json>` to save the graph
-in the NetworkX ``json_graph`` format under the name ``"PA_VTD.json``.
-
 Next, we configure an :class:`~gerrychain.Election` object representing the 2012 Senate election,
 using the ``USS12D`` and ``USS12R`` vote total columns from our shapefile. The first argument
 is a name for the election (``"SEN12"``), and the second argument is a dictionary matching political
