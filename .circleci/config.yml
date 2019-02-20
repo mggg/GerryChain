@@ -1,5 +1,69 @@
 version: 2
+
+jobs:
+  test:
+    docker:
+      - image: python:3.7
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run:
+          name: run linter
+          command: |
+            pip install flake8-colors
+            flake8 --format="$FORMAT" --config=./setup.cfg --show-source
+          environment:
+            FORMAT: "${cyan}%(path)s${reset}:${yellow_bold}%(row)d${reset}:${green_bold}%(col)d${reset}: ${red_bold}%(code)s${reset} %(text)s"
+      - run:
+          name: install dependencies
+          command: |
+            pip install pytest pytest-cov
+            pip install codecov
+            python setup.py install
+      - run:
+          name: run tests
+          command: |
+            # Direct matplotlib to use the Agg (non-graphical) backend during
+            # circleci runs.
+            echo "backend: Agg" > "matplotlibrc"
+            pytest -v --cov=gerrychain --junitxml=test-reports/junit.xml tests
+            codecov
+          environment:
+            PYTHONHASHSEED: "0"
+      - store_test_results:
+          path: test-reports
+      - store_artifacts:
+          path: test-reports
+
+  deploy:
+    docker:
+      - image: python:3.7
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run:
+          name: install dependencies
+          command: |
+            pip install --upgrade setuptools wheel
+            python setup.py install
+      - run:
+          name: set up .pypirc
+          command: |
+            echo -e "[pypi]" >> ~/.pypirc
+            echo -e "username = $PYPI_USERNAME" >> ~/.pypirc
+            echo -e "password = $PYPI_PASSWORD" >> ~/.pypirc
+      - run:
+          name: create package
+          command: |
+            python setup.py sdist
+            python setup.py bdist_wheel
+      - run:
+          name: upload to pypi
+          command: |
+            twine upload dist/*
+
 workflows:
+  version: 2
   test_and_deploy:
     jobs:
       - test
@@ -11,76 +75,3 @@ workflows:
               only: /v[0-9]+(\.[0-9]+)*/
             branches:
               ignore: /.*/
-jobs:
-  test:
-    docker:
-      - image: python:3.7
-
-    working_directory: ~/repo
-
-    steps:
-      - checkout
-
-      - run:
-          name: run linter
-          command: |
-            pip install flake8-colors
-            flake8 --format="$FORMAT" --config=./setup.cfg --show-source
-          environment:
-            FORMAT: "${cyan}%(path)s${reset}:${yellow_bold}%(row)d${reset}:${green_bold}%(col)d${reset}: ${red_bold}%(code)s${reset} %(text)s"
-
-      - run:
-          name: install dependencies
-          command: |
-            pip install pytest pytest-cov
-            pip install codecov
-            python setup.py install
-
-      - run:
-          name: run tests
-          command: |
-            # Direct matplotlib to use the Agg (non-graphical) backend during
-            # circleci runs.
-            echo "backend: Agg" > "matplotlibrc"
-            pytest -v --cov=gerrychain --junitxml=test-reports/junit.xml tests
-            codecov
-          environment:
-            PYTHONHASHSEED: "0"
-
-      - store_test_results:
-          path: test-reports
-
-      - store_artifacts:
-          path: test-reports
-  deploy:
-    docker:
-      - image: python:3.7
-
-    working_directory: ~/repo
-
-    steps:
-      - checkout
-
-      - run:
-          name: install dependencies
-          command: |
-            pip install --upgrade setuptools wheel
-            python setup.py install
-
-      - run:
-          name: init .pypirc
-          command: |
-            echo -e "[pypi]" >> ~/.pypirc
-            echo -e "username = $PYPI_USERNAME" >> ~/.pypirc
-            echo -e "password = $PYPI_PASSWORD" >> ~/.pypirc
-
-      - run:
-          name: create package
-          command: |
-            python setup.py sdist
-            python setup.py bdist_wheel
-
-      - run:
-          name: upload to pypi
-          command: |
-            twine upload dist/*
