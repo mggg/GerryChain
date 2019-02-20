@@ -8,7 +8,7 @@ from shapely.ops import unary_union
 from shapely.prepared import prep
 
 from .adjacency import neighbors
-from .geo import reprojected, invalid_geometries, GeometryError
+from .geo import GeometryError, invalid_geometries, reprojected
 
 
 class Graph(networkx.Graph):
@@ -140,21 +140,6 @@ class Graph(networkx.Graph):
         column_dictionaries = df.to_dict("index")
         networkx.set_node_attributes(self, column_dictionaries)
 
-    def node_attribute(self, node_attribute_key):
-        """Create a dictionary of the form ``{node: <attribute value>}`` for
-        the given attribute key, over all nodes of the graph.
-
-        This is useful for creating an assignment dictionary from an attribute
-        from a source data file. For example, if you created your graph from Census data
-        and each node has a `CD` attribute that gives the congressional district
-        the node belongs to, then `graph.node_attribute("CD")` would return the
-        desired assignment of nodes to CDs.
-
-        :param graph: NetworkX graph.
-        :param node_attribute_key: Attribute available on all nodes.
-        :return: Dictionary of {node_id: attribute} pairs.
-        """
-        return {node: data[node_attribute_key] for node, data in self.nodes.items()}
 
     def join(self, dataframe, columns=None, left_index=None, right_index=None):
         """Add data from a dataframe to the graph, matching nodes to rows when

@@ -217,13 +217,6 @@ def test_from_file_and_then_to_json_with_geometries_with_Partition(
     partition.to_json(target_file, include_geometries_as_geojson=True)
 
 
-def test_graph_assignment_raises_if_data_is_missing():
-    graph = Graph([(1, 2), (2, 3), (3, 1)])
-
-    with pytest.raises(KeyError):
-        graph.node_attribute("missing_data_key")
-
-
 def test_graph_warns_for_islands():
     graph = Graph()
     graph.add_node(0)

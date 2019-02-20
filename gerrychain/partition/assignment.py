@@ -81,7 +81,7 @@ def get_assignment(assignment, graph=None):
             raise TypeError(
                 "You must provide a graph when using a node attribute for the assignment"
             )
-        return Assignment.from_dict(graph.node_attribute(assignment))
+        return Assignment.from_dict({node: graph.nodes[node][assignment] for node in graph})
     elif isinstance(assignment, dict):
         return Assignment.from_dict(assignment)
     elif isinstance(assignment, Assignment):
