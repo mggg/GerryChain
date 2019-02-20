@@ -82,6 +82,10 @@ class TestComputeCountySplits:
         assert result["b"].split == CountySplit.OLD_SPLIT
         assert result["c"].split == CountySplit.NOT_SPLIT
 
+    @pytest.mark.xfail(
+        reason="county_splits only remembers the splits from the "
+        "previous partition, which is not the intuitive behavior."
+    )
     def test_initial_split_that_disappears_and_comes_back(self, split_partition):
         no_splits = split_partition.flip({3: 2})
         result = no_splits["splits"]
