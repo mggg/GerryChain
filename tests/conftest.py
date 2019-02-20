@@ -1,6 +1,6 @@
-import networkx
 import pytest
 
+from gerrychain import Graph
 from gerrychain.random import random
 
 
@@ -11,7 +11,7 @@ def three_by_three_grid():
     3 4 5
     6 7 8
     """
-    graph = networkx.Graph()
+    graph = Graph()
     graph.add_edges_from(
         [
             (0, 1),
@@ -45,3 +45,8 @@ def attach_random_data(graph, columns):
     for node in graph.nodes:
         for col in columns:
             graph.nodes[node][col] = random.randint(1, 1000)
+
+
+@pytest.fixture
+def graph(three_by_three_grid):
+    return three_by_three_grid
