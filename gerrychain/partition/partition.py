@@ -1,3 +1,5 @@
+import geopandas
+
 from ..graph import Graph
 from ..updaters import compute_edge_flows, flows_from_changes
 from .assignment import get_assignment
@@ -104,6 +106,25 @@ class Partition:
     @property
     def parts(self):
         return self.assignment.parts
+
+    def plot(self, geometries, **kwargs):
+        """Plot the partition, using the provided geometries.
+
+        :param geometries: A :class:`geopandas.GeoDataFrame` or :class:`geopandas.GeoSeries`
+            holding the geometries to use for plotting. Its :class:`~pandas.Index` should match
+            the node labels of the partition's underlying :class:`~gerrychain.Graph`.
+        :param **kwargs: Additional arguments to pass to :meth:`geopandas.GeoDataFrame.plot`
+            to adjust the plot.
+        """
+        if set(geometries.index) != set(self.graph.nodes):
+            raise TypeError(
+                "The provided geometries do not match the nodes of the graph."
+            )
+        assignment_series = self.assignment.to_series()
+        if isinstance(geometries, geopandas.GeoDataFrame):
+            geometries = geometries.geometry
+        df = geopandas.GeoDataFrame({"assignment": assignment_series}, geometry=geometries)
+        return df.plot(column="assignment", **kwargs)
 
     @classmethod
     def from_json(cls, graph_path, assignment, updaters=None):
