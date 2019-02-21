@@ -122,10 +122,9 @@ class Partition:
             )
         assignment_series = self.assignment.to_series()
         if isinstance(geometries, geopandas.GeoDataFrame):
-            df = geometries
-        else:
-            df = geopandas.GeoDataFrame(geometry=geometries)
-        return df.plot(column=assignment_series, **kwargs)
+            geometries = geometries.geometry
+        df = geopandas.GeoDataFrame({"assignment": assignment_series}, geometry=geometries)
+        return df.plot(column="assignment", **kwargs)
 
     @classmethod
     def from_json(cls, graph_path, assignment, updaters=None):

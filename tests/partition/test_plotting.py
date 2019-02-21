@@ -26,9 +26,10 @@ def geodataframe():
 
 class TestPartitionPlotting:
     def test_can_plot(self, geodataframe, partition):
-        geodataframe.plot = MagicMock()
+        mock_plot = MagicMock()
+        gp.GeoDataFrame.plot = mock_plot
         partition.plot(geodataframe)
-        assert geodataframe.plot.call_count == 1
+        assert mock_plot.call_count == 1
 
     def test_raises_typeerror_for_mismatched_indices(self, geodataframe, partition):
         df = geodataframe.set_index("ID")
@@ -50,11 +51,11 @@ class TestPartitionPlotting:
         args, kwargs = mock_plot.call_args
         assert kwargs["cmap"] == "viridis"
 
-    def test_calls_with_correct_assignment(self, geodataframe, partition):
+    def test_calls_with_column_as_a_string(self, geodataframe, partition):
         mock_plot = MagicMock()
         gp.GeoDataFrame.plot = mock_plot
 
         partition.plot(geodataframe)
 
         args, kwargs = mock_plot.call_args
-        assert set(kwargs["column"].items()) == {(0, 1), (1, 1), (2, 2), (3, 2)}
+        assert isinstance(kwargs["column"], str)
