@@ -113,7 +113,7 @@ class Partition:
         :param geometries: A :class:`geopandas.GeoDataFrame` or :class:`geopandas.GeoSeries`
             holding the geometries to use for plotting. Its :class:`~pandas.Index` should match
             the node labels of the partition's underlying :class:`~gerrychain.Graph`.
-        :param \**kwargs: Additional arguments to pass to :meth:`geopandas.GeoDataFrame.plot`
+        :param **kwargs: Additional arguments to pass to :meth:`geopandas.GeoDataFrame.plot`
             to adjust the plot.
         """
         if set(geometries.index) != set(self.graph.nodes):
