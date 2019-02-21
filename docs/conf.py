@@ -208,6 +208,7 @@ MOCK_MODULES = [
     "shapely.strtree",
     "shapely.prep",
     "shapely.prepared",
+    "shapely.validation",
     "gerrychain.vendor.utm",
 ]
 
