@@ -1,5 +1,7 @@
 from collections import defaultdict
 
+import pandas
+
 from ..updaters.flows import flows_from_changes
 
 
@@ -18,9 +20,11 @@ class Assignment:
         self.parts = parts
 
     @classmethod
-    def from_dict(cls, assignment: dict):
+    def from_dict(cls, assignment):
         """Create an Assignment from a dictionary. This is probably the method you want
         to use to create a new assignment.
+
+        This also works for pandas Series.
         """
         parts = {
             part: frozenset(nodes) for part, nodes in level_sets(assignment).items()
@@ -71,8 +75,17 @@ class Assignment:
         except KeyError:
             return default
 
-    def __call__(self, key):
-        return self[key]
+    def to_series(self):
+        """Convert the assignment to a :class:`pandas.Series`."""
+        groups = [
+            pandas.Series(data=part, index=nodes) for part, nodes in self.parts.items()
+        ]
+        return pandas.concat(groups)
+
+    def to_dict(self):
+        """Convert the assignment to a {node: part} dictionary.
+        This is expensive and should be used rarely."""
+        return {node: part for part, nodes in self.parts.items() for node in nodes}
 
 
 def get_assignment(assignment, graph=None):
@@ -81,8 +94,10 @@ def get_assignment(assignment, graph=None):
             raise TypeError(
                 "You must provide a graph when using a node attribute for the assignment"
             )
-        return Assignment.from_dict({node: graph.nodes[node][assignment] for node in graph})
-    elif isinstance(assignment, dict):
+        return Assignment.from_dict(
+            {node: graph.nodes[node][assignment] for node in graph}
+        )
+    elif callable(getattr(assignment, "items", None)):
         return Assignment.from_dict(assignment)
     elif isinstance(assignment, Assignment):
         return assignment
