@@ -1,3 +1,7 @@
+import json
+import pathlib
+from tempfile import TemporaryDirectory
+
 import networkx
 import pytest
 
@@ -71,3 +75,58 @@ def test_Partition_caches_subgraphs(example_partition):
 
 def test_partition_implements_getattr_for_updater_access(example_partition):
     assert example_partition.cut_edges
+
+
+def test_can_be_created_from_a_districtr_file(graph, districtr_plan_file):
+    for node in graph:
+        graph.nodes[node]["area_num_1"] = node
+
+    partition = Partition.from_districtr_file(graph, districtr_plan_file)
+    assert partition.assignment.to_dict() == {
+        0: 1,
+        1: 1,
+        2: 1,
+        3: 2,
+        4: 2,
+        5: 2,
+        6: 3,
+        7: 3,
+        8: 3,
+    }
+
+
+def test_from_districtr_plan_raises_if_id_column_missing(graph, districtr_plan_file):
+    with pytest.raises(TypeError):
+        Partition.from_districtr_file(graph, districtr_plan_file)
+
+
+@pytest.fixture
+def districtr_plan_file():
+    districtr_plan = {
+        "assignment": {
+            "0": 1,
+            "1": 1,
+            "2": 1,
+            "3": 2,
+            "4": 2,
+            "5": 2,
+            "6": 3,
+            "7": 3,
+            "8": 3,
+        },
+        "id": "f3087dd5",
+        "idColumn": {"key": "area_num_1", "name": "Area Number"},
+        "placeId": "three_by_three_grid",
+        "problem": {
+            "type": "multimember",
+            "numberOfParts": 3,
+            "name": "City Council",
+            "pluralNoun": "City Council Seats",
+        },
+    }
+
+    with TemporaryDirectory() as tempdir:
+        filename = pathlib.Path(tempdir) / "districtr-plan.json"
+        with open(filename, "w") as f:
+            json.dump(districtr_plan, f)
+        yield filename

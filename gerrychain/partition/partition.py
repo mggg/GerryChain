@@ -1,3 +1,5 @@
+import json
+
 import geopandas
 
 from ..graph import Graph
@@ -11,7 +13,6 @@ class Partition:
     Partition represents a partition of the nodes of the graph. It will perform
     the first layer of computations at each step in the Markov chain - basic
     aggregations and calculations that we want to optimize.
-
     """
 
     default_updaters = {}
@@ -123,7 +124,9 @@ class Partition:
         assignment_series = self.assignment.to_series()
         if isinstance(geometries, geopandas.GeoDataFrame):
             geometries = geometries.geometry
-        df = geopandas.GeoDataFrame({"assignment": assignment_series}, geometry=geometries)
+        df = geopandas.GeoDataFrame(
+            {"assignment": assignment_series}, geometry=geometries
+        )
         return df.plot(column="assignment", **kwargs)
 
     @classmethod
@@ -174,4 +177,38 @@ class Partition:
         a GeoJSON file, or any other file that the `fiona` library can handle.
         """
         graph = Graph.from_file(filename, cols_to_add=columns)
+        return cls(graph, assignment, updaters)
+
+    @classmethod
+    def from_districtr_file(cls, graph, districtr_file, updaters=None):
+        """Create a Partition from a districting plan created with `Districtr`_,
+        a free and open-source web app created by MGGG for drawing districts.
+
+        The provided ``graph`` should be created from the same shapefile as the
+        Districtr module used to draw the districting plan. These shapefiles may
+        be found in a repository in the `mggg-states`_ GitHub organization, or by
+        request from MGGG.
+
+        .. _`Districtr`: https://mggg.org/Districtr
+        .. _`mggg-states`: https://github.com/mggg-states
+
+        :param graph: :class:`~gerrychain.Graph`
+        :param districtr_file: the path to the ``.json`` file exported from Districtr
+        :param updaters: dictionary of updaters
+        """
+        with open(districtr_file) as f:
+            districtr_plan = json.load(f)
+
+        id_column_key = districtr_plan["idColumn"]["key"]
+        districtr_assignment = districtr_plan["assignment"]
+        try:
+            node_to_id = {node: str(graph.nodes[node][id_column_key]) for node in graph}
+        except KeyError:
+            raise TypeError(
+                "The provided graph is missing the {} column, which is "
+                "needed to match the Districtr assignment to the nodes of the graph."
+            )
+
+        assignment = {node: districtr_assignment[node_to_id[node]] for node in graph}
+
         return cls(graph, assignment, updaters)
