@@ -4,11 +4,10 @@ import networkx
 import pytest
 
 from gerrychain import MarkovChain
-from gerrychain.constraints import (contiguous,
-                                    within_percent_of_ideal_population)
+from gerrychain.constraints import contiguous, within_percent_of_ideal_population
 from gerrychain.partition import Partition
 from gerrychain.proposals import recom
-from gerrychain.tree_methods import random_spanning_tree, tree_part2
+from gerrychain.tree import bipartition_tree, random_spanning_tree
 from gerrychain.updaters import Tally, cut_edges
 
 
@@ -28,17 +27,17 @@ def partition_with_pop(graph_with_pop):
     )
 
 
-def test_tree_part2_returns_a_subset_of_nodes(graph_with_pop):
+def test_bipartition_tree_returns_a_subset_of_nodes(graph_with_pop):
     ideal_pop = sum(graph_with_pop.nodes[node]["pop"] for node in graph_with_pop) / 2
-    result = tree_part2(graph_with_pop, "pop", ideal_pop, 0.25, 10)
+    result = bipartition_tree(graph_with_pop, "pop", ideal_pop, 0.25, 10)
     assert isinstance(result, set)
     assert all(node in graph_with_pop.nodes for node in result)
 
 
-def test_tree_part2_returns_within_epsilon_of_target_pop(graph_with_pop):
+def test_bipartition_tree_returns_within_epsilon_of_target_pop(graph_with_pop):
     ideal_pop = sum(graph_with_pop.nodes[node]["pop"] for node in graph_with_pop) / 2
     epsilon = 0.25
-    result = tree_part2(graph_with_pop, "pop", ideal_pop, epsilon, 10)
+    result = bipartition_tree(graph_with_pop, "pop", ideal_pop, epsilon, 10)
 
     part_pop = sum(graph_with_pop.nodes[node]["pop"] for node in result)
     assert abs(part_pop - ideal_pop) / ideal_pop < epsilon
@@ -51,7 +50,7 @@ def test_random_spanning_tree_returns_tree_with_pop_attribute(graph_with_pop):
         assert tree.nodes[node]["pop"] == graph_with_pop.nodes[node]["pop"]
 
 
-def test_tree_part2_returns_a_tree(graph_with_pop):
+def test_bipartition_tree_returns_a_tree(graph_with_pop):
     ideal_pop = sum(graph_with_pop.nodes[node]["pop"] for node in graph_with_pop) / 2
     tree = networkx.Graph(
         [(0, 1), (1, 2), (1, 4), (3, 4), (4, 5), (3, 6), (6, 7), (6, 8)]
@@ -59,7 +58,7 @@ def test_tree_part2_returns_a_tree(graph_with_pop):
     for node in tree:
         tree.nodes[node]["pop"] = graph_with_pop.nodes[node]["pop"]
 
-    result = tree_part2(
+    result = bipartition_tree(
         graph_with_pop, "pop", ideal_pop, 0.25, 10, 0, tree, lambda x: 4
     )
 

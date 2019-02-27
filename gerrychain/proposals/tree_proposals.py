@@ -1,5 +1,5 @@
 from ..random import random
-from ..tree_methods import tree_part2
+from ..tree import recursive_tree_part
 
 
 def recom(partition, pop_col, pop_target, epsilon, node_repeats):
@@ -47,39 +47,3 @@ def recom(partition, pop_col, pop_target, epsilon, node_repeats):
     )
 
     return partition.flip(flips)
-
-
-def recursive_tree_part(graph, parts, pop_target, pop_col, epsilon, node_repeats=20):
-    """helper function for merge walk partitioning.
-    Uses :func:`~gerrychain.tree_methods.tree_part2` recursively to partition a tree into
-    ``len(parts)`` parts of population ``pop_target`` (within ``epsilon``).
-
-    :param graph: The graph
-    :param parts: Iterable of part labels (like ``[0,1,2]`` or ``range(4)``
-    :param pop_target: Target population for each part of the partition
-    :param pop_col: Node attribute key holding population data
-    :param epsilon: How far (as a percentage of ``pop_target``) from ``pop_target`` the parts
-        of the partition can be
-    :param node_repeats: Parameter for :func:`~gerrychain.tree_methods.tree_part2` to use.
-    :return: New assignments for the nodes of ``graph``.
-    :rtype: dict
-    """
-    flips = {}
-    remaining_nodes = set(graph.nodes)
-
-    for part in parts[:-1]:
-        nodes = tree_part2(
-            graph.subgraph(remaining_nodes), pop_col, pop_target, epsilon, node_repeats
-        )
-
-        for node in nodes:
-            flips[node] = part
-        # update pop_target?
-
-        remaining_nodes -= nodes
-
-    # All of the remaining nodes go in the last part
-    for node in remaining_nodes:
-        flips[node] = parts[-1]
-
-    return flips
