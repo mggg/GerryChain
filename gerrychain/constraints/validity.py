@@ -37,7 +37,7 @@ class Validator:
                 pass
             else:
                 raise TypeError(
-                    "Constraint {} returned a non-boolean.".format(constraint.__name__)
+                    "Constraint {} returned a non-boolean.".format(repr(constraint))
                 )
 
         # all constraints are satisfied

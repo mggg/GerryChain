@@ -49,7 +49,10 @@ class UpperBound:
 
     @property
     def __name__(self):
-        return "UpperBound({},{})".format(self.func.__name__, self.bound)
+        return "UpperBound({} >= {})".format(self.func.__name__, self.bound)
+
+    def __repr__(self):
+        return "<{}>".format(self.__name__)
 
 
 class LowerBound:
@@ -75,7 +78,10 @@ class LowerBound:
 
     @property
     def __name__(self):
-        return "LowerBound({},{})".format(self.func.__name__, self.bound)
+        return "LowerBound({} <= {})".format(self.func.__name__, self.bound)
+
+    def __repr__(self):
+        return "<{}>".format(self.__name__)
 
 
 class SelfConfiguringUpperBound:
@@ -101,9 +107,7 @@ class SelfConfiguringUpperBound:
     def __call__(self, partition):
         if not self.bound:
             self.bound = self.func(partition)
-            return self.__call__(partition)
-        else:
-            return self.func(partition) <= self.bound
+        return self.func(partition) <= self.bound
 
 
 class SelfConfiguringLowerBound:
@@ -132,9 +136,7 @@ class SelfConfiguringLowerBound:
     def __call__(self, partition):
         if not self.bound:
             self.bound = self.func(partition) - self.epsilon
-            return self.__call__(partition)
-        else:
-            return self.func(partition) >= self.bound
+        return self.func(partition) >= self.bound
 
 
 class WithinPercentRangeOfBounds:

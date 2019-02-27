@@ -12,3 +12,7 @@ class SubgraphView:
     def __iter__(self):
         for part in self.parts:
             yield self[part]
+
+    def items(self):
+        for part in self.parts:
+            yield part, self[part]

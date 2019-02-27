@@ -51,7 +51,14 @@ class Graph(networkx.Graph):
             json.dump(data, f)
 
     @classmethod
-    def from_file(cls, filename, adjacency="rook", cols_to_add=None, reproject=True):
+    def from_file(
+        cls,
+        filename,
+        adjacency="rook",
+        cols_to_add=None,
+        reproject=True,
+        ignore_errors=False,
+    ):
         """Create a :class:`Graph` from a shapefile (or GeoPackage, or GeoJSON, or
         any other library that :mod:`geopandas` can read. See :meth:`from_geodataframe`
         for more details.
@@ -65,7 +72,9 @@ class Graph(networkx.Graph):
         return graph
 
     @classmethod
-    def from_geodataframe(cls, dataframe, adjacency="rook", reproject=True):
+    def from_geodataframe(
+        cls, dataframe, adjacency="rook", reproject=True, ignore_errors=False
+    ):
         """Creates the adjacency :class:`Graph` of geometries described by `dataframe`.
         The areas of the polygons are included as node attributes (with key `area`).
         The shared perimeter of neighboring polygons are included as edge attributes
@@ -85,16 +94,21 @@ class Graph(networkx.Graph):
         :param dataframe: :class:`geopandas.GeoDataFrame`
         :param adjacency: (optional) The adjacency type to use ("rook" or "queen").
             Default is "rook".
+        :param reproject: (optional) Whether to reproject to a UTM projection before
+            creating the graph. Default is ``True``.
+        :param ignore_errors: (optional) Whether to ignore all invalid geometries and
+            attept to create the graph anyway. Default is ``False``.
         :return: The adjacency graph of the geometries from `dataframe`.
         :rtype: :class:`Graph`
         """
         # Validate geometries before reprojection
         invalid = invalid_geometries(dataframe)
-        if invalid:
+        if invalid and not ignore_errors:
             raise GeometryError(
                 "Invalid geometries at rows {} before "
                 "reprojection. Consider repairing the affected geometries with "
-                "`.buffer(0)`.".format(invalid)
+                "`.buffer(0)`, or pass `ignore_errors=True` to attempt to create "
+                "the graph anyways.".format(invalid)
             )
 
         # Project the dataframe to an appropriate UTM projection unless
@@ -102,7 +116,7 @@ class Graph(networkx.Graph):
         if reproject:
             df = reprojected(dataframe)
             invalid_reproj = invalid_geometries(df)
-            if invalid_reproj:
+            if invalid_reproj and not ignore_errors:
                 raise GeometryError(
                     "Invalid geometries at rows {} after "
                     "reprojection. Consider reloading the GeoDataFrame with "
