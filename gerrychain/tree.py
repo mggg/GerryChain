@@ -19,7 +19,7 @@ def random_spanning_tree(graph, pop_col):
     return spanning_tree
 
 
-def tree_part2(
+def bipartition_tree(
     graph,
     pop_col,
     pop_target,
@@ -82,7 +82,7 @@ def tree_part2(
 
     if restarts < node_repeats:
         # Try again with new root, same tree
-        return tree_part2(
+        return bipartition_tree(
             graph,
             pop_col,
             pop_target,
@@ -93,4 +93,40 @@ def tree_part2(
         )
     else:
         # If restarts == node_repeats, start over completely with a new tree
-        return tree_part2(graph, pop_col, pop_target, epsilon, node_repeats)
+        return bipartition_tree(graph, pop_col, pop_target, epsilon, node_repeats)
+
+
+def recursive_tree_part(graph, parts, pop_target, pop_col, epsilon, node_repeats=None):
+    """Uses :func:`~gerrychain.tree_methods.bipartition_tree` recursively to partition a tree into
+    ``len(parts)`` parts of population ``pop_target`` (within ``epsilon``). Can be used to
+    generate initial seed plans or to implement ReCom-like "merge walk" proposals.
+
+    :param graph: The graph
+    :param parts: Iterable of part labels (like ``[0,1,2]`` or ``range(4)``
+    :param pop_target: Target population for each part of the partition
+    :param pop_col: Node attribute key holding population data
+    :param epsilon: How far (as a percentage of ``pop_target``) from ``pop_target`` the parts
+        of the partition can be
+    :param node_repeats: Parameter for :func:`~gerrychain.tree_methods.bipartition_tree` to use.
+    :return: New assignments for the nodes of ``graph``.
+    :rtype: dict
+    """
+    flips = {}
+    remaining_nodes = set(graph.nodes)
+
+    for part in parts[:-1]:
+        nodes = bipartition_tree(
+            graph.subgraph(remaining_nodes), pop_col, pop_target, epsilon, node_repeats
+        )
+
+        for node in nodes:
+            flips[node] = part
+        # update pop_target?
+
+        remaining_nodes -= nodes
+
+    # All of the remaining nodes go in the last part
+    for node in remaining_nodes:
+        flips[node] = parts[-1]
+
+    return flips

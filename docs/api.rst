@@ -6,7 +6,7 @@ API Reference
 .. contents:: Table of Contents
     :local:
 
-Adjacency Graphs
+Adjacency graphs
 ----------------
 
 .. autoclass:: gerrychain.Graph
@@ -18,7 +18,7 @@ Partitions
     :members:
     :show-inheritance:
 
-Markov Chains
+Markov chains
 -------------------------
 
 .. autoclass:: gerrychain.MarkovChain
@@ -58,3 +58,20 @@ class representing a partition of a grid graph. This is especially useful if you
 but do not yet have a clean set of data and geometries to build your graph from.
 
 .. autoclass:: gerrychain.grid.Grid
+
+Spanning tree methods
+---------------------
+
+The :func:`~gerrychain.proposals.recom` proposal function operates on `spanning trees`_ of the
+adjacency graph in order to generate new contiguous districting plans with balanced population.
+
+The :mod:`gerrychain.tree` submodule exposes some helpful functions for partitioning graphs
+using spanning trees methods. These may be used to implement proposal functions or to generate
+initial plans for running Markov chains, as described in MGGG's `2018 Virginia House of Delegates`_
+report.
+
+.. _`2018 Virginia House of Delegates`: https://mggg.org/VA-report.pdf
+.. _`spanning trees`: https://en.wikipedia.org/wiki/Spanning_tree
+
+..automodule:: gerrychain.tree
+    :members:
