@@ -51,7 +51,14 @@ class Graph(networkx.Graph):
             json.dump(data, f)
 
     @classmethod
-    def from_file(cls, filename, adjacency="rook", cols_to_add=None, reproject=True):
+    def from_file(
+        cls,
+        filename,
+        adjacency="rook",
+        cols_to_add=None,
+        reproject=True,
+        ignore_errors=False,
+    ):
         """Create a :class:`Graph` from a shapefile (or GeoPackage, or GeoJSON, or
         any other library that :mod:`geopandas` can read. See :meth:`from_geodataframe`
         for more details.
@@ -65,7 +72,9 @@ class Graph(networkx.Graph):
         return graph
 
     @classmethod
-    def from_geodataframe(cls, dataframe, adjacency="rook", reproject=True, ignore_errors=False):
+    def from_geodataframe(
+        cls, dataframe, adjacency="rook", reproject=True, ignore_errors=False
+    ):
         """Creates the adjacency :class:`Graph` of geometries described by `dataframe`.
         The areas of the polygons are included as node attributes (with key `area`).
         The shared perimeter of neighboring polygons are included as edge attributes
@@ -85,6 +94,10 @@ class Graph(networkx.Graph):
         :param dataframe: :class:`geopandas.GeoDataFrame`
         :param adjacency: (optional) The adjacency type to use ("rook" or "queen").
             Default is "rook".
+        :param reproject: (optional) Whether to reproject to a UTM projection before
+            creating the graph. Default is ``True``.
+        :param ignore_errors: (optional) Whether to ignore all invalid geometries and
+            attept to create the graph anyway. Default is ``False``.
         :return: The adjacency graph of the geometries from `dataframe`.
         :rtype: :class:`Graph`
         """
