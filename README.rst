@@ -6,11 +6,14 @@ GerryChain
     :target: https://circleci.com/gh/mggg/GerryChain
     :alt: Build Status
 .. image:: https://codecov.io/gh/mggg/GerryChain/branch/master/graph/badge.svg
-   :target: https://codecov.io/gh/mggg/GerryChain
-   :alt: Code Coverage
+    :target: https://codecov.io/gh/mggg/GerryChain
+    :alt: Code Coverage
 .. image:: https://readthedocs.org/projects/gerrychain/badge/?version=latest
-   :target: https://gerrychain.readthedocs.io/en/latest
-   :alt: Documentation Status
+    :target: https://gerrychain.readthedocs.io/en/latest
+    :alt: Documentation Status
+.. image:: https://badge.fury.io/py/gerrychain.svg
+    :target: https://https://pypi.org/project/gerrychain/
+    :alt: PyPI Package
 
 GerryChain is a Python library for building ensembles of districting plans
 using `Markov chain Monte Carlo`_. It is developed and maintained by the `Metric
