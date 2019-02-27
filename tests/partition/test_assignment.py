@@ -1,7 +1,7 @@
 import pandas
 import pytest
 
-from gerrychain.partition.assignment import Assignment
+from gerrychain.partition.assignment import Assignment, get_assignment
 
 
 @pytest.fixture
@@ -30,3 +30,26 @@ class TestAssignment:
 
         assert isinstance(assignment_dict, dict)
         assert list(assignment_dict.items()) == [(1, 1), (2, 2), (3, 2)]
+
+    def test_has_get_method_like_a_dict(self, assignment):
+        assert assignment.get(1) == 1
+        assert assignment.get("not a node", default=5) == 5
+
+    def test_raises_keyerror_for_missing_nodes(self, assignment):
+        with pytest.raises(KeyError):
+            assignment["not a node"]
+
+    def test_can_update_parts(self, assignment):
+        assignment.update_parts({2: {2}, 3: {3}})
+        assert assignment.to_dict() == {1: 1, 2: 2, 3: 3}
+
+
+def test_get_assignment_accepts_assignment(assignment):
+    created = assignment
+    get_assignment(assignment)
+    assert assignment is created
+
+
+def test_get_assignment_raises_typeerror_for_unexpected_input():
+    with pytest.raises(TypeError):
+        get_assignment(None)
