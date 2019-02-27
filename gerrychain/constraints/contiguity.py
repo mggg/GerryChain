@@ -1,7 +1,6 @@
 from heapq import heappop, heappush
 from itertools import count
 
-import matplotlib.pyplot as plt
 import networkx as nx
 
 from ..random import random
@@ -180,33 +179,19 @@ def number_of_contiguous_parts(partition):
     return sum(1 for part in parts if nx.is_connected(partition.subgraphs[part]))
 
 
-def non_bool_where(partition):
-    """Return the number of non-connected assignment subgraphs.
+def contiguous_components(partition):
+    """Return then connected components of each of the subgraphs of the parts
+    of the partition.
 
     :param partition: Instance of Partition; contains connected components.
-    :return: number of contiguous districts
-    :rtype: int
+    :return: dictionary mapping each part ID to a list holding the connected
+        subgraphs of that part of the partition
+    :rtype: dict
     """
-    returns = 0
-
-    # Generates a subgraph for each district and perform a BFS on it
-    # to check connectedness.
-    for part in partition.parts:
-        subgraph = partition.subgraphs[part]
-        adj = nx.to_dict_of_lists()
-        if _bfs(adj):
-            returns += 1
-        else:
-            print(part)
-            nx.draw(subgraph)
-            plt.show()
-            print(subgraph.nodes)
-            for subdistrict in nx.connected_components(subgraph):
-                nx.draw(partition.graph.subgraph(subdistrict), with_labels=True)
-                plt.show()
-                print(subdistrict)
-
-    return returns
+    return {
+        part: [subgraph.subgraph(nodes) for nodes in nx.connected_components(subgraph)]
+        for part, subgraph in partition.subgraphs.items()
+    }
 
 
 no_more_discontiguous = SelfConfiguringLowerBound(number_of_contiguous_parts)

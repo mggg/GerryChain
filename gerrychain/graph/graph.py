@@ -65,7 +65,7 @@ class Graph(networkx.Graph):
         return graph
 
     @classmethod
-    def from_geodataframe(cls, dataframe, adjacency="rook", reproject=True):
+    def from_geodataframe(cls, dataframe, adjacency="rook", reproject=True, ignore_errors=False):
         """Creates the adjacency :class:`Graph` of geometries described by `dataframe`.
         The areas of the polygons are included as node attributes (with key `area`).
         The shared perimeter of neighboring polygons are included as edge attributes
@@ -90,11 +90,12 @@ class Graph(networkx.Graph):
         """
         # Validate geometries before reprojection
         invalid = invalid_geometries(dataframe)
-        if invalid:
+        if invalid and not ignore_errors:
             raise GeometryError(
                 "Invalid geometries at rows {} before "
                 "reprojection. Consider repairing the affected geometries with "
-                "`.buffer(0)`.".format(invalid)
+                "`.buffer(0)`, or pass `ignore_errors=True` to attempt to create "
+                "the graph anyways.".format(invalid)
             )
 
         # Project the dataframe to an appropriate UTM projection unless
@@ -102,7 +103,7 @@ class Graph(networkx.Graph):
         if reproject:
             df = reprojected(dataframe)
             invalid_reproj = invalid_geometries(df)
-            if invalid_reproj:
+            if invalid_reproj and not ignore_errors:
                 raise GeometryError(
                     "Invalid geometries at rows {} after "
                     "reprojection. Consider reloading the GeoDataFrame with "
