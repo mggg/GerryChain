@@ -73,5 +73,5 @@ report.
 .. _`2018 Virginia House of Delegates`: https://mggg.org/VA-report.pdf
 .. _`spanning trees`: https://en.wikipedia.org/wiki/Spanning_tree
 
-..automodule:: gerrychain.tree
+.. automodule:: gerrychain.tree
     :members:
