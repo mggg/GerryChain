@@ -44,10 +44,8 @@ def test_bipartition_tree_returns_within_epsilon_of_target_pop(graph_with_pop):
 
 
 def test_random_spanning_tree_returns_tree_with_pop_attribute(graph_with_pop):
-    tree = random_spanning_tree(graph_with_pop, "pop")
+    tree = random_spanning_tree(graph_with_pop)
     assert networkx.is_tree(tree)
-    for node in tree:
-        assert tree.nodes[node]["pop"] == graph_with_pop.nodes[node]["pop"]
 
 
 def test_bipartition_tree_returns_a_tree(graph_with_pop):
@@ -59,7 +57,7 @@ def test_bipartition_tree_returns_a_tree(graph_with_pop):
         tree.nodes[node]["pop"] = graph_with_pop.nodes[node]["pop"]
 
     result = bipartition_tree(
-        graph_with_pop, "pop", ideal_pop, 0.25, 10, 0, tree, lambda x: 4
+        graph_with_pop, "pop", ideal_pop, 0.25, 10, tree, lambda x: 4
     )
 
     assert networkx.is_tree(tree.subgraph(result))

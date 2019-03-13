@@ -8,15 +8,53 @@ def predecessors(h, root):
     return {a: b for a, b in nx.bfs_predecessors(h, root)}
 
 
-def random_spanning_tree(graph, pop_col):
+def random_spanning_tree(graph):
     for edge in graph.edges:
         graph.edges[edge]["weight"] = random.random()
 
-    edges = tree.maximum_spanning_edges(graph, algorithm="kruskal", data=False)
-    spanning_tree = nx.Graph(edges)
-    for node in graph:
-        spanning_tree.nodes[node][pop_col] = graph.nodes[node][pop_col]
+    spanning_tree = tree.maximum_spanning_tree(
+        graph, algorithm="kruskal", weight="weight"
+    )
     return spanning_tree
+
+
+class PopulatedGraph(nx.Graph):
+    def __init__(self, graph, populations, ideal_pop, epsilon):
+        super().__init__(graph)
+        self.subsets = {node: {node} for node in self}
+        self.population = {node: populations[node] for node in self}
+        self.ideal_pop = ideal_pop
+        self.epsilon = epsilon
+
+    def contract_node(self, node, parent):
+        self.population[parent] += self.population[node]
+        self.subsets[parent] |= self.subsets[node]
+        self.remove_node(node)
+
+    def has_ideal_population(self, node):
+        return (
+            abs(self.population[node] - self.ideal_pop) < self.epsilon * self.ideal_pop
+        )
+
+
+def contract_leaves_until_balanced_or_none(h, choice=random.choice):
+    # this used to be greater than 2 but failed on small grids:(
+    root = choice([x for x in h.nodes if h.degree(x) > 1])
+    # BFS predecessors for iteratively contracting leaves
+    pred = predecessors(h, root)
+
+    # As we contract leaves, we keep track of which nodes merged together in
+    # this dictionary:
+    while len(h) > 1:
+        leaves = [x for x in h if h.degree(x) == 1 and x != root]
+
+        for leaf in leaves:
+            if h.has_ideal_population(leaf):
+                return h.subsets[leaf]
+            # Contract the leaf:
+            parent = pred[leaf]
+            h.contract_node(leaf, parent)
+    return None
 
 
 def bipartition_tree(
@@ -25,7 +63,6 @@ def bipartition_tree(
     pop_target,
     epsilon,
     node_repeats,
-    restarts=0,
     spanning_tree=None,
     choice=random.choice,
 ):
@@ -47,53 +84,25 @@ def bipartition_tree(
         ``pop_target``) for the subgraph's population
     :param node_repeats: A parameter for the algorithm: how many different choices
         of root to use before drawing a new spanning tree.
-    :param restarts: Number of iterations (used when the algorithm chooses a new root)
     :param spanning_tree: The spanning tree for the algorithm to use (used when the
         algorithm chooses a new root and for testing)
     :param choice: :func:`random.choice`. Can be substituted for testing.
     """
+    populations = {node: graph.nodes[node][pop_col] for node in graph}
 
+    balanced_subtree = None
     if spanning_tree is None:
-        spanning_tree = random_spanning_tree(graph, pop_col)
+        spanning_tree = random_spanning_tree(graph)
+    restarts = 0
+    while balanced_subtree is None:
+        if restarts == node_repeats:
+            spanning_tree = random_spanning_tree(graph)
+            restarts = 0
+        h = PopulatedGraph(spanning_tree.copy(), populations, pop_target, epsilon)
+        balanced_subtree = contract_leaves_until_balanced_or_none(h, choice=choice)
+        restarts += 1
 
-    h = spanning_tree.copy()
-
-    # this used to be greater than 2 but failed on small grids:(
-    root = choice([x for x in spanning_tree.nodes if spanning_tree.degree(x) > 1])
-
-    # BFS predecessors for iteratively contracting leaves
-    pred = predecessors(h, root)
-
-    # As we contract leaves, we keep track of which nodes merged together in
-    # this dictionary:
-    subsets = {x: {x} for x in graph}
-
-    while len(h) > 1:
-        leaves = [x for x in h if h.degree(x) == 1 and x != root]
-
-        for leaf in leaves:
-            if abs(h.nodes[leaf][pop_col] - pop_target) < epsilon * pop_target:
-                return subsets[leaf]
-            # Contract the leaf:
-            parent = pred[leaf]
-            h.nodes[parent][pop_col] += h.nodes[leaf][pop_col]
-            subsets[parent] |= subsets[leaf]
-            h.remove_node(leaf)
-
-    if restarts < node_repeats:
-        # Try again with new root, same tree
-        return bipartition_tree(
-            graph,
-            pop_col,
-            pop_target,
-            epsilon,
-            node_repeats,
-            restarts + 1,
-            spanning_tree,
-        )
-    else:
-        # If restarts == node_repeats, start over completely with a new tree
-        return bipartition_tree(graph, pop_col, pop_target, epsilon, node_repeats)
+    return balanced_subtree
 
 
 def recursive_tree_part(graph, parts, pop_target, pop_col, epsilon, node_repeats=None):
@@ -116,7 +125,11 @@ def recursive_tree_part(graph, parts, pop_target, pop_col, epsilon, node_repeats
 
     for part in parts[:-1]:
         nodes = bipartition_tree(
-            graph.subgraph(remaining_nodes), pop_col, pop_target, epsilon, node_repeats
+            graph.subgraph(remaining_nodes),
+            pop_col=pop_col,
+            pop_target=pop_target,
+            epsilon=epsilon,
+            node_repeats=node_repeats,
         )
 
         for node in nodes:
