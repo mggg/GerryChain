@@ -56,7 +56,7 @@ class Partition:
         self.edge_flows = None
 
     def validate_assignment(self):
-        node_names = set(list(self.graph.nodes()))
+        node_names = set(self.graph.nodes)
         assgn_names = set([name for dist in self.assignment.parts.values() for name in dist])
         return node_names == assgn_names
 
