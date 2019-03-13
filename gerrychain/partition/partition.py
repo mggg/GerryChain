@@ -41,8 +41,8 @@ class Partition:
 
         self.assignment = get_assignment(assignment, graph)
 
-         if not self.validate_assignment():
-             raise NameError("Graph's nodes' names do not match the Assignment's geo units' names.")
+        if not self.validate_assignment():
+            raise NameError("Graph's nodes' names do not match the Assignment's geo units' names.")
 
 
         if updaters is None:
