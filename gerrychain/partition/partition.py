@@ -57,7 +57,7 @@ class Partition:
 
     def validate_assignment(self):
         node_names = set(self.graph.nodes)
-        assgn_names = set([name for dist in self.assignment.parts.values() for name in dist])
+        assgn_names = set(name for dist in self.assignment.parts.values() for name in dist)
         return node_names == assgn_names
 
     def _from_parent(self, parent, flips):
