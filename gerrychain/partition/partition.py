@@ -44,7 +44,6 @@ class Partition:
         if not self.validate_assignment():
             raise NameError("Graph's nodes' names do not match the Assignment's geo units' names.")
 
-
         if updaters is None:
             updaters = dict()
         self.updaters = self.default_updaters.copy()
