@@ -56,6 +56,9 @@ class Partition:
 
     def validate_assignment(self):
         node_names = set(self.graph.nodes)
+        if len(node_names) != sum(len(dist) for dist in self.assignment.parts.values()):
+            return False
+
         assgn_names = set(name for dist in self.assignment.parts.values() for name in dist)
         return node_names == assgn_names
 
