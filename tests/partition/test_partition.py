@@ -24,6 +24,24 @@ def test_Partition_can_be_flipped(example_partition):
     assert new_partition.assignment[1] == 2
 
 
+def test_Partition_misnamed_vertices_raises_namerror():
+    graph = networkx.complete_graph(3)
+    assignment = {'0': 1, '1': 1, '2': 2}
+    with pytest.raises(NameError):
+        partition = Partition(graph, assignment, {"cut_edges": cut_edges})
+
+def test_Partition_unlabelled_vertices_raises_namerror():
+    graph = networkx.complete_graph(3)
+    assignment = {0: 1, 2: 2}
+    with pytest.raises(NameError):
+        partition = Partition(graph, assignment, {"cut_edges": cut_edges})
+
+
+def test_Partition_validate_vertex_in_unique_district(example_partition):
+    example_partition.assignment.parts[1] = frozenset([0,1,2])
+    assert example_partition.validate_assignment() == False
+
+
 def test_Partition_knows_cut_edges_K3(example_partition):
     partition = example_partition
     assert (1, 2) in partition["cut_edges"] or (2, 1) in partition["cut_edges"]
