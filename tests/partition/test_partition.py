@@ -36,6 +36,12 @@ def test_Partition_unlabelled_vertices_raises_namerror():
     with pytest.raises(NameError):
         partition = Partition(graph, assignment, {"cut_edges": cut_edges})
 
+
+def test_Partition_validate_vertex_in_unique_district(example_partition):
+    example_partition.assignment.parts[1] = frozenset([0,1,2])
+    assert example_partition.validate_assignment() == False
+
+
 def test_Partition_knows_cut_edges_K3(example_partition):
     partition = example_partition
     assert (1, 2) in partition["cut_edges"] or (2, 1) in partition["cut_edges"]
