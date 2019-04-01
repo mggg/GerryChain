@@ -18,7 +18,14 @@ class Assignment(Mapping):
     ``{part: <frozenset of nodes in part>}``.
     """
 
-    def __init__(self, parts: dict):
+    def __init__(self, parts, validate=True):
+        if validate:
+            number_of_keys = sum(len(keys) for keys in parts.values())
+            number_of_unique_keys = len(set().union(*parts.values()))
+            if number_of_keys != number_of_unique_keys:
+                raise ValueError("Keys must have unique assignments.")
+            if not all(isinstance(keys, frozenset) for keys in parts.values()):
+                raise TypeError("Level sets must be frozensets")
         self.parts = parts
 
     def __iter__(self):
@@ -37,7 +44,7 @@ class Assignment(Mapping):
         """Returns a copy of the assignment.
         Does not duplicate the frozensets of nodes, just the parts dictionary.
         """
-        return Assignment(self.parts.copy())
+        return Assignment(self.parts.copy(), validate=False)
 
     def update(self, mapping):
         """Update the assignment for some nodes using the given mapping.
@@ -81,20 +88,19 @@ class Assignment(Mapping):
         return pandas.concat(groups)
 
     def to_dict(self):
-        """Convert the assignment to a {node: part} dictionary.
+        """Convert the assignment to a ``{node: part}`` dictionary.
         This is expensive and should be used rarely."""
         return {node: part for part, nodes in self.parts.items() for node in nodes}
 
     @classmethod
     def from_dict(cls, assignment):
-        """Create an Assignment from a dictionary. This is probably the method you want
+        """Create an :class:`Assignment` from a dictionary. This is probably the method you want
         to use to create a new assignment.
 
-        This also works for pandas Series.
+        This also works for :class:`pandas.Series`.
         """
-        parts = {
-            part: frozenset(nodes) for part, nodes in level_sets(assignment).items()
-        }
+        parts = {part: frozenset(keys) for part, keys in level_sets(assignment).items()}
+
         return cls(parts)
 
 

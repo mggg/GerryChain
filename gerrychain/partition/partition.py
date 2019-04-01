@@ -41,8 +41,8 @@ class Partition:
 
         self.assignment = get_assignment(assignment, graph)
 
-        if not self.validate_assignment():
-            raise NameError("Graph's nodes' names do not match the Assignment's geo units' names.")
+        if set(self.assignment) != set(graph):
+            raise KeyError("The graph's node labels do not match the Assignment's keys")
 
         if updaters is None:
             updaters = dict()
@@ -53,14 +53,6 @@ class Partition:
         self.flips = None
         self.flows = None
         self.edge_flows = None
-
-    def validate_assignment(self):
-        node_names = set(self.graph.nodes)
-        if len(node_names) != sum(len(dist) for dist in self.assignment.parts.values()):
-            return False
-
-        assgn_names = set(name for dist in self.assignment.parts.values() for name in dist)
-        return node_names == assgn_names
 
     def _from_parent(self, parent, flips):
         self.parent = parent
