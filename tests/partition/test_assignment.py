@@ -2,6 +2,7 @@ import pandas
 import pytest
 
 from gerrychain.partition.assignment import Assignment, get_assignment
+from collections.abc import Mapping
 
 
 @pytest.fixture
@@ -43,6 +44,50 @@ class TestAssignment:
         assignment.update_parts({2: {2}, 3: {3}})
         assert assignment.to_dict() == {1: 1, 2: 2, 3: 3}
 
+    def test_implements_Mapping_abc(self, assignment):
+        # __iter__
+        assert list(assignment) == [1, 2, 3]
+
+        # __contains__
+        for i in [1, 2, 3]:
+            assert i in assignment
+
+        # __len__
+        assert len(assignment) == 3
+
+        # __getitem__
+        assert assignment[1] == 1
+        assert assignment[3] == 2
+
+        # keys()
+        keys = list(assignment.keys())
+        assert len(keys) == 3
+        assert set(keys) == {1, 2, 3}
+
+        # values()
+        values = list(assignment.values())
+        assert len(values) == 3
+        assert set(values) == {1, 2}
+
+        # items()
+        items = list(assignment.items())
+        assert len(items) == 3
+        assert set(items) == {(1, 1), (2, 2), (3, 2)}
+
+        # __eq__
+        assert assignment == {1: 1, 2: 2, 3: 2}
+
+        assert isinstance(assignment, Mapping)
+
+    def test_assignment_raises_if_a_key_has_two_assignments(self):
+        with pytest.raises(ValueError):
+            Assignment({"one": {1, 2, 3}, "two": {1, 4, 5}})
+
+    def test_assignment_can_be_instantiated_from_series(self):
+        series = pandas.Series([1, 2, 1, 2], index=[1, 2, 3, 4])
+        assignment = Assignment.from_dict(series)
+        assert assignment == {1: 1, 2: 2, 3: 1, 4: 2}
+
 
 def test_get_assignment_accepts_assignment(assignment):
     created = assignment
@@ -53,3 +98,10 @@ def test_get_assignment_accepts_assignment(assignment):
 def test_get_assignment_raises_typeerror_for_unexpected_input():
     with pytest.raises(TypeError):
         get_assignment(None)
+
+
+def test_get_assignment_with_series():
+    series = pandas.Series([1, 2, 1, 2], index=[1, 2, 3, 4])
+    assignment = get_assignment(series)
+    assert isinstance(assignment, Assignment)
+    assert assignment == {1: 1, 2: 2, 3: 1, 4: 2}
