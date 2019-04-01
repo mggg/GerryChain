@@ -43,6 +43,39 @@ class TestAssignment:
         assignment.update_parts({2: {2}, 3: {3}})
         assert assignment.to_dict() == {1: 1, 2: 2, 3: 3}
 
+    def test_implements_Mapping_abc(self, assignment):
+        # __iter__
+        assert list(assignment) == [1, 2, 3]
+
+        # __contains__
+        for i in [1, 2, 3]:
+            assert i in assignment
+
+        # __len__
+        assert len(assignment) == 3
+
+        # __getitem__
+        assert assignment[1] == 1
+        assert assignment[3] == 2
+
+        # keys()
+        keys = list(assignment.keys())
+        assert len(keys) == 3
+        assert set(keys) == {1, 2, 3}
+
+        # values()
+        values = list(assignment.values())
+        assert len(values) == 3
+        assert set(values) == {1, 2}
+
+        # items()
+        items = list(assignment.items())
+        assert len(items) == 3
+        assert set(items) == {(1, 1), (2, 2), (3, 2)}
+
+        # __eq__
+        assert assignment == {1: 1, 2: 2, 3: 2}
+
 
 def test_get_assignment_accepts_assignment(assignment):
     created = assignment

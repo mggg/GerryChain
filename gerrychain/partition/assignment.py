@@ -1,11 +1,13 @@
 from collections import defaultdict
+from itertools import chain, repeat
+from collections.abc import Mapping
 
 import pandas
 
 from ..updaters.flows import flows_from_changes
 
 
-class Assignment:
+class Assignment(Mapping):
     """An assignment of nodes into parts.
 
     The goal of :class:`Assignment` is to provide an interface that mirrors a
@@ -19,17 +21,11 @@ class Assignment:
     def __init__(self, parts: dict):
         self.parts = parts
 
-    @classmethod
-    def from_dict(cls, assignment):
-        """Create an Assignment from a dictionary. This is probably the method you want
-        to use to create a new assignment.
+    def __iter__(self):
+        return self.keys()
 
-        This also works for pandas Series.
-        """
-        parts = {
-            part: frozenset(nodes) for part, nodes in level_sets(assignment).items()
-        }
-        return cls(parts)
+    def __len__(self):
+        return sum(len(keys) for keys in self.parts.values())
 
     def __getitem__(self, node):
         for part, nodes in self.parts.items():
@@ -43,7 +39,7 @@ class Assignment:
         """
         return Assignment(self.parts.copy())
 
-    def update(self, mapping: dict):
+    def update(self, mapping):
         """Update the assignment for some nodes using the given mapping.
         """
         flows = flows_from_changes(self, mapping)
@@ -59,6 +55,14 @@ class Assignment:
             for node in nodes:
                 yield (node, part)
 
+    def keys(self):
+        return chain(*self.parts.values())
+
+    def values(self):
+        return chain(
+            *(repeat(value, times=len(keys)) for value, keys in self.parts.items())
+        )
+
     def update_parts(self, new_parts):
         """Update some parts of the assignment. Does not check that every node is
         still assigned to a part.
@@ -68,12 +72,6 @@ class Assignment:
         """
         for part, nodes in new_parts.items():
             self.parts[part] = frozenset(nodes)
-
-    def get(self, key, default=None):
-        try:
-            return self[key]
-        except KeyError:
-            return default
 
     def to_series(self):
         """Convert the assignment to a :class:`pandas.Series`."""
@@ -86,6 +84,18 @@ class Assignment:
         """Convert the assignment to a {node: part} dictionary.
         This is expensive and should be used rarely."""
         return {node: part for part, nodes in self.parts.items() for node in nodes}
+
+    @classmethod
+    def from_dict(cls, assignment):
+        """Create an Assignment from a dictionary. This is probably the method you want
+        to use to create a new assignment.
+
+        This also works for pandas Series.
+        """
+        parts = {
+            part: frozenset(nodes) for part, nodes in level_sets(assignment).items()
+        }
+        return cls(parts)
 
 
 def get_assignment(assignment, graph=None):
