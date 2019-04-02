@@ -1,7 +1,9 @@
 import pytest
 
-from gerrychain import Graph
+from gerrychain import Graph, Partition
 from gerrychain.random import random
+from gerrychain.updaters import cut_edges
+import networkx
 
 
 @pytest.fixture
@@ -50,3 +52,11 @@ def attach_random_data(graph, columns):
 @pytest.fixture
 def graph(three_by_three_grid):
     return three_by_three_grid
+
+
+@pytest.fixture
+def example_partition():
+    graph = networkx.complete_graph(3)
+    assignment = {0: 1, 1: 1, 2: 2}
+    partition = Partition(graph, assignment, {"cut_edges": cut_edges})
+    return partition
