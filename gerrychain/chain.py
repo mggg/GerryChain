@@ -73,8 +73,7 @@ class MarkovChain:
                 if proposed_next_state.accepted:
                     self.state = proposed_next_state
                 self.counter += 1
-                # Yield the proposed state, even if not accepted
-                return proposed_next_state
+                return self.state
         raise StopIteration
 
     def __len__(self):

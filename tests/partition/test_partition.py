@@ -10,14 +10,6 @@ from gerrychain.proposals import propose_random_flip
 from gerrychain.updaters import cut_edges
 
 
-@pytest.fixture
-def example_partition():
-    graph = networkx.complete_graph(3)
-    assignment = {0: 1, 1: 1, 2: 2}
-    partition = Partition(graph, assignment, {"cut_edges": cut_edges})
-    return partition
-
-
 def test_Partition_can_be_flipped(example_partition):
     flip = {1: 2}
     new_partition = example_partition.flip(flip)
