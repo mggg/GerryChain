@@ -8,6 +8,9 @@ from shapely.geometry import Polygon
 
 from gerrychain import Partition
 from gerrychain.graph import Graph
+from gerrychain.graph.geo import GeometryError
+
+from unittest.mock import patch
 
 
 @pytest.fixture
@@ -230,3 +233,16 @@ def test_graph_raises_if_crs_is_missing(geodataframe):
 
     with pytest.raises(ValueError):
         Graph.from_geodataframe(geodataframe)
+
+
+def test_raises_geometry_error_if_invalid_geometry(shapefile):
+    with patch("gerrychain.graph.geo.explain_validity") as explain:
+        explain.return_value = "Invalid geometry"
+        with pytest.raises(GeometryError):
+            Graph.from_file(shapefile, ignore_errors=False)
+
+
+def test_can_ignore_errors_while_making_graph(shapefile):
+    with patch("gerrychain.graph.geo.explain_validity") as explain:
+        explain.return_value = "Invalid geometry"
+        assert Graph.from_file(shapefile, ignore_errors=True)

@@ -67,7 +67,9 @@ class Graph(networkx.Graph):
             add to the graph as node attributes. By default, all columns are added.
         """
         df = gp.read_file(filename)
-        graph = cls.from_geodataframe(df, adjacency, reproject)
+        graph = cls.from_geodataframe(
+            df, adjacency=adjacency, reproject=reproject, ignore_errors=ignore_errors
+        )
         graph.add_data(df, columns=cols_to_add)
         return graph
 
