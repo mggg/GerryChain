@@ -18,6 +18,9 @@ class Graph(networkx.Graph):
     to save and load graphs as JSON files.
     """
 
+    def __repr__(self):
+        return "<Graph [{} nodes, {} edges]>".format(len(self.nodes), len(self.edges))
+
     @classmethod
     def from_json(cls, json_file):
         """Load a graph from a JSON file in the NetworkX json_graph format.

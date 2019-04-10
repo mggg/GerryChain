@@ -28,6 +28,9 @@ class Assignment(Mapping):
                 raise TypeError("Level sets must be frozensets")
         self.parts = parts
 
+    def __repr__(self):
+        return "<Assignment [{} keys, {} parts]>".format(len(self), len(self.parts))
+
     def __iter__(self):
         return self.keys()
 

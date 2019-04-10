@@ -10,13 +10,13 @@ class MarkovChain:
 
     .. code-block:: python
 
-        chain = MarkovChain(proposal, is_valid, accept, initial_state)
+        chain = MarkovChain(proposal, constraints, accept, initial_state, total_steps)
         for state in chain:
             # Do whatever you want - print output, compute scores, ...
 
     """
 
-    def __init__(self, proposal, constraints, accept, initial_state, total_steps=1000):
+    def __init__(self, proposal, constraints, accept, initial_state, total_steps):
         """
         :param proposal: Function proposing the next state from the current state.
         :param constraints: A function with signature ``Partition -> bool`` determining whether
@@ -77,6 +77,9 @@ class MarkovChain:
 
     def __len__(self):
         return self.total_steps
+
+    def __repr__(self):
+        return "<MarkovChain [{} steps]>".format(len(self))
 
     def with_progress_bar(self):
         from tqdm.auto import tqdm
