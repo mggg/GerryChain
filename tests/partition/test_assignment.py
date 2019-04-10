@@ -105,3 +105,7 @@ def test_get_assignment_with_series():
     assignment = get_assignment(series)
     assert isinstance(assignment, Assignment)
     assert assignment == {1: 1, 2: 2, 3: 1, 4: 2}
+
+
+def test_repr(assignment):
+    assert repr(assignment) == "<Assignment [3 keys, 2 parts]>"

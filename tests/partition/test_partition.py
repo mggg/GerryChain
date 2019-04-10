@@ -136,3 +136,7 @@ def districtr_plan_file():
         with open(filename, "w") as f:
             json.dump(districtr_plan, f)
         yield filename
+
+
+def test_repr(example_partition):
+    assert repr(example_partition) == "<Partition [2 parts]>"

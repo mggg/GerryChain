@@ -74,3 +74,15 @@ def test_chain_only_yields_accepted_states():
 
     for state in chain:
         assert accept(state), "The chain yielded a non-accepted state"
+
+
+def test_repr():
+    chain = MarkovChain(
+        proposal=lambda x: None,
+        constraints=[],
+        accept=lambda x: True,
+        initial_state=None,
+        total_steps=100,
+    )
+
+    assert repr(chain) == "<MarkovChain [100 steps]>"
