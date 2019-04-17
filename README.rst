@@ -66,9 +66,8 @@ Useful links
 Installation
 ============
 
------------------------------
 Using conda (recommended)
------------------------------
+-------------------------
 
 To install GerryChain from conda-forge_ using conda_, run
 
@@ -100,7 +99,6 @@ dependencies, see `Getting started with conda`_.
 .. _conda: https://conda.io/projects/conda/en/latest/
 .. _conda-forge: https://conda-forge.org/
 
--------------
 Using ``pip``
 -------------
 
