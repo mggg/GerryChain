@@ -3,9 +3,16 @@ import math
 import networkx
 
 from gerrychain.partition import Partition
-from gerrychain.updaters import (Tally, boundary_nodes, cut_edges,
-                                 cut_edges_by_part, exterior_boundaries,
-                                 interior_boundaries, perimeter, polsby_popper)
+from gerrychain.updaters import (
+    Tally,
+    boundary_nodes,
+    cut_edges,
+    cut_edges_by_part,
+    exterior_boundaries,
+    interior_boundaries,
+    perimeter,
+)
+from gerrychain.metrics import polsby_popper
 
 
 class Grid(Partition):
