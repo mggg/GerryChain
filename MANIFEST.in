@@ -1,0 +1,3 @@
+include versioneer.py
+include gerrychain/_version.py
+include LICENSE

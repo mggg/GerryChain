@@ -2,6 +2,7 @@ import networkx as nx
 from networkx.algorithms import tree
 
 from .random import random
+from collections import deque
 
 
 def predecessors(h, root):
@@ -18,18 +19,25 @@ def random_spanning_tree(graph):
     return spanning_tree
 
 
-class PopulatedGraph(nx.Graph):
+class PopulatedGraph:
     def __init__(self, graph, populations, ideal_pop, epsilon):
-        super().__init__(graph)
-        self.subsets = {node: {node} for node in self}
-        self.population = {node: populations[node] for node in self}
+        self.graph = graph
+        self.subsets = {node: {node} for node in graph}
+        self.population = populations.copy()
         self.ideal_pop = ideal_pop
         self.epsilon = epsilon
+        self._degrees = {node: graph.degree(node) for node in graph}
+
+    def __iter__(self):
+        return iter(self.graph)
+
+    def degree(self, node):
+        return self._degrees[node]
 
     def contract_node(self, node, parent):
         self.population[parent] += self.population[node]
         self.subsets[parent] |= self.subsets[node]
-        self.remove_node(node)
+        self._degrees[parent] -= 1
 
     def has_ideal_population(self, node):
         return (
@@ -39,21 +47,20 @@ class PopulatedGraph(nx.Graph):
 
 def contract_leaves_until_balanced_or_none(h, choice=random.choice):
     # this used to be greater than 2 but failed on small grids:(
-    root = choice([x for x in h.nodes if h.degree(x) > 1])
+    root = choice([x for x in h if h.degree(x) > 1])
     # BFS predecessors for iteratively contracting leaves
-    pred = predecessors(h, root)
+    pred = predecessors(h.graph, root)
 
-    # As we contract leaves, we keep track of which nodes merged together in
-    # this dictionary:
-    while len(h) > 1:
-        leaves = [x for x in h if h.degree(x) == 1 and x != root]
-
-        for leaf in leaves:
-            if h.has_ideal_population(leaf):
-                return h.subsets[leaf]
-            # Contract the leaf:
-            parent = pred[leaf]
-            h.contract_node(leaf, parent)
+    leaves = deque(x for x in h if h.degree(x) == 1)
+    while len(leaves) > 0:
+        leaf = leaves.popleft()
+        if h.has_ideal_population(leaf):
+            return h.subsets[leaf]
+        # Contract the leaf:
+        parent = pred[leaf]
+        h.contract_node(leaf, parent)
+        if h.degree(parent) == 1 and parent != root:
+            leaves.append(parent)
     return None
 
 
@@ -98,7 +105,7 @@ def bipartition_tree(
         if restarts == node_repeats:
             spanning_tree = random_spanning_tree(graph)
             restarts = 0
-        h = PopulatedGraph(spanning_tree.copy(), populations, pop_target, epsilon)
+        h = PopulatedGraph(spanning_tree, populations, pop_target, epsilon)
         balanced_subtree = contract_leaves_until_balanced_or_none(h, choice=choice)
         restarts += 1
 
