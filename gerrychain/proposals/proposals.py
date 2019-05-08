@@ -90,7 +90,6 @@ def slow_reversible_propose(partition):
     neighbor_assignments.remove(partition.assignment[flip])
     flips = {flip: random.choice(neighbor_assignments)}
 
-
     return partition.flip(flips)
 
 
