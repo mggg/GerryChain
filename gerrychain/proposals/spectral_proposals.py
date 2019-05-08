@@ -19,10 +19,10 @@ def spectral_cut(graph, part_labels, weight_type, lap_type):
             graph.edges[edge]["weight"] = random.random()
 
     if lap_type == "normalized":
-        LAP = (nx.normalized_laplacian_matrix(G)).todense()
+        LAP = (nx.normalized_laplacian_matrix(graph)).todense()
 
     else:
-        LAP = (nx.laplacian_matrix(G)).todense()
+        LAP = (nx.laplacian_matrix(graph)).todense()
 
     NLMva, NLMve = LA.eigh(LAP)
     NFv = NLMve[:, 1]
