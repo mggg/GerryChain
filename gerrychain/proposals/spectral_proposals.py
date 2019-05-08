@@ -2,34 +2,35 @@ import networkx as nx
 from numpy import linalg as LA
 from ..random import random
 
+
 def spectral_cut(G, part_labels, weight_type, lap_type):
     """Spectral cut function.
 
-    Uses the signs of the elements in the Fiedler vector of a graph to 
-	partition into two components. 
+    Uses the signs of the elements in the Fiedler vector of a graph to
+    partition into two components.
 
     """
-  
-	nlist = list(G.nodes())
+
+    nlist = list(G.nodes())
     n = len(nlist)
-	
-	
+
+
     if weight_type == "random":
-	    for edge in graph.edges():
-		    graph.edges[edge]["weight"] = random.random()
-	
-	if lap_type == "normalized":
+        for edge in graph.edges():
+            graph.edges[edge]["weight"] = random.random()
+
+    if lap_type == "normalized":
         LAP = (nx.normalized_laplacian_matrix(G)).todense()
-		
-	else:
+
+    else:
         LAP = (nx.laplacian_matrix(G)).todense()
-	    
+
     NLMva, NLMve = LA.eigh(LAP)
-	NFv = NLMve[:,1]
+    NFv = NLMve[:,1]
     xNFv = [NFv.item(x) for x in range(n)]
-	
+
     node_color = [xNFv[x] > 0 for x in range(n)]
-    
+
     clusters={nlist[x]:part_labels[node_color[x]] for x in range(n)}
 
     return clusters
