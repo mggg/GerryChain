@@ -8,6 +8,7 @@ with open("./README.rst") as f:
 requirements = [
     # package requirements go here
     "pandas",
+    "scipy",
     "networkx",
     "geopandas",
     "shapely",
