@@ -71,4 +71,26 @@ def propose_random_flip(partition):
     return partition.flip(flip)
 
 
+def slow_reversible_propose(partition):
+    """Proposes a random boundary flip from the partition in a reversible fasion
+    by selecting a boundary node at random and uniformly picking one of its
+    neighboring parts.
+
+    Temporary version until we make an updater for this set.
+
+    :param partition: The current partition to propose a flip from.
+    :return: a proposed next `~gerrychain.Partition`
+    """
+
+    b_nodes = {x[0] for x in partition["cut_edges"]}.union({x[1] for x in partition["cut_edges"]})
+
+    flip = random.choice(list(b_nodes))
+    neighbor_assignments = list(set([partition.assignment[neighbor] for neighbor
+                                in partition.graph.neighbors(flip)]))
+    neighbor_assignments.remove(partition.assignment[flip])
+    flips = {flip: random.choice(neighbor_assignments)}
+
+    return partition.flip(flips)
+
+
 flip = propose_random_flip
