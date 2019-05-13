@@ -107,7 +107,7 @@ def slow_reversible_propose(partition):
     :return: a proposed next `~gerrychain.Partition`
     """
 
-    b_nodes = {(x[0], partition.assignment[x[1]] for x in partition["cut_edges"]
+    b_nodes = {(x[0], partition.assignment[x[1]]) for x in partition["cut_edges"]
                 }.union({(x[1], partition.assignment[x[0]]) for x in partition["cut_edges"]})
     flip = random.choice(list(b_nodes))
     return partition.flip({flip[0]: flip[1]})
