@@ -23,6 +23,7 @@ def partition(graph):
         proposals.propose_flip_every_district,
         proposals.propose_random_flip,
         proposals.slow_reversible_propose,
+        proposals.slow_reversible_propose_bi,
         proposals.spectral_recom,
     ],
 )
