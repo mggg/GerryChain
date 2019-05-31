@@ -59,7 +59,7 @@ class Graph(networkx.Graph):
         filename,
         adjacency="rook",
         cols_to_add=None,
-        reproject=True,
+        reproject=False,
         ignore_errors=False,
     ):
         """Create a :class:`Graph` from a shapefile (or GeoPackage, or GeoJSON, or
@@ -78,7 +78,7 @@ class Graph(networkx.Graph):
 
     @classmethod
     def from_geodataframe(
-        cls, dataframe, adjacency="rook", reproject=True, ignore_errors=False
+        cls, dataframe, adjacency="rook", reproject=False, ignore_errors=False
     ):
         """Creates the adjacency :class:`Graph` of geometries described by `dataframe`.
         The areas of the polygons are included as node attributes (with key `area`).
