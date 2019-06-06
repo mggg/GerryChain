@@ -53,13 +53,14 @@ extensions = [
     "sphinx.ext.mathjax",
     "sphinx.ext.viewcode",
     "sphinx.ext.intersphinx",
+    "recommonmark",
 ]
 
 intersphinx_mapping = {
-    "python": ("https://docs.python.org/3", None),
-    "pandas": ("http://pandas.pydata.org/pandas-docs/stable/", None),
-    "geopandas": ("http://geopandas.org/", None),
-    "networkx": ("https://networkx.github.io/", None),
+    # "python": ("https://docs.python.org/3", None),
+    # "pandas": ("http://pandas.pydata.org/pandas-docs/stable/", None),
+    # "geopandas": ("http://geopandas.org/", None),
+    # "networkx": ("https://networkx.github.io/", None),
 }
 
 # Add any paths that contain templates here, relative to this directory.
