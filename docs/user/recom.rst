@@ -37,7 +37,7 @@ The first step is to import everything we'll need::
 Setting up the initial districting plan
 =======================================
 
-We'll create our graph using the Pennsylvania shapefile on MGGG-States:
+We'll create our graph using the Pennsylvania shapefile on MGGG-States::
 
     graph = Graph.from_file("https://github.com/mggg-states/PA-shapefiles/blob/master/PA/PA_VTD.zip?raw=true")
 
