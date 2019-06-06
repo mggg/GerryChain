@@ -37,7 +37,7 @@ class DataTally:
                     )
                 else:
                     tally[part] += add
-            return tally
+            return dict(tally)
 
         @on_flow(initialize_tally, alias=alias)
         def update_tally(partition, previous, new_nodes, old_nodes):
