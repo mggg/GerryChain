@@ -184,7 +184,7 @@ vectors, with the initial 2011 districting plan plotted in red, in just a few li
     import matplotlib.pyplot as plt
     
     ax = data.boxplot(positions=range(len(data.columns)))
-    data.iloc[0].plot(style="ro", ax=ax)
+    plt.plot(data.iloc[0], "ro")
 
     plt.show()
 

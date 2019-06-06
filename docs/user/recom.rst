@@ -173,7 +173,7 @@ Now we'll create a box plot similar to those appearing the Virginia report. ::
     data.boxplot(ax=ax, positions=range(len(data.columns)))
 
     # Draw initial plan's Democratic vote %s (.iloc[0] gives the first row)
-    data.iloc[0].plot(style="ro", ax=ax)
+    plt.plot(data.iloc[0], "ro")
 
     # Annotate
     ax.set_title("Comparing the 2011 plan to an ensemble")
