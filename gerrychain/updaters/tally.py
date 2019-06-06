@@ -72,7 +72,7 @@ class Tally:
         self.dtype = dtype
 
     def __call__(self, partition):
-        if not partition.flips or not partition.parent:
+        if partition.parent is None:
             return self._initialize_tally(partition)
         return self._update_tally(partition)
 
@@ -93,7 +93,7 @@ class Tally:
                 )
             else:
                 tally[part] += add
-        return tally
+        return dict(tally)
 
     def _update_tally(self, partition):
         """Compute the district-wide tally of data stored in the "field" attribute
