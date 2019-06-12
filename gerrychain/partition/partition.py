@@ -111,7 +111,7 @@ class Partition:
     def parts(self):
         return self.assignment.parts
 
-    def plot(self, geometries, **kwargs):
+    def plot(self, geometries=None, **kwargs):
         """Plot the partition, using the provided geometries.
 
         :param geometries: A :class:`geopandas.GeoDataFrame` or :class:`geopandas.GeoSeries`
@@ -120,6 +120,9 @@ class Partition:
         :param **kwargs: Additional arguments to pass to :meth:`geopandas.GeoDataFrame.plot`
             to adjust the plot.
         """
+        if geometries is not None:
+            geometries = self.graph.geometry
+
         if set(geometries.index) != set(self.graph.nodes):
             raise TypeError(
                 "The provided geometries do not match the nodes of the graph."
