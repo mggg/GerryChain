@@ -107,27 +107,30 @@ class Graph(networkx.Graph):
         :rtype: :class:`Graph`
         """
         # Validate geometries before reprojection
-        invalid = invalid_geometries(dataframe)
-        if invalid and not ignore_errors:
-            raise GeometryError(
-                "Invalid geometries at rows {} before "
-                "reprojection. Consider repairing the affected geometries with "
-                "`.buffer(0)`, or pass `ignore_errors=True` to attempt to create "
-                "the graph anyways.".format(invalid)
-            )
+        if not ignore_errors:
+            invalid = invalid_geometries(dataframe)
+            if len(invalid) > 0:
+                raise GeometryError(
+                    "Invalid geometries at rows {} before "
+                    "reprojection. Consider repairing the affected geometries with "
+                    "`.buffer(0)`, or pass `ignore_errors=True` to attempt to create "
+                    "the graph anyways.".format(invalid)
+                )
 
         # Project the dataframe to an appropriate UTM projection unless
         # explicitly told not to.
         if reproject:
             df = reprojected(dataframe)
-            invalid_reproj = invalid_geometries(df)
-            if invalid_reproj and not ignore_errors:
-                raise GeometryError(
-                    "Invalid geometries at rows {} after "
-                    "reprojection. Consider reloading the GeoDataFrame with "
-                    "`reproject=False` or repairing the affected geometries "
-                    "with `.buffer(0)`.".format(invalid_reproj)
-                )
+            if ignore_errors:
+                invalid_reproj = invalid_geometries(df)
+                print(invalid_reproj)
+                if len(invalid_reproj) > 0:
+                    raise GeometryError(
+                        "Invalid geometries at rows {} after "
+                        "reprojection. Consider reloading the GeoDataFrame with "
+                        "`reproject=False` or repairing the affected geometries "
+                        "with `.buffer(0)`.".format(invalid_reproj)
+                    )
         else:
             df = dataframe
 
@@ -135,6 +138,8 @@ class Graph(networkx.Graph):
         # to the requested adjacency rule
         adjacencies = neighbors(df, adjacency)
         graph = cls(adjacencies)
+
+        graph.geometry = df.geometry
 
         graph.issue_warnings()
 
@@ -156,12 +161,17 @@ class Graph(networkx.Graph):
         """
 
         if columns is None:
-            columns = df.columns
+            columns = list(df.columns)
 
         check_dataframe(df[columns])
 
         column_dictionaries = df.to_dict("index")
         networkx.set_node_attributes(self, column_dictionaries)
+
+        if hasattr(self, "data"):
+            self.data[columns] = df[columns]
+        else:
+            self.data = df[columns]
 
     def join(self, dataframe, columns=None, left_index=None, right_index=None):
         """Add data from a dataframe to the graph, matching nodes to rows when
