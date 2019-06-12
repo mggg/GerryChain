@@ -120,7 +120,7 @@ class Partition:
         :param **kwargs: Additional arguments to pass to :meth:`geopandas.GeoDataFrame.plot`
             to adjust the plot.
         """
-        if geometries is not None:
+        if geometries is None:
             geometries = self.graph.geometry
 
         if set(geometries.index) != set(self.graph.nodes):
