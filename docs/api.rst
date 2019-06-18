@@ -75,3 +75,10 @@ report.
 
 .. automodule:: gerrychain.tree
     :members:
+
+
+Metrics
+-------
+
+.. automodule:: gerrychain.metrics
+    :members:

@@ -9,6 +9,8 @@ def compute_polsby_popper(area, perimeter):
 
 
 def polsby_popper(partition):
+    """Computes Polsby-Popper compactness scores for each district in the partition.
+    """
     return {
         part: compute_polsby_popper(
             partition["area"][part], partition["perimeter"][part]
