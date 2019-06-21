@@ -1,5 +1,6 @@
 import pathlib
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 import geopandas as gp
 import pandas
@@ -9,8 +10,6 @@ from shapely.geometry import Polygon
 from gerrychain import Partition
 from gerrychain.graph import Graph
 from gerrychain.graph.geo import GeometryError
-
-from unittest.mock import patch
 
 
 @pytest.fixture
@@ -257,3 +256,13 @@ def test_can_ignore_errors_while_making_graph(shapefile):
     with patch("gerrychain.graph.geo.explain_validity") as explain:
         explain.return_value = "Invalid geometry"
         assert Graph.from_file(shapefile, ignore_errors=True)
+
+
+def test_data_and_geometry(gdf_with_data):
+    df = gdf_with_data
+    graph = Graph.from_geodataframe(df)
+    assert graph.geometry is df.geometry
+    graph.add_data(df[["data"]])
+    assert (graph.data["data"] == df["data"]).all()
+    graph.add_data(df[["data2"]])
+    assert list(graph.data.columns) == ["data", "data2"]
