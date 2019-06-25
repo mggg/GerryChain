@@ -191,7 +191,7 @@ class ElectionResults:
         :return: The tuple of the percentage of votes that ``party`` received
             in each part of the partition
         """
-        return tuple(self.percents_for_party[party][race] for race in self.races)
+        return {race: self.percents_for_party[party][race] for race in self.races}
 
     def count(self, party, race=None):
         """
