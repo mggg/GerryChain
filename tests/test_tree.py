@@ -7,7 +7,12 @@ from gerrychain import MarkovChain
 from gerrychain.constraints import contiguous, within_percent_of_ideal_population
 from gerrychain.partition import Partition
 from gerrychain.proposals import recom
-from gerrychain.tree import bipartition_tree, random_spanning_tree
+from gerrychain.tree import (
+    bipartition_tree,
+    random_spanning_tree,
+    find_balanced_edge_cuts,
+    PopulatedGraph,
+)
 from gerrychain.updaters import Tally, cut_edges
 
 
@@ -78,3 +83,24 @@ def test_recom_works_as_a_proposal(partition_with_pop):
 
     for state in chain:
         assert contiguous(state)
+
+
+def test_find_balanced_cuts():
+    tree = networkx.Graph(
+        [(0, 1), (1, 2), (1, 4), (3, 4), (4, 5), (3, 6), (6, 7), (6, 8)]
+    )
+
+    # 0 - 1 - 2
+    #   ||
+    # 3= 4 - 5
+    # ||
+    # 6- 7
+    # |
+    # 8
+
+    populated_tree = PopulatedGraph(
+        tree, {node: 1 for node in tree}, len(tree) / 2, 0.5
+    )
+    cuts = find_balanced_edge_cuts(populated_tree)
+    edges = set(tuple(sorted(cut.edge)) for cut in cuts)
+    assert edges == {(1, 4), (3, 4), (3, 6)}

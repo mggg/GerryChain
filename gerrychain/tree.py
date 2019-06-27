@@ -2,7 +2,7 @@ import networkx as nx
 from networkx.algorithms import tree
 
 from .random import random
-from collections import deque
+from collections import deque, namedtuple
 
 
 def predecessors(h, root):
@@ -64,12 +64,35 @@ def contract_leaves_until_balanced_or_none(h, choice=random.choice):
     return None
 
 
+Cut = namedtuple("Cut", "edge subset")
+
+
+def find_balanced_edge_cuts(h, choice=random.choice):
+    # this used to be greater than 2 but failed on small grids:(
+    root = choice([x for x in h if h.degree(x) > 1])
+    # BFS predecessors for iteratively contracting leaves
+    pred = predecessors(h.graph, root)
+
+    cuts = []
+    leaves = deque(x for x in h if h.degree(x) == 1)
+    while len(leaves) > 0:
+        leaf = leaves.popleft()
+        if h.has_ideal_population(leaf):
+            cuts.append(Cut(edge=(leaf, pred[leaf]), subset=h.subsets[leaf].copy()))
+        # Contract the leaf:
+        parent = pred[leaf]
+        h.contract_node(leaf, parent)
+        if h.degree(parent) == 1 and parent != root:
+            leaves.append(parent)
+    return cuts
+
+
 def bipartition_tree(
     graph,
     pop_col,
     pop_target,
     epsilon,
-    node_repeats,
+    node_repeats=1,
     spanning_tree=None,
     choice=random.choice,
 ):
@@ -112,7 +135,57 @@ def bipartition_tree(
     return balanced_subtree
 
 
-def recursive_tree_part(graph, parts, pop_target, pop_col, epsilon, node_repeats=None):
+def bipartition_tree_random(
+    graph,
+    pop_col,
+    pop_target,
+    epsilon,
+    node_repeats=1,
+    spanning_tree=None,
+    choice=random.choice,
+):
+    """This is like :func:`bipartition_tree` except it chooses a random balanced
+    cut, rather than the first cut it finds.
+
+    This function finds a balanced 2 partition of a graph by drawing a
+    spanning tree and finding an edge to cut that leaves at most an epsilon
+    imbalance between the populations of the parts. If a root fails, new roots
+    are tried until node_repeats in which case a new tree is drawn.
+
+    Builds up a connected subgraph with a connected complement whose population
+    is ``epsilon * pop_target`` away from ``pop_target``.
+
+    Returns a subset of nodes of ``graph`` (whose induced subgraph is connected).
+    The other part of the partition is the complement of this subset.
+
+    :param graph: The graph to partition
+    :param pop_col: The node attribute holding the population of each node
+    :param pop_target: The target population for the returned subset of nodes
+    :param epsilon: The allowable deviation from  ``pop_target`` (as a percentage of
+        ``pop_target``) for the subgraph's population
+    :param node_repeats: A parameter for the algorithm: how many different choices
+        of root to use before drawing a new spanning tree.
+    :param spanning_tree: The spanning tree for the algorithm to use (used when the
+        algorithm chooses a new root and for testing)
+    :param choice: :func:`random.choice`. Can be substituted for testing.
+    """
+    populations = {node: graph.nodes[node][pop_col] for node in graph}
+
+    possible_cuts = []
+    if spanning_tree is None:
+        spanning_tree = random_spanning_tree(graph)
+
+    while len(possible_cuts) == 0:
+        spanning_tree = random_spanning_tree(graph)
+        h = PopulatedGraph(spanning_tree, populations, pop_target, epsilon)
+        possible_cuts = find_balanced_edge_cuts(h, choice=choice)
+
+    return choice(possible_cuts).subset
+
+
+def recursive_tree_part(
+    graph, parts, pop_target, pop_col, epsilon, node_repeats=1, method=bipartition_tree
+):
     """Uses :func:`~gerrychain.tree_methods.bipartition_tree` recursively to partition a tree into
     ``len(parts)`` parts of population ``pop_target`` (within ``epsilon``). Can be used to
     generate initial seed plans or to implement ReCom-like "merge walk" proposals.
@@ -131,7 +204,7 @@ def recursive_tree_part(graph, parts, pop_target, pop_col, epsilon, node_repeats
     remaining_nodes = set(graph.nodes)
 
     for part in parts[:-1]:
-        nodes = bipartition_tree(
+        nodes = method(
             graph.subgraph(remaining_nodes),
             pop_col=pop_col,
             pop_target=pop_target,
