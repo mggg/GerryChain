@@ -1,8 +1,10 @@
 from ..random import random
-from ..tree import recursive_tree_part
+from ..tree import recursive_tree_part, bipartition_tree, bipartition_tree_random
 
 
-def recom(partition, pop_col, pop_target, epsilon, node_repeats):
+def recom(
+    partition, pop_col, pop_target, epsilon, node_repeats=1, method=bipartition_tree
+):
     """ReCom proposal.
 
     Description from MGGG's 2018 Virginia House of Delegates report:
@@ -44,6 +46,20 @@ def recom(partition, pop_col, pop_target, epsilon, node_repeats):
         pop_target=pop_target,
         epsilon=epsilon,
         node_repeats=node_repeats,
+        method=method,
     )
 
     return partition.flip(flips)
+
+
+class ReCom:
+    def __init__(self, pop_col, ideal_pop, epsilon, method=bipartition_tree_random):
+        self.pop_col = pop_col
+        self.ideal_pop = ideal_pop
+        self.epsilon = epsilon
+        self.method = method
+
+    def __call__(self, partition):
+        return recom(
+            partition, self.pop_col, self.ideal_pop, self.epsilon, method=self.method
+        )
