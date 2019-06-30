@@ -1,6 +1,7 @@
 import math
 
 from gerrychain.updaters.tally import DataTally
+import gerrychain.metrics.partisan as pm
 
 
 class Election:
@@ -231,6 +232,36 @@ class ElectionResults:
 
     def total_votes(self):
         return sum(self.totals.values())
+
+    def mean_median(self):
+        """
+        Computes the mean-median score for this ElectionResults object.
+        """
+        return pm.mean_median(self)
+
+    def mean_thirdian(self):
+        """
+        Computes the mean-thirdian score for this ElectionResults object.
+        """
+        return pm.mean_thirdian(self)
+
+    def efficiency_gap(self):
+        """
+        Computes the efficiency gap for this ElectionResults object.
+        """
+        return pm.efficiency_gap(self)
+
+    def partisan_bias(self):
+        """
+        Computes the partisan bias for this ElectionResults object.
+        """
+        return pm.partisan_bias(self)
+
+    def partisan_gini(self):
+        """
+        Computes the Gini score for this ElectionResults object.
+        """
+        return pm.partisan_gini(self)
 
 
 def format_part_results(percents_for_party, part):
