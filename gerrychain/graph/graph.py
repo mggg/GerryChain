@@ -16,6 +16,7 @@ class Graph(networkx.Graph):
 
     We have added some classmethods to help construct graphs from shapefiles, and
     to save and load graphs as JSON files.
+
     """
 
     def __repr__(self):
@@ -36,12 +37,13 @@ class Graph(networkx.Graph):
 
     def to_json(self, json_file, *, include_geometries_as_geojson=False):
         """Save a graph to a JSON file in the NetworkX json_graph format.
+
         :param json_file: Path to target JSON file.
-        :param bool include_geometry_as_geojson: (optional) Whether to include any
-            :mod:`shapely` geometry objects encountered in the graph's node attributes
-            as GeoJSON. The default (``False``) behavior is to remove all geometry
-            objects because they are not serializable. Including the GeoJSON will result
-            in a much larger JSON file.
+        :param bool include_geometry_as_geojson: (optional) Whether to include
+            any :mod:`shapely` geometry objects encountered in the graph's node
+            attributes as GeoJSON. The default (``False``) behavior is to remove
+            all geometry objects because they are not serializable. Including the
+            GeoJSON will result in a much larger JSON file.
         """
         data = json_graph.adjacency_data(self)
 
