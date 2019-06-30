@@ -49,7 +49,7 @@ class Partition:
 
         if updaters is None:
             updaters = dict()
-        
+
         self.updaters = self.default_updaters.copy()
         self.updaters.update(updaters)
 
