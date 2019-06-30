@@ -6,6 +6,7 @@ from ..graph import Graph
 from ..updaters import compute_edge_flows, flows_from_changes
 from .assignment import get_assignment
 from .subgraphs import SubgraphView
+from ..updaters import cut_edges
 
 
 class Partition:
@@ -15,7 +16,9 @@ class Partition:
     aggregations and calculations that we want to optimize.
     """
 
-    default_updaters = {}
+    default_updaters = {
+        "cut_edges": cut_edges
+    }
 
     def __init__(
         self, graph=None, assignment=None, updaters=None, parent=None, flips=None
@@ -46,6 +49,7 @@ class Partition:
 
         if updaters is None:
             updaters = dict()
+        
         self.updaters = self.default_updaters.copy()
         self.updaters.update(updaters)
 
