@@ -143,5 +143,10 @@ def test_repr(example_partition):
 def test_partition_has_default_updaters(example_partition):
     partition = example_partition
     default_updaters = partition.default_updaters
-    assert default_updaters.get("cut_edges", None) is not None
-    assert partition["cut_edges"] == cut_edges(partition)
+    should_have_updaters = {
+        "cut_edges": cut_edges
+    }
+
+    for updater in should_have_updaters:
+        assert default_updaters.get(updater, None) is not None
+        assert should_have_updaters[updater](partition) == partition[updater]
