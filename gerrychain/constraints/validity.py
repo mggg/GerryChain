@@ -1,5 +1,6 @@
 from ..updaters import CountySplit
 from .bounds import Bounds
+import numpy
 
 
 class Validator:
@@ -31,6 +32,10 @@ class Validator:
         # check each constraint function and fail when a constraint test fails
         for constraint in self.constraints:
             is_valid = constraint(partition)
+            # Coerce NumPy booleans
+            if isinstance(is_valid, numpy.bool_):
+                is_valid = bool(is_valid)
+
             if is_valid is False:
                 return False
             elif is_valid is True:

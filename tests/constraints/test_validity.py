@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock
 
 import networkx as nx
+import numpy
 import pytest
 
 from gerrychain.constraints import (SelfConfiguringLowerBound, Validator,
@@ -138,6 +139,17 @@ def test_validator_raises_TypeError_if_constraint_returns_non_boolean():
 
     with pytest.raises(TypeError):
         validator(mock_partition)
+
+
+def test_validator_accepts_numpy_booleans():
+    mock_partition = MagicMock()
+
+    mock_constraint = MagicMock()
+    mock_constraint.return_value = numpy.bool_(True)
+    mock_constraint.__name__ = "mock_constraint"
+
+    is_valid = Validator([mock_constraint])
+    assert is_valid(mock_partition)
 
 
 def test_no_vanishing_districts_works():
