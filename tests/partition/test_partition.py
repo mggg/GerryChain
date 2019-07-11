@@ -137,6 +137,16 @@ def districtr_plan_file():
             json.dump(districtr_plan, f)
         yield filename
 
-
 def test_repr(example_partition):
     assert repr(example_partition) == "<Partition [2 parts]>"
+
+def test_partition_has_default_updaters(example_partition):
+    partition = example_partition
+    default_updaters = partition.default_updaters
+    should_have_updaters = {
+        "cut_edges": cut_edges
+    }
+
+    for updater in should_have_updaters:
+        assert default_updaters.get(updater, None) is not None
+        assert should_have_updaters[updater](partition) == partition[updater]
