@@ -186,7 +186,7 @@ def bipartition_tree_random(
 def recursive_tree_part(
     graph, parts, pop_target, pop_col, epsilon, node_repeats=1, method=bipartition_tree
 ):
-    """Uses :func:`~gerrychain.tree_methods.bipartition_tree` recursively to partition a tree into
+    """Uses :func:`~gerrychain.tree.bipartition_tree` recursively to partition a tree into
     ``len(parts)`` parts of population ``pop_target`` (within ``epsilon``). Can be used to
     generate initial seed plans or to implement ReCom-like "merge walk" proposals.
 
