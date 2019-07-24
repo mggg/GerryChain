@@ -8,7 +8,7 @@ required to make that possible.
 
 
 Share your code on GitHub
-------------------------
+-------------------------
 
 Before anyone can run your code, they'll need to find it. We strongly recommend publishing your source code
 as a `GitHub`_ repository, and not as a ``.zip`` file on your personal website. GitHub has a
