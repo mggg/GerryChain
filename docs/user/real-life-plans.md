@@ -166,5 +166,5 @@ You also might run into problems when you go to run a Markov chain using the
 partition we made. If the districts are not contiguous with respect to your
 underlying graph, you would want to add edges (within reason) to make the graph
 agree with the notion of contiguity that the real-life plan uses. See [What to
-do about islands and connectivity](What to do about islands and connectivity)
+do about islands and connectivity](https://gerrychain.readthedocs.io/en/latest/user/islands.html)
 for a guide to handling those types of issues.
