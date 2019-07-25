@@ -75,4 +75,3 @@ junit.xml
 # Pytest cache
 .pytest_cache/
 Dockerfile
-docs/user/islands.md
