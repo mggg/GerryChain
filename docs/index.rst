@@ -49,7 +49,10 @@ repository, where `bug reports and feature requests`_, as well as
     user/install
     user/quickstart
     user/recom
+    user/partitions
     user/updaters
+    user/islands
+    user/real-life-plans
 
 We also highly recommend the resources prepared by Daryl R. DeFord of
 MGGG for the 2019 MIT IAP course `Computational Approaches for Political Redistricting`_.
