@@ -1,6 +1,8 @@
+# Imports
 from collections import defaultdict, Counter
 import networkx as nx
 import math
+
 
 class LocalitySplits:
 
@@ -112,7 +114,7 @@ class LocalitySplits:
                 for n in sg.nodes():
                     pop += sg.node[n][self.pop_col]
 
-                allowed_pieces[loc] = math.ceil(pop/(totpop/num_districts))
+                allowed_pieces[loc] = math.ceil(pop / (totpop / num_districts))
             self.allowed_pieces = allowed_pieces
 
         for s in self.scores:
@@ -244,7 +246,7 @@ class LocalitySplits:
                     p = intersection / tot_county_vtds
 
                     if p != 0:
-                        inner_sum += p * math.log(1/p)
+                        inner_sum += p * math.log(1 / p)
                 else:
                     continue
             entropy += q * (inner_sum)
@@ -289,10 +291,10 @@ class LocalitySplits:
                     p = intersection / tot_county_vtds
 
                     if p != 0:
-                        inner_sum += p ** (1-self.pent_alpha)
+                        inner_sum += p ** (1 - self.pent_alpha)
                 else:
                     continue
-            entropy += 1/q * (inner_sum-1)
+            entropy += 1 / q * (inner_sum - 1)
         return entropy
 
     def symmetric_entropy(self, partition):  # IN PROGRESS
@@ -327,8 +329,8 @@ class LocalitySplits:
             fractional_sum = 0
             for locality in localities_and_pops.keys():
                 fractional_sum += math.sqrt(
-                    localities_and_pops[locality]/total)
-            score += total*fractional_sum
+                    localities_and_pops[locality] / total)
+            score += total * fractional_sum
 
         # how do localities split districts?
         for locality in district_dict_inv.keys():
@@ -336,8 +338,9 @@ class LocalitySplits:
             total = sum(districts_and_pops.values())
             fractional_sum = 0
             for district in districts_and_pops.keys():
-                fractional_sum += math.sqrt(districts_and_pops[district]/total)
-            score += total*fractional_sum
+                fractional_sum += math.sqrt(districts_and_pops[district]
+                                            / total)
+            score += total * fractional_sum
 
         return score
 
