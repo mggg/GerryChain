@@ -230,8 +230,6 @@ class LocalitySplits:
                 v = dict(v)
                 if locality_j in list(v.keys()):
                     tot_county_vtds += v[locality_j]
-                else:
-                    continue
 
             inner_sum = 0
             q = tot_county_vtds / total_vtds
@@ -247,8 +245,7 @@ class LocalitySplits:
 
                     if p != 0:
                         inner_sum += p * math.log(1 / p)
-                else:
-                    continue
+
             entropy += q * (inner_sum)
         return entropy
 
@@ -275,8 +272,6 @@ class LocalitySplits:
                 v = dict(v)
                 if locality_j in list(v.keys()):
                     tot_county_vtds += v[locality_j]
-                else:
-                    continue
 
             inner_sum = 0
 
@@ -292,8 +287,7 @@ class LocalitySplits:
 
                     if p != 0:
                         inner_sum += p ** (1 - self.pent_alpha)
-                else:
-                    continue
+
             entropy += 1 / q * (inner_sum - 1)
         return entropy
 
