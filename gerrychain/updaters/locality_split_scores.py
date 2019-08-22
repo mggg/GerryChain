@@ -18,10 +18,13 @@ class LocalitySplits:
     Example usage::
         # Assuming your nodes have attributes "countyID"
         # with (for example) the name of the county that
-        # node lies in:
+        # node lies in and a population attribute "pop":
         county_splits = LocalitySplits(
             "countysplits",
             "countyID",
+            "pop",
+            ["num_parts", "symmetric_entropy","power_entropy"],
+            pent_alpha = 0.8
         )
         # Assuming you already have a graph and assignment:
         partition = Partition(
@@ -29,11 +32,11 @@ class LocalitySplits:
             assignment,
             updaters={"county_splits" : county_splits}
         )
-        # The updater returns an ElectionResults instance, which
-        # we can use (for example) to see how many seats a given
-        # party would win in this partition using this election's
-        # vote distribution:
-        partition["2008_Sen"].wins("Republican")
+        # The updater returns an dictionary instance, which
+        # at each step of the chain has the name of the score
+        # and its value at that step
+
+    """
 
 
     """
@@ -136,7 +139,7 @@ class LocalitySplits:
             if s == 'num_split_localities':
                 self.scores[s] = self.num_split_localities(partition)
 
-
+        return self.scores
 
 
     def num_parts(self, partition):
