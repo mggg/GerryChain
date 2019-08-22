@@ -1,6 +1,11 @@
-from .compactness import (boundary_nodes, exterior_boundaries,
-                          exterior_boundaries_as_a_set, flips,
-                          interior_boundaries, perimeter, polsby_popper)
+from .compactness import (
+    boundary_nodes,
+    exterior_boundaries,
+    exterior_boundaries_as_a_set,
+    flips,
+    interior_boundaries,
+    perimeter,
+)
 from .county_splits import CountySplit, county_splits
 from .cut_edges import cut_edges, cut_edges_by_part
 from .election import Election
@@ -9,7 +14,6 @@ from .tally import DataTally, Tally
 
 __all__ = [
     "flows_from_changes",
-    "polsby_popper",
     "county_splits",
     "cut_edges",
     "cut_edges_by_part",

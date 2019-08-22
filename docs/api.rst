@@ -28,7 +28,7 @@ Proposals
 ---------
 
 .. automodule:: gerrychain.proposals
-   :members:
+    :members:
 
 Binary constraints
 ------------------
@@ -37,6 +37,16 @@ Binary constraints
     :members:
 
 .. autoclass:: gerrychain.constraints.Validator
+
+.. autoclass:: gerrychain.constraints.UpperBound
+
+.. autoclass:: gerrychain.constraints.LowerBound
+
+.. autoclass:: gerrychain.constraints.SelfConfiguringLowerBound
+
+.. autoclass:: gerrychain.constraints.SelfConfiguringUpperBound
+
+.. autoclass:: gerrychain.constraints.WithinPercentRangeOfBounds
 
 Updaters
 --------
@@ -74,4 +84,11 @@ report.
 .. _`spanning trees`: https://en.wikipedia.org/wiki/Spanning_tree
 
 .. automodule:: gerrychain.tree
+    :members:
+
+
+Metrics
+-------
+
+.. automodule:: gerrychain.metrics
     :members:

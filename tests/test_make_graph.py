@@ -1,13 +1,14 @@
 import pathlib
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 import geopandas as gp
 import pandas
 import pytest
 from shapely.geometry import Polygon
 
-from gerrychain import Partition
 from gerrychain.graph import Graph
+from gerrychain.graph.geo import GeometryError
 
 
 @pytest.fixture
@@ -136,11 +137,22 @@ def test_can_insist_on_not_reprojecting(geodataframe):
         assert graph.edges[edge]["shared_perim"] == 1
 
 
-def test_reprojects_by_default(geodataframe):
+def test_does_not_reproject_by_default(geodataframe):
+    df = geodataframe.set_index("ID")
+    graph = Graph.from_geodataframe(df)
+
+    for node in ("a", "b", "c", "d"):
+        assert graph.nodes[node]["area"] == 1.0
+
+    for edge in graph.edges:
+        assert graph.edges[edge]["shared_perim"] == 1.0
+
+
+def test_reproject(geodataframe):
     # I don't know what the areas and perimeters are in UTM for these made-up polygons,
     # but I'm pretty sure they're not 1.
     df = geodataframe.set_index("ID")
-    graph = Graph.from_geodataframe(df)
+    graph = Graph.from_geodataframe(df, reproject=True)
 
     for node in ("a", "b", "c", "d"):
         assert graph.nodes[node]["area"] != 1
@@ -197,26 +209,6 @@ def test_from_file_and_then_to_json_with_geometries(shapefile, target_file):
     graph.to_json(target_file, include_geometries_as_geojson=True)
 
 
-def test_from_file_and_then_to_json_with_Partition(shapefile, target_file):
-    partition = Partition.from_file(shapefile, assignment="data")
-
-    # Even the geometry column is copied to the graph
-    assert all("geometry" in node_data for node_data in partition.graph.nodes.values())
-
-    partition.to_json(target_file)
-
-
-def test_from_file_and_then_to_json_with_geometries_with_Partition(
-    shapefile, target_file
-):
-    partition = Partition.from_file(shapefile, assignment="data")
-
-    # Even the geometry column is copied to the graph
-    assert all("geometry" in node_data for node_data in partition.graph.nodes.values())
-
-    partition.to_json(target_file, include_geometries_as_geojson=True)
-
-
 def test_graph_warns_for_islands():
     graph = Graph()
     graph.add_node(0)
@@ -225,8 +217,31 @@ def test_graph_warns_for_islands():
         graph.warn_for_islands()
 
 
-def test_graph_raises_if_crs_is_missing(geodataframe):
+def test_graph_raises_if_crs_is_missing_when_reprojecting(geodataframe):
     del geodataframe.crs
 
     with pytest.raises(ValueError):
-        Graph.from_geodataframe(geodataframe)
+        Graph.from_geodataframe(geodataframe, reproject=True)
+
+
+def test_raises_geometry_error_if_invalid_geometry(shapefile):
+    with patch("gerrychain.graph.geo.explain_validity") as explain:
+        explain.return_value = "Invalid geometry"
+        with pytest.raises(GeometryError):
+            Graph.from_file(shapefile, ignore_errors=False)
+
+
+def test_can_ignore_errors_while_making_graph(shapefile):
+    with patch("gerrychain.graph.geo.explain_validity") as explain:
+        explain.return_value = "Invalid geometry"
+        assert Graph.from_file(shapefile, ignore_errors=True)
+
+
+def test_data_and_geometry(gdf_with_data):
+    df = gdf_with_data
+    graph = Graph.from_geodataframe(df)
+    assert graph.geometry is df.geometry
+    graph.add_data(df[["data"]])
+    assert (graph.data["data"] == df["data"]).all()
+    graph.add_data(df[["data2"]])
+    assert list(graph.data.columns) == ["data", "data2"]

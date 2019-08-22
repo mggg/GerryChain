@@ -1,13 +1,10 @@
-import math
 from collections import defaultdict
 
 from gerrychain import MarkovChain
 from gerrychain.accept import always_accept
-from gerrychain.constraints import (no_vanishing_districts,
-                                    single_flip_contiguous)
+from gerrychain.constraints import no_vanishing_districts, single_flip_contiguous
 from gerrychain.grid import Grid
 from gerrychain.proposals import propose_random_flip
-from gerrychain.updaters.compactness import compute_polsby_popper
 
 
 def setup():
@@ -132,8 +129,3 @@ def test_perimeter_match_naive_perimeter_at_every_step():
         expected = expected_perimeter(state)
         assert expected == state["perimeter"]
 
-
-def test_polsby_popper_returns_nan_when_perimeter_is_0():
-    area = 10
-    perimeter = 0
-    assert compute_polsby_popper(area, perimeter) is math.nan

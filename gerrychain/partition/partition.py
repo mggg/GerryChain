@@ -2,8 +2,7 @@ import json
 
 import geopandas
 
-from ..graph import Graph
-from ..updaters import compute_edge_flows, flows_from_changes
+from ..updaters import compute_edge_flows, flows_from_changes, cut_edges
 from .assignment import get_assignment
 from .subgraphs import SubgraphView
 
@@ -13,17 +12,21 @@ class Partition:
     Partition represents a partition of the nodes of the graph. It will perform
     the first layer of computations at each step in the Markov chain - basic
     aggregations and calculations that we want to optimize.
+
+    :ivar gerrychain.Graph graph: The underlying graph.
+    :ivar gerrychain.Assignment assignment: Maps node IDs to district IDs.
+    :ivar dict parts: Maps district IDs to the set of nodes in that district.
+    :ivar dict subgraphs: Maps district IDs to the induced subgraph of that district.
     """
 
-    default_updaters = {}
+    default_updaters = {"cut_edges": cut_edges}
 
     def __init__(
         self, graph=None, assignment=None, updaters=None, parent=None, flips=None
     ):
         """
-        :param graph: Underlying graph; a NetworkX object.
-        :param assignment: Dictionary assigning nodes to districts. If None,
-            initialized to assign all nodes to district 0.
+        :param graph: Underlying graph.
+        :param assignment: Dictionary assigning nodes to districts.
         :param updaters: Dictionary of functions to track data about the partition.
             The keys are stored as attributes on the partition class,
             which the functions compute.
@@ -41,11 +44,12 @@ class Partition:
 
         self.assignment = get_assignment(assignment, graph)
 
-        if not self.validate_assignment():
-            raise NameError("Graph's nodes' names do not match the Assignment's geo units' names.")
+        if set(self.assignment) != set(graph):
+            raise KeyError("The graph's node labels do not match the Assignment's keys")
 
         if updaters is None:
             updaters = dict()
+
         self.updaters = self.default_updaters.copy()
         self.updaters.update(updaters)
 
@@ -53,14 +57,6 @@ class Partition:
         self.flips = None
         self.flows = None
         self.edge_flows = None
-
-    def validate_assignment(self):
-        node_names = set(self.graph.nodes)
-        if len(node_names) != sum(len(dist) for dist in self.assignment.parts.values()):
-            return False
-
-        assgn_names = set(name for dist in self.assignment.parts.values() for name in dist)
-        return node_names == assgn_names
 
     def _from_parent(self, parent, flips):
         self.parent = parent
@@ -78,7 +74,7 @@ class Partition:
     def __repr__(self):
         number_of_parts = len(self)
         s = "s" if number_of_parts > 1 else ""
-        return "Partition of a graph into {} part{}".format(number_of_parts, s)
+        return "<{} [{} part{}]>".format(self.__class__.__name__, number_of_parts, s)
 
     def __len__(self):
         return len(self.parts)
@@ -115,19 +111,25 @@ class Partition:
     def __getattr__(self, key):
         return self[key]
 
+    def keys(self):
+        return self.updaters.keys()
+
     @property
     def parts(self):
         return self.assignment.parts
 
-    def plot(self, geometries, **kwargs):
+    def plot(self, geometries=None, **kwargs):
         """Plot the partition, using the provided geometries.
 
         :param geometries: A :class:`geopandas.GeoDataFrame` or :class:`geopandas.GeoSeries`
             holding the geometries to use for plotting. Its :class:`~pandas.Index` should match
             the node labels of the partition's underlying :class:`~gerrychain.Graph`.
-        :param **kwargs: Additional arguments to pass to :meth:`geopandas.GeoDataFrame.plot`
+        :param `**kwargs`: Additional arguments to pass to :meth:`geopandas.GeoDataFrame.plot`
             to adjust the plot.
         """
+        if geometries is None:
+            geometries = self.graph.geometry
+
         if set(geometries.index) != set(self.graph.nodes):
             raise TypeError(
                 "The provided geometries do not match the nodes of the graph."
@@ -139,56 +141,6 @@ class Partition:
             {"assignment": assignment_series}, geometry=geometries
         )
         return df.plot(column="assignment", **kwargs)
-
-    @classmethod
-    def from_json(cls, graph_path, assignment, updaters=None):
-        """Creates a :class:`Partition` from a json file containing a
-        serialized NetworkX `adjacency_data` object. Files of this
-        kind for each state are available in the @gerrymandr/vtd-adjacency-graphs
-        GitHub repository.
-
-        :param graph_path: String filename for the json file
-        :param assignment: String key for the node attribute giving a district
-            assignment, or a dictionary mapping node IDs to district IDs.
-        :param updaters: (optional) Dictionary of updater functions to
-            attach to the partition, in addition to the default_updaters of `cls`.
-        """
-        graph = Graph.from_json(graph_path)
-
-        return cls(graph, assignment, updaters)
-
-    def to_json(
-        self, json_path, *, save_assignment_as=None, include_geometries_as_geojson=False
-    ):
-        """Save the partition to a JSON file in the NetworkX json_graph format.
-
-        :param json_file: Path to target JSON file.
-        :param str save_assignment_as: (optional) The string to use as a node attribute
-            key holding the current assignment. By default, does not save the
-            assignment as an attribute.
-        :param bool include_geometries_as_geojson: (optional) Whether to include any
-            :mod:`shapely` geometry objects encountered in the graph's node attributes
-            as GeoJSON. The default (``False``) behavior is to remove all geometry
-            objects because they are not serializable. Including the GeoJSON will result
-            in a much larger JSON file.
-        """
-        graph = Graph(self.graph)
-
-        if save_assignment_as is not None:
-            for node in graph.nodes:
-                graph.nodes[node][save_assignment_as] = self.assignment[node]
-
-        graph.to_json(
-            json_path, include_geometries_as_geojson=include_geometries_as_geojson
-        )
-
-    @classmethod
-    def from_file(cls, filename, assignment, updaters=None, columns=None):
-        """Create a :class:`Partition` from an ESRI Shapefile, a GeoPackage,
-        a GeoJSON file, or any other file that the `fiona` library can handle.
-        """
-        graph = Graph.from_file(filename, cols_to_add=columns)
-        return cls(graph, assignment, updaters)
 
     @classmethod
     def from_districtr_file(cls, graph, districtr_file, updaters=None):

@@ -59,3 +59,12 @@ class TestPartitionPlotting:
 
         args, kwargs = mock_plot.call_args
         assert isinstance(kwargs["column"], str)
+
+    def test_uses_graph_geometries_by_default(self, geodataframe):
+        mock_plot = MagicMock()
+        gp.GeoDataFrame.plot = mock_plot
+
+        graph = Graph.from_geodataframe(geodataframe)
+        partition = Partition(graph=graph, assignment={node: 0 for node in graph})
+        partition.plot()
+        assert mock_plot.call_count == 1

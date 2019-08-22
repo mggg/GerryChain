@@ -10,36 +10,24 @@ from gerrychain.proposals import propose_random_flip
 from gerrychain.updaters import cut_edges
 
 
-@pytest.fixture
-def example_partition():
-    graph = networkx.complete_graph(3)
-    assignment = {0: 1, 1: 1, 2: 2}
-    partition = Partition(graph, assignment, {"cut_edges": cut_edges})
-    return partition
-
-
 def test_Partition_can_be_flipped(example_partition):
     flip = {1: 2}
     new_partition = example_partition.flip(flip)
     assert new_partition.assignment[1] == 2
 
 
-def test_Partition_misnamed_vertices_raises_namerror():
+def test_Partition_misnamed_vertices_raises_keyerror():
     graph = networkx.complete_graph(3)
-    assignment = {'0': 1, '1': 1, '2': 2}
-    with pytest.raises(NameError):
-        partition = Partition(graph, assignment, {"cut_edges": cut_edges})
+    assignment = {"0": 1, "1": 1, "2": 2}
+    with pytest.raises(KeyError):
+        Partition(graph, assignment, {"cut_edges": cut_edges})
 
-def test_Partition_unlabelled_vertices_raises_namerror():
+
+def test_Partition_unlabelled_vertices_raises_keyerror():
     graph = networkx.complete_graph(3)
     assignment = {0: 1, 2: 2}
-    with pytest.raises(NameError):
-        partition = Partition(graph, assignment, {"cut_edges": cut_edges})
-
-
-def test_Partition_validate_vertex_in_unique_district(example_partition):
-    example_partition.assignment.parts[1] = frozenset([0,1,2])
-    assert example_partition.validate_assignment() == False
+    with pytest.raises(KeyError):
+        Partition(graph, assignment, {"cut_edges": cut_edges})
 
 
 def test_Partition_knows_cut_edges_K3(example_partition):
@@ -148,3 +136,21 @@ def districtr_plan_file():
         with open(filename, "w") as f:
             json.dump(districtr_plan, f)
         yield filename
+
+
+def test_repr(example_partition):
+    assert repr(example_partition) == "<Partition [2 parts]>"
+
+
+def test_partition_has_default_updaters(example_partition):
+    partition = example_partition
+    default_updaters = partition.default_updaters
+    should_have_updaters = {"cut_edges": cut_edges}
+
+    for updater in should_have_updaters:
+        assert default_updaters.get(updater, None) is not None
+        assert should_have_updaters[updater](partition) == partition[updater]
+
+
+def test_partition_has_keys(example_partition):
+    assert "cut_edges" in set(example_partition.keys())

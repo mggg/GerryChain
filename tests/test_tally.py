@@ -1,13 +1,12 @@
 from collections import defaultdict
 
-from gerrychain import MarkovChain, Partition
+from gerrychain import MarkovChain, Partition, Graph
 from gerrychain.accept import always_accept
-from gerrychain.constraints import (no_vanishing_districts,
-                                    single_flip_contiguous)
+from gerrychain.constraints import no_vanishing_districts, single_flip_contiguous
 from gerrychain.grid import Grid
 from gerrychain.proposals import propose_random_flip
 from gerrychain.random import random
-from gerrychain.updaters.tally import DataTally
+from gerrychain.updaters.tally import DataTally, Tally
 
 
 def random_assignment(graph, num_districts):
@@ -75,3 +74,17 @@ def test_tally_matches_naive_tally_at_every_step():
     for state in chain:
         expected = get_expected_tally(state)
         assert expected == state["population"]
+
+
+def test_works_when_no_flips_occur():
+    graph = Graph([(0, 1), (1, 2), (2, 3), (3, 0)])
+    for node in graph:
+        graph.nodes[node]["pop"] = node + 1
+    partition = Partition(graph, {0: 0, 1: 0, 2: 1, 3: 1}, {"pop": Tally("pop")})
+
+    chain = MarkovChain(lambda p: p.flip({}), [], always_accept, partition, 10)
+
+    expected = {0: 3, 1: 7}
+
+    for partition in chain:
+        assert partition["pop"] == expected

@@ -7,7 +7,13 @@ from gerrychain import MarkovChain
 from gerrychain.constraints import contiguous, within_percent_of_ideal_population
 from gerrychain.partition import Partition
 from gerrychain.proposals import recom
-from gerrychain.tree import bipartition_tree, random_spanning_tree
+from gerrychain.tree import (
+    bipartition_tree,
+    random_spanning_tree,
+    find_balanced_edge_cuts,
+    recursive_tree_part,
+    PopulatedGraph,
+)
 from gerrychain.updaters import Tally, cut_edges
 
 
@@ -27,6 +33,16 @@ def partition_with_pop(graph_with_pop):
     )
 
 
+@pytest.fixture
+def twelve_by_twelve_with_pop():
+    xy_grid = networkx.grid_graph([12, 12])
+    nodes = {node: node[1] + 12 * node[0] for node in xy_grid}
+    grid = networkx.relabel_nodes(xy_grid, nodes)
+    for node in grid:
+        grid.nodes[node]["pop"] = 1
+    return grid
+
+
 def test_bipartition_tree_returns_a_subset_of_nodes(graph_with_pop):
     ideal_pop = sum(graph_with_pop.nodes[node]["pop"] for node in graph_with_pop) / 2
     result = bipartition_tree(graph_with_pop, "pop", ideal_pop, 0.25, 10)
@@ -43,11 +59,22 @@ def test_bipartition_tree_returns_within_epsilon_of_target_pop(graph_with_pop):
     assert abs(part_pop - ideal_pop) / ideal_pop < epsilon
 
 
+def test_recursive_tree_part_returns_within_epsilon_of_target_pop(twelve_by_twelve_with_pop):
+    n_districts = 7  # 144/7 ≈ 20.5 nodes/subgraph (1 person/node)
+    ideal_pop = (sum(twelve_by_twelve_with_pop.nodes[node]["pop"]
+                     for node in twelve_by_twelve_with_pop)) / n_districts
+    epsilon = 0.05
+    result = recursive_tree_part(twelve_by_twelve_with_pop, range(n_districts),
+                                 ideal_pop, "pop", epsilon)
+    partition = Partition(twelve_by_twelve_with_pop, result,
+                          updaters={"pop": Tally("pop")})
+    return all(abs(part_pop - ideal_pop) / ideal_pop < epsilon
+               for part_pop in partition['pop'].values())
+
+
 def test_random_spanning_tree_returns_tree_with_pop_attribute(graph_with_pop):
-    tree = random_spanning_tree(graph_with_pop, "pop")
+    tree = random_spanning_tree(graph_with_pop)
     assert networkx.is_tree(tree)
-    for node in tree:
-        assert tree.nodes[node]["pop"] == graph_with_pop.nodes[node]["pop"]
 
 
 def test_bipartition_tree_returns_a_tree(graph_with_pop):
@@ -59,7 +86,7 @@ def test_bipartition_tree_returns_a_tree(graph_with_pop):
         tree.nodes[node]["pop"] = graph_with_pop.nodes[node]["pop"]
 
     result = bipartition_tree(
-        graph_with_pop, "pop", ideal_pop, 0.25, 10, 0, tree, lambda x: 4
+        graph_with_pop, "pop", ideal_pop, 0.25, 10, tree, lambda x: 4
     )
 
     assert networkx.is_tree(tree.subgraph(result))
@@ -80,3 +107,24 @@ def test_recom_works_as_a_proposal(partition_with_pop):
 
     for state in chain:
         assert contiguous(state)
+
+
+def test_find_balanced_cuts():
+    tree = networkx.Graph(
+        [(0, 1), (1, 2), (1, 4), (3, 4), (4, 5), (3, 6), (6, 7), (6, 8)]
+    )
+
+    # 0 - 1 - 2
+    #   ||
+    # 3= 4 - 5
+    # ||
+    # 6- 7
+    # |
+    # 8
+
+    populated_tree = PopulatedGraph(
+        tree, {node: 1 for node in tree}, len(tree) / 2, 0.5
+    )
+    cuts = find_balanced_edge_cuts(populated_tree)
+    edges = set(tuple(sorted(cut.edge)) for cut in cuts)
+    assert edges == {(1, 4), (3, 4), (3, 6)}
