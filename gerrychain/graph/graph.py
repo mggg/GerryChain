@@ -158,7 +158,7 @@ class Graph(networkx.Graph):
         # Add area data to the nodes
         areas = df.geometry.area.to_dict()
         networkx.set_node_attributes(graph, name="area", values=areas)
-        
+
         graph.add_data(df, columns=cols_to_add)
         return graph
 
