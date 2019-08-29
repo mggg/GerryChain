@@ -105,7 +105,9 @@ class Graph(networkx.Graph):
 
         :param dataframe: :class:`geopandas.GeoDataFrame`
         :param adjacency: (optional) The adjacency type to use ("rook" or "queen").
-            Default is "rook".
+            Default is "rook"
+        :param cols_to_add: (optional) The names of the columns that you want to
+            add to the graph as node attributes. By default, all columns are added.
         :param reproject: (optional) Whether to reproject to a UTM projection before
             creating the graph. Default is ``True``.
         :param ignore_errors: (optional) Whether to ignore all invalid geometries and
