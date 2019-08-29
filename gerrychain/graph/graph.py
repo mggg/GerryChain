@@ -73,9 +73,12 @@ class Graph(networkx.Graph):
         """
         df = gp.read_file(filename)
         graph = cls.from_geodataframe(
-            df, adjacency=adjacency, reproject=reproject, ignore_errors=ignore_errors
+            df, adjacency=adjacency,
+            cols_to_add=cols_to_add,
+            reproject=reproject,
+            ignore_errors=ignore_errors
         )
-        graph.add_data(df, columns=cols_to_add)
+
         return graph
 
     @classmethod
