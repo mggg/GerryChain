@@ -241,7 +241,7 @@ def test_data_and_geometry(gdf_with_data):
     df = gdf_with_data
     graph = Graph.from_geodataframe(df)
     assert graph.geometry is df.geometry
-    graph.add_data(df[["data"]])
+    #graph.add_data(df[["data"]])
     assert (graph.data["data"] == df["data"]).all()
-    graph.add_data(df[["data2"]])
+    #graph.add_data(df[["data2"]])
     assert list(graph.data.columns) == ["data", "data2"]
