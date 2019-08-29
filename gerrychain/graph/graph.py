@@ -80,7 +80,12 @@ class Graph(networkx.Graph):
 
     @classmethod
     def from_geodataframe(
-        cls, dataframe, adjacency="rook", reproject=False, ignore_errors=False
+        cls,
+        dataframe,
+        adjacency="rook",
+        cols_to_add=None,
+        reproject=False,
+        ignore_errors=False
     ):
         """Creates the adjacency :class:`Graph` of geometries described by `dataframe`.
         The areas of the polygons are included as node attributes (with key `area`).
@@ -151,7 +156,8 @@ class Graph(networkx.Graph):
         # Add area data to the nodes
         areas = df.geometry.area.to_dict()
         networkx.set_node_attributes(graph, name="area", values=areas)
-
+        
+        graph.add_data(df, columns=cols_to_add)
         return graph
 
     def add_data(self, df, columns=None):
