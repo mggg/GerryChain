@@ -73,14 +73,22 @@ class Graph(networkx.Graph):
         """
         df = gp.read_file(filename)
         graph = cls.from_geodataframe(
-            df, adjacency=adjacency, reproject=reproject, ignore_errors=ignore_errors
+            df, adjacency=adjacency,
+            cols_to_add=cols_to_add,
+            reproject=reproject,
+            ignore_errors=ignore_errors
         )
-        graph.add_data(df, columns=cols_to_add)
+
         return graph
 
     @classmethod
     def from_geodataframe(
-        cls, dataframe, adjacency="rook", reproject=False, ignore_errors=False
+        cls,
+        dataframe,
+        adjacency="rook",
+        cols_to_add=None,
+        reproject=False,
+        ignore_errors=False
     ):
         """Creates the adjacency :class:`Graph` of geometries described by `dataframe`.
         The areas of the polygons are included as node attributes (with key `area`).
@@ -100,7 +108,9 @@ class Graph(networkx.Graph):
 
         :param dataframe: :class:`geopandas.GeoDataFrame`
         :param adjacency: (optional) The adjacency type to use ("rook" or "queen").
-            Default is "rook".
+            Default is "rook"
+        :param cols_to_add: (optional) The names of the columns that you want to
+            add to the graph as node attributes. By default, all columns are added.
         :param reproject: (optional) Whether to reproject to a UTM projection before
             creating the graph. Default is ``True``.
         :param ignore_errors: (optional) Whether to ignore all invalid geometries and
@@ -152,6 +162,7 @@ class Graph(networkx.Graph):
         areas = df.geometry.area.to_dict()
         networkx.set_node_attributes(graph, name="area", values=areas)
 
+        graph.add_data(df, columns=cols_to_add)
         return graph
 
     def add_data(self, df, columns=None):
