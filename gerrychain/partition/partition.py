@@ -42,6 +42,9 @@ class Partition:
     def _first_time(self, graph, assignment, updaters):
         self.graph = graph
 
+        if assignment == None:
+            assignment = {node : 0 for node in set(graph)}
+
         self.assignment = get_assignment(assignment, graph)
 
         if set(self.assignment) != set(graph):
