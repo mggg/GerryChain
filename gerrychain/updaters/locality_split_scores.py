@@ -3,6 +3,7 @@ from collections import defaultdict, Counter
 import networkx as nx
 import math
 
+
 class LocalitySplits:
 
     """Computes various splitting measures for a partition
@@ -38,10 +39,8 @@ class LocalitySplits:
 
     """
 
-
-    """
-
-    def __init__(self, name, col_id, pop_col,scores_to_compute=["num_parts"], pent_alpha=.05):
+    def __init__(self, name, col_id, pop_col,
+                 scores_to_compute=["num_parts"], pent_alpha=.05):
         """
         :param name: The name of the updater (e.g. "countysplits")
         :param col_id: The name of the column containing the locality
@@ -87,9 +86,9 @@ class LocalitySplits:
             self.localities = set(list(self.localitydict.values()))
 
         locality_splits = {k: [self.localitydict[v] for v in d]
-            for k, d in partition.assignment.parts.items()}
+                           for k, d in partition.assignment.parts.items()}
         self.locality_splits = {k: Counter(v)
-                                           for k, v in locality_splits.items()}
+                                for k, v in locality_splits.items()}
 
         self.locality_splits_inv = defaultdict(dict)
         for k, v in self.locality_splits.items():
@@ -106,15 +105,16 @@ class LocalitySplits:
 
             num_districts = len(partition.assignment.parts.keys())
 
-            for locality in self.localities:
-                sg = partition.graph.subgraph(n for n, v in partition.graph.nodes(
-                    data=True) if v[self.col_id] == locality)
+            for loc in self.localities:
+                sg = partition.graph.subgraph(
+                    n for n, v in partition.graph.nodes(
+                        data=True) if v[self.col_id] == loc)
 
                 pop = 0
                 for n in sg.nodes():
                     pop += sg.node[n][self.pop_col]
 
-                allowed_pieces[locality] = math.ceil(pop/(totpop/num_districts))
+                allowed_pieces[loc] = math.ceil(pop / (totpop / num_districts))
             self.allowed_pieces = allowed_pieces
 
         for s in self.scores:
@@ -140,7 +140,6 @@ class LocalitySplits:
                 self.scores[s] = self.num_split_localities(partition)
 
         return self.scores
-
 
     def num_parts(self, partition):
         '''
@@ -172,7 +171,8 @@ class LocalitySplits:
         for n in partition.graph.nodes():
             locality = partition.graph.nodes[n][self.col_id]
             if locality not in locality_intersections:
-                locality_intersections[locality] = set([partition.assignment[n]])
+                locality_intersections[locality] = set(
+                    [partition.assignment[n]])
 
             locality_intersections[locality].update([partition.assignment[n]])
 
@@ -187,12 +187,9 @@ class LocalitySplits:
                 pieces += nx.number_connected_components(subgraph)
         return pieces
 
-
-
-
-    def naked_boundary(self,partition):
+    def naked_boundary(self, partition):
         '''
-        Computes the number of cut edges inside localities (i.e. the 
+        Computes the number of cut edges inside localities (i.e. the
             number of cut edges with both endpoints in the same locality).
 
         :param partition: The partition to be scored.
@@ -207,24 +204,18 @@ class LocalitySplits:
             vtd_2 = i[1]
             county_1 = self.localitydict.get(vtd_1)
             county_2 = self.localitydict.get(vtd_2)
-            if county_1 == county_2: #not on county boundary
+            if county_1 == county_2:  # not on county boundary
                 cut_edges_within += 1
         return cut_edges_within
-
-
-
 
     def shannon_entropy(self, partition):
         '''
         Computes the shannon entropy score of a district plan.
-        
+
         :param partition: The partition to be scored.
 
         :returns: Shannon entropy score.
         '''
-
-        vtds = {k : len(v) for k, v in partition.assignment.parts.items()}
-        num_districts = len(vtds)
 
         total_vtds = 0
         for k, v in self.locality_splits.items():
@@ -232,92 +223,75 @@ class LocalitySplits:
                 total_vtds += x
 
         entropy = 0
-        for locality_j in self.localities: #iter thru localities to get total count
+        for locality_j in self.localities:  # iter thru locs to get total count
             tot_county_vtds = 0
             # iter thru counters
             for k, v in self.locality_splits.items():
                 v = dict(v)
                 if locality_j in list(v.keys()):
                     tot_county_vtds += v[locality_j]
-                else:
-                    continue
-            
+
             inner_sum = 0
             q = tot_county_vtds / total_vtds
-            
+
             # iter thru districts to get vtds in county in district
-            # for district in range(num_districts):      
+            # for district in range(num_districts):
             for k, v in self.locality_splits.items():
-                # counter = dict(locality_splits[district+1])  
-                count = dict(v)          
-                if locality_j in count:
-                    intersection = count[str(locality_j)]
-                    p = intersection / tot_county_vtds
-
-                    if p != 0:
-                        inner_sum += p * math.log(1/p)
-                else: 
-                    continue
-            entropy += q * (inner_sum)
-        return entropy
-
-
-
-
-
-    def power_entropy(self, partition):
-
-        '''
-        Computes the power entropy score of a district plan.
-        
-        :param partition: The partition to be scored.
-
-        :returns: Power entropy score.
-        '''
-
-        vtds = {k : len(v) for k, v in partition.assignment.parts.items()}
-        num_districts = len(vtds)
-
-        total_vtds = 0              #count the total number of vtds in state
-        for k,v in self.locality_splits.items():
-            for x in list(v.values()):
-                total_vtds += x
-
-        entropy = 0
-        for locality_j in self.localities:         #iter thru localities to get total count
-            tot_county_vtds = 0
-            # iter thru counters
-            for k, v in self.locality_splits.items():
-                v = dict(v)
-                if locality_j in list(v.keys()):
-                    tot_county_vtds += v[locality_j]
-                else:
-                    continue
-            
-            inner_sum = 0
-            
-            q = tot_county_vtds / total_vtds
-            # iter thru districts to get vtds in county in district
-            # for district in range(num_districts): 
-            for k,v in self.locality_splits.items():           
-                # counter = dict(locality_splits[district+1])            
+                # counter = dict(locality_splits[district+1])
                 count = dict(v)
                 if locality_j in count:
                     intersection = count[str(locality_j)]
                     p = intersection / tot_county_vtds
 
                     if p != 0:
-                        inner_sum += p ** (1-self.pent_alpha)
-                else: 
-                    continue
-            entropy += 1/q * (inner_sum-1)
+                        inner_sum += p * math.log(1 / p)
+
+            entropy += q * (inner_sum)
         return entropy
 
+    def power_entropy(self, partition):
 
+        '''
+        Computes the power entropy score of a district plan.
 
+        :param partition: The partition to be scored.
 
+        :returns: Power entropy score.
+        '''
 
-    def symmetric_entropy(self, partition): #IN PROGRESS
+        total_vtds = 0  # count the total number of vtds in state
+        for k, v in self.locality_splits.items():
+            for x in list(v.values()):
+                total_vtds += x
+
+        entropy = 0
+        for locality_j in self.localities:  # iter thru locs to get total count
+            tot_county_vtds = 0
+            # iter thru counters
+            for k, v in self.locality_splits.items():
+                v = dict(v)
+                if locality_j in list(v.keys()):
+                    tot_county_vtds += v[locality_j]
+
+            inner_sum = 0
+
+            q = tot_county_vtds / total_vtds
+            # iter thru districts to get vtds in county in district
+            # for district in range(num_districts):
+            for k, v in self.locality_splits.items():
+                # counter = dict(locality_splits[district+1])
+                count = dict(v)
+                if locality_j in count:
+                    intersection = count[str(locality_j)]
+                    p = intersection / tot_county_vtds
+
+                    if p != 0:
+                        inner_sum += p ** (1 - self.pent_alpha)
+
+            entropy += 1 / q * (inner_sum - 1)
+        return entropy
+
+    def symmetric_entropy(self, partition):  # IN PROGRESS
         '''
         Calculates the symmetric entropy score.
 
@@ -326,23 +300,20 @@ class LocalitySplits:
         :return: The symmetric square root entropy score.
         '''
 
-
-
         district_dict = dict(partition.parts)
 
         for district in district_dict.keys():
             vtds = district_dict[district]
-            locality_pop = {k : 0 for k in self.localities}
+            locality_pop = {k: 0 for k in self.localities}
             for vtd in vtds:
-                locality_pop[self.localitydict[vtd]] += partition.graph.nodes[vtd][self.pop_col]
+                locality_pop[self.localitydict[vtd]] += partition.graph.nodes[
+                    vtd][self.pop_col]
             district_dict[district] = locality_pop
 
-
         district_dict_inv = defaultdict(dict)
-        for k,v in district_dict.items():
-            for k2,v2 in v.items():
+        for k, v in district_dict.items():
+            for k2, v2 in v.items():
                 district_dict_inv[k2][k] = v2
-
 
         # how do districts split localities?
         score = 0
@@ -351,9 +322,9 @@ class LocalitySplits:
             total = sum(localities_and_pops.values())
             fractional_sum = 0
             for locality in localities_and_pops.keys():
-                fractional_sum += math.sqrt(localities_and_pops[locality]/total)
-            score += total*fractional_sum
-
+                fractional_sum += math.sqrt(
+                    localities_and_pops[locality] / total)
+            score += total * fractional_sum
 
         # how do localities split districts?
         for locality in district_dict_inv.keys():
@@ -361,13 +332,11 @@ class LocalitySplits:
             total = sum(districts_and_pops.values())
             fractional_sum = 0
             for district in districts_and_pops.keys():
-                fractional_sum += math.sqrt(districts_and_pops[district]/total)
-            score += total*fractional_sum
+                fractional_sum += math.sqrt(districts_and_pops[district]
+                                            / total)
+            score += total * fractional_sum
 
         return score
-
-
-
 
     def num_split_localities(self, partition):
         '''
@@ -375,7 +344,8 @@ class LocalitySplits:
 
         :param partition: The partition to be scored.
 
-        :return: The number of split localities, i.e. the number of localities touching 2 or more districts.
+        :return: The number of split localities, i.e. the number of localities
+            touching 2 or more districts.
         '''
 
         total_splits = 0
@@ -385,13 +355,3 @@ class LocalitySplits:
                 total_splits += 1
 
         return total_splits
-    
-
-
-
-
-
-
-
-
-
