@@ -43,7 +43,7 @@ The `Partition` class takes three arguments to create a Partition:
 -   A dictionary of **updaters**.
 
 This creates a partition of the `graph` object we created above from the
-Pennsylvania shapefile. The partition is defined by the `"2011_PLA_1"` column
+Pennsylvania shapefile. The partition is defined by the `"CD_2011"` column
 from our shapefile's attribute table.
 
 ## `partition.graph`: the underlying graph
@@ -69,57 +69,79 @@ shapefile's attribute table attached to the graph as _node attributes_. We can
 see the data that a node has like this:
 
 ```python
->>> partition.graph.nodes['42039060']
-{'boundary_node': False,
- 'area': 0.0063017857514999324,
+>>> partition.graph.nodes[0]
+{'boundary_node': True,
+ 'boundary_perim': 0.06312599142331599,
+ 'area': 0.004278359631999892,
  'STATEFP10': '42',
- 'COUNTYFP10': '039',
- 'VTDST10': '60',
+ 'COUNTYFP10': '085',
+ 'VTDST10': '960',
+ 'GEOID10': '42085960',
  'VTDI10': 'A',
- 'NAME10': 'CAMBRIDGE SPRINGS Voting District',
- 'NAMELSAD10': 'CAMBRIDGE SPRINGS Voting District',
+ 'NAME10': 'SHENANGO TWP VTD WEST',
+ 'NAMELSAD10': 'SHENANGO TWP VTD WEST',
  'LSAD10': '00',
  'MTFCC10': 'G5240',
  'FUNCSTAT10': 'N',
- 'ALAND10': 2258229,
- 'AWATER10': 0,
- 'INTPTLAT10': '+41.8018353',
- 'INTPTLON10': '-080.0596566',
- 'ATG12D': 0.0,
- 'ATG12R': 0.0,
- 'GOV10D': 0.0,
- 'GOV10R': 0.0,
- 'PRES12D': 0.0,
- 'PRES12O': 0.0,
- 'PRES12R': 0.0,
- 'SEN10D': 0.0,
- 'SEN10R': 0.0,
- 'T16ATGD': 0.0,
- 'T16ATGR': 0.0,
- 'T16PRESD': 0.0,
- 'T16PRESOTH': 0.0,
- 'T16PRESR': 0.0,
- 'T16SEND': 0.0,
- 'T16SENR': 0.0,
- 'USS12D': 0.0,
- 'USS12R': 0.0,
- 'GOV': 3,
- 'TS': 5,
- 'HISP_POP': 0,
- 'TOT_POP': 0,
- 'WHITE_POP': 0,
- 'BLACK_POP': 0,
- 'NATIVE_POP': 0,
- 'ASIAN_POP': 0,
- 'F2014GOVD': 0,
- 'F2014GOVR': 0,
- '2011_PLA_1': 3,
- 'REMEDIAL_P': 14,
- '538CPCT__1': '03',
- '538DEM_PL': '03',
- '538GOP_PL': '03',
- '8THGRADE_1': '1',
- 'geometry': <shapely.geometry.polygon.Polygon at 0x1767ceac9e8>}
+ 'ALAND10': 39740056,
+ 'AWATER10': 141805,
+ 'INTPTLAT10': '+41.1564874',
+ 'INTPTLON10': '-080.4865792',
+ 'TOTPOP': 1915,
+ 'NH_WHITE': 1839,
+ 'NH_BLACK': 35'
+ 'NH_AMIN': 1,
+ 'NH_ASIAN': 8,
+ 'NH_NHPI': 0,
+ 'NH_OTHER': 3,
+ 'NH_2MORE': 19,
+ 'HISP': 10,
+ 'H_WHITE': 3,
+ 'H_BLACK': 0,
+ 'H_AMIN': 1,
+ 'H_ASIAN': 0,
+ 'H_NHPI': 0,
+ 'H_OTHER': 4,
+ 'H_2MORE': 2,
+ 'VAP': 1553,
+ 'HVAP': 7,
+ 'WVAP': 1494,
+ 'BVAP': 30,
+ 'AMINVAP': 1,
+ 'ASIANVAP': 6,
+ 'NHPIVAP': 0,
+ 'OTHERVAP': 2,
+ '2MOREVAP': 13, 
+ 'ATG12D': 514.0001036045286,
+ 'ATG12R': 388.0000782073095, 
+ 'F2014GOVD': 290.0000584539169, 
+ 'F2014GOVR': 242.00004877878584, 
+ 'GOV10D': 289.00005825235166, 
+ 'GOV10R': 349.00007034626555, 
+ 'PRES12D': 492.0000991700935, 
+ 'PRES12O': 11.000002217217538, 
+ 'PRES12R': 451.0000909059191, 
+ 'SEN10D': 315.00006349304766, 
+ 'SEN10R': 328.0000661133957, 
+ 'T16ATGD': 416.00008385113597, 
+ 'T16ATGR': 558.0001124733988, 
+ 'T16PRESD': 342.0000689353089, 
+ 'T16PRESOTH': 32.00000645008738, 
+ 'T16PRESR': 631.0001271876606, 
+ 'T16SEND': 379.00007639322246, 
+ 'T16SENR': 590.0001189234862, 
+ 'USS12D': 505.00010179044153, 
+ 'USS12R': 423.0000852620926, 
+ 'REMEDIAL': '16', 
+ 'GOV': '3', 
+ 'TS': 3, 
+ 'CD_2011': 3, 
+ 'SEND': 50, 
+ 'HDIST': 7, 
+ '538DEM': '03', 
+ '538GOP': '03', 
+ '538CMPCT': '03', 
+ 'geometry': <shapely.geometry.polygon.Polygon object at 0x7ff3edeb7f90>}
 ```
 
 The nodes of the graph are identified by IDs. Here the IDs are the VTDs GEOIDs
@@ -142,9 +164,9 @@ it just like a dictionary.
 3
 3
 3
-10
-10
-10
+3
+3
+3
 ```
 
 ## `partition.parts`: the nodes in each part
@@ -158,20 +180,20 @@ As an example, let's print out the number of nodes in each part:
 >>> for part in partition.parts:
 ...    number_of_nodes = len(partition.parts[part])
 ...    print(f"Part {part} has {number_of_nodes} nodes")
-Part 3 has 469 nodes
-Part 10 has 462 nodes
-Part 9 has 515 nodes
-Part 5 has 513 nodes
-Part 15 has 317 nodes
-Part 6 has 310 nodes
-Part 11 has 440 nodes
-Part 8 has 337 nodes
-Part 4 has 271 nodes
-Part 18 has 591 nodes
-Part 12 has 597 nodes
-Part 17 has 412 nodes
-Part 7 has 404 nodes
-Part 16 has 322 nodes
+Part 3 has 500 nodes
+Part 5 has 580 nodes
+Part 10 has 515 nodes
+Part 9 has 575 nodes
+Part 12 has 623 nodes
+Part 6 has 313 nodes
+Part 15 has 324 nodes
+Part 7 has 405 nodes
+Part 16 has 329 nodes
+Part 11 has 456 nodes
+Part 4 has 292 nodes
+Part 8 has 340 nodes
+Part 17 has 442 nodes
+Part 18 has 600 nodes
 Part 14 has 867 nodes
 Part 13 has 548 nodes
 Part 2 has 828 nodes
@@ -197,24 +219,25 @@ way.
 >>> for part, subgraph in partition.subgraphs.items():
 ...     number_of_edges = len(subgraph.edges)
 ...     print(f"Part {part} has {number_of_edges} edges")
-Part 3 has 1195 edges
-Part 10 has 1183 edges
-Part 9 has 1314 edges
-Part 5 has 1349 edges
-Part 15 has 824 edges
-Part 6 has 745 edges
-Part 11 has 1134 edges
-Part 8 has 881 edges
-Part 4 has 693 edges
-Part 18 has 1575 edges
-Part 12 has 1559 edges
-Part 17 has 1015 edges
-Part 7 has 930 edges
-Part 16 has 825 edges
+Part 3 has 1229 edges
+Part 5 has 1450 edges
+Part 10 has 1252 edges
+Part 9 has 1391 edges
+Part 12 has 1601 edges
+Part 6 has 749 edges
+Part 15 has 834 edges
+Part 7 has 931 edges
+Part 16 has 836 edges
+Part 11 has 1152 edges
+Part 4 has 723 edges
+Part 8 has 886 edges
+Part 17 has 1092 edges
+Part 18 has 1585 edges
 Part 14 has 2344 edges
 Part 13 has 1362 edges
 Part 2 has 2159 edges
 Part 1 has 1780 edges
+
 ```
 
 Let's use NetworkX's
@@ -229,19 +252,19 @@ graph. You don't have to know that!)
 ...     diameter = networkx.diameter(subgraph)
 ...     print(f"Part {part} has diameter {diameter}")
 Part 3 has diameter 40
+Part 5 has diameter 30
 Part 10 has diameter 40
 Part 9 has diameter 40
-Part 5 has diameter 29
-Part 15 has diameter 28
+Part 12 has diameter 36
 Part 6 has diameter 32
-Part 11 has diameter 31
-Part 8 has diameter 24
-Part 4 has diameter 19
-Part 18 has diameter 28
-Part 12 has diameter 35
-Part 17 has diameter 35
+Part 15 has diameter 28
 Part 7 has diameter 38
 Part 16 has diameter 38
+Part 11 has diameter 31
+Part 4 has diameter 19
+Part 8 has diameter 24
+Part 17 has diameter 34
+Part 18 has diameter 28
 Part 14 has diameter 38
 Part 13 has diameter 30
 Part 2 has diameter 28
@@ -257,9 +280,9 @@ _different_ parts of the partition.
 
 ```python
 >>> len(partition["cut_edges"])
-2361
+2367
 >>> len(partition.cut_edges)
-2361
+2367
 ```
 
 ```python
@@ -267,5 +290,5 @@ _different_ parts of the partition.
 >>> print("Proportion of edges that are cut:")
 >>> print(proportion_of_cut_edges)
 Proportion of edges that are cut:
-0.09358649120025368
+0.09201881584574116
 ```
