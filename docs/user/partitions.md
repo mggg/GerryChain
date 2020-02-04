@@ -10,22 +10,27 @@ GerryChain `Partition` object.
 ```
 
 We'll use our
-[Pennsylvania VTD shapefile](https://github.com/mggg-states/PA-shapefiles) to
+[Pennsylvania VTD json]( https://github.com/mggg/GerryChain/blob/master/docs/user/PA_VTDs.json) to
 create the graph we'll use in these examples.
 
+```python
+graph = Graph.from_json("./PA_VTDs.json")
+```
+
+<!--
 ```python
 >>> df = geopandas.read_file("https://github.com/mggg-states/PA-shapefiles/raw/master/PA/PA_VTD.zip")
 >>> df.set_index("GEOID10", inplace=True)
 >>> graph = Graph.from_geodataframe(df)
 >>> graph.add_data(df)
 ```
-
+-->
 ## Creating a partition
 
 Here is how you can create a Partition:
 
 ```python
->>> partition = Partition(graph, "2011_PLA_1", {"cut_edges": cut_edges})
+>>> partition = Partition(graph, "CD_2011", {"cut_edges": cut_edges})
 ```
 
 The `Partition` class takes three arguments to create a Partition:

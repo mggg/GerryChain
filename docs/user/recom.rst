@@ -37,9 +37,9 @@ The first step is to import everything we'll need::
 Setting up the initial districting plan
 =======================================
 
-We'll create our graph using the Pennsylvania shapefile on MGGG-States::
+We'll create our graph using the Pennsylvania shapefile from MGGG-States (download the .json `here`_ if you didn't start with the Getting started with GerryChain guide)::
 
-    graph = Graph.from_file("https://github.com/mggg-states/PA-shapefiles/blob/master/PA/PA_VTD.zip?raw=true")
+    graph = Graph.from_json("./PA_VTDs.json")
 
 We configure :class:`~gerrychain.Election` objects representing some of the election
 data from our shapefile. ::
@@ -54,6 +54,7 @@ data from our shapefile. ::
     
 
 .. _Pennsylvania shapefile: https://github.com/mggg-states/PA-shapefiles/
+.. _`here`: https://github.com/mggg/GerryChain/blob/master/docs/user/PA_VTDs.json 
 
 Configuring our updaters
 ------------------------
@@ -62,7 +63,7 @@ We want to set up updaters for everything we want to compute for each plan in th
     
     # Population updater, for computing how close to equality the district
     # populations are. "TOT_POP" is the population column from our shapefile.
-    my_updaters = {"population": updaters.Tally("TOT_POP", alias="population")}
+    my_updaters = {"population": updaters.Tally("TOTPOP", alias="population")}
     
     # Election updaters, for computing election results using the vote totals
     # from our shapefile.
@@ -75,7 +76,7 @@ Instantiating the partition
 
 We can now instantiate the initial state of our Markov chain, using the 2011 districting plan::
 
-    initial_partition = GeographicPartition(graph, assignment="2011_PLA_1", updaters=my_updaters)
+    initial_partition = GeographicPartition(graph, assignment="CD_2011", updaters=my_updaters)
     
 :class:`~gerrychain.GeographicPartition` comes with built-in ``area`` and ``perimeter`` updaters.
 We do not use them here, but they would allow us to compute compactness scores like Polsby-Popper
@@ -98,7 +99,7 @@ before we can use it as our proposal function. ::
     # We use functools.partial to bind the extra parameters (pop_col, pop_target, epsilon, node_repeats)
     # of the recom proposal.
     proposal = partial(recom,
-                       pop_col="TOT_POP",
+                       pop_col="TOTPOP",
                        pop_target=ideal_population,
                        epsilon=0.02,
                        node_repeats=2
