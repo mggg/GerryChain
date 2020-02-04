@@ -15,12 +15,12 @@ What you'll need
 Before we can start running Markov chains, you'll need to:
 
 * Install ``gerrychain`` from PyPI by running ``pip install gerrychain`` in a terminal.
-* Download and unzip MGGG's `shapefile of Pennsylvania's VTDs`_ from GitHub.
+* Download MGGG's `json of Pennsylvania's VTDs`_ from GitHub.
 * Open your preferred Python environment (e.g. JupyterLab, IPython, or a ``.py`` file
-  in your favorite editor) in the directory containing the ``PA_VTD.shp`` file
-  from the ``.zip`` that you downloaded and unzipped.
+  in your favorite editor) in the directory containing the ``PA_VTDs.json`` file
+  that you downloaded.
 
-.. _`shapefile of Pennsylvania's VTDs`: https://github.com/mggg-states/PA-shapefiles/blob/master/PA/PA_VTD.zip
+.. _`json of Pennsylvania's VTDs`: https://github.com/mggg/GerryChain/blob/master/docs/user/PA_VTDs.json
 
 .. TODO: conda instructions
 
@@ -35,24 +35,24 @@ will be the initial state of our Markov chain. ::
     from gerrychain import Graph, Partition, Election
     from gerrychain.updaters import Tally, cut_edges
 
-    graph = Graph.from_file("./PA_VTD.shp")
+    graph = Graph.from_json("./PA_VTDs.json")
 
     election = Election("SEN12", {"Dem": "USS12D", "Rep": "USS12R"})
 
     initial_partition = Partition(
         graph,
-        assignment="2011_PLA_1",
+        assignment="CD_2011",
         updaters={
             "cut_edges": cut_edges,
-            "population": Tally("TOT_POP", alias="population"),
+            "population": Tally("TOTPOP", alias="population"),
             "SEN12": election
         }
     )
 
 Here's what's happening in this code block.
 
-The :meth:`Graph.from_file() <gerrychain.Graph.from_file>` classmethod creates a
-:class:`~gerrychain.Graph` of the precincts in our shapefile. By default, this method
+The :meth:`Graph.from_json() <gerrychain.Graph.from_json>` classmethod creates a
+:class:`~gerrychain.Graph` of the precincts. By default, this method
 copies all of the data columns from the shapefile's attribute table to the ``graph`` object
 as node attributes. The contents of this particular shapefile's attribute table are
 summarized in the `mggg-states/PA-shapefiles <https://github.com/mggg-states/PA-shapefiles#metadata>`_
@@ -71,11 +71,11 @@ takes three arguments:
 :graph: A graph.
 :assignment: An assignment of the nodes of the graph into parts of the partition. This can be either
     a dictionary mapping node IDs to part IDs, or the string key of a node attribute that holds
-    each node's assignment. In this example we've written ``assignment="2011_PLA_1"`` to tell the :class:`~gerrychain.Partition`
-    to assign nodes by their ``"2011_PLA_1"`` attribute that we copied from the shapefile. This attributes holds the
+    each node's assignment. In this example we've written ``assignment="CD_2011"`` to tell the :class:`~gerrychain.Partition`
+    to assign nodes by their ``"CD_2011"`` attribute that we copied from the shapefile. This attributes holds the
     assignments of precincts to congressional districts from the 2010 redistricting cycle.
 :updaters: An optional dictionary of "updater" functions. Here we've provided an updater named ``"population"`` that
-    computes the total population of each district in the partition, based on the ``"TOT_POP"`` node attribute
+    computes the total population of each district in the partition, based on the ``"TOTPOP"`` node attribute
     from our shapefile, and a "SEN12" updater that will output the election results for the ``election`` that we
     set up. We've also provided a ``cut_edges`` updater. This returns all of the edges in the graph
     that cross from one part to another, and is used by ``propose_random_flip`` to find a random boundary node to
