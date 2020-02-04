@@ -62,7 +62,7 @@ Configuring our updaters
 We want to set up updaters for everything we want to compute for each plan in the ensemble. ::
     
     # Population updater, for computing how close to equality the district
-    # populations are. "TOT_POP" is the population column from our shapefile.
+    # populations are. "TOTPOP" is the population column from our shapefile.
     my_updaters = {"population": updaters.Tally("TOTPOP", alias="population")}
     
     # Election updaters, for computing election results using the vote totals
