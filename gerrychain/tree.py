@@ -174,11 +174,14 @@ def bipartition_tree_random(
     possible_cuts = []
     if spanning_tree is None:
         spanning_tree = random_spanning_tree(graph)
-
+    restarts = 0
     while len(possible_cuts) == 0:
-        spanning_tree = random_spanning_tree(graph)
+        if restarts == node_repeats:
+            spanning_tree = random_spanning_tree(graph)
+            restarts = 0
         h = PopulatedGraph(spanning_tree, populations, pop_target, epsilon)
         possible_cuts = find_balanced_edge_cuts(h, choice=choice)
+        restarts += 1
 
     return choice(possible_cuts).subset
 
