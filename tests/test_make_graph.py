@@ -218,7 +218,7 @@ def test_graph_warns_for_islands():
 
 
 def test_graph_raises_if_crs_is_missing_when_reprojecting(geodataframe):
-    del geodataframe.crs
+    geodataframe.crs = None
 
     with pytest.raises(ValueError):
         Graph.from_geodataframe(geodataframe, reproject=True)
