@@ -47,8 +47,8 @@ def example_geographic_partition():
     graph = networkx.complete_graph(3)
     assignment = {0: 1, 1: 1, 2: 2}
     for node in graph.nodes:
-        graph.node[node]["boundary_node"] = False
-        graph.node[node]["area"] = 1
+        graph.nodes[node]["boundary_node"] = False
+        graph.nodes[node]["area"] = 1
     for edge in graph.edges:
         graph.edges[edge]["shared_perim"] = 1
     return GeographicPartition(graph, assignment, None, None, None)
