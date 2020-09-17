@@ -168,8 +168,9 @@ class Partition:
             node_to_id = {node: str(graph.nodes[node][id_column_key]) for node in graph}
         except KeyError:
             raise TypeError(
-                "The provided graph is missing the {} column, which is "
-                "needed to match the Districtr assignment to the nodes of the graph."
+                "The provided graph is missing the {} column, which is \
+                needed to match the Districtr assignment to the nodes of the graph."
+                .format(id_column_key)
             )
 
         assignment = {node: districtr_assignment[node_to_id[node]] for node in graph}
