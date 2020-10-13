@@ -1,5 +1,10 @@
+from functools import partial
 from ..random import random
-from ..tree import recursive_tree_part, bipartition_tree, bipartition_tree_random
+from ..tree import (
+    recursive_tree_part, bipartition_tree, bipartition_tree_random,
+    uniform_random_spanning_tree, find_balanced_edge_cuts_memoization,
+    find_balanced_edge_cuts_contraction, BalanceError
+)
 
 
 def recom(
@@ -52,6 +57,71 @@ def recom(
     return partition.flip(flips)
 
 
+def reversible_recom(partition, pop_col, pop_target, epsilon,
+                     balance_edge_fn=find_balanced_edge_cuts_contraction, M=1):
+    # TODO: keep track of district adjacency within `Partition`
+    def dist_pair_edges(part, a, b):
+        return set(
+            e for e in part.graph.edges
+            if ((part.assignment[e[0]] == a and part.assignment[1] == b) or
+                (part.assignment[e[0]] == b and part.assignment[1] == a))
+        )
+
+    def bounded_balance_edge_fn(*args, **kwargs):
+        cuts = balance_edge_fn(*args, **kwargs)
+        if len(cuts) > M:
+            raise ReversibilityError(f'Found {len(cuts)} balance edges, '
+                                     f'but the upper bound is {M}.')
+        return cuts
+
+    bipartition_tree_random_reversible = partial(
+        bipartition_tree_random,
+        repeat_until_valid=False,
+        spanning_tree_fn=uniform_random_spanning_tree,
+        balance_edge_fn=bounded_balance_edge_fn
+    )
+
+    parts = sorted(list(partition.parts.keys()))
+    dist_pairs = []
+    for out_part in parts:
+        for in_part in parts:
+            dist_pairs.append((out_part, in_part))
+
+    random_pair = random.choice(dist_pairs)
+    pair_edges = dist_pair_edges(partition, *random_pair)
+    if random_pair[0] == random_pair[1] or not pair_edges:
+        #print('no adjacency')
+        return partition # self-loop: no adjacency
+
+    dist_a, dist_b = random_pair
+    parts_to_merge = (partition.assignment[dist_a], partition.assignment[dist_b])
+    subgraph = partition.graph.subgraph(
+        partition.parts[dist_a] | partition.parts[dist_b]
+    )
+    print(dist_a, dist_b)
+
+    try:
+        flips = recursive_tree_part(
+            subgraph,
+            parts_to_merge,
+            pop_col=pop_col,
+            pop_target=pop_target,
+            epsilon=epsilon,
+            method=bipartition_tree_random_reversible
+        )
+    except BalanceError:
+        #print('no balance')
+        return partition # self-loop: no balance edge
+    
+    new_part = partition.flip(flips)
+    seam_length = len(dist_pair_edges(new_part, *random_pair))
+    if random.random() < 1 / (M * seam_length):
+        #print('new partition')
+        return new_part
+    #print('rejected')
+    return partition  # self-loop
+
+
 class ReCom:
     def __init__(self, pop_col, ideal_pop, epsilon, method=bipartition_tree_random):
         self.pop_col = pop_col
@@ -63,3 +133,9 @@ class ReCom:
         return recom(
             partition, self.pop_col, self.ideal_pop, self.epsilon, method=self.method
         )
+
+
+class ReversibilityError(Exception):
+    """Raised when the cut edge upper bound is violated."""
+    def __init__(self, msg):
+        self.message = msg

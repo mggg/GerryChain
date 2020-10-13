@@ -9,7 +9,11 @@ def predecessors(h, root):
     return {a: b for a, b in nx.bfs_predecessors(h, root)}
 
 
-def random_spanning_tree(graph):
+def successors(h, root):
+    return {a: b for a, b in nx.bfs_successors(h, root)}
+
+
+def random_minimum_spanning_tree(graph):
     for edge in graph.edges:
         graph.edges[edge]["weight"] = random.random()
 
@@ -19,29 +23,63 @@ def random_spanning_tree(graph):
     return spanning_tree
 
 
+def uniform_random_spanning_tree(graph, choice=random.choice):
+    root = choice(list(graph.nodes))
+    tree_nodes = set([root])
+    next_node = {root: None}
+    for node in graph.nodes:
+        u = node
+        while u not in tree_nodes:
+            next_node[u] = choice(list(nx.neighbors(graph, u)))
+            u = next_node[u]
+        u = node
+        while u not in tree_nodes:
+            tree_nodes.add(u)
+            u = next_node[u]
+
+    G = nx.Graph()
+    for node in tree_nodes:
+        if next_node[node] is not None:
+            G.add_edge(node, next_node[node])
+
+    # DEBUG (10/13): did we produce a valid spanning tree?
+    assert len(G.nodes) == len(graph.nodes)
+    assert len(G.edges) == len(G.nodes) - 1
+    assert nx.number_connected_components(G) == 1
+
+    return G
+
 class PopulatedGraph:
     def __init__(self, graph, populations, ideal_pop, epsilon):
         self.graph = graph
         self.subsets = {node: {node} for node in graph}
         self.population = populations.copy()
+        self.tot_pop = sum(self.population.values())
         self.ideal_pop = ideal_pop
         self.epsilon = epsilon
         self._degrees = {node: graph.degree(node) for node in graph}
-
+    
     def __iter__(self):
         return iter(self.graph)
-
+    
     def degree(self, node):
         return self._degrees[node]
-
+    
     def contract_node(self, node, parent):
         self.population[parent] += self.population[node]
         self.subsets[parent] |= self.subsets[node]
         self._degrees[parent] -= 1
-
+    
     def has_ideal_population(self, node):
         return (
-            abs(self.population[node] - self.ideal_pop) < self.epsilon * self.ideal_pop
+            (
+                abs(self.population[node] - self.ideal_pop) <=
+                self.epsilon * self.ideal_pop
+            ) or 
+            (
+                abs(self.population[node] - (self.tot_pop - self.ideal_pop)) <=
+                self.epsilon * self.ideal_pop
+            )
         )
 
 
@@ -67,7 +105,7 @@ def contract_leaves_until_balanced_or_none(h, choice=random.choice):
 Cut = namedtuple("Cut", "edge subset")
 
 
-def find_balanced_edge_cuts(h, choice=random.choice):
+def find_balanced_edge_cuts_contraction(h, choice=random.choice):
     # this used to be greater than 2 but failed on small grids:(
     root = choice([x for x in h if h.degree(x) > 1])
     # BFS predecessors for iteratively contracting leaves
@@ -87,6 +125,53 @@ def find_balanced_edge_cuts(h, choice=random.choice):
     return cuts
 
 
+def find_balanced_edge_cuts_memoization(h, choice=random.choice):
+    root = choice([x for x in h if h.degree(x) > 1])
+    pred = predecessors(h.graph, root)
+    succ = successors(h.graph, root)
+    total_pop = h.tot_pop
+    subtree_pops = {}
+    stack = deque(n for n in succ[root])
+    while stack:
+        next_node = stack.pop()
+        if next_node not in subtree_pops:
+            if next_node in succ:
+                children = succ[next_node]
+                if all(c in subtree_pops for c in children):
+                    subtree_pops[next_node] = sum(subtree_pops[c] for c in children)
+                    subtree_pops[next_node] += h.population[next_node]            
+                else:
+                    stack.append(next_node)
+                    for c in children:
+                        if c not in subtree_pops:
+                            stack.append(c)
+            else:
+                subtree_pops[next_node] = h.population[next_node]
+    
+    cuts = []
+    for node, tree_pop in subtree_pops.items():
+        # TODO: clean this up! there might be a networkx builtin
+        def part_nodes(start):
+            nodes = set()
+            queue = deque([start])
+            while queue:
+                next_node = queue.pop()
+                if next_node not in nodes:
+                    nodes.add(next_node)
+                    if next_node in succ:
+                        for c in succ[next_node]:
+                            if c not in nodes:
+                                queue.append(c)
+            return nodes
+
+        if abs(tree_pop - h.ideal_pop) <= h.ideal_pop * h.epsilon:
+            cuts.append(Cut(edge=(node, pred[node]), subset=part_nodes(node)))
+        elif abs((total_pop - tree_pop) - h.ideal_pop) <= h.ideal_pop * h.epsilon:
+            cuts.append(Cut(edge=(node, pred[node]),
+                            subset=set(h.graph.nodes) - part_nodes(node)))
+    return cuts 
+
+
 def bipartition_tree(
     graph,
     pop_col,
@@ -94,6 +179,7 @@ def bipartition_tree(
     epsilon,
     node_repeats=1,
     spanning_tree=None,
+    spanning_tree_fn=random_minimum_spanning_tree,
     choice=random.choice,
 ):
     """This function finds a balanced 2 partition of a graph by drawing a
@@ -116,17 +202,19 @@ def bipartition_tree(
         of root to use before drawing a new spanning tree.
     :param spanning_tree: The spanning tree for the algorithm to use (used when the
         algorithm chooses a new root and for testing)
+    :param spanning_tree_fn: The random spanning tree algorithm to use if a spanning
+        tree is not provided
     :param choice: :func:`random.choice`. Can be substituted for testing.
     """
     populations = {node: graph.nodes[node][pop_col] for node in graph}
 
     balanced_subtree = None
     if spanning_tree is None:
-        spanning_tree = random_spanning_tree(graph)
+        spanning_tree = spanning_tree_fn(graph)
     restarts = 0
     while balanced_subtree is None:
         if restarts == node_repeats:
-            spanning_tree = random_spanning_tree(graph)
+            spanning_tree = spanning_tree_fn(graph)
             restarts = 0
         h = PopulatedGraph(spanning_tree, populations, pop_target, epsilon)
         balanced_subtree = contract_leaves_until_balanced_or_none(h, choice=choice)
@@ -141,7 +229,10 @@ def bipartition_tree_random(
     pop_target,
     epsilon,
     node_repeats=1,
+    repeat_until_valid=True,
     spanning_tree=None,
+    spanning_tree_fn=random_minimum_spanning_tree,
+    balance_edge_fn=find_balanced_edge_cuts_memoization,
     choice=random.choice,
 ):
     """This is like :func:`bipartition_tree` except it chooses a random balanced
@@ -163,24 +254,35 @@ def bipartition_tree_random(
     :param pop_target: The target population for the returned subset of nodes
     :param epsilon: The allowable deviation from  ``pop_target`` (as a percentage of
         ``pop_target``) for the subgraph's population
+    :param repeat_until_valid: Determines whether to keep drawing spanning trees
+        until a tree with a balanced cut is found. If `True`, a set of nodes will
+        always be returned; if `False`, `None` will be returned if a valid spanning
+        tree is not found on the first try.
     :param node_repeats: A parameter for the algorithm: how many different choices
-        of root to use before drawing a new spanning tree.
+        of root to use before drawing a new spanning tree. (UNUSED)
     :param spanning_tree: The spanning tree for the algorithm to use (used when the
         algorithm chooses a new root and for testing)
+    :param spanning_tree_fn: The random spanning tree algorithm to use if a spanning
+        tree is not provided
+    :param spanning_tree_fn: The algorithm to use to find balanced cuts in a spanning tree
     :param choice: :func:`random.choice`. Can be substituted for testing.
     """
     populations = {node: graph.nodes[node][pop_col] for node in graph}
 
     possible_cuts = []
     if spanning_tree is None:
-        spanning_tree = random_spanning_tree(graph)
+        spanning_tree = spanning_tree_fn(graph)
 
-    while len(possible_cuts) == 0:
-        spanning_tree = random_spanning_tree(graph)
+    repeat = True
+    while repeat and len(possible_cuts) == 0:
+        spanning_tree = spanning_tree_fn(graph)
         h = PopulatedGraph(spanning_tree, populations, pop_target, epsilon)
-        possible_cuts = find_balanced_edge_cuts(h, choice=choice)
+        possible_cuts = balance_edge_fn(h, choice=choice)
+        repeat = repeat_until_valid
 
-    return choice(possible_cuts).subset
+    if possible_cuts:
+        return choice(possible_cuts).subset
+    return None
 
 
 def recursive_tree_part(
@@ -221,6 +323,8 @@ def recursive_tree_part(
             epsilon=(max_pop - min_pop) / (2 * pop_target),
             node_repeats=node_repeats,
         )
+        if nodes is None:
+            raise BalanceError()
 
         part_pop = 0
         for node in nodes:
@@ -234,3 +338,7 @@ def recursive_tree_part(
         flips[node] = parts[-1]
 
     return flips
+
+
+class BalanceError(Exception):
+    """Raised when a balanced cut cannot be found."""
