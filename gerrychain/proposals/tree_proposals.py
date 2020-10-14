@@ -93,12 +93,11 @@ def reversible_recom(partition, pop_col, pop_target, epsilon,
         #print('no adjacency')
         return partition # self-loop: no adjacency
 
-    dist_a, dist_b = random_pair
-    parts_to_merge = (partition.assignment[dist_a], partition.assignment[dist_b])
+    edge = random.choice(list(pair_edges))
+    parts_to_merge = (partition.assignment[edge[0]], partition.assignment[edge[1]])
     subgraph = partition.graph.subgraph(
-        partition.parts[dist_a] | partition.parts[dist_b]
+        partition.parts[parts_to_merge[0]] | partition.parts[parts_to_merge[1]]
     )
-    print(dist_a, dist_b)
 
     try:
         flips = recursive_tree_part(
