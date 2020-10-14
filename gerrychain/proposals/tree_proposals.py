@@ -63,8 +63,8 @@ def reversible_recom(partition, pop_col, pop_target, epsilon,
     def dist_pair_edges(part, a, b):
         return set(
             e for e in part.graph.edges
-            if ((part.assignment[e[0]] == a and part.assignment[1] == b) or
-                (part.assignment[e[0]] == b and part.assignment[1] == a))
+            if ((part.assignment[e[0]] == a and part.assignment[e[1]] == b) or
+                (part.assignment[e[0]] == b and part.assignment[e[1]] == a))
         )
 
     def bounded_balance_edge_fn(*args, **kwargs):
