@@ -16,7 +16,7 @@ class MarkovChain:
 
     """
 
-    def __init__(self, proposal, constraints, accept, initial_state, total_steps):
+    def __init__(self, proposal, constraints, accept, initial_state, total_steps, max_failed_steps=float("inf")):
         """
         :param proposal: Function proposing the next state from the current state.
         :param constraints: A function with signature ``Partition -> bool`` determining whether
@@ -27,6 +27,8 @@ class MarkovChain:
             Metropolis-Hastings acceptance rule, this is where you would implement it.
         :param initial_state: Initial :class:`gerrychain.partition.Partition` class.
         :param total_steps: Number of steps to run.
+        :param max_failed_steps: Maximum number of partitions that are generated and
+            don't pass constraints before aborting. By default there is no maximum.
 
         """
         if callable(constraints):
@@ -52,9 +54,11 @@ class MarkovChain:
         self.total_steps = total_steps
         self.initial_state = initial_state
         self.state = initial_state
+        self.max_failed_steps = max_failed_steps
 
     def __iter__(self):
         self.counter = 0
+        self.failed_steps = 0
         self.state = self.initial_state
         return self
 
@@ -72,7 +76,14 @@ class MarkovChain:
                 if self.accept(proposed_next_state):
                     self.state = proposed_next_state
                 self.counter += 1
+                self.failed_steps = 0
                 return self.state
+            else:
+                self.failed_steps += 1
+                if self.failed_steps >= self.max_failed_steps:
+                    print("MarkovChain walk aborted: maximum failed steps attained.")
+                    break
+                    
         raise StopIteration
 
     def __len__(self):
