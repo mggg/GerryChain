@@ -112,7 +112,7 @@ class LocalitySplits:
 
                 pop = 0
                 for n in sg.nodes():
-                    pop += sg.node[n][self.pop_col]
+                    pop += sg.nodes[n][self.pop_col]
 
                 allowed_pieces[loc] = math.ceil(pop / (totpop / num_districts))
             self.allowed_pieces = allowed_pieces
