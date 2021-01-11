@@ -7,12 +7,12 @@ with open("./README.rst") as f:
 
 requirements = [
     # package requirements go here
-    "pandas",
-    "scipy",
-    "networkx",
-    "geopandas",
-    "shapely",
-    "matplotlib",
+    "pandas=1.20",
+    "scipy=1.6.0",
+    "networkx=2.5",
+    "geopandas=0.6.1",
+    "shapely=1.6.4",
+    "matplotlib=3.3.3",
 ]
 
 setup(
@@ -31,7 +31,7 @@ setup(
     install_requires=requirements,
     keywords="GerryChain",
     classifiers=[
-        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.7",
         "Operating System :: OS Independent",
         "License :: OSI Approved :: BSD License",
