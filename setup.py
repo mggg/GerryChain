@@ -11,7 +11,7 @@ requirements = [
     "scipy",
     "networkx",
     "geopandas",
-    "shapely",
+    "shapely==1.6.4",
     "matplotlib",
 ]
 
