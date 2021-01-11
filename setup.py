@@ -7,7 +7,7 @@ with open("./README.rst") as f:
 
 requirements = [
     # package requirements go here
-    "pandas=1.20",
+    "pandas=1.2.0",
     "scipy=1.6.0",
     "networkx=2.5",
     "geopandas=0.6.1",
