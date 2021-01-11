@@ -21,6 +21,7 @@ def random_spanning_tree(graph):
     )
     return spanning_tree
 
+
 def uniform_spanning_tree(graph, choice=random.choice):
     """ Builds a spanning tree chosen uniformly from the space of all
         spanning trees of the graph.
@@ -48,6 +49,7 @@ def uniform_spanning_tree(graph, choice=random.choice):
             G.add_edge(node, next_node[node])
 
     return G
+
 
 class PopulatedGraph:
     def __init__(self, graph, populations, ideal_pop, epsilon):
