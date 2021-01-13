@@ -32,7 +32,7 @@ jobs:
             fi
 
             # Conda configuration
-            # conda config --set always_yes yes --set auto_update_conda false
+            conda config --set always_yes yes --set auto_update_conda false
             # Update conda
             # conda update conda
             # install dependencies in conda env
