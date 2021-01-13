@@ -33,6 +33,9 @@ jobs:
 
             # Conda configuration
             conda config --set always_yes yes --set auto_update_conda false
+            # Create test environment
+            conda create --name test
+            conda activate test
             # Update conda
             # conda update conda
             # install dependencies in conda env
@@ -45,6 +48,7 @@ jobs:
           command: |
             # Direct matplotlib to use the Agg (non-graphical) backend during
             # circleci runs.
+            conda activate test
             echo "backend: Agg" > "matplotlibrc"
             pytest -v --cov=gerrychain --junitxml=test-reports/junit.xml tests
             codecov
