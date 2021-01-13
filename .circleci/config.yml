@@ -30,7 +30,6 @@ jobs:
             else
                 echo "Miniconda is already installed, continuing to build."
             fi
-            chmod u+x ~/repo/.circleci/*.sh
 
             # Conda configuration
             # conda config --set always_yes yes --set auto_update_conda false
