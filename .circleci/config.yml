@@ -17,10 +17,6 @@ jobs:
       - run:
           name: install dependencies
           command: |
-            # wget https://repo.anaconda.com/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh
-            # bash miniconda.sh -b -p "$HOME"/miniconda
-            # source /home/circleci/miniconda/etc/profile.d/conda.sh
-            # conda activate base
             ls $HOME
             if [ ! -d "/home/circleci/conda" ]; then
                 wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
@@ -33,27 +29,30 @@ jobs:
 
             # Conda configuration
             conda config --set always_yes yes --set auto_update_conda false
-            # Create test environment
-            conda create --name test
-            conda activate test
-            # Update conda
-            # conda update conda
+
             # install dependencies in conda env
             conda install pytest pytest-cov
             conda install codecov
             python setup.py install
             conda install shapely==1.6.4
-      - run:
-          name: run tests
-          command: |
-            # Direct matplotlib to use the Agg (non-graphical) backend during
-            # circleci runs.
-            conda activate test
+
+            # run tests
             echo "backend: Agg" > "matplotlibrc"
             pytest -v --cov=gerrychain --junitxml=test-reports/junit.xml tests
             codecov
           environment:
             PYTHONHASHSEED: "0"
+      # - run:
+      #     name: run tests
+      #     command: |
+      #       # Direct matplotlib to use the Agg (non-graphical) backend during
+      #       # circleci runs.
+      #       conda activate test
+      #       echo "backend: Agg" > "matplotlibrc"
+      #       pytest -v --cov=gerrychain --junitxml=test-reports/junit.xml tests
+      #       codecov
+      #     environment:
+      #       PYTHONHASHSEED: "0"
       - store_test_results:
           path: test-reports
       - store_artifacts:
