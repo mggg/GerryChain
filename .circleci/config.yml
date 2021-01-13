@@ -17,6 +17,15 @@ jobs:
       - run:
           name: install dependencies
           command: |
+            wget https://repo.anaconda.com/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh
+            bash miniconda.sh -b -p "$HOME"/miniconda
+            source /home/circleci/miniconda/etc/profile.d/conda.sh
+            conda activate base
+            # Conda configuration
+            conda config --set always_yes yes --set auto_update_conda false
+            # Update conda
+            conda update conda
+            # install dependencies in conda env
             conda install pytest pytest-cov
             conda install codecov
             python setup.py install
