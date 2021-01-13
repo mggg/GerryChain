@@ -15,16 +15,28 @@ jobs:
           environment:
             FORMAT: "${cyan}%(path)s${reset}:${yellow_bold}%(row)d${reset}:${green_bold}%(col)d${reset}: ${red_bold}%(code)s${reset} %(text)s"
       - run:
-          name: install dependencies
+          name: install dependencies & run tests
           command: |
-            pip install pytest pytest-cov
-            pip install codecov
+            ls $HOME
+            if [ ! -d "/home/circleci/conda" ]; then
+                wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+                /bin/bash Miniconda3-latest-Linux-x86_64.sh -b -p $HOME/conda
+                export PATH=$HOME/conda/bin:$PATH
+                conda install -y -c defaults -c conda-forge sregistry
+            else
+                echo "Miniconda is already installed, continuing to build."
+            fi
+
+            # Conda configuration
+            conda config --set always_yes yes --set auto_update_conda false
+
+            # install dependencies in conda env
+            conda install pytest pytest-cov
+            conda install codecov
             python setup.py install
-      - run:
-          name: run tests
-          command: |
-            # Direct matplotlib to use the Agg (non-graphical) backend during
-            # circleci runs.
+            conda install shapely==1.6.4
+
+            # run tests
             echo "backend: Agg" > "matplotlibrc"
             pytest -v --cov=gerrychain --junitxml=test-reports/junit.xml tests
             codecov
