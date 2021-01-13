@@ -15,7 +15,7 @@ jobs:
           environment:
             FORMAT: "${cyan}%(path)s${reset}:${yellow_bold}%(row)d${reset}:${green_bold}%(col)d${reset}: ${red_bold}%(code)s${reset} %(text)s"
       - run:
-          name: install dependencies
+          name: install dependencies & run tests
           command: |
             ls $HOME
             if [ ! -d "/home/circleci/conda" ]; then
@@ -42,17 +42,6 @@ jobs:
             codecov
           environment:
             PYTHONHASHSEED: "0"
-      # - run:
-      #     name: run tests
-      #     command: |
-      #       # Direct matplotlib to use the Agg (non-graphical) backend during
-      #       # circleci runs.
-      #       conda activate test
-      #       echo "backend: Agg" > "matplotlibrc"
-      #       pytest -v --cov=gerrychain --junitxml=test-reports/junit.xml tests
-      #       codecov
-      #     environment:
-      #       PYTHONHASHSEED: "0"
       - store_test_results:
           path: test-reports
       - store_artifacts:
