@@ -20,6 +20,8 @@ jobs:
             pip install pytest pytest-cov
             pip install codecov
             python setup.py install
+            pip uninstall shapely
+            pip install -Iv shapely==1.6.4
       - run:
           name: run tests
           command: |
