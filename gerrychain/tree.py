@@ -10,6 +10,9 @@ def predecessors(h, root):
 
 
 def random_spanning_tree(graph):
+    """ Builds a spanning tree chosen by Kruskal's method using random weights.
+        :param graph: Networkx Graph
+    """
     for edge in graph.edges:
         graph.edges[edge]["weight"] = random.random()
 
@@ -17,6 +20,35 @@ def random_spanning_tree(graph):
         graph, algorithm="kruskal", weight="weight"
     )
     return spanning_tree
+
+
+def uniform_spanning_tree(graph, choice=random.choice):
+    """ Builds a spanning tree chosen uniformly from the space of all
+        spanning trees of the graph.
+        :param graph: Networkx Graph
+        :param choice: :func:`random.choice`
+    """
+    root = choice(list(graph.nodes))
+    tree_nodes = set([root])
+    next_node = {root: None}
+
+    for node in graph.nodes:
+        u = node
+        while u not in tree_nodes:
+            next_node[u] = choice(list(nx.neighbors(graph, u)))
+            u = next_node[u]
+
+        u = node
+        while u not in tree_nodes:
+            tree_nodes.add(u)
+            u = next_node[u]
+
+    G = nx.Graph()
+    for node in tree_nodes:
+        if next_node[node] is not None:
+            G.add_edge(node, next_node[node])
+
+    return G
 
 
 class PopulatedGraph:
@@ -94,6 +126,7 @@ def bipartition_tree(
     epsilon,
     node_repeats=1,
     spanning_tree=None,
+    spanning_tree_fn=random_spanning_tree,
     choice=random.choice,
 ):
     """This function finds a balanced 2 partition of a graph by drawing a
@@ -116,17 +149,19 @@ def bipartition_tree(
         of root to use before drawing a new spanning tree.
     :param spanning_tree: The spanning tree for the algorithm to use (used when the
         algorithm chooses a new root and for testing)
+    :param spanning_tree_fn: The random spanning tree algorithm to use if a spanning
+        tree is not provided
     :param choice: :func:`random.choice`. Can be substituted for testing.
     """
     populations = {node: graph.nodes[node][pop_col] for node in graph}
 
     balanced_subtree = None
     if spanning_tree is None:
-        spanning_tree = random_spanning_tree(graph)
+        spanning_tree = spanning_tree_fn(graph)
     restarts = 0
     while balanced_subtree is None:
         if restarts == node_repeats:
-            spanning_tree = random_spanning_tree(graph)
+            spanning_tree = spanning_tree_fn(graph)
             restarts = 0
         h = PopulatedGraph(spanning_tree, populations, pop_target, epsilon)
         balanced_subtree = contract_leaves_until_balanced_or_none(h, choice=choice)
@@ -142,6 +177,7 @@ def bipartition_tree_random(
     epsilon,
     node_repeats=1,
     spanning_tree=None,
+    spanning_tree_fn=random_spanning_tree,
     choice=random.choice,
 ):
     """This is like :func:`bipartition_tree` except it chooses a random balanced
@@ -167,16 +203,18 @@ def bipartition_tree_random(
         of root to use before drawing a new spanning tree.
     :param spanning_tree: The spanning tree for the algorithm to use (used when the
         algorithm chooses a new root and for testing)
+    :param spanning_tree_fn: The random spanning tree algorithm to use if a spanning
+        tree is not provided
     :param choice: :func:`random.choice`. Can be substituted for testing.
     """
     populations = {node: graph.nodes[node][pop_col] for node in graph}
 
     possible_cuts = []
     if spanning_tree is None:
-        spanning_tree = random_spanning_tree(graph)
+        spanning_tree = spanning_tree_fn(graph)
 
     while len(possible_cuts) == 0:
-        spanning_tree = random_spanning_tree(graph)
+        spanning_tree = spanning_tree_fn(graph)
         h = PopulatedGraph(spanning_tree, populations, pop_target, epsilon)
         possible_cuts = find_balanced_edge_cuts(h, choice=choice)
 
