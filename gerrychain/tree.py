@@ -324,7 +324,7 @@ def recursive_tree_part(
 
         if nodes is None:
             raise BalanceError()
-            
+
         part_pop = 0
         for node in nodes:
             flips[node] = part
