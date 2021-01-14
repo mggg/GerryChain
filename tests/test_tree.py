@@ -10,7 +10,7 @@ from gerrychain.proposals import recom
 from gerrychain.tree import (
     bipartition_tree,
     random_spanning_tree,
-    find_balanced_edge_cuts,
+    find_balanced_edge_cuts_contraction,
     recursive_tree_part,
     PopulatedGraph,
 )
@@ -109,7 +109,7 @@ def test_recom_works_as_a_proposal(partition_with_pop):
         assert contiguous(state)
 
 
-def test_find_balanced_cuts():
+def test_find_balanced_cuts_contraction():
     tree = networkx.Graph(
         [(0, 1), (1, 2), (1, 4), (3, 4), (4, 5), (3, 6), (6, 7), (6, 8)]
     )
@@ -125,6 +125,6 @@ def test_find_balanced_cuts():
     populated_tree = PopulatedGraph(
         tree, {node: 1 for node in tree}, len(tree) / 2, 0.5
     )
-    cuts = find_balanced_edge_cuts(populated_tree)
+    cuts = find_balanced_edge_cuts_contraction(populated_tree)
     edges = set(tuple(sorted(cut.edge)) for cut in cuts)
     assert edges == {(1, 4), (3, 4), (3, 6)}
