@@ -322,6 +322,9 @@ def recursive_tree_part(
             node_repeats=node_repeats,
         )
 
+        if nodes is None:
+            raise BalanceError()
+            
         part_pop = 0
         for node in nodes:
             flips[node] = part
@@ -334,3 +337,7 @@ def recursive_tree_part(
         flips[node] = parts[-1]
 
     return flips
+
+
+class BalanceError(Exception):
+    """Raised when a balanced cut cannot be found."""

@@ -1,6 +1,9 @@
 from ..random import random
-from ..tree import recursive_tree_part, bipartition_tree, bipartition_tree_random
-
+from ..tree import (
+    recursive_tree_part, bipartition_tree, bipartition_tree_random,
+    uniform_random_spanning_tree, find_balanced_edge_cuts_memoization,
+    find_balanced_edge_cuts_contraction, BalanceError
+)
 
 def recom(
     partition, pop_col, pop_target, epsilon, node_repeats=1, method=bipartition_tree
