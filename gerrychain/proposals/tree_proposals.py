@@ -1,10 +1,12 @@
+from functools import partial
 from ..random import random
 
 from ..tree import (
     recursive_tree_part, bipartition_tree, bipartition_tree_random,
     uniform_spanning_tree, find_balanced_edge_cuts_memoization,
-    find_balanced_edge_cuts_contraction, BalanceError
+    BalanceError
 )
+
 
 def recom(
     partition, pop_col, pop_target, epsilon, node_repeats=1, method=bipartition_tree
@@ -57,7 +59,7 @@ def recom(
 
 
 def reversible_recom(partition, pop_col, pop_target, epsilon,
-                     balance_edge_fn=find_balanced_edge_cuts_contraction, M=1,
+                     balance_edge_fn=find_balanced_edge_cuts_memoization, M=1,
                      repeat_until_valid=False):
     def dist_pair_edges(part, a, b):
         return set(
@@ -107,7 +109,7 @@ def reversible_recom(partition, pop_col, pop_target, epsilon,
             method=bipartition_tree_random_reversible
         )
     except BalanceError:
-        return partition # self-loop: no balance edge
+        return partition  # self-loop: no balance edge
 
     new_part = partition.flip(flips)
     seam_length = len(dist_pair_edges(new_part, *random_pair))
@@ -115,7 +117,7 @@ def reversible_recom(partition, pop_col, pop_target, epsilon,
     if random.random() < 1 / (M * seam_length):
         return new_part
 
-    return partition  # self-loop
+    return partition   # self-loop
 
 
 class ReCom:
@@ -129,6 +131,7 @@ class ReCom:
         return recom(
             partition, self.pop_col, self.ideal_pop, self.epsilon, method=self.method
         )
+
 
 class ReversibilityError(Exception):
     """Raised when the cut edge upper bound is violated."""
