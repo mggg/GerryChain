@@ -60,6 +60,7 @@ class PopulatedGraph:
         self.graph = graph
         self.subsets = {node: {node} for node in graph}
         self.population = populations.copy()
+        self.tot_pop = sum(self.population.values())
         self.ideal_pop = ideal_pop
         self.epsilon = epsilon
         self._degrees = {node: graph.degree(node) for node in graph}
