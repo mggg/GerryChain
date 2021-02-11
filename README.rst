@@ -108,6 +108,6 @@ the command line.
 This approach often fails due to compatibility issues between our
 different Python GIS dependencies, like ``geopandas``, ``pyproj``,
 ``fiona``, and ``shapely``. For this reason, we recommend installing
-from conda-forge for most users.
+from conda-forge for most users. 
 
 .. _PyPI: https://pypi.org/
