@@ -16,12 +16,19 @@ def successors(h, root):
 def random_spanning_tree(graph):
     """ Builds a spanning tree chosen by Kruskal's method using random weights.
         :param graph: Networkx Graph
+
+        Important Note:
+        The key is specifically labelled "random_weight" instead of the previously
+        used "weight". Turns out that networkx uses the "weight" keyword for other
+        operations, like when computing the laplacian or the adjacency matrix.
+        This meant that the laplacian would change for the graph step to step,
+        something that we do not intend!!
     """
     for edge in graph.edges:
-        graph.edges[edge]["weight"] = random.random()
+        graph.edges[edge]["random_weight"] = random.random()
 
     spanning_tree = tree.maximum_spanning_tree(
-        graph, algorithm="kruskal", weight="weight"
+        graph, algorithm="kruskal", weight="random_weight"
     )
     return spanning_tree
 
