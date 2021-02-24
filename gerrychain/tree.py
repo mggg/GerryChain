@@ -89,25 +89,6 @@ class PopulatedGraph:
         )
 
 
-def contract_leaves_until_balanced_or_none(h, choice=random.choice):
-    # this used to be greater than 2 but failed on small grids:(
-    root = choice([x for x in h if h.degree(x) > 1])
-    # BFS predecessors for iteratively contracting leaves
-    pred = predecessors(h.graph, root)
-
-    leaves = deque(x for x in h if h.degree(x) == 1)
-    while len(leaves) > 0:
-        leaf = leaves.popleft()
-        if h.has_ideal_population(leaf):
-            return h.subsets[leaf]
-        # Contract the leaf:
-        parent = pred[leaf]
-        h.contract_node(leaf, parent)
-        if h.degree(parent) == 1 and parent != root:
-            leaves.append(parent)
-    return None
-
-
 Cut = namedtuple("Cut", "edge subset")
 
 
@@ -186,6 +167,7 @@ def bipartition_tree(
     node_repeats=1,
     spanning_tree=None,
     spanning_tree_fn=random_spanning_tree,
+    balance_edge_fn=find_balanced_edge_cuts_memoization,
     choice=random.choice,
 ):
     """This function finds a balanced 2 partition of a graph by drawing a
@@ -214,19 +196,19 @@ def bipartition_tree(
     """
     populations = {node: graph.nodes[node][pop_col] for node in graph}
 
-    balanced_subtree = None
+    possible_cuts = []
     if spanning_tree is None:
         spanning_tree = spanning_tree_fn(graph)
     restarts = 0
-    while balanced_subtree is None:
+    while len(possible_cuts) == 0:
         if restarts == node_repeats:
             spanning_tree = spanning_tree_fn(graph)
             restarts = 0
         h = PopulatedGraph(spanning_tree, populations, pop_target, epsilon)
-        balanced_subtree = contract_leaves_until_balanced_or_none(h, choice=choice)
+        possible_cuts = balance_edge_fn(h, choice=choice)
         restarts += 1
 
-    return balanced_subtree
+    return choice(possible_cuts).subset
 
 
 def bipartition_tree_random(
