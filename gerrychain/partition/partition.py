@@ -150,16 +150,15 @@ class Partition:
         Given a district number, returns the number of spanning trees in the 
         subgraph of self corresponding to the district. 
         Uses Kirchoff's theorem to compute the number of spanning trees.
-        
+
         :param self: :class:`gerrychain.Partition`
-        :param district: A district in p
-        :return: The number of spanning trees in the subgraph of p corresponding to district
+        :param district: A district in self
+        :return: The number of spanning trees in the subgraph of self
+        corresponding to district
         '''
         graph = self.subgraphs[district]
-        nodes = self.parts[district]
-        
         laplacian = networkx.laplacian_matrix(graph)
-        L = numpy.delete(numpy.delete(laplacian.todense(),0,0), 1,1)
+        L = numpy.delete(numpy.delete(laplacian.todense(), 0, 0), 1, 1)
         return math.exp(numpy.linalg.slogdet(L)[1])
 
     @classmethod
