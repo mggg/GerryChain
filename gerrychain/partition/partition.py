@@ -147,8 +147,8 @@ class Partition:
 
     def get_num_spanning_trees(self, district):
         '''
-        Given a district number, returns the number of spanning trees in the 
-        subgraph of self corresponding to the district. 
+        Given a district number, returns the number of spanning trees in the
+        subgraph of self corresponding to the district.
         Uses Kirchoff's theorem to compute the number of spanning trees.
 
         :param self: :class:`gerrychain.Partition`
