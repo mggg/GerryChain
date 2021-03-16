@@ -1,6 +1,9 @@
 import json
 
 import geopandas
+import networkx
+import numpy
+import math
 
 from ..updaters import compute_edge_flows, flows_from_changes, cut_edges
 from .assignment import get_assignment
@@ -141,6 +144,23 @@ class Partition:
             {"assignment": assignment_series}, geometry=geometries
         )
         return df.plot(column="assignment", **kwargs)
+
+    def get_num_spanning_trees(self, district):
+        '''
+        Given a district number, returns the number of spanning trees in the 
+        subgraph of self corresponding to the district. 
+        Uses Kirchoff's theorem to compute the number of spanning trees.
+        
+        :param self: :class:`gerrychain.Partition`
+        :param district: A district in p
+        :return: The number of spanning trees in the subgraph of p corresponding to district
+        '''
+        graph = self.subgraphs[district]
+        nodes = self.parts[district]
+        
+        laplacian = networkx.laplacian_matrix(graph)
+        L = numpy.delete(numpy.delete(laplacian.todense(),0,0), 1,1)
+        return math.exp(numpy.linalg.slogdet(L)[1])
 
     @classmethod
     def from_districtr_file(cls, graph, districtr_file, updaters=None):
