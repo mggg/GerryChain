@@ -12,6 +12,7 @@ from gerrychain.tree import (
     random_spanning_tree,
     find_balanced_edge_cuts_contraction,
     recursive_tree_part,
+    recursive_seed_part,
     PopulatedGraph,
 )
 from gerrychain.updaters import Tally, cut_edges
@@ -66,6 +67,18 @@ def test_recursive_tree_part_returns_within_epsilon_of_target_pop(twelve_by_twel
     epsilon = 0.05
     result = recursive_tree_part(twelve_by_twelve_with_pop, range(n_districts),
                                  ideal_pop, "pop", epsilon)
+    partition = Partition(twelve_by_twelve_with_pop, result,
+                          updaters={"pop": Tally("pop")})
+    return all(abs(part_pop - ideal_pop) / ideal_pop < epsilon
+               for part_pop in partition['pop'].values())
+
+def test_recursive_seed_part_returns_within_epsilon_of_target_pop(twelve_by_twelve_with_pop):
+    n_districts = 7  # 144/7 ≈ 20.5 nodes/subgraph (1 person/node)
+    ideal_pop = (sum(twelve_by_twelve_with_pop.nodes[node]["pop"]
+                     for node in twelve_by_twelve_with_pop)) / n_districts
+    epsilon = 0.1
+    result = recursive_seed_part(twelve_by_twelve_with_pop, range(n_districts),
+                                 ideal_pop, "pop", epsilon, n=5, ceil=None)
     partition = Partition(twelve_by_twelve_with_pop, result,
                           updaters={"pop": Tally("pop")})
     return all(abs(part_pop - ideal_pop) / ideal_pop < epsilon
