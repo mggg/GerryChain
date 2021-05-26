@@ -329,7 +329,8 @@ def recursive_tree_part(
     return flips
 
 
-def get_seed_chunks(graph,
+def get_seed_chunks(
+    graph,
     num_chunks,
     num_dists,
     pop_target,
@@ -371,7 +372,7 @@ def get_seed_chunks(graph,
         min_pop = pop_target * (1 - new_epsilon) * num_chunks_left
         max_pop = pop_target * (1 + new_epsilon) * num_chunks_left
 
-        chunk_pop_target = chunk_pop / num_chunks #pop_target * num_chunks_left
+        chunk_pop_target = chunk_pop / num_chunks
 
         diff = min(max_pop - chunk_pop_target, chunk_pop_target - min_pop)
         new_new_epsilon = diff / chunk_pop_target
@@ -382,8 +383,8 @@ def get_seed_chunks(graph,
             nodes = method(
                 graph.subgraph(remaining_nodes),
                 pop_col=pop_col,
-                pop_target= chunk_pop_target,
-                epsilon= new_new_epsilon,
+                pop_target=chunk_pop_target,
+                epsilon=new_new_epsilon,
                 node_repeats=node_repeats,
             )
 
@@ -423,6 +424,7 @@ def get_seed_chunks(graph,
 
     return list(chunks.values())
 
+
 def get_max_prime_factor_less_than(
     n, ceil
 ):
@@ -440,7 +442,7 @@ def get_max_prime_factor_less_than(
             factors.append(i)
     if n > 1:
         factors.append(n)
-        
+
     if len(factors) == 0:
         return 1
     m = [i for i in factors if i <= ceil]
@@ -474,7 +476,7 @@ def recursive_seed_part_inner(
     Finally, if the number of chunks as chosen above does not divide ``num_dists``, then
     this function bites off a single district from the graph and recursively partitions
     the remaining graph into ``num_dists``-1 districts.
-    
+
     :param graph: The graph
     :param num_dists: number of districts to partition the graph into
     :param pop_target: Target population for each part of the partition
@@ -483,14 +485,14 @@ def recursive_seed_part_inner(
         of the partition can be
     :param method: Function used to find balanced partitions at the 2-district level
     :param node_repeats: Parameter for :func:`~gerrychain.tree_methods.bipartition_tree` to use.
-    :param n: Either a positive integer (greater than 1) or None. If n is a positive integer, 
-        this function will recursively create a seed plan by either biting off districts from 
-        graph or dividing graph into n chunks and recursing into each of these. If n is None, 
-        this function prime factors ``num_dists``=n_1*n_2*...*n_k (n_1 > n_2 > ... n_k) and 
+    :param n: Either a positive integer (greater than 1) or None. If n is a positive integer,
+        this function will recursively create a seed plan by either biting off districts from
+        graph or dividing graph into n chunks and recursing into each of these. If n is None,
+        this function prime factors ``num_dists``=n_1*n_2*...*n_k (n_1 > n_2 > ... n_k) and
         recursively partitions graph into n_1 chunks.
-    :param ceil: Either a positive integer (at least 2) or None. Relevant only if n is None. 
-        If ``ceil`` is a positive integer then finds the largest factor of ``num_dists`` less 
-        than or equal to ``ceil``, and recursively splits graph into that number of chunks, or 
+    :param ceil: Either a positive integer (at least 2) or None. Relevant only if n is None.
+        If ``ceil`` is a positive integer then finds the largest factor of ``num_dists`` less
+        than or equal to ``ceil``, and recursively splits graph into that number of chunks, or
         bites off a district if that number is 1.
     :return: New assignments for the nodes of ``graph``.
     :rtype: List of lists, each list is a district
@@ -509,18 +511,18 @@ def recursive_seed_part_inner(
         raise ValueError("n must be None or a positive integer")
 
     # base case
-    if num_dists == 1: 
-        return [set(graph.nodes)] 
-    
+    if num_dists == 1:
+        return [set(graph.nodes)]
+
     # bite off a district and recurse into the remaining subgraph
-    elif num_chunks is None or num_dists % num_chunks != 0: 
+    elif num_chunks is None or num_dists % num_chunks != 0:
         remaining_nodes = set(graph.nodes)
         nodes = method(
             graph.subgraph(remaining_nodes),
             pop_col=pop_col,
             pop_target=pop_target,
             epsilon=epsilon,
-            node_repeats=node_repeats,
+            node_repeats=node_repeats
         )
         remaining_nodes -= nodes
         assignment = [nodes] + recursive_seed_part_inner(graph.subgraph(remaining_nodes),
@@ -528,31 +530,36 @@ def recursive_seed_part_inner(
             pop_target,
             pop_col,
             epsilon,
-            n=n, 
+            n=n,
             ceil=ceil)
     
     # split graph into num_chunks chunks, and recurse into each chunk
     elif num_dists % num_chunks == 0:          
-        chunks = get_seed_chunks(graph, 
-            num_chunks, 
-            num_dists, 
-            pop_target, 
-            pop_col, 
-            epsilon, 
-            method=method)
-    
+        chunks = get_seed_chunks(
+            graph,
+            num_chunks,
+            num_dists,
+            pop_target,
+            pop_col,
+            epsilon,
+            method=method
+        )
+
         assignment = []
         for chunk in chunks:
-            chunk_assignment = recursive_seed_part_inner(graph.subgraph(chunk),
+            chunk_assignment = recursive_seed_part_inner(
+                graph.subgraph(chunk),
                 num_dists // num_chunks,
                 pop_target,
                 pop_col,
                 epsilon,
-                n=n, 
-                ceil=ceil)
+                n=n,
+                ceil=ceil
+            )
             assignment += chunk_assignment
-            
+
     return assignment
+
 
 def recursive_seed_part(
     graph,
@@ -566,7 +573,7 @@ def recursive_seed_part(
     ceil=None
 ):
     """
-    Returns a partition with ``num_dists`` districts balanced within ``epsilon`` of 
+    Returns a partition with ``num_dists`` districts balanced within ``epsilon`` of
     ``pop_target`` by recursively splitting graph using recursive_seed_part_inner.
 
     :param graph: The graph
@@ -590,15 +597,17 @@ def recursive_seed_part(
     :rtype: dict
     """
     flips = {}
-    assignment = recursive_seed_part_inner(graph, 
-        len(parts), 
-        pop_target, 
-        pop_col, 
-        epsilon, 
-        method=bipartition_tree, 
-        node_repeats=node_repeats, 
-        n=n, 
-        ceil=ceil)
+    assignment = recursive_seed_part_inner(
+        graph,
+        len(parts),
+        pop_target,
+        pop_col,
+        epsilon,
+        method=bipartition_tree,
+        node_repeats=node_repeats,
+        n=n,
+        ceil=ceil
+    )
     for i in range(len(assignment)):
         for node in assignment[i]:
             flips[node] = parts[i]
