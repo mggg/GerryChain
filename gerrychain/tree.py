@@ -461,7 +461,7 @@ def recursive_seed_part_inner(
     node_repeats=1,
     n=None,
     ceil=None,
- ):
+):
     """
     Inner function for recursive_seed_part.
     Returns a partition with ``num_dists`` districts balanced within ``epsilon`` of
