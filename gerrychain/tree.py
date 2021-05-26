@@ -450,6 +450,7 @@ def get_max_prime_factor_less_than(
         return None
     return int(max(m))
 
+
 def recursive_seed_part_inner(
     graph,
     num_dists,
@@ -459,12 +460,12 @@ def recursive_seed_part_inner(
     method=bipartition_tree,
     node_repeats=1,
     n=None,
-    ceil=None
+    ceil=None,
  ):
     """
     Inner function for recursive_seed_part.
     Returns a partition with ``num_dists`` districts balanced within ``epsilon`` of
-    ``pop_target``. 
+    ``pop_target``.
     Splits graph into num_chunks chunks, and then recursively splits each chunk into
     ``num_dists``/num_chunks chunks.
     The number num_chunks of chunks is chosen based on ``n`` and ``ceil`` as follows:
@@ -532,9 +533,9 @@ def recursive_seed_part_inner(
             epsilon,
             n=n,
             ceil=ceil)
-    
+
     # split graph into num_chunks chunks, and recurse into each chunk
-    elif num_dists % num_chunks == 0:          
+    elif num_dists % num_chunks == 0:
         chunks = get_seed_chunks(
             graph,
             num_chunks,
