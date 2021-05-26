@@ -456,16 +456,19 @@ def recursive_seed_part_inner(graph,
     ):
     """
     Inner function for recursive_seed_part.
-    Returns a partition with ``num_dists`` districts balanced within ``epsilon`` of ``pop_target``. 
-    Splits graph into num_chunks chunks, and then recursively splits each chunk into ``num_dists``/num_chunks chunks.
+    Returns a partition with ``num_dists`` districts balanced within ``epsilon`` of 
+    ``pop_target``. 
+    Splits graph into num_chunks chunks, and then recursively splits each chunk into 
+    ``num_dists``/num_chunks chunks.
     The number num_chunks of chunks is chosen based on ``n`` and ``ceil`` as follows: 
-        If ``n`` is None, and ``ceil`` is None, num_chunks is the largest prime factor of ``num_dists``.
-        If ``n`` is None and ``ceil`` is an integer at least 2, then num_chunks is the largest prime factor of 
-        ``num_dists`` that is less than ``ceil``
+        If ``n`` is None, and ``ceil`` is None, num_chunks is the largest prime factor 
+        of ``num_dists``.
+        If ``n`` is None and ``ceil`` is an integer at least 2, then num_chunks is the 
+        largest prime factor of ``num_dists`` that is less than ``ceil``
         If ``n`` is a positive integer, num_chunks equals n.
-    Finally, if the number of chunks as chosen above does not divide ``num_dists``, then this function
-    bites off a single district from the graph and recursively partitions the remaining graph into 
-    ``num_dists``-1 districts.
+    Finally, if the number of chunks as chosen above does not divide ``num_dists``, then 
+    this function bites off a single district from the graph and recursively partitions 
+    the remaining graph into ``num_dists``-1 districts.
     
     :param graph: The graph
     :param num_dists: number of districts to partition the graph into
@@ -475,13 +478,15 @@ def recursive_seed_part_inner(graph,
         of the partition can be
     :param method: Function used to find balanced partitions at the 2-district level
     :param node_repeats: Parameter for :func:`~gerrychain.tree_methods.bipartition_tree` to use.
-    :param n: Either a positive integer (greater than 1) or None. If n is a positive integer, this function 
-    will recursively create a seed plan by either biting off districts from graph or dividing graph into
-    n chunks and recursing into each of these. If n is None, this function prime factors 
-    ``num_dists``=n_1*n_2*...*n_k (n_1 > n_2 > ... n_k) and recursively partitions graph into n_1 chunks.
-    :param ceil: Either a positive integer (at least 2) or None. Relevant only if n is None. If ceil 
-    is a positive integer then finds the largest factor of ``num_dists`` less than or equal to ``ceil``, and 
-    recursively splits graph into that number of chunks, or bites off a district if that number is 1.
+    :param n: Either a positive integer (greater than 1) or None. If n is a positive integer, 
+        this function will recursively create a seed plan by either biting off districts from 
+        graph or dividing graph into n chunks and recursing into each of these. If n is None, 
+        this function prime factors ``num_dists``=n_1*n_2*...*n_k (n_1 > n_2 > ... n_k) and 
+        recursively partitions graph into n_1 chunks.
+    :param ceil: Either a positive integer (at least 2) or None. Relevant only if n is None. 
+        If ``ceil`` is a positive integer then finds the largest factor of ``num_dists`` less 
+        than or equal to ``ceil``, and recursively splits graph into that number of chunks, or 
+        bites off a district if that number is 1.
     :return: New assignments for the nodes of ``graph``.
     :rtype: List of lists, each list is a district
     """
@@ -524,17 +529,23 @@ def recursive_seed_part_inner(graph,
     
     # split graph into num_chunks chunks, and recurse into each chunk
     elif num_dists % num_chunks == 0:          
-        chunks = get_seed_chunks(graph, num_chunks, num_dists, pop_target, pop_col, epsilon, method=method)
+        chunks = get_seed_chunks(graph, 
+            num_chunks, 
+            num_dists, 
+            pop_target, 
+            pop_col, 
+            epsilon, 
+            method=method)
     
         assignment = []
         for chunk in chunks:
             chunk_assignment = recursive_seed_part_inner(graph.subgraph(chunk),
-                                                      num_dists // num_chunks,
-                                                      pop_target,
-                                                      pop_col,
-                                                      epsilon,
-                                                        n=n, 
-                                                        ceil=ceil)
+                num_dists // num_chunks,
+                pop_target,
+                pop_col,
+                epsilon,
+                n=n, 
+                ceil=ceil)
             assignment += chunk_assignment
             
     return assignment
@@ -549,8 +560,8 @@ def recursive_seed_part(graph,
     n=None, 
     ceil=None):
     """
-    Returns a partition with ``num_dists`` districts balanced within ``epsilon`` of ``pop_target`` by recursively
-    splitting graph using recursive_seed_part_inner.
+    Returns a partition with ``num_dists`` districts balanced within ``epsilon`` of 
+    ``pop_target`` by recursively splitting graph using recursive_seed_part_inner.
     
     :param graph: The graph
     :param parts: Iterable of part labels (like ``[0,1,2]`` or ``range(4)``
@@ -560,13 +571,15 @@ def recursive_seed_part(graph,
         of the partition can be
     :param method: Function used to find balanced partitions at the 2-district level
     :param node_repeats: Parameter for :func:`~gerrychain.tree_methods.bipartition_tree` to use.
-    :param n: Either a positive integer (greater than 1) or None. If n is a positive integer, this function 
-    will recursively create a seed plan by either biting off districts from graph or dividing graph into
-    n chunks and recursing into each of these. If n is None, this function prime factors 
-    ``num_dists``=n_1*n_2*...*n_k (n_1 > n_2 > ... n_k) and recursively partitions graph into n_1 chunks.
-    :param ceil: Either a positive integer (at least 2) or None. Relevant only if n is None. If ceil 
-    is a positive integer then finds the largest factor of ``num_dists`` less than or equal to ``ceil``, and 
-    recursively splits graph into that number of chunks, or bites off a district if that number is 1.
+    :param n: Either a positive integer (greater than 1) or None. If n is a positive integer, 
+    this function will recursively create a seed plan by either biting off districts from graph 
+    or dividing graph into n chunks and recursing into each of these. If n is None, this 
+    function prime factors ``num_dists``=n_1*n_2*...*n_k (n_1 > n_2 > ... n_k) and recursively 
+    partitions graph into n_1 chunks.
+    :param ceil: Either a positive integer (at least 2) or None. Relevant only if n is None. If 
+    ``ceil`` is a positive integer then finds the largest factor of ``num_dists`` less than or 
+    equal to ``ceil``, and recursively splits graph into that number of chunks, or bites off a 
+    district if that number is 1.
     :return: New assignments for the nodes of ``graph``.
     :rtype: dict
     """
