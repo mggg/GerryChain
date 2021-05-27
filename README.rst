@@ -116,16 +116,16 @@ Citations
 -------------
 You can cite the Recombination algorithm as
 ``
-    @article{DeFord2021Recombination,
-    journal = {Harvard Data Science Review},
-    doi = {10.1162/99608f92.eb30390f},
-    note = {https://hdsr.mitpress.mit.edu/pub/1ds8ptxu},
-    title = {Recombination: A Family of Markov Chains for Redistricting},
-    url = {https://hdsr.mitpress.mit.edu/pub/1ds8ptxu},
-    author = {DeFord, Daryl and Duchin, Moon and Solomon, Justin},
-    date = {2021-03-31},
-    year = {2021},
-    month = {3},
-    day = {31},
-    }
+@article{DeFord2021Recombination,
+journal = {Harvard Data Science Review},
+doi = {10.1162/99608f92.eb30390f},
+note = {https://hdsr.mitpress.mit.edu/pub/1ds8ptxu},
+title = {Recombination: A Family of Markov Chains for Redistricting},
+url = {https://hdsr.mitpress.mit.edu/pub/1ds8ptxu},
+author = {DeFord, Daryl and Duchin, Moon and Solomon, Justin},
+date = {2021-03-31},
+year = {2021},
+month = {3},
+day = {31},
+}
 ``
