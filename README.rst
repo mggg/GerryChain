@@ -115,7 +115,7 @@ from conda-forge for most users.
 Citations
 -------------
 You can cite the Recombination algorithm as
-
+``
     @article{DeFord2021Recombination,
     journal = {Harvard Data Science Review},
     doi = {10.1162/99608f92.eb30390f},
@@ -128,4 +128,4 @@ You can cite the Recombination algorithm as
     month = {3},
     day = {31},
     }
-
+``
