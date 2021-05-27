@@ -115,7 +115,6 @@ from conda-forge for most users.
 Citations
 -------------
 You can cite the Recombination algorithm as
-.. code-block:: console
 
     @article{DeFord2021Recombination,
     journal = {Harvard Data Science Review},
