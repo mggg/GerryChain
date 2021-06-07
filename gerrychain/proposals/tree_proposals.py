@@ -5,7 +5,6 @@ from ..tree import (
     recursive_tree_part, bipartition_tree, bipartition_tree_random,
     _bipartition_tree_random_all, uniform_spanning_tree,
     find_balanced_edge_cuts_memoization,
-    BalanceError
 )
 
 
