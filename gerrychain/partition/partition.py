@@ -1,10 +1,5 @@
 import json
-
 import geopandas
-import networkx
-import numpy
-import math
-
 from ..updaters import compute_edge_flows, flows_from_changes, cut_edges
 from .assignment import get_assignment
 from .subgraphs import SubgraphView
@@ -113,6 +108,7 @@ class Partition:
 
     def __getattr__(self, key):
         return self[key]
+
     def keys(self):
         return self.updaters.keys()
 
