@@ -42,13 +42,6 @@ def test_propose_random_flip_proposes_a_partition(example_partition):
     assert isinstance(proposal, partition.__class__)
 
 
-def test_get_num_spanning_trees(three_by_three_grid):
-    graph = three_by_three_grid
-    assignment = {0: 1, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1, 7: 1, 8: 1}
-    partition = Partition(graph, assignment, {"cut_edges": cut_edges})
-    assert 192 == round(partition.get_num_spanning_trees(1))
-
-
 @pytest.fixture
 def example_geographic_partition():
     graph = networkx.complete_graph(3)
