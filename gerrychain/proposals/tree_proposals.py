@@ -9,7 +9,7 @@ from ..tree import (
 
 
 def recom(
-    partition, pop_col, pop_target, epsilon, node_repeats=1, method=bipartition_tree
+    partition, pop_col, pop_target, epsilon, node_repeats=1, method=bipartition_tree, multimember=False,
 ):
     """ReCom proposal.
 
@@ -45,7 +45,9 @@ def recom(
         partition.parts[parts_to_merge[0]] | partition.parts[parts_to_merge[1]]
     )
 
-    flips = recursive_tree_part(
+    magnitudes = partition.magnitudes if multimember else None
+
+    flips, new_magnitudes = recursive_tree_part(
         subgraph,
         parts_to_merge,
         pop_col=pop_col,
@@ -53,9 +55,10 @@ def recom(
         epsilon=epsilon,
         node_repeats=node_repeats,
         method=method,
+        magnitudes=magnitudes
     )
 
-    return partition.flip(flips)
+    return partition.flip(flips, new_magnitudes) if multimember else partition.flip(flips)
 
 
 def reversible_recom(partition, pop_col, pop_target, epsilon,

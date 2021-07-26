@@ -274,7 +274,7 @@ def bipartition_tree_random(
 
 
 def recursive_tree_part(
-    graph, parts, pop_target, pop_col, epsilon, node_repeats=1, method=bipartition_tree
+    graph, parts, pop_target, pop_col, epsilon, node_repeats=1, method=bipartition_tree, magnitudes=None
 ):
     """Uses :func:`~gerrychain.tree.bipartition_tree` recursively to partition a tree into
     ``len(parts)`` parts of population ``pop_target`` (within ``epsilon``). Can be used to
@@ -291,6 +291,8 @@ def recursive_tree_part(
     :rtype: dict
     """
     flips = {}
+    new_magnitudes = {}
+
     remaining_nodes = set(graph.nodes)
     # We keep a running tally of deviation from ``epsilon`` at each partition
     # and use it to tighten the population constraints on a per-partition
@@ -302,8 +304,9 @@ def recursive_tree_part(
     debt = 0
 
     for part in parts[:-1]:
-        min_pop = max(pop_target * (1 - epsilon), pop_target * (1 - epsilon) - debt)
-        max_pop = min(pop_target * (1 + epsilon), pop_target * (1 + epsilon) - debt)
+        part_mag = 1 if magnitudes == None else magnitudes[part]
+        min_pop = max(pop_target * part_mag * (1 - epsilon), pop_target * part_mag * (1 - epsilon) - debt)
+        max_pop = min(pop_target * part_mag * (1 + epsilon), pop_target * part_mag * (1 + epsilon) - debt)
         nodes = method(
             graph.subgraph(remaining_nodes),
             pop_col=pop_col,
@@ -322,11 +325,17 @@ def recursive_tree_part(
         debt += part_pop - pop_target
         remaining_nodes -= nodes
 
+        if magnitudes != None:
+            new_magnitudes[part] = part_mag
+
     # All of the remaining nodes go in the last part
     for node in remaining_nodes:
         flips[node] = parts[-1]
 
-    return flips
+    if magnitudes != None:
+            new_magnitudes[parts[-1]] = magnitudes[parts[-1]]
+
+    return flips, new_magnitudes
 
 
 def get_seed_chunks(
