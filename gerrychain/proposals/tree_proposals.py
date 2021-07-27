@@ -48,7 +48,7 @@ def recom(
 
     magnitudes = partition.magnitudes if multimember else None
 
-    flips, new_magnitudes = recursive_tree_part(
+    flips = recursive_tree_part(
         subgraph,
         parts_to_merge,
         pop_col=pop_col,
@@ -58,6 +58,10 @@ def recom(
         method=method,
         magnitudes=magnitudes
     )
+
+    if multimember:
+        new_magnitudes = flips[1]
+        flips = flips[0]
 
     return partition.flip(flips, new_magnitudes) if multimember else partition.flip(flips)
 

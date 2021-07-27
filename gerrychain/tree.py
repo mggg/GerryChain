@@ -335,7 +335,10 @@ def recursive_tree_part(
     if magnitudes != None:
             new_magnitudes[parts[-1]] = magnitudes[parts[-1]]
 
-    return flips, new_magnitudes
+    if magnitudes != None:
+        return flips, new_magnitudes
+    else:
+        return flips
 
 
 def get_seed_chunks(
