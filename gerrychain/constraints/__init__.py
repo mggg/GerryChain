@@ -48,7 +48,8 @@ from .contiguity import (contiguous, contiguous_bfs, no_more_discontiguous,
                          single_flip_contiguous)
 from .validity import (Validator, districts_within_tolerance,
                        no_vanishing_districts, refuse_new_splits,
-                       within_percent_of_ideal_population)
+                       within_percent_of_ideal_population,
+                       within_percent_of_ideal_population_per_representative)
 
 __all__ = ["LowerBound", "SelfConfiguringLowerBound",
         "SelfConfiguringUpperBound", "UpperBound",
@@ -58,4 +59,5 @@ __all__ = ["LowerBound", "SelfConfiguringLowerBound",
         "no_worse_L_minus_1_polsby_popper", "contiguous", "contiguous_bfs",
         "no_more_discontiguous", "single_flip_contiguous", "Validator",
         "districts_within_tolerance", "no_vanishing_districts",
-        "refuse_new_splits", "within_percent_of_ideal_population", "Bounds"]
+        "refuse_new_splits", "within_percent_of_ideal_population",
+        "within_percent_of_ideal_population_per_representative", "Bounds"]

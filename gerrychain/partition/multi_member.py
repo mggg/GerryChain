@@ -15,13 +15,14 @@ class MultiMemberPartition(Partition):
         :param updaters: Dictionary of functions to track data about the partition.
             The keys are stored as attributes on the partition class,
             which the functions compute.
-        :param magnitudes: Dictionary assigning districts to number of representatives
+        :param magnitudes (dict<Any, numeric>): Dictionary assigning districts to number of representatives
         """
         super().__init__(graph=graph, assignment=assignment, updaters=updaters, parent=parent, flips=flips)
         if parent is None:
             self._init_magnitudes(magnitudes)
         else:
             self._update_magnitudes_from_parent(magnitudes)
+        self.number_of_representatives = sum(magnitudes.values())
 
     def _init_magnitudes(self, magnitudes):
         """

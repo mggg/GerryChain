@@ -75,6 +75,32 @@ def within_percent_of_ideal_population(
 
     return Bounds(population, bounds=bounds)
 
+def within_percent_of_ideal_population_per_representative(
+    initial_partition, percent=0.01, pop_key="population"
+):
+    """Require that all districts are within a certain percent of "ideal" (i.e.,
+    uniform) population per representative.
+
+    Ideal population is defined as "total population / number of representatives."
+
+    :param initial_partition: Starting MultiMemberPartition from which to compute district 
+        information.
+    :param percent: (optional) Allowed percentage deviation. Default is 1%.
+    :param pop_key: (optional) The name of the population
+        :class:`Tally <gerrychain.updaters.Tally>`. Default is ``"population"``.
+    :return: A :class:`.Bounds` constraint on the population attribute identified
+        by ``pop_key``.
+    """
+
+    def population_per_rep(partition):
+        return [v / partition.magnitudes[k] for k, v in partition[pop_key].items()]
+
+    number_of_representatives = initial_partition.number_of_representatives
+    total_population = sum(initial_partition[pop_key].values())
+    ideal_population = total_population / number_of_representatives
+    bounds = ((1 - percent) * ideal_population, (1 + percent) * ideal_population)
+
+    return Bounds(population_per_rep, bounds=bounds)
 
 def deviation_from_ideal(partition, attribute="population"):
     """Computes the deviation of the given ``attribute`` from exact equality
