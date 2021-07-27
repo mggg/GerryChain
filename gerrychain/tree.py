@@ -311,7 +311,7 @@ def recursive_tree_part(
             graph.subgraph(remaining_nodes),
             pop_col=pop_col,
             pop_target=(min_pop + max_pop) / 2,
-            epsilon=(max_pop - min_pop) / (2 * pop_target),
+            epsilon=(max_pop - min_pop) / (2 * pop_target * part_mag),
             node_repeats=node_repeats,
         )
 
@@ -322,7 +322,7 @@ def recursive_tree_part(
         for node in nodes:
             flips[node] = part
             part_pop += graph.nodes[node][pop_col]
-        debt += part_pop - pop_target
+        debt += part_pop - pop_target * part_mag
         remaining_nodes -= nodes
 
         if magnitudes != None:
