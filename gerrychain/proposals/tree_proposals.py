@@ -9,7 +9,7 @@ from ..tree import (
 
 
 def recom(
-    partition, pop_col, pop_target, epsilon, node_repeats=1, method=bipartition_tree, 
+    partition, pop_col, pop_target, epsilon, node_repeats=1, method=bipartition_tree,
     multimember=False,
 ):
     """ReCom proposal.
@@ -139,7 +139,7 @@ class ReCom:
 
     def __call__(self, partition):
         return recom(
-            partition, self.pop_col, self.ideal_pop, self.epsilon, method=self.method, 
+            partition, self.pop_col, self.ideal_pop, self.epsilon, method=self.method,
             multimember=self.multimember
         )
 

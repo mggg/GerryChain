@@ -2,7 +2,8 @@ from gerrychain.partition import Partition
 
 
 class MultiMemberPartition(Partition):
-    """A :class:`Partition` with district magnitude information included.
+    """
+    A :class:`Partition` with district magnitude information included.
     These additional data allows for districts of different scales (number of representatives)
     to be properly balanced.
     """
@@ -15,9 +16,11 @@ class MultiMemberPartition(Partition):
         :param updaters: Dictionary of functions to track data about the partition.
             The keys are stored as attributes on the partition class,
             which the functions compute.
-        :param magnitudes (dict<Any, numeric>): Dictionary assigning districts to number of representatives
+        :param magnitudes (dict<Any, numeric>): Dictionary assigning districts to number of
+            representatives
         """
-        super().__init__(graph=graph, assignment=assignment, updaters=updaters, parent=parent, flips=flips)
+        super().__init__(graph=graph, assignment=assignment, updaters=updaters, parent=parent,
+                         flips=flips)
         if parent is None:
             self._init_magnitudes(magnitudes)
         else:
@@ -31,9 +34,8 @@ class MultiMemberPartition(Partition):
         """
         dist_ids = self.assignment.parts.keys()
         self.magnitudes = {dist_id: 1 for dist_id in dist_ids}
-        if magnitudes != None:
+        if magnitudes is not None:
             self.magnitudes = {**self.magnitudes, **magnitudes}
-
 
     def _update_magnitudes_from_parent(self, magnitudes):
         parent = self.parent

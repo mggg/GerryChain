@@ -75,6 +75,7 @@ def within_percent_of_ideal_population(
 
     return Bounds(population, bounds=bounds)
 
+
 def within_percent_of_ideal_population_per_representative(
     initial_partition, percent=0.01, pop_key="population"
 ):
@@ -83,7 +84,7 @@ def within_percent_of_ideal_population_per_representative(
 
     Ideal population is defined as "total population / number of representatives."
 
-    :param initial_partition: Starting MultiMemberPartition from which to compute district 
+    :param initial_partition: Starting MultiMemberPartition from which to compute district
         information.
     :param percent: (optional) Allowed percentage deviation. Default is 1%.
     :param pop_key: (optional) The name of the population
@@ -101,6 +102,7 @@ def within_percent_of_ideal_population_per_representative(
     bounds = ((1 - percent) * ideal_population, (1 + percent) * ideal_population)
 
     return Bounds(population_per_rep, bounds=bounds)
+
 
 def deviation_from_ideal(partition, attribute="population"):
     """Computes the deviation of the given ``attribute`` from exact equality
