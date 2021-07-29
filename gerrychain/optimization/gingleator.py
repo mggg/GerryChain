@@ -1,0 +1,110 @@
+from .optimization import SingleMetricOptimizer
+from functools import partial
+
+import numpy as np
+import warnings
+
+
+class Gingleator(SingleMetricOptimizer):
+    """
+    """
+
+    def __init__(self, proposal, constraints, initial_state, tracking_funct=None,
+                 minority_perc_col=None, threshold=0.5, score_function=None,
+                 minority_pop_col=None, total_pop_col="TOTPOP",
+                 min_perc_column_name="_gingleator_auxiallary_helper_updater"):
+
+        if minority_perc_col is None and minority_pop_col is None:
+            raise ValueError("`minority_perc_col` and `minority_pop_col` cannot both be `None`. \
+                              Unclear how to compute gingles district.")
+        elif minority_perc_col is not None and minority_pop_col is not None:
+            warnings.warn("`minority_perc_col` and `minority_pop_col` are both specified.  By \
+                           default `minority_perc_col` will be used.")
+        score_function = self.num_opportunity_dists if score_function is None else score_function
+
+        if minority_perc_col is None:
+            perc_up = {min_perc_column_name:
+                            lambda part: {k: part[minority_pop_col][k] / part[total_pop_col][k]
+                                          for k in part.parts.keys()}}
+            initial_state.updaters.update(perc_up)
+
+        score = partial(score_function, minority_perc_col=minority_perc_col, threshold=threshold)
+
+        super().__init__(proposal, constraints, initial_state, score, minmax="max",
+                         tracking_funct=tracking_funct)
+
+    """
+    Score Functions
+    """
+
+    @classmethod
+    def num_opportunity_dists(cls, part, minority_perc_col, threshold):
+        """
+        num_opportunity_dists: given a partition, name of the minority percent updater, and a
+                               threshold, returns the number of opportunity districts.
+        """
+        dist_percs = part[minority_perc_col].values()
+        return sum(list(map(lambda v: v >= threshold, dist_percs)))
+
+    @classmethod
+    def reward_partial_dist(cls, part, minority_perc_col, threshold):
+        """
+        reward_partial_dist: given a partition, name of the minority percent updater, and a
+                             threshold, returns the number of opportunity districts + the
+                             percentage of the next highest district.
+        """
+        dist_percs = part[minority_perc_col].values()
+        num_opport_dists = sum(list(map(lambda v: v >= threshold, dist_percs)))
+        next_dist = max(i for i in dist_percs if i < threshold)
+        return num_opport_dists + next_dist
+
+    @classmethod
+    def reward_next_highest_close(cls, part, minority_perc_col, threshold):
+        """
+        reward_next_highest_close: given a partition, name of the minority percent updater, and a
+                                   threshold, returns the number of opportunity districts, if no
+                                   additional district is within 10% of reaching the threshold.
+                                   If one is,
+                                   the distance that district is from the threshold is scaled
+                                   between 0
+                                   and 1 and added to the count of opportunity districts.
+        """
+        dist_percs = part[minority_perc_col].values()
+        num_opport_dists = sum(list(map(lambda v: v >= threshold, dist_percs)))
+        next_dist = max(i for i in dist_percs if i < threshold)
+
+        if next_dist < threshold - 0.1:
+            return num_opport_dists
+        else:
+            return num_opport_dists + (next_dist - threshold + 0.1) * 10
+
+    @classmethod
+    def penalize_maximum_over(cls, part, minority_perc_col, threshold):
+        """
+        penalize_maximum_over: given a partition, name of the minority percent updater, and a
+                               threshold, returns the number of opportunity districts +
+                               (1 - the maximum excess) scaled to between 0 and 1.
+        """
+        dist_percs = part[minority_perc_col].values()
+        num_opportunity_dists = sum(list(map(lambda v: v >= threshold, dist_percs)))
+        if num_opportunity_dists == 0:
+            return 0
+        else:
+            max_dist = max(dist_percs)
+            return num_opportunity_dists + (1 - max_dist) / (1 - threshold)
+
+    @classmethod
+    def penalize_avg_over(cls, part, minority_perc_col, threshold):
+        """
+        penalize_maximum_over: given a partition, name of the minority percent updater, and a
+                               threshold, returns the number of opportunity districts +
+                               (1 - the average excess) scaled to between 0 and 1.
+        """
+        dist_percs = part[minority_perc_col].values()
+        opport_dists = list(filter(lambda v: v >= threshold, dist_percs))
+        if opport_dists == []:
+            return 0
+        else:
+            num_opportunity_dists = len(opport_dists)
+            avg_opportunity_dist = np.mean(opport_dists)
+            return num_opportunity_dists + (1 - avg_opportunity_dist) / (1 - threshold)
