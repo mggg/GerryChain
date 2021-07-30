@@ -21,7 +21,7 @@ class SingleMetricOptimizer:
         :param `initial_state`: Initial :class:`gerrychain.partition.Partition` class.
         :param `optimization_metric`: The score function with which to optimize over.  This should
             have the signiture: ``Partition -> 'a where 'a is Comparable``
-        :param `minmax`: Whether to minimize or maximize the function?
+        :param `minmax` (str): Whether to minimize or maximize the function?
         :param `tracking_funct`: A function with the signiture ``Partition -> None`` to be run at
             every step of the chain.  If you'd like to externaly track stats beyond those reflected
             in the optimation_metric here is where to implement that.

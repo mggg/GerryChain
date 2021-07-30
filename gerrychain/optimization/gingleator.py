@@ -1,19 +1,44 @@
 from .optimization import SingleMetricOptimizer
-from functools import partial
 
+from functools import partial
 import numpy as np
 import warnings
 
 
 class Gingleator(SingleMetricOptimizer):
     """
+    `Gingleator` is a child class of `SingleMetricOptimizer` which can be used to search for plans
+    with increased numbers of Gingles' districts.
     """
 
     def __init__(self, proposal, constraints, initial_state, tracking_funct=None,
                  minority_perc_col=None, threshold=0.5, score_function=None,
                  minority_pop_col=None, total_pop_col="TOTPOP",
-                 min_perc_column_name="_gingleator_auxiallary_helper_updater"):
-
+                 min_perc_column_name="_gingleator_auxiliary_helper_updater_min_perc_col"):
+        """
+        :param `proposal`: Function proposing the next state from the current state.
+        :param `constraints`: A function with signature ``Partition -> bool`` determining whether
+            the proposed next state is valid (passes all binary constraints). Usually this is a
+            :class:`~gerrychain.constraints.Validator` class instance.
+        :param `initial_state`: Initial :class:`gerrychain.partition.Partition` class.
+        :param `tracking_funct`: A function with the signiture ``Partition -> None`` to be run at
+            every step of the chain.  If you'd like to externaly track stats beyond those reflected
+            in the optimation_metric here is where to implement that.
+        :param `minority_perc_col`: Which updater is a mapping of district ids to the fraction of
+            minority popultion within that district.
+        :param `threshold`:  Beyond which fraction to consider something a "Gingles"
+            (or opportunity) district.
+        :param `score_function`: The function to using doing optimization.  Should have the
+            signature ``Partition * str (minority_perc_col) * float (threhold) -> 
+            'a where 'a is Comparable``.  This class implement a few potnetial choices as class
+            methods.
+        :param `minority_pop_col`:  If minority_perc_col is defined, the minority population column
+            with which to compute percentage. 
+        :param `total_pop_col`: If minority_perc_col is defined, the total population column with
+            which to compute percentage. 
+        :param `min_perc_column_name`: If minority_perc_col is defined, the name to give the created
+            percentage updater.
+        """
         if minority_perc_col is None and minority_pop_col is None:
             raise ValueError("`minority_perc_col` and `minority_pop_col` cannot both be `None`. \
                               Unclear how to compute gingles district.")
@@ -40,8 +65,15 @@ class Gingleator(SingleMetricOptimizer):
     @classmethod
     def num_opportunity_dists(cls, part, minority_perc_col, threshold):
         """
-        num_opportunity_dists: given a partition, name of the minority percent updater, and a
-                               threshold, returns the number of opportunity districts.
+        Given a partition, returns the number of opportunity districts.
+
+        :param `part`: Partition to score.
+        :param `minority_perc_col`: Which updater is a mapping of district ids to the fraction of
+            minority popultion within that district.
+        :param `threshold`: Beyond which fraction to consider something a "Gingles" 
+            (or opportunity) district.
+
+        :rtype int
         """
         dist_percs = part[minority_perc_col].values()
         return sum(list(map(lambda v: v >= threshold, dist_percs)))
@@ -49,9 +81,16 @@ class Gingleator(SingleMetricOptimizer):
     @classmethod
     def reward_partial_dist(cls, part, minority_perc_col, threshold):
         """
-        reward_partial_dist: given a partition, name of the minority percent updater, and a
-                             threshold, returns the number of opportunity districts + the
-                             percentage of the next highest district.
+        Given a partition, returns the number of opportunity districts + the percentage of the next
+        highest district.
+
+        :param `part`: Partition to score.
+        :param `minority_perc_col`: Which updater is a mapping of district ids to the fraction of
+            minority popultion within that district.
+        :param `threshold`: Beyond which fraction to consider something a "Gingles" 
+            (or opportunity) district.
+
+        :rtype float
         """
         dist_percs = part[minority_perc_col].values()
         num_opport_dists = sum(list(map(lambda v: v >= threshold, dist_percs)))
@@ -61,13 +100,17 @@ class Gingleator(SingleMetricOptimizer):
     @classmethod
     def reward_next_highest_close(cls, part, minority_perc_col, threshold):
         """
-        reward_next_highest_close: given a partition, name of the minority percent updater, and a
-                                   threshold, returns the number of opportunity districts, if no
-                                   additional district is within 10% of reaching the threshold.
-                                   If one is,
-                                   the distance that district is from the threshold is scaled
-                                   between 0
-                                   and 1 and added to the count of opportunity districts.
+        Given a partition, returns the number of opportunity districts, if no additional district
+        is within 10% of reaching the threshold. If one is, the distance that district is from the
+        threshold is scaled between 0 and 1 and added to the count of opportunity districts.
+
+        :param `part`: Partition to score.
+        :param `minority_perc_col`: Which updater is a mapping of district ids to the fraction of
+            minority popultion within that district.
+        :param `threshold`: Beyond which fraction to consider something a "Gingles" 
+            (or opportunity) district.
+
+        :rtype float
         """
         dist_percs = part[minority_perc_col].values()
         num_opport_dists = sum(list(map(lambda v: v >= threshold, dist_percs)))
@@ -81,9 +124,16 @@ class Gingleator(SingleMetricOptimizer):
     @classmethod
     def penalize_maximum_over(cls, part, minority_perc_col, threshold):
         """
-        penalize_maximum_over: given a partition, name of the minority percent updater, and a
-                               threshold, returns the number of opportunity districts +
-                               (1 - the maximum excess) scaled to between 0 and 1.
+        Given a partition, returns the number of opportunity districts + (1 - the maximum excess)
+        scaled to between 0 and 1.
+        
+        :param `part`: Partition to score.
+        :param `minority_perc_col`: Which updater is a mapping of district ids to the fraction of
+            minority popultion within that district.
+        :param `threshold`: Beyond which fraction to consider something a "Gingles" 
+            (or opportunity) district.
+
+        :rtype float
         """
         dist_percs = part[minority_perc_col].values()
         num_opportunity_dists = sum(list(map(lambda v: v >= threshold, dist_percs)))
@@ -96,9 +146,16 @@ class Gingleator(SingleMetricOptimizer):
     @classmethod
     def penalize_avg_over(cls, part, minority_perc_col, threshold):
         """
-        penalize_maximum_over: given a partition, name of the minority percent updater, and a
-                               threshold, returns the number of opportunity districts +
-                               (1 - the average excess) scaled to between 0 and 1.
+        Given a partition, returns the number of opportunity districts + (1 - the average excess)
+        scaled to between 0 and 1.
+
+        :param `part`: Partition to score.
+        :param `minority_perc_col`: Which updater is a mapping of district ids to the fraction of
+            minority popultion within that district.
+        :param `threshold`: Beyond which fraction to consider something a "Gingles" 
+            (or opportunity) district.
+
+        :rtype float
         """
         dist_percs = part[minority_perc_col].values()
         opport_dists = list(filter(lambda v: v >= threshold, dist_percs))
