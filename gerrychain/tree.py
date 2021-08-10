@@ -211,6 +211,34 @@ def bipartition_tree(
     return choice(possible_cuts).subset
 
 
+def _bipartition_tree_random_all(
+    graph,
+    pop_col,
+    pop_target,
+    epsilon,
+    node_repeats=1,
+    repeat_until_valid=True,
+    spanning_tree=None,
+    spanning_tree_fn=random_spanning_tree,
+    balance_edge_fn=find_balanced_edge_cuts_memoization,
+    choice=random.choice,
+):
+    """Randomly bipartitions a graph and returns all cuts."""
+    populations = {node: graph.nodes[node][pop_col] for node in graph}
+
+    possible_cuts = []
+    if spanning_tree is None:
+        spanning_tree = spanning_tree_fn(graph)
+
+    repeat = True
+    while repeat and len(possible_cuts) == 0:
+        spanning_tree = spanning_tree_fn(graph)
+        h = PopulatedGraph(spanning_tree, populations, pop_target, epsilon)
+        possible_cuts = balance_edge_fn(h, choice=choice)
+        repeat = repeat_until_valid
+    return possible_cuts
+
+
 def bipartition_tree_random(
     graph,
     pop_col,
@@ -222,6 +250,7 @@ def bipartition_tree_random(
     spanning_tree_fn=random_spanning_tree,
     balance_edge_fn=find_balanced_edge_cuts_memoization,
     choice=random.choice,
+    *args, **kwargs
 ):
     """This is like :func:`bipartition_tree` except it chooses a random balanced
     cut, rather than the first cut it finds.
@@ -255,22 +284,9 @@ def bipartition_tree_random(
     :param balance_edge_fn: The algorithm used to find balanced cut edges
     :param choice: :func:`random.choice`. Can be substituted for testing.
     """
-    populations = {node: graph.nodes[node][pop_col] for node in graph}
-
-    possible_cuts = []
-    if spanning_tree is None:
-        spanning_tree = spanning_tree_fn(graph)
-
-    repeat = True
-    while repeat and len(possible_cuts) == 0:
-        spanning_tree = spanning_tree_fn(graph)
-        h = PopulatedGraph(spanning_tree, populations, pop_target, epsilon)
-        possible_cuts = balance_edge_fn(h, choice=choice)
-        repeat = repeat_until_valid
-
+    possible_cuts = _bipartition_tree_random_all(*args, **kwargs)
     if possible_cuts:
         return choice(possible_cuts).subset
-    return None
 
 
 def recursive_tree_part(
