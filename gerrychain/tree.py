@@ -196,11 +196,13 @@ def bipartition_tree(
     pop_col,
     pop_target,
     epsilon,
+    region_weights=None,
     node_repeats=1,
     spanning_tree=None,
     spanning_tree_fn=random_spanning_tree,
     balance_edge_fn=find_balanced_edge_cuts_memoization,
-    choice=random.choice
+    choice=random.choice,
+    attempts_before_giveup=100,
 ):
     """This function finds a balanced 2 partition of a graph by drawing a
     spanning tree and finding an edge to cut that leaves at most an epsilon
@@ -218,6 +220,12 @@ def bipartition_tree(
     :param pop_target: The target population for the returned subset of nodes
     :param epsilon: The allowable deviation from  ``pop_target`` (as a percentage of
         ``pop_target``) for the subgraph's population
+    :param region_weights: list of (str, float) — `None` unless we want to try to keep
+    certain regions intact. If so, the first element in each tuple is the column in the 
+    data that refers to the region, and the second element is the weight assigned to keeping 
+    that region intact. [("COUNTYFP20", 2), ("TOWN", 1)] would mean we want to keep both 
+    counties and towns intact, but would prefer keeping counties whole instead of towns, 
+    where necessary. Often, setting the weights to be 1 for every region works well.
     :param node_repeats: A parameter for the algorithm: how many different choices
         of root to use before drawing a new spanning tree.
     :param spanning_tree: The spanning tree for the algorithm to use (used when the
@@ -230,16 +238,25 @@ def bipartition_tree(
 
     possible_cuts = []
     if spanning_tree is None:
-        spanning_tree = spanning_tree_fn(graph)
+        spanning_tree = spanning_tree_fn(graph, region_weights=region_weights)
     restarts = 0
-    while len(possible_cuts) == 0:
+    counter = 0
+    while len(possible_cuts) == 0 and counter < attempts_before_giveup:
         if restarts == node_repeats:
-            spanning_tree = spanning_tree_fn(graph)
+            spanning_tree = spanning_tree_fn(graph, region_weights=region_weights)
             restarts = 0
+            counter += 1
         h = PopulatedGraph(spanning_tree, populations, pop_target, epsilon)
-        possible_cuts = balance_edge_fn(h, choice=choice)
+        if len(region_weights) > 0 and restarts == 0:
+            sorted_region_weights = sorted(region_weights, key=lambda x:x[1], reverse=True)
+            possible_cuts = find_balanced_edge_cuts_memoization(h, choice=choice, region_weights=sorted_region_weights)
+        if len(possible_cuts) == 0:
+            h = PopulatedGraph(spanning_tree, populations, pop_target, epsilon)
+            possible_cuts = find_balanced_edge_cuts_memoization(h, choice=choice)
         restarts += 1
 
+    if counter >= attempts_before_giveup:
+        return set()
     return choice(possible_cuts).subset
 
 
