@@ -46,8 +46,8 @@ def recom(
             node_repeats=10
         )
 
-        Above, we would be running a chain that prefers to keep counties (labeled by `COUNTYFP20`) intact, 
-        if possible.
+        Above, we would be running a chain that prefers to keep counties
+        (labeled by `COUNTYFP20`) intact, if possible.
 
         chain = MarkovChain(proposal, constraints, accept, partition, total_steps)
 
