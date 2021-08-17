@@ -27,7 +27,7 @@ def random_spanning_tree(graph, region_weights=None):
         This meant that the laplacian would change for the graph step to step,
         something that we do not intend!!
     """
-    weights = {edge:0 for edge in graph.edges}
+    weights = {edge: 0 for edge in graph.edges}
     for edge in graph.edges:
         if region_weights is not None:
             for (region_col, penalty) in region_weights:
@@ -174,20 +174,23 @@ def find_balanced_edge_cuts_memoization(h, choice=random.choice, region_weights=
             for i, region_col in enumerate(region_cols):
                 if h.graph.nodes[parent][region_col] != h.graph.nodes[node][region_col]:
                     node_split_score += 2 ** (len(region_cols) - i - 1)
-        
+
             if node_split_score > best_split_score and (is_balanced_A or is_balanced_B):
                 best_split_score = node_split_score
                 cuts = []
-                part_subset = part_nodes(node) if is_balanced_A else set(h.graph.nodes) - part_nodes(node)
+                part_subset = part_nodes(node) if is_balanced_A \
+                    else set(h.graph.nodes) - part_nodes(node)
                 cuts.append(Cut(edge=(node, pred[node]), subset=part_subset))
             elif node_split_score == best_split_score and (is_balanced_A or is_balanced_B):
-                part_subset = part_nodes(node) if is_balanced_A else set(h.graph.nodes) - part_nodes(node)
+                part_subset = part_nodes(node) if is_balanced_A \
+                    else set(h.graph.nodes) - part_nodes(node)
                 cuts.append(Cut(edge=(node, pred[node]), subset=part_subset))
         else:
             if is_balanced_A:
                 cuts.append(Cut(edge=(node, pred[node]), subset=part_nodes(node)))
             elif is_balanced_B:
-                cuts.append(Cut(edge=(node, pred[node]), subset=set(h.graph.nodes) - part_nodes(node)))
+                cuts.append(Cut(edge=(node, pred[node]), \
+                    subset=set(h.graph.nodes) - part_nodes(node)))
     return cuts
 
 
@@ -210,7 +213,7 @@ def bipartition_tree(
     we first look for a balance edge that neatly cuts our regions of interest
     along their boundary. If a root fails, new roots are tried until node_repeats 
     in which case a new tree is drawn.
-
+    
     Builds up a connected subgraph with a connected complement whose population
     is ``epsilon * pop_target`` away from ``pop_target``.
 
