@@ -9,7 +9,7 @@ from ..tree import (
 
 
 def recom(
-    partition, pop_col, pop_target, epsilon, node_repeats=1, method=bipartition_tree
+    partition, pop_col, pop_target, epsilon, region_weights=None, node_repeats=1, method=bipartition_tree
 ):
     """ReCom proposal.
 
@@ -32,8 +32,10 @@ def recom(
         pop_target = sum(partition["population"].values()) / len(partition)
 
         proposal = partial(
-            recom, pop_col="POP10", pop_target=pop_target, epsilon=.05, node_repeats=10
+            recom, pop_col="POP10", pop_target=pop_target, epsilon=.05, region_weights=[("COUNTYFP20", 1)], node_repeats=10
         )
+
+        Above, we would be running a chain that prefers to keep counties (labeled by `COUNTYFP20`) intact, if possible.
 
         chain = MarkovChain(proposal, constraints, accept, partition, total_steps)
 
@@ -51,6 +53,7 @@ def recom(
         pop_col=pop_col,
         pop_target=pop_target,
         epsilon=epsilon,
+        region_weights=region_weights,
         node_repeats=node_repeats,
         method=method,
     )
