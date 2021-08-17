@@ -189,7 +189,7 @@ def find_balanced_edge_cuts_memoization(h, choice=random.choice, region_weights=
             if is_balanced_A:
                 cuts.append(Cut(edge=(node, pred[node]), subset=part_nodes(node)))
             elif is_balanced_B:
-                cuts.append(Cut(edge=(node, pred[node]), \
+                cuts.append(Cut(edge=(node, pred[node]),
                     subset=set(h.graph.nodes) - part_nodes(node)))
     return cuts
 
@@ -211,9 +211,9 @@ def bipartition_tree(
     spanning tree and finding an edge to cut that leaves at most an epsilon
     imbalance between the populations of the parts. If region_weights is not `None`,
     we first look for a balance edge that neatly cuts our regions of interest
-    along their boundary. If a root fails, new roots are tried until node_repeats 
+    along their boundary. If a root fails, new roots are tried until node_repeats
     in which case a new tree is drawn.
-    
+
     Builds up a connected subgraph with a connected complement whose population
     is ``epsilon * pop_target`` away from ``pop_target``.
 
@@ -226,10 +226,10 @@ def bipartition_tree(
     :param epsilon: The allowable deviation from  ``pop_target`` (as a percentage of
         ``pop_target``) for the subgraph's population
     :param region_weights: list of (str, float) — `None` unless we want to try to keep
-    certain regions intact. If so, the first element in each tuple is the column in the 
-    data that refers to the region, and the second element is the weight assigned to keeping 
-    that region intact. [("COUNTYFP20", 2), ("TOWN", 1)] would mean we want to keep both 
-    counties and towns intact, but would prefer keeping counties whole instead of towns, 
+    certain regions intact. If so, the first element in each tuple is the column in the
+    data that refers to the region, and the second element is the weight assigned to keeping
+    that region intact. [("COUNTYFP20", 2), ("TOWN", 1)] would mean we want to keep both
+    counties and towns intact, but would prefer keeping counties whole instead of towns,
     where necessary. Often, setting the weights to be 1 for every region works well.
     :param node_repeats: A parameter for the algorithm: how many different choices
         of root to use before drawing a new spanning tree.
@@ -253,7 +253,7 @@ def bipartition_tree(
             counter += 1
         h = PopulatedGraph(spanning_tree, populations, pop_target, epsilon)
         if len(region_weights) > 0 and restarts == 0:
-            sorted_region_weights = sorted(region_weights, key=lambda x:x[1], reverse=True)
+            sorted_region_weights = sorted(region_weights, key=lambda x: x[1], reverse=True)
             possible_cuts = balance_edge_fn(h, choice=choice, region_weights=sorted_region_weights)
         if len(possible_cuts) == 0:
             h = PopulatedGraph(spanning_tree, populations, pop_target, epsilon)
@@ -344,7 +344,14 @@ def bipartition_tree_random(
 
 
 def recursive_tree_part(
-    graph, parts, pop_target, pop_col, epsilon, region_weights=None, node_repeats=1, method=bipartition_tree
+    graph, 
+    parts, 
+    pop_target, 
+    pop_col, 
+    epsilon, 
+    region_weights=None, 
+    node_repeats=1, 
+    method=bipartition_tree
 ):
     """Uses :func:`~gerrychain.tree.bipartition_tree` recursively to partition a tree into
     ``len(parts)`` parts of population ``pop_target`` (within ``epsilon``). Can be used to
@@ -357,10 +364,10 @@ def recursive_tree_part(
     :param epsilon: How far (as a percentage of ``pop_target``) from ``pop_target`` the parts
         of the partition can be
     :param region_weights: list of (str, float) — `None` unless we want to try to keep
-    certain regions intact. If so, the first element in each tuple is the column in the 
-    data that refers to the region, and the second element is the weight assigned to keeping 
-    that region intact. [("COUNTYFP20", 2), ("TOWN", 1)] would mean we want to keep both 
-    counties and towns intact, but would prefer keeping counties whole instead of towns, 
+    certain regions intact. If so, the first element in each tuple is the column in the
+    data that refers to the region, and the second element is the weight assigned to keeping
+    that region intact. [("COUNTYFP20", 2), ("TOWN", 1)] would mean we want to keep both
+    counties and towns intact, but would prefer keeping counties whole instead of towns,
     where necessary. Often, setting the weights to be 1 for every region works well.
     :param node_repeats: Parameter for :func:`~gerrychain.tree_methods.bipartition_tree` to use.
     :return: New assignments for the nodes of ``graph``.
