@@ -13,9 +13,12 @@ def successors(h, root):
     return {a: b for a, b in nx.bfs_successors(h, root)}
 
 
-def random_spanning_tree(graph):
+def random_spanning_tree(graph, region_weights=None):
     """ Builds a spanning tree chosen by Kruskal's method using random weights.
         :param graph: Networkx Graph
+        :param region_weights: list of (str, float) — the first element is the region
+            column and the second element is the weight penalty added to any edge that
+            spans two distinct regions.
 
         Important Note:
         The key is specifically labelled "random_weight" instead of the previously
@@ -24,8 +27,13 @@ def random_spanning_tree(graph):
         This meant that the laplacian would change for the graph step to step,
         something that we do not intend!!
     """
+    weights = {edge:1 for edge in graph.edges}
     for edge in graph.edges:
-        graph.edges[edge]["random_weight"] = random.random()
+        if region_weights is not None:
+            for (region_col, penalty) in region_weights:
+                if graph.nodes[edge[0]][region_col] != graph.nodes[edge[1]][region_col]:
+                    weights[edge] += penalty
+        graph.edges[edge]["random_weight"] = weights[edge] + random.random()
 
     spanning_tree = tree.maximum_spanning_tree(
         graph, algorithm="kruskal", weight="random_weight"
