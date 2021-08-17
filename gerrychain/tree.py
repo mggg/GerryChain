@@ -206,8 +206,10 @@ def bipartition_tree(
 ):
     """This function finds a balanced 2 partition of a graph by drawing a
     spanning tree and finding an edge to cut that leaves at most an epsilon
-    imbalance between the populations of the parts. If a root fails, new roots
-    are tried until node_repeats in which case a new tree is drawn.
+    imbalance between the populations of the parts. If region_weights is not `None`,
+    we first look for a balance edge that neatly cuts our regions of interest
+    along their boundary. If a root fails, new roots are tried until node_repeats 
+    in which case a new tree is drawn.
 
     Builds up a connected subgraph with a connected complement whose population
     is ``epsilon * pop_target`` away from ``pop_target``.
