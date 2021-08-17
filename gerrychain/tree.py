@@ -341,7 +341,7 @@ def bipartition_tree_random(
 
 
 def recursive_tree_part(
-    graph, parts, pop_target, pop_col, epsilon, node_repeats=1, method=bipartition_tree
+    graph, parts, pop_target, pop_col, epsilon, region_weights=None, node_repeats=1, method=bipartition_tree
 ):
     """Uses :func:`~gerrychain.tree.bipartition_tree` recursively to partition a tree into
     ``len(parts)`` parts of population ``pop_target`` (within ``epsilon``). Can be used to
@@ -353,6 +353,12 @@ def recursive_tree_part(
     :param pop_col: Node attribute key holding population data
     :param epsilon: How far (as a percentage of ``pop_target``) from ``pop_target`` the parts
         of the partition can be
+    :param region_weights: list of (str, float) — `None` unless we want to try to keep
+    certain regions intact. If so, the first element in each tuple is the column in the 
+    data that refers to the region, and the second element is the weight assigned to keeping 
+    that region intact. [("COUNTYFP20", 2), ("TOWN", 1)] would mean we want to keep both 
+    counties and towns intact, but would prefer keeping counties whole instead of towns, 
+    where necessary. Often, setting the weights to be 1 for every region works well.
     :param node_repeats: Parameter for :func:`~gerrychain.tree_methods.bipartition_tree` to use.
     :return: New assignments for the nodes of ``graph``.
     :rtype: dict
@@ -376,6 +382,7 @@ def recursive_tree_part(
             pop_col=pop_col,
             pop_target=(min_pop + max_pop) / 2,
             epsilon=(max_pop - min_pop) / (2 * pop_target),
+            region_weights=region_weights,
             node_repeats=node_repeats,
         )
 
