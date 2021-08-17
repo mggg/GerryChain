@@ -252,7 +252,7 @@ def bipartition_tree(
             restarts = 0
             counter += 1
         h = PopulatedGraph(spanning_tree, populations, pop_target, epsilon)
-        if len(region_weights) > 0 and restarts == 0:
+        if region_weights is not None and restarts == 0:
             sorted_region_weights = sorted(region_weights, key=lambda x: x[1], reverse=True)
             possible_cuts = balance_edge_fn(h, choice=choice, region_weights=sorted_region_weights)
         if len(possible_cuts) == 0:
