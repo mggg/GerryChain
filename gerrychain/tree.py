@@ -344,13 +344,13 @@ def bipartition_tree_random(
 
 
 def recursive_tree_part(
-    graph, 
-    parts, 
-    pop_target, 
-    pop_col, 
-    epsilon, 
-    region_weights=None, 
-    node_repeats=1, 
+    graph,
+    parts,
+    pop_target,
+    pop_col,
+    epsilon,
+    region_weights=None,
+    node_repeats=1,
     method=bipartition_tree
 ):
     """Uses :func:`~gerrychain.tree.bipartition_tree` recursively to partition a tree into

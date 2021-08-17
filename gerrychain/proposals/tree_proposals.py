@@ -9,12 +9,12 @@ from ..tree import (
 
 
 def recom(
-    partition, 
-    pop_col, 
-    pop_target, 
-    epsilon, 
-    region_weights=None, 
-    node_repeats=1, 
+    partition,
+    pop_col,
+    pop_target,
+    epsilon,
+    region_weights=None,
+    node_repeats=1,
     method=bipartition_tree
 ):
     """ReCom proposal.
@@ -38,11 +38,11 @@ def recom(
         pop_target = sum(partition["population"].values()) / len(partition)
 
         proposal = partial(
-            recom, 
-            pop_col="POP10", 
-            pop_target=pop_target, 
-            epsilon=.05, 
-            region_weights=[("COUNTYFP20", 1)], 
+            recom,
+            pop_col="POP10",
+            pop_target=pop_target,
+            epsilon=.05,
+            region_weights=[("COUNTYFP20", 1)],
             node_repeats=10
         )
 
