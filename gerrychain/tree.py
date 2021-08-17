@@ -27,7 +27,7 @@ def random_spanning_tree(graph, region_weights=None):
         This meant that the laplacian would change for the graph step to step,
         something that we do not intend!!
     """
-    weights = {edge:1 for edge in graph.edges}
+    weights = {edge:0 for edge in graph.edges}
     for edge in graph.edges:
         if region_weights is not None:
             for (region_col, penalty) in region_weights:
@@ -120,7 +120,7 @@ def find_balanced_edge_cuts_contraction(h, choice=random.choice):
     return cuts
 
 
-def find_balanced_edge_cuts_memoization(h, choice=random.choice):
+def find_balanced_edge_cuts_memoization(h, choice=random.choice, region_weights=None):
     root = choice([x for x in h if h.degree(x) > 1])
     pred = predecessors(h.graph, root)
     succ = successors(h.graph, root)
@@ -144,6 +144,7 @@ def find_balanced_edge_cuts_memoization(h, choice=random.choice):
                 subtree_pops[next_node] = h.population[next_node]
 
     cuts = []
+    best_split_score = 0
     for node, tree_pop in subtree_pops.items():
 
         def part_nodes(start):
@@ -159,11 +160,34 @@ def find_balanced_edge_cuts_memoization(h, choice=random.choice):
                                 queue.append(c)
             return nodes
 
-        if abs(tree_pop - h.ideal_pop) <= h.ideal_pop * h.epsilon:
-            cuts.append(Cut(edge=(node, pred[node]), subset=part_nodes(node)))
-        elif abs((total_pop - tree_pop) - h.ideal_pop) <= h.ideal_pop * h.epsilon:
-            cuts.append(Cut(edge=(node, pred[node]),
-                            subset=set(h.graph.nodes) - part_nodes(node)))
+        is_balanced_A = abs(tree_pop - h.ideal_pop) <= h.ideal_pop * h.epsilon
+        is_balanced_B = abs((total_pop - tree_pop) - h.ideal_pop) <= h.ideal_pop * h.epsilon
+
+        parent = pred[node]
+        if region_weights is not None:
+            region_cols = [tup[0] for tup in region_weights]
+            # score function to prefer dividing higher ranked regions. three regions -> [4, 2, 1]
+            # an edge that splits our first- and last-ranked regions would get a score of 4 + 1 = 5
+            # if node corresponds to a balance cut and our split score is as good or better than our
+            # best previously seen split score, add this cut to our list of potential balance cuts
+            node_split_score = 0
+            for i, region_col in enumerate(region_cols):
+                if h.graph.nodes[parent][region_col] != h.graph.nodes[node][region_col]:
+                    node_split_score += 2 ** (len(region_cols) - i - 1)
+        
+            if node_split_score > best_split_score and (is_balanced_A or is_balanced_B):
+                best_split_score = node_split_score
+                cuts = []
+                part_subset = part_nodes(node) if is_balanced_A else set(h.graph.nodes) - part_nodes(node)
+                cuts.append(Cut(edge=(node, pred[node]), subset=part_subset))
+            elif node_split_score == best_split_score and (is_balanced_A or is_balanced_B):
+                part_subset = part_nodes(node) if is_balanced_A else set(h.graph.nodes) - part_nodes(node)
+                cuts.append(Cut(edge=(node, pred[node]), subset=part_subset))
+        else:
+            if is_balanced_A:
+                cuts.append(Cut(edge=(node, pred[node]), subset=part_nodes(node)))
+            elif is_balanced_B:
+                cuts.append(Cut(edge=(node, pred[node]), subset=set(h.graph.nodes) - part_nodes(node)))
     return cuts
 
 
