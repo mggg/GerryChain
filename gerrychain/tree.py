@@ -34,8 +34,7 @@ def random_spanning_tree(graph, region_weights=None):
                 if graph.nodes[edge[0]][region_col] != graph.nodes[edge[1]][region_col]:
                     weights[edge] += penalty
         graph.edges[edge]["random_weight"] = weights[edge] + random.random()
-
-    spanning_tree = tree.maximum_spanning_tree(
+    spanning_tree = tree.minimum_spanning_tree(
         graph, algorithm="kruskal", weight="random_weight"
     )
     return spanning_tree
@@ -240,7 +239,6 @@ def bipartition_tree(
     :param choice: :func:`random.choice`. Can be substituted for testing.
     """
     populations = {node: graph.nodes[node][pop_col] for node in graph}
-
     possible_cuts = []
     if spanning_tree is None:
         spanning_tree = spanning_tree_fn(graph, region_weights=region_weights)
