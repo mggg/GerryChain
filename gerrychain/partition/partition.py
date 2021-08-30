@@ -16,8 +16,18 @@ class Partition:
     :ivar dict parts: Maps district IDs to the set of nodes in that district.
     :ivar dict subgraphs: Maps district IDs to the induced subgraph of that district.
     """
-
     default_updaters = {"cut_edges": cut_edges}
+    __slots__ = (
+        'graph',
+        'subgraphs',
+        'assignment',
+        'updaters',
+        'parent',
+        'flips',
+        'flows',
+        'edge_flows',
+        '_cache'
+    )
 
     def __init__(
         self, graph=None, assignment=None, updaters=None, parent=None, flips=None
