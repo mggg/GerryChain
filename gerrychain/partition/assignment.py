@@ -102,8 +102,7 @@ class Assignment(Mapping):
         return pandas.concat(groups)
 
     def to_dict(self):
-        """Convert the assignment to a ``{node: part}`` dictionary.
-        This is expensive and should be used rarely."""
+        """Convert the assignment to a ``{node: part}`` dictionary."""
         return self.mapping
 
     @classmethod
