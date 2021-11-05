@@ -4,7 +4,7 @@ import pytest
 
 
 @pytest.mark.skipif(
-    True or os.environ.get("PYTHONHASHSEED", 1) != "0",
+    os.environ.get("PYTHONHASHSEED", 1) != "0",
     reason="Need to fix the PYTHONHASHSEED for reproducibility. The expected flips "
     "for this test will change as we make changes to the library, so we only need "
     "to update it and make sure it consistently passes when we are about to make "
@@ -58,3 +58,52 @@ def test_repeatable(three_by_three_grid):
     flips = [partition.flips for partition in chain]
     print(flips)
     assert flips == expected_flips
+
+def test_pa_freeze():
+    from gerrychain import (
+        GeographicPartition,
+        Graph,
+        MarkovChain,
+        proposals,
+        updaters,
+        constraints,
+        accept,
+    )
+    import hashlib
+    from gerrychain.proposals import recom
+    from functools import partial
+
+    graph = Graph.from_json("docs/user/PA_VTDs.json")
+
+    my_updaters = {"population": updaters.Tally("TOTPOP", alias="population")}
+    initial_partition = GeographicPartition(
+        graph, assignment="CD_2011", updaters=my_updaters
+    )
+
+    ideal_population = sum(initial_partition["population"].values()) / len(
+        initial_partition
+    )
+
+    # We use functools.partial to bind the extra parameters (pop_col, pop_target, epsilon, node_repeats)
+    # of the recom proposal.
+    proposal = partial(
+        recom, pop_col="TOTPOP", pop_target=ideal_population, epsilon=0.02, node_repeats=2
+    )
+
+    pop_constraint = constraints.within_percent_of_ideal_population(initial_partition, 0.02)
+
+    chain = MarkovChain(
+        proposal=proposal,
+        constraints=[pop_constraint],
+        accept=accept.always_accept,
+        initial_state=initial_partition,
+        total_steps=100,
+    )
+
+    result = ""
+    for count, partition in enumerate(chain):
+        result += str(list(sorted(partition.population.values())))
+        result += str(len(partition.cut_edges))
+        result += str(count) + "\n"
+
+    assert hashlib.sha256(result.encode()).hexdigest() == "3bef9ac8c0bfa025fb75e32aea3847757a8fba56b2b2be6f9b3b952088ae3b3c"
