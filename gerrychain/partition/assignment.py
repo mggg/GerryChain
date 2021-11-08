@@ -18,7 +18,7 @@ class Assignment(Mapping):
     ``{part: <frozenset of nodes in part>}``.
     """
 
-    def __init__(self, parts, validate=True):
+    def __init__(self, parts, mapping=None, validate=True):
         if validate:
             number_of_keys = sum(len(keys) for keys in parts.values())
             number_of_unique_keys = len(set().union(*parts.values()))
@@ -27,6 +27,14 @@ class Assignment(Mapping):
             if not all(isinstance(keys, frozenset) for keys in parts.values()):
                 raise TypeError("Level sets must be frozensets")
         self.parts = parts
+
+        if not mapping:
+            self.mapping = {}
+            for part, nodes in self.parts.items():
+                for node in nodes:
+                    self.mapping[node] = part
+        else:
+            self.mapping = mapping
 
     def __repr__(self):
         return "<Assignment [{} keys, {} parts]>".format(len(self), len(self.parts))
@@ -38,16 +46,13 @@ class Assignment(Mapping):
         return sum(len(keys) for keys in self.parts.values())
 
     def __getitem__(self, node):
-        for part, nodes in self.parts.items():
-            if node in nodes:
-                return part
-        raise KeyError(node)
+        return self.mapping[node]
 
     def copy(self):
         """Returns a copy of the assignment.
         Does not duplicate the frozensets of nodes, just the parts dictionary.
         """
-        return Assignment(self.parts.copy(), validate=False)
+        return Assignment(self.parts.copy(), self.mapping.copy(), validate=False)
 
     def update(self, mapping):
         """Update the assignment for some nodes using the given mapping.
@@ -57,6 +62,9 @@ class Assignment(Mapping):
             # Union between frozenset and set returns an object whose type
             # matches the object on the left, which here is a frozenset
             self.parts[part] = (self.parts[part] - flow["out"]) | flow["in"]
+
+            for node in flow["in"]:
+                self.mapping[node] = part
 
     def items(self):
         """Iterate over ``(node, part)`` tuples, where ``node`` is assigned to ``part``.
@@ -83,6 +91,9 @@ class Assignment(Mapping):
         for part, nodes in new_parts.items():
             self.parts[part] = frozenset(nodes)
 
+            for node in nodes:
+                self.mapping[node] = part
+
     def to_series(self):
         """Convert the assignment to a :class:`pandas.Series`."""
         groups = [
@@ -91,9 +102,8 @@ class Assignment(Mapping):
         return pandas.concat(groups)
 
     def to_dict(self):
-        """Convert the assignment to a ``{node: part}`` dictionary.
-        This is expensive and should be used rarely."""
-        return {node: part for part, nodes in self.parts.items() for node in nodes}
+        """Convert the assignment to a ``{node: part}`` dictionary."""
+        return self.mapping
 
     @classmethod
     def from_dict(cls, assignment):
