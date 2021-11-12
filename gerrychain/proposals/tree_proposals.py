@@ -9,7 +9,8 @@ from ..tree import (
 
 
 def recom(
-    partition, pop_col, pop_target, epsilon, node_repeats=1, method=bipartition_tree
+    partition, pop_col, pop_target, epsilon, node_repeats=1, method=bipartition_tree,
+    multimember=False,
 ):
     """ReCom proposal.
 
@@ -45,6 +46,8 @@ def recom(
         partition.parts[parts_to_merge[0]] | partition.parts[parts_to_merge[1]]
     )
 
+    magnitudes = partition.magnitudes if multimember else None
+
     flips = recursive_tree_part(
         subgraph,
         parts_to_merge,
@@ -53,9 +56,14 @@ def recom(
         epsilon=epsilon,
         node_repeats=node_repeats,
         method=method,
+        magnitudes=magnitudes
     )
 
-    return partition.flip(flips)
+    if multimember:
+        new_magnitudes = flips[1]
+        flips = flips[0]
+
+    return partition.flip(flips, new_magnitudes) if multimember else partition.flip(flips)
 
 
 def reversible_recom(partition, pop_col, pop_target, epsilon,
@@ -130,15 +138,18 @@ def reversible_recom(partition, pop_col, pop_target, epsilon,
 
 
 class ReCom:
-    def __init__(self, pop_col, ideal_pop, epsilon, method=bipartition_tree_random):
+    def __init__(self, pop_col, ideal_pop, epsilon, method=bipartition_tree_random,
+                 multimember=False,):
         self.pop_col = pop_col
         self.ideal_pop = ideal_pop
         self.epsilon = epsilon
         self.method = method
+        self.multimember = multimember
 
     def __call__(self, partition):
         return recom(
-            partition, self.pop_col, self.ideal_pop, self.epsilon, method=self.method
+            partition, self.pop_col, self.ideal_pop, self.epsilon, method=self.method,
+            multimember=self.multimember
         )
 
 
