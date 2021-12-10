@@ -1,4 +1,13 @@
+from __future__ import annotations
+
 from .constraints import Validator
+from typing import Union, List, Callable, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from functools import partial
+    from gerrychain.constraints.bounds import Bounds
+    from gerrychain.grid import Grid
+    from gerrychain.partition.partition import Partition
 
 
 class MarkovChain:
@@ -16,7 +25,17 @@ class MarkovChain:
 
     """
 
-    def __init__(self, proposal, constraints, accept, initial_state, total_steps):
+    def __init__(self,
+    proposal: Union[Callable,
+    partial],
+    constraints: Union[List[Callable],
+    Validator,
+    List[Bounds],
+    Callable],
+    accept: Callable,
+    initial_state: Optional[Union[Grid,
+    Partition]],
+            total_steps: int) -> None:
         """
         :param proposal: Function proposing the next state from the current state.
         :param constraints: A function with signature ``Partition -> bool`` determining whether
@@ -53,12 +72,12 @@ class MarkovChain:
         self.initial_state = initial_state
         self.state = initial_state
 
-    def __iter__(self):
+    def __iter__(self) -> MarkovChain:
         self.counter = 0
         self.state = self.initial_state
         return self
 
-    def __next__(self):
+    def __next__(self) -> Union[Partition, Grid]:
         if self.counter == 0:
             self.counter += 1
             return self.state
@@ -75,10 +94,10 @@ class MarkovChain:
                 return self.state
         raise StopIteration
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self.total_steps
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<MarkovChain [{} steps]>".format(len(self))
 
     def with_progress_bar(self):
