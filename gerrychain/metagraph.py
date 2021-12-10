@@ -1,14 +1,21 @@
+from __future__ import annotations
+
 from itertools import product
 
 from .constraints import Validator
+from typing import Callable, Dict, Iterator, List, Union, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from gerrychain.partition.partition import Partition
 
 
-def all_cut_edge_flips(partition):
+def all_cut_edge_flips(partition: Partition) -> Iterator[Dict[int, int]]:
     for edge, index in product(partition.cut_edges, (0, 1)):
         yield {edge[index]: partition.assignment.mapping[edge[1 - index]]}
 
 
-def all_valid_states_one_flip_away(partition, constraints):
+def all_valid_states_one_flip_away(
+        partition: Partition, constraints: Union[List[Callable], Callable]) -> Iterator[Partition]:
     """Generates all valid Partitions that differ from the given partition
     by one flip. These are the given partition's neighbors in the metagraph
     of partitions.
@@ -24,7 +31,7 @@ def all_valid_states_one_flip_away(partition, constraints):
             yield next_state
 
 
-def all_valid_flips(partition, constraints):
+def all_valid_flips(partition: Partition, constraints: List[Callable]) -> Iterator[Dict[int, int]]:
     for state in all_valid_states_one_flip_away(partition, constraints):
         yield state.flips
 
