@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import math
 
 import networkx
@@ -14,6 +16,11 @@ from gerrychain.updaters import (
     perimeter,
 )
 from gerrychain.metrics import polsby_popper
+
+from typing import Dict, Optional, Tuple, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from networkx.classes.graph import Graph
 
 
 class Grid(Partition):
@@ -44,13 +51,13 @@ class Grid(Partition):
 
     def __init__(
         self,
-        dimensions=None,
-        with_diagonals=False,
-        assignment=None,
-        updaters=None,
-        parent=None,
-        flips=None,
-    ):
+        dimensions: Optional[Tuple[int, int]] = None,
+        with_diagonals: bool = False,
+        assignment: None = None,
+        updaters: None = None,
+        parent: Optional[Grid] = None,
+        flips: Optional[Dict[Tuple[int, int], int]] = None,
+    ) -> None:
         """
         :param dimensions: tuple (m,n) of the desired dimensions of the grid.
         :param with_diagonals: (optional, defaults to False) whether to include diagonals
@@ -103,7 +110,7 @@ class Grid(Partition):
         return [[self.assignment.mapping[(i, j)] for i in range(m)] for j in range(n)]
 
 
-def create_grid_graph(dimensions, with_diagonals):
+def create_grid_graph(dimensions: Tuple[int, int], with_diagonals: bool) -> Graph:
     if len(dimensions) != 2:
         raise ValueError("Expected two dimensions.")
     m, n = dimensions
@@ -136,7 +143,7 @@ def give_constant_attribute(graph, attribute, value):
         graph.nodes[node][attribute] = value
 
 
-def tag_boundary_nodes(graph, dimensions):
+def tag_boundary_nodes(graph: Graph, dimensions: Tuple[int, int]) -> None:
     m, n = dimensions
     for node in graph.nodes:
         if node[0] in [0, m - 1] or node[1] in [0, n - 1]:
@@ -146,7 +153,7 @@ def tag_boundary_nodes(graph, dimensions):
             graph.nodes[node]["boundary_node"] = False
 
 
-def get_boundary_perim(node, dimensions):
+def get_boundary_perim(node: Tuple[int, int], dimensions: Tuple[int, int]) -> int:
     m, n = dimensions
     if node in [(0, 0), (m - 1, 0), (0, n - 1), (m - 1, n - 1)]:
         return 2
@@ -161,7 +168,7 @@ def color_half(node, threshold=5):
     return 0 if x <= threshold else 1
 
 
-def color_quadrants(node, thresholds):
+def color_quadrants(node: Tuple[int, int], thresholds: Tuple[int, int]) -> int:
     x, y = node
     x_color = 0 if x < thresholds[0] else 1
     y_color = 0 if y < thresholds[1] else 2
