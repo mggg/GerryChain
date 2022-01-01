@@ -46,7 +46,7 @@ def recom(
     )
 
     flips = recursive_tree_part(
-        subgraph,
+        subgraph.graph,
         parts_to_merge,
         pop_col=pop_col,
         pop_target=pop_target,

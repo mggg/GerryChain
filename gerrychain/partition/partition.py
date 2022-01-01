@@ -1,5 +1,8 @@
 import json
 import geopandas
+import networkx
+
+from gerrychain.graph.graph import FrozenGraph, Graph
 from ..updaters import compute_edge_flows, flows_from_changes, cut_edges
 from .assignment import get_assignment
 from .subgraphs import SubgraphView
@@ -50,7 +53,16 @@ class Partition:
         self.subgraphs = SubgraphView(self.graph, self.parts)
 
     def _first_time(self, graph, assignment, updaters, use_cut_edges):
-        self.graph = graph
+        if isinstance(graph, Graph):
+            self.graph = FrozenGraph(graph)
+        elif isinstance(graph, networkx.Graph):
+            graph = Graph.from_networkx(graph)
+            self.graph = FrozenGraph(graph)
+        elif isinstance(graph, FrozenGraph):
+            self.graph = graph
+        else:
+            raise TypeError("Unsupported Graph object")
+
         self.assignment = get_assignment(assignment, graph)
 
         if set(self.assignment) != set(graph):

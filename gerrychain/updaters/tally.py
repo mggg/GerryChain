@@ -9,6 +9,11 @@ class DataTally:
     """An updater for tallying numerical data that is not necessarily stored as
     node attributes
     """
+    __slots__ = [
+        "data",
+        "alias",
+        "_call"
+    ]
 
     def __init__(self, data, alias):
         """
@@ -54,6 +59,11 @@ class DataTally:
 class Tally:
     """An updater for keeping a tally of one or more node attributes.
     """
+    __slots__ = [
+        "fields",
+        "alias",
+        "dtype"
+    ]
 
     def __init__(self, fields, alias=None, dtype=int):
         """
@@ -116,12 +126,12 @@ class Tally:
         return new_tally
 
     def _get_tally_from_node(self, partition, node):
-        return sum(partition.graph.nodes[node][field] for field in self.fields)
+        return sum(partition.graph.lookup(node, field) for field in self.fields)
 
 
 def compute_out_flow(graph, fields, flow):
-    return sum(graph.nodes[node][field] for node in flow["out"] for field in fields)
+    return sum(graph.lookup(node, field) for node in flow["out"] for field in fields)
 
 
 def compute_in_flow(graph, fields, flow):
-    return sum(graph.nodes[node][field] for node in flow["in"] for field in fields)
+    return sum(graph.lookup(node, field) for node in flow["in"] for field in fields)
