@@ -15,7 +15,7 @@ def spectral_cut(graph, part_labels, weight_type, lap_type):
     n = len(nlist)
 
     if weight_type == "random":
-        for edge in graph.edges():
+        for edge in graph.edge_indicies:
             graph.edges[edge]["weight"] = random.random()
 
     if lap_type == "normalized":

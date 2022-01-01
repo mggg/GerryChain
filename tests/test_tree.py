@@ -5,6 +5,7 @@ import pytest
 
 from gerrychain import MarkovChain
 from gerrychain.constraints import contiguous, within_percent_of_ideal_population
+from gerrychain.graph import Graph
 from gerrychain.partition import Partition
 from gerrychain.proposals import recom
 from gerrychain.tree import (
@@ -22,7 +23,7 @@ from gerrychain.updaters import Tally, cut_edges
 def graph_with_pop(three_by_three_grid):
     for node in three_by_three_grid:
         three_by_three_grid.nodes[node]["pop"] = 1
-    return three_by_three_grid
+    return Graph.from_networkx(three_by_three_grid)
 
 
 @pytest.fixture
@@ -41,7 +42,7 @@ def twelve_by_twelve_with_pop():
     grid = networkx.relabel_nodes(xy_grid, nodes)
     for node in grid:
         grid.nodes[node]["pop"] = 1
-    return grid
+    return Graph.from_networkx(grid)
 
 
 def test_bipartition_tree_returns_a_subset_of_nodes(graph_with_pop):
@@ -92,9 +93,9 @@ def test_random_spanning_tree_returns_tree_with_pop_attribute(graph_with_pop):
 
 def test_bipartition_tree_returns_a_tree(graph_with_pop):
     ideal_pop = sum(graph_with_pop.nodes[node]["pop"] for node in graph_with_pop) / 2
-    tree = networkx.Graph(
+    tree = Graph.from_networkx(networkx.Graph(
         [(0, 1), (1, 2), (1, 4), (3, 4), (4, 5), (3, 6), (6, 7), (6, 8)]
-    )
+    ))
     for node in tree:
         tree.nodes[node]["pop"] = graph_with_pop.nodes[node]["pop"]
 
@@ -123,9 +124,9 @@ def test_recom_works_as_a_proposal(partition_with_pop):
 
 
 def test_find_balanced_cuts_contraction():
-    tree = networkx.Graph(
+    tree = Graph.from_networkx(networkx.Graph(
         [(0, 1), (1, 2), (1, 4), (3, 4), (4, 5), (3, 6), (6, 7), (6, 8)]
-    )
+    ))
 
     # 0 - 1 - 2
     #   ||

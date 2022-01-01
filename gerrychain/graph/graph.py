@@ -1,8 +1,11 @@
+import functools
 import json
+from typing import Any
 import warnings
 
 import geopandas as gp
 import networkx
+from networkx.classes.function import frozen
 from networkx.readwrite import json_graph
 from shapely.ops import unary_union
 from shapely.prepared import prep
@@ -18,9 +21,13 @@ class Graph(networkx.Graph):
     to save and load graphs as JSON files.
 
     """
-
     def __repr__(self):
         return "<Graph [{} nodes, {} edges]>".format(len(self.nodes), len(self.edges))
+
+    @classmethod
+    def from_networkx(cls, graph: networkx.Graph):
+        g = cls(graph)
+        return g
 
     @classmethod
     def from_json(cls, json_file):
@@ -31,7 +38,7 @@ class Graph(networkx.Graph):
         with open(json_file) as f:
             data = json.load(f)
         g = json_graph.adjacency_graph(data)
-        graph = cls(g)
+        graph = cls.from_networkx(g)
         graph.issue_warnings()
         return graph
 
@@ -164,6 +171,22 @@ class Graph(networkx.Graph):
 
         graph.add_data(df, columns=cols_to_add)
         return graph
+
+    def lookup(self, node, field):
+        """
+        Lookup a node/field attribute.
+        :param node: Node to look up.
+        :param field: Field to look up.
+        """
+        return self.nodes[node][field]
+
+    @property
+    def node_indicies(self):
+        return set(self.nodes)
+
+    @property
+    def edge_indicies(self):
+        return set(self.edges)
 
     def add_data(self, df, columns=None):
         """Add columns of a DataFrame to a graph as node attributes using
@@ -310,3 +333,63 @@ def convert_geometries_to_geojson(data):
                 # This is what :func:`geopandas.GeoSeries.to_json` uses under
                 # the hood.
                 node[key] = node[key].__geo_interface__
+
+
+class FrozenGraph:
+    """ Represents an immutable graph to be partitioned. It is based off :class:`Graph`.
+
+    This speeds up chain runs and prevents having to deal with cache invalidation issues.
+    This class behaves slightly differently than :class:`Graph` or :class:`networkx.Graph`.
+    """
+    __slots__ = [
+        "graph",
+        "size"
+    ]
+
+    def __init__(self, graph: Graph):
+        self.graph = networkx.classes.function.freeze(graph)
+        self.graph.join = frozen
+        self.graph.add_data = frozen
+        self.graph.add_data = frozen
+
+        self.size = len(self.graph)
+
+    def __len__(self):
+        return self.size
+
+    @functools.lru_cache(64)
+    def __getattribute__(self, __name: str) -> Any:
+        try:
+            return object.__getattribute__(self, __name)
+        except AttributeError:
+            return object.__getattribute__(self.graph, __name)
+
+    @functools.lru_cache(16384)
+    def __getitem__(self, __name: str) -> Any:
+        return self.graph[__name]
+
+    def __iter__(self):
+        yield from self.node_indicies
+
+    @functools.lru_cache(16384)
+    def neighbors(self, n):
+        return tuple(self.graph.neighbors(n))
+
+    @functools.cached_property
+    def node_indicies(self):
+        return self.graph.node_indicies
+
+    @functools.cached_property
+    def edge_indicies(self):
+        return self.graph.edge_indicies
+
+    @functools.lru_cache(16384)
+    def degree(self, n):
+        return self.graph.degree(n)
+
+    @functools.lru_cache(65536)
+    def lookup(self, node, field):
+        return self.graph.nodes[node][field]
+
+    def subgraph(self, nodes):
+        return FrozenGraph(self.graph.subgraph(nodes))
