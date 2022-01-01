@@ -17,6 +17,10 @@ class Assignment(Mapping):
     An :class:`Assignment` has a ``parts`` property that is a dictionary of the form
     ``{part: <frozenset of nodes in part>}``.
     """
+    __slots__ = (
+        'parts',
+        'mapping',
+    )
 
     def __init__(self, parts, mapping=None, validate=True):
         if validate:
