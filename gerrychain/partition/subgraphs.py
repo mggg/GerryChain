@@ -1,4 +1,10 @@
 class SubgraphView:
+    __slots__ = [
+        "graph",
+        "parts",
+        "subgraphs_cache"
+    ]
+
     def __init__(self, graph, parts):
         self.graph = graph
         self.parts = parts
