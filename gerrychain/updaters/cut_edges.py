@@ -1,6 +1,6 @@
 import collections
 
-from .flows import on_edge_flow
+from .flows import on_edge_flow, neighbor_flips
 
 
 def put_edges_into_parts(edges, assignment):
@@ -15,9 +15,8 @@ def put_edges_into_parts(edges, assignment):
 def new_cuts(partition):
     """The edges that were not cut, but now are"""
     return {
-        tuple(sorted((node, neighbor)))
-        for node in partition.flips
-        for neighbor in partition.graph.neighbors(node)
+        (node, neighbor)
+        for node, neighbor in neighbor_flips(partition)
         if partition.crosses_parts((node, neighbor))
     }
 
@@ -25,9 +24,8 @@ def new_cuts(partition):
 def obsolete_cuts(partition):
     """The edges that were cut, but now are not"""
     return {
-        tuple(sorted((node, neighbor)))
-        for node in partition.flips
-        for neighbor in partition.graph.neighbors(node)
+        (node, neighbor)
+        for node, neighbor in neighbor_flips(partition)
         if partition.parent.crosses_parts((node, neighbor))
         and not partition.crosses_parts((node, neighbor))
     }
