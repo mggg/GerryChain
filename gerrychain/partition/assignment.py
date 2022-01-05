@@ -1,5 +1,4 @@
 from collections import defaultdict
-from itertools import chain, repeat
 from collections.abc import Mapping
 
 import pandas
@@ -70,17 +69,13 @@ class Assignment(Mapping):
     def items(self):
         """Iterate over ``(node, part)`` tuples, where ``node`` is assigned to ``part``.
         """
-        for part, nodes in self.parts.items():
-            for node in nodes:
-                yield (node, part)
+        yield from self.mapping.items()
 
     def keys(self):
-        return chain(*self.parts.values())
+        yield from self.mapping.keys()
 
     def values(self):
-        return chain(
-            *(repeat(value, times=len(keys)) for value, keys in self.parts.items())
-        )
+        yield from self.mapping.values()
 
     def update_parts(self, new_parts):
         """Update some parts of the assignment. Does not check that every node is
