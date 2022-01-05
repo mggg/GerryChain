@@ -43,7 +43,7 @@ def compute_county_splits(partition, county_field, partition_field):
                 split, nodes, seen = CountySplit.NOT_SPLIT, [], set()
 
             nodes.append(node)
-            seen.update(set([partition.assignment[node]]))
+            seen.update(set([partition.assignment.mapping[node]]))
 
             if len(seen) > 1:
                 split = CountySplit.OLD_SPLIT
@@ -56,7 +56,7 @@ def compute_county_splits(partition, county_field, partition_field):
 
     parent = partition.parent
     for county, county_info in parent[partition_field].items():
-        seen = set(partition.assignment[node] for node in county_info.nodes)
+        seen = set(partition.assignment.mapping[node] for node in county_info.nodes)
 
         split = CountySplit.NOT_SPLIT
 

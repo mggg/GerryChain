@@ -24,7 +24,7 @@ def propose_flip_every_district(partition):
 
         index = random.choice((0, 1))
         flipped_node, other_node = edge[index], edge[1 - index]
-        flip = {flipped_node: partition.assignment[other_node]}
+        flip = {flipped_node: partition.assignment.mapping[other_node]}
 
         flips.update(flip)
 
@@ -47,11 +47,11 @@ def propose_chunk_flip(partition):
     valid_flips = [
         nbr
         for nbr in partition.graph.neighbors(flipped_node)
-        if partition.assignment[nbr] != partition.assignment[flipped_node]
+        if partition.assignment.mapping[nbr] != partition.assignment.mapping[flipped_node]
     ]
 
     for flipped_neighbor in valid_flips:
-        flips.update({flipped_neighbor: partition.assignment[flipped_node]})
+        flips.update({flipped_neighbor: partition.assignment.mapping[flipped_node]})
 
     return partition.flip(flips)
 
@@ -67,7 +67,7 @@ def propose_random_flip(partition):
     edge = random.choice(tuple(partition["cut_edges"]))
     index = random.choice((0, 1))
     flipped_node, other_node = edge[index], edge[1 - index]
-    flip = {flipped_node: partition.assignment[other_node]}
+    flip = {flipped_node: partition.assignment.mapping[other_node]}
     return partition.flip(flip)
 
 
@@ -86,9 +86,9 @@ def slow_reversible_propose_bi(partition):
     b_nodes = {x[0] for x in partition["cut_edges"]}.union({x[1] for x in partition["cut_edges"]})
 
     flip = random.choice(list(b_nodes))
-    neighbor_assignments = list(set([partition.assignment[neighbor] for neighbor
+    neighbor_assignments = list(set([partition.assignment.mapping[neighbor] for neighbor
                                 in partition.graph.neighbors(flip)]))
-    neighbor_assignments.remove(partition.assignment[flip])
+    neighbor_assignments.remove(partition.assignment.mapping[flip])
     flips = {flip: random.choice(neighbor_assignments)}
 
     return partition.flip(flips)
@@ -107,8 +107,8 @@ def slow_reversible_propose(partition):
     :return: a proposed next `~gerrychain.Partition`
     """
 
-    b_nodes = {(x[0], partition.assignment[x[1]]) for x in partition["cut_edges"]
-               }.union({(x[1], partition.assignment[x[0]]) for x in partition["cut_edges"]})
+    b_nodes = {(x[0], partition.assignment.mapping[x[1]]) for x in partition["cut_edges"]
+               }.union({(x[1], partition.assignment.mapping[x[0]]) for x in partition["cut_edges"]})
 
     flip = random.choice(list(b_nodes))
     return partition.flip({flip[0]: flip[1]})

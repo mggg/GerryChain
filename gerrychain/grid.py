@@ -99,7 +99,7 @@ class Grid(Partition):
         grid.
         """
         m, n = self.dimensions
-        return [[self.assignment[(i, j)] for i in range(m)] for j in range(n)]
+        return [[self.assignment.mapping[(i, j)] for i in range(m)] for j in range(n)]
 
 
 def create_grid_graph(dimensions, with_diagonals):

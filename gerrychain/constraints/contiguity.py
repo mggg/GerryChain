@@ -78,7 +78,7 @@ def single_flip_contiguous(partition):
         """Compute the district edge weight, which is 1 if the nodes have the same
         assignment, and infinity otherwise.
         """
-        if assignment[start_node] != assignment[end_node]:
+        if assignment.mapping[start_node] != assignment.mapping[end_node]:
             # Fun fact: networkx actually refuses to take edges with None
             # weight.
             return True
@@ -86,12 +86,12 @@ def single_flip_contiguous(partition):
         return False
 
     for changed_node in flips:
-        old_assignment = partition.parent.assignment[changed_node]
+        old_assignment = partition.parent.assignment.mapping[changed_node]
 
         old_neighbors = [
             node
             for node in graph.neighbors(changed_node)
-            if assignment[node] == old_assignment
+            if assignment.mapping[node] == old_assignment
         ]
 
         if not old_neighbors:
@@ -130,7 +130,7 @@ def affected_parts(partition):
     affected = set()
     for node, part in flips.items():
         affected.add(part)
-        affected.add(parent.assignment[node])
+        affected.add(parent.assignment.mapping[node])
 
     return affected
 

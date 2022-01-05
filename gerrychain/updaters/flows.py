@@ -19,7 +19,7 @@ def create_flow():
 def flows_from_changes(old_assignment, flips):
     flows = collections.defaultdict(create_flow)
     for node, target in flips.items():
-        source = old_assignment[node]
+        source = old_assignment.mapping[node]
         if source != target:
             flows[target]['in'].add(node)
             flows[source]['out'].add(node)
@@ -80,11 +80,11 @@ def compute_edge_flows(partition):
     for (node, neighbor) in neighbor_flips(partition):
         edge = (node, neighbor)
 
-        old_source = old_assignment[node]
-        old_target = old_assignment[neighbor]
+        old_source = old_assignment.mapping[node]
+        old_target = old_assignment.mapping[neighbor]
 
-        new_source = assignment[node]
-        new_target = assignment[neighbor]
+        new_source = assignment.mapping[node]
+        new_target = assignment.mapping[neighbor]
 
         cut = new_source != new_target
         was_cut = old_source != old_target

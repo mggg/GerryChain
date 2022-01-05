@@ -17,7 +17,7 @@ def boundary_nodes(partition, alias="boundary_nodes"):
 def initialize_exterior_boundaries_as_a_set(partition):
     part_boundaries = collections.defaultdict(set)
     for node in partition["boundary_nodes"]:
-        part_boundaries[partition.assignment[node]].add(node)
+        part_boundaries[partition.assignment.mapping[node]].add(node)
     return part_boundaries
 
 
@@ -31,7 +31,7 @@ def initialize_exterior_boundaries(partition):
     graph_boundary = partition["boundary_nodes"]
     boundaries = collections.defaultdict(lambda: 0)
     for node in graph_boundary:
-        part = partition.assignment[node]
+        part = partition.assignment.mapping[node]
         boundaries[part] += partition.graph.nodes[node]["boundary_perim"]
     return boundaries
 
