@@ -56,7 +56,7 @@ def example_geographic_partition():
 
 def test_geographic_partition_can_be_instantiated(example_geographic_partition):
     partition = example_geographic_partition
-    assert partition.updaters == GeographicPartition.default_updaters
+    assert isinstance(partition, GeographicPartition)
 
 
 def test_Partition_parts_is_a_dictionary_of_parts_to_nodes(example_partition):
@@ -144,11 +144,9 @@ def test_repr(example_partition):
 
 def test_partition_has_default_updaters(example_partition):
     partition = example_partition
-    default_updaters = partition.default_updaters
     should_have_updaters = {"cut_edges": cut_edges}
 
     for updater in should_have_updaters:
-        assert default_updaters.get(updater, None) is not None
         assert should_have_updaters[updater](partition) == partition[updater]
 
 

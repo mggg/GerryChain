@@ -16,7 +16,6 @@ class Partition:
     :ivar dict parts: Maps district IDs to the set of nodes in that district.
     :ivar dict subgraphs: Maps district IDs to the induced subgraph of that district.
     """
-    default_updaters = {"cut_edges": cut_edges}
     __slots__ = (
         'graph',
         'subgraphs',
@@ -30,7 +29,8 @@ class Partition:
     )
 
     def __init__(
-        self, graph=None, assignment=None, updaters=None, parent=None, flips=None
+        self, graph=None, assignment=None, updaters=None, parent=None, flips=None,
+        use_cut_edges=True
     ):
         """
         :param graph: Underlying graph.
@@ -38,18 +38,19 @@ class Partition:
         :param updaters: Dictionary of functions to track data about the partition.
             The keys are stored as attributes on the partition class,
             which the functions compute.
+        :param use_cut_edges: If `False`, do not include `cut_edges` updater by default
+            and do not calculate edge flows.
         """
         if parent is None:
-            self._first_time(graph, assignment, updaters)
+            self._first_time(graph, assignment, updaters, use_cut_edges)
         else:
             self._from_parent(parent, flips)
 
         self._cache = dict()
         self.subgraphs = SubgraphView(self.graph, self.parts)
 
-    def _first_time(self, graph, assignment, updaters):
+    def _first_time(self, graph, assignment, updaters, use_cut_edges):
         self.graph = graph
-
         self.assignment = get_assignment(assignment, graph)
 
         if set(self.assignment) != set(graph):
@@ -58,7 +59,11 @@ class Partition:
         if updaters is None:
             updaters = dict()
 
-        self.updaters = self.default_updaters.copy()
+        if use_cut_edges:
+            self.updaters = {"cut_edges": cut_edges}
+        else:
+            self.updaters = {}
+
         self.updaters.update(updaters)
 
         self.parent = None
@@ -77,7 +82,9 @@ class Partition:
         self.updaters = parent.updaters
 
         self.flows = flows_from_changes(parent.assignment, flips)
-        self.edge_flows = compute_edge_flows(self)
+
+        if "cut_edges" in self.updaters:
+            self.edge_flows = compute_edge_flows(self)
 
     def __repr__(self):
         number_of_parts = len(self)
