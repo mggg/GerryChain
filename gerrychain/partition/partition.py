@@ -111,7 +111,7 @@ class Partition:
         :param edge: tuple of node IDs
         :rtype: bool
         """
-        return self.assignment[edge[0]] != self.assignment[edge[1]]
+        return self.assignment.mapping[edge[0]] != self.assignment.mapping[edge[1]]
 
     def __getitem__(self, key):
         """Allows accessing the values of updaters computed for this

@@ -172,9 +172,9 @@ class LocalitySplits:
             locality = partition.graph.nodes[n][self.col_id]
             if locality not in locality_intersections:
                 locality_intersections[locality] = set(
-                    [partition.assignment[n]])
+                    [partition.assignment.mapping[n]])
 
-            locality_intersections[locality].update([partition.assignment[n]])
+            locality_intersections[locality].update([partition.assignment.mapping[n]])
 
         pieces = 0
         for locality in locality_intersections:
