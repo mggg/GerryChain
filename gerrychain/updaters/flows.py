@@ -16,10 +16,11 @@ def create_flow():
     return {'in': set(), 'out': set()}
 
 
-def flows_from_changes(old_assignment, flips):
+@functools.lru_cache(maxsize=2)
+def flows_from_changes(old_partition, new_partition):
     flows = collections.defaultdict(create_flow)
-    for node, target in flips.items():
-        source = old_assignment.mapping[node]
+    for node, target in new_partition.flips.items():
+        source = old_partition.assignment.mapping[node]
         if source != target:
             flows[target]['in'].add(node)
             flows[source]['out'].add(node)
