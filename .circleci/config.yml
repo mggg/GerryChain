@@ -3,7 +3,7 @@ version: 2
 jobs:
   test:
     docker:
-      - image: python:3.7
+      - image: python:3.8
     working_directory: ~/repo
     steps:
       - checkout
@@ -19,8 +19,8 @@ jobs:
           command: |
             ls $HOME
             if [ ! -d "/home/circleci/conda" ]; then
-                wget https://repo.anaconda.com/miniconda/Miniconda3-py37_4.9.2-Linux-x86_64.sh
-                /bin/bash Miniconda3-py37_4.9.2-Linux-x86_64.sh -b -p $HOME/conda
+                wget https://repo.anaconda.com/miniconda/Miniconda3-py38_4.10.3-Linux-x86_64.sh
+                /bin/bash Miniconda3-py38_4.10.3-Linux-x86_64.sh -b -p $HOME/conda
                 export PATH=$HOME/conda/bin:$PATH
                 conda install -y -c defaults -c conda-forge sregistry
             else
@@ -34,7 +34,7 @@ jobs:
             conda install pytest pytest-cov
             conda install codecov
             python setup.py install
-            conda install shapely==1.6.4
+            conda install shapely==1.7.1
 
             # run tests
             echo "backend: Agg" > "matplotlibrc"
@@ -49,14 +49,14 @@ jobs:
 
   deploy:
     docker:
-      - image: python:3.7
+      - image: python:3.8
     working_directory: ~/repo
     steps:
       - checkout
       - run:
           name: install dependencies
           command: |
-            pip install --upgrade setuptools wheel
+            pip install --upgrade setuptools wheel twine
             python setup.py install
       - run:
           name: set up .pypirc
