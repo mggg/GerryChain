@@ -89,7 +89,7 @@ class PopulatedGraph:
     def contract_node(self, node, parent) -> None:
         self.population[parent] += self.population[node]
         self.subsets[parent] |= self.subsets[node]
-        self._degrees[parent] -= 1
+        self.degrees[parent] -= 1
 
     def has_ideal_population(self, node) -> bool:
         return (
@@ -103,12 +103,12 @@ Cut = namedtuple("Cut", "edge subset")
 def find_balanced_edge_cuts_contraction(
         h: PopulatedGraph, choice: Callable = random.choice) -> List[Cut]:
     # this used to be greater than 2 but failed on small grids:(
-    root = choice([x for x in h if h.degree(x) > 1])
+    root = choice([x for x in h if h.degrees[x] > 1])
     # BFS predecessors for iteratively contracting leaves
     pred = predecessors(h.graph, root)
 
     cuts = []
-    leaves = deque(x for x in h if h.degree(x) == 1)
+    leaves = deque(x for x in h if h.degrees[x] == 1)
     while len(leaves) > 0:
         leaf = leaves.popleft()
         if h.has_ideal_population(leaf):
@@ -116,7 +116,7 @@ def find_balanced_edge_cuts_contraction(
         # Contract the leaf:
         parent = pred[leaf]
         h.contract_node(leaf, parent)
-        if h.degree(parent) == 1 and parent != root:
+        if h.degrees[parent] == 1 and parent != root:
             leaves.append(parent)
     return cuts
 
