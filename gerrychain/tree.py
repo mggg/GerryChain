@@ -208,7 +208,7 @@ def bipartition_tree(
     :param choice: :func:`random.choice`. Can be substituted for testing.
     :param max_atempts: The max number of attempts that should be made to bipartition.
     """
-    populations = {node: graph.nodes[node][pop_col] for node in graph.node_indices}
+    populations = {node: graph.lookup(node, pop_col) for node in graph.node_indicies}
 
     possible_cuts = []
     if spanning_tree is None:
@@ -246,7 +246,7 @@ def _bipartition_tree_random_all(
     max_attempts: Optional[int] = None
 ):
     """Randomly bipartitions a graph and returns all cuts."""
-    populations = {node: graph.nodes[node][pop_col] for node in graph.node_indices}
+    populations = {node: graph.lookup(node, pop_col) for node in graph.node_indicies}
 
     possible_cuts = []
     if spanning_tree is None:
@@ -383,7 +383,7 @@ def recursive_tree_part(
         part_pop = 0
         for node in nodes:
             flips[node] = part
-            part_pop += graph.nodes[node][pop_col]
+            part_pop += graph.lookup(node, pop_col)
         debt += part_pop - pop_target
         remaining_nodes -= nodes
 
@@ -425,8 +425,8 @@ def get_seed_chunks(
         new_epsilon = epsilon
 
     chunk_pop = 0
-    for node in graph.node_indices:
-        chunk_pop += graph.nodes[node][pop_col]
+    for node in graph.node_indicies:
+        chunk_pop += graph.lookup(node, pop_col)
 
     while True:
         epsilon = abs(epsilon)
@@ -466,7 +466,7 @@ def get_seed_chunks(
 
         part_pop = 0
         for node in remaining_nodes:
-            part_pop += graph.nodes[node][pop_col]
+            part_pop += graph.lookup(node, pop_col)
         part_pop_as_dist = part_pop / num_chunks_left
         fake_epsilon = epsilon
         if num_chunks_left != 1:
