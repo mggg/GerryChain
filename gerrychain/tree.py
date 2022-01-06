@@ -63,6 +63,16 @@ def uniform_spanning_tree(graph, choice=random.choice):
 
 
 class PopulatedGraph:
+    __slots__ = [
+        "graph",
+        "subsets",
+        "population",
+        "tot_pop",
+        "ideal_pop",
+        "epsilon",
+        "degrees"
+    ]
+
     def __init__(self, graph, populations, ideal_pop, epsilon):
         self.graph = graph
         self.subsets = {node: {node} for node in graph.node_indicies}
@@ -70,18 +80,15 @@ class PopulatedGraph:
         self.tot_pop = sum(self.population.values())
         self.ideal_pop = ideal_pop
         self.epsilon = epsilon
-        self._degrees = {node: graph.degree(node) for node in graph.node_indicies}
+        self.degrees = {node: graph.degree(node) for node in graph}
 
     def __iter__(self):
         return iter(self.graph)
 
-    def degree(self, node):
-        return self._degrees[node]
-
     def contract_node(self, node, parent):
         self.population[parent] += self.population[node]
         self.subsets[parent] |= self.subsets[node]
-        self._degrees[parent] -= 1
+        self.degrees[parent] -= 1
 
     def has_ideal_population(self, node):
         return (
@@ -94,12 +101,12 @@ Cut = namedtuple("Cut", "edge subset")
 
 def find_balanced_edge_cuts_contraction(h, choice=random.choice):
     # this used to be greater than 2 but failed on small grids:(
-    root = choice([x for x in h if h.degree(x) > 1])
+    root = choice([x for x in h if h.degrees[x] > 1])
     # BFS predecessors for iteratively contracting leaves
     pred = predecessors(h.graph, root)
 
     cuts = []
-    leaves = deque(x for x in h if h.degree(x) == 1)
+    leaves = deque(x for x in h if h.degrees[x] == 1)
     while len(leaves) > 0:
         leaf = leaves.popleft()
         if h.has_ideal_population(leaf):
@@ -107,13 +114,13 @@ def find_balanced_edge_cuts_contraction(h, choice=random.choice):
         # Contract the leaf:
         parent = pred[leaf]
         h.contract_node(leaf, parent)
-        if h.degree(parent) == 1 and parent != root:
+        if h.degrees[parent] == 1 and parent != root:
             leaves.append(parent)
     return cuts
 
 
 def find_balanced_edge_cuts_memoization(h, choice=random.choice):
-    root = choice([x for x in h if h.degree(x) > 1])
+    root = choice([x for x in h if h.degrees[x] > 1])
     pred = predecessors(h.graph, root)
     succ = successors(h.graph, root)
     total_pop = h.tot_pop
