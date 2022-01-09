@@ -63,11 +63,11 @@ def reversible_recom(partition, pop_col, pop_target, epsilon,
                      repeat_until_valid=False, choice=random.choice):
     """Reversible ReCom proposal."""
     def dist_pair_edges(part, a, b):
-        return set(
+        return {
             e for e in part.graph.edges
             if ((part.assignment[e[0]] == a and part.assignment[e[1]] == b) or
                 (part.assignment[e[0]] == b and part.assignment[e[1]] == a))
-        )
+        }
 
     def bounded_balance_edge_fn(*args, **kwargs):
         cuts = balance_edge_fn(*args, **kwargs)
@@ -110,7 +110,7 @@ def reversible_recom(partition, pop_col, pop_target, epsilon,
         return partition    # self-loop: no balance edge
 
     nodes = choice(all_cuts).subset
-    remaining_nodes = set(subgraph.nodes()) - set(nodes)
+    remaining_nodes = {subgraph.nodes()} - {nodes}
     flips = {
         **{node: parts_to_merge[0] for node in nodes},
         **{node: parts_to_merge[1] for node in remaining_nodes}

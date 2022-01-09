@@ -17,7 +17,7 @@ def propose_flip_every_district(partition):
     :param partition: The current partition to propose a flip from.
     :return: a proposed next `~gerrychain.Partition`
     """
-    flips = dict()
+    flips = {}
 
     for dist_edges in partition["cut_edges_by_part"].values():
         edge = random.choice(tuple(dist_edges))
@@ -37,7 +37,7 @@ def propose_chunk_flip(partition):
     :param partition: The current partition to propose a flip from.
     :return: a proposed next `~gerrychain.Partition`
     """
-    flips = dict()
+    flips = {}
 
     edge = random.choice(tuple(partition["cut_edges"]))
     index = random.choice((0, 1))
@@ -86,8 +86,8 @@ def slow_reversible_propose_bi(partition):
     b_nodes = {x[0] for x in partition["cut_edges"]}.union({x[1] for x in partition["cut_edges"]})
 
     flip = random.choice(list(b_nodes))
-    neighbor_assignments = list(set([partition.assignment[neighbor] for neighbor
-                                in partition.graph.neighbors(flip)]))
+    neighbor_assignments = list({[partition.assignment[neighbor] for neighbor
+                                in partition.graph.neighbors(flip)]})
     neighbor_assignments.remove(partition.assignment[flip])
     flips = {flip: random.choice(neighbor_assignments)}
 

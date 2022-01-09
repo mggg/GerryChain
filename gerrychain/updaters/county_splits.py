@@ -33,7 +33,7 @@ def compute_county_splits(partition, county_field, partition_field):
 
     # Create the initial county data containers.
     if not partition.parent:
-        county_dict = dict()
+        county_dict = {}
 
         for node in partition.graph:
             county = partition.graph.nodes[node][county_field]
@@ -52,7 +52,7 @@ def compute_county_splits(partition, county_field, partition_field):
 
         return county_dict
 
-    new_county_dict = dict()
+    new_county_dict = {}
 
     parent = partition.parent
     for county, county_info in parent[partition_field].items():

@@ -44,7 +44,7 @@ class Partition:
         else:
             self._from_parent(parent, flips)
 
-        self._cache = dict()
+        self._cache = {}
         self.subgraphs = SubgraphView(self.graph, self.parts)
 
     def _first_time(self, graph, assignment, updaters):
@@ -56,7 +56,7 @@ class Partition:
             raise KeyError("The graph's node labels do not match the Assignment's keys")
 
         if updaters is None:
-            updaters = dict()
+            updaters = {}
 
         self.updaters = self.default_updaters.copy()
         self.updaters.update(updaters)

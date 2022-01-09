@@ -40,7 +40,7 @@ def uniform_spanning_tree(graph, choice=random.choice):
         :param choice: :func:`random.choice`
     """
     root = choice(list(graph.nodes))
-    tree_nodes = set([root])
+    tree_nodes = {root}
     next_node = {root: None}
 
     for node in graph.nodes:
@@ -155,7 +155,7 @@ def find_balanced_edge_cuts_memoization(h, choice=random.choice):
             cuts.append(Cut(edge=(node, pred[node]), subset=part_nodes(node)))
         elif abs((total_pop - tree_pop) - h.ideal_pop) <= h.ideal_pop * h.epsilon:
             cuts.append(Cut(edge=(node, pred[node]),
-                            subset=set(h.graph.nodes) - part_nodes(node)))
+                            subset={h.graph.nodes} - part_nodes(node)))
     return cuts
 
 
@@ -307,7 +307,7 @@ def recursive_tree_part(
     :rtype: dict
     """
     flips = {}
-    remaining_nodes = set(graph.nodes)
+    remaining_nodes = {graph.nodes}
     # We keep a running tally of deviation from ``epsilon`` at each partition
     # and use it to tighten the population constraints on a per-partition
     # basis such that every partition, including the last partition, has a
@@ -383,7 +383,7 @@ def get_seed_chunks(
         epsilon = abs(epsilon)
 
         flips = {}
-        remaining_nodes = set(graph.nodes)
+        remaining_nodes = {graph.nodes}
 
         min_pop = pop_target * (1 - new_epsilon) * num_chunks_left
         max_pop = pop_target * (1 + new_epsilon) * num_chunks_left
@@ -529,11 +529,11 @@ def recursive_seed_part_inner(
 
     # base case
     if num_dists == 1:
-        return [set(graph.nodes)]
+        return [{graph.nodes}]
 
     # bite off a district and recurse into the remaining subgraph
     elif num_chunks is None or num_dists % num_chunks != 0:
-        remaining_nodes = set(graph.nodes)
+        remaining_nodes = {graph.nodes}
         nodes = method(
             graph.subgraph(remaining_nodes),
             pop_col=pop_col,
