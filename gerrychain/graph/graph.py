@@ -4,6 +4,7 @@ from typing import Any
 import warnings
 
 import networkx
+import retworkx
 from networkx.classes.function import frozen
 from networkx.readwrite import json_graph
 import pandas as pd
@@ -357,8 +358,7 @@ class FrozenGraph:
     This speeds up chain runs and prevents having to deal with cache invalidation issues.
     This class behaves slightly differently than :class:`Graph` or :class:`networkx.Graph`.
     """
-
-    __slots__ = ["graph", "size"]
+    __slots__ = ["graph", "size", "pygraph"]
 
     def __init__(self, graph: Graph):
         self.graph = networkx.classes.function.freeze(graph)
