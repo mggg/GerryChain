@@ -38,7 +38,7 @@ jobs:
 
             # run tests
             echo "backend: Agg" > "matplotlibrc"
-            pytest -v --cov=gerrychain --junitxml=test-reports/junit.xml tests
+            pytest -v --runslow --cov=gerrychain --junitxml=test-reports/junit.xml tests
             codecov
           environment:
             PYTHONHASHSEED: "0"
@@ -56,7 +56,7 @@ jobs:
       - run:
           name: install dependencies
           command: |
-            pip install --upgrade setuptools wheel
+            pip install --upgrade setuptools wheel twine
             python setup.py install
       - run:
           name: set up .pypirc
