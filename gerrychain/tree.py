@@ -78,7 +78,7 @@ class PopulatedGraph:
         self.tot_pop = sum(self.population.values())
         self.ideal_pop = ideal_pop
         self.epsilon = epsilon
-        self._degrees = {node: graph.degree(node) for node in graph.nodes}
+        self.degrees = {node: graph.degree(node) for node in graph.nodes}
 
     def __iter__(self):
         return iter(self.graph)
