@@ -366,6 +366,7 @@ class FrozenGraph:
         self.graph.add_data = frozen
 
         self.size = len(self.graph)
+        self.pygraph = retworkx.networkx_converter(graph, keep_attributes=True)
 
     def __len__(self):
         return self.size
