@@ -4,12 +4,12 @@ from ..random import random
 from ..tree import (
     recursive_tree_part, bipartition_tree, bipartition_tree_random,
     _bipartition_tree_random_all, uniform_spanning_tree,
-    find_balanced_edge_cuts_memoization,
+    find_balanced_edge_cuts_memoization, bipartition_tree_retworkx
 )
 
 
 def recom(
-    partition, pop_col, pop_target, epsilon, node_repeats=1, method=bipartition_tree
+    partition, pop_col, pop_target, epsilon, node_repeats=1, method=bipartition_tree_retworkx
 ):
     """ReCom proposal.
 
@@ -46,7 +46,7 @@ def recom(
     )
 
     flips = recursive_tree_part(
-        subgraph.graph,
+        subgraph,
         parts_to_merge,
         pop_col=pop_col,
         pop_target=pop_target,
