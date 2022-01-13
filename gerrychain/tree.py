@@ -187,7 +187,7 @@ def bipartition_tree_retworkx(
 ):
     pops = graph.pygraph_pop_lookup(pop_col)
 
-    balanced_nodes = retworkx.bipartition_tree(graph.pygraph, lambda x: random.random(), pops, float(pop_target), float(epsilon))
+    balanced_nodes = retworkx.bipartition_tree(graph.pygraph, lambda x: random.random(), pops, pop_target, epsilon)
     return {graph.retworkx_networkx_mapping[x] for x in choice(balanced_nodes)[1]}
 
 
@@ -389,8 +389,14 @@ def recursive_tree_part(
     for part in parts[:-1]:
         min_pop = max(pop_target * (1 - epsilon), pop_target * (1 - epsilon) - debt)
         max_pop = min(pop_target * (1 + epsilon), pop_target * (1 + epsilon) - debt)
+
+        if len(parts[:-1]) == 1:  # prevent unnecessary subgraphing
+            subgraph = graph
+        else:
+            subgraph = graph.subgraph(remaining_nodes)
+
         nodes = method(
-            graph.subgraph(remaining_nodes),
+            subgraph,
             pop_col=pop_col,
             pop_target=(min_pop + max_pop) / 2,
             epsilon=(max_pop - min_pop) / (2 * pop_target),
