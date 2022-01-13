@@ -1,6 +1,6 @@
 import functools
 import json
-from typing import Any
+from typing import Any, Tuple
 import warnings
 
 import networkx
@@ -358,15 +358,31 @@ class FrozenGraph:
     This speeds up chain runs and prevents having to deal with cache invalidation issues.
     This class behaves slightly differently than :class:`Graph` or :class:`networkx.Graph`.
     """
-    __slots__ = ["graph", "size", "pygraph"]
+    __slots__ = [
+        "graph",
+        "size",
+        "pygraph",
+        "networkx_rustworkx_mapping",
+        "rustworkx_networkx_mapping"
+    ]
 
-    def __init__(self, graph: Graph):
+    def __init__(self, graph: Graph, pygraph: retworkx.PyGraph = None, mappings: Tuple[dict, dict] = None):
         self.graph = networkx.classes.function.freeze(graph)
         self.graph.join = frozen
         self.graph.add_data = frozen
 
         self.size = len(self.graph)
-        self.pygraph = retworkx.networkx_converter(graph, keep_attributes=True)
+
+        if pygraph:
+            self.pygraph = pygraph
+        else:
+            self.pygraph = retworkx.networkx_converter(graph, keep_attributes=True)
+
+        if mappings:
+            self.retworkx_networkx_mapping, self.networkx_retworkx_mapping = mappings
+        else:
+            self.retworkx_networkx_mapping = {node: self.pygraph[node]["__networkx_node__"] for node in self.pygraph.node_indexes()}
+            self.networkx_retworkx_mapping = {self.pygraph[node]["__networkx_node__"]: node for node in self.pygraph.node_indexes()}
 
     def __len__(self):
         return self.size
@@ -404,4 +420,15 @@ class FrozenGraph:
         return self.graph.nodes[node][field]
 
     def subgraph(self, nodes):
-        return FrozenGraph(self.graph.subgraph(nodes))
+        return FrozenGraph(self.graph.subgraph(nodes), 
+            self.pygraph.subgraph(
+                [self.networkx_retworkx_mapping[x] for x in nodes]
+            )
+        )
+
+    @functools.cache
+    def pygraph_pop_lookup(self, field: str):
+        attrs = [0] * len(self.pygraph.node_indexes())
+        for node in self.pygraph.node_indexes():
+            attrs[node] = float(self.pygraph[node][field])
+        return attrs
