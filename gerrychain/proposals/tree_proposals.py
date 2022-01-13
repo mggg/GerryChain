@@ -45,16 +45,15 @@ def recom(
         partition.parts[parts_to_merge[0]] | partition.parts[parts_to_merge[1]]
     )
 
-    flips = {
-        x: parts_to_merge[0] 
-        for x in bipartition_tree_retworkx(
-            subgraph,
-            pop_col=pop_col,
-            pop_target=pop_target,
-            epsilon=epsilon,
-            node_repeats=node_repeats,
-        )
-    }
+    flips = recursive_tree_part(
+        subgraph,
+        parts_to_merge,
+        pop_col=pop_col,
+        pop_target=pop_target,
+        epsilon=epsilon,
+        node_repeats=node_repeats,
+        method=method,
+    )
 
     return partition.flip(flips)
 
