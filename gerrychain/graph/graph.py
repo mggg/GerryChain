@@ -415,7 +415,7 @@ class FrozenGraph:
     def degree(self, n):
         return self.graph.degree(n)
 
-    @functools.lru_cache(65536)
+    # @functools.lru_cache(65536) # memory leak
     def lookup(self, node, field):
         return self.graph.nodes[node][field]
 
@@ -426,7 +426,7 @@ class FrozenGraph:
             )
         )
 
-    @functools.cache
+    # @functools.cache
     def pygraph_pop_lookup(self, field: str):
         attrs = [0] * len(self.pygraph.node_indexes())
         for node in self.pygraph.node_indexes():
