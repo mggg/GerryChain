@@ -357,14 +357,12 @@ class FrozenGraph:
     def __len__(self):
         return self.size
 
-    @functools.lru_cache(64)
     def __getattribute__(self, __name: str) -> Any:
         try:
             return object.__getattribute__(self, __name)
         except AttributeError:
             return object.__getattribute__(self.graph, __name)
 
-    @functools.lru_cache(16384)
     def __getitem__(self, __name: str) -> Any:
         return self.graph[__name]
 
@@ -387,7 +385,6 @@ class FrozenGraph:
     def degree(self, n):
         return self.graph.degree(n)
 
-    @functools.lru_cache(65536)
     def lookup(self, node, field):
         return self.graph.nodes[node][field]
 
