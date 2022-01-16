@@ -1,5 +1,4 @@
 from collections import Counter
-from shapely.validation import explain_validity
 from gerrychain.vendor.utm import from_latlon
 
 
@@ -22,6 +21,7 @@ def invalid_geometries(df):
     :param df: :class:`geopandas.GeoDataFrame`
     :rtype: list of int
     """
+    from shapely.validation import explain_validity
     invalid = []
     for idx, row in df.iterrows():
         validity = explain_validity(row.geometry)

@@ -3,12 +3,9 @@ import json
 from typing import Any
 import warnings
 
-import geopandas as gp
 import networkx
 from networkx.classes.function import frozen
 from networkx.readwrite import json_graph
-from shapely.ops import unary_union
-from shapely.prepared import prep
 
 from .adjacency import neighbors
 from .geo import GeometryError, invalid_geometries, reprojected
@@ -78,6 +75,7 @@ class Graph(networkx.Graph):
         :param cols_to_add: (optional) The names of the columns that you want to
             add to the graph as node attributes. By default, all columns are added.
         """
+        import geopandas as gp
         df = gp.read_file(filename)
         graph = cls.from_geodataframe(
             df, adjacency=adjacency,
@@ -275,6 +273,8 @@ def add_boundary_perimeters(graph, geometries):
     :param df: Geodataframe containing geometry information.
     :return: The updated graph.
     """
+    from shapely.ops import unary_union
+    from shapely.prepared import prep
     prepared_boundary = prep(unary_union(geometries).boundary)
 
     boundary_nodes = geometries.boundary.apply(prepared_boundary.intersects)

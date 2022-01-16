@@ -1,7 +1,5 @@
 import warnings
 
-from shapely.strtree import STRtree
-
 
 def neighbors(df, adjacency):
     if adjacency not in ("rook", "queen"):
@@ -17,6 +15,7 @@ def str_tree(geometries):
     """Add ids to geometries and create a STR tree for spatial indexing.
     Use this for all spatial operations!
     """
+    from shapely.strtree import STRtree
     for i in geometries.index:
         geometries[i].id = i
     try:

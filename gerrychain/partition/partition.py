@@ -1,5 +1,4 @@
 import json
-import geopandas
 import networkx
 
 from gerrychain.graph.graph import FrozenGraph, Graph
@@ -155,6 +154,8 @@ class Partition:
         :param `**kwargs`: Additional arguments to pass to :meth:`geopandas.GeoDataFrame.plot`
             to adjust the plot.
         """
+        import geopandas
+
         if geometries is None:
             geometries = self.graph.geometry
 
