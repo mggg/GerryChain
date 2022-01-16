@@ -10,8 +10,6 @@ requirements = [
     "pandas",
     "scipy",
     "networkx",
-    "geopandas",
-    "shapely",
     "matplotlib",
 ]
 
@@ -37,4 +35,7 @@ setup(
         "Operating System :: OS Independent",
         "License :: OSI Approved :: BSD License",
     ],
+    extras_require={
+        'geo': ["shapely", "geopandas"]
+    }
 )
