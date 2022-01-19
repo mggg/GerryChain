@@ -14,6 +14,14 @@ def identify_utm_zone(df):
     return most_common
 
 
+def explain_validity(geo):
+    """Given a geometry, explain the validity.
+    Light wrapper around shapely's explain_validity.
+    """
+    import shapely.validation
+    return shapely.validation.explain_validity(geo)
+
+
 def invalid_geometries(df):
     """Given a GeoDataFrame, returns a list of row indices
     with invalid geometries.
@@ -21,7 +29,6 @@ def invalid_geometries(df):
     :param df: :class:`geopandas.GeoDataFrame`
     :rtype: list of int
     """
-    from shapely.validation import explain_validity
     invalid = []
     for idx, row in df.iterrows():
         validity = explain_validity(row.geometry)
