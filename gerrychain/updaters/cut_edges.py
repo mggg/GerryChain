@@ -7,8 +7,8 @@ def put_edges_into_parts(edges, assignment):
     by_part = collections.defaultdict(set)
     for edge in edges:
         # add edge to the sets corresponding to the parts it touches
-        by_part[assignment[edge[0]]].add(edge)
-        by_part[assignment[edge[1]]].add(edge)
+        by_part[assignment.mapping[edge[0]]].add(edge)
+        by_part[assignment.mapping[edge[1]]].add(edge)
     return by_part
 
 

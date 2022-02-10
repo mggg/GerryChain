@@ -59,7 +59,7 @@ def spectral_recom(partition, weight_type=None, lap_type="normalized"):
     """
 
     edge = random.choice(tuple(partition["cut_edges"]))
-    parts_to_merge = (partition.assignment[edge[0]], partition.assignment[edge[1]])
+    parts_to_merge = (partition.assignment.mapping[edge[0]], partition.assignment.mapping[edge[1]])
 
     subgraph = partition.graph.subgraph(
         partition.parts[parts_to_merge[0]] | partition.parts[parts_to_merge[1]]
