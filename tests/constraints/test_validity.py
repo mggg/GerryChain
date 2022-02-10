@@ -169,6 +169,6 @@ def test_no_vanishing_districts_works():
     partition = MagicMock()
     partition.parent = parent
     partition.assignment = parent.assignment.copy()
-    partition.assignment.update({2: 1})
+    partition.assignment.update_flows({1: {"out": set(), "in": {2}}, 2: {"out": {2}, "in": set()}})
 
     assert not no_vanishing_districts(partition)

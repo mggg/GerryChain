@@ -4,8 +4,6 @@ from collections.abc import Mapping
 
 import pandas
 
-from ..updaters.flows import flows_from_changes
-
 
 class Assignment(Mapping):
     """An assignment of nodes into parts.
@@ -58,10 +56,9 @@ class Assignment(Mapping):
         """
         return Assignment(self.parts.copy(), self.mapping.copy(), validate=False)
 
-    def update(self, mapping):
-        """Update the assignment for some nodes using the given mapping.
+    def update_flows(self, flows):
+        """Update the assignment for some nodes using the given flows.
         """
-        flows = flows_from_changes(self, mapping)
         for part, flow in flows.items():
             # Union between frozenset and set returns an object whose type
             # matches the object on the left, which here is a frozenset
