@@ -28,7 +28,7 @@ def county_splits(partition_name, county_field_name):
     return _get_county_splits
 
 
-def compute_county_splits(partition, county_field, partition_field):
+def compute_county_splits(partition, county_field, partition_field, population=None):
     """Track nodes in counties and information about their splitting."""
 
     # Create the initial county data containers.
@@ -36,6 +36,8 @@ def compute_county_splits(partition, county_field, partition_field):
         county_dict = dict()
 
         for node in partition.graph:
+            if population and partition.graph.nodes[node][population] == 0:
+                continue
             county = partition.graph.nodes[node][county_field]
             if county in county_dict:
                 split, nodes, seen = county_dict[county]
