@@ -78,7 +78,7 @@ class Partition:
         self.graph = parent.graph
         self.updaters = parent.updaters
 
-        self.flows = flows_from_changes(parent.assignment, flips)
+        self.flows = flows_from_changes(parent, self)  # careful
 
         self.assignment = parent.assignment.copy()
         self.assignment.update_flows(self.flows)
