@@ -181,11 +181,11 @@ class Graph(networkx.Graph):
         return self.nodes[node][field]
 
     @property
-    def node_indicies(self):
+    def node_indices(self):
         return set(self.nodes)
 
     @property
-    def edge_indicies(self):
+    def edge_indices(self):
         return set(self.edges)
 
     def add_data(self, df, columns=None):
@@ -367,19 +367,19 @@ class FrozenGraph:
         return self.graph[__name]
 
     def __iter__(self):
-        yield from self.node_indicies
+        yield from self.node_indices
 
     @functools.lru_cache(16384)
     def neighbors(self, n):
         return tuple(self.graph.neighbors(n))
 
     @functools.cached_property
-    def node_indicies(self):
-        return self.graph.node_indicies
+    def node_indices(self):
+        return self.graph.node_indices
 
     @functools.cached_property
-    def edge_indicies(self):
-        return self.graph.edge_indicies
+    def edge_indices(self):
+        return self.graph.edge_indices
 
     @functools.lru_cache(16384)
     def degree(self, n):
