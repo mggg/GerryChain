@@ -7,6 +7,7 @@ import pytest
 
 from gerrychain.partition import GeographicPartition, Partition
 from gerrychain.proposals import propose_random_flip
+from gerrychain.graph import Graph
 from gerrychain.updaters import cut_edges
 
 
@@ -17,14 +18,14 @@ def test_Partition_can_be_flipped(example_partition):
 
 
 def test_Partition_misnamed_vertices_raises_keyerror():
-    graph = networkx.complete_graph(3)
+    graph = Graph.from_networkx(networkx.complete_graph(3))
     assignment = {"0": 1, "1": 1, "2": 2}
     with pytest.raises(KeyError):
         Partition(graph, assignment, {"cut_edges": cut_edges})
 
 
 def test_Partition_unlabelled_vertices_raises_keyerror():
-    graph = networkx.complete_graph(3)
+    graph = Graph.from_networkx(networkx.complete_graph(3))
     assignment = {0: 1, 2: 2}
     with pytest.raises(KeyError):
         Partition(graph, assignment, {"cut_edges": cut_edges})
@@ -44,7 +45,7 @@ def test_propose_random_flip_proposes_a_partition(example_partition):
 
 @pytest.fixture
 def example_geographic_partition():
-    graph = networkx.complete_graph(3)
+    graph = Graph.from_networkx(networkx.complete_graph(3))
     assignment = {0: 1, 1: 1, 2: 2}
     for node in graph.nodes:
         graph.nodes[node]["boundary_node"] = False

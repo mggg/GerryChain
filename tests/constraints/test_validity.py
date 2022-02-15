@@ -11,6 +11,7 @@ from gerrychain.constraints import (SelfConfiguringLowerBound, Validator,
                                     single_flip_contiguous)
 from gerrychain.partition import Partition
 from gerrychain.partition.partition import get_assignment
+from gerrychain.graph import Graph
 
 
 @pytest.fixture
@@ -18,7 +19,7 @@ def contiguous_partition_with_flips():
     graph = nx.Graph()
     graph.add_nodes_from(range(4))
     graph.add_edges_from([(0, 1), (1, 2), (2, 3), (3, 0)])
-    partition = Partition(graph, {0: 0, 1: 1, 2: 1, 3: 0})
+    partition = Partition(Graph.from_networkx(graph), {0: 0, 1: 1, 2: 1, 3: 0})
 
     # This flip will maintain contiguity.
     return partition, {0: 1}
@@ -29,7 +30,7 @@ def discontiguous_partition_with_flips():
     graph = nx.Graph()
     graph.add_nodes_from(range(4))
     graph.add_edges_from([(0, 1), (1, 2), (2, 3)])
-    partition = Partition(graph, {0: 0, 1: 1, 2: 1, 3: 0})
+    partition = Partition(Graph.from_networkx(graph), {0: 0, 1: 1, 2: 1, 3: 0})
 
     # This flip will maintain discontiguity.
     return partition, {1: 0}

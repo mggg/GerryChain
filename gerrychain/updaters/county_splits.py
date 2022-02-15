@@ -35,8 +35,8 @@ def compute_county_splits(partition, county_field, partition_field):
     if not partition.parent:
         county_dict = dict()
 
-        for node in partition.graph:
-            county = partition.graph.nodes[node][county_field]
+        for node in partition.graph.node_indices:
+            county = partition.graph.lookup(node, county_field)
             if county in county_dict:
                 split, nodes, seen = county_dict[county]
             else:
