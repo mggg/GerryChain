@@ -7,6 +7,7 @@ import pytest
 
 from gerrychain.partition import GeographicPartition, Partition
 from gerrychain.proposals import propose_random_flip
+from gerrychain.graph import Graph
 from gerrychain.updaters import cut_edges
 
 
@@ -17,14 +18,14 @@ def test_Partition_can_be_flipped(example_partition):
 
 
 def test_Partition_misnamed_vertices_raises_keyerror():
-    graph = networkx.complete_graph(3)
+    graph = Graph.from_networkx(networkx.complete_graph(3))
     assignment = {"0": 1, "1": 1, "2": 2}
     with pytest.raises(KeyError):
         Partition(graph, assignment, {"cut_edges": cut_edges})
 
 
 def test_Partition_unlabelled_vertices_raises_keyerror():
-    graph = networkx.complete_graph(3)
+    graph = Graph.from_networkx(networkx.complete_graph(3))
     assignment = {0: 1, 2: 2}
     with pytest.raises(KeyError):
         Partition(graph, assignment, {"cut_edges": cut_edges})
@@ -42,16 +43,9 @@ def test_propose_random_flip_proposes_a_partition(example_partition):
     assert isinstance(proposal, partition.__class__)
 
 
-def test_get_num_spanning_trees(three_by_three_grid):
-    graph = three_by_three_grid
-    assignment = {0: 1, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1, 7: 1, 8: 1}
-    partition = Partition(graph, assignment, {"cut_edges": cut_edges})
-    assert 192 == round(partition.get_num_spanning_trees(1))
-
-
 @pytest.fixture
 def example_geographic_partition():
-    graph = networkx.complete_graph(3)
+    graph = Graph.from_networkx(networkx.complete_graph(3))
     assignment = {0: 1, 1: 1, 2: 2}
     for node in graph.nodes:
         graph.nodes[node]["boundary_node"] = False
@@ -63,7 +57,7 @@ def example_geographic_partition():
 
 def test_geographic_partition_can_be_instantiated(example_geographic_partition):
     partition = example_geographic_partition
-    assert partition.updaters == GeographicPartition.default_updaters
+    assert isinstance(partition, GeographicPartition)
 
 
 def test_Partition_parts_is_a_dictionary_of_parts_to_nodes(example_partition):
@@ -151,11 +145,9 @@ def test_repr(example_partition):
 
 def test_partition_has_default_updaters(example_partition):
     partition = example_partition
-    default_updaters = partition.default_updaters
     should_have_updaters = {"cut_edges": cut_edges}
 
     for updater in should_have_updaters:
-        assert default_updaters.get(updater, None) is not None
         assert should_have_updaters[updater](partition) == partition[updater]
 
 

@@ -3,8 +3,8 @@ from ..random import random
 
 from ..tree import (
     recursive_tree_part, bipartition_tree, bipartition_tree_random,
-    uniform_spanning_tree, find_balanced_edge_cuts_memoization,
-    BalanceError
+    _bipartition_tree_random_all, uniform_spanning_tree,
+    find_balanced_edge_cuts_memoization,
 )
 
 
@@ -39,14 +39,14 @@ def recom(
 
     """
     edge = random.choice(tuple(partition["cut_edges"]))
-    parts_to_merge = (partition.assignment[edge[0]], partition.assignment[edge[1]])
+    parts_to_merge = (partition.assignment.mapping[edge[0]], partition.assignment.mapping[edge[1]])
 
     subgraph = partition.graph.subgraph(
         partition.parts[parts_to_merge[0]] | partition.parts[parts_to_merge[1]]
     )
 
     flips = recursive_tree_part(
-        subgraph,
+        subgraph.graph,
         parts_to_merge,
         pop_col=pop_col,
         pop_target=pop_target,
@@ -60,12 +60,13 @@ def recom(
 
 def reversible_recom(partition, pop_col, pop_target, epsilon,
                      balance_edge_fn=find_balanced_edge_cuts_memoization, M=1,
-                     repeat_until_valid=False):
+                     repeat_until_valid=False, choice=random.choice):
+    """Reversible ReCom proposal."""
     def dist_pair_edges(part, a, b):
         return set(
             e for e in part.graph.edges
-            if ((part.assignment[e[0]] == a and part.assignment[e[1]] == b) or
-                (part.assignment[e[0]] == b and part.assignment[e[1]] == a))
+            if ((part.assignment.mapping[e[0]] == a and part.assignment.mapping[e[1]] == b) or
+                (part.assignment.mapping[e[0]] == b and part.assignment.mapping[e[1]] == a))
         )
 
     def bounded_balance_edge_fn(*args, **kwargs):
@@ -76,7 +77,7 @@ def reversible_recom(partition, pop_col, pop_target, epsilon,
         return cuts
 
     bipartition_tree_random_reversible = partial(
-        bipartition_tree_random,
+        _bipartition_tree_random_all,
         repeat_until_valid=repeat_until_valid,
         spanning_tree_fn=uniform_spanning_tree,
         balance_edge_fn=bounded_balance_edge_fn
@@ -94,27 +95,35 @@ def reversible_recom(partition, pop_col, pop_target, epsilon,
         return partition    # self-loop: no adjacency
 
     edge = random.choice(list(pair_edges))
-    parts_to_merge = (partition.assignment[edge[0]], partition.assignment[edge[1]])
+    parts_to_merge = (partition.assignment.mapping[edge[0]], partition.assignment.mapping[edge[1]])
     subgraph = partition.graph.subgraph(
         partition.parts[parts_to_merge[0]] | partition.parts[parts_to_merge[1]]
     )
 
-    try:
-        flips = recursive_tree_part(
-            subgraph,
-            parts_to_merge,
-            pop_col=pop_col,
-            pop_target=pop_target,
-            epsilon=epsilon,
-            method=bipartition_tree_random_reversible
-        )
-    except BalanceError:
+    all_cuts = bipartition_tree_random_reversible(
+        subgraph,
+        pop_col=pop_col,
+        pop_target=pop_target,
+        epsilon=epsilon
+    )
+    if not all_cuts:
         return partition    # self-loop: no balance edge
+
+    nodes = choice(all_cuts).subset
+    remaining_nodes = set(subgraph.nodes()) - set(nodes)
+    flips = {
+        **{node: parts_to_merge[0] for node in nodes},
+        **{node: parts_to_merge[1] for node in remaining_nodes}
+    }
 
     new_part = partition.flip(flips)
     seam_length = len(dist_pair_edges(new_part, *random_pair))
 
-    if random.random() < 1 / (M * seam_length):
+    prob = len(all_cuts) / (M * seam_length)
+    if prob > 1:
+        raise ReversibilityError(f'Found {len(all_cuts)} balance edges, but '
+                                 f'the upper bound (with seam length 1) is {M}.')
+    if random.random() < prob:
         return new_part
 
     return partition     # self-loop

@@ -5,6 +5,7 @@ import pytest
 
 from gerrychain import MarkovChain
 from gerrychain.constraints import Validator, no_vanishing_districts
+from gerrychain.graph import Graph
 from gerrychain.partition import Partition
 from gerrychain.proposals import propose_random_flip
 from gerrychain.random import random
@@ -62,7 +63,7 @@ def test_Partition_can_update_stats():
 
     updaters = {"total_stat": Tally("stat", alias="total_stat")}
 
-    partition = Partition(graph, assignment, updaters)
+    partition = Partition(Graph.from_networkx(graph), assignment, updaters)
     assert partition["total_stat"][2] == 3
     flip = {1: 2}
 

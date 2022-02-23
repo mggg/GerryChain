@@ -3,6 +3,7 @@ import math
 import networkx
 
 from gerrychain.partition import Partition
+from gerrychain.graph import Graph
 from gerrychain.updaters import (
     Tally,
     boundary_nodes,
@@ -63,7 +64,7 @@ class Grid(Partition):
         """
         if dimensions:
             self.dimensions = dimensions
-            graph = create_grid_graph(dimensions, with_diagonals)
+            graph = Graph.from_networkx(create_grid_graph(dimensions, with_diagonals))
 
             if not assignment:
                 thresholds = tuple(math.floor(n / 2) for n in self.dimensions)
@@ -99,7 +100,7 @@ class Grid(Partition):
         grid.
         """
         m, n = self.dimensions
-        return [[self.assignment[(i, j)] for i in range(m)] for j in range(n)]
+        return [[self.assignment.mapping[(i, j)] for i in range(m)] for j in range(n)]
 
 
 def create_grid_graph(dimensions, with_diagonals):

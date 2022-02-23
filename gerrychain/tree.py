@@ -15,7 +15,7 @@ def successors(h, root):
 
 def random_spanning_tree(graph):
     """ Builds a spanning tree chosen by Kruskal's method using random weights.
-        :param graph: Networkx Graph
+        :param graph: FrozenGraph
 
         Important Note:
         The key is specifically labelled "random_weight" instead of the previously
@@ -24,7 +24,7 @@ def random_spanning_tree(graph):
         This meant that the laplacian would change for the graph step to step,
         something that we do not intend!!
     """
-    for edge in graph.edges:
+    for edge in graph.edge_indices:
         graph.edges[edge]["random_weight"] = random.random()
 
     spanning_tree = tree.maximum_spanning_tree(
@@ -39,14 +39,14 @@ def uniform_spanning_tree(graph, choice=random.choice):
         :param graph: Networkx Graph
         :param choice: :func:`random.choice`
     """
-    root = choice(list(graph.nodes))
+    root = choice(graph.node_indices)
     tree_nodes = set([root])
     next_node = {root: None}
 
-    for node in graph.nodes:
+    for node in graph.node_indices:
         u = node
         while u not in tree_nodes:
-            next_node[u] = choice(list(nx.neighbors(graph, u)))
+            next_node[u] = choice(graph.neighbors(u))
             u = next_node[u]
 
         u = node
@@ -65,12 +65,12 @@ def uniform_spanning_tree(graph, choice=random.choice):
 class PopulatedGraph:
     def __init__(self, graph, populations, ideal_pop, epsilon):
         self.graph = graph
-        self.subsets = {node: {node} for node in graph}
+        self.subsets = {node: {node} for node in graph.node_indices}
         self.population = populations.copy()
         self.tot_pop = sum(self.population.values())
         self.ideal_pop = ideal_pop
         self.epsilon = epsilon
-        self._degrees = {node: graph.degree(node) for node in graph}
+        self._degrees = {node: graph.degree(node) for node in graph.node_indices}
 
     def __iter__(self):
         return iter(self.graph)
@@ -194,7 +194,7 @@ def bipartition_tree(
         tree is not provided
     :param choice: :func:`random.choice`. Can be substituted for testing.
     """
-    populations = {node: graph.nodes[node][pop_col] for node in graph}
+    populations = {node: graph.nodes[node][pop_col] for node in graph.node_indices}
 
     possible_cuts = []
     if spanning_tree is None:
@@ -211,6 +211,34 @@ def bipartition_tree(
     return choice(possible_cuts).subset
 
 
+def _bipartition_tree_random_all(
+    graph,
+    pop_col,
+    pop_target,
+    epsilon,
+    node_repeats=1,
+    repeat_until_valid=True,
+    spanning_tree=None,
+    spanning_tree_fn=random_spanning_tree,
+    balance_edge_fn=find_balanced_edge_cuts_memoization,
+    choice=random.choice,
+):
+    """Randomly bipartitions a graph and returns all cuts."""
+    populations = {node: graph.nodes[node][pop_col] for node in graph.node_indices}
+
+    possible_cuts = []
+    if spanning_tree is None:
+        spanning_tree = spanning_tree_fn(graph)
+
+    repeat = True
+    while repeat and len(possible_cuts) == 0:
+        spanning_tree = spanning_tree_fn(graph)
+        h = PopulatedGraph(spanning_tree, populations, pop_target, epsilon)
+        possible_cuts = balance_edge_fn(h, choice=choice)
+        repeat = repeat_until_valid
+    return possible_cuts
+
+
 def bipartition_tree_random(
     graph,
     pop_col,
@@ -222,6 +250,7 @@ def bipartition_tree_random(
     spanning_tree_fn=random_spanning_tree,
     balance_edge_fn=find_balanced_edge_cuts_memoization,
     choice=random.choice,
+    *args, **kwargs
 ):
     """This is like :func:`bipartition_tree` except it chooses a random balanced
     cut, rather than the first cut it finds.
@@ -255,22 +284,9 @@ def bipartition_tree_random(
     :param balance_edge_fn: The algorithm used to find balanced cut edges
     :param choice: :func:`random.choice`. Can be substituted for testing.
     """
-    populations = {node: graph.nodes[node][pop_col] for node in graph}
-
-    possible_cuts = []
-    if spanning_tree is None:
-        spanning_tree = spanning_tree_fn(graph)
-
-    repeat = True
-    while repeat and len(possible_cuts) == 0:
-        spanning_tree = spanning_tree_fn(graph)
-        h = PopulatedGraph(spanning_tree, populations, pop_target, epsilon)
-        possible_cuts = balance_edge_fn(h, choice=choice)
-        repeat = repeat_until_valid
-
+    possible_cuts = _bipartition_tree_random_all(*args, **kwargs)
     if possible_cuts:
         return choice(possible_cuts).subset
-    return None
 
 
 def recursive_tree_part(
@@ -287,11 +303,12 @@ def recursive_tree_part(
     :param epsilon: How far (as a percentage of ``pop_target``) from ``pop_target`` the parts
         of the partition can be
     :param node_repeats: Parameter for :func:`~gerrychain.tree_methods.bipartition_tree` to use.
+    :param method: The partition method to use.
     :return: New assignments for the nodes of ``graph``.
     :rtype: dict
     """
     flips = {}
-    remaining_nodes = set(graph.nodes)
+    remaining_nodes = graph.node_indices
     # We keep a running tally of deviation from ``epsilon`` at each partition
     # and use it to tighten the population constraints on a per-partition
     # basis such that every partition, including the last partition, has a
@@ -360,7 +377,7 @@ def get_seed_chunks(
         new_epsilon = epsilon
 
     chunk_pop = 0
-    for node in graph.nodes:
+    for node in graph.node_indices:
         chunk_pop += graph.nodes[node][pop_col]
 
     while True:

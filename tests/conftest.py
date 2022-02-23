@@ -56,7 +56,27 @@ def graph(three_by_three_grid):
 
 @pytest.fixture
 def example_partition():
-    graph = networkx.complete_graph(3)
+    graph = Graph.from_networkx(networkx.complete_graph(3))
     assignment = {0: 1, 1: 1, 2: 2}
     partition = Partition(graph, assignment, {"cut_edges": cut_edges})
     return partition
+
+# From the docs: https://docs.pytest.org/en/latest/example/simple.html#control-skipping-of-tests-according-to-command-line-option
+def pytest_addoption(parser):
+    parser.addoption(
+        "--runslow", action="store_true", default=False, help="run slow tests"
+    )
+
+
+def pytest_configure(config):
+    config.addinivalue_line("markers", "slow: mark test as slow to run")
+
+
+def pytest_collection_modifyitems(config, items):
+    if config.getoption("--runslow"):
+        # --runslow given in cli: do not skip slow tests
+        return
+    skip_slow = pytest.mark.skip(reason="need --runslow option to run")
+    for item in items:
+        if "slow" in item.keywords:
+            item.add_marker(skip_slow)
