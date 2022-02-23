@@ -85,7 +85,7 @@ class Graph(networkx.Graph):
             reproject=reproject,
             ignore_errors=ignore_errors
         )
-
+        graph.graph["crs"] = df.crs.to_json()
         return graph
 
     @classmethod
@@ -170,6 +170,7 @@ class Graph(networkx.Graph):
         networkx.set_node_attributes(graph, name="area", values=areas)
 
         graph.add_data(df, columns=cols_to_add)
+        graph.graph["crs"] = df.crs.to_json()
         return graph
 
     def lookup(self, node, field):
