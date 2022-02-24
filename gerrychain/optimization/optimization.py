@@ -54,8 +54,9 @@ class SingleMetricOptimizer:
             numpy array of observed scores over each of the bursts.
         """
         if with_progress_bar:
-            tqdm(self.short_bursts(burst_length, num_bursts, accept, with_progress_bar=False),
-                 total=burst_length*num_bursts)
+            for part in  tqdm(self.short_bursts(burst_length, num_bursts, accept, with_progress_bar=False),
+                              total=burst_length*num_bursts):
+                              yield part
             return
 
         self.best_part = self.initial_part
@@ -130,8 +131,9 @@ class SingleMetricOptimizer:
             numpy array of observed scores over each of the bursts.
         """
         if with_progress_bar:
-            tqdm(self.variable_lenght_short_bursts(num_steps, stuck_buffer, accept, with_progress_bar=False),
-                 total=num_steps)
+            for part in tqdm(self.variable_lenght_short_bursts(num_steps, stuck_buffer, accept,
+                             with_progress_bar=False), total=num_steps):
+                yield part
             return
         
         self.best_part = self.initial_part
@@ -176,9 +178,9 @@ class SingleMetricOptimizer:
         self.best_part = self.initial_part
         self.best_score = self.score(self.best_part)
 
-        chain_enumerator = tqdm(enumerate(chain)) if with_progress_bar else enumerate(chain)
+        chain_generator = tqdm(chain) if with_progress_bar else chain
 
-        for i, part in chain_enumerator:
+        for part in chain_generator:
             yield part
             part_score = self.score(part)
 

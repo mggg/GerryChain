@@ -49,6 +49,7 @@ class Gingleator(SingleMetricOptimizer):
                             lambda part: {k: part[minority_pop_col][k] / part[total_pop_col][k]
                                           for k in part.parts.keys()}}
             initial_state.updaters.update(perc_up)
+            minority_perc_col = min_perc_column_name
 
         score = partial(score_function, minority_perc_col=minority_perc_col, threshold=threshold)
 
