@@ -5,6 +5,7 @@ from ..random import random
 
 from typing import Union, Callable, List, Any
 from tqdm import tqdm
+import math
 
 class SingleMetricOptimizer:
     """
@@ -13,7 +14,7 @@ class SingleMetricOptimizer:
     """
 
     def __init__(self, proposal: Callable[[Partition], Partition], constraints: Union[Callable[[Partition], bool], List[Callable[[Partition], bool]]],
-                 initial_state: Partition, optimization_metric: Callable[[Partition], Any], maximize: bool = True):
+                 initial_state: Partition, optimization_metric: Callable[[Partition], Any], maximize: bool = True, step_indexer="step"):
         """
         :param `proposal`: Function proposing the next state from the current state.
         :param `constraints`: A function with signature ``Partition -> bool`` determining whether
@@ -31,12 +32,49 @@ class SingleMetricOptimizer:
         self.maximize = maximize
         self.best_part = None
         self.best_score = None
+        self.step_indexer = step_indexer
+
+        if self.step_indexer not in self.initial_part.updaters:
+            self.initial_part.updaters[self.step_indexer] = lambda p: 0 if p.parent is None else p.parent[self.step_indexer] + 1
 
     def _is_improvement(self, part_score, max_score) -> bool:
         if self.maximize:
             return part_score >= max_score
         else:
             return part_score <= max_score
+
+    def _titled_acceptance_function(self, p: float) -> Callable[[Partition], bool]:
+        """
+        Function factory that binds and returns a tilted acceptance function.
+
+        :rtype (``Partition -> Bool``)
+        """
+        def tilted_acceptance_function(part):
+            if part.parent is None:
+                return True
+
+            part_score = self.score(part)
+            prev_score = self.score(part.parent)
+
+            if self._is_improvement(part_score, prev_score):
+                return True
+            else:
+                return random.random() < p
+
+        return tilted_acceptance_function
+
+    def _simulated_anealing_acceptance_function(self,  beta_function: Callable[[int], float], beta_magnitude: float):
+        
+        def simulated_anealing_acceptance_function(part):
+            if part.parent is None:
+                return True
+            score_delta = self.score(part) - self.score(part.parent)
+            beta = beta_function(part[self.step_indexer])
+            if self.maximize:
+                score_delta *= -1
+            return random.random() < math.exp(beta * beta_magnitude * score_delta)
+
+        return simulated_anealing_acceptance_function
 
     def short_bursts(self, burst_length: int, num_bursts: int, 
                      accept: Callable[[Partition], bool] = always_accept, with_progress_bar: bool = False):
@@ -73,28 +111,31 @@ class SingleMetricOptimizer:
                     self.best_part = part
                     self.best_score = part_score
 
+    @classmethod
+    def hot_cold_beta_function_factory(cls, duration_hot: int, duration_cold: int) -> float:
+        cycle_length = duration_hot + duration_cold
+        def hot_cold_beta_function(step: int):
+            time_in_cycle = step % cycle_length
+            return float(time_in_cycle >= duration_hot)
+        return hot_cold_beta_function
+            
+    
+    def simulated_annealing(self, num_steps: int, beta_function: Callable[[int], float], beta_magnitude: float = 1, 
+                            with_progress_bar: bool = False):
+        chain = MarkovChain(self.proposal, self.constraints, self._simulated_anealing_acceptance_function(beta_function, beta_magnitude),
+                            self.initial_part, num_steps)
+        
+        self.best_part = self.initial_part
+        self.best_score = self.score(self.best_part)
 
-    def _titled_acceptance_function(self, p: float) -> Callable[[Partition], bool]:
-        """
-        Function factory that binds and returns a tilted acceptance function.
+        chain_generator = tqdm(chain) if with_progress_bar else chain
 
-        :rtype (``Partition -> Bool``)
-        """
-        def tilted_acceptance_function(part):
-            if part.parent is None:
-                return True
-
+        for part in chain_generator:
+            yield part
             part_score = self.score(part)
-            prev_score = self.score(part.parent)
-
-            if self.maximize and part_score >= prev_score:
-                return True
-            elif not self.maximize and part_score <= prev_score:
-                return True
-            else:
-                return random.random() < p
-
-        return tilted_acceptance_function
+            if self._is_improvement(part_score, self.best_score):
+                    self.best_part = part
+                    self.best_score = part_score
 
     def tilted_short_bursts(self, burst_length: int, num_bursts: int, p: float, with_progress_bar: bool = False):
         """
