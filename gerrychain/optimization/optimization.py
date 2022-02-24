@@ -4,7 +4,7 @@ from ..accept import always_accept
 from ..random import random
 
 from typing import Union, Callable, List, Any
-
+from tqdm import tqdm
 
 class SingleMetricOptimizer:
     """
@@ -22,7 +22,7 @@ class SingleMetricOptimizer:
         :param `initial_state`: Initial :class:`gerrychain.partition.Partition` class.
         :param `optimization_metric`: The score function with which to optimize over.  This should
             have the signature: ``Partition -> 'a where 'a is Comparable``
-        :param `minmax` (bool): Whether to minimize or maximize the function?
+        :param `maximize` (bool): Whether to minimize or maximize the function?
         """
         self.initial_part = initial_state
         self.proposal = proposal
@@ -38,8 +38,8 @@ class SingleMetricOptimizer:
         else:
             return part_score <= max_score
 
-    def short_bursts(self, burst_length: int, num_bursts: int,
-                     accept: Callable[[Partition], bool] = always_accept):
+    def short_bursts(self, burst_length: int, num_bursts: int, 
+                     accept: Callable[[Partition], bool] = always_accept, with_progress_bar: bool = False):
         """
         Preforms a short burst run using the instance's score function.  Each burst starts at the
         best preforming plan of the previous burst.  If there's a tie, the later observed one is
@@ -53,6 +53,11 @@ class SingleMetricOptimizer:
         :rtype (Partition * np.array): Tuple of maximal (or minimal) observed partition and a 2D
             numpy array of observed scores over each of the bursts.
         """
+        if with_progress_bar:
+            tqdm(self.short_bursts(burst_length, num_bursts, accept, with_progress_bar=False),
+                 total=burst_length*num_bursts)
+            return
+
         self.best_part = self.initial_part
         self.best_score = self.score(self.best_part)
 
@@ -90,7 +95,7 @@ class SingleMetricOptimizer:
 
         return tilted_acceptance_function
 
-    def tilted_short_bursts(self, burst_length: int, num_bursts: int, p: float):
+    def tilted_short_bursts(self, burst_length: int, num_bursts: int, p: float, with_progress_bar: bool = False):
         """
         Preforms a short burst run using the instance's score function.  Each burst starts at the
         best preforming plan of the previous burst.  If there's a tie, the later observed one is
@@ -104,11 +109,12 @@ class SingleMetricOptimizer:
         :rtype (Partition * np.array): Tuple of maximal (or minimal) observed partition and a 2D
             numpy array of observed scores over each of the bursts.
         """
-        return self.short_bursts(burst_length, num_bursts,
-                                 accept=self._titled_acceptance_function(p))
+        return self.short_bursts(burst_length, num_bursts, accept=self._titled_acceptance_function(p),
+                                 with_progress_bar=with_progress_bar)
 
     def variable_lenght_short_bursts(self, num_steps: int , stuck_buffer: int, 
-                                     accept: Callable[[Partition], bool] = always_accept):
+                                     accept: Callable[[Partition], bool] = always_accept,
+                                     with_progress_bar: bool = False):
         """
         Preforms a short burst where the burst length is alowed to increase as it gets harder to
         find high scoring plans.  The initial burst length is set to 2, and it is doubled each time
@@ -123,6 +129,11 @@ class SingleMetricOptimizer:
         :rtype (Partition * np.array): Tuple of maximal (or minimal) observed partition and a 1D
             numpy array of observed scores over each of the bursts.
         """
+        if with_progress_bar:
+            tqdm(self.variable_lenght_short_bursts(num_steps, stuck_buffer, accept, with_progress_bar=False),
+                 total=num_steps)
+            return
+        
         self.best_part = self.initial_part
         self.best_score = self.score(self.best_part)
         time_stuck = 0
@@ -148,7 +159,7 @@ class SingleMetricOptimizer:
             if time_stuck >= stuck_buffer * burst_length:
                 burst_length *= 2
 
-    def tilted_run(self, num_steps: int, p: float):
+    def tilted_run(self, num_steps: int, p: float, with_progress_bar: bool = False):
         """
         Preforms a tilted run.  A chain where the acceptance function always accepts better plans
         and accepts worse plans with some probabilty.
@@ -161,10 +172,13 @@ class SingleMetricOptimizer:
         """
         chain = MarkovChain(self.proposal, self.constraints, self._titled_acceptance_function(p),
                             self.initial_part, num_steps)
+        
         self.best_part = self.initial_part
         self.best_score = self.score(self.best_part)
 
-        for i, part in enumerate(chain):
+        chain_enumerator = tqdm(enumerate(chain)) if with_progress_bar else enumerate(chain)
+
+        for i, part in chain_enumerator:
             yield part
             part_score = self.score(part)
 

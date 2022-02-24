@@ -11,7 +11,7 @@ class Gingleator(SingleMetricOptimizer):
     with increased numbers of Gingles' districts.
     """
 
-    def __init__(self, proposal, constraints, initial_state, tracking_funct=None,
+    def __init__(self, proposal, constraints, initial_state,
                  minority_perc_col=None, threshold=0.5, score_function=None,
                  minority_pop_col=None, total_pop_col="TOTPOP",
                  min_perc_column_name="_gingleator_auxiliary_helper_updater_min_perc_col"):
@@ -21,9 +21,6 @@ class Gingleator(SingleMetricOptimizer):
             the proposed next state is valid (passes all binary constraints). Usually this is a
             :class:`~gerrychain.constraints.Validator` class instance.
         :param `initial_state`: Initial :class:`gerrychain.partition.Partition` class.
-        :param `tracking_funct`: A function with the signiture ``Partition -> None`` to be run at
-            every step of the chain.  If you'd like to externaly track stats beyond those reflected
-            in the optimation_metric here is where to implement that.
         :param `minority_perc_col`: Which updater is a mapping of district ids to the fraction of
             minority popultion within that district.
         :param `threshold`:  Beyond which fraction to consider something a "Gingles"
@@ -55,8 +52,7 @@ class Gingleator(SingleMetricOptimizer):
 
         score = partial(score_function, minority_perc_col=minority_perc_col, threshold=threshold)
 
-        super().__init__(proposal, constraints, initial_state, score, minmax="max",
-                         tracking_funct=tracking_funct)
+        super().__init__(proposal, constraints, initial_state, score, maximize=True)
 
     """
     Score Functions
