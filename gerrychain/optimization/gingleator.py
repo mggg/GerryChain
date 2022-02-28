@@ -9,6 +9,10 @@ class Gingleator(SingleMetricOptimizer):
     """
     `Gingleator` is a child class of `SingleMetricOptimizer` which can be used to search for plans
     with increased numbers of Gingles' districts.
+
+    A gingles district (named for the Supreme Court case Thornburg v. Gingles) is a district that is
+    majority-minority.  aka 50% + 1 of some population subgroup.  Demonstrating additional Gingles
+    districts is one of the litmus test used in bringing forth a VRA case.
     """
 
     def __init__(self, proposal, constraints, initial_state,
@@ -26,8 +30,8 @@ class Gingleator(SingleMetricOptimizer):
         :param `threshold`:  Beyond which fraction to consider something a "Gingles"
             (or opportunity) district.
         :param `score_function`: The function to using doing optimization.  Should have the
-            signature ``Partition * str (minority_perc_col) * float (threhold) -> 
-            'a where 'a is Comparable``.  This class implement a few potnetial choices as class
+            signature ``Partition * str (minority_perc_col) * float (threshold) -> 
+            'a where 'a is Comparable``.  This class implement a few potential choices as class
             methods.
         :param `minority_pop_col`:  If minority_perc_col is defined, the minority population column
             with which to compute percentage. 
