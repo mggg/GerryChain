@@ -7,11 +7,14 @@ from typing import Union, Callable, List, Any
 from tqdm import tqdm
 import math
 
+
 class SingleMetricOptimizer:
     """
     SingleMetricOptimizer represents the class of algorithms / chains that optimize plans with
-    respect to a single metric.  This class 
-    
+    respect to a single metric.  In instance of this class encapsulates the dualgraph and updaters
+    via the initial partition, the constraints new proposals are subject to, the metric over which
+    to optimize and whether or not to seek maximal or minimal values of the metric.
+
     The SingleMetricOptimizer class implements the following common methods of optimization:
         * Short Bursts
         * Simulated Annealing
@@ -33,12 +36,13 @@ class SingleMetricOptimizer:
                 current state.
             constraints (Union[Callable[[Partition], bool], List[Callable[[Partition], bool]]]):
                 A function, or lists of functions, determining whether the proposed next state is
-                valid (aka passes all binary constraints).  Usually this is a 
+                valid (aka passes all binary constraints).  Usually this is a
                 `~gerrychain.constraints.Validator` class instance.
             initial_state (Partition): Initial state of the optimizer.
             optimization_metric (Callable[[Partition], Any]): The score function with which to
-                optimize over.  This should have the signature: `Partition -> 'a where 'a is Comparable`
-            maximize (bool, optional): Whether to minimize or maximize the function?  Defaults to 
+                optimize over. This should have the signature:
+                `Partition -> 'a where 'a is Comparable`
+            maximize (bool, optional): Whether to minimize or maximize the function?  Defaults to
                 maximize.
             step_indexer (str, optional): Name of the updater tracking the partitions step in the
                 chain.  If not implemented on the partition the constructor creates and adds it.
@@ -57,8 +61,8 @@ class SingleMetricOptimizer:
         self.step_indexer = step_indexer
 
         if self.step_indexer not in self.initial_part.updaters:
-            self.initial_part.updaters[self.step_indexer] = lambda p: 0 if p.parent is None else p.parent[self.step_indexer] + 1
-
+            step_updater = lambda p: 0 if p.parent is None else p.parent[self.step_indexer] + 1
+            self.initial_part.updaters[self.step_indexer] = step_updater
 
     def _is_improvement(self, new_score, old_score) -> bool:
         """
@@ -67,7 +71,7 @@ class SingleMetricOptimizer:
 
         Args:
             new_score (Any): Score of proprosed partition.
-            old_score (Any): Score of previous partition. 
+            old_score (Any): Score of previous partition.
 
         Returns:
             Whether the new score is an improvement over the old score.
@@ -77,7 +81,6 @@ class SingleMetricOptimizer:
             return new_score >= old_score
         else:
             return new_score <= old_score
-
 
     def _titled_acceptance_function(self, p: float) -> Callable[[Partition], bool]:
         """
@@ -109,7 +112,7 @@ class SingleMetricOptimizer:
         Function factory that binds and returns a simulated annealing acceptance function.
 
         Args:
-            beta_functions (Callable[[int], float]):  Function (f: t -> beta, where beta is in [0,1])
+            beta_functions (Callable[[int], float]): Function (f: t -> beta, where beta is in [0,1])
                 defining temperature over time.  f(t) = 0 the chain is hot and every proposal is
                 accepted.  At f(t) = 1 the chain is cold and worse proposal have a low probability
                 of being excepted relative to the magnitude of change in score.
@@ -129,7 +132,6 @@ class SingleMetricOptimizer:
 
         return simulated_annealing_acceptance_function
 
-
     @classmethod
     def hot_cold_cycle_beta_function_factory(cls, duration_hot: int, duration_cold: int) -> float:
         """
@@ -143,14 +145,16 @@ class SingleMetricOptimizer:
             Beta function defining hot-cold cycle.
         """
         cycle_length = duration_hot + duration_cold
+
         def hot_cold_beta_function(step: int):
             time_in_cycle = step % cycle_length
             return float(time_in_cycle >= duration_hot)
+
         return hot_cold_beta_function
 
-
-    def short_bursts(self, burst_length: int, num_bursts: int, 
-                     accept: Callable[[Partition], bool] = always_accept, with_progress_bar: bool = False):
+    def short_bursts(self, burst_length: int, num_bursts: int,
+                     accept: Callable[[Partition], bool] = always_accept,
+                     with_progress_bar: bool = False):
         """
         Preforms a short burst run using the instance's score function.  Each burst starts at the
         best preforming plan of the previous burst.  If there's a tie, the later observed one is
@@ -168,16 +172,18 @@ class SingleMetricOptimizer:
             Partition generator.
         """
         if with_progress_bar:
-            for part in  tqdm(self.short_bursts(burst_length, num_bursts, accept, with_progress_bar=False),
-                              total=burst_length*num_bursts):
-                              yield part
+            for part in tqdm(self.short_bursts(burst_length, num_bursts, accept,
+                                                with_progress_bar=False),
+                             total=burst_length * num_bursts):
+                yield part
             return
 
         self.best_part = self.initial_part
         self.best_score = self.score(self.best_part)
 
         for i in range(num_bursts):
-            chain = MarkovChain(self.proposal, self.constraints, accept, self.best_part, burst_length)
+            chain = MarkovChain(self.proposal, self.constraints, accept, self.best_part,
+                                burst_length)
 
             for part in chain:
                 yield part
@@ -187,9 +193,8 @@ class SingleMetricOptimizer:
                     self.best_part = part
                     self.best_score = part_score
 
-
-    def simulated_annealing(self, num_steps: int, beta_function: Callable[[int], float], beta_magnitude: float = 1, 
-                            with_progress_bar: bool = False):
+    def simulated_annealing(self, num_steps: int, beta_function: Callable[[int], float],
+                            beta_magnitude: float = 1, with_progress_bar: bool = False):
         """
         Preforms simulated annealing with respect to the class instance's score function.
 
@@ -206,9 +211,11 @@ class SingleMetricOptimizer:
         Returns:
             Partition generator.
         """
-        chain = MarkovChain(self.proposal, self.constraints, self._simulated_annealing_acceptance_function(beta_function, beta_magnitude),
+        chain = MarkovChain(self.proposal, self.constraints,
+                            self._simulated_annealing_acceptance_function(beta_function,
+                                                                          beta_magnitude),
                             self.initial_part, num_steps)
-        
+
         self.best_part = self.initial_part
         self.best_score = self.score(self.best_part)
 
@@ -218,11 +225,11 @@ class SingleMetricOptimizer:
             yield part
             part_score = self.score(part)
             if self._is_improvement(part_score, self.best_score):
-                    self.best_part = part
-                    self.best_score = part_score
+                self.best_part = part
+                self.best_score = part_score
 
-
-    def tilted_short_bursts(self, burst_length: int, num_bursts: int, p: float, with_progress_bar: bool = False):
+    def tilted_short_bursts(self, burst_length: int, num_bursts: int, p: float,
+                            with_progress_bar: bool = False):
         """
         Preforms a short burst run using the instance's score function.  Each burst starts at the
         best preforming plan of the previous burst.  If there's a tie, the later observed one is
@@ -239,11 +246,11 @@ class SingleMetricOptimizer:
         Returns:
             Partition generator.
         """
-        return self.short_bursts(burst_length, num_bursts, accept=self._titled_acceptance_function(p),
+        return self.short_bursts(burst_length, num_bursts,
+                                 accept=self._titled_acceptance_function(p),
                                  with_progress_bar=with_progress_bar)
 
-
-    def variable_lenght_short_bursts(self, num_steps: int , stuck_buffer: int, 
+    def variable_lenght_short_bursts(self, num_steps: int, stuck_buffer: int,
                                      accept: Callable[[Partition], bool] = always_accept,
                                      with_progress_bar: bool = False):
         """
@@ -268,7 +275,7 @@ class SingleMetricOptimizer:
                              with_progress_bar=False), total=num_steps):
                 yield part
             return
-        
+
         self.best_part = self.initial_part
         self.best_score = self.score(self.best_part)
         time_stuck = 0
@@ -276,7 +283,8 @@ class SingleMetricOptimizer:
         i = 0
 
         while(i < num_steps):
-            chain = MarkovChain(self.proposal, self.constraints, accept, self.best_part, burst_length)
+            chain = MarkovChain(self.proposal, self.constraints, accept, self.best_part,
+                                burst_length)
             for part in chain:
                 yield part
                 part_score = self.score(part)
@@ -294,7 +302,6 @@ class SingleMetricOptimizer:
             if time_stuck >= stuck_buffer * burst_length:
                 burst_length *= 2
 
-
     def tilted_run(self, num_steps: int, p: float, with_progress_bar: bool = False):
         """
         Preforms a tilted run.  A chain where the acceptance function always accepts better plans
@@ -311,7 +318,7 @@ class SingleMetricOptimizer:
         """
         chain = MarkovChain(self.proposal, self.constraints, self._titled_acceptance_function(p),
                             self.initial_part, num_steps)
-        
+
         self.best_part = self.initial_part
         self.best_score = self.score(self.best_part)
 
@@ -322,6 +329,5 @@ class SingleMetricOptimizer:
             part_score = self.score(part)
 
             if self._is_improvement(part_score, self.best_score):
-                    self.best_part = part
-                    self.best_score = part_score
-
+                self.best_part = part
+                self.best_score = part_score

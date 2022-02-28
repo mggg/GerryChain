@@ -30,13 +30,13 @@ class Gingleator(SingleMetricOptimizer):
         :param `threshold`:  Beyond which fraction to consider something a "Gingles"
             (or opportunity) district.
         :param `score_function`: The function to using doing optimization.  Should have the
-            signature ``Partition * str (minority_perc_col) * float (threshold) -> 
+            signature ``Partition * str (minority_perc_col) * float (threshold) ->
             'a where 'a is Comparable``.  This class implement a few potential choices as class
             methods.
         :param `minority_pop_col`:  If minority_perc_col is defined, the minority population column
-            with which to compute percentage. 
+            with which to compute percentage.
         :param `total_pop_col`: If minority_perc_col is defined, the total population column with
-            which to compute percentage. 
+            which to compute percentage.
         :param `min_perc_column_name`: If minority_perc_col is defined, the name to give the created
             percentage updater.
         """
@@ -71,7 +71,7 @@ class Gingleator(SingleMetricOptimizer):
         :param `part`: Partition to score.
         :param `minority_perc_col`: Which updater is a mapping of district ids to the fraction of
             minority popultion within that district.
-        :param `threshold`: Beyond which fraction to consider something a "Gingles" 
+        :param `threshold`: Beyond which fraction to consider something a "Gingles"
             (or opportunity) district.
 
         :rtype int
@@ -88,7 +88,7 @@ class Gingleator(SingleMetricOptimizer):
         :param `part`: Partition to score.
         :param `minority_perc_col`: Which updater is a mapping of district ids to the fraction of
             minority popultion within that district.
-        :param `threshold`: Beyond which fraction to consider something a "Gingles" 
+        :param `threshold`: Beyond which fraction to consider something a "Gingles"
             (or opportunity) district.
 
         :rtype float
@@ -108,7 +108,7 @@ class Gingleator(SingleMetricOptimizer):
         :param `part`: Partition to score.
         :param `minority_perc_col`: Which updater is a mapping of district ids to the fraction of
             minority popultion within that district.
-        :param `threshold`: Beyond which fraction to consider something a "Gingles" 
+        :param `threshold`: Beyond which fraction to consider something a "Gingles"
             (or opportunity) district.
 
         :rtype float
@@ -127,11 +127,11 @@ class Gingleator(SingleMetricOptimizer):
         """
         Given a partition, returns the number of opportunity districts + (1 - the maximum excess)
         scaled to between 0 and 1.
-        
+
         :param `part`: Partition to score.
         :param `minority_perc_col`: Which updater is a mapping of district ids to the fraction of
             minority popultion within that district.
-        :param `threshold`: Beyond which fraction to consider something a "Gingles" 
+        :param `threshold`: Beyond which fraction to consider something a "Gingles"
             (or opportunity) district.
 
         :rtype float
@@ -153,7 +153,7 @@ class Gingleator(SingleMetricOptimizer):
         :param `part`: Partition to score.
         :param `minority_perc_col`: Which updater is a mapping of district ids to the fraction of
             minority popultion within that district.
-        :param `threshold`: Beyond which fraction to consider something a "Gingles" 
+        :param `threshold`: Beyond which fraction to consider something a "Gingles"
             (or opportunity) district.
 
         :rtype float
