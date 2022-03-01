@@ -21,7 +21,7 @@ class SingleMetricOptimizer:
 
     Both during and after a optimization run, the instance variables `best_part` and `best_score`
     represent the optimal partition / corresponding score value observed.  Note that these are reset
-    everytime a optimization run is invoked and do not persist.  If necessary the values should be
+    everytime an optimization run is invoked and do not persist.  If necessary the values should be
     "snapshot-ed" externally to perserve them for comparision.
     """
 
@@ -304,7 +304,7 @@ class SingleMetricOptimizer:
     def tilted_run(self, num_steps: int, p: float, with_progress_bar: bool = False):
         """
         Performs a tilted run.  A chain where the acceptance function always accepts better plans
-        and accepts worse plans with some probability.
+        and accepts worse plans with some probability `p`.
 
         Args:
             num_steps (int): How many steps to run for.
