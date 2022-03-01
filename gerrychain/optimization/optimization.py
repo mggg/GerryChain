@@ -17,7 +17,7 @@ class SingleMetricOptimizer:
     The SingleMetricOptimizer class implements the following common methods of optimization:
         * Short Bursts
         * Simulated Annealing
-        * Titled Runs
+        * Tilted Runs
 
     Both during and after a optimization run, the instance variables `best_part` and `best_score`
     represent the optimal partition / corresponding score value observed.  Note that these are reset
@@ -161,7 +161,7 @@ class SingleMetricOptimizer:
 
         Args
             burst_length (int): How many steps to run within each burst?
-            num_bursts (int): How many bursts to preform?
+            num_bursts (int): How many bursts to perform?
             accept (Callable[[Partition], bool], optional): Function accepting or rejecting the
                 proposed state.  In the most basic use case, this always returns True.
             with_progress_bar (bool, optional): Whether or not to draw tqdm progress bar.  Defaults
@@ -237,7 +237,7 @@ class SingleMetricOptimizer:
 
         Args
             burst_length (int): How many steps to run within each burst?
-            num_bursts (int): How many bursts to preform?
+            num_bursts (int): How many bursts to perform?
             p (float): The probability of accepting a plan with a worse score.
             with_progress_bar (bool, optional): Whether or not to draw tqdm progress bar.  Defaults
                 to False.
@@ -303,7 +303,7 @@ class SingleMetricOptimizer:
 
     def tilted_run(self, num_steps: int, p: float, with_progress_bar: bool = False):
         """
-        Preforms a tilted run.  A chain where the acceptance function always accepts better plans
+        Performs a tilted run.  A chain where the acceptance function always accepts better plans
         and accepts worse plans with some probability.
 
         Args:
