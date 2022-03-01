@@ -12,7 +12,7 @@ class Gingleator(SingleMetricOptimizer):
 
     A gingles district (named for the Supreme Court case Thornburg v. Gingles) is a district that is
     majority-minority.  aka 50% + 1 of some population subgroup.  Demonstrating additional Gingles
-    districts is one of the litmus test used in bringing forth a VRA case.
+    districts is one of the litmus tests used in bringing forth a VRA case.
     """
 
     def __init__(self, proposal, constraints, initial_state,
@@ -26,12 +26,12 @@ class Gingleator(SingleMetricOptimizer):
             :class:`~gerrychain.constraints.Validator` class instance.
         :param `initial_state`: Initial :class:`gerrychain.partition.Partition` class.
         :param `minority_perc_col`: Which updater is a mapping of district ids to the fraction of
-            minority popultion within that district.
+            minority population within that district.
         :param `threshold`:  Beyond which fraction to consider something a "Gingles"
             (or opportunity) district.
         :param `score_function`: The function to using doing optimization.  Should have the
             signature ``Partition * str (minority_perc_col) * float (threshold) ->
-            'a where 'a is Comparable``.  This class implement a few potential choices as class
+            'a where 'a is Comparable``.  This class implements a few potential choices as class
             methods.
         :param `minority_pop_col`:  If minority_perc_col is defined, the minority population column
             with which to compute percentage.
@@ -70,7 +70,7 @@ class Gingleator(SingleMetricOptimizer):
 
         :param `part`: Partition to score.
         :param `minority_perc_col`: Which updater is a mapping of district ids to the fraction of
-            minority popultion within that district.
+            minority population within that district.
         :param `threshold`: Beyond which fraction to consider something a "Gingles"
             (or opportunity) district.
 
@@ -87,7 +87,7 @@ class Gingleator(SingleMetricOptimizer):
 
         :param `part`: Partition to score.
         :param `minority_perc_col`: Which updater is a mapping of district ids to the fraction of
-            minority popultion within that district.
+            minority population within that district.
         :param `threshold`: Beyond which fraction to consider something a "Gingles"
             (or opportunity) district.
 
@@ -107,7 +107,7 @@ class Gingleator(SingleMetricOptimizer):
 
         :param `part`: Partition to score.
         :param `minority_perc_col`: Which updater is a mapping of district ids to the fraction of
-            minority popultion within that district.
+            minority population within that district.
         :param `threshold`: Beyond which fraction to consider something a "Gingles"
             (or opportunity) district.
 
@@ -130,7 +130,7 @@ class Gingleator(SingleMetricOptimizer):
 
         :param `part`: Partition to score.
         :param `minority_perc_col`: Which updater is a mapping of district ids to the fraction of
-            minority popultion within that district.
+            minority population within that district.
         :param `threshold`: Beyond which fraction to consider something a "Gingles"
             (or opportunity) district.
 
@@ -152,7 +152,7 @@ class Gingleator(SingleMetricOptimizer):
 
         :param `part`: Partition to score.
         :param `minority_perc_col`: Which updater is a mapping of district ids to the fraction of
-            minority popultion within that district.
+            minority population within that district.
         :param `threshold`: Beyond which fraction to consider something a "Gingles"
             (or opportunity) district.
 

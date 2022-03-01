@@ -2,7 +2,6 @@ from ..chain import MarkovChain
 from .. partition import Partition
 from ..accept import always_accept
 from ..random import random
-
 from typing import Union, Callable, List, Any
 from tqdm import tqdm
 import math
@@ -36,7 +35,7 @@ class SingleMetricOptimizer:
                 current state.
             constraints (Union[Callable[[Partition], bool], List[Callable[[Partition], bool]]]):
                 A function, or lists of functions, determining whether the proposed next state is
-                valid (aka passes all binary constraints).  Usually this is a
+                valid (passes all binary constraints).  Usually this is a
                 `~gerrychain.constraints.Validator` class instance.
             initial_state (Partition): Initial state of the optimizer.
             optimization_metric (Callable[[Partition], Any]): The score function with which to
@@ -66,11 +65,11 @@ class SingleMetricOptimizer:
 
     def _is_improvement(self, new_score, old_score) -> bool:
         """
-        Helper function definiting improvement comparision between scores.  Scores can be any
+        Helper function defining improvement comparison between scores.  Scores can be any
         comparable type.
 
         Args:
-            new_score (Any): Score of proprosed partition.
+            new_score (Any): Score of proposed partition.
             old_score (Any): Score of previous partition.
 
         Returns:
@@ -82,7 +81,7 @@ class SingleMetricOptimizer:
         else:
             return new_score <= old_score
 
-    def _titled_acceptance_function(self, p: float) -> Callable[[Partition], bool]:
+    def _tilted_acceptance_function(self, p: float) -> Callable[[Partition], bool]:
         """
         Function factory that binds and returns a tilted acceptance function.
 
@@ -115,7 +114,7 @@ class SingleMetricOptimizer:
             beta_functions (Callable[[int], float]): Function (f: t -> beta, where beta is in [0,1])
                 defining temperature over time.  f(t) = 0 the chain is hot and every proposal is
                 accepted.  At f(t) = 1 the chain is cold and worse proposal have a low probability
-                of being excepted relative to the magnitude of change in score.
+                of being accepted relative to the magnitude of change in score.
             beta_magnitude (float):  Scaling parameter for how much to weight changes in score.
 
         Returns:
@@ -156,8 +155,8 @@ class SingleMetricOptimizer:
                      accept: Callable[[Partition], bool] = always_accept,
                      with_progress_bar: bool = False):
         """
-        Preforms a short burst run using the instance's score function.  Each burst starts at the
-        best preforming plan of the previous burst.  If there's a tie, the later observed one is
+        Performs a short burst run using the instance's score function.  Each burst starts at the
+        best performing plan of the previous burst.  If there's a tie, the later observed one is
         selected.
 
         Args
@@ -181,7 +180,7 @@ class SingleMetricOptimizer:
         self.best_part = self.initial_part
         self.best_score = self.score(self.best_part)
 
-        for i in range(num_bursts):
+        for _ in range(num_bursts):
             chain = MarkovChain(self.proposal, self.constraints, accept, self.best_part,
                                 burst_length)
 
@@ -196,14 +195,14 @@ class SingleMetricOptimizer:
     def simulated_annealing(self, num_steps: int, beta_function: Callable[[int], float],
                             beta_magnitude: float = 1, with_progress_bar: bool = False):
         """
-        Preforms simulated annealing with respect to the class instance's score function.
+        Performs simulated annealing with respect to the class instance's score function.
 
         Args:
             num_steps (int): How many steps to run for.
             beta_function (Callable[[int], float]):  Function (f: t -> beta, where beta is in [0,1])
                 defining temperature over time.  f(t) = 0 the chain is hot and every proposal is
                 accepted.  At f(t) = 1 the chain is cold and worse proposal have a low probability
-                of being excepted relative to the magnitude of change in score.
+                of being accepted relative to the magnitude of change in score.
             beta_magnitude (float):  Scaling parameter for how much to weight changes in score.
             with_progress_bar (bool, optional): Whether or not to draw tqdm progress bar.  Defaults
                 to False.
@@ -231,8 +230,8 @@ class SingleMetricOptimizer:
     def tilted_short_bursts(self, burst_length: int, num_bursts: int, p: float,
                             with_progress_bar: bool = False):
         """
-        Preforms a short burst run using the instance's score function.  Each burst starts at the
-        best preforming plan of the previous burst.  If there's a tie, the later observed one is
+        Performs a short burst run using the instance's score function.  Each burst starts at the
+        best performing plan of the previous burst.  If there's a tie, the later observed one is
         selected.  Within each burst a tilted acceptance function is used where better scoring plans
         are always accepted and worse scoring plans are accepted with probability `p`.
 
@@ -247,14 +246,14 @@ class SingleMetricOptimizer:
             Partition generator.
         """
         return self.short_bursts(burst_length, num_bursts,
-                                 accept=self._titled_acceptance_function(p),
+                                 accept=self._tilted_acceptance_function(p),
                                  with_progress_bar=with_progress_bar)
 
-    def variable_lenght_short_bursts(self, num_steps: int, stuck_buffer: int,
+    def variable_length_short_bursts(self, num_steps: int, stuck_buffer: int,
                                      accept: Callable[[Partition], bool] = always_accept,
                                      with_progress_bar: bool = False):
         """
-        Preforms a short burst where the burst length is alowed to increase as it gets harder to
+        Performs a short burst where the burst length is alowed to increase as it gets harder to
         find high scoring plans.  The initial burst length is set to 2, and it is doubled each time
         there is no improvement over the passed number (`stuck_buffer`) of runs.
 
@@ -271,7 +270,7 @@ class SingleMetricOptimizer:
             Partition generator.
         """
         if with_progress_bar:
-            for part in tqdm(self.variable_lenght_short_bursts(num_steps, stuck_buffer, accept,
+            for part in tqdm(self.variable_length_short_bursts(num_steps, stuck_buffer, accept,
                              with_progress_bar=False), total=num_steps):
                 yield part
             return
@@ -316,7 +315,7 @@ class SingleMetricOptimizer:
         Returns:
             Partition generator.
         """
-        chain = MarkovChain(self.proposal, self.constraints, self._titled_acceptance_function(p),
+        chain = MarkovChain(self.proposal, self.constraints, self._tilted_acceptance_function(p),
                             self.initial_part, num_steps)
 
         self.best_part = self.initial_part
