@@ -314,7 +314,7 @@ def recursive_tree_part(
     pop_col,
     epsilon,
     node_repeats=1,
-    method=partial(bipartition_tree, max_attempts=50)
+    method=partial(bipartition_tree, max_attempts=10000)
 ):
     """Uses :func:`~gerrychain.tree.bipartition_tree` recursively to partition a tree into
     ``len(parts)`` parts of population ``pop_target`` (within ``epsilon``). Can be used to
@@ -378,7 +378,7 @@ def get_seed_chunks(
     pop_col,
     epsilon,
     node_repeats=1,
-    method=partial(bipartition_tree_random, max_attempts=50)
+    method=partial(bipartition_tree_random, max_attempts=10000)
 ):
     """
     Helper function for recursive_seed_part. Partitions the graph into ``num_chunks`` chunks,
@@ -498,7 +498,7 @@ def recursive_seed_part_inner(
     pop_target,
     pop_col,
     epsilon,
-    method=partial(bipartition_tree, max_attempts=50),
+    method=partial(bipartition_tree, max_attempts=10000),
     node_repeats=1,
     n=None,
     ceil=None,
@@ -609,7 +609,7 @@ def recursive_seed_part(
     pop_target,
     pop_col,
     epsilon,
-    method=partial(bipartition_tree, max_attempts=50),
+    method=partial(bipartition_tree, max_attempts=10000),
     node_repeats=1,
     n=None,
     ceil=None
@@ -645,7 +645,7 @@ def recursive_seed_part(
         pop_target,
         pop_col,
         epsilon,
-        method=partial(bipartition_tree, max_attempts=50),
+        method=partial(bipartition_tree, max_attempts=10000),
         node_repeats=node_repeats,
         n=n,
         ceil=ceil
