@@ -9,6 +9,7 @@ from networkx.classes.function import frozen
 from networkx.readwrite import json_graph
 from shapely.ops import unary_union
 from shapely.prepared import prep
+from shapely.geometry import Polygon, MultiPolygon
 
 from .adjacency import neighbors
 from .geo import GeometryError, invalid_geometries, reprojected
@@ -392,3 +393,120 @@ class FrozenGraph:
 
     def subgraph(self, nodes):
         return FrozenGraph(self.graph.subgraph(nodes))
+
+
+class EmbeddedGraph(Graph):
+    """
+    A graph with a mutable embedding.
+    """
+    @classmethod
+    def from_geodataframe(
+            cls,
+            dataframe,
+            adjacency="rook",
+            cols_to_add=None,
+            ignore_errors=False
+        ):
+        """Creates the adjacency :class:`Graph` of geometries described by `dataframe`.
+        The areas of the polygons are included as node attributes (with key `area`).
+        The shared perimeter of neighboring polygons are included as edge attributes
+        (with key `shared_perim`).
+        Nodes corresponding to polygons on the boundary of the union of all the geometries
+        (e.g., the state, if your dataframe describes VTDs) have a `boundary_node` attribute
+        (set to `True`) and a `boundary_perim` attribute with the length of this "exterior"
+        boundary.
+
+        By default, areas and lengths are computed in a UTM projection suitable for the
+        geometries. This prevents the bizarro area and perimeter values that show up when
+        you accidentally do computations in Longitude-Latitude coordinates. If the user
+        specifies `reproject=False`, then the areas and lengths will be computed in the
+        GeoDataFrame's current coordinate reference system. This option is for users who
+        have a preferred CRS they would like to use.
+
+        :param dataframe: :class:`geopandas.GeoDataFrame`
+        :param adjacency: (optional) The adjacency type to use ("rook" or "queen").
+            Default is "rook"
+        :param cols_to_add: (optional) The names of the columns that you want to
+            add to the graph as node attributes. By default, all columns are added.
+        :param ignore_errors: (optional) Whether to ignore all invalid geometries and
+            attept to create the graph anyway. Default is ``False``.
+        :return: The adjacency graph of the geometries from `dataframe`.
+        :rtype: :class:`Graph`
+        """
+        # Validate geometries before reprojection
+        if not ignore_errors:
+            invalid = invalid_geometries(dataframe)
+            if len(invalid) > 0:
+                raise GeometryError(
+                    "Invalid geometries at rows {} before "
+                    "reprojection. Consider repairing the affected geometries with "
+                    "`.buffer(0)`, or pass `ignore_errors=True` to attempt to create "
+                    "the graph anyways.".format(invalid)
+                )
+
+        # First, assign the geometries as properties of the EmbeddedGraph class.
+        cls.geometries = dataframe["geometry"]
+        cls.hulls = dataframe["geometry"].apply(lambda p: p.convex_hull)
+        
+        # Get dict of dicts with shared perimeters according to the requested
+        # adjacency rule; issue warnings for possible errors in the graph.
+        adjacencies = neighbors(dataframe, adjacency)
+        cls.graph = cls(adjacencies)
+        cls.graph.issue_warnings()
+
+        # Add "exterior" perimeters to the boundary nodes
+        add_boundary_perimeters(cls.graph, dataframe["geometry"])
+
+        # Add area data to the nodes
+        areas = cls.geometries.area.to_dict()
+        networkx.set_node_attributes(cls.graph, name="area", values=areas)
+
+        cls.graph.add_data(dataframe, columns=cols_to_add)
+        cls.graph.graph["crs"] = dataframe.crs.to_json()
+
+        return cls._assign_geometries()
+
+    @classmethod
+    def _assign_geometries(cls):
+        """
+        Assigns points to geometries.
+
+        :rtype: :class:`Graph`
+        """
+        # Create an embedding for the graph. First, find out which vertices are
+        # dual to exterior geometries.
+        exterior = set(
+            v for v, d in cls.graph.nodes(data=True) if d.get("boundary_node")
+        )
+
+        # Get geometries and hulls for quick lookups.
+        geometries = cls.geometries.to_dict()
+        hulls = cls.hulls.to_dict()
+
+        # For each vertex in the graph, assign its polygon's coordinates to the
+        # POINTS property.
+        for v, d in cls.graph.nodes(data=True):
+            if v in exterior: geometry = geometries[v] 
+            else: geometry = hulls[v]
+
+            if type(geometry) is MultiPolygon:
+                points = [point for p in list(geometry.geoms) for point in p.exterior.coords]
+            else: points = list(geometry.exterior.coords)
+            
+            d["POINTS"] = points
+
+        return cls.graph
+
+    @classmethod
+    def reproject(cls, crs):
+        """
+        Re-projects the external and internal geometries of the graph.
+
+
+        """
+        # Do the reprojection of things.
+        cls.geometries = cls.geometries.to_crs(crs)
+        cls.hulls = cls.hulls.to_crs(crs)
+
+        # Reassign.
+        return cls._assign_geometries()

@@ -2,7 +2,7 @@ import json
 import geopandas
 import networkx
 
-from gerrychain.graph.graph import FrozenGraph, Graph
+from gerrychain.graph.graph import FrozenGraph, Graph, EmbeddedGraph
 from ..updaters import compute_edge_flows, flows_from_changes, cut_edges
 from .assignment import get_assignment
 from .subgraphs import SubgraphView
@@ -60,6 +60,10 @@ class Partition:
             self.graph = FrozenGraph(graph)
         elif isinstance(graph, FrozenGraph):
             self.graph = graph
+        elif isinstance(graph, EmbeddedGraph):
+            graph.geometries = None
+            graph.hulls = None
+            self.graph = FrozenGraph(graph)
         else:
             raise TypeError("Unsupported Graph object")
 
