@@ -54,7 +54,7 @@ def recom(
     )
 
     flips = {node: parts_to_merge[0] for node in flips_left}
-    flips |= {node: parts_to_merge[1] for node in flips_right}
+    flips.update({node: parts_to_merge[1] for node in flips_right})
 
     return partition.flip(flips)
 
