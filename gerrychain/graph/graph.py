@@ -351,7 +351,6 @@ class FrozenGraph:
         self.graph = networkx.classes.function.freeze(graph)
         self.graph.join = frozen
         self.graph.add_data = frozen
-        self.graph.add_data = frozen
 
         self.size = len(self.graph)
 
