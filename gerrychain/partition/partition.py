@@ -31,9 +31,11 @@ class Partition:
         '_cache'
     )
 
+    default_updaters = {"cut_edges": cut_edges}
+
     def __init__(
         self, graph=None, assignment=None, updaters=None, parent=None, flips=None,
-        use_cut_edges=True
+        use_default_updaters=True
     ):
         """
         :param graph: Underlying graph.
@@ -41,18 +43,17 @@ class Partition:
         :param updaters: Dictionary of functions to track data about the partition.
             The keys are stored as attributes on the partition class,
             which the functions compute.
-        :param use_cut_edges: If `False`, do not include `cut_edges` updater by default
-            and do not calculate edge flows.
+        :param use_default_updaters: If `False`, do not include default updaters.
         """
         if parent is None:
-            self._first_time(graph, assignment, updaters, use_cut_edges)
+            self._first_time(graph, assignment, updaters, use_default_updaters)
         else:
             self._from_parent(parent, flips)
 
         self._cache = dict()
         self.subgraphs = SubgraphView(self.graph, self.parts)
 
-    def _first_time(self, graph, assignment, updaters, use_cut_edges):
+    def _first_time(self, graph, assignment, updaters, use_default_updaters):
         if isinstance(graph, Graph):
             self.graph = FrozenGraph(graph)
         elif isinstance(graph, networkx.Graph):
@@ -71,8 +72,8 @@ class Partition:
         if updaters is None:
             updaters = dict()
 
-        if use_cut_edges:
-            self.updaters = {"cut_edges": cut_edges}
+        if use_default_updaters:
+            self.updaters = self.default_updaters
         else:
             self.updaters = {}
 
