@@ -365,19 +365,21 @@ class LocalitySplits:
 
         :param partition: The partition to be scored.
 
-        :return: Proportion of the pairs of people in the same locality who are split into different districts,
-        population-weighted by locality
+        :return: Proportion of the pairs of people in the same locality
+        who are split into different districts, population-weighted by locality
         '''
 
         # get list of districts
         districts = dict(partition.parts).keys()
 
-        # initialize dictionary keyed by locality, values are dicts of district : intersection_pop
+        # initialize dictionary keyed by locality, values are dicts of
+        # district : intersection_pop
         district_pops_per_locality = {}
 
         # initialize inner dicts
         for locality in self.localities:
-            district_pops_per_locality[locality] = {district: 0.0 for district in districts}
+            district_pops_per_locality[locality] = {district: 0.0
+                                                    for district in districts}
 
         # for each district
         for district in districts:
@@ -385,12 +387,12 @@ class LocalitySplits:
             # get the vtds assigned to this district in the partition
             vtds = partition.parts[district]
 
-            # for each vtd, add the population to the appropriate locality-district pair
+            # for each vtd, add the population to the proper locality-district pair
             for vtd in vtds:
                 district_pops_per_locality[self.localitydict[vtd]][district] += \
                     partition.graph.nodes[vtd][self.pop_col]
 
-        # initialize lists for split pairs scores by locality and populations by locality
+        # initialize lists for split pairs scores by locality and populations
         scores = []
         loc_pops = []
 
@@ -411,4 +413,4 @@ class LocalitySplits:
             loc_pops += [total_pop]
 
         # return population-weighted average of split pairs score
-        return sum([scores[i] * pop for i, pop in enumerate(loc_pops)]) / sum(loc_pops)
+        return sum([scores[i] * p for i, p in enumerate(loc_pops)]) / sum(loc_pops)
