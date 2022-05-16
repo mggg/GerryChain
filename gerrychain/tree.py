@@ -189,7 +189,7 @@ def bipartition_tree_retworkx(
 
     balanced_node_choices = retworkx.bipartition_tree(graph.pygraph, lambda x: random.random(), pops, float(pop_target), float(epsilon))
     balanced_nodes = {graph.retworkx_networkx_mapping[x] for x in choice(balanced_node_choices)[1]}
-    return (balanced_nodes, graph.node_indicies - balanced_nodes)
+    return (balanced_nodes, graph.node_indices - balanced_nodes)
 
 
 def bipartition_tree(
@@ -229,7 +229,7 @@ def bipartition_tree(
     :param choice: :func:`random.choice`. Can be substituted for testing.
     :param max_atempts: The max number of attempts that should be made to bipartition.
     """
-    populations = {node: graph.lookup(node, pop_col) for node in graph.node_indicies}
+    populations = {node: graph.lookup(node, pop_col) for node in graph.node_indices}
 
     possible_cuts = []
     if spanning_tree is None:
@@ -267,7 +267,7 @@ def _bipartition_tree_random_all(
     max_attempts: Optional[int] = None
 ):
     """Randomly bipartitions a graph and returns all cuts."""
-    populations = {node: graph.lookup(node, pop_col) for node in graph.node_indicies}
+    populations = {node: graph.lookup(node, pop_col) for node in graph.node_indices}
 
     possible_cuts = []
     if spanning_tree is None:
@@ -452,7 +452,7 @@ def get_seed_chunks(
         new_epsilon = epsilon
 
     chunk_pop = 0
-    for node in graph.node_indicies:
+    for node in graph.node_indices:
         chunk_pop += graph.lookup(node, pop_col)
 
     while True:
