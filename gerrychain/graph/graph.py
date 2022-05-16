@@ -366,7 +366,12 @@ class FrozenGraph:
         "rustworkx_networkx_mapping"
     ]
 
-    def __init__(self, graph: Graph, pygraph: retworkx.PyGraph = None, mappings: Tuple[dict, dict] = None):
+    def __init__(
+        self,
+        graph: Graph,
+        pygraph: retworkx.PyGraph = None,
+        mappings: Tuple[dict, dict] = None
+    ):
         self.graph = networkx.classes.function.freeze(graph)
         self.graph.join = frozen
         self.graph.add_data = frozen
@@ -381,8 +386,12 @@ class FrozenGraph:
         if mappings:
             self.retworkx_networkx_mapping, self.networkx_retworkx_mapping = mappings
         else:
-            self.retworkx_networkx_mapping = {node: self.pygraph[node]["__networkx_node__"] for node in self.pygraph.node_indexes()}
-            self.networkx_retworkx_mapping = {self.pygraph[node]["__networkx_node__"]: node for node in self.pygraph.node_indexes()}
+            self.retworkx_networkx_mapping = {
+                n: self.pygraph[n]["__networkx_node__"] for n in self.pygraph.node_indexes()
+            }
+            self.networkx_retworkx_mapping = {
+                self.pygraph[n]["__networkx_node__"]: n for n in self.pygraph.node_indexes()
+            }
 
     def __len__(self):
         return self.size
@@ -420,7 +429,8 @@ class FrozenGraph:
         return self.graph.nodes[node][field]
 
     def subgraph(self, nodes):
-        return FrozenGraph(self.graph.subgraph(nodes), 
+        return FrozenGraph(
+            self.graph.subgraph(nodes),
             self.pygraph.subgraph(
                 [self.networkx_retworkx_mapping[x] for x in nodes]
             )

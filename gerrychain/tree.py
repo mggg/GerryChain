@@ -187,7 +187,13 @@ def bipartition_tree_retworkx(
 ):
     pops = graph.pygraph_pop_lookup(pop_col)
 
-    balanced_node_choices = retworkx.bipartition_tree(graph.pygraph, lambda x: random.random(), pops, float(pop_target), float(epsilon))
+    balanced_node_choices = retworkx.bipartition_tree(
+        graph.pygraph,
+        lambda x: random.random(),
+        pops,
+        float(pop_target),
+        float(epsilon)
+    )
     balanced_nodes = {graph.retworkx_networkx_mapping[x] for x in choice(balanced_node_choices)[1]}
     return (balanced_nodes, graph.node_indices - balanced_nodes)
 

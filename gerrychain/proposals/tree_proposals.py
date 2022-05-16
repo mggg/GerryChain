@@ -1,10 +1,11 @@
 from functools import partial
-from ..random import random
 
+from ..random import random
 from ..tree import (
-    recursive_tree_part, bipartition_tree, bipartition_tree_random,
+    bipartition_tree_random,
     _bipartition_tree_random_all, uniform_spanning_tree,
     find_balanced_edge_cuts_memoization, bipartition_tree_retworkx
+    # recursive_tree_part, bipartition_tree,
 )
 
 
