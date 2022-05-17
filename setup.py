@@ -11,6 +11,7 @@ requirements = [
     "scipy",
     "networkx",
     "matplotlib",
+    "retworkx",
 ]
 
 setup(
