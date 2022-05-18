@@ -93,10 +93,7 @@ class Assignment(Mapping):
 
     def to_series(self):
         """Convert the assignment to a :class:`pandas.Series`."""
-        groups = [
-            pandas.Series(data=part, index=nodes) for part, nodes in self.parts.items()
-        ]
-        return pandas.concat(groups)
+        return pandas.Series(self.mapping, dtype="uint32")
 
     def to_dict(self):
         """Convert the assignment to a ``{node: part}`` dictionary."""
