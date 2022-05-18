@@ -396,11 +396,8 @@ class FrozenGraph:
     def __len__(self):
         return self.size
 
-    def __getattribute__(self, __name: str) -> Any:
-        try:
-            return object.__getattribute__(self, __name)
-        except AttributeError:
-            return object.__getattribute__(self.graph, __name)
+    def __getattr__(self, __name: str) -> Any:
+        return getattr(self.graph, __name)
 
     def __getitem__(self, __name: str) -> Any:
         return self.graph[__name]
