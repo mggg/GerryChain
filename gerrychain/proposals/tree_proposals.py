@@ -38,7 +38,7 @@ def recom(
     )
 
     flips = recursive_tree_part(
-        subgraph,
+        subgraph.graph,
         parts_to_merge,
         pop_col=pop_col,
         pop_target=pop_target,
@@ -95,14 +95,14 @@ def region_aware_recom(
 
     """
     edge = random.choice(tuple(partition["cut_edges"]))
-    parts_to_merge = (partition.assignment[edge[0]], partition.assignment[edge[1]])
+    parts_to_merge = (partition.assignment.mapping[edge[0]], partition.assignment.mapping[edge[1]])
 
     subgraph = partition.graph.subgraph(
         partition.parts[parts_to_merge[0]] | partition.parts[parts_to_merge[1]]
     )
 
     flips = recursive_region_aware_tree_part(
-        subgraph,
+        subgraph.graph,
         parts_to_merge,
         pop_col=pop_col,
         pop_target=pop_target,
@@ -122,8 +122,8 @@ def reversible_recom(partition, pop_col, pop_target, epsilon,
     def dist_pair_edges(part, a, b):
         return set(
             e for e in part.graph.edges
-            if ((part.assignment[e[0]] == a and part.assignment[e[1]] == b) or
-                (part.assignment[e[0]] == b and part.assignment[e[1]] == a))
+            if ((part.assignment.mapping[e[0]] == a and part.assignment.mapping[e[1]] == b) or
+                (part.assignment.mapping[e[0]] == b and part.assignment.mapping[e[1]] == a))
         )
 
     def bounded_balance_edge_fn(*args, **kwargs):
@@ -152,7 +152,7 @@ def reversible_recom(partition, pop_col, pop_target, epsilon,
         return partition    # self-loop: no adjacency
 
     edge = random.choice(list(pair_edges))
-    parts_to_merge = (partition.assignment[edge[0]], partition.assignment[edge[1]])
+    parts_to_merge = (partition.assignment.mapping[edge[0]], partition.assignment.mapping[edge[1]])
     subgraph = partition.graph.subgraph(
         partition.parts[parts_to_merge[0]] | partition.parts[parts_to_merge[1]]
     )

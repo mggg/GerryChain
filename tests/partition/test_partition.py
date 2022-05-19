@@ -7,6 +7,7 @@ import pytest
 
 from gerrychain.partition import GeographicPartition, Partition
 from gerrychain.proposals import propose_random_flip
+from gerrychain.graph import Graph
 from gerrychain.updaters import cut_edges
 
 
@@ -17,14 +18,14 @@ def test_Partition_can_be_flipped(example_partition):
 
 
 def test_Partition_misnamed_vertices_raises_keyerror():
-    graph = networkx.complete_graph(3)
+    graph = Graph.from_networkx(networkx.complete_graph(3))
     assignment = {"0": 1, "1": 1, "2": 2}
     with pytest.raises(KeyError):
         Partition(graph, assignment, {"cut_edges": cut_edges})
 
 
 def test_Partition_unlabelled_vertices_raises_keyerror():
-    graph = networkx.complete_graph(3)
+    graph = Graph.from_networkx(networkx.complete_graph(3))
     assignment = {0: 1, 2: 2}
     with pytest.raises(KeyError):
         Partition(graph, assignment, {"cut_edges": cut_edges})
@@ -44,7 +45,7 @@ def test_propose_random_flip_proposes_a_partition(example_partition):
 
 @pytest.fixture
 def example_geographic_partition():
-    graph = networkx.complete_graph(3)
+    graph = Graph.from_networkx(networkx.complete_graph(3))
     assignment = {0: 1, 1: 1, 2: 2}
     for node in graph.nodes:
         graph.nodes[node]["boundary_node"] = False
@@ -56,7 +57,7 @@ def example_geographic_partition():
 
 def test_geographic_partition_can_be_instantiated(example_geographic_partition):
     partition = example_geographic_partition
-    assert partition.updaters == GeographicPartition.default_updaters
+    assert isinstance(partition, GeographicPartition)
 
 
 def test_Partition_parts_is_a_dictionary_of_parts_to_nodes(example_partition):
@@ -144,13 +145,33 @@ def test_repr(example_partition):
 
 def test_partition_has_default_updaters(example_partition):
     partition = example_partition
-    default_updaters = partition.default_updaters
     should_have_updaters = {"cut_edges": cut_edges}
 
     for updater in should_have_updaters:
-        assert default_updaters.get(updater, None) is not None
         assert should_have_updaters[updater](partition) == partition[updater]
 
 
 def test_partition_has_keys(example_partition):
     assert "cut_edges" in set(example_partition.keys())
+
+
+def test_geographic_partition_has_keys(example_geographic_partition):
+    keys = set(example_geographic_partition.updaters.keys())
+
+    assert "perimeter" in keys
+    assert "exterior_boundaries" in keys
+    assert "interior_boundaries" in keys
+    assert "boundary_nodes" in keys
+    assert "cut_edges" in keys
+    assert "area" in keys
+    assert "cut_edges_by_part" in keys
+
+
+def test_partition_has_default_updaters(example_geographic_partition):
+    assert hasattr(example_geographic_partition, "perimeter")
+    assert hasattr(example_geographic_partition, "exterior_boundaries")
+    assert hasattr(example_geographic_partition, "interior_boundaries")
+    assert hasattr(example_geographic_partition, "boundary_nodes")
+    assert hasattr(example_geographic_partition, "cut_edges")
+    assert hasattr(example_geographic_partition, "area")
+    assert hasattr(example_geographic_partition, "cut_edges_by_part")

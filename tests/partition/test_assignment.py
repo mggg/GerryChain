@@ -12,7 +12,7 @@ def assignment():
 
 class TestAssignment:
     def test_assignment_can_be_updated(self, assignment):
-        assignment.update({2: 1})
+        assignment.update_flows({1: {"out": set(), "in": {2}}, 2: {"out": {2}, "in": set()}})
         assert assignment[2] == 1
 
     def test_assignment_copy_does_not_copy_the_node_sets(self, assignment):

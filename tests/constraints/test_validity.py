@@ -11,30 +11,39 @@ from gerrychain.constraints import (SelfConfiguringLowerBound, Validator,
                                     single_flip_contiguous)
 from gerrychain.partition import Partition
 from gerrychain.partition.partition import get_assignment
+from gerrychain.graph import Graph
 
 
 @pytest.fixture
-def contiguous_partition():
+def contiguous_partition_with_flips():
     graph = nx.Graph()
     graph.add_nodes_from(range(4))
     graph.add_edges_from([(0, 1), (1, 2), (2, 3), (3, 0)])
-    partition = Partition(graph, {0: 0, 1: 1, 2: 1, 3: 0})
+    partition = Partition(Graph.from_networkx(graph), {0: 0, 1: 1, 2: 1, 3: 0})
 
     # This flip will maintain contiguity.
-    partition.test_flips = {0: 1}
-    return partition
+    return partition, {0: 1}
 
 
 @pytest.fixture
-def discontiguous_partition():
+def discontiguous_partition_with_flips():
     graph = nx.Graph()
     graph.add_nodes_from(range(4))
     graph.add_edges_from([(0, 1), (1, 2), (2, 3)])
-    partition = Partition(graph, {0: 0, 1: 1, 2: 1, 3: 0})
+    partition = Partition(Graph.from_networkx(graph), {0: 0, 1: 1, 2: 1, 3: 0})
 
     # This flip will maintain discontiguity.
-    partition.test_flips = {1: 0}
-    return partition
+    return partition, {1: 0}
+
+
+@pytest.fixture
+def contiguous_partition(contiguous_partition_with_flips):
+    return contiguous_partition_with_flips[0]
+
+
+@pytest.fixture
+def discontiguous_partition(discontiguous_partition_with_flips):
+    return discontiguous_partition_with_flips[0]
 
 
 def test_contiguous_with_contiguity_no_flips_is_true(contiguous_partition):
@@ -43,8 +52,9 @@ def test_contiguous_with_contiguity_no_flips_is_true(contiguous_partition):
     assert contiguous_bfs(contiguous_partition)
 
 
-def test_contiguous_with_contiguity_flips_is_true(contiguous_partition):
-    contiguous_partition2 = contiguous_partition.flip(contiguous_partition.test_flips)
+def test_contiguous_with_contiguity_flips_is_true(contiguous_partition_with_flips):
+    contiguous_partition, test_flips = contiguous_partition_with_flips
+    contiguous_partition2 = contiguous_partition.flip(test_flips)
     assert contiguous(contiguous_partition2)
     assert single_flip_contiguous(contiguous_partition2)
     assert contiguous_bfs(contiguous_partition2)
@@ -64,10 +74,11 @@ def test_discontiguous_with_contiguous_bfs_no_flips_is_false(discontiguous_parti
     assert not contiguous_bfs(discontiguous_partition)
 
 
-def test_discontiguous_with_contiguous_flips_is_false(discontiguous_partition):
-    discontiguous_partition2 = discontiguous_partition.flip(
-        discontiguous_partition.test_flips
-    )
+def test_discontiguous_with_contiguous_flips_is_false(
+    discontiguous_partition_with_flips
+):
+    part, test_flips = discontiguous_partition_with_flips
+    discontiguous_partition2 = part.flip(test_flips)
     assert not contiguous(discontiguous_partition2)
 
 
@@ -76,18 +87,18 @@ def test_discontiguous_with_contiguous_flips_is_false(discontiguous_partition):
     "when the previous partition is discontiguous"
 )
 def test_discontiguous_with_single_flip_contiguous_flips_is_false(
-    discontiguous_partition
+    discontiguous_partition_with_flips
 ):
-    discontiguous_partition2 = discontiguous_partition.flip(
-        discontiguous_partition.test_flips
-    )
+    part, test_flips = discontiguous_partition_with_flips
+    discontiguous_partition2 = part.flip(test_flips)
     assert not single_flip_contiguous(discontiguous_partition2)
 
 
-def test_discontiguous_with_contiguous_bfs_flips_is_false(discontiguous_partition):
-    discontiguous_partition2 = discontiguous_partition.flip(
-        discontiguous_partition.test_flips
-    )
+def test_discontiguous_with_contiguous_bfs_flips_is_false(
+    discontiguous_partition_with_flips
+):
+    part, test_flips = discontiguous_partition_with_flips
+    discontiguous_partition2 = part.flip(test_flips)
     assert not contiguous_bfs(discontiguous_partition2)
 
 
@@ -159,6 +170,6 @@ def test_no_vanishing_districts_works():
     partition = MagicMock()
     partition.parent = parent
     partition.assignment = parent.assignment.copy()
-    partition.assignment.update({2: 1})
+    partition.assignment.update_flows({1: {"out": set(), "in": {2}}, 2: {"out": {2}, "in": set()}})
 
     assert not no_vanishing_districts(partition)

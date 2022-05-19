@@ -1,6 +1,7 @@
 import networkx as nx
 from networkx.algorithms import tree
 
+from functools import partial
 from .random import random
 from collections import deque, namedtuple
 
@@ -14,7 +15,8 @@ def successors(h, root):
 
 def random_spanning_tree(graph):
     """ Builds a spanning tree chosen by Kruskal's method using random weights.
-        :param graph: Networkx Graph
+        :param graph: FrozenGraph
+
         Important Note:
         The key is specifically labelled "random_weight" instead of the previously
         used "weight". Turns out that networkx uses the "weight" keyword for other
@@ -22,7 +24,7 @@ def random_spanning_tree(graph):
         This meant that the laplacian would change for the graph step to step,
         something that we do not intend!!
     """
-    for edge in graph.edges:
+    for edge in graph.edge_indices:
         graph.edges[edge]["random_weight"] = random.random()
 
     spanning_tree = tree.maximum_spanning_tree(
@@ -63,14 +65,14 @@ def uniform_spanning_tree(graph, choice=random.choice):
         :param graph: Networkx Graph
         :param choice: :func:`random.choice`
     """
-    root = choice(list(graph.nodes))
+    root = choice(graph.node_indices)
     tree_nodes = set([root])
     next_node = {root: None}
 
-    for node in graph.nodes:
+    for node in graph.node_indices:
         u = node
         while u not in tree_nodes:
-            next_node[u] = choice(list(nx.neighbors(graph, u)))
+            next_node[u] = choice(graph.neighbors(u))
             u = next_node[u]
 
         u = node
@@ -89,12 +91,12 @@ def uniform_spanning_tree(graph, choice=random.choice):
 class PopulatedGraph:
     def __init__(self, graph, populations, ideal_pop, epsilon):
         self.graph = graph
-        self.subsets = {node: {node} for node in graph}
+        self.subsets = {node: {node} for node in graph.node_indices}
         self.population = populations.copy()
         self.tot_pop = sum(self.population.values())
         self.ideal_pop = ideal_pop
         self.epsilon = epsilon
-        self._degrees = {node: graph.degree(node) for node in graph}
+        self._degrees = {node: graph.degree(node) for node in graph.node_indices}
 
     def __iter__(self):
         return iter(self.graph)
@@ -267,7 +269,8 @@ def bipartition_tree(
     spanning_tree=None,
     spanning_tree_fn=random_spanning_tree,
     balance_edge_fn=find_balanced_edge_cuts_memoization,
-    choice=random.choice
+    choice=random.choice,
+    max_attempts=None
 ):
     """This function finds a balanced 2 partition of a graph by drawing a
     spanning tree and finding an edge to cut that leaves at most an epsilon
@@ -289,22 +292,30 @@ def bipartition_tree(
     :param spanning_tree_fn: The random spanning tree algorithm to use if a spanning
         tree is not provided
     :param choice: :func:`random.choice`. Can be substituted for testing.
+    :param max_atempts: The max number of attempts that should be made to bipartition.
     """
-    populations = {node: graph.nodes[node][pop_col] for node in graph}
+    populations = {node: graph.nodes[node][pop_col] for node in graph.node_indices}
 
     possible_cuts = []
     if spanning_tree is None:
         spanning_tree = spanning_tree_fn(graph)
+
     restarts = 0
-    while len(possible_cuts) == 0:
+    attempts = 0
+    while max_attempts is None or attempts < max_attempts:
         if restarts == node_repeats:
             spanning_tree = spanning_tree_fn(graph)
             restarts = 0
         h = PopulatedGraph(spanning_tree, populations, pop_target, epsilon)
         possible_cuts = balance_edge_fn(h, choice=choice)
-        restarts += 1
 
-    return choice(possible_cuts).subset
+        if len(possible_cuts) != 0:
+            return choice(possible_cuts).subset
+
+        restarts += 1
+        attempts += 1
+
+    raise RuntimeError(f"Could not find a possible cut after {max_attempts} attempts.")
 
 
 def region_aware_bipartition_tree(
@@ -388,21 +399,29 @@ def _bipartition_tree_random_all(
     spanning_tree_fn=random_spanning_tree,
     balance_edge_fn=find_balanced_edge_cuts_memoization,
     choice=random.choice,
+    max_attempts=None
 ):
     """Randomly bipartitions a graph and returns all cuts."""
-    populations = {node: graph.nodes[node][pop_col] for node in graph}
+    populations = {node: graph.nodes[node][pop_col] for node in graph.node_indices}
 
     possible_cuts = []
     if spanning_tree is None:
         spanning_tree = spanning_tree_fn(graph)
 
     repeat = True
-    while repeat and len(possible_cuts) == 0:
+    attempts = 0
+    while max_attempts is None or attempts < max_attempts:
         spanning_tree = spanning_tree_fn(graph)
         h = PopulatedGraph(spanning_tree, populations, pop_target, epsilon)
         possible_cuts = balance_edge_fn(h, choice=choice)
+
         repeat = repeat_until_valid
-    return possible_cuts
+        attempts += 1
+
+        if not (repeat and len(possible_cuts) == 0):
+            return possible_cuts
+
+    raise RuntimeError(f"Could not find a possible cut after {max_attempts} attempts.")
 
 
 def bipartition_tree_random(
@@ -456,7 +475,13 @@ def bipartition_tree_random(
 
 
 def recursive_tree_part(
-    graph, parts, pop_target, pop_col, epsilon, node_repeats=1, method=bipartition_tree
+    graph,
+    parts,
+    pop_target,
+    pop_col,
+    epsilon,
+    node_repeats=1,
+    method=partial(bipartition_tree, max_attempts=10000)
 ):
     """Uses :func:`~gerrychain.tree.bipartition_tree` recursively to partition a tree into
     ``len(parts)`` parts of population ``pop_target`` (within ``epsilon``). Can be used to
@@ -537,11 +562,12 @@ def recursive_region_aware_tree_part(
     counties and towns intact, but would prefer keeping counties whole instead of towns,
     where necessary. Often, setting the weights to be 1 for every region works well.
     :param node_repeats: Parameter for :func:`~gerrychain.tree_methods.bipartition_tree` to use.
+    :param method: The partition method to use.
     :return: New assignments for the nodes of ``graph``.
     :rtype: dict
     """
     flips = {}
-    remaining_nodes = set(graph.nodes)
+    remaining_nodes = graph.node_indices
     # We keep a running tally of deviation from ``epsilon`` at each partition
     # and use it to tighten the population constraints on a per-partition
     # basis such that every partition, including the last partition, has a
@@ -588,7 +614,7 @@ def get_seed_chunks(
     pop_col,
     epsilon,
     node_repeats=1,
-    method=bipartition_tree_random
+    method=partial(bipartition_tree_random, max_attempts=10000)
 ):
     """
     Helper function for recursive_seed_part. Partitions the graph into ``num_chunks`` chunks,
@@ -611,7 +637,7 @@ def get_seed_chunks(
         new_epsilon = epsilon
 
     chunk_pop = 0
-    for node in graph.nodes:
+    for node in graph.node_indices:
         chunk_pop += graph.nodes[node][pop_col]
 
     while True:
@@ -708,7 +734,7 @@ def recursive_seed_part_inner(
     pop_target,
     pop_col,
     epsilon,
-    method=bipartition_tree,
+    method=partial(bipartition_tree, max_attempts=10000),
     node_repeats=1,
     n=None,
     ceil=None,
@@ -819,7 +845,7 @@ def recursive_seed_part(
     pop_target,
     pop_col,
     epsilon,
-    method=bipartition_tree,
+    method=partial(bipartition_tree, max_attempts=10000),
     node_repeats=1,
     n=None,
     ceil=None
@@ -855,7 +881,7 @@ def recursive_seed_part(
         pop_target,
         pop_col,
         epsilon,
-        method=bipartition_tree,
+        method=partial(bipartition_tree, max_attempts=10000),
         node_repeats=node_repeats,
         n=n,
         ceil=ceil

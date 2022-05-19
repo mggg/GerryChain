@@ -6,6 +6,7 @@ import geopandas as gp
 import pandas
 import pytest
 from shapely.geometry import Polygon
+from pyproj import CRS
 
 from gerrychain.graph import Graph
 from gerrychain.graph.geo import GeometryError
@@ -245,3 +246,13 @@ def test_data_and_geometry(gdf_with_data):
     assert (graph.data["data"] == df["data"]).all()
     #graph.add_data(df[["data2"]])
     assert list(graph.data.columns) == ["data", "data2"]
+
+
+def test_make_graph_from_dataframe_has_crs(gdf_with_data):
+    graph = Graph.from_geodataframe(gdf_with_data)
+    assert CRS.from_json(graph.graph["crs"]).equals(gdf_with_data.crs)
+
+def test_make_graph_from_shapefile_has_crs(shapefile):
+    graph = Graph.from_file(shapefile)
+    df = gp.read_file(shapefile)
+    assert CRS.from_json(graph.graph["crs"]).equals(df.crs)

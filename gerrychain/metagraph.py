@@ -5,7 +5,7 @@ from .constraints import Validator
 
 def all_cut_edge_flips(partition):
     for edge, index in product(partition.cut_edges, (0, 1)):
-        yield {edge[index]: partition.assignment[edge[1 - index]]}
+        yield {edge[index]: partition.assignment.mapping[edge[1 - index]]}
 
 
 def all_valid_states_one_flip_away(partition, constraints):

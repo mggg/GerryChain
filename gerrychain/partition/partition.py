@@ -1,5 +1,8 @@
 import json
 import geopandas
+import networkx
+
+from gerrychain.graph.graph import FrozenGraph, Graph
 from ..updaters import compute_edge_flows, flows_from_changes, cut_edges
 from .assignment import get_assignment
 from .subgraphs import SubgraphView
@@ -16,11 +19,23 @@ class Partition:
     :ivar dict parts: Maps district IDs to the set of nodes in that district.
     :ivar dict subgraphs: Maps district IDs to the induced subgraph of that district.
     """
+    __slots__ = (
+        'graph',
+        'subgraphs',
+        'assignment',
+        'updaters',
+        'parent',
+        'flips',
+        'flows',
+        'edge_flows',
+        '_cache'
+    )
 
     default_updaters = {"cut_edges": cut_edges}
 
     def __init__(
-        self, graph=None, assignment=None, updaters=None, parent=None, flips=None
+        self, graph=None, assignment=None, updaters=None, parent=None, flips=None,
+        use_default_updaters=True
     ):
         """
         :param graph: Underlying graph.
@@ -28,17 +43,26 @@ class Partition:
         :param updaters: Dictionary of functions to track data about the partition.
             The keys are stored as attributes on the partition class,
             which the functions compute.
+        :param use_default_updaters: If `False`, do not include default updaters.
         """
         if parent is None:
-            self._first_time(graph, assignment, updaters)
+            self._first_time(graph, assignment, updaters, use_default_updaters)
         else:
             self._from_parent(parent, flips)
 
         self._cache = dict()
         self.subgraphs = SubgraphView(self.graph, self.parts)
 
-    def _first_time(self, graph, assignment, updaters):
-        self.graph = graph
+    def _first_time(self, graph, assignment, updaters, use_default_updaters):
+        if isinstance(graph, Graph):
+            self.graph = FrozenGraph(graph)
+        elif isinstance(graph, networkx.Graph):
+            graph = Graph.from_networkx(graph)
+            self.graph = FrozenGraph(graph)
+        elif isinstance(graph, FrozenGraph):
+            self.graph = graph
+        else:
+            raise TypeError("Unsupported Graph object")
 
         self.assignment = get_assignment(assignment, graph)
 
@@ -48,7 +72,11 @@ class Partition:
         if updaters is None:
             updaters = dict()
 
-        self.updaters = self.default_updaters.copy()
+        if use_default_updaters:
+            self.updaters = self.default_updaters
+        else:
+            self.updaters = {}
+
         self.updaters.update(updaters)
 
         self.parent = None
@@ -60,14 +88,16 @@ class Partition:
         self.parent = parent
         self.flips = flips
 
-        self.assignment = parent.assignment.copy()
-        self.assignment.update(flips)
-
         self.graph = parent.graph
         self.updaters = parent.updaters
 
-        self.flows = flows_from_changes(parent.assignment, flips)
-        self.edge_flows = compute_edge_flows(self)
+        self.flows = flows_from_changes(parent, self)  # careful
+
+        self.assignment = parent.assignment.copy()
+        self.assignment.update_flows(self.flows)
+
+        if "cut_edges" in self.updaters:
+            self.edge_flows = compute_edge_flows(self)
 
     def __repr__(self):
         number_of_parts = len(self)
@@ -94,7 +124,7 @@ class Partition:
         :param edge: tuple of node IDs
         :rtype: bool
         """
-        return self.assignment[edge[0]] != self.assignment[edge[1]]
+        return self.assignment.mapping[edge[0]] != self.assignment.mapping[edge[1]]
 
     def __getitem__(self, key):
         """Allows accessing the values of updaters computed for this
