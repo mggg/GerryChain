@@ -167,7 +167,7 @@ def test_geographic_partition_has_keys(example_geographic_partition):
     assert "cut_edges_by_part" in keys
 
 
-def test_partition_has_default_updaters(example_geographic_partition):
+def test_geographic_partition_has_default_updaters(example_geographic_partition):
     assert hasattr(example_geographic_partition, "perimeter")
     assert hasattr(example_geographic_partition, "exterior_boundaries")
     assert hasattr(example_geographic_partition, "interior_boundaries")
