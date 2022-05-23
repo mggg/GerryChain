@@ -46,6 +46,7 @@ repository, where `bug reports and feature requests`_, as well as
     :caption: User Guide
     :maxdepth: 2
 
+    user/intro
     user/install
     user/quickstart
     user/recom
@@ -53,6 +54,7 @@ repository, where `bug reports and feature requests`_, as well as
     user/updaters
     user/islands
     user/real-life-plans
+    user/adjacency
 
 We also highly recommend the resources prepared by Daryl R. DeFord of
 MGGG for the 2019 MIT IAP course `Computational Approaches for Political Redistricting`_.
