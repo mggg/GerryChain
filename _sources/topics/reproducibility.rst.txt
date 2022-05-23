@@ -17,6 +17,35 @@ as a `GitHub`_ repository, and not as a ``.zip`` file on your personal website. 
 .. _`GitHub`: https://github.com/
 .. _`desktop client`: https://desktop.github.com/
 
+Make your chains speedily replayable
+------------------------------------
+
+It is sometimes desirable to allow others to reproduce or "replay" your chain runs step by step. In such cirucmstances, we recommend using `pcompress`_ which efficiently and rapidly stores your MCMC chain runs in a highly-compressed format. It can then be quickly read-in by `pcompress` at a later date. To setup `pcompress`_, you need to first `install Cargo`_. Then, you can install `pcompress`_ by installing running ``cargo install pcompress`` and ``pip install pcompress`` in your terminal.
+
+To use `pcompress`_, you can wrap your ``MarkovChain`` instances with ``Record`` and pass along the file name you want to save your chain as. For example, this will save your chain run as ``saved-run.chain``:
+
+.. code-block:: python
+
+    from pcompress import Record
+
+    chain = MarkovChain(
+        # chain setup here
+    )
+
+    for partition in Record(chain, "saved-run.chain"):
+        # normal chain stuff here
+
+Then, if you want to replay your chain run, you can select the same filename and pass along the graph that was used to generate the chain, along with any updaters that are needed:
+
+.. code-block:: python
+
+    from pcompress import Replay
+
+    for partition in Replay(graph, "saved-run.chain", updaters=my_updaters):
+        # normal chain stuff here
+
+The two code samples provided will produce totally equivalent chain runs, up to reordering. Each step in the replayed chain run will match each step in the recorded chain run. Furthermore, the replay process will be faster than the original chain running process and is compatible across future and past releases of GerryChain.
+
 
 Use the same versions of all of your dependencies
 -------------------------------------------------
@@ -83,3 +112,5 @@ before running your code.
 .. _`environment variable`: https://en.wikipedia.org/wiki/Environment_variable
 .. _conda: https://conda.io/en/master/
 .. _`save environment variables in your conda environment`: https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#saving-environment-variables
+.. _`pcompress`: https://github.com/mggg/pcompress
+.. _`install Cargo`: https://doc.rust-lang.org/cargo/getting-started/installation.html

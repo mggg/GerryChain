@@ -54,6 +54,7 @@
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Reproducibility</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#share-your-code-on-github">Share your code on GitHub</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#make-your-chains-speedily-replayable">Make your chains speedily replayable</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#use-the-same-versions-of-all-of-your-dependencies">Use the same versions of all of your dependencies</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#import-random-from-gerrychain-random">Import <code class="docutils literal notranslate"><span class="pre">random</span></code> from <code class="docutils literal notranslate"><span class="pre">gerrychain.random</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#set-pythonhashseed-0">Set <code class="docutils literal notranslate"><span class="pre">PYTHONHASHSEED=0</span></code></a></li>
@@ -95,6 +96,29 @@ required to make that possible.</p>
 <p>Before anyone can run your code, they’ll need to find it. We strongly recommend publishing your source code
 as a <a class="reference external" href="https://github.com/">GitHub</a> repository, and not as a <code class="docutils literal notranslate"><span class="pre">.zip</span></code> file on your personal website. GitHub has a
 <a class="reference external" href="https://desktop.github.com/">desktop client</a> that makes this easy.</p>
+</div>
+<div class="section" id="make-your-chains-speedily-replayable">
+<h2>Make your chains speedily replayable<a class="headerlink" href="#make-your-chains-speedily-replayable" title="Permalink to this headline">¶</a></h2>
+<p>It is sometimes desirable to allow others to reproduce or “replay” your chain runs step by step. In such cirucmstances, we recommend using <a class="reference external" href="https://github.com/mggg/pcompress">pcompress</a> which efficiently and rapidly stores your MCMC chain runs in a highly-compressed format. It can then be quickly read-in by <cite>pcompress</cite> at a later date. To setup <a class="reference external" href="https://github.com/mggg/pcompress">pcompress</a>, you need to first <a class="reference external" href="https://doc.rust-lang.org/cargo/getting-started/installation.html">install Cargo</a>. Then, you can install <a class="reference external" href="https://github.com/mggg/pcompress">pcompress</a> by installing running <code class="docutils literal notranslate"><span class="pre">cargo</span> <span class="pre">install</span> <span class="pre">pcompress</span></code> and <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">pcompress</span></code> in your terminal.</p>
+<p>To use <a class="reference external" href="https://github.com/mggg/pcompress">pcompress</a>, you can wrap your <code class="docutils literal notranslate"><span class="pre">MarkovChain</span></code> instances with <code class="docutils literal notranslate"><span class="pre">Record</span></code> and pass along the file name you want to save your chain as. For example, this will save your chain run as <code class="docutils literal notranslate"><span class="pre">saved-run.chain</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pcompress</span> <span class="kn">import</span> <span class="n">Record</span>
+
+<span class="n">chain</span> <span class="o">=</span> <span class="n">MarkovChain</span><span class="p">(</span>
+    <span class="c1"># chain setup here</span>
+<span class="p">)</span>
+
+<span class="k">for</span> <span class="n">partition</span> <span class="ow">in</span> <span class="n">Record</span><span class="p">(</span><span class="n">chain</span><span class="p">,</span> <span class="s2">&quot;saved-run.chain&quot;</span><span class="p">):</span>
+    <span class="c1"># normal chain stuff here</span>
+</pre></div>
+</div>
+<p>Then, if you want to replay your chain run, you can select the same filename and pass along the graph that was used to generate the chain, along with any updaters that are needed:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pcompress</span> <span class="kn">import</span> <span class="n">Replay</span>
+
+<span class="k">for</span> <span class="n">partition</span> <span class="ow">in</span> <span class="n">Replay</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="s2">&quot;saved-run.chain&quot;</span><span class="p">,</span> <span class="n">updaters</span><span class="o">=</span><span class="n">my_updaters</span><span class="p">):</span>
+    <span class="c1"># normal chain stuff here</span>
+</pre></div>
+</div>
+<p>The two code samples provided will produce totally equivalent chain runs, up to reordering. Each step in the replayed chain run will match each step in the recorded chain run. Furthermore, the replay process will be faster than the original chain running process and is compatible across future and past releases of GerryChain.</p>
 </div>
 <div class="section" id="use-the-same-versions-of-all-of-your-dependencies">
 <h2>Use the same versions of all of your dependencies<a class="headerlink" href="#use-the-same-versions-of-all-of-your-dependencies" title="Permalink to this headline">¶</a></h2>
