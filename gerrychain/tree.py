@@ -35,8 +35,8 @@ def random_spanning_tree(graph):
 def random_region_aware_spanning_tree(graph, region_weights=None):
     """ Builds a spanning tree chosen by Kruskal's method using random weights.
         :param graph: Networkx Graph
-        :param region_weights: list of (str, float) — the first element is the region
-            column and the second element is the weight penalty added to any edge that
+        :param region_weights: dict — each key is a region
+            column and each value is the weight penalty added to any edge that
             spans two distinct regions.
 
         Important Note:
@@ -49,7 +49,7 @@ def random_region_aware_spanning_tree(graph, region_weights=None):
     weights = {edge: 0 for edge in graph.edges}
     for edge in graph.edges:
         if region_weights is not None:
-            for (region_col, penalty) in region_weights:
+            for region_col, penalty in region_weights.items():
                 if graph.nodes[edge[0]][region_col] != graph.nodes[edge[1]][region_col]:
                     weights[edge] += penalty
         graph.edges[edge]["random_weight"] = weights[edge] + random.random()
@@ -230,9 +230,17 @@ def find_region_aware_balanced_edge_cuts_memoization(h, choice=random.choice, re
 
         parent = pred[node]
         if region_weights is not None:
-            region_cols = [tup[0] for tup in region_weights]
-            # score function to prefer dividing higher ranked regions. three regions -> [4, 2, 1]
-            # an edge that splits our first- and last-ranked regions would get a score of 4 + 1 = 5
+            sorted_region_weights = sorted(region_weights.items(), key=lambda x: x[1], reverse=True)
+            region_cols = [tup[0] for tup in sorted_region_weights]
+            # score function to prefer dividing higher ranked regions. if we have three regions,
+            # each region gets split scores in decreasing powers of 2 — the first-ranked region would get
+            # a score of 4 if split, the second would get 2, the third 1. so an edge that splits our first- 
+            # and third-ranked regions would get a score of 4 + 1 = 5, which would be better than an 
+            # edge that splits our second- and third-ranked regions (2 + 1 = 3), but worse than an edge
+            # that splits our first- and second-ranked regions (score of 6).
+            # TODO: this means {"COUNTYFP20": 1, "COUSUB":1} would behave differently than 
+            # {"COUSUB": 1, "COUNTYFP20": 1}, which it shouldn't. but this requires more thinking
+            # about how best to account for this...
             # if node corresponds to a balance cut and our split score is as good or better than our
             # best previously seen split score, add this cut to our list of potential balance cuts
             node_split_score = 0
@@ -349,10 +357,10 @@ def region_aware_bipartition_tree(
     :param pop_target: The target population for the returned subset of nodes
     :param epsilon: The allowable deviation from  ``pop_target`` (as a percentage of
         ``pop_target``) for the subgraph's population
-    :param region_weights: list of (str, float) — `None` unless we want to try to keep
-    certain regions intact. If so, the first element in each tuple is the column in the
-    data that refers to the region, and the second element is the weight assigned to keeping
-    that region intact. [("COUNTYFP20", 2), ("TOWN", 1)] would mean we want to keep both
+    :param region_weights: dict — `None` unless we want to try to keep
+    certain regions intact. If so, each key is the column in the
+    data that refers to the region, and each value is the weight assigned to keeping
+    that region intact. {"COUNTYFP20": 2, "TOWN": 1} would mean we want to keep both
     counties and towns intact, but would prefer keeping counties whole instead of towns,
     where necessary. Often, setting the weights to be 1 for every region works well.
     :param node_repeats: A parameter for the algorithm: how many different choices
@@ -376,8 +384,7 @@ def region_aware_bipartition_tree(
             counter += 1
         h = PopulatedGraph(spanning_tree, populations, pop_target, epsilon)
         if region_weights is not None and restarts == 0:
-            sorted_region_weights = sorted(region_weights, key=lambda x: x[1], reverse=True)
-            possible_cuts = balance_edge_fn(h, choice=choice, region_weights=sorted_region_weights)
+            possible_cuts = balance_edge_fn(h, choice=choice, region_weights=region_weights)
         if len(possible_cuts) == 0:
             h = PopulatedGraph(spanning_tree, populations, pop_target, epsilon)
             possible_cuts = balance_edge_fn(h, choice=choice)
