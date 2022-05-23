@@ -72,7 +72,8 @@ Using ``pip``
 To install GerryChain from PyPI_, run ``pip install gerrychain`` from
 the command line. 
 
-If you plan on using GerryChain's GIS functions, then run 
+If you plan on using GerryChain's GIS functions, such as computing
+adjacencies or reading in shapefiles, then run
 ``pip install gerrychain[geo]`` from the command line.
 
 This approach sometimes fails due to compatibility issues between our
