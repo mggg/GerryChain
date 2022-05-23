@@ -9,7 +9,7 @@ API Reference
 Adjacency graphs
 ----------------
 
-.. autoclass:: gerrychain.Graph
+.. autoclass:: gerrychain.graph.graph.Graph
 
 Partitions
 ----------

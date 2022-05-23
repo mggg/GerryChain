@@ -1,3 +1,5 @@
+Handling Adjacencies
+====================
 
 We construct the *adjacency graph* on our set of precincts (the *nodes* of our graph)
 by drawing an edge between any two VTDs that are adjacent.
