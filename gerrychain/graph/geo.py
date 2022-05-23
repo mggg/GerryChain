@@ -1,5 +1,4 @@
 from collections import Counter
-from shapely.validation import explain_validity
 from gerrychain.vendor.utm import from_latlon
 
 
@@ -13,6 +12,14 @@ def identify_utm_zone(df):
     # most_common returns a list of tuples, and we want the 0,0th entry
     most_common = utm_counts.most_common(1)[0][0]
     return most_common
+
+
+def explain_validity(geo):
+    """Given a geometry, explain the validity.
+    Light wrapper around shapely's explain_validity.
+    """
+    import shapely.validation
+    return shapely.validation.explain_validity(geo)
 
 
 def invalid_geometries(df):

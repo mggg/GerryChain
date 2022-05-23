@@ -66,7 +66,24 @@ Useful links
 Installation
 ============
 
-Using conda (recommended)
+Using ``pip``
+-------------
+
+To install GerryChain from PyPI_, run ``pip install gerrychain`` from
+the command line. 
+
+If you plan on using GerryChain's GIS functions, such as computing
+adjacencies or reading in shapefiles, then run
+``pip install gerrychain[geo]`` from the command line.
+
+This approach sometimes fails due to compatibility issues between our
+different Python GIS dependencies, like ``geopandas``, ``pyproj``,
+``fiona``, and ``shapely``. For this reason, we recommend installing
+from conda-forge for users that encounter difficulty with PyPI_. 
+
+.. _PyPI: https://pypi.org/
+
+Using conda
 -------------------------
 
 To install GerryChain from conda-forge_ using conda_, run
@@ -98,17 +115,3 @@ dependencies, see `Getting started with conda`_.
 .. _`Getting started with conda`: https://conda.io/projects/conda/en/latest/user-guide/getting-started.html
 .. _conda: https://conda.io/projects/conda/en/latest/
 .. _conda-forge: https://conda-forge.org/
-
-Using ``pip``
--------------
-
-To install GerryChain from PyPI_, run ``pip install gerrychain`` from
-the command line.
-
-This approach often fails due to compatibility issues between our
-different Python GIS dependencies, like ``geopandas``, ``pyproj``,
-``fiona``, and ``shapely``. For this reason, we recommend installing
-from conda-forge for most users. 
-
-.. _PyPI: https://pypi.org/
-

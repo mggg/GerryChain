@@ -33,7 +33,7 @@ jobs:
             # install dependencies in conda env
             conda install pytest pytest-cov
             conda install codecov
-            python setup.py install
+            python -m pip install .[geo]
             conda install shapely==1.6.4
 
             # run tests
@@ -57,7 +57,7 @@ jobs:
           name: install dependencies
           command: |
             pip install --upgrade setuptools wheel twine
-            python setup.py install
+            python -m pip install .[geo]
       - run:
           name: set up .pypirc
           command: |
