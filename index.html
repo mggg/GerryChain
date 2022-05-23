@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GerryChain &mdash; GerryChain  documentation</title><link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Overview of the Chain" href="user/intro.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #0099cd" >
+            <a href="#" class="icon icon-home"> GerryChain
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="user/intro.html">Overview of the Chain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/quickstart.html">Getting started with GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/recom.html">Running a chain with ReCom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/partitions.html">Working with Partitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/updaters.html">Updaters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/islands.html">What to do about islands and connectivity</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/real-life-plans.html">Using <code class="docutils literal notranslate"><span class="pre">maup</span></code> to use a real-life plan in GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/adjacency.html">Handling Adjacencies</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Topics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="topics/reproducibility.html">Reproducibility</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #0099cd" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">GerryChain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home"></a> &raquo;</li>
+      <li>GerryChain</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="gerrychain">
+<h1>GerryChain<a class="headerlink" href="#gerrychain" title="Permalink to this headline">¶</a></h1>
+<a class="reference external image-reference" href="https://circleci.com/gh/mggg/GerryChain"><img alt="Build Status" src="https://circleci.com/gh/mggg/GerryChain.svg?style=svg" /></a>
+<a class="reference external image-reference" href="https://codecov.io/gh/mggg/GerryChain"><img alt="Code Coverage" src="https://codecov.io/gh/mggg/GerryChain/branch/master/graph/badge.svg" /></a>
+<a class="reference external image-reference" href="https://gerrychain.readthedocs.io/en/latest"><img alt="Documentation Status" src="https://readthedocs.org/projects/gerrychain/badge/?version=latest" /></a>
+<a class="reference external image-reference" href="https://pypi.org/project/gerrychain/"><img alt="PyPI Package" src="https://badge.fury.io/py/gerrychain.svg" /></a>
+<a class="reference external image-reference" href="https://anaconda.org/conda-forge/gerrychain"><img alt="conda-forge Package" src="https://img.shields.io/conda/vn/conda-forge/gerrychain.svg?color=%230099cd" /></a>
+<p>GerryChain is a library for using <a class="reference external" href="https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo">Markov Chain Monte Carlo</a> methods
+to study the problem of political redistricting. Development of the
+library began during the <a class="reference external" href="http://gerrydata.org/">2018 Voting Rights Data Institute</a> (VRDI).</p>
+<p>The project is in active development in the <a class="reference external" href="https://github.com/mggg/GerryChain">mggg/GerryChain</a> GitHub
+repository, where <a class="reference external" href="https://github.com/mggg/gerrychain/issues">bug reports and feature requests</a>, as well as
+<a class="reference external" href="https://github.com/mggg/gerrychain/pulls">contributions</a>, are welcome.</p>
+<div class="section" id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="using-pip">
+<h3>Using <code class="docutils literal notranslate"><span class="pre">pip</span></code><a class="headerlink" href="#using-pip" title="Permalink to this headline">¶</a></h3>
+<p>To install GerryChain from <a class="reference external" href="https://pypi.org/">PyPI</a>, run <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">gerrychain</span></code> from
+the command line.</p>
+<p>If you plan on using GerryChain’s GIS functions, such as computing
+adjacencies or reading in shapefiles, then run
+<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">gerrychain[geo]</span></code> from the command line.</p>
+<p>This approach sometimes fails due to compatibility issues between our
+different Python GIS dependencies, like <code class="docutils literal notranslate"><span class="pre">geopandas</span></code>, <code class="docutils literal notranslate"><span class="pre">pyproj</span></code>,
+<code class="docutils literal notranslate"><span class="pre">fiona</span></code>, and <code class="docutils literal notranslate"><span class="pre">shapely</span></code>. For this reason, we recommend installing
+from conda-forge for users that encounter difficulty with <a class="reference external" href="https://pypi.org/">PyPI</a>.</p>
+</div>
+<div class="section" id="using-conda">
+<h3>Using conda<a class="headerlink" href="#using-conda" title="Permalink to this headline">¶</a></h3>
+<p>To install GerryChain from <a class="reference external" href="https://conda-forge.org/">conda-forge</a> using <a class="reference external" href="https://conda.io/projects/conda/en/latest/">conda</a>, run</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">conda install -c conda-forge gerrychain</span>
+</pre></div>
+</div>
+<p>For this command to work as intended, you will first need to activate
+the conda environment that you want to install GerryChain in. If
+the environment you want to activate is called <code class="docutils literal notranslate"><span class="pre">vrdi</span></code> (for example),
+then you can do this by running</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">conda activate vrdi</span>
+</pre></div>
+</div>
+<p>If this command causes problems, make sure conda is up-to-date by
+running</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">conda update conda</span>
+<span class="go">conda init</span>
+</pre></div>
+</div>
+<p>For more information on using conda to install packages and manage
+dependencies, see <a class="reference external" href="https://conda.io/projects/conda/en/latest/user-guide/getting-started.html">Getting started with conda</a>.</p>
+<div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="user/intro.html">Overview of the Chain</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="user/intro.html#parts-of-the-chain">Parts of the chain</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="user/install.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="user/install.html#using-pip">Using <code class="docutils literal notranslate"><span class="pre">pip</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/install.html#using-conda">Using conda</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="user/quickstart.html">Getting started with GerryChain</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="user/quickstart.html#what-you-ll-need">What you’ll need</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/quickstart.html#creating-the-initial-partition">Creating the initial partition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/quickstart.html#running-a-chain">Running a chain</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/quickstart.html#next-steps">Next steps</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="user/recom.html">Running a chain with ReCom</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="user/recom.html#imports">Imports</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/recom.html#setting-up-the-initial-districting-plan">Setting up the initial districting plan</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/recom.html#setting-up-the-markov-chain">Setting up the Markov chain</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/recom.html#running-the-chain">Running the chain</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/recom.html#create-a-plot">Create a plot</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="user/partitions.html">Working with Partitions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="user/partitions.html#creating-a-partition">Creating a partition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/partitions.html#partition-graph-the-underlying-graph"><code class="docutils literal notranslate"><span class="pre">partition.graph</span></code>: the underlying graph</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/partitions.html#partition-assignment-assign-nodes-to-parts"><code class="docutils literal notranslate"><span class="pre">partition.assignment</span></code>: assign nodes to parts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/partitions.html#partition-parts-the-nodes-in-each-part"><code class="docutils literal notranslate"><span class="pre">partition.parts</span></code>: the nodes in each part</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/partitions.html#partition-subgraphs-the-subgraphs-of-each-part"><code class="docutils literal notranslate"><span class="pre">partition.subgraphs</span></code>: the subgraphs of each part</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/partitions.html#outputs-of-updaters">Outputs of updaters</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="user/updaters.html">Updaters</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="user/updaters.html#useful-updater-functions-in-gerrychain">Useful updater functions in GerryChain</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/updaters.html#writing-your-own-updater-function">Writing your own updater function</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="user/islands.html">What to do about islands and connectivity</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="user/islands.html#figuring-out-what-is-going-on">Figuring out what is going on</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/islands.html#strategy-1-delete-the-problem-components">Strategy 1: delete the problem components</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/islands.html#strategy-2-connect-the-components-manually">Strategy 2: connect the components manually</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/islands.html#discontiguous-plans">Discontiguous plans</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="user/real-life-plans.html">Using <code class="docutils literal notranslate"><span class="pre">maup</span></code> to use a real-life plan in GerryChain</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="user/real-life-plans.html#downloading-a-plan">Downloading a plan</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/real-life-plans.html#getting-the-assignment">Getting the assignment</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/real-life-plans.html#creating-a-partition-with-the-real-life-assignment">Creating a <code class="docutils literal notranslate"><span class="pre">Partition</span></code> with the real-life assignment</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="user/adjacency.html">Handling Adjacencies</a></li>
+</ul>
+</div>
+<p>We also highly recommend the resources prepared by Daryl R. DeFord of
+MGGG for the 2019 MIT IAP course <a class="reference external" href="https://people.csail.mit.edu/ddeford//CAPR.php">Computational Approaches for Political Redistricting</a>.</p>
+<div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api.html#adjacency-graphs">Adjacency graphs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#partitions">Partitions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#markov-chains">Markov chains</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#proposals">Proposals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#binary-constraints">Binary constraints</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#updaters">Updaters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#elections">Elections</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#grids">Grids</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#spanning-tree-methods">Spanning tree methods</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#metrics">Metrics</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">Topics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="topics/reproducibility.html">Reproducibility</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="topics/reproducibility.html#share-your-code-on-github">Share your code on GitHub</a></li>
+<li class="toctree-l2"><a class="reference internal" href="topics/reproducibility.html#use-the-same-versions-of-all-of-your-dependencies">Use the same versions of all of your dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="topics/reproducibility.html#import-random-from-gerrychain-random">Import <code class="docutils literal notranslate"><span class="pre">random</span></code> from <code class="docutils literal notranslate"><span class="pre">gerrychain.random</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="topics/reproducibility.html#set-pythonhashseed-0">Set <code class="docutils literal notranslate"><span class="pre">PYTHONHASHSEED=0</span></code></a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="user/intro.html" class="btn btn-neutral float-right" title="Overview of the Chain" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2018, Metric Geometry and Gerrymandering Group.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

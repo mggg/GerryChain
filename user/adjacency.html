@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Handling Adjacencies &mdash; GerryChain  documentation</title><link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="API Reference" href="../api.html" />
+    <link rel="prev" title="Using maup to use a real-life plan in GerryChain" href="real-life-plans.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #0099cd" >
+            <a href="../index.html" class="icon icon-home"> GerryChain
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Overview of the Chain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Getting started with GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="recom.html">Running a chain with ReCom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="partitions.html">Working with Partitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="updaters.html">Updaters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="islands.html">What to do about islands and connectivity</a></li>
+<li class="toctree-l1"><a class="reference internal" href="real-life-plans.html">Using <code class="docutils literal notranslate"><span class="pre">maup</span></code> to use a real-life plan in GerryChain</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Handling Adjacencies</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">API Reference</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Topics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../topics/reproducibility.html">Reproducibility</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #0099cd" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">GerryChain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Handling Adjacencies</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/user/adjacency.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="handling-adjacencies">
+<h1>Handling Adjacencies<a class="headerlink" href="#handling-adjacencies" title="Permalink to this headline">¶</a></h1>
+<p>We construct the <em>adjacency graph</em> on our set of precincts (the <em>nodes</em> of our graph)
+by drawing an edge between any two VTDs that are adjacent.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>An adjacency graph is different from the <em>dual graph</em> of the VTD geometries, which we would
+construct by drawing an edge between two VTDs <em>for each edge that they share</em>.
+An adjacency graph, by contrast, never has multiple edges between two nodes.</p>
+</div>
+<p>There are two concepts of “adjacency” that one can apply when constructing
+an adjacency graph.</p>
+<ul class="simple">
+<li><p><strong>Rook adjacency</strong>: Two polygons are adjacent if they share one or more <em>edges</em>.</p></li>
+<li><p><strong>Queen adjacency</strong>: Two polygons are adjacent if they share one or more <em>vertices</em>.</p></li>
+</ul>
+<p>All Rook edges are Queen edges, but not the other way around. Many congressional
+districts are only Queen-contiguous (e.g., they consist of two polygons connected
+at a single corner).</p>
+<p>The names Rook and Queen come from the way Rook and Queen pieces in <a class="reference external" href="https://en.wikipedia.org/wiki/Chess">Chess</a> are
+allowed to move about the board.</p>
+<blockquote>
+<div><div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The GerryChain <code class="xref py py-class docutils literal notranslate"><span class="pre">Graph</span></code> is based on the <code class="xref py py-class docutils literal notranslate"><span class="pre">Graph</span></code>
+from the NetworkX library.
+We recommend consulting the NetworkX documentation to learn how to work with nodes, edges, and
+their attributes.</p>
+</div>
+</div></blockquote>
+</div>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="real-life-plans.html" class="btn btn-neutral float-left" title="Using maup to use a real-life plan in GerryChain" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../api.html" class="btn btn-neutral float-right" title="API Reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2018, Metric Geometry and Gerrymandering Group.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

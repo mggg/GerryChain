@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Getting started with GerryChain &mdash; GerryChain  documentation</title><link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Running a chain with ReCom" href="recom.html" />
+    <link rel="prev" title="Installation" href="install.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #0099cd" >
+            <a href="../index.html" class="icon icon-home"> GerryChain
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Overview of the Chain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Getting started with GerryChain</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#what-you-ll-need">What you’ll need</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#creating-the-initial-partition">Creating the initial partition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#running-a-chain">Running a chain</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#next-steps">Next steps</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="recom.html">Running a chain with ReCom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="partitions.html">Working with Partitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="updaters.html">Updaters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="islands.html">What to do about islands and connectivity</a></li>
+<li class="toctree-l1"><a class="reference internal" href="real-life-plans.html">Using <code class="docutils literal notranslate"><span class="pre">maup</span></code> to use a real-life plan in GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="adjacency.html">Handling Adjacencies</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">API Reference</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Topics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../topics/reproducibility.html">Reproducibility</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #0099cd" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">GerryChain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Getting started with GerryChain</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/user/quickstart.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="getting-started-with-gerrychain">
+<span id="quickstart"></span><h1>Getting started with GerryChain<a class="headerlink" href="#getting-started-with-gerrychain" title="Permalink to this headline">¶</a></h1>
+<p>This guide will show you how to start generating ensembles with GerryChain, using MGGG’s
+<a class="reference external" href="https://github.com/mggg-states/PA-shapefiles/">Pennsylvania shapefile</a>.</p>
+<div class="section" id="what-you-ll-need">
+<h2>What you’ll need<a class="headerlink" href="#what-you-ll-need" title="Permalink to this headline">¶</a></h2>
+<p>Before we can start running Markov chains, you’ll need to:</p>
+<ul class="simple">
+<li><p>Install <code class="docutils literal notranslate"><span class="pre">gerrychain</span></code> from PyPI by running <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">gerrychain</span></code> in a terminal.</p></li>
+<li><p>Download MGGG’s <a class="reference external" href="https://github.com/mggg/GerryChain/blob/master/docs/user/PA_VTDs.json">json of Pennsylvania’s VTDs</a> from GitHub.</p></li>
+<li><p>Open your preferred Python environment (e.g. JupyterLab, IPython, or a <code class="docutils literal notranslate"><span class="pre">.py</span></code> file
+in your favorite editor) in the directory containing the <code class="docutils literal notranslate"><span class="pre">PA_VTDs.json</span></code> file
+that you downloaded.</p></li>
+</ul>
+</div>
+<div class="section" id="creating-the-initial-partition">
+<h2>Creating the initial partition<a class="headerlink" href="#creating-the-initial-partition" title="Permalink to this headline">¶</a></h2>
+<p>In order to run a Markov chain, we need an
+adjacency <code class="xref py py-class docutils literal notranslate"><span class="pre">Graph</span></code> of our VTD geometries and
+<code class="xref py py-class docutils literal notranslate"><span class="pre">Partition</span></code> of our adjacency graph into districts. This Partition
+will be the initial state of our Markov chain.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">gerrychain</span> <span class="kn">import</span> <span class="n">Graph</span><span class="p">,</span> <span class="n">Partition</span><span class="p">,</span> <span class="n">Election</span>
+<span class="kn">from</span> <span class="nn">gerrychain.updaters</span> <span class="kn">import</span> <span class="n">Tally</span><span class="p">,</span> <span class="n">cut_edges</span>
+
+<span class="n">graph</span> <span class="o">=</span> <span class="n">Graph</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="s2">&quot;./PA_VTDs.json&quot;</span><span class="p">)</span>
+
+<span class="n">election</span> <span class="o">=</span> <span class="n">Election</span><span class="p">(</span><span class="s2">&quot;SEN12&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;Dem&quot;</span><span class="p">:</span> <span class="s2">&quot;USS12D&quot;</span><span class="p">,</span> <span class="s2">&quot;Rep&quot;</span><span class="p">:</span> <span class="s2">&quot;USS12R&quot;</span><span class="p">})</span>
+
+<span class="n">initial_partition</span> <span class="o">=</span> <span class="n">Partition</span><span class="p">(</span>
+    <span class="n">graph</span><span class="p">,</span>
+    <span class="n">assignment</span><span class="o">=</span><span class="s2">&quot;CD_2011&quot;</span><span class="p">,</span>
+    <span class="n">updaters</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;cut_edges&quot;</span><span class="p">:</span> <span class="n">cut_edges</span><span class="p">,</span>
+        <span class="s2">&quot;population&quot;</span><span class="p">:</span> <span class="n">Tally</span><span class="p">(</span><span class="s2">&quot;TOTPOP&quot;</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s2">&quot;population&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;SEN12&quot;</span><span class="p">:</span> <span class="n">election</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Here’s what’s happening in this code block.</p>
+<p>The <code class="xref py py-meth docutils literal notranslate"><span class="pre">Graph.from_json()</span></code> classmethod creates a
+<code class="xref py py-class docutils literal notranslate"><span class="pre">Graph</span></code> of the precincts. By default, this method
+copies all of the data columns from the shapefile’s attribute table to the <code class="docutils literal notranslate"><span class="pre">graph</span></code> object
+as node attributes. The contents of this particular shapefile’s attribute table are
+summarized in the <a class="reference external" href="https://github.com/mggg-states/PA-shapefiles#metadata">mggg-states/PA-shapefiles</a>
+GitHub repo.</p>
+<p>Next, we configure an <code class="xref py py-class docutils literal notranslate"><span class="pre">Election</span></code> object representing the 2012 Senate election,
+using the <code class="docutils literal notranslate"><span class="pre">USS12D</span></code> and <code class="docutils literal notranslate"><span class="pre">USS12R</span></code> vote total columns from our shapefile. The first argument
+is a name for the election (<code class="docutils literal notranslate"><span class="pre">&quot;SEN12&quot;</span></code>), and the second argument is a dictionary matching political
+parties to their vote total columns in our shapefile. This will let us compute
+hypothetical election results for each districting plan in the ensemble.</p>
+<p>Finally, we create a <code class="xref py py-class docutils literal notranslate"><span class="pre">Partition</span></code> of the graph.
+This will be the starting point for our Markov chain. The <code class="xref py py-class docutils literal notranslate"><span class="pre">Partition</span></code> class
+takes three arguments:</p>
+<dl class="field-list simple">
+<dt class="field-odd">graph</dt>
+<dd class="field-odd"><p>A graph.</p>
+</dd>
+<dt class="field-even">assignment</dt>
+<dd class="field-even"><p>An assignment of the nodes of the graph into parts of the partition. This can be either
+a dictionary mapping node IDs to part IDs, or the string key of a node attribute that holds
+each node’s assignment. In this example we’ve written <code class="docutils literal notranslate"><span class="pre">assignment=&quot;CD_2011&quot;</span></code> to tell the <code class="xref py py-class docutils literal notranslate"><span class="pre">Partition</span></code>
+to assign nodes by their <code class="docutils literal notranslate"><span class="pre">&quot;CD_2011&quot;</span></code> attribute that we copied from the shapefile. This attributes holds the
+assignments of precincts to congressional districts from the 2010 redistricting cycle.</p>
+</dd>
+<dt class="field-odd">updaters</dt>
+<dd class="field-odd"><p>An optional dictionary of “updater” functions. Here we’ve provided an updater named <code class="docutils literal notranslate"><span class="pre">&quot;population&quot;</span></code> that
+computes the total population of each district in the partition, based on the <code class="docutils literal notranslate"><span class="pre">&quot;TOTPOP&quot;</span></code> node attribute
+from our shapefile, and a “SEN12” updater that will output the election results for the <code class="docutils literal notranslate"><span class="pre">election</span></code> that we
+set up. We’ve also provided a <code class="docutils literal notranslate"><span class="pre">cut_edges</span></code> updater. This returns all of the edges in the graph
+that cross from one part to another, and is used by <code class="docutils literal notranslate"><span class="pre">propose_random_flip</span></code> to find a random boundary node to
+flip.</p>
+</dd>
+</dl>
+<p>With the <code class="docutils literal notranslate"><span class="pre">&quot;population&quot;</span></code> updater configured, we can see the total population in each of our congressional districts.
+In an interactive Python session, we can print out the populations like this:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">district</span><span class="p">,</span> <span class="n">pop</span> <span class="ow">in</span> <span class="n">initial_partition</span><span class="p">[</span><span class="s2">&quot;population&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;District </span><span class="si">{}</span><span class="s2">: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">district</span><span class="p">,</span> <span class="n">pop</span><span class="p">))</span>
+<span class="go">District 3: 706653</span>
+<span class="go">District 10: 706992</span>
+<span class="go">District 9: 702500</span>
+<span class="go">District 5: 695917</span>
+<span class="go">District 15: 705549</span>
+<span class="go">District 6: 705782</span>
+<span class="go">District 11: 705115</span>
+<span class="go">District 8: 705689</span>
+<span class="go">District 4: 705669</span>
+<span class="go">District 18: 705847</span>
+<span class="go">District 12: 706232</span>
+<span class="go">District 17: 699133</span>
+<span class="go">District 7: 712463</span>
+<span class="go">District 16: 699557</span>
+<span class="go">District 14: 705526</span>
+<span class="go">District 13: 705028</span>
+<span class="go">District 2: 705689</span>
+<span class="go">District 1: 705588</span>
+</pre></div>
+</div>
+<p>Notice that <code class="docutils literal notranslate"><span class="pre">partition[&quot;population&quot;]</span></code> is a dictionary mapping the ID of each district to its total
+population (that’s why we can call the <code class="docutils literal notranslate"><span class="pre">.items()</span></code> method on it). Most updaters output values in this dictionary format.</p>
+<p>For more information on updaters, see the <code class="xref py py-mod docutils literal notranslate"><span class="pre">gerrychain.updaters</span></code> documentation.</p>
+</div>
+<div class="section" id="running-a-chain">
+<h2>Running a chain<a class="headerlink" href="#running-a-chain" title="Permalink to this headline">¶</a></h2>
+<p>Now that we have our initial partition, we can configure and run a <code class="xref py py-class docutils literal notranslate"><span class="pre">Markov</span> <span class="pre">chain</span></code>.
+Let’s configure a short Markov chain to make sure everything works properly.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">gerrychain</span> <span class="kn">import</span> <span class="n">MarkovChain</span>
+<span class="kn">from</span> <span class="nn">gerrychain.constraints</span> <span class="kn">import</span> <span class="n">single_flip_contiguous</span>
+<span class="kn">from</span> <span class="nn">gerrychain.proposals</span> <span class="kn">import</span> <span class="n">propose_random_flip</span>
+<span class="kn">from</span> <span class="nn">gerrychain.accept</span> <span class="kn">import</span> <span class="n">always_accept</span>
+
+<span class="n">chain</span> <span class="o">=</span> <span class="n">MarkovChain</span><span class="p">(</span>
+    <span class="n">proposal</span><span class="o">=</span><span class="n">propose_random_flip</span><span class="p">,</span>
+    <span class="n">constraints</span><span class="o">=</span><span class="p">[</span><span class="n">single_flip_contiguous</span><span class="p">],</span>
+    <span class="n">accept</span><span class="o">=</span><span class="n">always_accept</span><span class="p">,</span>
+    <span class="n">initial_state</span><span class="o">=</span><span class="n">initial_partition</span><span class="p">,</span>
+    <span class="n">total_steps</span><span class="o">=</span><span class="mi">1000</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>To configure a chain, we need to specify five objects.</p>
+<dl class="field-list simple">
+<dt class="field-odd">proposal</dt>
+<dd class="field-odd"><p>A function that takes the current state and returns new district assignments (“flips”) for one
+or more nodes. This comes in the form of a dictionary mapping one or more node IDs to their new district IDs.
+Here we’ve used the <code class="docutils literal notranslate"><span class="pre">propose_random_flip</span></code> proposal, which proposes that a random node on the boundary of one
+district be flipped into the neighboring district.</p>
+</dd>
+<dt class="field-even">constraints</dt>
+<dd class="field-even"><p>A list of binary constraints (functions that take a partition and return <code class="docutils literal notranslate"><span class="pre">True</span></code> or <code class="docutils literal notranslate"><span class="pre">False</span></code>) that
+together define which districting plans. are valid. Here we’ve used just a single constraint, <code class="docutils literal notranslate"><span class="pre">single_flip_contiguous</span></code>,
+which checks that each district in  the plan is contiguous. This particular constraint is
+optimized for the single-flip proposal function we are using (hence the name). We could add more
+constraints to require that districts have nearly-equal population, to impose a bound on the compactness of
+the districts according to some score, or to prevent districts from splitting more counties than the original plan.</p>
+</dd>
+<dt class="field-odd">accept</dt>
+<dd class="field-odd"><p>A function that takes a valid proposed state and returns <code class="docutils literal notranslate"><span class="pre">True</span></code> or <code class="docutils literal notranslate"><span class="pre">False</span></code> to signal whether
+the random walk should indeed move to the proposed state. <code class="docutils literal notranslate"><span class="pre">always_accept</span></code> always accepts valid proposed states.
+If you want to implement Metropolis-Hastings or any other more sophisticated acceptance criterion, you can
+specify your own custom acceptance function here.</p>
+</dd>
+<dt class="field-even">initial_state</dt>
+<dd class="field-even"><p>The first state of the random walk.</p>
+</dd>
+<dt class="field-odd">total_steps</dt>
+<dd class="field-odd"><p>The total number of steps to take. Invalid proposals are not counted toward this total, but
+rejected (by <code class="docutils literal notranslate"><span class="pre">accept</span></code>) valid states are.</p>
+</dd>
+</dl>
+<p>For more information on the details of our Markov chain implementation, consult
+the <code class="xref py py-class docutils literal notranslate"><span class="pre">gerrychain.MarkovChain</span></code> documentation and source code.</p>
+<p>The above code configures a Markov chain called <code class="docutils literal notranslate"><span class="pre">chain</span></code>, but does <em>not</em> run it yet. We run the chain
+by iterating through all of the states using a <code class="docutils literal notranslate"><span class="pre">for</span></code> loop. As an example, let’s iterate through
+this chain and print out the sorted vector of Democratic vote percentages in each district for each
+step in the chain.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">partition</span> <span class="ow">in</span> <span class="n">chain</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">partition</span><span class="p">[</span><span class="s2">&quot;SEN12&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">percents</span><span class="p">(</span><span class="s2">&quot;Dem&quot;</span><span class="p">)))</span>
+</pre></div>
+</div>
+<p>That’s all: you’ve run a Markov chain!</p>
+<p>To analyze the Republican vote percentages for each districting plan in our ensemble,
+we’ll want to actually collect the data, and not just print it out. We can use a list
+comprehension to store these vote percentages, and then convert it into a <code class="xref py py-mod docutils literal notranslate"><span class="pre">pandas</span></code>
+<code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code>.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pandas</span>
+
+<span class="n">d_percents</span> <span class="o">=</span> <span class="p">[</span><span class="nb">sorted</span><span class="p">(</span><span class="n">partition</span><span class="p">[</span><span class="s2">&quot;SEN12&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">percents</span><span class="p">(</span><span class="s2">&quot;Dem&quot;</span><span class="p">))</span> <span class="k">for</span> <span class="n">partition</span> <span class="ow">in</span> <span class="n">chain</span><span class="p">]</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">d_percents</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This code will collect data from a different ensemble than our <code class="docutils literal notranslate"><span class="pre">for</span></code> loop above. Each time
+we iterate through the <code class="docutils literal notranslate"><span class="pre">chain</span></code> object, we run a fresh new Markov chain (using the same
+configuration that we defined when instantiating <code class="docutils literal notranslate"><span class="pre">chain</span></code>).</p>
+<p>The <a class="reference external" href="https://pandas.pydata.org/">pandas</a> <code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code> object has many helpful methods for analyzing and plotting
+data. For example, we can produce a boxplot of our ensemble’s Democratic vote percentage
+vectors, with the initial 2011 districting plan plotted in red, in just a few lines of code:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="n">ax</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">boxplot</span><span class="p">(</span><span class="n">positions</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">)))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;ro&quot;</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>(Before you over-analyze this data, keep in mind that this is a toy ensemble of just
+one thousand plans created by single flips.)</p>
+</div>
+<div class="section" id="next-steps">
+<h2>Next steps<a class="headerlink" href="#next-steps" title="Permalink to this headline">¶</a></h2>
+<p>To see a more elaborate example that uses the ReCom proposal, see <a class="reference internal" href="recom.html"><span class="doc">Running a chain with ReCom</span></a>.</p>
+<p>To learn more about the specific components of GerryChain, see the <a class="reference internal" href="../api.html"><span class="doc">API Reference</span></a>.</p>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="install.html" class="btn btn-neutral float-left" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="recom.html" class="btn btn-neutral float-right" title="Running a chain with ReCom" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2018, Metric Geometry and Gerrymandering Group.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

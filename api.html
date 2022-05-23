@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API Reference &mdash; GerryChain  documentation</title><link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Reproducibility" href="topics/reproducibility.html" />
+    <link rel="prev" title="Handling Adjacencies" href="user/adjacency.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #0099cd" >
+            <a href="index.html" class="icon icon-home"> GerryChain
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="user/intro.html">Overview of the Chain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/quickstart.html">Getting started with GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/recom.html">Running a chain with ReCom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/partitions.html">Working with Partitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/updaters.html">Updaters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/islands.html">What to do about islands and connectivity</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/real-life-plans.html">Using <code class="docutils literal notranslate"><span class="pre">maup</span></code> to use a real-life plan in GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/adjacency.html">Handling Adjacencies</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API Reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#adjacency-graphs">Adjacency graphs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#partitions">Partitions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#markov-chains">Markov chains</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#proposals">Proposals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#binary-constraints">Binary constraints</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#updaters">Updaters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#elections">Elections</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#grids">Grids</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#spanning-tree-methods">Spanning tree methods</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#metrics">Metrics</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">Topics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="topics/reproducibility.html">Reproducibility</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #0099cd" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">GerryChain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>API Reference</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/api.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="module-gerrychain">
+<span id="api-reference"></span><h1>API Reference<a class="headerlink" href="#module-gerrychain" title="Permalink to this headline">¶</a></h1>
+<div class="contents local topic" id="table-of-contents">
+<p class="topic-title">Table of Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#adjacency-graphs" id="id1">Adjacency graphs</a></p></li>
+<li><p><a class="reference internal" href="#partitions" id="id2">Partitions</a></p></li>
+<li><p><a class="reference internal" href="#markov-chains" id="id3">Markov chains</a></p></li>
+<li><p><a class="reference internal" href="#proposals" id="id4">Proposals</a></p></li>
+<li><p><a class="reference internal" href="#binary-constraints" id="id5">Binary constraints</a></p></li>
+<li><p><a class="reference internal" href="#updaters" id="id6">Updaters</a></p></li>
+<li><p><a class="reference internal" href="#elections" id="id7">Elections</a></p></li>
+<li><p><a class="reference internal" href="#grids" id="id8">Grids</a></p></li>
+<li><p><a class="reference internal" href="#spanning-tree-methods" id="id9">Spanning tree methods</a></p></li>
+<li><p><a class="reference internal" href="#metrics" id="id10">Metrics</a></p></li>
+</ul>
+</div>
+<div class="section" id="adjacency-graphs">
+<h2><a class="toc-backref" href="#id1">Adjacency graphs</a><a class="headerlink" href="#adjacency-graphs" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="partitions">
+<h2><a class="toc-backref" href="#id2">Partitions</a><a class="headerlink" href="#partitions" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="markov-chains">
+<h2><a class="toc-backref" href="#id3">Markov chains</a><a class="headerlink" href="#markov-chains" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="proposals">
+<h2><a class="toc-backref" href="#id4">Proposals</a><a class="headerlink" href="#proposals" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="binary-constraints">
+<h2><a class="toc-backref" href="#id5">Binary constraints</a><a class="headerlink" href="#binary-constraints" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="updaters">
+<h2><a class="toc-backref" href="#id6">Updaters</a><a class="headerlink" href="#updaters" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="elections">
+<h2><a class="toc-backref" href="#id7">Elections</a><a class="headerlink" href="#elections" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="grids">
+<h2><a class="toc-backref" href="#id8">Grids</a><a class="headerlink" href="#grids" title="Permalink to this headline">¶</a></h2>
+<p>To make it easier to play around with GerryChain, we have provided a <code class="xref py py-class docutils literal notranslate"><span class="pre">Grid</span></code>
+class representing a partition of a grid graph. This is especially useful if you want to start experimenting
+but do not yet have a clean set of data and geometries to build your graph from.</p>
+</div>
+<div class="section" id="spanning-tree-methods">
+<h2><a class="toc-backref" href="#id9">Spanning tree methods</a><a class="headerlink" href="#spanning-tree-methods" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="xref py py-func docutils literal notranslate"><span class="pre">recom()</span></code> proposal function operates on <a class="reference external" href="https://en.wikipedia.org/wiki/Spanning_tree">spanning trees</a> of the
+adjacency graph in order to generate new contiguous districting plans with balanced population.</p>
+<p>The <code class="xref py py-mod docutils literal notranslate"><span class="pre">gerrychain.tree</span></code> submodule exposes some helpful functions for partitioning graphs
+using spanning trees methods. These may be used to implement proposal functions or to generate
+initial plans for running Markov chains, as described in MGGG’s <a class="reference external" href="https://mggg.org/VA-report.pdf">2018 Virginia House of Delegates</a>
+report.</p>
+</div>
+<div class="section" id="metrics">
+<h2><a class="toc-backref" href="#id10">Metrics</a><a class="headerlink" href="#metrics" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="user/adjacency.html" class="btn btn-neutral float-left" title="Handling Adjacencies" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="topics/reproducibility.html" class="btn btn-neutral float-right" title="Reproducibility" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2018, Metric Geometry and Gerrymandering Group.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

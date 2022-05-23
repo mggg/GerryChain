@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Working with Partitions &mdash; GerryChain  documentation</title><link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Updaters" href="updaters.html" />
+    <link rel="prev" title="Running a chain with ReCom" href="recom.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #0099cd" >
+            <a href="../index.html" class="icon icon-home"> GerryChain
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Overview of the Chain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Getting started with GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="recom.html">Running a chain with ReCom</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Working with Partitions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#creating-a-partition">Creating a partition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#partition-graph-the-underlying-graph"><code class="docutils literal notranslate"><span class="pre">partition.graph</span></code>: the underlying graph</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#partition-assignment-assign-nodes-to-parts"><code class="docutils literal notranslate"><span class="pre">partition.assignment</span></code>: assign nodes to parts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#partition-parts-the-nodes-in-each-part"><code class="docutils literal notranslate"><span class="pre">partition.parts</span></code>: the nodes in each part</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#partition-subgraphs-the-subgraphs-of-each-part"><code class="docutils literal notranslate"><span class="pre">partition.subgraphs</span></code>: the subgraphs of each part</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#outputs-of-updaters">Outputs of updaters</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="updaters.html">Updaters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="islands.html">What to do about islands and connectivity</a></li>
+<li class="toctree-l1"><a class="reference internal" href="real-life-plans.html">Using <code class="docutils literal notranslate"><span class="pre">maup</span></code> to use a real-life plan in GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="adjacency.html">Handling Adjacencies</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">API Reference</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Topics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../topics/reproducibility.html">Reproducibility</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #0099cd" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">GerryChain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Working with Partitions</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/user/partitions.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="working-with-partitions">
+<h1>Working with Partitions<a class="headerlink" href="#working-with-partitions" title="Permalink to this headline">¶</a></h1>
+<p>This document walks you through the most common ways that you might work with a
+GerryChain <code class="docutils literal notranslate"><span class="pre">Partition</span></code> object.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">geopandas</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">gerrychain</span> <span class="kn">import</span> <span class="n">Partition</span><span class="p">,</span> <span class="n">Graph</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">gerrychain.updaters</span> <span class="kn">import</span> <span class="n">cut_edges</span>
+</pre></div>
+</div>
+<p>We’ll use our
+<a class="reference external" href="https://github.com/mggg/GerryChain/blob/master/docs/user/PA_VTDs.json">Pennsylvania VTD json</a> to
+create the graph we’ll use in these examples.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">graph</span> <span class="o">=</span> <span class="n">Graph</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="s2">&quot;./PA_VTDs.json&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<!--
+```python
+>>> df = geopandas.read_file("https://github.com/mggg-states/PA-shapefiles/raw/master/PA/PA_VTD.zip")
+>>> df.set_index("GEOID10", inplace=True)
+>>> graph = Graph.from_geodataframe(df)
+>>> graph.add_data(df)
+```
+--><div class="section" id="creating-a-partition">
+<h2>Creating a partition<a class="headerlink" href="#creating-a-partition" title="Permalink to this headline">¶</a></h2>
+<p>Here is how you can create a Partition:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">partition</span> <span class="o">=</span> <span class="n">Partition</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="s2">&quot;CD_2011&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;cut_edges&quot;</span><span class="p">:</span> <span class="n">cut_edges</span><span class="p">})</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">Partition</span></code> class takes three arguments to create a Partition:</p>
+<ul class="simple">
+<li><p>A <strong>graph</strong>.</p></li>
+<li><p>An <strong>assignment of nodes to districts</strong>. This can be the string name of a
+node attribute (shapefile column) that holds each node’s district
+assignment, or a dictionary mapping each node ID to its assigned district
+ID.</p></li>
+<li><p>A dictionary of <strong>updaters</strong>.</p></li>
+</ul>
+<p>This creates a partition of the <code class="docutils literal notranslate"><span class="pre">graph</span></code> object we created above from the
+Pennsylvania shapefile. The partition is defined by the <code class="docutils literal notranslate"><span class="pre">&quot;CD_2011&quot;</span></code> column
+from our shapefile’s attribute table.</p>
+</div>
+<div class="section" id="partition-graph-the-underlying-graph">
+<h2><code class="docutils literal notranslate"><span class="pre">partition.graph</span></code>: the underlying graph<a class="headerlink" href="#partition-graph-the-underlying-graph" title="Permalink to this headline">¶</a></h2>
+<p>You can access the partition’s underlying Graph as <code class="docutils literal notranslate"><span class="pre">partition.graph</span></code>. This
+contains no information about the partition—it will be the same graph object
+that you passed in to <code class="docutils literal notranslate"><span class="pre">Partition()</span></code> when you created the partition instance.</p>
+<p><code class="docutils literal notranslate"><span class="pre">partition.graph</span></code> is a
+<a class="reference external" href="https://gerrychain.readthedocs.io/en/latest/api.html#gerrychain.Graph"><code class="docutils literal notranslate"><span class="pre">gerrychain.Graph</span></code></a>
+object. It is based on the NetworkX Graph object, so any functions (e.g.
+<a class="reference external" href="https://networkx.github.io/documentation/stable/reference/algorithms/generated/networkx.algorithms.components.connected_components.html#networkx.algorithms.components.connected_components"><code class="docutils literal notranslate"><span class="pre">connected_components</span></code></a>)
+you can find in the <a class="reference external" href="https://networkx.github.io/">NetworkX documentation</a> will
+be compatible.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">partition</span><span class="o">.</span><span class="n">graph</span>
+<span class="go">&lt;Graph [8921 nodes, 25228 edges]&gt;</span>
+</pre></div>
+</div>
+<p>Now we have a graph of Pennsylvania’s VTDs, with all of the data from our
+shapefile’s attribute table attached to the graph as <em>node attributes</em>. We can
+see the data that a node has like this:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">partition</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="go">{&#39;boundary_node&#39;: True,</span>
+<span class="go"> &#39;boundary_perim&#39;: 0.06312599142331599,</span>
+<span class="go"> &#39;area&#39;: 0.004278359631999892,</span>
+<span class="go"> &#39;STATEFP10&#39;: &#39;42&#39;,</span>
+<span class="go"> &#39;COUNTYFP10&#39;: &#39;085&#39;,</span>
+<span class="go"> &#39;VTDST10&#39;: &#39;960&#39;,</span>
+<span class="go"> &#39;GEOID10&#39;: &#39;42085960&#39;,</span>
+<span class="go"> &#39;VTDI10&#39;: &#39;A&#39;,</span>
+<span class="go"> &#39;NAME10&#39;: &#39;SHENANGO TWP VTD WEST&#39;,</span>
+<span class="go"> &#39;NAMELSAD10&#39;: &#39;SHENANGO TWP VTD WEST&#39;,</span>
+<span class="go"> &#39;LSAD10&#39;: &#39;00&#39;,</span>
+<span class="go"> &#39;MTFCC10&#39;: &#39;G5240&#39;,</span>
+<span class="go"> &#39;FUNCSTAT10&#39;: &#39;N&#39;,</span>
+<span class="go"> &#39;ALAND10&#39;: 39740056,</span>
+<span class="go"> &#39;AWATER10&#39;: 141805,</span>
+<span class="go"> &#39;INTPTLAT10&#39;: &#39;+41.1564874&#39;,</span>
+<span class="go"> &#39;INTPTLON10&#39;: &#39;-080.4865792&#39;,</span>
+<span class="go"> &#39;TOTPOP&#39;: 1915,</span>
+<span class="go"> &#39;NH_WHITE&#39;: 1839,</span>
+<span class="go"> &#39;NH_BLACK&#39;: 35&#39;</span>
+<span class="go"> &#39;NH_AMIN&#39;: 1,</span>
+<span class="go"> &#39;NH_ASIAN&#39;: 8,</span>
+<span class="go"> &#39;NH_NHPI&#39;: 0,</span>
+<span class="go"> &#39;NH_OTHER&#39;: 3,</span>
+<span class="go"> &#39;NH_2MORE&#39;: 19,</span>
+<span class="go"> &#39;HISP&#39;: 10,</span>
+<span class="go"> &#39;H_WHITE&#39;: 3,</span>
+<span class="go"> &#39;H_BLACK&#39;: 0,</span>
+<span class="go"> &#39;H_AMIN&#39;: 1,</span>
+<span class="go"> &#39;H_ASIAN&#39;: 0,</span>
+<span class="go"> &#39;H_NHPI&#39;: 0,</span>
+<span class="go"> &#39;H_OTHER&#39;: 4,</span>
+<span class="go"> &#39;H_2MORE&#39;: 2,</span>
+<span class="go"> &#39;VAP&#39;: 1553,</span>
+<span class="go"> &#39;HVAP&#39;: 7,</span>
+<span class="go"> &#39;WVAP&#39;: 1494,</span>
+<span class="go"> &#39;BVAP&#39;: 30,</span>
+<span class="go"> &#39;AMINVAP&#39;: 1,</span>
+<span class="go"> &#39;ASIANVAP&#39;: 6,</span>
+<span class="go"> &#39;NHPIVAP&#39;: 0,</span>
+<span class="go"> &#39;OTHERVAP&#39;: 2,</span>
+<span class="go"> &#39;2MOREVAP&#39;: 13, </span>
+<span class="go"> &#39;ATG12D&#39;: 514.0001036045286,</span>
+<span class="go"> &#39;ATG12R&#39;: 388.0000782073095, </span>
+<span class="go"> &#39;F2014GOVD&#39;: 290.0000584539169, </span>
+<span class="go"> &#39;F2014GOVR&#39;: 242.00004877878584, </span>
+<span class="go"> &#39;GOV10D&#39;: 289.00005825235166, </span>
+<span class="go"> &#39;GOV10R&#39;: 349.00007034626555, </span>
+<span class="go"> &#39;PRES12D&#39;: 492.0000991700935, </span>
+<span class="go"> &#39;PRES12O&#39;: 11.000002217217538, </span>
+<span class="go"> &#39;PRES12R&#39;: 451.0000909059191, </span>
+<span class="go"> &#39;SEN10D&#39;: 315.00006349304766, </span>
+<span class="go"> &#39;SEN10R&#39;: 328.0000661133957, </span>
+<span class="go"> &#39;T16ATGD&#39;: 416.00008385113597, </span>
+<span class="go"> &#39;T16ATGR&#39;: 558.0001124733988, </span>
+<span class="go"> &#39;T16PRESD&#39;: 342.0000689353089, </span>
+<span class="go"> &#39;T16PRESOTH&#39;: 32.00000645008738, </span>
+<span class="go"> &#39;T16PRESR&#39;: 631.0001271876606, </span>
+<span class="go"> &#39;T16SEND&#39;: 379.00007639322246, </span>
+<span class="go"> &#39;T16SENR&#39;: 590.0001189234862, </span>
+<span class="go"> &#39;USS12D&#39;: 505.00010179044153, </span>
+<span class="go"> &#39;USS12R&#39;: 423.0000852620926, </span>
+<span class="go"> &#39;REMEDIAL&#39;: &#39;16&#39;, </span>
+<span class="go"> &#39;GOV&#39;: &#39;3&#39;, </span>
+<span class="go"> &#39;TS&#39;: 3, </span>
+<span class="go"> &#39;CD_2011&#39;: 3, </span>
+<span class="go"> &#39;SEND&#39;: 50, </span>
+<span class="go"> &#39;HDIST&#39;: 7, </span>
+<span class="go"> &#39;538DEM&#39;: &#39;03&#39;, </span>
+<span class="go"> &#39;538GOP&#39;: &#39;03&#39;, </span>
+<span class="go"> &#39;538CMPCT&#39;: &#39;03&#39;, </span>
+<span class="go"> &#39;geometry&#39;: &lt;shapely.geometry.polygon.Polygon object at 0x7ff3edeb7f90&gt;}</span>
+</pre></div>
+</div>
+<p>The nodes of the graph are identified by IDs. Here the IDs are the VTDs GEOIDs
+from the <code class="docutils literal notranslate"><span class="pre">&quot;GEOID10&quot;</span></code> column from our shapefile.</p>
+</div>
+<div class="section" id="partition-assignment-assign-nodes-to-parts">
+<h2><code class="docutils literal notranslate"><span class="pre">partition.assignment</span></code>: assign nodes to parts<a class="headerlink" href="#partition-assignment-assign-nodes-to-parts" title="Permalink to this headline">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">partition.assignment</span></code> gives you a mapping from node IDs to part IDs (“part” is
+our generic word for “district”). It is a custom data structure but you can use
+it just like a dictionary.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">first_ten_nodes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">partition</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">)[:</span><span class="mi">10</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">first_ten_nodes</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="n">partition</span><span class="o">.</span><span class="n">assignment</span><span class="p">[</span><span class="n">node</span><span class="p">])</span>
+<span class="go">3</span>
+<span class="go">3</span>
+<span class="go">3</span>
+<span class="go">3</span>
+<span class="go">3</span>
+<span class="go">3</span>
+<span class="go">3</span>
+<span class="go">3</span>
+<span class="go">3</span>
+<span class="go">3</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="partition-parts-the-nodes-in-each-part">
+<h2><code class="docutils literal notranslate"><span class="pre">partition.parts</span></code>: the nodes in each part<a class="headerlink" href="#partition-parts-the-nodes-in-each-part" title="Permalink to this headline">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">partition.parts</span></code> gives you a mapping from each part ID to the set of nodes that
+belong to that part. This is the “opposite” mapping of <code class="docutils literal notranslate"><span class="pre">assignment</span></code>.</p>
+<p>As an example, let’s print out the number of nodes in each part:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">partition</span><span class="o">.</span><span class="n">parts</span><span class="p">:</span>
+<span class="gp">... </span>   <span class="n">number_of_nodes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">partition</span><span class="o">.</span><span class="n">parts</span><span class="p">[</span><span class="n">part</span><span class="p">])</span>
+<span class="gp">... </span>   <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Part </span><span class="si">{part}</span><span class="s2"> has </span><span class="si">{number_of_nodes}</span><span class="s2"> nodes&quot;</span><span class="p">)</span>
+<span class="go">Part 3 has 500 nodes</span>
+<span class="go">Part 5 has 580 nodes</span>
+<span class="go">Part 10 has 515 nodes</span>
+<span class="go">Part 9 has 575 nodes</span>
+<span class="go">Part 12 has 623 nodes</span>
+<span class="go">Part 6 has 313 nodes</span>
+<span class="go">Part 15 has 324 nodes</span>
+<span class="go">Part 7 has 405 nodes</span>
+<span class="go">Part 16 has 329 nodes</span>
+<span class="go">Part 11 has 456 nodes</span>
+<span class="go">Part 4 has 292 nodes</span>
+<span class="go">Part 8 has 340 nodes</span>
+<span class="go">Part 17 has 442 nodes</span>
+<span class="go">Part 18 has 600 nodes</span>
+<span class="go">Part 14 has 867 nodes</span>
+<span class="go">Part 13 has 548 nodes</span>
+<span class="go">Part 2 has 828 nodes</span>
+<span class="go">Part 1 has 718 nodes</span>
+</pre></div>
+</div>
+<p>Notice that <code class="docutils literal notranslate"><span class="pre">partition.parts</span></code> might not loop through the parts in numerical
+order—but it will always loop through the parts in the same order. (You can
+run the cell above multiple times to verify that the order doesn’t change.)</p>
+</div>
+<div class="section" id="partition-subgraphs-the-subgraphs-of-each-part">
+<h2><code class="docutils literal notranslate"><span class="pre">partition.subgraphs</span></code>: the subgraphs of each part<a class="headerlink" href="#partition-subgraphs-the-subgraphs-of-each-part" title="Permalink to this headline">¶</a></h2>
+<p>For each part of our partition, we can look at the <em>subgraph</em> that it defines.
+That is, we can look at the graph made up of all the nodes in a certain part and
+all the edges between those nodes.</p>
+<p><code class="docutils literal notranslate"><span class="pre">partition.subgraphs</span></code> gives us a mapping (like a dictionary) from part IDs to
+their subgraphs. These subgraphs are NetworkX Subgraph objects, and work exactly
+like our main graph object—nodes, edges, and node attributes all work the same
+way.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">part</span><span class="p">,</span> <span class="n">subgraph</span> <span class="ow">in</span> <span class="n">partition</span><span class="o">.</span><span class="n">subgraphs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<span class="gp">... </span>    <span class="n">number_of_edges</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">subgraph</span><span class="o">.</span><span class="n">edges</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Part </span><span class="si">{part}</span><span class="s2"> has </span><span class="si">{number_of_edges}</span><span class="s2"> edges&quot;</span><span class="p">)</span>
+<span class="go">Part 3 has 1229 edges</span>
+<span class="go">Part 5 has 1450 edges</span>
+<span class="go">Part 10 has 1252 edges</span>
+<span class="go">Part 9 has 1391 edges</span>
+<span class="go">Part 12 has 1601 edges</span>
+<span class="go">Part 6 has 749 edges</span>
+<span class="go">Part 15 has 834 edges</span>
+<span class="go">Part 7 has 931 edges</span>
+<span class="go">Part 16 has 836 edges</span>
+<span class="go">Part 11 has 1152 edges</span>
+<span class="go">Part 4 has 723 edges</span>
+<span class="go">Part 8 has 886 edges</span>
+<span class="go">Part 17 has 1092 edges</span>
+<span class="go">Part 18 has 1585 edges</span>
+<span class="go">Part 14 has 2344 edges</span>
+<span class="go">Part 13 has 1362 edges</span>
+<span class="go">Part 2 has 2159 edges</span>
+<span class="go">Part 1 has 1780 edges</span>
+</pre></div>
+</div>
+<p>Let’s use NetworkX’s
+<a class="reference external" href="https://networkx.github.io/documentation/stable/reference/algorithms/generated/networkx.algorithms.distance_measures.diameter.html">diameter</a>
+function to compute the diameter of each part subgraph. (The <em>diameter</em> of a
+graph is the length of the longest shortest path between any two nodes in the
+graph. You don’t have to know that!)</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">networkx</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">part</span><span class="p">,</span> <span class="n">subgraph</span> <span class="ow">in</span> <span class="n">partition</span><span class="o">.</span><span class="n">subgraphs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<span class="gp">... </span>    <span class="n">diameter</span> <span class="o">=</span> <span class="n">networkx</span><span class="o">.</span><span class="n">diameter</span><span class="p">(</span><span class="n">subgraph</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Part </span><span class="si">{part}</span><span class="s2"> has diameter </span><span class="si">{diameter}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="go">Part 3 has diameter 40</span>
+<span class="go">Part 5 has diameter 30</span>
+<span class="go">Part 10 has diameter 40</span>
+<span class="go">Part 9 has diameter 40</span>
+<span class="go">Part 12 has diameter 36</span>
+<span class="go">Part 6 has diameter 32</span>
+<span class="go">Part 15 has diameter 28</span>
+<span class="go">Part 7 has diameter 38</span>
+<span class="go">Part 16 has diameter 38</span>
+<span class="go">Part 11 has diameter 31</span>
+<span class="go">Part 4 has diameter 19</span>
+<span class="go">Part 8 has diameter 24</span>
+<span class="go">Part 17 has diameter 34</span>
+<span class="go">Part 18 has diameter 28</span>
+<span class="go">Part 14 has diameter 38</span>
+<span class="go">Part 13 has diameter 30</span>
+<span class="go">Part 2 has diameter 28</span>
+<span class="go">Part 1 has diameter 50</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="outputs-of-updaters">
+<h2>Outputs of updaters<a class="headerlink" href="#outputs-of-updaters" title="Permalink to this headline">¶</a></h2>
+<p>The other main way we can extract information from <code class="docutils literal notranslate"><span class="pre">partition</span></code> is through the
+updaters that we configured when we created it. We gave <code class="docutils literal notranslate"><span class="pre">partition</span></code> just one
+updater, <code class="docutils literal notranslate"><span class="pre">cut_edges</span></code>. This is the set of edges that go between nodes that are in
+<em>different</em> parts of the partition.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">len</span><span class="p">(</span><span class="n">partition</span><span class="p">[</span><span class="s2">&quot;cut_edges&quot;</span><span class="p">])</span>
+<span class="go">2367</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">len</span><span class="p">(</span><span class="n">partition</span><span class="o">.</span><span class="n">cut_edges</span><span class="p">)</span>
+<span class="go">2367</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">proportion_of_cut_edges</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">partition</span><span class="o">.</span><span class="n">cut_edges</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">partition</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">edges</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Proportion of edges that are cut:&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">proportion_of_cut_edges</span><span class="p">)</span>
+<span class="go">Proportion of edges that are cut:</span>
+<span class="go">0.09201881584574116</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="recom.html" class="btn btn-neutral float-left" title="Running a chain with ReCom" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="updaters.html" class="btn btn-neutral float-right" title="Updaters" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2018, Metric Geometry and Gerrymandering Group.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

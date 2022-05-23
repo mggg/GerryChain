@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reproducibility &mdash; GerryChain  documentation</title><link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="API Reference" href="../api.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #0099cd" >
+            <a href="../index.html" class="icon icon-home"> GerryChain
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../user/intro.html">Overview of the Chain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/quickstart.html">Getting started with GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/recom.html">Running a chain with ReCom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/partitions.html">Working with Partitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/updaters.html">Updaters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/islands.html">What to do about islands and connectivity</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/real-life-plans.html">Using <code class="docutils literal notranslate"><span class="pre">maup</span></code> to use a real-life plan in GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/adjacency.html">Handling Adjacencies</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">API Reference</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Topics</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Reproducibility</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#share-your-code-on-github">Share your code on GitHub</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#use-the-same-versions-of-all-of-your-dependencies">Use the same versions of all of your dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#import-random-from-gerrychain-random">Import <code class="docutils literal notranslate"><span class="pre">random</span></code> from <code class="docutils literal notranslate"><span class="pre">gerrychain.random</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#set-pythonhashseed-0">Set <code class="docutils literal notranslate"><span class="pre">PYTHONHASHSEED=0</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #0099cd" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">GerryChain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Reproducibility</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/topics/reproducibility.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="reproducibility">
+<h1>Reproducibility<a class="headerlink" href="#reproducibility" title="Permalink to this headline">¶</a></h1>
+<p>If you’ve used GerryChain to do some analysis or research, you may want to ensure that your analysis is
+completely repeatable by anyone else on their own computer. This guide will walk you through the steps
+required to make that possible.</p>
+<div class="section" id="share-your-code-on-github">
+<h2>Share your code on GitHub<a class="headerlink" href="#share-your-code-on-github" title="Permalink to this headline">¶</a></h2>
+<p>Before anyone can run your code, they’ll need to find it. We strongly recommend publishing your source code
+as a <a class="reference external" href="https://github.com/">GitHub</a> repository, and not as a <code class="docutils literal notranslate"><span class="pre">.zip</span></code> file on your personal website. GitHub has a
+<a class="reference external" href="https://desktop.github.com/">desktop client</a> that makes this easy.</p>
+</div>
+<div class="section" id="use-the-same-versions-of-all-of-your-dependencies">
+<h2>Use the same versions of all of your dependencies<a class="headerlink" href="#use-the-same-versions-of-all-of-your-dependencies" title="Permalink to this headline">¶</a></h2>
+<p>You will want to make sure that anyone who tries to repeat your analysis by
+running your code will have the exact same versions of all of the software and packages
+that you use, including the same version of Python.</p>
+<p>The easiest way to do this is to use <a class="reference external" href="https://conda.io/en/master/">conda</a> to manage all of your dependencies.
+You can use conda to export an <code class="docutils literal notranslate"><span class="pre">environment.yml</span></code> file that anyone can use to replicate your
+environment by running the command <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">env</span> <span class="pre">create</span> <span class="pre">-f</span> <span class="pre">environment.yml</span></code>. For instructions on
+how to do this, see <a class="reference external" href="https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#sharing-an-environment">Sharing your environment</a> and <a class="reference external" href="https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-from-an-environment-yml-file">Creating an environment from an environment.yml file</a>
+in the conda documentation.</p>
+<p>If you’ve published your code on GitHub, it is a good idea to include your <code class="docutils literal notranslate"><span class="pre">environment.yml</span></code>
+file in the root folder of your code repository.</p>
+</div>
+<div class="section" id="import-random-from-gerrychain-random">
+<h2>Import <code class="docutils literal notranslate"><span class="pre">random</span></code> from <code class="docutils literal notranslate"><span class="pre">gerrychain.random</span></code><a class="headerlink" href="#import-random-from-gerrychain-random" title="Permalink to this headline">¶</a></h2>
+<p>The submodule <code class="docutils literal notranslate"><span class="pre">gerrychain.random</span></code> is the single place where GerryChain imports the built-in Python
+module <code class="docutils literal notranslate"><span class="pre">random</span></code> and sets a random seed. This makes sure that all randomness is used <em>after</em> the seed
+is set. If you use the <code class="docutils literal notranslate"><span class="pre">random</span></code> module anywhere in your own code (say, in your own proposal function),
+replace the line <code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">random</span></code> with <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">gerrychain.random</span> <span class="pre">import</span> <span class="pre">random</span></code>. This will ensure
+that your code uses the same random seed as GerryChain.</p>
+<p>GerryChain sets a random seed of <code class="docutils literal notranslate"><span class="pre">2018</span></code> after it imports <code class="docutils literal notranslate"><span class="pre">random</span></code>. If you wish to use a different
+random seed, set it immediately after importing <code class="docutils literal notranslate"><span class="pre">random</span></code> from <code class="docutils literal notranslate"><span class="pre">gerrychain.random</span></code>, and <em>before</em> you
+import anything else. That will look like this:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">gerrychain.random</span> <span class="kn">import</span> <span class="n">random</span>
+<span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">12345678</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">gerrychain</span> <span class="kn">import</span> <span class="n">MarkovChain</span><span class="p">,</span> <span class="n">Partition</span>
+<span class="c1"># and so on...</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="set-pythonhashseed-0">
+<h2>Set <code class="docutils literal notranslate"><span class="pre">PYTHONHASHSEED=0</span></code><a class="headerlink" href="#set-pythonhashseed-0" title="Permalink to this headline">¶</a></h2>
+<p>In addition to the randomness provided by the <code class="docutils literal notranslate"><span class="pre">random</span></code> module, Python uses a random
+seed for its hashing algorithm, which affects how objects are stored in sets and dictionaries.
+This must happen the same way every time in order for GerryChain runs to be repeatable.</p>
+<p>The way to accomplish this is to set the <a class="reference external" href="https://en.wikipedia.org/wiki/Environment_variable">environment variable</a> <code class="docutils literal notranslate"><span class="pre">PYTHONHASHSEED</span></code> to <code class="docutils literal notranslate"><span class="pre">0</span></code>.</p>
+<p>If you are using <a class="reference external" href="https://conda.io/en/master/">conda</a> for managing packages, dependencies, and environments, you can
+<a class="reference external" href="https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#saving-environment-variables">save environment variables in your conda environment</a>.</p>
+<p>Otherwise, in macOS or Linux environments you can accomplish this by running the command <code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">PYTHONHASHSEED=0</span></code>
+in the Terminal or bash shell before running your code.</p>
+<p>In a Windows 10 environment using PowerShell, you can accomplish this by running <code class="docutils literal notranslate"><span class="pre">$env:PYTHONHASHSEED=0</span></code>
+before running your code.</p>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../api.html" class="btn btn-neutral float-left" title="API Reference" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2018, Metric Geometry and Gerrymandering Group.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
