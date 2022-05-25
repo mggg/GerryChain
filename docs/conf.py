@@ -30,7 +30,7 @@ sys.path.insert(0, os.path.abspath("../"))
 # -- Project information -----------------------------------------------------
 
 project = "GerryChain"
-copyright = "2018, Metric Geometry and Gerrymandering Group"
+copyright = "2022, Metric Geometry and Gerrymandering Group"
 author = "Metric Geometry and Gerrymandering Group"
 
 # The short X.Y version
