@@ -8,6 +8,7 @@ GerryChain is used to analyze redistricting plans in the real world. For example
 evaltools
 ---------
 `evaltools`_ is a toolkit that contains:
+
 - a suite of plan scoring metrics (like efficiency gap and reock scores) for use in comparing plans
 - a suite of data grabbing/manipulating tools, with an emphasis on interacting with Census data
 - super-easy and beautiful visualization functions to make pretty graphs and intuitive displays of data
