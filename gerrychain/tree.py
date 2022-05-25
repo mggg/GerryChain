@@ -235,16 +235,16 @@ def find_region_aware_balanced_edge_cuts_memoization(h, choice=random.choice, re
             sorted_region_weights = sorted(region_weights.items(), key=lambda x: x[1], reverse=True)
             region_cols = [tup[0] for tup in sorted_region_weights]
             # score function to prefer dividing higher ranked regions. if we have three regions,
-            # each region gets split scores in decreasing powers of 2 — the first-ranked region 
+            # each region gets split scores in decreasing powers of 2 — the first-ranked region
             # would get a score of 4 if split, the second would get 2, the third 1. so an edge that
-            # splits our first- and third-ranked regions would get a score of 4 + 1 = 5, which 
+            # splits our first- and third-ranked regions would get a score of 4 + 1 = 5, which
             # would be better than an edge that splits our second- and third-ranked regions 
             # (2 + 1 = 3), but worse than an edge
             # that splits our first- and second-ranked regions (score of 6).
-            # TODO: this means {"COUNTYFP20": 1, "COUSUB":1} would behave differently than 
+            # TODO: this means {"COUNTYFP20": 1, "COUSUB":1} would behave differently than
             # {"COUSUB": 1, "COUNTYFP20": 1}, which it shouldn't. but this requires more thinking
             # about how best to account for this...
-            # if node corresponds to a balance cut and our split score is as good or better than 
+            # if node corresponds to a balance cut and our split score is as good or better than
             # our best previously seen split score, add this cut to list of potential balance cuts
             node_split_score = 0
             for i, region_col in enumerate(region_cols):
