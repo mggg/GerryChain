@@ -1,2 +1,6 @@
 recommonmark==0.7.1
 sphinx-rtd-theme==1.0.0
+networkx==2.7.1
+geopandas==0.8.2
+matplotlib==3.5.1
+scipy==1.8.0

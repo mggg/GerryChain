@@ -26,6 +26,7 @@ To use `pcompress`_, you can wrap your ``MarkovChain`` instances with ``Record``
 
 .. code-block:: python
 
+    from gerrychain import MarkovChain
     from pcompress import Record
 
     chain = MarkovChain(

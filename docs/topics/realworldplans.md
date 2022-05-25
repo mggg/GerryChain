@@ -1,4 +1,4 @@
-# Using `maup` to use a real-life plan in GerryChain
+# Using `maup` to import a real-life plan in GerryChain
 
 To generate an ensemble of districting plans using GerryChain, we need a
 starting point for our Markov chain. GerryChain gives you functions like
