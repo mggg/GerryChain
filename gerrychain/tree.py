@@ -13,6 +13,7 @@ def predecessors(h, root):
 def successors(h, root):
     return {a: b for a, b in nx.bfs_successors(h, root)}
 
+
 def random_spanning_tree(graph):
     """ Builds a spanning tree chosen by Kruskal's method using random weights.
         :param graph: FrozenGraph
@@ -31,6 +32,7 @@ def random_spanning_tree(graph):
         graph, algorithm="kruskal", weight="random_weight"
     )
     return spanning_tree
+
 
 def random_region_aware_spanning_tree(graph, region_weights=None):
     """ Builds a spanning tree chosen by Kruskal's method using random weights.
@@ -233,23 +235,24 @@ def find_region_aware_balanced_edge_cuts_memoization(h, choice=random.choice, re
             sorted_region_weights = sorted(region_weights.items(), key=lambda x: x[1], reverse=True)
             region_cols = [tup[0] for tup in sorted_region_weights]
             # score function to prefer dividing higher ranked regions. if we have three regions,
-            # each region gets split scores in decreasing powers of 2 — the first-ranked region would get
-            # a score of 4 if split, the second would get 2, the third 1. so an edge that splits our first- 
-            # and third-ranked regions would get a score of 4 + 1 = 5, which would be better than an 
-            # edge that splits our second- and third-ranked regions (2 + 1 = 3), but worse than an edge
+            # each region gets split scores in decreasing powers of 2 — the first-ranked region 
+            # would get a score of 4 if split, the second would get 2, the third 1. so an edge that
+            # splits our first- and third-ranked regions would get a score of 4 + 1 = 5, which 
+            # would be better than an edge that splits our second- and third-ranked regions 
+            # (2 + 1 = 3), but worse than an edge
             # that splits our first- and second-ranked regions (score of 6).
             # TODO: this means {"COUNTYFP20": 1, "COUSUB":1} would behave differently than 
             # {"COUSUB": 1, "COUNTYFP20": 1}, which it shouldn't. but this requires more thinking
             # about how best to account for this...
-            # if node corresponds to a balance cut and our split score is as good or better than our
-            # best previously seen split score, add this cut to our list of potential balance cuts
+            # if node corresponds to a balance cut and our split score is as good or better than 
+            # our best previously seen split score, add this cut to list of potential balance cuts
             node_split_score = 0
             for i, region_col in enumerate(region_cols):
                 if h.graph.nodes[parent][region_col] != h.graph.nodes[node][region_col]:
                     node_split_score += 2 ** (len(region_cols) - i - 1)
 
             if node_split_score >= best_split_score and (is_balanced_A or is_balanced_B):
-                if node_split_score > best_split_score: # special case: strictly better
+                if node_split_score > best_split_score:  # special case: strictly better
                     best_split_score = node_split_score
                     cuts = []
                 part_subset = part_nodes(node) if is_balanced_A \
@@ -360,9 +363,9 @@ def region_aware_bipartition_tree(
     :param region_weights: dict — `None` unless we want to try to keep
     certain regions intact. If so, each key is the column in the
     data that refers to the region, and each value is the weight assigned to keeping
-    that region intact. {"COUNTYFP20": 2, "TOWN": 1} would mean we want to keep both
+    that region intact. {"COUNTYFP20": 0.9, "TOWN": 0.7} would mean we want to keep both
     counties and towns intact, but would prefer keeping counties whole instead of towns,
-    where necessary. Often, setting the weights to be 1 for every region works well.
+    where necessary. Often, setting the weights to be 0.9 for every region works well.
     :param node_repeats: A parameter for the algorithm: how many different choices
         of root to use before drawing a new spanning tree.
     :param spanning_tree: The spanning tree for the algorithm to use (used when the
