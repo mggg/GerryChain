@@ -2,9 +2,9 @@ from functools import partial
 from ..random import random
 
 from ..tree import (
-    recursive_tree_part, recursive_region_aware_tree_part, bipartition_tree, region_aware_bipartition_tree,
-    bipartition_tree_random, _bipartition_tree_random_all, uniform_spanning_tree,
-    find_balanced_edge_cuts_memoization,
+    recursive_tree_part, recursive_region_aware_tree_part, bipartition_tree, 
+    region_aware_bipartition_tree, bipartition_tree_random, _bipartition_tree_random_all, 
+    uniform_spanning_tree, find_balanced_edge_cuts_memoization,
 )
 
 
