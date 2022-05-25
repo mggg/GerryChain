@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>What to do about islands and connectivity &mdash; GerryChain  documentation</title><link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="Using maup to import a real-life plan in GerryChain" href="realworldplans.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #0099cd" >
+            <a href="../index.html" class="icon icon-home"> GerryChain
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../user/intro.html">Overview of the Chain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/quickstart.html">Getting started with GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/recom.html">Running a chain with ReCom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/partitions.html">Working with Partitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/updaters.html">Updaters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/adjacency.html">Handling Adjacencies</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">API Reference</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Topics</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="reproducibility.html">Reproducibility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tools.html">Evaluating districting plans in the real world</a></li>
+<li class="toctree-l1"><a class="reference internal" href="realworldplans.html">Using <code class="docutils literal notranslate"><span class="pre">maup</span></code> to import a real-life plan in GerryChain</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">What to do about islands and connectivity</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#figuring-out-what-is-going-on">Figuring out what is going on</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#strategy-1-delete-the-problem-components">Strategy 1: delete the problem components</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#strategy-2-connect-the-components-manually">Strategy 2: connect the components manually</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#downloading-the-shapefile">Downloading the shapefile</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#inspecting-the-disconnected-components">Inspecting the disconnected components</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#adding-edges-to-the-graph">Adding edges to the graph</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#discontiguous-plans">Discontiguous plans</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #0099cd" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">GerryChain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>What to do about islands and connectivity</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/topics/whatislands.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="what-to-do-about-islands-and-connectivity">
+<h1>What to do about islands and connectivity<a class="headerlink" href="#what-to-do-about-islands-and-connectivity" title="Permalink to this headline">¶</a></h1>
+<p>When you create or load a graph, you may have see a warning about islands, like
+this one for Massachusetts:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">gerrychain</span> <span class="kn">import</span> <span class="n">Graph</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">graph</span> <span class="o">=</span> <span class="n">Graph</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="s2">&quot;./Block_Groups/BG25.json&quot;</span><span class="p">)</span>
+<span class="go">graph.py:216: UserWarning: Found islands (degree-0 nodes). Indices of islands: {2552, 3107}</span>
+<span class="go">    &quot;Found islands (degree-0 nodes). Indices of islands: {}&quot;.format(islands)</span>
+</pre></div>
+</div>
+<p>This warning is telling you that there are a couple nodes (2552, 3107) that have
+no neighbors—that is, they are completely disconnected from the rest of the
+graph. In addition to these nodes without neighbors, we can also have a whole
+cluster of nodes that is disconnected from the rest of the graph.</p>
+<p>These are a problem because we want the districting plans we generate to have
+contiguous districts, and any district with one of these islands will not be
+contiguous. In addition, spanning tree-based methods like the ReCom proposal or
+the <code class="docutils literal notranslate"><span class="pre">recursive_tree_part</span></code> seed-creation method require that the graph be
+connected—starting with a disconnected graph can lead to mysterious
+<code class="docutils literal notranslate"><span class="pre">KeyError</span></code>s and infinite loops.</p>
+<p>These islands and disconnected components show up when there are actual
+geographic islands, or (for example) when there is a unit that is connected to
+the mainland by a bridge but whose official boundary in the shapefile does not
+touch the mainland’s boundary.</p>
+<p>This notebook will show you how to diagnose these contiguity problems, and will
+give you a few different strategies for dealing with islands and disconnected
+components so that you can get your graph to a workable state for generating
+ensembles of districting plans.</p>
+<div class="section" id="figuring-out-what-is-going-on">
+<h2>Figuring out what is going on<a class="headerlink" href="#figuring-out-what-is-going-on" title="Permalink to this headline">¶</a></h2>
+<p>The first step in the process is to figure out what is going on. To see the node
+IDs of the islands that GerryChain warned us about, we can inspect
+<code class="docutils literal notranslate"><span class="pre">graph.islands</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">islands</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">islands</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">islands</span>
+<span class="go">{2552, 3107}</span>
+</pre></div>
+</div>
+<p>GerryChain warns you when there are islands, but we’ll also want to see if there
+are whole disconnected components of the graph. We can use the
+<a class="reference external" href="https://networkx.github.io">NetworkX</a> function <code class="docutils literal notranslate"><span class="pre">connected_components</span></code> to do
+this. The <code class="docutils literal notranslate"><span class="pre">connected_components</span></code> function yields the set of node IDs in each
+connected component of the graph. We’ll put these sets into a list, and then
+print out their lengths to see how bad the contiguity situation is:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">networkx</span> <span class="kn">import</span> <span class="n">is_connected</span><span class="p">,</span> <span class="n">connected_components</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">components</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">connected_components</span><span class="p">(</span><span class="n">graph</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">components</span><span class="p">]</span>
+<span class="go">[4922, 25, 19, 11, 1, 1]</span>
+</pre></div>
+</div>
+<p>We have one big component with 4922 nodes. The two components with 1 node are
+the islands that GerryChain warned us about. Then we also have another few
+disconnected components with 25, 19, and 11 nodes each.</p>
+<p>To fix these problems, we have two options. The first strategy is to just delete
+these disconnected components, and do our analysis on the big connected
+component. This might be the right way to go if you are just trying to get
+started—you can always go back and make a better fix later when you want to
+make sure your results are sound.</p>
+<p>The second strategy is to manually add edges to the graph to connect all of the
+disconnected components. This is more involved but will give you a much better
+graph for your analysis.</p>
+</div>
+<div class="section" id="strategy-1-delete-the-problem-components">
+<h2>Strategy 1: delete the problem components<a class="headerlink" href="#strategy-1-delete-the-problem-components" title="Permalink to this headline">¶</a></h2>
+<p>For the quick and very dirty route, we can just delete all of the nodes in
+components that are causing us problems:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">biggest_component_size</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">components</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">problem_components</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">components</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="o">!=</span> <span class="n">biggest_component_size</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">component</span> <span class="ow">in</span> <span class="n">problem_components</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">component</span><span class="p">:</span>
+<span class="gp">... </span>        <span class="n">graph</span><span class="o">.</span><span class="n">remove_node</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>We can verify that our graph is now connected:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">is_connected</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>And now we’re ready to run a chain! Let’s save the graph in a new <code class="docutils literal notranslate"><span class="pre">.json</span></code> file
+so that we don’t have to do this fix every time we want to run a chain.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">graph</span><span class="o">.</span><span class="n">to_json</span><span class="p">(</span><span class="s2">&quot;./my_graph_with_islands_deleted.json&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="strategy-2-connect-the-components-manually">
+<h2>Strategy 2: connect the components manually<a class="headerlink" href="#strategy-2-connect-the-components-manually" title="Permalink to this headline">¶</a></h2>
+<p>Deleting the problem components will make it easier for your code to run, but we
+should not use this method when we actually care about the results we are
+getting. Deleting nodes from the graph also deletes all the people who live in
+those nodes, which is strictly not OK, morally speaking. For a better, more
+laborious solution, we will:</p>
+<ul class="simple">
+<li><p>Use QGIS to open the Shapefile that our graph was made from</p></li>
+<li><p>Examine the disconnected components in QGIS, and</p></li>
+<li><p>Judiciously add edges to the graph to make it connected.</p></li>
+</ul>
+<p>This requires making some human judgements about which units are “near” to each
+other, for the purposes of district contiguity. This is an art more than a
+science, with a lot of questions with no single right answer. For instance,
+should all of the Hawaiian islands be connected to one another, or connected in
+a chain from east to west? Should the upper peninsula of Michigan connect to the
+lower pensinsula only at the Mackinac bridge, or all along the coast?</p>
+<div class="section" id="downloading-the-shapefile">
+<h3>Downloading the shapefile<a class="headerlink" href="#downloading-the-shapefile" title="Permalink to this headline">¶</a></h3>
+<p>This graph was made from census block groups. We can use
+<a class="reference external" href="https://geopandas.org">geopandas</a> to open the zipped Shapefile.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="s2">&quot;zip://BG25.zip&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="inspecting-the-disconnected-components">
+<h3>Inspecting the disconnected components<a class="headerlink" href="#inspecting-the-disconnected-components" title="Permalink to this headline">¶</a></h3>
+<p>The next step in the process is to open the block group Shapefile in QGIS so we
+can see what’s going on. For the purposes of this Jupyter notebook, we’ll plot
+our GeoDataFrame <code class="docutils literal notranslate"><span class="pre">df</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Change the projection so we can plot it:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">df</span><span class="o">.</span><span class="n">to_crs</span><span class="p">({</span><span class="s2">&quot;init&quot;</span><span class="p">:</span> <span class="s2">&quot;epsg:26986&quot;</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">df</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s1">&#39;off&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<p><img alt="png" src="../_images/output_22_0.png" /></p>
+<p>It’s not immediately clear from this plot where the disconnected components are.
+But we can use our adjacency graph to get the GEOIDs of the disconnected nodes,
+which we can then highlight using QGIS (or geopandas).</p>
+<p>Let’s load our graph in again and verify that it’s not connected.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">graph</span> <span class="o">=</span> <span class="n">Graph</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="s2">&quot;./Block_Groups/BG25.json&quot;</span><span class="p">)</span>
+<span class="go">graph.py:216: UserWarning: Found islands (degree-0 nodes). Indices of islands: {2552, 3107}</span>
+<span class="go">    &quot;Found islands (degree-0 nodes). Indices of islands: {}&quot;.format(islands)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">is_connected</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<p>Now we’ll collect the GEOIDs of all of the nodes and use them to highlight the
+block groups that we need to connect.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">components</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">connected_components</span><span class="p">(</span><span class="n">graph</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">components</span><span class="p">]</span>
+<span class="go">[4922, 25, 19, 11, 1, 1]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">biggest_component_size</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">components</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">problem_components</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">components</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="o">!=</span> <span class="n">biggest_component_size</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">problem_nodes</span> <span class="o">=</span> <span class="p">[</span><span class="n">node</span> <span class="k">for</span> <span class="n">component</span> <span class="ow">in</span> <span class="n">problem_components</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">component</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">problem_geoids</span> <span class="o">=</span> <span class="p">[</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">node</span><span class="p">][</span><span class="s2">&quot;GEOID10&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">problem_nodes</span><span class="p">]</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">is_a_problem</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;GEOID10&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">problem_geoids</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">df</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="n">is_a_problem</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s1">&#39;off&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<p><img alt="png" src="../_images/output_30_0.png" /></p>
+<p>We can do the same thing in QGIS by using the “Select by Expression” feature
+with an expression like this:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;GEOID10&quot;</span> <span class="ow">in</span> <span class="p">(</span>
+ <span class="s1">&#39;250092215001&#39;</span><span class="p">,</span>
+ <span class="s1">&#39;250092216001&#39;</span><span class="p">,</span>
+ <span class="s1">&#39;250092214003&#39;</span><span class="p">,</span>
+ <span class="s1">&#39;250092213001&#39;</span><span class="p">,</span>
+ <span class="s1">&#39;250092214002&#39;</span><span class="p">,</span>
+ <span class="s1">&#39;250092215002&#39;</span><span class="p">,</span> <span class="o">...</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>where we’ve copied and pasted the GEOIDs from our <code class="docutils literal notranslate"><span class="pre">problem_geoids</span></code> variable into
+the <code class="docutils literal notranslate"><span class="pre">...</span></code> part between the parentheses.</p>
+<p>Then click “Select features” and you should see these same features highlighted
+on the map.</p>
+</div>
+<div class="section" id="adding-edges-to-the-graph">
+<h3>Adding edges to the graph<a class="headerlink" href="#adding-edges-to-the-graph" title="Permalink to this headline">¶</a></h3>
+<p>Now comes the fun part! We want to identify some edges that we can add to make
+the graph connected. To do this, we want to:</p>
+<ul class="simple">
+<li><p>Zoom into the areas where these disconnected block groups (highlighted in
+yellow) are close to block groups in the main connected component (in
+purple)</p></li>
+<li><p>Use the “Identify features” tool to inspect the attributes of the yellow and
+purple block groups that we want to connect</p></li>
+<li><p>Copy the <code class="docutils literal notranslate"><span class="pre">&quot;GEOID10&quot;</span></code> attribute values for both of the units we want to
+connect</p></li>
+</ul>
+<p>Once we have these GEOIDs, we can find the corresponding nodes in the graph and
+add that edge. For the Massachusetts example, here are two GEOIDs of nodes that
+I want to connect that I found in QGIS:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">purple_geoid</span> <span class="o">=</span> <span class="s2">&quot;250010149001&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">yellow_geoid</span> <span class="o">=</span> <span class="s2">&quot;250072004006&quot;</span>
+</pre></div>
+</div>
+<p>Next, we find the corresponding node using this GEOID. Let’s write a function to
+do this to save some mental space:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">find_node_by_geoid</span><span class="p">(</span><span class="n">geoid</span><span class="p">,</span> <span class="n">graph</span><span class="o">=</span><span class="n">graph</span><span class="p">):</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">graph</span><span class="p">:</span>
+<span class="gp">... </span>        <span class="k">if</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">node</span><span class="p">][</span><span class="s2">&quot;GEOID10&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">geoid</span><span class="p">:</span>
+<span class="gp">... </span>            <span class="k">return</span> <span class="n">node</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">purple_node</span> <span class="o">=</span> <span class="n">find_node_by_geoid</span><span class="p">(</span><span class="n">purple_geoid</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">yellow_node</span> <span class="o">=</span> <span class="n">find_node_by_geoid</span><span class="p">(</span><span class="n">yellow_geoid</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">purple_node</span><span class="p">,</span> <span class="n">yellow_node</span>
+<span class="go">(955, 2552)</span>
+</pre></div>
+</div>
+<p>And now we can finally add the edge <code class="docutils literal notranslate"><span class="pre">(955,</span> <span class="pre">2552)</span></code> to connect these nodes:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">graph</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">purple_node</span><span class="p">,</span> <span class="n">yellow_node</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Let’s use <code class="docutils literal notranslate"><span class="pre">connected_components</span></code> to see if we’ve made our graph more connected.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">connected_components</span><span class="p">(</span><span class="n">graph</span><span class="p">)]</span>
+<span class="go">[4923, 25, 19, 11, 1]</span>
+</pre></div>
+</div>
+<p>Yay! We’ve connected one of the islands that GerryChain warned us about. Now
+we’ll repeat this process of adding edges until the graph only has one connected
+component.</p>
+<p>Here are all the pairs of GEOIDs that I found that I wanted to connect:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">geoids_i_found</span> <span class="o">=</span> <span class="p">[</span>
+<span class="gp">... </span>    <span class="p">(</span><span class="s2">&quot;250072004001&quot;</span><span class="p">,</span> <span class="s2">&quot;250072004006&quot;</span><span class="p">),</span>
+<span class="gp">... </span>    <span class="p">(</span><span class="s2">&quot;250072003001&quot;</span><span class="p">,</span> <span class="s2">&quot;250199503071&quot;</span><span class="p">),</span>
+<span class="gp">... </span>    <span class="p">(</span><span class="s2">&quot;250092218002&quot;</span><span class="p">,</span> <span class="s2">&quot;250092219022&quot;</span><span class="p">),</span>
+<span class="gp">... </span>    <span class="p">(</span><span class="s2">&quot;250259901010&quot;</span><span class="p">,</span> <span class="s2">&quot;250251803013&quot;</span><span class="p">)</span>
+<span class="gp">... </span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Let’s add them:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">edges_to_add</span> <span class="o">=</span> <span class="p">[(</span><span class="n">find_node_by_geoid</span><span class="p">(</span><span class="n">u</span><span class="p">),</span> <span class="n">find_node_by_geoid</span><span class="p">(</span><span class="n">v</span><span class="p">))</span> <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">geoids_i_found</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">edges_to_add</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">graph</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>And let’s verify that the graph is connected:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">connected_components</span><span class="p">(</span><span class="n">graph</span><span class="p">)))</span> <span class="o">==</span> <span class="mi">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">is_connected</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Hooray! 🎉🎉🎉 The graph is connected now! 🎉🎉🎉</p>
+<p>Now we can run a proper Markov chain, without deleting any people from the
+graph.</p>
+</div>
+</div>
+<div class="section" id="discontiguous-plans">
+<h2>Discontiguous plans<a class="headerlink" href="#discontiguous-plans" title="Permalink to this headline">¶</a></h2>
+<p>In addition to connectivity problems in the actual graph, you may also need to
+think about discontiguities in districting plans. That is, if we want to use a
+real-life plan as our initial state in GerryChain, we will want it to be
+contiguous, so we need to make sure that our graph structure has the right edges
+in place for that to be true.</p>
+<p>The process for fixing discontiguous plans is similar to the above process. The
+only difference is in how we identify the problematic nodes. GerryChain provides
+a function <code class="docutils literal notranslate"><span class="pre">contiguous_components</span></code> that takes a Partition and returns the
+contiguous components of each district.</p>
+<p>Here’s how we can find those components, using a random example plan with 2
+districts for Massachusetts, just to see what a discontiguous plan looks like:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">gerrychain.constraints.contiguity</span> <span class="kn">import</span> <span class="n">contiguous_components</span><span class="p">,</span> <span class="n">contiguous</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">gerrychain</span> <span class="kn">import</span> <span class="n">Partition</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">assignment</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">graph</span><span class="p">:</span>
+<span class="gp">... </span>   <span class="k">if</span> <span class="nb">float</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">node</span><span class="p">][</span><span class="s2">&quot;INTPTLAT10&quot;</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mf">42.356767</span><span class="p">:</span>
+<span class="gp">... </span>       <span class="n">assignment</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="gp">... </span>   <span class="k">else</span><span class="p">:</span>
+<span class="gp">... </span>       <span class="n">assignment</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">discontiguous_plan</span> <span class="o">=</span> <span class="n">Partition</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">assignment</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Now we’ll verify that the plan does not pass our contiguity test, and examine
+the two contiguous components:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">contiguous</span><span class="p">(</span><span class="n">discontiguous_plan</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">contiguous_components</span><span class="p">(</span><span class="n">discontiguous_plan</span><span class="p">)</span>
+<span class="go">{0: [&lt;Graph [2960 nodes, 7889 edges]&gt;,</span>
+<span class="go">  &lt;Graph [1 nodes, 0 edges]&gt;,</span>
+<span class="go">  &lt;Graph [1 nodes, 0 edges]&gt;],</span>
+<span class="go"> 1: [&lt;Graph [2010 nodes, 5422 edges]&gt;, &lt;Graph [7 nodes, 15 edges]&gt;]}</span>
+</pre></div>
+</div>
+<p>For any district with more than one contiguous component, you’ll want to do the
+exact same process that we did with the overall graph above: add edges until
+there is only one contiguous component.</p>
+<p>If the starting plan is not important to you, then you might want to use a
+function like <code class="docutils literal notranslate"><span class="pre">recursive_tree_part</span></code> to generate a starting plan from scratch.</p>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="realworldplans.html" class="btn btn-neutral float-left" title="Using maup to import a real-life plan in GerryChain" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Metric Geometry and Gerrymandering Group.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

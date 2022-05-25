@@ -42,8 +42,6 @@
 <li class="toctree-l1"><a class="reference internal" href="user/recom.html">Running a chain with ReCom</a></li>
 <li class="toctree-l1"><a class="reference internal" href="user/partitions.html">Working with Partitions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="user/updaters.html">Updaters</a></li>
-<li class="toctree-l1"><a class="reference internal" href="user/islands.html">What to do about islands and connectivity</a></li>
-<li class="toctree-l1"><a class="reference internal" href="user/real-life-plans.html">Using <code class="docutils literal notranslate"><span class="pre">maup</span></code> to use a real-life plan in GerryChain</a></li>
 <li class="toctree-l1"><a class="reference internal" href="user/adjacency.html">Handling Adjacencies</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API Reference</span></p>
@@ -53,6 +51,9 @@
 <p class="caption"><span class="caption-text">Topics</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="topics/reproducibility.html">Reproducibility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="topics/tools.html">Evaluating districting plans in the real world</a></li>
+<li class="toctree-l1"><a class="reference internal" href="topics/realworldplans.html">Using <code class="docutils literal notranslate"><span class="pre">maup</span></code> to import a real-life plan in GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="topics/whatislands.html">What to do about islands and connectivity</a></li>
 </ul>
 
         </div>
@@ -168,19 +169,6 @@ dependencies, see <a class="reference external" href="https://conda.io/projects/
 <li class="toctree-l2"><a class="reference internal" href="user/updaters.html#writing-your-own-updater-function">Writing your own updater function</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="user/islands.html">What to do about islands and connectivity</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="user/islands.html#figuring-out-what-is-going-on">Figuring out what is going on</a></li>
-<li class="toctree-l2"><a class="reference internal" href="user/islands.html#strategy-1-delete-the-problem-components">Strategy 1: delete the problem components</a></li>
-<li class="toctree-l2"><a class="reference internal" href="user/islands.html#strategy-2-connect-the-components-manually">Strategy 2: connect the components manually</a></li>
-<li class="toctree-l2"><a class="reference internal" href="user/islands.html#discontiguous-plans">Discontiguous plans</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="user/real-life-plans.html">Using <code class="docutils literal notranslate"><span class="pre">maup</span></code> to use a real-life plan in GerryChain</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="user/real-life-plans.html#downloading-a-plan">Downloading a plan</a></li>
-<li class="toctree-l2"><a class="reference internal" href="user/real-life-plans.html#getting-the-assignment">Getting the assignment</a></li>
-<li class="toctree-l2"><a class="reference internal" href="user/real-life-plans.html#creating-a-partition-with-the-real-life-assignment">Creating a <code class="docutils literal notranslate"><span class="pre">Partition</span></code> with the real-life assignment</a></li>
-</ul>
-</li>
 <li class="toctree-l1"><a class="reference internal" href="user/adjacency.html">Handling Adjacencies</a></li>
 </ul>
 </div>
@@ -191,15 +179,15 @@ MGGG for the 2019 MIT IAP course <a class="reference external" href="https://peo
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="api.html#adjacency-graphs">Adjacency graphs</a></li>
-<li class="toctree-l2"><a class="reference internal" href="api.html#partitions">Partitions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#module-gerrychain.partition">Partitions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="api.html#markov-chains">Markov chains</a></li>
-<li class="toctree-l2"><a class="reference internal" href="api.html#proposals">Proposals</a></li>
-<li class="toctree-l2"><a class="reference internal" href="api.html#binary-constraints">Binary constraints</a></li>
-<li class="toctree-l2"><a class="reference internal" href="api.html#updaters">Updaters</a></li>
-<li class="toctree-l2"><a class="reference internal" href="api.html#elections">Elections</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#module-gerrychain.proposals">Proposals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#module-gerrychain.constraints">Binary constraints</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#module-gerrychain.updaters">Updaters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#module-gerrychain.updaters.election">Elections</a></li>
 <li class="toctree-l2"><a class="reference internal" href="api.html#grids">Grids</a></li>
 <li class="toctree-l2"><a class="reference internal" href="api.html#spanning-tree-methods">Spanning tree methods</a></li>
-<li class="toctree-l2"><a class="reference internal" href="api.html#metrics">Metrics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#module-gerrychain.metrics">Metrics</a></li>
 </ul>
 </li>
 </ul>
@@ -207,14 +195,10 @@ MGGG for the 2019 MIT IAP course <a class="reference external" href="https://peo
 <div class="toctree-wrapper compound">
 <p class="caption"><span class="caption-text">Topics</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="topics/reproducibility.html">Reproducibility</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="topics/reproducibility.html#share-your-code-on-github">Share your code on GitHub</a></li>
-<li class="toctree-l2"><a class="reference internal" href="topics/reproducibility.html#make-your-chains-speedily-replayable">Make your chains speedily replayable</a></li>
-<li class="toctree-l2"><a class="reference internal" href="topics/reproducibility.html#use-the-same-versions-of-all-of-your-dependencies">Use the same versions of all of your dependencies</a></li>
-<li class="toctree-l2"><a class="reference internal" href="topics/reproducibility.html#import-random-from-gerrychain-random">Import <code class="docutils literal notranslate"><span class="pre">random</span></code> from <code class="docutils literal notranslate"><span class="pre">gerrychain.random</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="topics/reproducibility.html#set-pythonhashseed-0">Set <code class="docutils literal notranslate"><span class="pre">PYTHONHASHSEED=0</span></code></a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="topics/reproducibility.html">Reproducibility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="topics/tools.html">Evaluating districting plans in the real world</a></li>
+<li class="toctree-l1"><a class="reference internal" href="topics/realworldplans.html">Using <code class="docutils literal notranslate"><span class="pre">maup</span></code> to import a real-life plan in GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="topics/whatislands.html">What to do about islands and connectivity</a></li>
 </ul>
 </div>
 </div>
@@ -231,7 +215,7 @@ MGGG for the 2019 MIT IAP course <a class="reference external" href="https://peo
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2018, Metric Geometry and Gerrymandering Group.</p>
+    <p>&#169; Copyright 2022, Metric Geometry and Gerrymandering Group.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

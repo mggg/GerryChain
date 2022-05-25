@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>gerrychain.constraints.contiguity &mdash; GerryChain  documentation</title><link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #0099cd" >
+            <a href="../../../index.html" class="icon icon-home"> GerryChain
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/intro.html">Overview of the Chain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/quickstart.html">Getting started with GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/recom.html">Running a chain with ReCom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/partitions.html">Working with Partitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/updaters.html">Updaters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/adjacency.html">Handling Adjacencies</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API Reference</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Topics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../topics/reproducibility.html">Reproducibility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../topics/tools.html">Evaluating districting plans in the real world</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../topics/realworldplans.html">Using <code class="docutils literal notranslate"><span class="pre">maup</span></code> to import a real-life plan in GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../topics/whatislands.html">What to do about islands and connectivity</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #0099cd" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">GerryChain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+      <li>gerrychain.constraints.contiguity</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for gerrychain.constraints.contiguity</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">heapq</span> <span class="kn">import</span> <span class="n">heappop</span><span class="p">,</span> <span class="n">heappush</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">count</span>
+
+<span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
+
+<span class="kn">from</span> <span class="nn">..random</span> <span class="kn">import</span> <span class="n">random</span>
+<span class="kn">from</span> <span class="nn">.bounds</span> <span class="kn">import</span> <span class="n">SelfConfiguringLowerBound</span>
+
+
+<span class="k">def</span> <span class="nf">are_reachable</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">avoid</span><span class="p">,</span> <span class="n">targets</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Check that source can reach targets while avoiding given edges.</span>
+<span class="sd">    This function is a modified form of NetworkX&#39;s ``_dijkstra_multisource()``.</span>
+
+<span class="sd">    :param G: NetworkX graph.</span>
+<span class="sd">    :param source: Starting node.</span>
+<span class="sd">    :param weight: Function with (u, v, data) input that returns that edges weight.</span>
+<span class="sd">    :param targets: Nodes required to find.</span>
+<span class="sd">    :return:</span>
+<span class="sd">        A mapping from node to shortest distance to that node from one</span>
+<span class="sd">        of the source nodes.</span>
+<span class="sd">    :rtype: dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">G_succ</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">_succ</span> <span class="k">if</span> <span class="n">G</span><span class="o">.</span><span class="n">is_directed</span><span class="p">()</span> <span class="k">else</span> <span class="n">G</span><span class="o">.</span><span class="n">_adj</span>
+
+    <span class="n">push</span> <span class="o">=</span> <span class="n">heappush</span>
+    <span class="n">pop</span> <span class="o">=</span> <span class="n">heappop</span>
+    <span class="n">dist</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># dictionary of final distances</span>
+    <span class="n">seen</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="c1"># fringe is heapq with 3-tuples (distance,c,node)</span>
+    <span class="c1"># use the count c to avoid comparing nodes (may not be able to)</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="n">count</span><span class="p">()</span>
+    <span class="n">fringe</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">seen</span><span class="p">[</span><span class="n">source</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">push</span><span class="p">(</span><span class="n">fringe</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">next</span><span class="p">(</span><span class="n">c</span><span class="p">),</span> <span class="n">source</span><span class="p">))</span>
+
+    <span class="k">while</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">t</span> <span class="ow">in</span> <span class="n">seen</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">targets</span><span class="p">)</span> <span class="ow">and</span> <span class="n">fringe</span><span class="p">:</span>
+        <span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="o">=</span> <span class="n">pop</span><span class="p">(</span><span class="n">fringe</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">dist</span><span class="p">:</span>
+            <span class="k">continue</span>  <span class="c1"># already searched this node.</span>
+        <span class="n">dist</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="n">d</span>
+        <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">G_succ</span><span class="p">[</span><span class="n">v</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">avoid</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">e</span><span class="p">):</span>
+                <span class="k">continue</span>
+
+            <span class="n">vu_dist</span> <span class="o">=</span> <span class="n">dist</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">u</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seen</span> <span class="ow">or</span> <span class="n">vu_dist</span> <span class="o">&lt;</span> <span class="n">seen</span><span class="p">[</span><span class="n">u</span><span class="p">]:</span>
+                <span class="n">seen</span><span class="p">[</span><span class="n">u</span><span class="p">]</span> <span class="o">=</span> <span class="n">vu_dist</span>
+                <span class="n">push</span><span class="p">(</span><span class="n">fringe</span><span class="p">,</span> <span class="p">(</span><span class="n">vu_dist</span><span class="p">,</span> <span class="nb">next</span><span class="p">(</span><span class="n">c</span><span class="p">),</span> <span class="n">u</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="nb">all</span><span class="p">(</span><span class="n">t</span> <span class="ow">in</span> <span class="n">seen</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">targets</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="single_flip_contiguous"><a class="viewcode-back" href="../../../api.html#gerrychain.constraints.single_flip_contiguous">[docs]</a><span class="k">def</span> <span class="nf">single_flip_contiguous</span><span class="p">(</span><span class="n">partition</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Check if swapping the given node from its old assignment disconnects the</span>
+<span class="sd">    old assignment class.</span>
+
+<span class="sd">    :param partition: The proposed next :class:`~gerrychain.partition.Partition`</span>
+
+<span class="sd">    :return: whether the partition is contiguous</span>
+<span class="sd">    :rtype: bool</span>
+
+<span class="sd">    We assume that `removed_node` belonged to an assignment class that formed a</span>
+<span class="sd">    connected subgraph. To see if its removal left the subgraph connected, we</span>
+<span class="sd">    check that the neighbors of the removed node are still connected through</span>
+<span class="sd">    the changed graph.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">partition</span><span class="o">.</span><span class="n">parent</span>
+    <span class="n">flips</span> <span class="o">=</span> <span class="n">partition</span><span class="o">.</span><span class="n">flips</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">flips</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">parent</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">contiguous</span><span class="p">(</span><span class="n">partition</span><span class="p">)</span>
+
+    <span class="n">graph</span> <span class="o">=</span> <span class="n">partition</span><span class="o">.</span><span class="n">graph</span>
+    <span class="n">assignment</span> <span class="o">=</span> <span class="n">partition</span><span class="o">.</span><span class="n">assignment</span>
+
+    <span class="k">def</span> <span class="nf">partition_edge_avoid</span><span class="p">(</span><span class="n">start_node</span><span class="p">,</span> <span class="n">end_node</span><span class="p">,</span> <span class="n">edge_attrs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute the district edge weight, which is 1 if the nodes have the same</span>
+<span class="sd">        assignment, and infinity otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">assignment</span><span class="o">.</span><span class="n">mapping</span><span class="p">[</span><span class="n">start_node</span><span class="p">]</span> <span class="o">!=</span> <span class="n">assignment</span><span class="o">.</span><span class="n">mapping</span><span class="p">[</span><span class="n">end_node</span><span class="p">]:</span>
+            <span class="c1"># Fun fact: networkx actually refuses to take edges with None</span>
+            <span class="c1"># weight.</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">for</span> <span class="n">changed_node</span> <span class="ow">in</span> <span class="n">flips</span><span class="p">:</span>
+        <span class="n">old_assignment</span> <span class="o">=</span> <span class="n">partition</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">mapping</span><span class="p">[</span><span class="n">changed_node</span><span class="p">]</span>
+
+        <span class="n">old_neighbors</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">node</span>
+            <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">changed_node</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">assignment</span><span class="o">.</span><span class="n">mapping</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">==</span> <span class="n">old_assignment</span>
+        <span class="p">]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">old_neighbors</span><span class="p">:</span>
+            <span class="c1"># Under our assumptions, if there are no old neighbors, then the</span>
+            <span class="c1"># old_assignment district has vanished. It is trivially connected.</span>
+
+            <span class="c1"># However, we actually don&#39;t want any districts to disappear because</span>
+            <span class="c1"># it ends up breaking a lot of our other updaters. So we consider</span>
+            <span class="c1"># the empty district to be disconnected.</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="n">start_neighbor</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">old_neighbors</span><span class="p">)</span>
+
+        <span class="n">connected</span> <span class="o">=</span> <span class="n">are_reachable</span><span class="p">(</span>
+            <span class="n">graph</span><span class="p">,</span> <span class="n">start_neighbor</span><span class="p">,</span> <span class="n">partition_edge_avoid</span><span class="p">,</span> <span class="n">old_neighbors</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">connected</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="c1"># All neighbors of all changed nodes are connected, so the new graph is</span>
+    <span class="c1"># connected.</span>
+    <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<span class="k">def</span> <span class="nf">affected_parts</span><span class="p">(</span><span class="n">partition</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns the set of IDs of all parts that gained or lost a node during the last</span>
+<span class="sd">    flip.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">flips</span> <span class="o">=</span> <span class="n">partition</span><span class="o">.</span><span class="n">flips</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">partition</span><span class="o">.</span><span class="n">parent</span>
+
+    <span class="k">if</span> <span class="n">flips</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">partition</span><span class="o">.</span><span class="n">parts</span>
+
+    <span class="n">affected</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">node</span><span class="p">,</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">flips</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">affected</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">part</span><span class="p">)</span>
+        <span class="n">affected</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">mapping</span><span class="p">[</span><span class="n">node</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">affected</span>
+
+
+<div class="viewcode-block" id="contiguous"><a class="viewcode-back" href="../../../api.html#gerrychain.constraints.contiguous">[docs]</a><span class="k">def</span> <span class="nf">contiguous</span><span class="p">(</span><span class="n">partition</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Check if the parts of a partition are connected using :func:`networkx.is_connected`.</span>
+
+<span class="sd">    :param partition: The proposed next :class:`~gerrychain.partition.Partition`</span>
+
+<span class="sd">    :return: whether the partition is contiguous</span>
+<span class="sd">    :rtype: bool</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">all</span><span class="p">(</span>
+        <span class="n">nx</span><span class="o">.</span><span class="n">is_connected</span><span class="p">(</span><span class="n">partition</span><span class="o">.</span><span class="n">subgraphs</span><span class="p">[</span><span class="n">part</span><span class="p">])</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">affected_parts</span><span class="p">(</span><span class="n">partition</span><span class="p">)</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="contiguous_bfs"><a class="viewcode-back" href="../../../api.html#gerrychain.constraints.contiguous_bfs">[docs]</a><span class="k">def</span> <span class="nf">contiguous_bfs</span><span class="p">(</span><span class="n">partition</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Checks that a given partition&#39;s parts are connected as graphs using a simple</span>
+<span class="sd">    breadth-first search.</span>
+
+<span class="sd">    :param partition: Instance of Partition</span>
+<span class="sd">    :return: Whether the parts of this partition are connected</span>
+<span class="sd">    :rtype: bool</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">parts_to_check</span> <span class="o">=</span> <span class="n">affected_parts</span><span class="p">(</span><span class="n">partition</span><span class="p">)</span>
+
+    <span class="c1"># Generates a subgraph for each district and perform a BFS on it</span>
+    <span class="c1"># to check connectedness.</span>
+    <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">parts_to_check</span><span class="p">:</span>
+        <span class="n">adj</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">to_dict_of_lists</span><span class="p">(</span><span class="n">partition</span><span class="o">.</span><span class="n">subgraphs</span><span class="p">[</span><span class="n">part</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">_bfs</span><span class="p">(</span><span class="n">adj</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<span class="k">def</span> <span class="nf">number_of_contiguous_parts</span><span class="p">(</span><span class="n">partition</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return the number of non-connected assignment subgraphs.</span>
+
+<span class="sd">    :param partition: Instance of Partition; contains connected components.</span>
+<span class="sd">    :return: number of contiguous districts</span>
+<span class="sd">    :rtype: int</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">parts</span> <span class="o">=</span> <span class="n">partition</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">parts</span>
+    <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">parts</span> <span class="k">if</span> <span class="n">nx</span><span class="o">.</span><span class="n">is_connected</span><span class="p">(</span><span class="n">partition</span><span class="o">.</span><span class="n">subgraphs</span><span class="p">[</span><span class="n">part</span><span class="p">]))</span>
+
+
+<span class="k">def</span> <span class="nf">contiguous_components</span><span class="p">(</span><span class="n">partition</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return then connected components of each of the subgraphs of the parts</span>
+<span class="sd">    of the partition.</span>
+
+<span class="sd">    :param partition: Instance of Partition; contains connected components.</span>
+<span class="sd">    :return: dictionary mapping each part ID to a list holding the connected</span>
+<span class="sd">        subgraphs of that part of the partition</span>
+<span class="sd">    :rtype: dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="n">part</span><span class="p">:</span> <span class="p">[</span><span class="n">subgraph</span><span class="o">.</span><span class="n">subgraph</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span> <span class="k">for</span> <span class="n">nodes</span> <span class="ow">in</span> <span class="n">nx</span><span class="o">.</span><span class="n">connected_components</span><span class="p">(</span><span class="n">subgraph</span><span class="p">)]</span>
+        <span class="k">for</span> <span class="n">part</span><span class="p">,</span> <span class="n">subgraph</span> <span class="ow">in</span> <span class="n">partition</span><span class="o">.</span><span class="n">subgraphs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+    <span class="p">}</span>
+
+
+<span class="n">no_more_discontiguous</span> <span class="o">=</span> <span class="n">SelfConfiguringLowerBound</span><span class="p">(</span><span class="n">number_of_contiguous_parts</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_bfs</span><span class="p">(</span><span class="n">graph</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Performs a breadth-first search on the provided graph and returns true or</span>
+<span class="sd">    false depending on whether the graph is connected.</span>
+
+<span class="sd">    :param graph: Dict-of-lists; an adjacency matrix.</span>
+<span class="sd">    :return: is this graph connected?</span>
+<span class="sd">    :rtype: bool</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">q</span> <span class="o">=</span> <span class="p">[</span><span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">graph</span><span class="p">))]</span>
+    <span class="n">visited</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="n">total_vertices</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
+
+    <span class="c1"># Check if the district has a single vertex. If it does, then simply return</span>
+    <span class="c1"># `True`, as it&#39;s trivially connected.</span>
+    <span class="k">if</span> <span class="n">total_vertices</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="c1"># bfs!</span>
+    <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">q</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">current</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">neighbors</span> <span class="o">=</span> <span class="n">graph</span><span class="p">[</span><span class="n">current</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">neighbor</span> <span class="ow">in</span> <span class="n">neighbors</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">neighbor</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">visited</span><span class="p">:</span>
+                <span class="n">visited</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">neighbor</span><span class="p">)</span>
+                <span class="n">q</span> <span class="o">+=</span> <span class="p">[</span><span class="n">neighbor</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">total_vertices</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">visited</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Metric Geometry and Gerrymandering Group.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -16,6 +16,7 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Evaluating districting plans in the real world" href="tools.html" />
     <link rel="prev" title="API Reference" href="../api.html" /> 
 </head>
 
@@ -42,8 +43,6 @@
 <li class="toctree-l1"><a class="reference internal" href="../user/recom.html">Running a chain with ReCom</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/partitions.html">Working with Partitions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/updaters.html">Updaters</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../user/islands.html">What to do about islands and connectivity</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../user/real-life-plans.html">Using <code class="docutils literal notranslate"><span class="pre">maup</span></code> to use a real-life plan in GerryChain</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/adjacency.html">Handling Adjacencies</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API Reference</span></p>
@@ -60,6 +59,9 @@
 <li class="toctree-l2"><a class="reference internal" href="#set-pythonhashseed-0">Set <code class="docutils literal notranslate"><span class="pre">PYTHONHASHSEED=0</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="tools.html">Evaluating districting plans in the real world</a></li>
+<li class="toctree-l1"><a class="reference internal" href="realworldplans.html">Using <code class="docutils literal notranslate"><span class="pre">maup</span></code> to import a real-life plan in GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="whatislands.html">What to do about islands and connectivity</a></li>
 </ul>
 
         </div>
@@ -101,7 +103,8 @@ as a <a class="reference external" href="https://github.com/">GitHub</a> reposit
 <h2>Make your chains speedily replayable<a class="headerlink" href="#make-your-chains-speedily-replayable" title="Permalink to this headline">¶</a></h2>
 <p>It is sometimes desirable to allow others to reproduce or “replay” your chain runs step by step. In such cirucmstances, we recommend using <a class="reference external" href="https://github.com/mggg/pcompress">pcompress</a> which efficiently and rapidly stores your MCMC chain runs in a highly-compressed format. It can then be quickly read-in by <cite>pcompress</cite> at a later date. To setup <a class="reference external" href="https://github.com/mggg/pcompress">pcompress</a>, you need to first <a class="reference external" href="https://doc.rust-lang.org/cargo/getting-started/installation.html">install Cargo</a>. Then, you can install <a class="reference external" href="https://github.com/mggg/pcompress">pcompress</a> by installing running <code class="docutils literal notranslate"><span class="pre">cargo</span> <span class="pre">install</span> <span class="pre">pcompress</span></code> and <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">pcompress</span></code> in your terminal.</p>
 <p>To use <a class="reference external" href="https://github.com/mggg/pcompress">pcompress</a>, you can wrap your <code class="docutils literal notranslate"><span class="pre">MarkovChain</span></code> instances with <code class="docutils literal notranslate"><span class="pre">Record</span></code> and pass along the file name you want to save your chain as. For example, this will save your chain run as <code class="docutils literal notranslate"><span class="pre">saved-run.chain</span></code>:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pcompress</span> <span class="kn">import</span> <span class="n">Record</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">gerrychain</span> <span class="kn">import</span> <span class="n">MarkovChain</span>
+<span class="kn">from</span> <span class="nn">pcompress</span> <span class="kn">import</span> <span class="n">Record</span>
 
 <span class="n">chain</span> <span class="o">=</span> <span class="n">MarkovChain</span><span class="p">(</span>
     <span class="c1"># chain setup here</span>
@@ -171,12 +174,13 @@ before running your code.</p>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="../api.html" class="btn btn-neutral float-left" title="API Reference" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="tools.html" class="btn btn-neutral float-right" title="Evaluating districting plans in the real world" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2018, Metric Geometry and Gerrymandering Group.</p>
+    <p>&#169; Copyright 2022, Metric Geometry and Gerrymandering Group.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Using maup to import a real-life plan in GerryChain &mdash; GerryChain  documentation</title><link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="What to do about islands and connectivity" href="whatislands.html" />
+    <link rel="prev" title="Evaluating districting plans in the real world" href="tools.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #0099cd" >
+            <a href="../index.html" class="icon icon-home"> GerryChain
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../user/intro.html">Overview of the Chain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/quickstart.html">Getting started with GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/recom.html">Running a chain with ReCom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/partitions.html">Working with Partitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/updaters.html">Updaters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/adjacency.html">Handling Adjacencies</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">API Reference</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Topics</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="reproducibility.html">Reproducibility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tools.html">Evaluating districting plans in the real world</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Using <code class="docutils literal notranslate"><span class="pre">maup</span></code> to import a real-life plan in GerryChain</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#downloading-a-plan">Downloading a plan</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#getting-the-assignment">Getting the assignment</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#creating-a-partition-with-the-real-life-assignment">Creating a <code class="docutils literal notranslate"><span class="pre">Partition</span></code> with the real-life assignment</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#troubleshooting-possible-issues">Troubleshooting possible issues</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="whatislands.html">What to do about islands and connectivity</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #0099cd" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">GerryChain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Using <code class="docutils literal notranslate"><span class="pre">maup</span></code> to import a real-life plan in GerryChain</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/topics/realworldplans.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="using-maup-to-import-a-real-life-plan-in-gerrychain">
+<h1>Using <code class="docutils literal notranslate"><span class="pre">maup</span></code> to import a real-life plan in GerryChain<a class="headerlink" href="#using-maup-to-import-a-real-life-plan-in-gerrychain" title="Permalink to this headline">¶</a></h1>
+<p>To generate an ensemble of districting plans using GerryChain, we need a
+starting point for our Markov chain. GerryChain gives you functions like
+<code class="docutils literal notranslate"><span class="pre">recursive_tree_part</span></code> to generate such plans from scratch, but you may want to
+use an actual districting plan from the real world instead. You also may want to
+compare a real-life plan to your ensemble.</p>
+<p><a class="reference external" href="https://github.com/mggg/maup"><code class="docutils literal notranslate"><span class="pre">maup</span></code></a> is MGGG’s package for doing common
+spatial data operations with redistricting data. We’ll use this package to
+assign our basic geographic units to the districts in the plan we’re interested
+in. Our steps are:</p>
+<ul class="simple">
+<li><p>Download a Shapefile of the districting plan we’re interested in,</p></li>
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">maup</span></code> to assign the our basic units to the districts in that plan, and
+then</p></li>
+<li><p>Create a GerryChain Partition using that assignment.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">maup</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">geopandas</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+</pre></div>
+</div>
+<div class="section" id="downloading-a-plan">
+<h2>Downloading a plan<a class="headerlink" href="#downloading-a-plan" title="Permalink to this headline">¶</a></h2>
+<p>For this guide, we’ll assign Massachusetts’s block groups to the 2010
+Massachusetts State Senate districting plan. We can use
+<a class="reference external" href="https://geopandas.org">geopandas</a> to download this Shapefile straight from the
+TIGER/Line files on the U.S. Census Bureau’s website:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">districts</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="s2">&quot;https://www2.census.gov/geo/tiger/TIGER2012/SLDU/tl_2012_25_sldu.zip&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="getting-the-assignment">
+<h2>Getting the assignment<a class="headerlink" href="#getting-the-assignment" title="Permalink to this headline">¶</a></h2>
+<p>Now we can use <code class="docutils literal notranslate"><span class="pre">maup</span></code> to assign our units to districts. See
+<a class="reference external" href="https://github.com/mggg/maup/blob/master/README.md#assigning-precincts-to-districts">the <code class="docutils literal notranslate"><span class="pre">maup</span></code> documentation</a>
+for another example and more information.</p>
+<p>First we’ll load our units as a GeoDataFrame:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">units</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="s2">&quot;zip://./BG25.zip&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Now we’ll use <code class="docutils literal notranslate"><span class="pre">maup.assign</span></code> to get an assignment from units to districts:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">assignment</span> <span class="o">=</span> <span class="n">maup</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">units</span><span class="p">,</span> <span class="n">districts</span><span class="p">)</span>
+<span class="go">---------------------------------------------------------------------------</span>
+
+<span class="go">TypeError                                 Traceback (most recent call last)</span>
+
+<span class="go">&lt;ipython-input-4-23d58953eccb&gt; in &lt;module&gt;</span>
+<span class="go">----&gt; 1 assignment = maup.assign(units, districts)</span>
+
+
+<span class="go">crs.py in wrapped(*args, **kwargs)</span>
+<span class="go">      9             raise TypeError(</span>
+<span class="go">     10                 &quot;the source and target geometries must have the same CRS. {} {}&quot;.format(</span>
+<span class="go">---&gt; 11                     geoms1.crs, geoms2.crs</span>
+<span class="go">     12                 )</span>
+<span class="go">     13             )</span>
+
+
+<span class="go">TypeError: the source and target geometries must have the same CRS. {&#39;proj&#39;: &#39;aea&#39;, &#39;lat_1&#39;: 29.5, &#39;lat_2&#39;: 45.5,&#39;lat_0&#39;: 37.5, &#39;lon_0&#39;: -96, &#39;x_0&#39;: 0, &#39;y_0&#39;: 0, &#39;ellps&#39;: &#39;GRS80&#39;, &#39;units&#39;: &#39;m&#39;, &#39;no_defs&#39;: True} {&#39;init&#39;:&#39;epsg:4269&#39;}</span>
+</pre></div>
+</div>
+<p>Oh no! ❌ This error is telling us that the coordinates in our <code class="docutils literal notranslate"><span class="pre">units</span></code> and our
+<code class="docutils literal notranslate"><span class="pre">districts</span></code> are stored in different coordinate reference systems (different
+projections). We can fix this by setting the <code class="docutils literal notranslate"><span class="pre">units</span></code> CRS to match the
+<code class="docutils literal notranslate"><span class="pre">districts</span></code> CRS:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">units</span><span class="o">.</span><span class="n">to_crs</span><span class="p">(</span><span class="n">districts</span><span class="o">.</span><span class="n">crs</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Now let’s try again:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">assignment</span> <span class="o">=</span> <span class="n">maup</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">units</span><span class="p">,</span> <span class="n">districts</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Yay! 🎉 It worked!</p>
+<p>Let’s use the <a class="reference external" href="http://pandas.pydata.org/">pandas</a> <code class="docutils literal notranslate"><span class="pre">.isna()</span></code> method to see if we
+have any units that could not be assigned to districts:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">assignment</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+<span class="go">0</span>
+</pre></div>
+</div>
+<p>This means that every unit was successfully assigned. If our basic units were
+too large to get a meaningful assignment, or if the districts did not cover all
+of our units (e.g. if our units included parts of the Atlantic Ocean but the
+districts did not), then we would have units with NA assignments that we would
+need to make decisions about.</p>
+<p>We’ll save the assignment in a column of our <code class="docutils literal notranslate"><span class="pre">units</span></code> GeoDataFrame:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">units</span><span class="p">[</span><span class="s2">&quot;SENDIST&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">assignment</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="creating-a-partition-with-the-real-life-assignment">
+<h2>Creating a <code class="docutils literal notranslate"><span class="pre">Partition</span></code> with the real-life assignment<a class="headerlink" href="#creating-a-partition-with-the-real-life-assignment" title="Permalink to this headline">¶</a></h2>
+<p>Now we are ready to use this assignment in GerryChain. We’ll start by loading in
+our Graph from a pre-saved JSON file:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">gerrychain</span> <span class="kn">import</span> <span class="n">Graph</span><span class="p">,</span> <span class="n">Partition</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">graph</span> <span class="o">=</span> <span class="n">Graph</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="s2">&quot;./Block_Groups/BG25.json&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>In order to get this assignment onto the graph, we need to match the nodes of
+our graph to the geometries in <code class="docutils literal notranslate"><span class="pre">units</span></code> by their GEOIDs. We can use the <code class="docutils literal notranslate"><span class="pre">graph</span></code>
+object’s <code class="docutils literal notranslate"><span class="pre">.join()</span></code> method to do this matching automatically:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">graph</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">units</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;SENDIST&quot;</span><span class="p">],</span> <span class="n">left_index</span><span class="o">=</span><span class="s2">&quot;GEOID10&quot;</span><span class="p">,</span> <span class="n">right_index</span><span class="o">=</span><span class="s2">&quot;GEOID10&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">left_index</span></code> and <code class="docutils literal notranslate"><span class="pre">right_index</span></code> arguments tell the <code class="docutils literal notranslate"><span class="pre">.join()</span></code> method to use
+the <code class="docutils literal notranslate"><span class="pre">GEOID10</span></code> node attribute and the <code class="docutils literal notranslate"><span class="pre">GEOID10</span></code> column of <code class="docutils literal notranslate"><span class="pre">units</span></code> to match the
+records in <code class="docutils literal notranslate"><span class="pre">units</span></code> to the nodes of our graph.</p>
+<p>Now <code class="docutils literal notranslate"><span class="pre">graph</span></code> has a node attribute called <code class="docutils literal notranslate"><span class="pre">SENDIST</span></code> that we can use to create a
+Partition:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">real_life_plan</span> <span class="o">=</span> <span class="n">Partition</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="s2">&quot;SENDIST&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To check our work, let’s plot the <code class="docutils literal notranslate"><span class="pre">real_life_plan</span></code> using the Partition’s
+<code class="docutils literal notranslate"><span class="pre">.plot()</span></code> method:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">real_life_plan</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">units</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;tab20&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s1">&#39;off&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<p><img alt="png" src="../_images/output_23_0.png" /></p>
+<p>That looks like a districting plan! Woohoo! 🎉🎉🎉</p>
+<div class="section" id="troubleshooting-possible-issues">
+<h3>Troubleshooting possible issues<a class="headerlink" href="#troubleshooting-possible-issues" title="Permalink to this headline">¶</a></h3>
+<p>If the plan looked like random noise or confetti, then we might suspect that
+something had gone wrong. The two places we would want to look for problems
+would be:</p>
+<ul class="simple">
+<li><p>the <code class="docutils literal notranslate"><span class="pre">graph.join</span></code> call, which would go wrong if the GEOIDs did not match up
+correctly, or</p></li>
+<li><p>the final <code class="docutils literal notranslate"><span class="pre">real_life_plan.plot</span></code> call, which would go wrong if the
+GeoDataFrame’s index did not match the node IDs of our graph in the right
+way.</p></li>
+</ul>
+<p>We could inspect both issues by making sure that the records with matching IDs
+actually referred to the same block groups.</p>
+<p>You also might run into problems when you go to run a Markov chain using the
+partition we made. If the districts are not contiguous with respect to your
+underlying graph, you would want to add edges (within reason) to make the graph
+agree with the notion of contiguity that the real-life plan uses. See <a class="reference external" href="https://gerrychain.readthedocs.io/en/latest/user/islands.html">What to
+do about islands and connectivity</a>
+for a guide to handling those types of issues.</p>
+</div>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="tools.html" class="btn btn-neutral float-left" title="Evaluating districting plans in the real world" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="whatislands.html" class="btn btn-neutral float-right" title="What to do about islands and connectivity" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Metric Geometry and Gerrymandering Group.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

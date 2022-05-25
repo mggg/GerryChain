@@ -49,8 +49,6 @@
 <li class="toctree-l1"><a class="reference internal" href="recom.html">Running a chain with ReCom</a></li>
 <li class="toctree-l1"><a class="reference internal" href="partitions.html">Working with Partitions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="updaters.html">Updaters</a></li>
-<li class="toctree-l1"><a class="reference internal" href="islands.html">What to do about islands and connectivity</a></li>
-<li class="toctree-l1"><a class="reference internal" href="real-life-plans.html">Using <code class="docutils literal notranslate"><span class="pre">maup</span></code> to use a real-life plan in GerryChain</a></li>
 <li class="toctree-l1"><a class="reference internal" href="adjacency.html">Handling Adjacencies</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API Reference</span></p>
@@ -60,6 +58,9 @@
 <p class="caption"><span class="caption-text">Topics</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../topics/reproducibility.html">Reproducibility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../topics/tools.html">Evaluating districting plans in the real world</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../topics/realworldplans.html">Using <code class="docutils literal notranslate"><span class="pre">maup</span></code> to import a real-life plan in GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../topics/whatislands.html">What to do about islands and connectivity</a></li>
 </ul>
 
         </div>
@@ -186,11 +187,11 @@ In an interactive Python session, we can print out the populations like this:</p
 </div>
 <p>Notice that <code class="docutils literal notranslate"><span class="pre">partition[&quot;population&quot;]</span></code> is a dictionary mapping the ID of each district to its total
 population (that’s why we can call the <code class="docutils literal notranslate"><span class="pre">.items()</span></code> method on it). Most updaters output values in this dictionary format.</p>
-<p>For more information on updaters, see the <code class="xref py py-mod docutils literal notranslate"><span class="pre">gerrychain.updaters</span></code> documentation.</p>
+<p>For more information on updaters, see the <a class="reference internal" href="../api.html#module-gerrychain.updaters" title="gerrychain.updaters"><code class="xref py py-mod docutils literal notranslate"><span class="pre">gerrychain.updaters</span></code></a> documentation.</p>
 </div>
 <div class="section" id="running-a-chain">
 <h2>Running a chain<a class="headerlink" href="#running-a-chain" title="Permalink to this headline">¶</a></h2>
-<p>Now that we have our initial partition, we can configure and run a <code class="xref py py-class docutils literal notranslate"><span class="pre">Markov</span> <span class="pre">chain</span></code>.
+<p>Now that we have our initial partition, we can configure and run a <a class="reference internal" href="../api.html#gerrychain.MarkovChain" title="gerrychain.MarkovChain"><code class="xref py py-class docutils literal notranslate"><span class="pre">Markov</span> <span class="pre">chain</span></code></a>.
 Let’s configure a short Markov chain to make sure everything works properly.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">gerrychain</span> <span class="kn">import</span> <span class="n">MarkovChain</span>
 <span class="kn">from</span> <span class="nn">gerrychain.constraints</span> <span class="kn">import</span> <span class="n">single_flip_contiguous</span>
@@ -237,7 +238,7 @@ rejected (by <code class="docutils literal notranslate"><span class="pre">accept
 </dd>
 </dl>
 <p>For more information on the details of our Markov chain implementation, consult
-the <code class="xref py py-class docutils literal notranslate"><span class="pre">gerrychain.MarkovChain</span></code> documentation and source code.</p>
+the <a class="reference internal" href="../api.html#gerrychain.MarkovChain" title="gerrychain.MarkovChain"><code class="xref py py-class docutils literal notranslate"><span class="pre">gerrychain.MarkovChain</span></code></a> documentation and source code.</p>
 <p>The above code configures a Markov chain called <code class="docutils literal notranslate"><span class="pre">chain</span></code>, but does <em>not</em> run it yet. We run the chain
 by iterating through all of the states using a <code class="docutils literal notranslate"><span class="pre">for</span></code> loop. As an example, let’s iterate through
 this chain and print out the sorted vector of Democratic vote percentages in each district for each
@@ -293,7 +294,7 @@ one thousand plans created by single flips.)</p>
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2018, Metric Geometry and Gerrymandering Group.</p>
+    <p>&#169; Copyright 2022, Metric Geometry and Gerrymandering Group.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

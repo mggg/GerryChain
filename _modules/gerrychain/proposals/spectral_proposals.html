@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>gerrychain.proposals.spectral_proposals &mdash; GerryChain  documentation</title><link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #0099cd" >
+            <a href="../../../index.html" class="icon icon-home"> GerryChain
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/intro.html">Overview of the Chain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/quickstart.html">Getting started with GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/recom.html">Running a chain with ReCom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/partitions.html">Working with Partitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/updaters.html">Updaters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/adjacency.html">Handling Adjacencies</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API Reference</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Topics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../topics/reproducibility.html">Reproducibility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../topics/tools.html">Evaluating districting plans in the real world</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../topics/realworldplans.html">Using <code class="docutils literal notranslate"><span class="pre">maup</span></code> to import a real-life plan in GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../topics/whatislands.html">What to do about islands and connectivity</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #0099cd" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">GerryChain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+      <li>gerrychain.proposals.spectral_proposals</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for gerrychain.proposals.spectral_proposals</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">linalg</span> <span class="k">as</span> <span class="n">LA</span>
+<span class="kn">from</span> <span class="nn">..random</span> <span class="kn">import</span> <span class="n">random</span>
+
+
+<span class="k">def</span> <span class="nf">spectral_cut</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">part_labels</span><span class="p">,</span> <span class="n">weight_type</span><span class="p">,</span> <span class="n">lap_type</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Spectral cut function.</span>
+
+<span class="sd">    Uses the signs of the elements in the Fiedler vector of a graph to</span>
+<span class="sd">    partition into two components.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">nlist</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">nlist</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">weight_type</span> <span class="o">==</span> <span class="s2">&quot;random&quot;</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">edge_indices</span><span class="p">:</span>
+            <span class="n">graph</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">edge</span><span class="p">][</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">lap_type</span> <span class="o">==</span> <span class="s2">&quot;normalized&quot;</span><span class="p">:</span>
+        <span class="n">LAP</span> <span class="o">=</span> <span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">normalized_laplacian_matrix</span><span class="p">(</span><span class="n">graph</span><span class="p">))</span><span class="o">.</span><span class="n">todense</span><span class="p">()</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">LAP</span> <span class="o">=</span> <span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">laplacian_matrix</span><span class="p">(</span><span class="n">graph</span><span class="p">))</span><span class="o">.</span><span class="n">todense</span><span class="p">()</span>
+
+    <span class="n">NLMva</span><span class="p">,</span> <span class="n">NLMve</span> <span class="o">=</span> <span class="n">LA</span><span class="o">.</span><span class="n">eigh</span><span class="p">(</span><span class="n">LAP</span><span class="p">)</span>
+    <span class="n">NFv</span> <span class="o">=</span> <span class="n">NLMve</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">xNFv</span> <span class="o">=</span> <span class="p">[</span><span class="n">NFv</span><span class="o">.</span><span class="n">item</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">)]</span>
+
+    <span class="n">node_color</span> <span class="o">=</span> <span class="p">[</span><span class="n">xNFv</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">)]</span>
+
+    <span class="n">clusters</span> <span class="o">=</span> <span class="p">{</span><span class="n">nlist</span><span class="p">[</span><span class="n">x</span><span class="p">]:</span> <span class="n">part_labels</span><span class="p">[</span><span class="n">node_color</span><span class="p">[</span><span class="n">x</span><span class="p">]]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">)}</span>
+
+    <span class="k">return</span> <span class="n">clusters</span>
+
+
+<div class="viewcode-block" id="spectral_recom"><a class="viewcode-back" href="../../../api.html#gerrychain.proposals.spectral_recom">[docs]</a><span class="k">def</span> <span class="nf">spectral_recom</span><span class="p">(</span><span class="n">partition</span><span class="p">,</span> <span class="n">weight_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lap_type</span><span class="o">=</span><span class="s2">&quot;normalized&quot;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Spectral ReCom proposal.</span>
+
+<span class="sd">    Uses spectral clustering to bipartition a subgraph of the original graph</span>
+<span class="sd">    formed by merging the nodes corresponding to two adjacent districts.</span>
+
+<span class="sd">    Example usage::</span>
+
+<span class="sd">        from functools import partial</span>
+<span class="sd">        from gerrychain import MarkovChain</span>
+<span class="sd">        from gerrychain.proposals import recom</span>
+
+<span class="sd">        # ...define constraints, accept, partition, total_steps here...</span>
+
+
+<span class="sd">        proposal = partial(</span>
+<span class="sd">            spectral_recom, weight_type=None, lap_type=&quot;normalized&quot;</span>
+<span class="sd">        )</span>
+
+<span class="sd">        chain = MarkovChain(proposal, constraints, accept, partition, total_steps)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">edge</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">partition</span><span class="p">[</span><span class="s2">&quot;cut_edges&quot;</span><span class="p">]))</span>
+    <span class="n">parts_to_merge</span> <span class="o">=</span> <span class="p">(</span><span class="n">partition</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">mapping</span><span class="p">[</span><span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">partition</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">mapping</span><span class="p">[</span><span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+
+    <span class="n">subgraph</span> <span class="o">=</span> <span class="n">partition</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">subgraph</span><span class="p">(</span>
+        <span class="n">partition</span><span class="o">.</span><span class="n">parts</span><span class="p">[</span><span class="n">parts_to_merge</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">|</span> <span class="n">partition</span><span class="o">.</span><span class="n">parts</span><span class="p">[</span><span class="n">parts_to_merge</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+    <span class="p">)</span>
+
+    <span class="n">flips</span> <span class="o">=</span> <span class="n">spectral_cut</span><span class="p">(</span>
+        <span class="n">subgraph</span><span class="p">,</span>
+        <span class="n">parts_to_merge</span><span class="p">,</span>
+        <span class="n">weight_type</span><span class="p">,</span>
+        <span class="n">lap_type</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">partition</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="n">flips</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Metric Geometry and Gerrymandering Group.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
