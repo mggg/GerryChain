@@ -211,7 +211,7 @@ def find_region_aware_balanced_edge_cuts_memoization(h, choice=random.choice, re
                 subtree_pops[next_node] = h.population[next_node]
 
     cuts = []
-    best_split_score = 0
+    best_edge_weight = 0
     for node, tree_pop in subtree_pops.items():
 
         def part_nodes(start):
@@ -232,41 +232,25 @@ def find_region_aware_balanced_edge_cuts_memoization(h, choice=random.choice, re
 
         parent = pred[node]
         if region_weights is not None:
-            sorted_region_weights = sorted(region_weights.items(), key=lambda x: x[1], reverse=True)
-            region_cols = [tup[0] for tup in sorted_region_weights]
-            # score function to prefer dividing higher ranked regions. if we have three regions,
-            # each region gets split scores in decreasing powers of 2 — the first-ranked region
-            # would get a score of 4 if split, the second would get 2, the third 1. so an edge that
-            # splits our first- and third-ranked regions would get a score of 4 + 1 = 5, which
-            # would be better than an edge that splits our second- and third-ranked regions
-            # (2 + 1 = 3), but worse than an edge
-            # that splits our first- and second-ranked regions (score of 6).
-            # TODO: this means {"COUNTYFP20": 1, "COUSUB":1} would behave differently than
-            # {"COUSUB": 1, "COUNTYFP20": 1}, which it shouldn't. but this requires more thinking
-            # about how best to account for this...
-            # if node corresponds to a balance cut and our split score is as good or better than
-            # our best previously seen split score, add this cut to list of potential balance cuts
-            node_split_score = 0
-            for i, region_col in enumerate(region_cols):
-                if h.graph.nodes[parent][region_col] != h.graph.nodes[node][region_col]:
-                    node_split_score += 2 ** (len(region_cols) - i - 1)
-
-            if node_split_score >= best_split_score and (is_balanced_A or is_balanced_B):
-                if node_split_score > best_split_score:  # special case: strictly better
-                    best_split_score = node_split_score
+            # Only populate the `cuts` list with edges that have the highest edge weight (i.e.
+            # tend to cut across the most regions).
+            edge_weight = h.graph.edges[(node, parent)]["random_weight"]
+            if edge_weight >= best_edge_weight and (is_balanced_A or is_balanced_B):
+                if edge_weight > best_edge_weight:  # special case: strictly better
+                    best_edge_weight = edge_weight
                     cuts = []
                 part_subset = part_nodes(node) if is_balanced_A \
                     else set(h.graph.nodes) - part_nodes(node)
-                cuts.append(Cut(edge=(node, pred[node]), subset=part_subset))
-            elif node_split_score == best_split_score and (is_balanced_A or is_balanced_B):
+                cuts.append(Cut(edge=(node, parent), subset=part_subset))
+            elif edge_weight == best_edge_weight and (is_balanced_A or is_balanced_B):
                 part_subset = part_nodes(node) if is_balanced_A \
                     else set(h.graph.nodes) - part_nodes(node)
-                cuts.append(Cut(edge=(node, pred[node]), subset=part_subset))
+                cuts.append(Cut(edge=(node, parent), subset=part_subset))
         else:
             if is_balanced_A:
-                cuts.append(Cut(edge=(node, pred[node]), subset=part_nodes(node)))
+                cuts.append(Cut(edge=(node, parent), subset=part_nodes(node)))
             elif is_balanced_B:
-                cuts.append(Cut(edge=(node, pred[node]),
+                cuts.append(Cut(edge=(node, parent),
                     subset=set(h.graph.nodes) - part_nodes(node)))
     return cuts
 
