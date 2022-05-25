@@ -238,7 +238,7 @@ def find_region_aware_balanced_edge_cuts_memoization(h, choice=random.choice, re
             # each region gets split scores in decreasing powers of 2 — the first-ranked region
             # would get a score of 4 if split, the second would get 2, the third 1. so an edge that
             # splits our first- and third-ranked regions would get a score of 4 + 1 = 5, which
-            # would be better than an edge that splits our second- and third-ranked regions 
+            # would be better than an edge that splits our second- and third-ranked regions
             # (2 + 1 = 3), but worse than an edge
             # that splits our first- and second-ranked regions (score of 6).
             # TODO: this means {"COUNTYFP20": 1, "COUSUB":1} would behave differently than
