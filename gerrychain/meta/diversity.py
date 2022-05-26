@@ -10,6 +10,10 @@ Simple tooling to collect diversity stats on chain runs
 class DiversityStats:
     """
     Lightweight stats object that reports the diversity of a given chain.
+
+    Example usage::
+
+        DiversityStats(unique_plans=44162, unique_districts=82992, steps_taken=100000)
     """
     unique_plans: int
     unique_districts: int
@@ -33,7 +37,7 @@ def collect_diversity_stats(chain: Iterable[Partition]) -> Iterable[Tuple[Partit
             # normal chain stuff here
 
     :param chain: A chain object to collect stats on.
-    :return: An iterable of (partition, DiversityStat).
+    :return: An iterable of `(partition, DiversityStat)`.
     """
     seen_plans = {}
     seen_districts = {}
