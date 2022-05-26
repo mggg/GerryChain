@@ -2,9 +2,11 @@ from dataclasses import dataclass
 from typing import Iterable, Tuple
 from gerrychain.partition import Partition
 
+
 """
 Simple tooling to collect diversity stats on chain runs
 """
+
 
 @dataclass
 class DiversityStats:
@@ -15,12 +17,15 @@ class DiversityStats:
 
         DiversityStats(unique_plans=44162, unique_districts=82992, steps_taken=100000)
     """
+
     unique_plans: int
     unique_districts: int
     steps_taken: int
 
 
-def collect_diversity_stats(chain: Iterable[Partition]) -> Iterable[Tuple[Partition, DiversityStats]]:
+def collect_diversity_stats(
+    chain: Iterable[Partition],
+) -> Iterable[Tuple[Partition, DiversityStats]]:
     """
     Report the diversity of the chain being run, live, as a drop-in wrapper.
     Requires the cut_edges updater on each `Partition` object..
@@ -29,7 +34,7 @@ def collect_diversity_stats(chain: Iterable[Partition]) -> Iterable[Tuple[Partit
 
         for partition, stats in collect_diversity_stats(
             Replay(
-                graph, 
+                graph,
                 "sample-run.chain"
                 )
         ):
@@ -62,9 +67,9 @@ def collect_diversity_stats(chain: Iterable[Partition]) -> Iterable[Tuple[Partit
             seen_plans[hashable_cut_edges] = 1
 
         stats = DiversityStats(
-            unique_plans = unique_plans,
-            unique_districts = unique_districts,
-            steps_taken = steps_taken
+            unique_plans=unique_plans,
+            unique_districts=unique_districts,
+            steps_taken=steps_taken,
         )
 
         yield partition, stats
