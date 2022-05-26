@@ -28,7 +28,9 @@ def collect_diversity_stats(
 ) -> Iterable[Tuple[Partition, DiversityStats]]:
     """
     Report the diversity of the chain being run, live, as a drop-in wrapper.
-    Requires the cut_edges updater on each `Partition` object..
+    Requires the cut_edges updater on each `Partition` object. Plans/districts 
+    are considered distinct if they are not isomorphic. That is, relabled plans
+    and districts are considered non-unique and counted as duplicate.
 
     Example usage::
 
