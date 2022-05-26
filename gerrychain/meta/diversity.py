@@ -2,19 +2,38 @@ from dataclasses import dataclass
 from typing import Iterable, Tuple
 from gerrychain.partition import Partition
 
-# TODO: consider using pydantic
+"""
+Simple tooling to collect diversity stats on chain runs
+"""
+
 @dataclass
 class DiversityStats:
     """
-    Stats object that reports the diversity of a given chain.
+    Lightweight stats object that reports the diversity of a given chain.
     """
     unique_plans: int
     unique_districts: int
     steps_taken: int
 
+
 def collect_diversity_stats(chain: Iterable[Partition]) -> Iterable[Tuple[Partition, DiversityStats]]:
     """
-    Determine the diversity of the chain being run. Requires the cut_edges updater.
+    Report the diversity of the chain being run, live, as a drop-in wrapper.
+    Requires the cut_edges updater on each `Partition` object..
+
+    Example usage::
+
+        for partition, stats in collect_diversity_stats(
+            Replay(
+                graph, 
+                "sample-run.chain"
+                )
+        ):
+            print(stats)
+            # normal chain stuff here
+
+    :param chain: A chain object to collect stats on.
+    :return: An iterable of (partition, DiversityStat).
     """
     seen_plans = {}
     seen_districts = {}
@@ -22,6 +41,7 @@ def collect_diversity_stats(chain: Iterable[Partition]) -> Iterable[Tuple[Partit
     unique_plans = 0
     unique_districts = 0
     steps_taken = 0
+
     for partition in chain:
         steps_taken += 1
 
