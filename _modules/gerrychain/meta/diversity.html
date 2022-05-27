@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>gerrychain.meta.diversity &mdash; GerryChain  documentation</title><link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #0099cd" >
+            <a href="../../../index.html" class="icon icon-home"> GerryChain
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/intro.html">Overview of the Chain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/quickstart.html">Getting started with GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/recom.html">Running a chain with ReCom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/partitions.html">Working with Partitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/updaters.html">Updaters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/adjacency.html">Handling Adjacencies</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API Reference</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Topics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../topics/reproducibility.html">Reproducibility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../topics/tools.html">Evaluating districting plans in the real world</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../topics/realworldplans.html">Using <code class="docutils literal notranslate"><span class="pre">maup</span></code> to import a real-life plan in GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../topics/whatislands.html">What to do about islands and connectivity</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #0099cd" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">GerryChain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+      <li>gerrychain.meta.diversity</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for gerrychain.meta.diversity</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">from</span> <span class="nn">gerrychain.partition</span> <span class="kn">import</span> <span class="n">Partition</span>
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Simple tooling to collect diversity stats on chain runs</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="DiversityStats"><a class="viewcode-back" href="../../../api.html#gerrychain.meta.diversity.DiversityStats">[docs]</a><span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">DiversityStats</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Lightweight stats object that reports the diversity of a given chain.</span>
+
+<span class="sd">    Example usage::</span>
+
+<span class="sd">        DiversityStats(unique_plans=44162, unique_districts=82992, steps_taken=100000)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">unique_plans</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">unique_districts</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">steps_taken</span><span class="p">:</span> <span class="nb">int</span></div>
+
+
+<div class="viewcode-block" id="collect_diversity_stats"><a class="viewcode-back" href="../../../api.html#gerrychain.meta.diversity.collect_diversity_stats">[docs]</a><span class="k">def</span> <span class="nf">collect_diversity_stats</span><span class="p">(</span>
+    <span class="n">chain</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Partition</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Partition</span><span class="p">,</span> <span class="n">DiversityStats</span><span class="p">]]:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Report the diversity of the chain being run, live, as a drop-in wrapper.</span>
+<span class="sd">    Requires the cut_edges updater on each `Partition` object. Plans/districts</span>
+<span class="sd">    are considered distinct if they are not isomorphic. That is, relabled plans</span>
+<span class="sd">    and districts are considered non-unique and counted as duplicate.</span>
+
+<span class="sd">    Example usage::</span>
+
+<span class="sd">        for partition, stats in collect_diversity_stats(</span>
+<span class="sd">            Replay(</span>
+<span class="sd">                graph,</span>
+<span class="sd">                &quot;sample-run.chain&quot;</span>
+<span class="sd">                )</span>
+<span class="sd">        ):</span>
+<span class="sd">            print(stats)</span>
+<span class="sd">            # normal chain stuff here</span>
+
+<span class="sd">    :param chain: A chain object to collect stats on.</span>
+<span class="sd">    :return: An iterable of `(partition, DiversityStat)`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">seen_plans</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">seen_districts</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="n">unique_plans</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">unique_districts</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">steps_taken</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">for</span> <span class="n">partition</span> <span class="ow">in</span> <span class="n">chain</span><span class="p">:</span>
+        <span class="n">steps_taken</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">for</span> <span class="n">district</span><span class="p">,</span> <span class="n">nodes</span> <span class="ow">in</span> <span class="n">partition</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">parts</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">hashable_nodes</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">nodes</span><span class="p">)))</span>
+            <span class="k">if</span> <span class="n">hashable_nodes</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seen_districts</span><span class="p">:</span>
+                <span class="n">unique_districts</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">seen_districts</span><span class="p">[</span><span class="n">hashable_nodes</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="n">cut_edges</span> <span class="o">=</span> <span class="n">partition</span><span class="p">[</span><span class="s2">&quot;cut_edges&quot;</span><span class="p">]</span>
+        <span class="n">hashable_cut_edges</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">cut_edges</span><span class="p">)))</span>
+        <span class="k">if</span> <span class="n">hashable_cut_edges</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seen_plans</span><span class="p">:</span>
+            <span class="n">unique_plans</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">seen_plans</span><span class="p">[</span><span class="n">hashable_cut_edges</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="n">stats</span> <span class="o">=</span> <span class="n">DiversityStats</span><span class="p">(</span>
+            <span class="n">unique_plans</span><span class="o">=</span><span class="n">unique_plans</span><span class="p">,</span>
+            <span class="n">unique_districts</span><span class="o">=</span><span class="n">unique_districts</span><span class="p">,</span>
+            <span class="n">steps_taken</span><span class="o">=</span><span class="n">steps_taken</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">yield</span> <span class="n">partition</span><span class="p">,</span> <span class="n">stats</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Metric Geometry and Gerrymandering Group.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

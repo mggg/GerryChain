@@ -58,6 +58,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#grids">Grids</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#spanning-tree-methods">Spanning tree methods</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-gerrychain.metrics">Metrics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-gerrychain.meta.diversity">Diversity stats</a></li>
 </ul>
 </li>
 </ul>
@@ -108,6 +109,7 @@
 <li><p><a class="reference internal" href="#grids" id="id10">Grids</a></p></li>
 <li><p><a class="reference internal" href="#spanning-tree-methods" id="id11">Spanning tree methods</a></p></li>
 <li><p><a class="reference internal" href="#module-gerrychain.metrics" id="id12">Metrics</a></p></li>
+<li><p><a class="reference internal" href="#module-gerrychain.meta.diversity" id="id13">Diversity stats</a></p></li>
 </ul>
 </div>
 <div class="section" id="adjacency-graphs">
@@ -1592,6 +1594,47 @@ in the Election’s parties_to_columns dictionary.</p>
 <dd><p>Computes the wasted votes for each party in the given race.
 :party1_votes: the number of votes party1 received in the race
 :party2_votes: the number of votes party2 received in the race</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-gerrychain.meta.diversity">
+<span id="diversity-stats"></span><h2><a class="toc-backref" href="#id13">Diversity stats</a><a class="headerlink" href="#module-gerrychain.meta.diversity" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="gerrychain.meta.diversity.DiversityStats">
+<em class="property">class </em><code class="sig-prename descclassname">gerrychain.meta.diversity.</code><code class="sig-name descname">DiversityStats</code><span class="sig-paren">(</span><em class="sig-param">unique_plans: int</em>, <em class="sig-param">unique_districts: int</em>, <em class="sig-param">steps_taken: int</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gerrychain/meta/diversity.html#DiversityStats"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gerrychain.meta.diversity.DiversityStats" title="Permalink to this definition">¶</a></dt>
+<dd><p>Lightweight stats object that reports the diversity of a given chain.</p>
+<p>Example usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">DiversityStats</span><span class="p">(</span><span class="n">unique_plans</span><span class="o">=</span><span class="mi">44162</span><span class="p">,</span> <span class="n">unique_districts</span><span class="o">=</span><span class="mi">82992</span><span class="p">,</span> <span class="n">steps_taken</span><span class="o">=</span><span class="mi">100000</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="gerrychain.meta.diversity.collect_diversity_stats">
+<code class="sig-prename descclassname">gerrychain.meta.diversity.</code><code class="sig-name descname">collect_diversity_stats</code><span class="sig-paren">(</span><em class="sig-param">chain: Iterable[gerrychain.partition.partition.Partition]</em><span class="sig-paren">)</span> &#x2192; Iterable[Tuple[gerrychain.partition.partition.Partition, gerrychain.meta.diversity.DiversityStats]]<a class="reference internal" href="_modules/gerrychain/meta/diversity.html#collect_diversity_stats"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gerrychain.meta.diversity.collect_diversity_stats" title="Permalink to this definition">¶</a></dt>
+<dd><p>Report the diversity of the chain being run, live, as a drop-in wrapper.
+Requires the cut_edges updater on each <cite>Partition</cite> object. Plans/districts
+are considered distinct if they are not isomorphic. That is, relabled plans
+and districts are considered non-unique and counted as duplicate.</p>
+<p>Example usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">partition</span><span class="p">,</span> <span class="n">stats</span> <span class="ow">in</span> <span class="n">collect_diversity_stats</span><span class="p">(</span>
+    <span class="n">Replay</span><span class="p">(</span>
+        <span class="n">graph</span><span class="p">,</span>
+        <span class="s2">&quot;sample-run.chain&quot;</span>
+        <span class="p">)</span>
+<span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">stats</span><span class="p">)</span>
+    <span class="c1"># normal chain stuff here</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>chain</strong> – A chain object to collect stats on.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>An iterable of <cite>(partition, DiversityStat)</cite>.</p>
+</dd>
+</dl>
 </dd></dl>
 
 </div>

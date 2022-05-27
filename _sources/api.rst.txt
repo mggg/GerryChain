@@ -92,3 +92,10 @@ Metrics
 
 .. automodule:: gerrychain.metrics
     :members:
+
+
+Diversity stats
+---------------
+
+.. automodule:: gerrychain.meta.diversity
+    :members:
