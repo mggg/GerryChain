@@ -187,7 +187,7 @@ def bipartition_tree_retworkx(
 ):
     pops = graph.pygraph_pop_lookup(pop_col)
 
-    balanced_node_choices = retworkx.bipartition_graph(
+    balanced_node_choices = retworkx.bipartition_graph_mst(
         graph.pygraph,
         lambda x: random.random(),
         pops,
