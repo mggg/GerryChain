@@ -40,7 +40,7 @@ def uniform_spanning_tree(graph, choice=random.choice):
         :param graph: Networkx Graph
         :param choice: :func:`random.choice`
     """
-    root = choice(graph.node_indices)
+    root = choice(list(graph.node_indices))
     tree_nodes = set([root])
     next_node = {root: None}
 
@@ -66,12 +66,12 @@ def uniform_spanning_tree(graph, choice=random.choice):
 class PopulatedGraph:
     def __init__(self, graph, populations, ideal_pop, epsilon):
         self.graph = graph
-        self.subsets = {node: {node} for node in graph.node_indices}
+        self.subsets = {node: {node} for node in graph.nodes}
         self.population = populations.copy()
         self.tot_pop = sum(self.population.values())
         self.ideal_pop = ideal_pop
         self.epsilon = epsilon
-        self._degrees = {node: graph.degree(node) for node in graph.node_indices}
+        self._degrees = {node: graph.degree(node) for node in graph.nodes}
 
     def __iter__(self):
         return iter(self.graph)
