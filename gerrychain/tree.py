@@ -47,7 +47,7 @@ def uniform_spanning_tree(graph, choice=random.choice):
     for node in graph.node_indices:
         u = node
         while u not in tree_nodes:
-            next_node[u] = choice(graph.neighbors(u))
+            next_node[u] = choice(list(graph.neighbors(u)))
             u = next_node[u]
 
         u = node
