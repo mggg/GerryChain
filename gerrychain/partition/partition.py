@@ -61,7 +61,7 @@ class Partition:
         elif isinstance(graph, FrozenGraph):
             self.graph = graph
         else:
-            raise TypeError("Unsupported Graph object")
+            raise TypeError(f"Unsupported Graph object with type {type(graph)}")
 
         self.assignment = get_assignment(assignment, graph)
 
