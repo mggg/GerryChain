@@ -15,6 +15,7 @@ from gerrychain.tree import (
     recursive_tree_part,
     recursive_seed_part,
     PopulatedGraph,
+    uniform_spanning_tree
 )
 from gerrychain.updaters import Tally, cut_edges
 
@@ -88,6 +89,11 @@ def test_recursive_seed_part_returns_within_epsilon_of_target_pop(twelve_by_twel
 
 def test_random_spanning_tree_returns_tree_with_pop_attribute(graph_with_pop):
     tree = random_spanning_tree(graph_with_pop)
+    assert networkx.is_tree(tree)
+
+
+def test_uniform_spanning_tree_returns_tree_with_pop_attribute(graph_with_pop):
+    tree = uniform_spanning_tree(graph_with_pop)
     assert networkx.is_tree(tree)
 
 

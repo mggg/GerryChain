@@ -19,8 +19,8 @@ def partition(graph):
     "proposal",
     [
         proposals.propose_any_node_flip,
-        proposals.propose_chunk_flip,
         proposals.propose_flip_every_district,
+        proposals.propose_chunk_flip,
         proposals.propose_random_flip,
         proposals.slow_reversible_propose,
         proposals.slow_reversible_propose_bi,

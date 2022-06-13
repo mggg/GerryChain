@@ -24,6 +24,12 @@ def test_Partition_misnamed_vertices_raises_keyerror():
         Partition(graph, assignment, {"cut_edges": cut_edges})
 
 
+def test_Partition_graph_raises_typeerror():
+    assignment = {"0": 1, "1": 1, "2": 2}
+    with pytest.raises(TypeError):
+        Partition("not a graph", assignment, {"cut_edges": cut_edges})
+
+
 def test_Partition_unlabelled_vertices_raises_keyerror():
     graph = Graph.from_networkx(networkx.complete_graph(3))
     assignment = {0: 1, 2: 2}
