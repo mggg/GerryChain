@@ -122,14 +122,14 @@
 <span class="sd">        :param graph: Networkx Graph</span>
 <span class="sd">        :param choice: :func:`random.choice`</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">root</span> <span class="o">=</span> <span class="n">choice</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">node_indices</span><span class="p">)</span>
+    <span class="n">root</span> <span class="o">=</span> <span class="n">choice</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">node_indices</span><span class="p">))</span>
     <span class="n">tree_nodes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">root</span><span class="p">])</span>
     <span class="n">next_node</span> <span class="o">=</span> <span class="p">{</span><span class="n">root</span><span class="p">:</span> <span class="kc">None</span><span class="p">}</span>
 
     <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">node_indices</span><span class="p">:</span>
         <span class="n">u</span> <span class="o">=</span> <span class="n">node</span>
         <span class="k">while</span> <span class="n">u</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">tree_nodes</span><span class="p">:</span>
-            <span class="n">next_node</span><span class="p">[</span><span class="n">u</span><span class="p">]</span> <span class="o">=</span> <span class="n">choice</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">u</span><span class="p">))</span>
+            <span class="n">next_node</span><span class="p">[</span><span class="n">u</span><span class="p">]</span> <span class="o">=</span> <span class="n">choice</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">u</span><span class="p">)))</span>
             <span class="n">u</span> <span class="o">=</span> <span class="n">next_node</span><span class="p">[</span><span class="n">u</span><span class="p">]</span>
 
         <span class="n">u</span> <span class="o">=</span> <span class="n">node</span>
@@ -148,12 +148,12 @@
 <span class="k">class</span> <span class="nc">PopulatedGraph</span><span class="p">:</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="n">populations</span><span class="p">,</span> <span class="n">ideal_pop</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">graph</span> <span class="o">=</span> <span class="n">graph</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">subsets</span> <span class="o">=</span> <span class="p">{</span><span class="n">node</span><span class="p">:</span> <span class="p">{</span><span class="n">node</span><span class="p">}</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">node_indices</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">subsets</span> <span class="o">=</span> <span class="p">{</span><span class="n">node</span><span class="p">:</span> <span class="p">{</span><span class="n">node</span><span class="p">}</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">population</span> <span class="o">=</span> <span class="n">populations</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tot_pop</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ideal_pop</span> <span class="o">=</span> <span class="n">ideal_pop</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span> <span class="o">=</span> <span class="n">epsilon</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_degrees</span> <span class="o">=</span> <span class="p">{</span><span class="n">node</span><span class="p">:</span> <span class="n">graph</span><span class="o">.</span><span class="n">degree</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">node_indices</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_degrees</span> <span class="o">=</span> <span class="p">{</span><span class="n">node</span><span class="p">:</span> <span class="n">graph</span><span class="o">.</span><span class="n">degree</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">}</span>
 
     <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="p">)</span>
