@@ -53,7 +53,7 @@ def partition(graph_with_counties):
         assignment={0: 1, 1: 1, 2: 1, 3: 2, 4: 2, 5: 2, 6: 3, 7: 3, 8: 3},
         updaters={"cut_edges":cut_edges, "splits": LocalitySplits("splittings", "county", "pop", ['num_parts', 'num_pieces',
             'naked_boundary', 'shannon_entropy', 'power_entropy',
-            'symmetric_entropy', 'num_split_localities'])},
+            'symmetric_entropy', 'num_split_localities', 'split_pairs'])},
     )
     return partition
 
@@ -65,7 +65,7 @@ def split_partition(graph_with_counties):
         assignment={0: 1, 1: 2, 2: 3, 3: 1, 4: 2, 5: 3, 6: 1, 7: 2, 8: 3},
         updaters={"cut_edges":cut_edges, "splits": LocalitySplits("splittings", "county", "pop", ['num_parts', 'num_pieces',
             'naked_boundary', 'shannon_entropy', 'power_entropy',
-            'symmetric_entropy', 'num_split_localities'])},
+            'symmetric_entropy', 'num_split_localities', 'split_pairs'])},
     )
     return partition
 
@@ -88,6 +88,7 @@ class TestSplittingScores:
         assert result["power_entropy"] == 0
         assert result["symmetric_entropy"] == 18
         assert result["num_split_localities"] == 0
+        assert result["split_pairs"] == 0
 
     def test_is_split(self, split_partition):
         part = split_partition.updaters["splits"](split_partition)
@@ -100,6 +101,7 @@ class TestSplittingScores:
         assert .6 > result["power_entropy"] > .5
         assert 32 > result["symmetric_entropy"] > 31 
         assert result["num_split_localities"] == 3
+        assert 1.01 > result["split_pairs"] > 0.99
 
 
 
