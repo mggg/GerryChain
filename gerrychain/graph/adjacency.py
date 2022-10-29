@@ -16,8 +16,7 @@ def str_tree(geometries):
     Use this for all spatial operations!
     """
     from shapely.strtree import STRtree
-    for i in geometries.index:
-        geometries[i].id = i
+
     try:
         tree = STRtree(geometries)
     except AttributeError:
@@ -26,17 +25,18 @@ def str_tree(geometries):
 
 
 def neighboring_geometries(geometries, tree=None):
-    """Generator yielding tuples of the form (id, (ids of neighbors)).
-    """
+    """Generator yielding tuples of the form (id, (ids of neighbors))."""
     if tree is None:
         tree = str_tree(geometries)
 
-    for geometry in geometries:
+    for geometry_id, geometry in geometries.items():
         possible = tree.query(geometry)
         actual = tuple(
-            p.id for p in possible if (not p.is_empty) and p.id != geometry.id
+            geometries.index[p]
+            for p in possible
+            if (not geometries.iloc[p].is_empty) and geometries.index[p] != geometry_id
         )
-        yield (geometry.id, actual)
+        yield (geometry_id, actual)
 
 
 def intersections_with_neighbors(geometries):
