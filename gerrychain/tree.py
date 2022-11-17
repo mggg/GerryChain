@@ -242,17 +242,22 @@ def _bipartition_tree_random_all(
         spanning_tree = spanning_tree_fn(graph)
 
     repeat = True
+    restarts = 0
     attempts = 0
     while max_attempts is None or attempts < max_attempts:
-        spanning_tree = spanning_tree_fn(graph)
+        if restarts == node_repeats:
+            spanning_tree = spanning_tree_fn(graph)
+            restarts = 0
         h = PopulatedGraph(spanning_tree, populations, pop_target, epsilon)
         possible_cuts = balance_edge_fn(h, choice=choice)
 
         repeat = repeat_until_valid
-        attempts += 1
 
         if not (repeat and len(possible_cuts) == 0):
             return possible_cuts
+
+        restarts += 1
+        attempts += 1
 
     raise RuntimeError(f"Could not find a possible cut after {max_attempts} attempts.")
 
