@@ -11,6 +11,7 @@ import pandas as pd
 from .adjacency import neighbors
 from .geo import GeometryError, invalid_geometries, reprojected
 
+
 def json_serialize(input_object):
     """Serialize json so we can write to file
     """
