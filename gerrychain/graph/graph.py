@@ -1,6 +1,6 @@
+import functools
 import json
 from typing import Any
-import functools
 import warnings
 
 import networkx
@@ -311,7 +311,7 @@ def check_dataframe(df: pd.DataFrame) -> None:
             warnings.warn("NA values found in column {}!".format(column))
 
 
-def remove_geometries(data: Union[networkx.graph.Graph, Graph]) -> None:
+def remove_geometries(data: networkx.Graph) -> None:
     """Remove geometry attributes from NetworkX adjacency data object,
     because they are not serializable. Mutates the ``data`` object.
 
@@ -331,7 +331,7 @@ def remove_geometries(data: Union[networkx.graph.Graph, Graph]) -> None:
             del node[key]
 
 
-def convert_geometries_to_geojson(data: Union[networkx.graph.Graph, Graph]) -> None:
+def convert_geometries_to_geojson(data: networkx.graph.Graph) -> None:
     """Convert geometry attributes in a NetworkX adjacency data object
     to GeoJSON, so that they can be serialized. Mutates the ``data`` object.
 

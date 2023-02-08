@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from .constraints import Validator
 from typing import Union, Iterable, Callable, Optional
 
