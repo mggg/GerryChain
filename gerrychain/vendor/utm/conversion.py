@@ -7,7 +7,7 @@ try:
 
     use_numpy = True
 except ImportError:
-    import math as mathlib
+    import math as mathlib  # type: ignore
 
     use_numpy = False
 

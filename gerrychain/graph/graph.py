@@ -10,6 +10,7 @@ import pandas as pd
 
 from .adjacency import neighbors
 from .geo import GeometryError, invalid_geometries, reprojected
+from typing import List, Iterable, Optional, Set
 
 
 def json_serialize(input_object):
@@ -31,7 +32,7 @@ class Graph(networkx.Graph):
         return "<Graph [{} nodes, {} edges]>".format(len(self.nodes), len(self.edges))
 
     @classmethod
-    def from_networkx(cls, graph: networkx.Graph):
+    def from_networkx(cls, graph: networkx.Graph) -> 'Graph':
         g = cls(graph)
         return g
 
@@ -48,7 +49,7 @@ class Graph(networkx.Graph):
         graph.issue_warnings()
         return graph
 
-    def to_json(self, json_file, *, include_geometries_as_geojson=False):
+    def to_json(self, json_file: str, *, include_geometries_as_geojson=False) -> None:
         """Save a graph to a JSON file in the NetworkX json_graph format.
 
         :param json_file: Path to target JSON file.
@@ -71,12 +72,12 @@ class Graph(networkx.Graph):
     @classmethod
     def from_file(
         cls,
-        filename,
-        adjacency="rook",
-        cols_to_add=None,
-        reproject=False,
-        ignore_errors=False,
-    ):
+        filename: str,
+        adjacency: str = "rook",
+        cols_to_add: Optional[List[str]] = None,
+        reproject: bool = False,
+        ignore_errors: bool = False,
+    ) -> "Graph":
         """Create a :class:`Graph` from a shapefile (or GeoPackage, or GeoJSON, or
         any other library that :mod:`geopandas` can read. See :meth:`from_geodataframe`
         for more details.
@@ -100,12 +101,12 @@ class Graph(networkx.Graph):
     @classmethod
     def from_geodataframe(
         cls,
-        dataframe,
-        adjacency="rook",
-        cols_to_add=None,
-        reproject=False,
-        ignore_errors=False,
-    ):
+        dataframe: pd.DataFrame,
+        adjacency: str = "rook",
+        cols_to_add: Optional[List[str]] = None,
+        reproject: bool = False,
+        ignore_errors: bool = False
+    ) -> "Graph":
         """Creates the adjacency :class:`Graph` of geometries described by `dataframe`.
         The areas of the polygons are included as node attributes (with key `area`).
         The shared perimeter of neighboring polygons are included as edge attributes
@@ -198,7 +199,8 @@ class Graph(networkx.Graph):
     def edge_indices(self):
         return set(self.edges)
 
-    def add_data(self, df, columns=None):
+    def add_data(self, df: pd.DataFrame,
+                 columns: Optional[Iterable[str]] = None) -> None:
         """Add columns of a DataFrame to a graph as node attributes using
         by matching the DataFrame's index to node ids.
 
@@ -215,11 +217,12 @@ class Graph(networkx.Graph):
         networkx.set_node_attributes(self, column_dictionaries)
 
         if hasattr(self, "data"):
-            self.data[columns] = df[columns]
+            self.data[columns] = df[columns]  # type: ignore
         else:
             self.data = df[columns]
 
-    def join(self, dataframe, columns=None, left_index=None, right_index=None):
+    def join(self, dataframe: pd.DataFrame, columns: Optional[List[str]] = None,
+             left_index: Optional[str] = None, right_index: Optional[str] = None) -> None:
         """Add data from a dataframe to the graph, matching nodes to rows when
         the node's `left_index` attribute equals the row's `right_index` value.
 
@@ -260,11 +263,11 @@ class Graph(networkx.Graph):
         networkx.set_node_attributes(self, node_attributes)
 
     @property
-    def islands(self):
+    def islands(self) -> Set:
         """The set of degree-0 nodes."""
         return set(node for node in self if self.degree[node] == 0)
 
-    def warn_for_islands(self):
+    def warn_for_islands(self) -> None:
         """Issue a warning if the graph has any islands (degree-0 nodes)."""
         islands = self.islands
         if len(self.islands) > 0:
@@ -272,16 +275,16 @@ class Graph(networkx.Graph):
                 "Found islands (degree-0 nodes). Indices of islands: {}".format(islands)
             )
 
-    def issue_warnings(self):
+    def issue_warnings(self) -> None:
         """Issue warnings if the graph has any red flags (right now, only islands)."""
         self.warn_for_islands()
 
 
-def add_boundary_perimeters(graph, geometries):
+def add_boundary_perimeters(graph: Graph, geometries: pd.Series) -> None:
     """Add shared perimeter between nodes and the total geometry boundary.
 
     :param graph: NetworkX graph
-    :param df: Geodataframe containing geometry information.
+    :param geometries: :class:`geopandas.GeoSeries` containing geometry information.
     :return: The updated graph.
     """
     from shapely.ops import unary_union
@@ -302,13 +305,13 @@ def add_boundary_perimeters(graph, geometries):
             graph.nodes[node]["boundary_perim"] = boundary_perimeter
 
 
-def check_dataframe(df):
+def check_dataframe(df: pd.DataFrame) -> None:
     for column in df.columns:
         if sum(df[column].isna()) > 0:
             warnings.warn("NA values found in column {}!".format(column))
 
 
-def remove_geometries(data):
+def remove_geometries(data: networkx.Graph) -> None:
     """Remove geometry attributes from NetworkX adjacency data object,
     because they are not serializable. Mutates the ``data`` object.
 
@@ -328,7 +331,7 @@ def remove_geometries(data):
             del node[key]
 
 
-def convert_geometries_to_geojson(data):
+def convert_geometries_to_geojson(data: networkx.Graph) -> None:
     """Convert geometry attributes in a NetworkX adjacency data object
     to GeoJSON, so that they can be serialized. Mutates the ``data`` object.
 
