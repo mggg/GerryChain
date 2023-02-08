@@ -48,7 +48,7 @@ class MarkovChain:
         if not is_valid(initial_state):
             failed = [
                 constraint
-                for constraint in is_valid.constraints
+                for constraint in is_valid.constraints  # type: ignore
                 if not constraint(initial_state)
             ]
             message = (
@@ -69,7 +69,7 @@ class MarkovChain:
         self.state = self.initial_state
         return self
 
-    def __next__(self) -> Partition:
+    def __next__(self) -> Optional[Partition]:
         if self.counter == 0:
             self.counter += 1
             return self.state
@@ -77,7 +77,8 @@ class MarkovChain:
         while self.counter < self.total_steps:
             proposed_next_state = self.proposal(self.state)
             # Erase the parent of the parent, to avoid memory leak
-            self.state.parent = None
+            if self.state is not None: 
+                self.state.parent = None
 
             if self.is_valid(proposed_next_state):
                 if self.accept(proposed_next_state):

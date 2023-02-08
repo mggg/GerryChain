@@ -217,7 +217,7 @@ class Graph(networkx.Graph):
         networkx.set_node_attributes(self, column_dictionaries)
 
         if hasattr(self, "data"):
-            self.data[columns] = df[columns]
+            self.data[columns] = df[columns]  # type: ignore
         else:
             self.data = df[columns]
 

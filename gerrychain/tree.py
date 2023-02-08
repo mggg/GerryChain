@@ -4,7 +4,7 @@ from networkx.algorithms import tree
 from functools import partial
 from .random import random
 from collections import deque, namedtuple
-from typing import Any, Callable, Dict, List, Optional, Set, Union, Iterable
+from typing import Any, Callable, Dict, List, Optional, Set, Union, Iterable, Sequence
 
 
 def predecessors(h: nx.Graph, root: Any) -> Dict:
@@ -122,12 +122,14 @@ def find_balanced_edge_cuts_contraction(
 
 
 def find_balanced_edge_cuts_memoization(
-        h: PopulatedGraph, choice: Callable = random.choice) -> List[Any]:
+    h: PopulatedGraph,
+    choice: Callable = random.choice
+) -> List[Any]:
     root = choice([x for x in h if h.degree(x) > 1])
     pred = predecessors(h.graph, root)
     succ = successors(h.graph, root)
     total_pop = h.tot_pop
-    subtree_pops = {}
+    subtree_pops: Dict[Any, Union[int, float]] = {}
     stack = deque(n for n in succ[root])
     while stack:
         next_node = stack.pop()
@@ -331,7 +333,7 @@ def bipartition_tree_random(
 
 def recursive_tree_part(
     graph: nx.Graph,
-    parts: Iterable,
+    parts: Sequence,
     pop_target: Union[float, int],
     pop_col: str,
     epsilon: float,
@@ -362,7 +364,7 @@ def recursive_tree_part(
     # For instance, if district n's population exceeds the target by 2%
     # with a +/-2% epsilon, then district n+1's population should be between
     # 98% of the target population and the target population.
-    debt = 0
+    debt: Union[int, float] = 0
 
     for part in parts[:-1]:
         min_pop = max(pop_target * (1 - epsilon), pop_target * (1 - epsilon) - debt)
@@ -479,7 +481,7 @@ def get_seed_chunks(
         else:
             break
 
-    chunks = {}
+    chunks: Dict[Any, List] = {}
     for key in flips.keys():
         if flips[key] not in chunks.keys():
             chunks[flips[key]] = []
@@ -627,7 +629,7 @@ def recursive_seed_part_inner(
 
 def recursive_seed_part(
     graph: nx.Graph,
-    parts: Iterable,
+    parts: Sequence,
     pop_target: Union[float, int],
     pop_col: str,
     epsilon: float,

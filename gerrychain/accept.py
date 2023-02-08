@@ -14,7 +14,7 @@ def cut_edge_accept(partition: Partition) -> bool:
     :return: True if accepted, False to remain in place
 
     """
-    bound = 1
+    bound = 1.0
 
     if partition.parent is not None:
         bound = min(1, len(partition.parent["cut_edges"]) / len(partition["cut_edges"]))

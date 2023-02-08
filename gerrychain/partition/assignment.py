@@ -1,5 +1,6 @@
 from collections import defaultdict
 from collections.abc import Mapping
+from typing import Dict
 
 import pandas
 
@@ -133,7 +134,7 @@ def get_assignment(assignment, graph=None):
 def level_sets(mapping: dict, container=set):
     """Inverts a dictionary. ``{key: value}`` becomes
     ``{value: <container of keys that map to value>}``."""
-    sets = defaultdict(container)
+    sets: Dict = defaultdict(container)
     for source, target in mapping.items():
         sets[target].add(source)
     return sets

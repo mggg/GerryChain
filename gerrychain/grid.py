@@ -71,7 +71,7 @@ class Grid(Partition):
             if not assignment:
                 thresholds = tuple(math.floor(n / 2) for n in self.dimensions)
                 assignment = {
-                    node: color_quadrants(node, thresholds) for node in graph.nodes
+                    node: color_quadrants(node, thresholds) for node in graph.nodes  # type: ignore
                 }
 
             if not updaters:
