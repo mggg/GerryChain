@@ -222,7 +222,7 @@ class Graph(networkx.Graph):
             self.data = df[columns]
 
     def join(self, dataframe: pd.DataFrame, columns: Optional[List[str]] = None,
-             left_index: None = None, right_index: Optional[str] = None) -> None:
+             left_index: Optional[str] = None, right_index: Optional[str] = None) -> None:
         """Add data from a dataframe to the graph, matching nodes to rows when
         the node's `left_index` attribute equals the row's `right_index` value.
 
@@ -331,7 +331,7 @@ def remove_geometries(data: networkx.Graph) -> None:
             del node[key]
 
 
-def convert_geometries_to_geojson(data: networkx.graph.Graph) -> None:
+def convert_geometries_to_geojson(data: networkx.Graph) -> None:
     """Convert geometry attributes in a NetworkX adjacency data object
     to GeoJSON, so that they can be serialized. Mutates the ``data`` object.
 
