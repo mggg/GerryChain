@@ -336,7 +336,7 @@ def recursive_tree_part(
     epsilon: float,
     node_repeats: int = 1,
     method: Callable = partial(bipartition_tree, max_attempts=10000)
-) -> Union[Dict[Tuple[int, int], int], Dict[int, int]]:
+) -> Dict:
     """Uses :func:`~gerrychain.tree.bipartition_tree` recursively to partition a tree into
     ``len(parts)`` parts of population ``pop_target`` (within ``epsilon``). Can be used to
     generate initial seed plans or to implement ReCom-like "merge walk" proposals.
