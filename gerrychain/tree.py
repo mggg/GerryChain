@@ -328,7 +328,8 @@ def bipartition_tree_random(
         return choice(possible_cuts).subset
 
 
-def recursive_tree_part(graph: nx.Graph,
+def recursive_tree_part(
+    graph: nx.Graph,
     parts: Iterable,
     pop_target: Union[float, int],
     pop_col: str,
@@ -398,7 +399,7 @@ def get_seed_chunks(
     pop_col: str,
     epsilon: float,
     node_repeats: int = 1,
-    method: Callable = partial(bipartition_tree, max_attempts=10000),
+    method: Callable = partial(bipartition_tree_random, max_attempts=10000),
 ) -> List[List[int]]:
     """
     Helper function for recursive_seed_part. Partitions the graph into ``num_chunks`` chunks,
