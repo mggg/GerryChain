@@ -6,9 +6,17 @@ import warnings
 import networkx
 from networkx.classes.function import frozen
 from networkx.readwrite import json_graph
+import pandas as pd
 
 from .adjacency import neighbors
 from .geo import GeometryError, invalid_geometries, reprojected
+
+
+def json_serialize(input_object):
+    """Serialize json so we can write to file
+    """
+    if pd.api.types.is_integer_dtype(input_object):  # handle int64
+        return int(input_object)
 
 
 class Graph(networkx.Graph):
@@ -18,6 +26,7 @@ class Graph(networkx.Graph):
     to save and load graphs as JSON files.
 
     """
+
     def __repr__(self):
         return "<Graph [{} nodes, {} edges]>".format(len(self.nodes), len(self.edges))
 
@@ -57,7 +66,7 @@ class Graph(networkx.Graph):
             remove_geometries(data)
 
         with open(json_file, "w") as f:
-            json.dump(data, f)
+            json.dump(data, f, default=json_serialize)
 
     @classmethod
     def from_file(
@@ -76,12 +85,14 @@ class Graph(networkx.Graph):
             add to the graph as node attributes. By default, all columns are added.
         """
         import geopandas as gp
+
         df = gp.read_file(filename)
         graph = cls.from_geodataframe(
-            df, adjacency=adjacency,
+            df,
+            adjacency=adjacency,
             cols_to_add=cols_to_add,
             reproject=reproject,
-            ignore_errors=ignore_errors
+            ignore_errors=ignore_errors,
         )
         graph.graph["crs"] = df.crs.to_json()
         return graph
@@ -93,7 +104,7 @@ class Graph(networkx.Graph):
         adjacency="rook",
         cols_to_add=None,
         reproject=False,
-        ignore_errors=False
+        ignore_errors=False,
     ):
         """Creates the adjacency :class:`Graph` of geometries described by `dataframe`.
         The areas of the polygons are included as node attributes (with key `area`).
@@ -275,6 +286,7 @@ def add_boundary_perimeters(graph, geometries):
     """
     from shapely.ops import unary_union
     from shapely.prepared import prep
+
     prepared_boundary = prep(unary_union(geometries).boundary)
 
     boundary_nodes = geometries.boundary.apply(prepared_boundary.intersects)
@@ -337,15 +349,13 @@ def convert_geometries_to_geojson(data):
 
 
 class FrozenGraph:
-    """ Represents an immutable graph to be partitioned. It is based off :class:`Graph`.
+    """Represents an immutable graph to be partitioned. It is based off :class:`Graph`.
 
     This speeds up chain runs and prevents having to deal with cache invalidation issues.
     This class behaves slightly differently than :class:`Graph` or :class:`networkx.Graph`.
     """
-    __slots__ = [
-        "graph",
-        "size"
-    ]
+
+    __slots__ = ["graph", "size"]
 
     def __init__(self, graph: Graph):
         self.graph = networkx.classes.function.freeze(graph)
