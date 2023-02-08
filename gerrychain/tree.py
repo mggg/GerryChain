@@ -310,6 +310,7 @@ def bipartition_tree_random(
         tree is not provided
     :param balance_edge_fn: The algorithm used to find balanced cut edges
     :param choice: :func:`random.choice`. Can be substituted for testing.
+    :param max_atempts: The max number of attempts that should be made to bipartition.
     """
     possible_cuts = _bipartition_tree_random_all(
         graph=graph,
