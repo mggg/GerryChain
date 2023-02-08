@@ -64,7 +64,7 @@ class MarkovChain:
         self.initial_state = initial_state
         self.state = initial_state
 
-    def __iter__(self) -> MarkovChain:
+    def __iter__(self) -> 'MarkovChain':
         self.counter = 0
         self.state = self.initial_state
         return self

@@ -10,7 +10,7 @@ import pandas as pd
 
 from .adjacency import neighbors
 from .geo import GeometryError, invalid_geometries, reprojected
-from typing import List, Iterable, Optional, Set, Union
+from typing import List, Iterable, Optional, Set
 
 
 def json_serialize(input_object):
