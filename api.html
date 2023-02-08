@@ -146,7 +146,7 @@ SciPy sparse matrix, or a PyGraphviz graph.</p>
 </div>
 <dl class="method">
 <dt id="gerrychain.graph.graph.Graph.add_data">
-<code class="sig-name descname">add_data</code><span class="sig-paren">(</span><em class="sig-param">df</em>, <em class="sig-param">columns=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gerrychain/graph/graph.html#Graph.add_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gerrychain.graph.graph.Graph.add_data" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">add_data</code><span class="sig-paren">(</span><em class="sig-param">df: &lt;Mock name='mock.DataFrame' id='140561625246640'&gt;</em>, <em class="sig-param">columns: Optional[Iterable[str]] = None</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/gerrychain/graph/graph.html#Graph.add_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gerrychain.graph.graph.Graph.add_data" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add columns of a DataFrame to a graph as node attributes using
 by matching the DataFrame’s index to node ids.</p>
 <dl class="field-list simple">
@@ -161,7 +161,7 @@ by matching the DataFrame’s index to node ids.</p>
 
 <dl class="method">
 <dt id="gerrychain.graph.graph.Graph.from_file">
-<em class="property">classmethod </em><code class="sig-name descname">from_file</code><span class="sig-paren">(</span><em class="sig-param">filename</em>, <em class="sig-param">adjacency='rook'</em>, <em class="sig-param">cols_to_add=None</em>, <em class="sig-param">reproject=False</em>, <em class="sig-param">ignore_errors=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gerrychain/graph/graph.html#Graph.from_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gerrychain.graph.graph.Graph.from_file" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><code class="sig-name descname">from_file</code><span class="sig-paren">(</span><em class="sig-param">filename: str</em>, <em class="sig-param">adjacency: str = 'rook'</em>, <em class="sig-param">cols_to_add: Optional[List[str]] = None</em>, <em class="sig-param">reproject: bool = False</em>, <em class="sig-param">ignore_errors: bool = False</em><span class="sig-paren">)</span> &#x2192; gerrychain.graph.graph.Graph<a class="reference internal" href="_modules/gerrychain/graph/graph.html#Graph.from_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gerrychain.graph.graph.Graph.from_file" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a <a class="reference internal" href="#gerrychain.graph.graph.Graph" title="gerrychain.graph.graph.Graph"><code class="xref py py-class docutils literal notranslate"><span class="pre">Graph</span></code></a> from a shapefile (or GeoPackage, or GeoJSON, or
 any other library that <code class="xref py py-mod docutils literal notranslate"><span class="pre">geopandas</span></code> can read. See <a class="reference internal" href="#gerrychain.graph.graph.Graph.from_geodataframe" title="gerrychain.graph.graph.Graph.from_geodataframe"><code class="xref py py-meth docutils literal notranslate"><span class="pre">from_geodataframe()</span></code></a>
 for more details.</p>
@@ -175,7 +175,7 @@ add to the graph as node attributes. By default, all columns are added.</p>
 
 <dl class="method">
 <dt id="gerrychain.graph.graph.Graph.from_geodataframe">
-<em class="property">classmethod </em><code class="sig-name descname">from_geodataframe</code><span class="sig-paren">(</span><em class="sig-param">dataframe</em>, <em class="sig-param">adjacency='rook'</em>, <em class="sig-param">cols_to_add=None</em>, <em class="sig-param">reproject=False</em>, <em class="sig-param">ignore_errors=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gerrychain/graph/graph.html#Graph.from_geodataframe"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gerrychain.graph.graph.Graph.from_geodataframe" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><code class="sig-name descname">from_geodataframe</code><span class="sig-paren">(</span><em class="sig-param">dataframe: &lt;Mock name='mock.DataFrame' id='140561625246640'&gt;</em>, <em class="sig-param">adjacency: str = 'rook'</em>, <em class="sig-param">cols_to_add: Optional[List[str]] = None</em>, <em class="sig-param">reproject: bool = False</em>, <em class="sig-param">ignore_errors: bool = False</em><span class="sig-paren">)</span> &#x2192; gerrychain.graph.graph.Graph<a class="reference internal" href="_modules/gerrychain/graph/graph.html#Graph.from_geodataframe"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gerrychain.graph.graph.Graph.from_geodataframe" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates the adjacency <a class="reference internal" href="#gerrychain.graph.graph.Graph" title="gerrychain.graph.graph.Graph"><code class="xref py py-class docutils literal notranslate"><span class="pre">Graph</span></code></a> of geometries described by <cite>dataframe</cite>.
 The areas of the polygons are included as node attributes (with key <cite>area</cite>).
 The shared perimeter of neighboring polygons are included as edge attributes
@@ -229,13 +229,13 @@ attept to create the graph anyway. Default is <code class="docutils literal notr
 
 <dl class="method">
 <dt id="gerrychain.graph.graph.Graph.issue_warnings">
-<code class="sig-name descname">issue_warnings</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/gerrychain/graph/graph.html#Graph.issue_warnings"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gerrychain.graph.graph.Graph.issue_warnings" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">issue_warnings</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/gerrychain/graph/graph.html#Graph.issue_warnings"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gerrychain.graph.graph.Graph.issue_warnings" title="Permalink to this definition">¶</a></dt>
 <dd><p>Issue warnings if the graph has any red flags (right now, only islands).</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="gerrychain.graph.graph.Graph.join">
-<code class="sig-name descname">join</code><span class="sig-paren">(</span><em class="sig-param">dataframe</em>, <em class="sig-param">columns=None</em>, <em class="sig-param">left_index=None</em>, <em class="sig-param">right_index=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gerrychain/graph/graph.html#Graph.join"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gerrychain.graph.graph.Graph.join" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">join</code><span class="sig-paren">(</span><em class="sig-param">dataframe: &lt;Mock name='mock.DataFrame' id='140561625246640'&gt;</em>, <em class="sig-param">columns: Optional[List[str]] = None</em>, <em class="sig-param">left_index: Optional[str] = None</em>, <em class="sig-param">right_index: Optional[str] = None</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/gerrychain/graph/graph.html#Graph.join"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gerrychain.graph.graph.Graph.join" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add data from a dataframe to the graph, matching nodes to rows when
 the node’s <cite>left_index</cite> attribute equals the row’s <cite>right_index</cite> value.</p>
 <dl class="field-list simple">
@@ -267,7 +267,7 @@ to nodes. If not provided, the DataFrame’s index is used.</p>
 
 <dl class="method">
 <dt id="gerrychain.graph.graph.Graph.to_json">
-<code class="sig-name descname">to_json</code><span class="sig-paren">(</span><em class="sig-param">json_file</em>, <em class="sig-param">*</em>, <em class="sig-param">include_geometries_as_geojson=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gerrychain/graph/graph.html#Graph.to_json"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gerrychain.graph.graph.Graph.to_json" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">to_json</code><span class="sig-paren">(</span><em class="sig-param">json_file: str</em>, <em class="sig-param">*</em>, <em class="sig-param">include_geometries_as_geojson=False</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/gerrychain/graph/graph.html#Graph.to_json"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gerrychain.graph.graph.Graph.to_json" title="Permalink to this definition">¶</a></dt>
 <dd><p>Save a graph to a JSON file in the NetworkX json_graph format.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -285,7 +285,7 @@ GeoJSON will result in a much larger JSON file.</p></li>
 
 <dl class="method">
 <dt id="gerrychain.graph.graph.Graph.warn_for_islands">
-<code class="sig-name descname">warn_for_islands</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/gerrychain/graph/graph.html#Graph.warn_for_islands"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gerrychain.graph.graph.Graph.warn_for_islands" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">warn_for_islands</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/gerrychain/graph/graph.html#Graph.warn_for_islands"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gerrychain.graph.graph.Graph.warn_for_islands" title="Permalink to this definition">¶</a></dt>
 <dd><p>Issue a warning if the graph has any islands (degree-0 nodes).</p>
 </dd></dl>
 
@@ -419,7 +419,7 @@ which the functions compute.</p></li>
 <h2><a class="toc-backref" href="#id5">Markov chains</a><a class="headerlink" href="#markov-chains" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="gerrychain.MarkovChain">
-<em class="property">class </em><code class="sig-prename descclassname">gerrychain.</code><code class="sig-name descname">MarkovChain</code><span class="sig-paren">(</span><em class="sig-param">proposal</em>, <em class="sig-param">constraints</em>, <em class="sig-param">accept</em>, <em class="sig-param">initial_state</em>, <em class="sig-param">total_steps</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gerrychain/chain.html#MarkovChain"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gerrychain.MarkovChain" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">gerrychain.</code><code class="sig-name descname">MarkovChain</code><span class="sig-paren">(</span><em class="sig-param">proposal: Callable, constraints: Union[Iterable[Callable], gerrychain.constraints.validity.Validator, Iterable[gerrychain.constraints.bounds.Bounds], Callable], accept: Callable, initial_state: Optional[gerrychain.partition.partition.Partition], total_steps: int</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gerrychain/chain.html#MarkovChain"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gerrychain.MarkovChain" title="Permalink to this definition">¶</a></dt>
 <dd><p>MarkovChain is an iterator that allows the user to iterate over the states
 of a Markov chain run.</p>
 <p>Example usage:</p>
@@ -1243,7 +1243,7 @@ class representing a partition of a grid graph. This is especially useful if you
 but do not yet have a clean set of data and geometries to build your graph from.</p>
 <dl class="class">
 <dt id="gerrychain.grid.Grid">
-<em class="property">class </em><code class="sig-prename descclassname">gerrychain.grid.</code><code class="sig-name descname">Grid</code><span class="sig-paren">(</span><em class="sig-param">dimensions=None</em>, <em class="sig-param">with_diagonals=False</em>, <em class="sig-param">assignment=None</em>, <em class="sig-param">updaters=None</em>, <em class="sig-param">parent=None</em>, <em class="sig-param">flips=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gerrychain/grid.html#Grid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gerrychain.grid.Grid" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">gerrychain.grid.</code><code class="sig-name descname">Grid</code><span class="sig-paren">(</span><em class="sig-param">dimensions: Optional[Tuple[int, int]] = None, with_diagonals: bool = False, assignment: Optional[Dict] = None, updaters: Optional[Dict[str, Callable]] = None, parent: Optional[Grid] = None, flips: Optional[Dict[Tuple[int, int], int]] = None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gerrychain/grid.html#Grid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gerrychain.grid.Grid" title="Permalink to this definition">¶</a></dt>
 <dd><p>The <a class="reference internal" href="#gerrychain.grid.Grid" title="gerrychain.grid.Grid"><code class="xref py py-class docutils literal notranslate"><span class="pre">Grid</span></code></a> class represents a grid partitioned into districts.
 It is useful for running little experiments with GerryChain without needing to do
 any data processing or cleaning to get started.</p>
@@ -1313,7 +1313,7 @@ report.</p>
 
 <dl class="function">
 <dt id="gerrychain.tree.bipartition_tree">
-<code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">bipartition_tree</code><span class="sig-paren">(</span><em class="sig-param">graph</em>, <em class="sig-param">pop_col</em>, <em class="sig-param">pop_target</em>, <em class="sig-param">epsilon</em>, <em class="sig-param">node_repeats=1</em>, <em class="sig-param">spanning_tree=None</em>, <em class="sig-param">spanning_tree_fn=&lt;function random_spanning_tree&gt;</em>, <em class="sig-param">balance_edge_fn=&lt;function find_balanced_edge_cuts_memoization&gt;</em>, <em class="sig-param">choice=&lt;bound method Random.choice of &lt;random.Random object&gt;&gt;</em>, <em class="sig-param">max_attempts=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gerrychain/tree.html#bipartition_tree"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gerrychain.tree.bipartition_tree" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">bipartition_tree</code><span class="sig-paren">(</span><em class="sig-param">graph: networkx.classes.graph.Graph, pop_col: str, pop_target: Union[int, float], epsilon: float, node_repeats: int = 1, spanning_tree: Optional[networkx.classes.graph.Graph] = None, spanning_tree_fn: Callable = &lt;function random_spanning_tree&gt;, balance_edge_fn: Callable = &lt;function find_balanced_edge_cuts_memoization&gt;, choice: Callable = &lt;bound method Random.choice of &lt;random.Random object&gt;&gt;, max_attempts: Optional[int] = None</em><span class="sig-paren">)</span> &#x2192; Set<a class="reference internal" href="_modules/gerrychain/tree.html#bipartition_tree"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gerrychain.tree.bipartition_tree" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function finds a balanced 2 partition of a graph by drawing a
 spanning tree and finding an edge to cut that leaves at most an epsilon
 imbalance between the populations of the parts. If a root fails, new roots
@@ -1345,7 +1345,7 @@ tree is not provided</p></li>
 
 <dl class="function">
 <dt id="gerrychain.tree.bipartition_tree_random">
-<code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">bipartition_tree_random</code><span class="sig-paren">(</span><em class="sig-param">graph</em>, <em class="sig-param">pop_col</em>, <em class="sig-param">pop_target</em>, <em class="sig-param">epsilon</em>, <em class="sig-param">node_repeats=1</em>, <em class="sig-param">repeat_until_valid=True</em>, <em class="sig-param">spanning_tree=None</em>, <em class="sig-param">spanning_tree_fn=&lt;function random_spanning_tree&gt;</em>, <em class="sig-param">balance_edge_fn=&lt;function find_balanced_edge_cuts_memoization&gt;</em>, <em class="sig-param">choice=&lt;bound method Random.choice of &lt;random.Random object&gt;&gt;</em>, <em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gerrychain/tree.html#bipartition_tree_random"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gerrychain.tree.bipartition_tree_random" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">bipartition_tree_random</code><span class="sig-paren">(</span><em class="sig-param">graph: networkx.classes.graph.Graph, pop_col: str, pop_target: Union[int, float], epsilon: float, node_repeats: int = 1, repeat_until_valid: bool = True, spanning_tree: Optional[networkx.classes.graph.Graph] = None, spanning_tree_fn: Callable = &lt;function random_spanning_tree&gt;, balance_edge_fn: Callable = &lt;function find_balanced_edge_cuts_memoization&gt;, choice: Callable = &lt;bound method Random.choice of &lt;random.Random object&gt;&gt;, max_attempts: Optional[int] = None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gerrychain/tree.html#bipartition_tree_random"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gerrychain.tree.bipartition_tree_random" title="Permalink to this definition">¶</a></dt>
 <dd><p>This is like <a class="reference internal" href="#gerrychain.tree.bipartition_tree" title="gerrychain.tree.bipartition_tree"><code class="xref py py-func docutils literal notranslate"><span class="pre">bipartition_tree()</span></code></a> except it chooses a random balanced
 cut, rather than the first cut it finds.</p>
 <p>This function finds a balanced 2 partition of a graph by drawing a
@@ -1376,6 +1376,7 @@ algorithm chooses a new root and for testing)</p></li>
 tree is not provided</p></li>
 <li><p><strong>balance_edge_fn</strong> – The algorithm used to find balanced cut edges</p></li>
 <li><p><strong>choice</strong> – <code class="xref py py-func docutils literal notranslate"><span class="pre">random.choice()</span></code>. Can be substituted for testing.</p></li>
+<li><p><strong>max_atempts</strong> – The max number of attempts that should be made to bipartition.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1390,7 +1391,7 @@ tree is not provided</p></li>
 
 <dl class="function">
 <dt id="gerrychain.tree.get_seed_chunks">
-<code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">get_seed_chunks</code><span class="sig-paren">(</span><em class="sig-param">graph</em>, <em class="sig-param">num_chunks</em>, <em class="sig-param">num_dists</em>, <em class="sig-param">pop_target</em>, <em class="sig-param">pop_col</em>, <em class="sig-param">epsilon</em>, <em class="sig-param">node_repeats=1</em>, <em class="sig-param">method=functools.partial(&lt;function bipartition_tree_random&gt;</em>, <em class="sig-param">max_attempts=10000)</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gerrychain/tree.html#get_seed_chunks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gerrychain.tree.get_seed_chunks" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">get_seed_chunks</code><span class="sig-paren">(</span><em class="sig-param">graph: networkx.classes.graph.Graph, num_chunks: int, num_dists: int, pop_target: Union[int, float], pop_col: str, epsilon: float, node_repeats: int = 1, method: Callable = functools.partial(&lt;function bipartition_tree_random&gt;, max_attempts=10000)</em><span class="sig-paren">)</span> &#x2192; List[List[int]]<a class="reference internal" href="_modules/gerrychain/tree.html#get_seed_chunks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gerrychain.tree.get_seed_chunks" title="Permalink to this definition">¶</a></dt>
 <dd><p>Helper function for recursive_seed_part. Partitions the graph into <code class="docutils literal notranslate"><span class="pre">num_chunks</span></code> chunks,
 balanced within new_epsilon &lt;= <code class="docutils literal notranslate"><span class="pre">epsilon</span></code> of a balanced target population.</p>
 <dl class="field-list simple">
@@ -1416,7 +1417,7 @@ of the partition can be</p></li>
 
 <dl class="function">
 <dt id="gerrychain.tree.random_spanning_tree">
-<code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">random_spanning_tree</code><span class="sig-paren">(</span><em class="sig-param">graph</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gerrychain/tree.html#random_spanning_tree"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gerrychain.tree.random_spanning_tree" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">random_spanning_tree</code><span class="sig-paren">(</span><em class="sig-param">graph: networkx.classes.graph.Graph</em><span class="sig-paren">)</span> &#x2192; networkx.classes.graph.Graph<a class="reference internal" href="_modules/gerrychain/tree.html#random_spanning_tree"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gerrychain.tree.random_spanning_tree" title="Permalink to this definition">¶</a></dt>
 <dd><p>Builds a spanning tree chosen by Kruskal’s method using random weights.
 :param graph: FrozenGraph</p>
 <p>Important Note:
@@ -1429,7 +1430,7 @@ something that we do not intend!!</p>
 
 <dl class="function">
 <dt id="gerrychain.tree.recursive_seed_part">
-<code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">recursive_seed_part</code><span class="sig-paren">(</span><em class="sig-param">graph</em>, <em class="sig-param">parts</em>, <em class="sig-param">pop_target</em>, <em class="sig-param">pop_col</em>, <em class="sig-param">epsilon</em>, <em class="sig-param">method=functools.partial(&lt;function bipartition_tree&gt;</em>, <em class="sig-param">max_attempts=10000)</em>, <em class="sig-param">node_repeats=1</em>, <em class="sig-param">n=None</em>, <em class="sig-param">ceil=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gerrychain/tree.html#recursive_seed_part"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gerrychain.tree.recursive_seed_part" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">recursive_seed_part</code><span class="sig-paren">(</span><em class="sig-param">graph: networkx.classes.graph.Graph, parts: Sequence, pop_target: Union[float, int], pop_col: str, epsilon: float, method: Callable = functools.partial(&lt;function bipartition_tree&gt;, max_attempts=10000), node_repeats: int = 1, n: Optional[int] = None, ceil: None = None</em><span class="sig-paren">)</span> &#x2192; Dict<a class="reference internal" href="_modules/gerrychain/tree.html#recursive_seed_part"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gerrychain.tree.recursive_seed_part" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a partition with <code class="docutils literal notranslate"><span class="pre">num_dists</span></code> districts balanced within <code class="docutils literal notranslate"><span class="pre">epsilon</span></code> of
 <code class="docutils literal notranslate"><span class="pre">pop_target</span></code> by recursively splitting graph using recursive_seed_part_inner.</p>
 <dl class="field-list simple">
@@ -1461,7 +1462,7 @@ district if that number is 1.
 
 <dl class="function">
 <dt id="gerrychain.tree.recursive_seed_part_inner">
-<code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">recursive_seed_part_inner</code><span class="sig-paren">(</span><em class="sig-param">graph</em>, <em class="sig-param">num_dists</em>, <em class="sig-param">pop_target</em>, <em class="sig-param">pop_col</em>, <em class="sig-param">epsilon</em>, <em class="sig-param">method=functools.partial(&lt;function bipartition_tree&gt;</em>, <em class="sig-param">max_attempts=10000)</em>, <em class="sig-param">node_repeats=1</em>, <em class="sig-param">n=None</em>, <em class="sig-param">ceil=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gerrychain/tree.html#recursive_seed_part_inner"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gerrychain.tree.recursive_seed_part_inner" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">recursive_seed_part_inner</code><span class="sig-paren">(</span><em class="sig-param">graph: networkx.classes.graph.Graph, num_dists: int, pop_target: Union[float, int], pop_col: str, epsilon: float, method: Callable = functools.partial(&lt;function bipartition_tree&gt;, max_attempts=10000), node_repeats: int = 1, n: Optional[int] = None, ceil: None = None</em><span class="sig-paren">)</span> &#x2192; List[Set]<a class="reference internal" href="_modules/gerrychain/tree.html#recursive_seed_part_inner"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gerrychain.tree.recursive_seed_part_inner" title="Permalink to this definition">¶</a></dt>
 <dd><p>Inner function for recursive_seed_part.
 Returns a partition with <code class="docutils literal notranslate"><span class="pre">num_dists</span></code> districts balanced within <code class="docutils literal notranslate"><span class="pre">epsilon</span></code> of
 <code class="docutils literal notranslate"><span class="pre">pop_target</span></code>.
@@ -1511,7 +1512,7 @@ bites off a district if that number is 1.</p></li>
 
 <dl class="function">
 <dt id="gerrychain.tree.recursive_tree_part">
-<code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">recursive_tree_part</code><span class="sig-paren">(</span><em class="sig-param">graph</em>, <em class="sig-param">parts</em>, <em class="sig-param">pop_target</em>, <em class="sig-param">pop_col</em>, <em class="sig-param">epsilon</em>, <em class="sig-param">node_repeats=1</em>, <em class="sig-param">method=functools.partial(&lt;function bipartition_tree&gt;</em>, <em class="sig-param">max_attempts=10000)</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gerrychain/tree.html#recursive_tree_part"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gerrychain.tree.recursive_tree_part" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">recursive_tree_part</code><span class="sig-paren">(</span><em class="sig-param">graph: networkx.classes.graph.Graph, parts: Sequence, pop_target: Union[float, int], pop_col: str, epsilon: float, node_repeats: int = 1, method: Callable = functools.partial(&lt;function bipartition_tree&gt;, max_attempts=10000)</em><span class="sig-paren">)</span> &#x2192; Dict<a class="reference internal" href="_modules/gerrychain/tree.html#recursive_tree_part"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gerrychain.tree.recursive_tree_part" title="Permalink to this definition">¶</a></dt>
 <dd><p>Uses <a class="reference internal" href="#gerrychain.tree.bipartition_tree" title="gerrychain.tree.bipartition_tree"><code class="xref py py-func docutils literal notranslate"><span class="pre">bipartition_tree()</span></code></a> recursively to partition a tree into
 <code class="docutils literal notranslate"><span class="pre">len(parts)</span></code> parts of population <code class="docutils literal notranslate"><span class="pre">pop_target</span></code> (within <code class="docutils literal notranslate"><span class="pre">epsilon</span></code>). Can be used to
 generate initial seed plans or to implement ReCom-like “merge walk” proposals.</p>
@@ -1539,7 +1540,7 @@ of the partition can be</p></li>
 
 <dl class="function">
 <dt id="gerrychain.tree.uniform_spanning_tree">
-<code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">uniform_spanning_tree</code><span class="sig-paren">(</span><em class="sig-param">graph</em>, <em class="sig-param">choice=&lt;bound method Random.choice of &lt;random.Random object&gt;&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gerrychain/tree.html#uniform_spanning_tree"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gerrychain.tree.uniform_spanning_tree" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">uniform_spanning_tree</code><span class="sig-paren">(</span><em class="sig-param">graph: networkx.classes.graph.Graph</em>, <em class="sig-param">choice: Callable = &lt;bound method Random.choice of &lt;random.Random object&gt;&gt;</em><span class="sig-paren">)</span> &#x2192; networkx.classes.graph.Graph<a class="reference internal" href="_modules/gerrychain/tree.html#uniform_spanning_tree"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gerrychain.tree.uniform_spanning_tree" title="Permalink to this definition">¶</a></dt>
 <dd><p>Builds a spanning tree chosen uniformly from the space of all
 spanning trees of the graph.
 :param graph: Networkx Graph

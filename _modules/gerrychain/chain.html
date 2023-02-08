@@ -81,6 +81,10 @@
              
   <h1>Source code for gerrychain.chain</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">.constraints</span> <span class="kn">import</span> <span class="n">Validator</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">from</span> <span class="nn">gerrychain.constraints</span> <span class="kn">import</span> <span class="n">Bounds</span>
+<span class="kn">from</span> <span class="nn">gerrychain.partition</span> <span class="kn">import</span> <span class="n">Partition</span>
 
 
 <div class="viewcode-block" id="MarkovChain"><a class="viewcode-back" href="../../api.html#gerrychain.MarkovChain">[docs]</a><span class="k">class</span> <span class="nc">MarkovChain</span><span class="p">:</span>
@@ -98,7 +102,14 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">proposal</span><span class="p">,</span> <span class="n">constraints</span><span class="p">,</span> <span class="n">accept</span><span class="p">,</span> <span class="n">initial_state</span><span class="p">,</span> <span class="n">total_steps</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">proposal</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+        <span class="n">constraints</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="n">Callable</span><span class="p">],</span> <span class="n">Validator</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Bounds</span><span class="p">],</span> <span class="n">Callable</span><span class="p">],</span>
+        <span class="n">accept</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+        <span class="n">initial_state</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Partition</span><span class="p">],</span>
+        <span class="n">total_steps</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        :param proposal: Function proposing the next state from the current state.</span>
 <span class="sd">        :param constraints: A function with signature ``Partition -&gt; bool`` determining whether</span>
@@ -119,7 +130,7 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="n">is_valid</span><span class="p">(</span><span class="n">initial_state</span><span class="p">):</span>
             <span class="n">failed</span> <span class="o">=</span> <span class="p">[</span>
                 <span class="n">constraint</span>
-                <span class="k">for</span> <span class="n">constraint</span> <span class="ow">in</span> <span class="n">is_valid</span><span class="o">.</span><span class="n">constraints</span>
+                <span class="k">for</span> <span class="n">constraint</span> <span class="ow">in</span> <span class="n">is_valid</span><span class="o">.</span><span class="n">constraints</span>  <span class="c1"># type: ignore</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">constraint</span><span class="p">(</span><span class="n">initial_state</span><span class="p">)</span>
             <span class="p">]</span>
             <span class="n">message</span> <span class="o">=</span> <span class="p">(</span>
@@ -135,12 +146,12 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">initial_state</span> <span class="o">=</span> <span class="n">initial_state</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">initial_state</span>
 
-    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;MarkovChain&#39;</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">counter</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_state</span>
         <span class="k">return</span> <span class="bp">self</span>
 
-    <span class="k">def</span> <span class="fm">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Partition</span><span class="p">]:</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">counter</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">counter</span> <span class="o">+=</span> <span class="mi">1</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span>
@@ -148,7 +159,8 @@
         <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">counter</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_steps</span><span class="p">:</span>
             <span class="n">proposed_next_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">proposal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
             <span class="c1"># Erase the parent of the parent, to avoid memory leak</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">parent</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">parent</span> <span class="o">=</span> <span class="kc">None</span>
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_valid</span><span class="p">(</span><span class="n">proposed_next_state</span><span class="p">):</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">accept</span><span class="p">(</span><span class="n">proposed_next_state</span><span class="p">):</span>
@@ -157,10 +169,10 @@
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span>
         <span class="k">raise</span> <span class="ne">StopIteration</span>
 
-    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_steps</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="k">return</span> <span class="s2">&quot;&lt;MarkovChain [</span><span class="si">{}</span><span class="s2"> steps]&gt;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
 
     <span class="k">def</span> <span class="nf">with_progress_bar</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>

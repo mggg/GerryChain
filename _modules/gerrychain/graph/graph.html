@@ -92,6 +92,7 @@
 
 <span class="kn">from</span> <span class="nn">.adjacency</span> <span class="kn">import</span> <span class="n">neighbors</span>
 <span class="kn">from</span> <span class="nn">.geo</span> <span class="kn">import</span> <span class="n">GeometryError</span><span class="p">,</span> <span class="n">invalid_geometries</span><span class="p">,</span> <span class="n">reprojected</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Set</span>
 
 
 <span class="k">def</span> <span class="nf">json_serialize</span><span class="p">(</span><span class="n">input_object</span><span class="p">):</span>
@@ -113,7 +114,7 @@
         <span class="k">return</span> <span class="s2">&quot;&lt;Graph [</span><span class="si">{}</span><span class="s2"> nodes, </span><span class="si">{}</span><span class="s2"> edges]&gt;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">))</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_networkx</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">graph</span><span class="p">:</span> <span class="n">networkx</span><span class="o">.</span><span class="n">Graph</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">from_networkx</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">graph</span><span class="p">:</span> <span class="n">networkx</span><span class="o">.</span><span class="n">Graph</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;Graph&#39;</span><span class="p">:</span>
         <span class="n">g</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">g</span>
 
@@ -130,7 +131,7 @@
         <span class="n">graph</span><span class="o">.</span><span class="n">issue_warnings</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">graph</span></div>
 
-<div class="viewcode-block" id="Graph.to_json"><a class="viewcode-back" href="../../../api.html#gerrychain.graph.graph.Graph.to_json">[docs]</a>    <span class="k">def</span> <span class="nf">to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">json_file</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">include_geometries_as_geojson</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="Graph.to_json"><a class="viewcode-back" href="../../../api.html#gerrychain.graph.graph.Graph.to_json">[docs]</a>    <span class="k">def</span> <span class="nf">to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">json_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">include_geometries_as_geojson</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Save a graph to a JSON file in the NetworkX json_graph format.</span>
 
 <span class="sd">        :param json_file: Path to target JSON file.</span>
@@ -153,12 +154,12 @@
 <div class="viewcode-block" id="Graph.from_file"><a class="viewcode-back" href="../../../api.html#gerrychain.graph.graph.Graph.from_file">[docs]</a>    <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">from_file</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
-        <span class="n">filename</span><span class="p">,</span>
-        <span class="n">adjacency</span><span class="o">=</span><span class="s2">&quot;rook&quot;</span><span class="p">,</span>
-        <span class="n">cols_to_add</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">reproject</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-        <span class="n">ignore_errors</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="p">):</span>
+        <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">adjacency</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;rook&quot;</span><span class="p">,</span>
+        <span class="n">cols_to_add</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">reproject</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">ignore_errors</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Graph&quot;</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Create a :class:`Graph` from a shapefile (or GeoPackage, or GeoJSON, or</span>
 <span class="sd">        any other library that :mod:`geopandas` can read. See :meth:`from_geodataframe`</span>
 <span class="sd">        for more details.</span>
@@ -182,12 +183,12 @@
 <div class="viewcode-block" id="Graph.from_geodataframe"><a class="viewcode-back" href="../../../api.html#gerrychain.graph.graph.Graph.from_geodataframe">[docs]</a>    <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">from_geodataframe</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
-        <span class="n">dataframe</span><span class="p">,</span>
-        <span class="n">adjacency</span><span class="o">=</span><span class="s2">&quot;rook&quot;</span><span class="p">,</span>
-        <span class="n">cols_to_add</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">reproject</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-        <span class="n">ignore_errors</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="p">):</span>
+        <span class="n">dataframe</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+        <span class="n">adjacency</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;rook&quot;</span><span class="p">,</span>
+        <span class="n">cols_to_add</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">reproject</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">ignore_errors</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Graph&quot;</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Creates the adjacency :class:`Graph` of geometries described by `dataframe`.</span>
 <span class="sd">        The areas of the polygons are included as node attributes (with key `area`).</span>
 <span class="sd">        The shared perimeter of neighboring polygons are included as edge attributes</span>
@@ -280,7 +281,8 @@
     <span class="k">def</span> <span class="nf">edge_indices</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">)</span>
 
-<div class="viewcode-block" id="Graph.add_data"><a class="viewcode-back" href="../../../api.html#gerrychain.graph.graph.Graph.add_data">[docs]</a>    <span class="k">def</span> <span class="nf">add_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="Graph.add_data"><a class="viewcode-back" href="../../../api.html#gerrychain.graph.graph.Graph.add_data">[docs]</a>    <span class="k">def</span> <span class="nf">add_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+                 <span class="n">columns</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Add columns of a DataFrame to a graph as node attributes using</span>
 <span class="sd">        by matching the DataFrame&#39;s index to node ids.</span>
 
@@ -297,11 +299,12 @@
         <span class="n">networkx</span><span class="o">.</span><span class="n">set_node_attributes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">column_dictionaries</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">columns</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">columns</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">columns</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">columns</span><span class="p">]</span>  <span class="c1"># type: ignore</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">columns</span><span class="p">]</span></div>
 
-<div class="viewcode-block" id="Graph.join"><a class="viewcode-back" href="../../../api.html#gerrychain.graph.graph.Graph.join">[docs]</a>    <span class="k">def</span> <span class="nf">join</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataframe</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">left_index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">right_index</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="Graph.join"><a class="viewcode-back" href="../../../api.html#gerrychain.graph.graph.Graph.join">[docs]</a>    <span class="k">def</span> <span class="nf">join</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataframe</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">columns</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+             <span class="n">left_index</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">right_index</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Add data from a dataframe to the graph, matching nodes to rows when</span>
 <span class="sd">        the node&#39;s `left_index` attribute equals the row&#39;s `right_index` value.</span>
 
@@ -342,11 +345,11 @@
         <span class="n">networkx</span><span class="o">.</span><span class="n">set_node_attributes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node_attributes</span><span class="p">)</span></div>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">islands</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">islands</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Set</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;The set of degree-0 nodes.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">set</span><span class="p">(</span><span class="n">node</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">degree</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
 
-<div class="viewcode-block" id="Graph.warn_for_islands"><a class="viewcode-back" href="../../../api.html#gerrychain.graph.graph.Graph.warn_for_islands">[docs]</a>    <span class="k">def</span> <span class="nf">warn_for_islands</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Graph.warn_for_islands"><a class="viewcode-back" href="../../../api.html#gerrychain.graph.graph.Graph.warn_for_islands">[docs]</a>    <span class="k">def</span> <span class="nf">warn_for_islands</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Issue a warning if the graph has any islands (degree-0 nodes).&quot;&quot;&quot;</span>
         <span class="n">islands</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">islands</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">islands</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
@@ -354,16 +357,16 @@
                 <span class="s2">&quot;Found islands (degree-0 nodes). Indices of islands: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">islands</span><span class="p">)</span>
             <span class="p">)</span></div>
 
-<div class="viewcode-block" id="Graph.issue_warnings"><a class="viewcode-back" href="../../../api.html#gerrychain.graph.graph.Graph.issue_warnings">[docs]</a>    <span class="k">def</span> <span class="nf">issue_warnings</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Graph.issue_warnings"><a class="viewcode-back" href="../../../api.html#gerrychain.graph.graph.Graph.issue_warnings">[docs]</a>    <span class="k">def</span> <span class="nf">issue_warnings</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Issue warnings if the graph has any red flags (right now, only islands).&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">warn_for_islands</span><span class="p">()</span></div></div>
 
 
-<span class="k">def</span> <span class="nf">add_boundary_perimeters</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">geometries</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">add_boundary_perimeters</span><span class="p">(</span><span class="n">graph</span><span class="p">:</span> <span class="n">Graph</span><span class="p">,</span> <span class="n">geometries</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Add shared perimeter between nodes and the total geometry boundary.</span>
 
 <span class="sd">    :param graph: NetworkX graph</span>
-<span class="sd">    :param df: Geodataframe containing geometry information.</span>
+<span class="sd">    :param geometries: :class:`geopandas.GeoSeries` containing geometry information.</span>
 <span class="sd">    :return: The updated graph.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">from</span> <span class="nn">shapely.ops</span> <span class="kn">import</span> <span class="n">unary_union</span>
@@ -384,13 +387,13 @@
             <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">node</span><span class="p">][</span><span class="s2">&quot;boundary_perim&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">boundary_perimeter</span>
 
 
-<span class="k">def</span> <span class="nf">check_dataframe</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">check_dataframe</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">sum</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">isna</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;NA values found in column </span><span class="si">{}</span><span class="s2">!&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">column</span><span class="p">))</span>
 
 
-<span class="k">def</span> <span class="nf">remove_geometries</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">remove_geometries</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">networkx</span><span class="o">.</span><span class="n">Graph</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Remove geometry attributes from NetworkX adjacency data object,</span>
 <span class="sd">    because they are not serializable. Mutates the ``data`` object.</span>
 
@@ -410,7 +413,7 @@
             <span class="k">del</span> <span class="n">node</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
 
 
-<span class="k">def</span> <span class="nf">convert_geometries_to_geojson</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">convert_geometries_to_geojson</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">networkx</span><span class="o">.</span><span class="n">Graph</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Convert geometry attributes in a NetworkX adjacency data object</span>
 <span class="sd">    to GeoJSON, so that they can be serialized. Mutates the ``data`` object.</span>
 
