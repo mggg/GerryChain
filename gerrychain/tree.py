@@ -4,7 +4,7 @@ from networkx.algorithms import tree
 from functools import partial
 from .random import random
 from collections import deque, namedtuple
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union, Iterable
+from typing import Any, Callable, Dict, List, Optional, Set, Union, Iterable
 
 
 def predecessors(h: nx.Graph, root: Any) -> Dict:
@@ -630,6 +630,7 @@ def recursive_seed_part(
     pop_target: Union[float, int],
     pop_col: str,
     epsilon: float,
+    method: Callable = partial(bipartition_tree, max_attempts=10000),
     node_repeats: int = 1,
     n: Optional[int] = None,
     ceil: None = None
@@ -665,7 +666,7 @@ def recursive_seed_part(
         pop_target,
         pop_col,
         epsilon,
-        method=partial(bipartition_tree, max_attempts=10000),
+        method=method,
         node_repeats=node_repeats,
         n=n,
         ceil=ceil
