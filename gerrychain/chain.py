@@ -77,7 +77,7 @@ class MarkovChain:
         while self.counter < self.total_steps:
             proposed_next_state = self.proposal(self.state)
             # Erase the parent of the parent, to avoid memory leak
-            if self.state is not None: 
+            if self.state is not None:
                 self.state.parent = None
 
             if self.is_valid(proposed_next_state):
