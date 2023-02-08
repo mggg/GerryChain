@@ -31,6 +31,7 @@ def neighboring_geometries(geometries, tree=None):
 
     for geometry_id, geometry in geometries.items():
         possible = tree.query(geometry)
+        print("possible intersections:", possible)
         actual = tuple(
             geometries.index[p]
             for p in possible
