@@ -30,10 +30,16 @@ def all_valid_states_one_flip_away(
             yield next_state
 
 
-def all_valid_flips(partition: Partition, constraints: Iterable[Callable]) -> Iterator[Dict]:
+def all_valid_flips(
+    partition: Partition,
+    constraints: Union[Iterable[Callable], Callable]
+) -> Iterator[Dict]:
     for state in all_valid_states_one_flip_away(partition, constraints):
         yield state.flips
 
 
-def metagraph_degree(partition, constraints):
+def metagraph_degree(
+    partition: Partition,
+    constraints: Union[Iterable[Callable], Callable]
+) -> int:
     return len(list(all_valid_states_one_flip_away(partition, constraints)))
