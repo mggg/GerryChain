@@ -17,10 +17,7 @@ from gerrychain.updaters import (
 )
 from gerrychain.metrics import polsby_popper
 
-from typing import Dict, Optional, Tuple, TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from networkx.classes.graph import Graph
+from typing import Callable, Dict, Optional, Tuple
 
 
 class Grid(Partition):
@@ -53,8 +50,8 @@ class Grid(Partition):
         self,
         dimensions: Optional[Tuple[int, int]] = None,
         with_diagonals: bool = False,
-        assignment: None = None,
-        updaters: None = None,
+        assignment: Optional[Dict] = None,
+        updaters: Optional[Dict[str, Callable]] = None,
         parent: Optional[Grid] = None,
         flips: Optional[Dict[Tuple[int, int], int]] = None,
     ) -> None:

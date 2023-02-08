@@ -1,5 +1,6 @@
 import json
 from typing import Any
+import functools
 import warnings
 
 import networkx
@@ -9,12 +10,7 @@ import pandas as pd
 
 from .adjacency import neighbors
 from .geo import GeometryError, invalid_geometries, reprojected
-from typing import List, Optional, Set, Union, TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from geopandas.geodataframe import GeoDataFrame
-    from geopandas.geoseries import GeoSeries
-    from pandas.core.frame import DataFrame
+from typing import List, Iterable, Optional, Set, Union
 
 
 def json_serialize(input_object):
@@ -36,7 +32,7 @@ class Graph(networkx.Graph):
         return "<Graph [{} nodes, {} edges]>".format(len(self.nodes), len(self.edges))
 
     @classmethod
-    def from_networkx(cls, graph: networkx.Graph):
+    def from_networkx(cls, graph: networkx.Graph) -> 'Graph':
         g = cls(graph)
         return g
 
@@ -78,10 +74,10 @@ class Graph(networkx.Graph):
         cls,
         filename: str,
         adjacency: str = "rook",
-        cols_to_add: None = None,
+        cols_to_add: Optional[List[str]] = None,
         reproject: bool = False,
         ignore_errors: bool = False,
-    ) -> Graph:
+    ) -> "Graph":
         """Create a :class:`Graph` from a shapefile (or GeoPackage, or GeoJSON, or
         any other library that :mod:`geopandas` can read. See :meth:`from_geodataframe`
         for more details.
@@ -105,12 +101,12 @@ class Graph(networkx.Graph):
     @classmethod
     def from_geodataframe(
         cls,
-        dataframe: GeoDataFrame,
+        dataframe: pd.DataFrame,
         adjacency: str = "rook",
         cols_to_add: Optional[List[str]] = None,
         reproject: bool = False,
         ignore_errors: bool = False
-    ) -> Graph:
+    ) -> "Graph":
         """Creates the adjacency :class:`Graph` of geometries described by `dataframe`.
         The areas of the polygons are included as node attributes (with key `area`).
         The shared perimeter of neighboring polygons are included as edge attributes
@@ -203,8 +199,8 @@ class Graph(networkx.Graph):
     def edge_indices(self):
         return set(self.edges)
 
-    def add_data(self, df: Union[DataFrame, GeoDataFrame],
-                 columns: Optional[List[str]] = None) -> None:
+    def add_data(self, df: pd.DataFrame,
+                 columns: Optional[Iterable[str]] = None) -> None:
         """Add columns of a DataFrame to a graph as node attributes using
         by matching the DataFrame's index to node ids.
 
@@ -225,7 +221,7 @@ class Graph(networkx.Graph):
         else:
             self.data = df[columns]
 
-    def join(self, dataframe: DataFrame, columns: Optional[List[str]] = None,
+    def join(self, dataframe: pd.DataFrame, columns: Optional[List[str]] = None,
              left_index: None = None, right_index: Optional[str] = None) -> None:
         """Add data from a dataframe to the graph, matching nodes to rows when
         the node's `left_index` attribute equals the row's `right_index` value.
@@ -267,7 +263,7 @@ class Graph(networkx.Graph):
         networkx.set_node_attributes(self, node_attributes)
 
     @property
-    def islands(self) -> Set[int]:
+    def islands(self) -> Set:
         """The set of degree-0 nodes."""
         return set(node for node in self if self.degree[node] == 0)
 
@@ -284,11 +280,11 @@ class Graph(networkx.Graph):
         self.warn_for_islands()
 
 
-def add_boundary_perimeters(graph: Graph, geometries: GeoSeries) -> None:
+def add_boundary_perimeters(graph: Graph, geometries: pd.Series) -> None:
     """Add shared perimeter between nodes and the total geometry boundary.
 
     :param graph: NetworkX graph
-    :param df: Geodataframe containing geometry information.
+    :param geometries: :class:`geopandas.GeoSeries` containing geometry information.
     :return: The updated graph.
     """
     from shapely.ops import unary_union
@@ -309,7 +305,7 @@ def add_boundary_perimeters(graph: Graph, geometries: GeoSeries) -> None:
             graph.nodes[node]["boundary_perim"] = boundary_perimeter
 
 
-def check_dataframe(df: Union[DataFrame, GeoDataFrame]) -> None:
+def check_dataframe(df: pd.DataFrame) -> None:
     for column in df.columns:
         if sum(df[column].isna()) > 0:
             warnings.warn("NA values found in column {}!".format(column))

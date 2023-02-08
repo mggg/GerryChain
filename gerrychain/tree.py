@@ -4,16 +4,14 @@ from networkx.algorithms import tree
 from functools import partial
 from .random import random
 from collections import deque, namedtuple
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union, Iterable
 
 
-def predecessors(h: nx.Graph, root: Union[int, Tuple[int, int]]
-                 ) -> Union[Dict[int, int], Dict[Tuple[int, int], Tuple[int, int]]]:
+def predecessors(h: nx.Graph, root: Any) -> Dict:
     return {a: b for a, b in nx.bfs_predecessors(h, root)}
 
 
-def successors(h: nx.Graph, root: Union[int, Tuple[int, int]]
-               ) -> Union[Dict[Tuple[int, int], List[Tuple[int, int]]], Dict[int, List[int]]]:
+def successors(h: nx.Graph, root: Any) -> Dict:
     return {a: b for a, b in nx.bfs_successors(h, root)}
 
 
@@ -37,7 +35,7 @@ def random_spanning_tree(graph: nx.Graph) -> nx.Graph:
     return spanning_tree
 
 
-def uniform_spanning_tree(graph, choice=random.choice):
+def uniform_spanning_tree(graph: nx.Graph, choice: Callable = random.choice) -> nx.Graph:
     """ Builds a spanning tree chosen uniformly from the space of all
         spanning trees of the graph.
         :param graph: Networkx Graph
@@ -67,8 +65,13 @@ def uniform_spanning_tree(graph, choice=random.choice):
 
 
 class PopulatedGraph:
-    def __init__(self, graph: nx.Graph, populations: Union[Dict[Tuple[int,
-                 int], int], Dict[int, int]], ideal_pop: float, epsilon: float) -> None:
+    def __init__(
+        self,
+        graph: nx.Graph,
+        populations: Dict,
+        ideal_pop: float,
+        epsilon: float
+    ) -> None:
         self.graph = graph
         self.subsets = {node: {node} for node in graph.nodes}
         self.population = populations.copy()
@@ -80,15 +83,15 @@ class PopulatedGraph:
     def __iter__(self):
         return iter(self.graph)
 
-    def degree(self, node: Union[int, Tuple[int, int]]) -> int:
+    def degree(self, node) -> int:
         return self._degrees[node]
 
-    def contract_node(self, node: int, parent: int) -> None:
+    def contract_node(self, node, parent) -> None:
         self.population[parent] += self.population[node]
         self.subsets[parent] |= self.subsets[node]
         self._degrees[parent] -= 1
 
-    def has_ideal_population(self, node: int) -> bool:
+    def has_ideal_population(self, node) -> bool:
         return (
             abs(self.population[node] - self.ideal_pop) < self.epsilon * self.ideal_pop
         )
@@ -119,7 +122,7 @@ def find_balanced_edge_cuts_contraction(
 
 
 def find_balanced_edge_cuts_memoization(
-        h: PopulatedGraph, choice: Callable = random.choice) -> List[Union[Any, Cut]]:
+        h: PopulatedGraph, choice: Callable = random.choice) -> List[Any]:
     root = choice([x for x in h if h.degree(x) > 1])
     pred = predecessors(h.graph, root)
     succ = successors(h.graph, root)
@@ -169,14 +172,15 @@ def find_balanced_edge_cuts_memoization(
 def bipartition_tree(
     graph: nx.Graph,
     pop_col: str,
-    pop_target: float,
+    pop_target: Union[int, float],
     epsilon: float,
     node_repeats: int = 1,
     spanning_tree: Optional[nx.Graph] = None,
     spanning_tree_fn: Callable = random_spanning_tree,
     balance_edge_fn: Callable = find_balanced_edge_cuts_memoization,
-    choice: Callable = random.choice
-) -> Union[Set[int], Set[Tuple[int, int]]]:
+    choice: Callable = random.choice,
+    max_attempts: Optional[int] = None
+) -> Set:
     """This function finds a balanced 2 partition of a graph by drawing a
     spanning tree and finding an edge to cut that leaves at most an epsilon
     imbalance between the populations of the parts. If a root fails, new roots
@@ -227,17 +231,17 @@ def bipartition_tree(
 
 
 def _bipartition_tree_random_all(
-    graph,
-    pop_col,
-    pop_target,
-    epsilon,
-    node_repeats=1,
-    repeat_until_valid=True,
-    spanning_tree=None,
-    spanning_tree_fn=random_spanning_tree,
-    balance_edge_fn=find_balanced_edge_cuts_memoization,
-    choice=random.choice,
-    max_attempts=None
+    graph: nx.Graph,
+    pop_col: str,
+    pop_target: Union[int, float],
+    epsilon: float,
+    node_repeats: int = 1,
+    repeat_until_valid: bool = True,
+    spanning_tree: Optional[nx.Graph] = None,
+    spanning_tree_fn: Callable = random_spanning_tree,
+    balance_edge_fn: Callable = find_balanced_edge_cuts_memoization,
+    choice: Callable = random.choice,
+    max_attempts: Optional[int] = None
 ):
     """Randomly bipartitions a graph and returns all cuts."""
     populations = {node: graph.nodes[node][pop_col] for node in graph.node_indices}
@@ -263,17 +267,17 @@ def _bipartition_tree_random_all(
 
 
 def bipartition_tree_random(
-    graph,
-    pop_col,
-    pop_target,
-    epsilon,
-    node_repeats=1,
-    repeat_until_valid=True,
-    spanning_tree=None,
-    spanning_tree_fn=random_spanning_tree,
-    balance_edge_fn=find_balanced_edge_cuts_memoization,
-    choice=random.choice,
-    *args, **kwargs
+    graph: nx.Graph,
+    pop_col: str,
+    pop_target: Union[int, float],
+    epsilon: float,
+    node_repeats: int = 1,
+    repeat_until_valid: bool = True,
+    spanning_tree: Optional[nx.Graph] = None,
+    spanning_tree_fn: Callable = random_spanning_tree,
+    balance_edge_fn: Callable = find_balanced_edge_cuts_memoization,
+    choice: Callable = random.choice,
+    max_attempts: Optional[int] = None
 ):
     """This is like :func:`bipartition_tree` except it chooses a random balanced
     cut, rather than the first cut it finds.
@@ -307,18 +311,30 @@ def bipartition_tree_random(
     :param balance_edge_fn: The algorithm used to find balanced cut edges
     :param choice: :func:`random.choice`. Can be substituted for testing.
     """
-    possible_cuts = _bipartition_tree_random_all(*args, **kwargs)
+    possible_cuts = _bipartition_tree_random_all(
+        graph=graph,
+        pop_col=pop_col,
+        pop_target=pop_target,
+        epsilon=epsilon,
+        node_repeats=node_repeats,
+        repeat_until_valid=repeat_until_valid,
+        spanning_tree=spanning_tree,
+        spanning_tree_fn=spanning_tree_fn,
+        balance_edge_fn=balance_edge_fn,
+        choice=choice,
+        max_attempts=max_attempts
+    )
     if possible_cuts:
         return choice(possible_cuts).subset
 
 
 def recursive_tree_part(graph: nx.Graph,
-    parts: Union[range, Tuple[int, int]],
+    parts: Iterable,
     pop_target: Union[float, int],
     pop_col: str,
     epsilon: float,
     node_repeats: int = 1,
-    method: Callable = bipartition_tree
+    method: Callable = partial(bipartition_tree, max_attempts=10000)
 ) -> Union[Dict[Tuple[int, int], int], Dict[int, int]]:
     """Uses :func:`~gerrychain.tree.bipartition_tree` recursively to partition a tree into
     ``len(parts)`` parts of population ``pop_target`` (within ``epsilon``). Can be used to
@@ -375,14 +391,14 @@ def recursive_tree_part(graph: nx.Graph,
 
 
 def get_seed_chunks(
-    graph: Graph,
+    graph: nx.Graph,
     num_chunks: int,
     num_dists: int,
-    pop_target: float,
+    pop_target: Union[int, float],
     pop_col: str,
     epsilon: float,
     node_repeats: int = 1,
-    method: Callable = bipartition_tree_random
+    method: Callable = partial(bipartition_tree, max_attempts=10000),
 ) -> List[List[int]]:
     """
     Helper function for recursive_seed_part. Partitions the graph into ``num_chunks`` chunks,
@@ -499,14 +515,14 @@ def get_max_prime_factor_less_than(
 def recursive_seed_part_inner(
     graph: nx.Graph,
     num_dists: int,
-    pop_target: float,
+    pop_target: Union[float, int],
     pop_col: str,
     epsilon: float,
     method: Callable = partial(bipartition_tree, max_attempts=10000),
     node_repeats: int = 1,
     n: Optional[int] = None,
     ceil: None = None,
-) -> List[Set[int]]:
+) -> List[Set]:
     """
     Inner function for recursive_seed_part.
     Returns a partition with ``num_dists`` districts balanced within ``epsilon`` of
@@ -609,15 +625,14 @@ def recursive_seed_part_inner(
 
 def recursive_seed_part(
     graph: nx.Graph,
-    parts: range,
-    pop_target: float,
+    parts: Iterable,
+    pop_target: Union[float, int],
     pop_col: str,
     epsilon: float,
-    method: Callable = partial(bipartition_tree, max_attempts=10000),
     node_repeats: int = 1,
     n: Optional[int] = None,
     ceil: None = None
-) -> Dict[int, int]:
+) -> Dict:
     """
     Returns a partition with ``num_dists`` districts balanced within ``epsilon`` of
     ``pop_target`` by recursively splitting graph using recursive_seed_part_inner.
