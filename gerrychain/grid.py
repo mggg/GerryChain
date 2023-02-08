@@ -50,7 +50,7 @@ class Grid(Partition):
         with_diagonals: bool = False,
         assignment: Optional[Dict] = None,
         updaters: Optional[Dict[str, Callable]] = None,
-        parent: Optional[Grid] = None,
+        parent: Optional["Grid"] = None,
         flips: Optional[Dict[Tuple[int, int], int]] = None,
     ) -> None:
         """
