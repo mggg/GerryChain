@@ -31,11 +31,10 @@ class Assignment(Mapping):
         self.parts = parts
 
         if not mapping:
-            _mapping = {}
+            self.mapping = {}
             for part, nodes in self.parts.items():
                 for node in nodes:
-                    _mapping[node] = part
-            self.mapping = dict(sorted(_mapping.items()))
+                    self.mapping[node] = part
         else:
             self.mapping = mapping
 
@@ -94,10 +93,13 @@ class Assignment(Mapping):
 
     def to_series(self):
         """Convert the assignment to a :class:`pandas.Series`."""
-        return pandas.Series(self.mapping, dtype="uint32")
+        groups = [
+            pandas.Series(data=part, index=nodes) for part, nodes in self.parts.items()
+        ]
+        return pandas.concat(groups)
 
     def to_dict(self):
-        """Convert the assignment to a ``{node: part}`` sorted dictionary."""
+        """Convert the assignment to a ``{node: part}`` dictionary."""
         return self.mapping
 
     @classmethod
