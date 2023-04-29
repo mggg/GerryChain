@@ -1,6 +1,5 @@
 from gerrychain.graph.graph import FrozenGraph
 
-import retworkx
 import networkx as nx
 from networkx.algorithms import tree
 
@@ -8,6 +7,13 @@ from functools import partial
 from .random import random
 from collections import deque, namedtuple
 from typing import Any, Callable, Dict, List, Optional, Set, Union, Sequence
+
+try:
+    import gerrychain_rs
+except ImportError:
+    _has_rust_extensions = False
+else:
+    _has_rust_extensions = True
 
 
 def predecessors(h: nx.Graph, root: Any) -> Dict:
@@ -174,27 +180,36 @@ def find_balanced_edge_cuts_memoization(
     return cuts
 
 
-def bipartition_tree_retworkx(
+def bipartition_tree_rust(
     graph: FrozenGraph,
     pop_col: str,
     pop_target: float,
     epsilon: float,
-    node_repeats=1,
-    spanning_tree=None,
-    spanning_tree_fn=None,
-    balance_edge_fn=None,
     choice=random.choice
 ):
+    """This function finds a balanced 2-partition of a graph by drawing a
+    spanning tree and finding an edge to cut that leaves at most an epsilon
+    imbalance between the populations of the parts. 
+    
+    Uses Rust extensions (GerryChain.rs).
+    """
+    if not _has_rust_extensions:
+        raise ImportError(
+            "GerryChain.rs is required to use accelerated tree functions."
+        )
+     
     pops = graph.pygraph_pop_lookup(pop_col)
-
-    balanced_node_choices = retworkx.bipartition_graph_mst(
+    balanced_node_choices = gerrychain_rs.bipartition_graph_mst(
         graph.pygraph,
-        lambda x: random.random(),
+        lambda _: random.random(),
         pops,
         float(pop_target),
         float(epsilon)
     )
-    balanced_nodes = {graph.retworkx_networkx_mapping[x] for x in choice(balanced_node_choices)[1]}
+    balanced_nodes = {
+        graph.rustworkx_networkx_mapping[x]
+        for x in choice(balanced_node_choices)[1]
+    }
     return (balanced_nodes, graph.node_indices - balanced_nodes)
 
 
@@ -210,7 +225,7 @@ def bipartition_tree(
     choice: Callable = random.choice,
     max_attempts: Optional[int] = None
 ) -> Set:
-    """This function finds a balanced 2 partition of a graph by drawing a
+    """This function finds a balanced 2-partition of a graph by drawing a
     spanning tree and finding an edge to cut that leaves at most an epsilon
     imbalance between the populations of the parts. If a root fails, new roots
     are tried until node_repeats in which case a new tree is drawn.

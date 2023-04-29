@@ -6,12 +6,10 @@ with open("./README.rst") as f:
     long_description = f.read()
 
 requirements = [
-    # package requirements go here
     "pandas",
     "scipy",
     "networkx",
     "matplotlib",
-    "retworkx",
 ]
 
 setup(
@@ -37,6 +35,7 @@ setup(
         "License :: OSI Approved :: BSD License",
     ],
     extras_require={
-        'geo': ["shapely>=2.0.1", "geopandas>=0.12.2"]
+        'geo': ["shapely>=2.0.1", "geopandas>=0.12.2"],
+        'rust': ["gerrychain_rs>=0.1"],
     }
 )

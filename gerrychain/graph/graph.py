@@ -20,11 +20,11 @@ def json_serialize(input_object):
         return int(input_object)
 
 try:
-    import rustworkx
+    from gerrychain_rs import rustworkx
 except ImportError:
-    _has_rustworkx = False
+    _has_rust_extensions = False
 else:
-    _has_rustworkx = True
+    _has_rust_extensions = True
 
 
 class Graph(networkx.Graph):
@@ -379,9 +379,23 @@ class FrozenGraph:
 
         self.size = len(self.graph)
 
-        if _has_rustworkx:
+        if _has_rust_extensions:
+            if graph.is_directed():
+                raise ValueError("Frozen graphs must be undirected.") 
+            
             if pygraph is None:
-                self.pygraph = rustworkx.networkx_converter(graph, keep_attributes=True)
+                # adapted from `rustworkx.networkx_converter`.
+                self.pygraph = rustworkx.PyGraph(multigraph=graph.is_multigraph())
+                nodes = list(graph.nodes)
+                node_indices = dict(zip(nodes, self.pygraph.add_nodes_from(nodes)))
+                self.pygraph.add_edges_from(
+                    [(node_indices[x[0]], node_indices[x[1]], x[2]) for x in graph.edges(data=True)]
+                )
+                
+                for node, node_index in node_indices.items():
+                    attributes = graph.nodes[node]
+                    attributes["__networkx_node__"] = node
+                    self.pygraph[node_index] = attributes
             else:
                 self.pygraph = pygraph
 
