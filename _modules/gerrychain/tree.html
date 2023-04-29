@@ -335,17 +335,22 @@
         <span class="n">spanning_tree</span> <span class="o">=</span> <span class="n">spanning_tree_fn</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
 
     <span class="n">repeat</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">restarts</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">attempts</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="k">while</span> <span class="n">max_attempts</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">attempts</span> <span class="o">&lt;</span> <span class="n">max_attempts</span><span class="p">:</span>
-        <span class="n">spanning_tree</span> <span class="o">=</span> <span class="n">spanning_tree_fn</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">restarts</span> <span class="o">==</span> <span class="n">node_repeats</span><span class="p">:</span>
+            <span class="n">spanning_tree</span> <span class="o">=</span> <span class="n">spanning_tree_fn</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
+            <span class="n">restarts</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">h</span> <span class="o">=</span> <span class="n">PopulatedGraph</span><span class="p">(</span><span class="n">spanning_tree</span><span class="p">,</span> <span class="n">populations</span><span class="p">,</span> <span class="n">pop_target</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">)</span>
         <span class="n">possible_cuts</span> <span class="o">=</span> <span class="n">balance_edge_fn</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">choice</span><span class="o">=</span><span class="n">choice</span><span class="p">)</span>
 
         <span class="n">repeat</span> <span class="o">=</span> <span class="n">repeat_until_valid</span>
-        <span class="n">attempts</span> <span class="o">+=</span> <span class="mi">1</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">repeat</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">possible_cuts</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">possible_cuts</span>
+
+        <span class="n">restarts</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">attempts</span> <span class="o">+=</span> <span class="mi">1</span>
 
     <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not find a possible cut after </span><span class="si">{max_attempts}</span><span class="s2"> attempts.&quot;</span><span class="p">)</span>
 
