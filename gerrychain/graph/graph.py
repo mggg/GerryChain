@@ -1,6 +1,6 @@
 import functools
 import json
-from typing import Any
+from typing import Any, Tuple
 import warnings
 
 import networkx
@@ -18,6 +18,13 @@ def json_serialize(input_object):
     """
     if pd.api.types.is_integer_dtype(input_object):  # handle int64
         return int(input_object)
+
+try:
+    from gerrychain_rs import rustworkx
+except ImportError:
+    _has_rust_extensions = False
+else:
+    _has_rust_extensions = True
 
 
 class Graph(networkx.Graph):
@@ -357,24 +364,57 @@ class FrozenGraph:
     This speeds up chain runs and prevents having to deal with cache invalidation issues.
     This class behaves slightly differently than :class:`Graph` or :class:`networkx.Graph`.
     """
+    __slots__ = [
+        "graph",
+        "size",
+        "pygraph",
+        "networkx_rustworkx_mapping",
+        "rustworkx_networkx_mapping"
+    ]
 
-    __slots__ = ["graph", "size"]
-
-    def __init__(self, graph: Graph):
+    def __init__(self, graph: Graph, pygraph: "rustworkx.PyGraph" = None):
         self.graph = networkx.classes.function.freeze(graph)
         self.graph.join = frozen
         self.graph.add_data = frozen
 
         self.size = len(self.graph)
 
+        if _has_rust_extensions:
+            if graph.is_directed():
+                raise ValueError("Frozen graphs must be undirected.") 
+            
+            if pygraph is None:
+                # adapted from `rustworkx.networkx_converter`.
+                self.pygraph = rustworkx.PyGraph(multigraph=graph.is_multigraph())
+                nodes = list(graph.nodes)
+                node_indices = dict(zip(nodes, self.pygraph.add_nodes_from(nodes)))
+                self.pygraph.add_edges_from(
+                    [(node_indices[x[0]], node_indices[x[1]], x[2]) for x in graph.edges(data=True)]
+                )
+                
+                for node, node_index in node_indices.items():
+                    attributes = graph.nodes[node]
+                    attributes["__networkx_node__"] = node
+                    self.pygraph[node_index] = attributes
+            else:
+                self.pygraph = pygraph
+
+            self.rustworkx_networkx_mapping = {
+                n: self.pygraph[n]["__networkx_node__"] for n in self.pygraph.node_indexes()
+            }
+            self.networkx_rustworkx_mapping = {
+                self.pygraph[n]["__networkx_node__"]: n for n in self.pygraph.node_indexes()
+            }
+        else:
+            self.pygraph = None
+            self.rustworkx_networkx_mapping = None
+            self.networkx_rustworkx_mapping = None
+
     def __len__(self):
         return self.size
 
-    def __getattribute__(self, __name: str) -> Any:
-        try:
-            return object.__getattribute__(self, __name)
-        except AttributeError:
-            return object.__getattribute__(self.graph, __name)
+    def __getattr__(self, __name: str) -> Any:
+        return getattr(self.graph, __name)
 
     def __getitem__(self, __name: str) -> Any:
         return self.graph[__name]
@@ -403,4 +443,21 @@ class FrozenGraph:
         return self.graph.nodes[node][field]
 
     def subgraph(self, nodes):
-        return FrozenGraph(self.graph.subgraph(nodes))
+        if self.pygraph is None:
+            return FrozenGraph(self.graph.subgraph(nodes))
+
+        return FrozenGraph(
+            self.graph.subgraph(nodes),
+            self.pygraph.subgraph(
+                [self.networkx_rustworkx_mapping[x] for x in nodes]
+            )
+        )
+
+    def pygraph_pop_lookup(self, field: str):
+        if self.pygraph is None:
+            raise ValueError("No rustworkx graph available.")
+
+        attrs = [0] * len(self.pygraph.node_indexes())
+        for node in self.pygraph.node_indexes():
+            attrs[node] = float(self.pygraph[node][field])
+        return attrs

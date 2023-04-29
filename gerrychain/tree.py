@@ -1,3 +1,5 @@
+from gerrychain.graph.graph import FrozenGraph
+
 import networkx as nx
 from networkx.algorithms import tree
 
@@ -5,6 +7,13 @@ from functools import partial
 from .random import random
 from collections import deque, namedtuple
 from typing import Any, Callable, Dict, List, Optional, Set, Union, Sequence
+
+try:
+    import gerrychain_rs
+except ImportError:
+    _has_rust_extensions = False
+else:
+    _has_rust_extensions = True
 
 
 def predecessors(h: nx.Graph, root: Any) -> Dict:
@@ -78,7 +87,7 @@ class PopulatedGraph:
         self.tot_pop = sum(self.population.values())
         self.ideal_pop = ideal_pop
         self.epsilon = epsilon
-        self._degrees = {node: graph.degree(node) for node in graph.nodes}
+        self.degrees = {node: graph.degree(node) for node in graph.nodes}
 
     def __iter__(self):
         return iter(self.graph)
@@ -89,7 +98,7 @@ class PopulatedGraph:
     def contract_node(self, node, parent) -> None:
         self.population[parent] += self.population[node]
         self.subsets[parent] |= self.subsets[node]
-        self._degrees[parent] -= 1
+        self.degrees[parent] -= 1
 
     def has_ideal_population(self, node) -> bool:
         return (
@@ -103,12 +112,12 @@ Cut = namedtuple("Cut", "edge subset")
 def find_balanced_edge_cuts_contraction(
         h: PopulatedGraph, choice: Callable = random.choice) -> List[Cut]:
     # this used to be greater than 2 but failed on small grids:(
-    root = choice([x for x in h if h.degree(x) > 1])
+    root = choice([x for x in h if h.degrees[x] > 1])
     # BFS predecessors for iteratively contracting leaves
     pred = predecessors(h.graph, root)
 
     cuts = []
-    leaves = deque(x for x in h if h.degree(x) == 1)
+    leaves = deque(x for x in h if h.degrees[x] == 1)
     while len(leaves) > 0:
         leaf = leaves.popleft()
         if h.has_ideal_population(leaf):
@@ -116,7 +125,7 @@ def find_balanced_edge_cuts_contraction(
         # Contract the leaf:
         parent = pred[leaf]
         h.contract_node(leaf, parent)
-        if h.degree(parent) == 1 and parent != root:
+        if h.degrees[parent] == 1 and parent != root:
             leaves.append(parent)
     return cuts
 
@@ -171,6 +180,39 @@ def find_balanced_edge_cuts_memoization(
     return cuts
 
 
+def bipartition_tree_rust(
+    graph: FrozenGraph,
+    pop_col: str,
+    pop_target: float,
+    epsilon: float,
+    choice=random.choice
+):
+    """This function finds a balanced 2-partition of a graph by drawing a
+    spanning tree and finding an edge to cut that leaves at most an epsilon
+    imbalance between the populations of the parts. 
+    
+    Uses Rust extensions (GerryChain.rs).
+    """
+    if not _has_rust_extensions:
+        raise ImportError(
+            "GerryChain.rs is required to use accelerated tree functions."
+        )
+     
+    pops = graph.pygraph_pop_lookup(pop_col)
+    balanced_node_choices = gerrychain_rs.bipartition_graph_mst(
+        graph.pygraph,
+        lambda _: random.random(),
+        pops,
+        float(pop_target),
+        float(epsilon)
+    )
+    balanced_nodes = {
+        graph.rustworkx_networkx_mapping[x]
+        for x in choice(balanced_node_choices)[1]
+    }
+    return (balanced_nodes, graph.node_indices - balanced_nodes)
+
+
 def bipartition_tree(
     graph: nx.Graph,
     pop_col: str,
@@ -183,7 +225,7 @@ def bipartition_tree(
     choice: Callable = random.choice,
     max_attempts: Optional[int] = None
 ) -> Set:
-    """This function finds a balanced 2 partition of a graph by drawing a
+    """This function finds a balanced 2-partition of a graph by drawing a
     spanning tree and finding an edge to cut that leaves at most an epsilon
     imbalance between the populations of the parts. If a root fails, new roots
     are tried until node_repeats in which case a new tree is drawn.
@@ -208,7 +250,7 @@ def bipartition_tree(
     :param choice: :func:`random.choice`. Can be substituted for testing.
     :param max_atempts: The max number of attempts that should be made to bipartition.
     """
-    populations = {node: graph.nodes[node][pop_col] for node in graph.node_indices}
+    populations = {node: graph.lookup(node, pop_col) for node in graph.node_indices}
 
     possible_cuts = []
     if spanning_tree is None:
@@ -246,7 +288,7 @@ def _bipartition_tree_random_all(
     max_attempts: Optional[int] = None
 ):
     """Randomly bipartitions a graph and returns all cuts."""
-    populations = {node: graph.nodes[node][pop_col] for node in graph.node_indices}
+    populations = {node: graph.lookup(node, pop_col) for node in graph.node_indices}
 
     possible_cuts = []
     if spanning_tree is None:
@@ -374,8 +416,14 @@ def recursive_tree_part(
     for part in parts[:-1]:
         min_pop = max(pop_target * (1 - epsilon), pop_target * (1 - epsilon) - debt)
         max_pop = min(pop_target * (1 + epsilon), pop_target * (1 + epsilon) - debt)
+
+        if len(parts[:-1]) == 1:  # prevent unnecessary subgraphing
+            subgraph = graph
+        else:
+            subgraph = graph.subgraph(remaining_nodes)
+
         nodes = method(
-            graph.subgraph(remaining_nodes),
+            subgraph,
             pop_col=pop_col,
             pop_target=(min_pop + max_pop) / 2,
             epsilon=(max_pop - min_pop) / (2 * pop_target),
@@ -388,7 +436,7 @@ def recursive_tree_part(
         part_pop = 0
         for node in nodes:
             flips[node] = part
-            part_pop += graph.nodes[node][pop_col]
+            part_pop += graph.lookup(node, pop_col)
         debt += part_pop - pop_target
         remaining_nodes -= nodes
 
@@ -431,7 +479,7 @@ def get_seed_chunks(
 
     chunk_pop = 0
     for node in graph.node_indices:
-        chunk_pop += graph.nodes[node][pop_col]
+        chunk_pop += graph.lookup(node, pop_col)
 
     while True:
         epsilon = abs(epsilon)
@@ -471,7 +519,7 @@ def get_seed_chunks(
 
         part_pop = 0
         for node in remaining_nodes:
-            part_pop += graph.nodes[node][pop_col]
+            part_pop += graph.lookup(node, pop_col)
         part_pop_as_dist = part_pop / num_chunks_left
         fake_epsilon = epsilon
         if num_chunks_left != 1:

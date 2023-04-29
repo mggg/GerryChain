@@ -1,12 +1,12 @@
 from functools import partial
+
 from ..random import random
-
 from ..tree import (
-    recursive_tree_part, bipartition_tree, bipartition_tree_random,
+    bipartition_tree_random,
     _bipartition_tree_random_all, uniform_spanning_tree,
-    find_balanced_edge_cuts_memoization,
+    find_balanced_edge_cuts_memoization, bipartition_tree_retworkx,
+    recursive_tree_part, bipartition_tree,
 )
-
 
 def recom(
     partition, pop_col, pop_target, epsilon, node_repeats=1, method=bipartition_tree
@@ -54,6 +54,28 @@ def recom(
         node_repeats=node_repeats,
         method=method,
     )
+
+    return partition.flip(flips)
+
+
+def recom_rust(partition, pop_col, pop_target, epsilon):
+    """Accelerated ReCom proposal (experimental, requires GerryChain.rs)."""
+    edge = random.choice(tuple(partition["cut_edges"]))
+    parts_to_merge = (partition.assignment.mapping[edge[0]], partition.assignment.mapping[edge[1]])
+
+    subgraph = partition.graph.subgraph(
+        partition.parts[parts_to_merge[0]] | partition.parts[parts_to_merge[1]]
+    )
+
+    flips_left, flips_right = bipartition_tree_retworkx(
+        subgraph,
+        pop_col=pop_col,
+        pop_target=pop_target,
+        epsilon=epsilon
+    )
+
+    flips = {node: parts_to_merge[0] for node in flips_left}
+    flips.update({node: parts_to_merge[1] for node in flips_right})
 
     return partition.flip(flips)
 
