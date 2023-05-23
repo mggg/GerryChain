@@ -226,8 +226,8 @@ class ElectionResults:
         Answers "Did ``party`` win the race in part ``race``?" with ``True`` or ``False``.
         """
         return all(
-            self.totals_for_party[party][race] >= self.totals_for_party[opponent][race]
-            for opponent in self.election.parties
+            self.totals_for_party[party][race] > self.totals_for_party[opponent][race]
+            for opponent in self.election.parties if opponent != party
         )
 
     def total_votes(self):
