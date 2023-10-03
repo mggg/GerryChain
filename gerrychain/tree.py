@@ -16,15 +16,15 @@ def successors(h: nx.Graph, root: Any) -> Dict:
 
 
 def random_spanning_tree(graph: nx.Graph) -> nx.Graph:
-    """ Builds a spanning tree chosen by Kruskal's method using random weights.
-        :param graph: FrozenGraph
+    """Builds a spanning tree chosen by Kruskal's method using random weights.
+    :param graph: FrozenGraph
 
-        Important Note:
-        The key is specifically labelled "random_weight" instead of the previously
-        used "weight". Turns out that networkx uses the "weight" keyword for other
-        operations, like when computing the laplacian or the adjacency matrix.
-        This meant that the laplacian would change for the graph step to step,
-        something that we do not intend!!
+    Important Note:
+    The key is specifically labelled "random_weight" instead of the previously
+    used "weight". Turns out that networkx uses the "weight" keyword for other
+    operations, like when computing the laplacian or the adjacency matrix.
+    This meant that the laplacian would change for the graph step to step,
+    something that we do not intend!!
     """
     for edge in graph.edge_indices:
         graph.edges[edge]["random_weight"] = random.random()
@@ -35,11 +35,13 @@ def random_spanning_tree(graph: nx.Graph) -> nx.Graph:
     return spanning_tree
 
 
-def uniform_spanning_tree(graph: nx.Graph, choice: Callable = random.choice) -> nx.Graph:
-    """ Builds a spanning tree chosen uniformly from the space of all
-        spanning trees of the graph.
-        :param graph: Networkx Graph
-        :param choice: :func:`random.choice`
+def uniform_spanning_tree(
+    graph: nx.Graph, choice: Callable = random.choice
+) -> nx.Graph:
+    """Builds a spanning tree chosen uniformly from the space of all
+    spanning trees of the graph.
+    :param graph: Networkx Graph
+    :param choice: :func:`random.choice`
     """
     root = choice(list(graph.node_indices))
     tree_nodes = set([root])
@@ -66,11 +68,7 @@ def uniform_spanning_tree(graph: nx.Graph, choice: Callable = random.choice) -> 
 
 class PopulatedGraph:
     def __init__(
-        self,
-        graph: nx.Graph,
-        populations: Dict,
-        ideal_pop: float,
-        epsilon: float
+        self, graph: nx.Graph, populations: Dict, ideal_pop: float, epsilon: float
     ) -> None:
         self.graph = graph
         self.subsets = {node: {node} for node in graph.nodes}
@@ -101,7 +99,8 @@ Cut = namedtuple("Cut", "edge subset")
 
 
 def find_balanced_edge_cuts_contraction(
-        h: PopulatedGraph, choice: Callable = random.choice) -> List[Cut]:
+    h: PopulatedGraph, choice: Callable = random.choice
+) -> List[Cut]:
     # this used to be greater than 2 but failed on small grids:(
     root = choice([x for x in h if h.degree(x) > 1])
     # BFS predecessors for iteratively contracting leaves
@@ -122,8 +121,7 @@ def find_balanced_edge_cuts_contraction(
 
 
 def find_balanced_edge_cuts_memoization(
-    h: PopulatedGraph,
-    choice: Callable = random.choice
+    h: PopulatedGraph, choice: Callable = random.choice
 ) -> List[Any]:
     root = choice([x for x in h if h.degree(x) > 1])
     pred = predecessors(h.graph, root)
@@ -166,8 +164,12 @@ def find_balanced_edge_cuts_memoization(
         if abs(tree_pop - h.ideal_pop) <= h.ideal_pop * h.epsilon:
             cuts.append(Cut(edge=(node, pred[node]), subset=part_nodes(node)))
         elif abs((total_pop - tree_pop) - h.ideal_pop) <= h.ideal_pop * h.epsilon:
-            cuts.append(Cut(edge=(node, pred[node]),
-                            subset=set(h.graph.nodes) - part_nodes(node)))
+            cuts.append(
+                Cut(
+                    edge=(node, pred[node]),
+                    subset=set(h.graph.nodes) - part_nodes(node),
+                )
+            )
     return cuts
 
 
@@ -181,7 +183,7 @@ def bipartition_tree(
     spanning_tree_fn: Callable = random_spanning_tree,
     balance_edge_fn: Callable = find_balanced_edge_cuts_memoization,
     choice: Callable = random.choice,
-    max_attempts: Optional[int] = None
+    max_attempts: Optional[int] = None,
 ) -> Set:
     """This function finds a balanced 2 partition of a graph by drawing a
     spanning tree and finding an edge to cut that leaves at most an epsilon
@@ -243,7 +245,7 @@ def _bipartition_tree_random_all(
     spanning_tree_fn: Callable = random_spanning_tree,
     balance_edge_fn: Callable = find_balanced_edge_cuts_memoization,
     choice: Callable = random.choice,
-    max_attempts: Optional[int] = None
+    max_attempts: Optional[int] = None,
 ):
     """Randomly bipartitions a graph and returns all cuts."""
     populations = {node: graph.nodes[node][pop_col] for node in graph.node_indices}
@@ -284,7 +286,7 @@ def bipartition_tree_random(
     spanning_tree_fn: Callable = random_spanning_tree,
     balance_edge_fn: Callable = find_balanced_edge_cuts_memoization,
     choice: Callable = random.choice,
-    max_attempts: Optional[int] = None
+    max_attempts: Optional[int] = None,
 ):
     """This is like :func:`bipartition_tree` except it chooses a random balanced
     cut, rather than the first cut it finds.
@@ -330,7 +332,7 @@ def bipartition_tree_random(
         spanning_tree_fn=spanning_tree_fn,
         balance_edge_fn=balance_edge_fn,
         choice=choice,
-        max_attempts=max_attempts
+        max_attempts=max_attempts,
     )
     if possible_cuts:
         return choice(possible_cuts).subset
@@ -343,7 +345,7 @@ def recursive_tree_part(
     pop_col: str,
     epsilon: float,
     node_repeats: int = 1,
-    method: Callable = partial(bipartition_tree, max_attempts=10000)
+    method: Callable = partial(bipartition_tree, max_attempts=10000),
 ) -> Dict:
     """Uses :func:`~gerrychain.tree.bipartition_tree` recursively to partition a tree into
     ``len(parts)`` parts of population ``pop_target`` (within ``epsilon``). Can be used to
@@ -495,9 +497,7 @@ def get_seed_chunks(
     return list(chunks.values())
 
 
-def get_max_prime_factor_less_than(
-    n, ceil
-):
+def get_max_prime_factor_less_than(n, ceil):
     """
     Helper function for recursive_seed_part. Returns the largest prime factor of ``n`` less than
     ``ceil``, or None if all are greater than ceil.
@@ -593,27 +593,24 @@ def recursive_seed_part_inner(
             pop_col=pop_col,
             pop_target=pop_target,
             epsilon=epsilon,
-            node_repeats=node_repeats
+            node_repeats=node_repeats,
         )
         remaining_nodes -= nodes
-        assignment = [nodes] + recursive_seed_part_inner(graph.subgraph(remaining_nodes),
+        assignment = [nodes] + recursive_seed_part_inner(
+            graph.subgraph(remaining_nodes),
             num_dists - 1,
             pop_target,
             pop_col,
             epsilon,
+            method,
             n=n,
-            ceil=ceil)
+            ceil=ceil,
+        )
 
     # split graph into num_chunks chunks, and recurse into each chunk
     elif num_dists % num_chunks == 0:
         chunks = get_seed_chunks(
-            graph,
-            num_chunks,
-            num_dists,
-            pop_target,
-            pop_col,
-            epsilon,
-            method=method
+            graph, num_chunks, num_dists, pop_target, pop_col, epsilon, method=method
         )
 
         assignment = []
@@ -624,8 +621,9 @@ def recursive_seed_part_inner(
                 pop_target,
                 pop_col,
                 epsilon,
+                method,
                 n=n,
-                ceil=ceil
+                ceil=ceil,
             )
             assignment += chunk_assignment
 
@@ -641,7 +639,7 @@ def recursive_seed_part(
     method: Callable = partial(bipartition_tree, max_attempts=10000),
     node_repeats: int = 1,
     n: Optional[int] = None,
-    ceil: None = None
+    ceil: None = None,
 ) -> Dict:
     """
     Returns a partition with ``num_dists`` districts balanced within ``epsilon`` of
@@ -677,7 +675,7 @@ def recursive_seed_part(
         method=method,
         node_repeats=node_repeats,
         n=n,
-        ceil=ceil
+        ceil=ceil,
     )
     for i in range(len(assignment)):
         for node in assignment[i]:
