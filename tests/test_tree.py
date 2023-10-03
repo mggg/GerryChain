@@ -87,6 +87,36 @@ def test_recursive_seed_part_returns_within_epsilon_of_target_pop(twelve_by_twel
                for part_pop in partition['pop'].values())
 
 
+def test_recursive_seed_part_uses_method(twelve_by_twelve_with_pop):
+    calls = 0
+
+    def dummy_method(graph, pop_col, pop_target, epsilon, node_repeats):
+        nonlocal calls
+        calls += 1
+        nodes = list(sorted(graph.nodes))
+        # we assume each node has pop 1
+        return set(nodes[:pop_target])
+
+    n_districts = 7  # 144/7 ≈ 20.5 nodes/subgraph (1 person/node)
+    ideal_pop = (
+        sum(
+            twelve_by_twelve_with_pop.nodes[node]["pop"]
+            for node in twelve_by_twelve_with_pop
+        )
+    ) / n_districts
+    epsilon = 0.1
+    result = recursive_seed_part(
+        twelve_by_twelve_with_pop,
+        range(n_districts),
+        ideal_pop,
+        "pop",
+        epsilon,
+        n=5,
+        ceil=None,
+        method=dummy_method,
+    )
+    assert calls == 7
+
 def test_random_spanning_tree_returns_tree_with_pop_attribute(graph_with_pop):
     tree = random_spanning_tree(graph_with_pop)
     assert networkx.is_tree(tree)
