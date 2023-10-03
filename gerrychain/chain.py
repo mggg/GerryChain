@@ -1,4 +1,8 @@
 from .constraints import Validator
+from typing import Union, Iterable, Callable, Optional
+
+from gerrychain.constraints import Bounds
+from gerrychain.partition import Partition
 
 
 class MarkovChain:
@@ -16,7 +20,14 @@ class MarkovChain:
 
     """
 
-    def __init__(self, proposal, constraints, accept, initial_state, total_steps):
+    def __init__(
+        self,
+        proposal: Callable,
+        constraints: Union[Iterable[Callable], Validator, Iterable[Bounds], Callable],
+        accept: Callable,
+        initial_state: Optional[Partition],
+        total_steps: int
+    ) -> None:
         """
         :param proposal: Function proposing the next state from the current state.
         :param constraints: A function with signature ``Partition -> bool`` determining whether
@@ -37,7 +48,7 @@ class MarkovChain:
         if not is_valid(initial_state):
             failed = [
                 constraint
-                for constraint in is_valid.constraints
+                for constraint in is_valid.constraints  # type: ignore
                 if not constraint(initial_state)
             ]
             message = (
@@ -53,12 +64,12 @@ class MarkovChain:
         self.initial_state = initial_state
         self.state = initial_state
 
-    def __iter__(self):
+    def __iter__(self) -> 'MarkovChain':
         self.counter = 0
         self.state = self.initial_state
         return self
 
-    def __next__(self):
+    def __next__(self) -> Optional[Partition]:
         if self.counter == 0:
             self.counter += 1
             return self.state
@@ -66,7 +77,8 @@ class MarkovChain:
         while self.counter < self.total_steps:
             proposed_next_state = self.proposal(self.state)
             # Erase the parent of the parent, to avoid memory leak
-            self.state.parent = None
+            if self.state is not None:
+                self.state.parent = None
 
             if self.is_valid(proposed_next_state):
                 if self.accept(proposed_next_state):
@@ -75,10 +87,10 @@ class MarkovChain:
                 return self.state
         raise StopIteration
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self.total_steps
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<MarkovChain [{} steps]>".format(len(self))
 
     def with_progress_bar(self):

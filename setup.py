@@ -36,6 +36,6 @@ setup(
         "License :: OSI Approved :: BSD License",
     ],
     extras_require={
-        'geo': ["shapely", "geopandas"]
+        'geo': ["shapely>=2.0.1", "geopandas>=0.12.2"]
     }
 )

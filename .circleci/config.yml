@@ -34,7 +34,6 @@ jobs:
             conda install pytest pytest-cov
             conda install codecov
             python -m pip install .[geo]
-            conda install shapely==1.6.4
 
             # run tests
             echo "backend: Agg" > "matplotlibrc"
