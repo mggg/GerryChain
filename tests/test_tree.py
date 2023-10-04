@@ -120,7 +120,11 @@ def test_recursive_seed_part_uses_method(twelve_by_twelve_with_pop):
         ceil=None,
         method=dummy_method,
     )
-    assert calls == n_districts - 1
+    # Called at least once for each district besides the last one
+    # (note that current implementation of recursive_seed_part calls method
+    # EXACTLY once for each district besides the last one, but that is an
+    # implementation detail)
+    assert calls >= n_districts - 1
 
 def test_random_spanning_tree_returns_tree_with_pop_attribute(graph_with_pop):
     tree = random_spanning_tree(graph_with_pop)
