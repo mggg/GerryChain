@@ -94,9 +94,14 @@ def test_recursive_seed_part_uses_method(twelve_by_twelve_with_pop):
     def dummy_method(graph, pop_col, pop_target, epsilon, node_repeats):
         nonlocal calls
         calls += 1
-        nodes = list(sorted(graph.nodes))
-        # we assume each node has pop 1
-        return set(nodes[:math.ceil(pop_target)])
+        return bipartition_tree(
+            graph,
+            pop_col=pop_col,
+            pop_target=pop_target,
+            epsilon=epsilon,
+            node_repeats=node_repeats,
+            max_attempts=10000,
+        )
 
     n_districts = 7  # 144/7 ≈ 20.5 nodes/subgraph (1 person/node)
     ideal_pop = (
