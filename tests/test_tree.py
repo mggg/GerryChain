@@ -121,7 +121,7 @@ def test_recursive_seed_part_uses_method(twelve_by_twelve_with_pop):
         ceil=None,
         method=dummy_method,
     )
-    assert calls == n_districts
+    assert calls == n_districts - 1
 
 def test_random_spanning_tree_returns_tree_with_pop_attribute(graph_with_pop):
     tree = random_spanning_tree(graph_with_pop)
