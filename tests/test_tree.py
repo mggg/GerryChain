@@ -1,5 +1,6 @@
 import functools
 
+import math
 import networkx
 import pytest
 
@@ -95,7 +96,7 @@ def test_recursive_seed_part_uses_method(twelve_by_twelve_with_pop):
         calls += 1
         nodes = list(sorted(graph.nodes))
         # we assume each node has pop 1
-        return set(nodes[:pop_target])
+        return set(nodes[:math.ceil(pop_target)])
 
     n_districts = 7  # 144/7 ≈ 20.5 nodes/subgraph (1 person/node)
     ideal_pop = (
