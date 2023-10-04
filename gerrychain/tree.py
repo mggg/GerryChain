@@ -601,6 +601,7 @@ def recursive_seed_part_inner(
             pop_target,
             pop_col,
             epsilon,
+            method,
             n=n,
             ceil=ceil)
 
@@ -624,6 +625,7 @@ def recursive_seed_part_inner(
                 pop_target,
                 pop_col,
                 epsilon,
+                method,
                 n=n,
                 ceil=ceil
             )
