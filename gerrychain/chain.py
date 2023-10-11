@@ -44,7 +44,7 @@ class MarkovChain:
             is_valid = Validator([constraints])
         else:
             is_valid = Validator(constraints)
-            
+
         if not is_valid(initial_state):
             failed = [
                 constraint
