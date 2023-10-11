@@ -374,11 +374,12 @@ def recursive_tree_part(
     for part in parts[:-1]:
         min_pop = max(pop_target * (1 - epsilon), pop_target * (1 - epsilon) - debt)
         max_pop = min(pop_target * (1 + epsilon), pop_target * (1 + epsilon) - debt)
+        new_pop_target = (min_pop + max_pop) / 2
         nodes = method(
             graph.subgraph(remaining_nodes),
             pop_col=pop_col,
-            pop_target=(min_pop + max_pop) / 2,
-            epsilon=(max_pop - min_pop) / (2 * pop_target),
+            pop_target=new_pop_target,
+            epsilon=(max_pop - min_pop) / (2 * new_pop_target),
             node_repeats=node_repeats,
         )
 
@@ -389,6 +390,7 @@ def recursive_tree_part(
         for node in nodes:
             flips[node] = part
             part_pop += graph.nodes[node][pop_col]
+
         debt += part_pop - pop_target
         remaining_nodes -= nodes
 
