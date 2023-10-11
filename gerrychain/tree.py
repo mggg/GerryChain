@@ -375,7 +375,6 @@ def recursive_tree_part(
         min_pop = max(pop_target * (1 - epsilon), pop_target * (1 - epsilon) - debt)
         max_pop = min(pop_target * (1 + epsilon), pop_target * (1 + epsilon) - debt)
         new_pop_target = (min_pop + max_pop) / 2
-
         nodes = method(
             graph.subgraph(remaining_nodes),
             pop_col=pop_col,
