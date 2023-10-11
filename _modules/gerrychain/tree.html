@@ -456,11 +456,12 @@
     <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">parts</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
         <span class="n">min_pop</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">pop_target</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">epsilon</span><span class="p">),</span> <span class="n">pop_target</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">epsilon</span><span class="p">)</span> <span class="o">-</span> <span class="n">debt</span><span class="p">)</span>
         <span class="n">max_pop</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">pop_target</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">epsilon</span><span class="p">),</span> <span class="n">pop_target</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">epsilon</span><span class="p">)</span> <span class="o">-</span> <span class="n">debt</span><span class="p">)</span>
+        <span class="n">new_pop_target</span> <span class="o">=</span> <span class="p">(</span><span class="n">min_pop</span> <span class="o">+</span> <span class="n">max_pop</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
         <span class="n">nodes</span> <span class="o">=</span> <span class="n">method</span><span class="p">(</span>
             <span class="n">graph</span><span class="o">.</span><span class="n">subgraph</span><span class="p">(</span><span class="n">remaining_nodes</span><span class="p">),</span>
             <span class="n">pop_col</span><span class="o">=</span><span class="n">pop_col</span><span class="p">,</span>
-            <span class="n">pop_target</span><span class="o">=</span><span class="p">(</span><span class="n">min_pop</span> <span class="o">+</span> <span class="n">max_pop</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span>
-            <span class="n">epsilon</span><span class="o">=</span><span class="p">(</span><span class="n">max_pop</span> <span class="o">-</span> <span class="n">min_pop</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">pop_target</span><span class="p">),</span>
+            <span class="n">pop_target</span><span class="o">=</span><span class="n">new_pop_target</span><span class="p">,</span>
+            <span class="n">epsilon</span><span class="o">=</span><span class="p">(</span><span class="n">max_pop</span> <span class="o">-</span> <span class="n">min_pop</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">new_pop_target</span><span class="p">),</span>
             <span class="n">node_repeats</span><span class="o">=</span><span class="n">node_repeats</span><span class="p">,</span>
         <span class="p">)</span>
 
@@ -471,6 +472,7 @@
         <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">:</span>
             <span class="n">flips</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="n">part</span>
             <span class="n">part_pop</span> <span class="o">+=</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">node</span><span class="p">][</span><span class="n">pop_col</span><span class="p">]</span>
+
         <span class="n">debt</span> <span class="o">+=</span> <span class="n">part_pop</span> <span class="o">-</span> <span class="n">pop_target</span>
         <span class="n">remaining_nodes</span> <span class="o">-=</span> <span class="n">nodes</span>
 
