@@ -308,8 +308,8 @@
 <span class="sd">        Answers &quot;Did ``party`` win the race in part ``race``?&quot; with ``True`` or ``False``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">all</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">totals_for_party</span><span class="p">[</span><span class="n">party</span><span class="p">][</span><span class="n">race</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">totals_for_party</span><span class="p">[</span><span class="n">opponent</span><span class="p">][</span><span class="n">race</span><span class="p">]</span>
-            <span class="k">for</span> <span class="n">opponent</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">election</span><span class="o">.</span><span class="n">parties</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">totals_for_party</span><span class="p">[</span><span class="n">party</span><span class="p">][</span><span class="n">race</span><span class="p">]</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">totals_for_party</span><span class="p">[</span><span class="n">opponent</span><span class="p">][</span><span class="n">race</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">opponent</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">election</span><span class="o">.</span><span class="n">parties</span> <span class="k">if</span> <span class="n">opponent</span> <span class="o">!=</span> <span class="n">party</span>
         <span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">total_votes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
