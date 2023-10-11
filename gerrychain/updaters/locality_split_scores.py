@@ -50,7 +50,7 @@ class LocalitySplits:
             score functions to compute at each step. This should be
             some subcollection of ```['num_parts', 'num_pieces',
             'naked_boundary', 'shannon_entropy', 'power_entropy',
-            'symmetric_entropy', 'num_split_localities']```
+            'symmetric_entropy', 'num_split_localities', 'split_pairs']```
         :param pent_alpha: A number between 0 and 1 which is
             passed as the exponent to :meth:`~LocalitySplits.power_entropy`
         """
@@ -138,6 +138,9 @@ class LocalitySplits:
 
             if s == 'num_split_localities':
                 self.scores[s] = self.num_split_localities(partition)
+
+            if s == 'split_pairs':
+                self.scores[s] = self.split_pairs(partition)
 
         return self.scores
 
@@ -355,3 +358,59 @@ class LocalitySplits:
                 total_splits += 1
 
         return total_splits
+
+    def split_pairs(self, partition):
+        '''
+        Calculates population-weighted split pairs score
+
+        :param partition: The partition to be scored.
+
+        :return: Proportion of the pairs of people in the same locality
+        who are split into different districts, population-weighted by locality
+        '''
+
+        # get list of districts
+        districts = dict(partition.parts).keys()
+
+        # initialize dictionary keyed by locality, values are dicts of
+        # district : intersection_pop
+        district_pops_per_locality = {}
+
+        # initialize inner dicts
+        for locality in self.localities:
+            district_pops_per_locality[locality] = {district: 0.0
+                                                    for district in districts}
+
+        # for each district
+        for district in districts:
+
+            # get the vtds assigned to this district in the partition
+            vtds = partition.parts[district]
+
+            # for each vtd, add the population to the proper locality-district pair
+            for vtd in vtds:
+                district_pops_per_locality[self.localitydict[vtd]][district] += \
+                    partition.graph.nodes[vtd][self.pop_col]
+
+        # initialize lists for split pairs scores by locality and populations
+        scores = []
+        loc_pops = []
+
+        # for each locality
+        for locality in self.localities:
+            # grab the population in each district
+            pops = district_pops_per_locality[locality].values()
+            pops = [float(i) for i in pops]
+
+            # get split pairs score for the locality
+            total_pop = sum(pops)
+            preserved_pairs = sum([i * (i - 1) / 2 for i in pops])
+            all_pairs = total_pop * (total_pop - 1) / 2
+            split_pairs_loc = 1 - preserved_pairs / all_pairs
+
+            # append score and locality population to list
+            scores += [split_pairs_loc]
+            loc_pops += [total_pop]
+
+        # return population-weighted average of split pairs score
+        return sum([scores[i] * p for i, p in enumerate(loc_pops)]) / sum(loc_pops)
