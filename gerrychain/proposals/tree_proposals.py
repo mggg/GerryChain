@@ -1,4 +1,5 @@
 from functools import partial
+from inspect import signature
 from ..random import random
 
 from ..tree import (
@@ -9,7 +10,9 @@ from ..tree import (
 
 
 def recom(
-    partition, pop_col, pop_target, epsilon, node_repeats=1, method=bipartition_tree
+    partition, pop_col, pop_target, epsilon, node_repeats=1, 
+    weight_dict = None,
+    method=bipartition_tree
 ):
     """ReCom proposal.
 
@@ -44,6 +47,11 @@ def recom(
     subgraph = partition.graph.subgraph(
         partition.parts[parts_to_merge[0]] | partition.parts[parts_to_merge[1]]
     )
+
+    # Try to add the region aware in if the method accepts the weight dictionary
+    if 'weight_dict' in signature(method).parameters:
+        method = partial(method, weight_dict=weight_dict)
+    
 
     flips = recursive_tree_part(
         subgraph.graph,

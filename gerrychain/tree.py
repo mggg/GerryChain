@@ -2,6 +2,7 @@ import networkx as nx
 from networkx.algorithms import tree
 
 from functools import partial
+from inspect import signature
 from .random import random
 from collections import deque, namedtuple
 from typing import Any, Callable, Dict, List, Optional, Set, Union, Sequence
@@ -15,19 +16,28 @@ def successors(h: nx.Graph, root: Any) -> Dict:
     return {a: b for a, b in nx.bfs_successors(h, root)}
 
 
-def random_spanning_tree(graph: nx.Graph) -> nx.Graph:
-    """ Builds a spanning tree chosen by Kruskal's method using random weights.
-        :param graph: FrozenGraph
-
-        Important Note:
-        The key is specifically labelled "random_weight" instead of the previously
-        used "weight". Turns out that networkx uses the "weight" keyword for other
-        operations, like when computing the laplacian or the adjacency matrix.
-        This meant that the laplacian would change for the graph step to step,
-        something that we do not intend!!
+def random_spanning_tree(graph: nx.Graph, weight_dict: Dict) -> nx.Graph:
+    """ 
+    Builds a spanning tree chosen by Kruskal's method using random weights.
+    
+    :param graph: The input graph to build the spanning tree from. Should be a Networkx Graph.
+    :type graph: nx.Graph
+    :param weight_dict: Dictionary of weights to add to the random weights used in region-aware variants.
+    :type weight_dict: Dict
+    :return: The maximal spanning tree represented as a Networkx Graph.
+    :rtype: nx.Graph
     """
-    for edge in graph.edge_indices:
-        graph.edges[edge]["random_weight"] = random.random()
+    if weight_dict is None:
+        weight_dict = dict()
+        
+    for edge in graph.edges():
+        weight = random.random()
+        for key, value in weight_dict.items():
+            if graph.nodes[edge[0]][key] == graph.nodes[edge[1]][key] and \
+               graph.nodes[edge[0]][key] is not None:
+                weight += value
+                
+        graph.edges[edge]["random_weight"] = weight
 
     spanning_tree = tree.maximum_spanning_tree(
         graph, algorithm="kruskal", weight="random_weight"
@@ -179,11 +189,14 @@ def bipartition_tree(
     node_repeats: int = 1,
     spanning_tree: Optional[nx.Graph] = None,
     spanning_tree_fn: Callable = random_spanning_tree,
+    weight_dict: Dict = None,
     balance_edge_fn: Callable = find_balanced_edge_cuts_memoization,
     choice: Callable = random.choice,
+    max_attempts: Optional[int] = 10000
     max_attempts: Optional[int] = None
 ) -> Set:
-    """This function finds a balanced 2 partition of a graph by drawing a
+    """
+    This function finds a balanced 2 partition of a graph by drawing a
     spanning tree and finding an edge to cut that leaves at most an epsilon
     imbalance between the populations of the parts. If a root fails, new roots
     are tried until node_repeats in which case a new tree is drawn.
@@ -191,23 +204,46 @@ def bipartition_tree(
     Builds up a connected subgraph with a connected complement whose population
     is ``epsilon * pop_target`` away from ``pop_target``.
 
-    Returns a subset of nodes of ``graph`` (whose induced subgraph is connected).
-    The other part of the partition is the complement of this subset.
 
-    :param graph: The graph to partition
-    :param pop_col: The node attribute holding the population of each node
-    :param pop_target: The target population for the returned subset of nodes
-    :param epsilon: The allowable deviation from  ``pop_target`` (as a percentage of
-        ``pop_target``) for the subgraph's population
-    :param node_repeats: A parameter for the algorithm: how many different choices
-        of root to use before drawing a new spanning tree.
-    :param spanning_tree: The spanning tree for the algorithm to use (used when the
-        algorithm chooses a new root and for testing)
-    :param spanning_tree_fn: The random spanning tree algorithm to use if a spanning
-        tree is not provided
-    :param choice: :func:`random.choice`. Can be substituted for testing.
-    :param max_atempts: The max number of attempts that should be made to bipartition.
+    :param graph: The graph to partition.
+    :type graph: nx.Graph
+    :param pop_col: The node attribute holding the population of each node.
+    :type pop_col: str
+    :param pop_target: The target population for the returned subset of nodes.
+    :type pop_target: Union[int, float]
+    :param epsilon: The allowable deviation from ``pop_target`` (as a percentage of 
+        ``pop_target``) for the subgraph's population.
+    :type epsilon: float
+    :param node_repeats: A parameter for the algorithm: how many different choices 
+        of root to use before drawing a new spanning tree. Defaults to 1.
+    :type node_repeats: int
+    :param spanning_tree: The spanning tree for the algorithm to use (used when the 
+        algorithm chooses a new root and for testing).
+    :type spanning_tree: Optional[nx.Graph]
+    :param spanning_tree_fn: The random spanning tree algorithm to use if a spanning 
+        tree is not provided. Defaults to :func:`random_spanning_tree`.
+    :type spanning_tree_fn: Callable
+    :param weight_dict: A dictionary of weights for the spanning tree algorithm. 
+        Defaults to None.
+    :type weight_dict: Dict, optional
+    :param balance_edge_fn: The function to find balanced edge cuts. Defaults to 
+        :func:`find_balanced_edge_cuts_memoization`.
+    :type balance_edge_fn: Callable, optional
+    :param choice: The function to make a random choice. Can be substituted for testing.
+        Defaults to :func:`random.choice`.
+    :type choice: Callable
+    :param max_attempts: The maximum number of attempts that should be made to bipartition. 
+        Defaults to 1000.
+    :type max_attempts: Optional[int]
+    :return: A subset of nodes of ``graph`` (whose induced subgraph is connected). The other 
+        part of the partition is the complement of this subset.
+    :rtype: Set
+    :raises RuntimeError: If a possible cut cannot be found after the maximum number of attempts.
     """
+    # Try to add the region-aware in if the spanning_tree_fn accepts a weight dictionary
+    if 'weight_dict' in signature(spanning_tree_fn).parameters:
+        spanning_tree_fn = partial(spanning_tree_fn, weight_dict=weight_dict)
+    
     populations = {node: graph.nodes[node][pop_col] for node in graph.node_indices}
 
     possible_cuts = []

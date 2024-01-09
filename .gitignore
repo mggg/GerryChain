@@ -75,3 +75,6 @@ junit.xml
 # Pytest cache
 .pytest_cache/
 Dockerfile
+
+# Extra Documentation Stuff
+release_notes.md
