@@ -3,7 +3,7 @@ from itertools import count
 
 import networkx as nx
 
-from ..random import random
+import random
 from .bounds import SelfConfiguringLowerBound
 
 

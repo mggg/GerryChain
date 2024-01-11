@@ -63,7 +63,7 @@ target/
 
 # pyenv python configuration file
 .python-version
-
+.venv
 junit.xml
 
 # crapple

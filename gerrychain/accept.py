@@ -1,4 +1,13 @@
-from .random import random
+"""
+This module provides the main acceptance function used in ReCom Markov chains.
+
+Dependencies:
+- random: For random number generation for probabilistic acceptance.
+
+Last Updated: 11 Jan 2024
+"""
+
+import random
 from gerrychain.partition import Partition
 
 
@@ -7,12 +16,15 @@ def always_accept(partition: Partition) -> bool:
 
 
 def cut_edge_accept(partition: Partition) -> bool:
-    """Always accepts the flip if the number of cut_edges increases.
+    """
+    Always accepts the flip if the number of cut_edges increases.
     Otherwise, uses the Metropolis criterion to decide.
 
     :param partition: The current partition to accept a flip from.
-    :return: True if accepted, False to remain in place
+    :type partition: Partition
 
+    :return: True if accepted, False to remain in place
+    :rtype: bool
     """
     bound = 1.0
 

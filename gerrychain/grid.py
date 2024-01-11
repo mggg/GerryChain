@@ -1,7 +1,18 @@
+"""
+This module provides a Grid class used for creating and manipulating grid partitions.
+It's part of the GerryChain suite, designed to facilitate experiments with redistricting
+plans without the need for extensive data processing. This module relies on NetworkX for
+graph operations and integrates with GerryChain's Partition class.
+
+Dependencies:
+- math: For math.floor() function.
+- networkx: For graph operations with using the graph structure in
+    :class:`~gerrychain.graph.Graph`.
+- typing: Used for type hints.
+"""
+
 import math
-
 import networkx
-
 from gerrychain.partition import Partition
 from gerrychain.graph import Graph
 from gerrychain.updaters import (
@@ -14,8 +25,7 @@ from gerrychain.updaters import (
     perimeter,
 )
 from gerrychain.metrics import polsby_popper
-
-from typing import Callable, Dict, Optional, Tuple
+from typing import Callable, Dict, Optional, Tuple, Any
 
 
 class Grid(Partition):
@@ -54,15 +64,35 @@ class Grid(Partition):
         flips: Optional[Dict[Tuple[int, int], int]] = None,
     ) -> None:
         """
-        :param dimensions: tuple (m,n) of the desired dimensions of the grid.
-        :param with_diagonals: (optional, defaults to False) whether to include diagonals
-            as edges of the graph (i.e., whether to use 'queen' adjacency rather than
-            'rook' adjacency).
-        :param assignment: (optional) dict matching nodes to their districts. If not
-            provided, partitions the grid into 4 quarters of roughly equal size.
-        :param updaters: (optional) dict matching names of attributes of the Partition
-            to functions that compute their values. If not provided, the Grid
-            configures the cut_edges updater for convenience.
+        If the updaters are not specified, the default updaters are used, which are as follows::
+
+            default_updaters = {
+                "cut_edges": cut_edges,
+                "population": Tally("population"),
+                "perimeter": perimeter,
+                "exterior_boundaries": exterior_boundaries,
+                "interior_boundaries": interior_boundaries,
+                "boundary_nodes": boundary_nodes,
+                "area": Tally("area", alias="area"),
+                "polsby_popper": polsby_popper,
+                "cut_edges_by_part": cut_edges_by_part,
+            }
+
+
+        :param dimensions: The grid dimensions (rows, columns), defaults to None.
+        :type dimensions: Tuple[int, int], optional
+        :param with_diagonals: If True, includes diagonal connections, defaults to False.
+        :type with_diagonals: bool, optional
+        :param assignment: Node-to-district assignments, defaults to None.
+        :type assignment: Dict, optional
+        :param updaters: Custom updater functions, defaults to None.
+        :type updaters: Dict[str, Callable], optional
+        :param parent: Parent Grid object for inheritance, defaults to None.
+        :type parent: Grid, optional
+        :param flips: Node flips for partition changes, defaults to None.
+        :type flips: Dict[Tuple[int, int], int], optional
+
+        :raises Exception: If neither dimensions nor parent is provided.
         """
         if dimensions:
             self.dimensions = dimensions
@@ -100,12 +130,32 @@ class Grid(Partition):
         Returns the grid as a list of lists (like a matrix), where the (i,j)th
         entry is the assigned district of the node in position (i,j) on the
         grid.
+
+        :return: List of lists representing the grid.
+        :rtype: List[List[int]]
         """
         m, n = self.dimensions
         return [[self.assignment.mapping[(i, j)] for i in range(m)] for j in range(n)]
 
 
-def create_grid_graph(dimensions: Tuple[int, int], with_diagonals: bool) -> Graph:
+def create_grid_graph(
+    dimensions: Tuple[int, int],
+    with_diagonals: bool
+) -> Graph:
+    """
+    Creates a grid graph with the specified dimensions.
+    Optionally includes diagonal connections between nodes.
+
+    :param dimensions: The grid dimensions (rows, columns).
+    :type dimensions: Tuple[int, int]
+    :param with_diagonals: If True, includes diagonal connections.
+    :type with_diagonals: bool
+
+    :return: A grid graph.
+    :rtype: Graph
+
+    :raises ValueError: If the dimensions are not a tuple of length 2.
+    """
     if len(dimensions) != 2:
         raise ValueError("Expected two dimensions.")
     m, n = dimensions
@@ -133,12 +183,43 @@ def create_grid_graph(dimensions: Tuple[int, int], with_diagonals: bool) -> Grap
     return graph
 
 
-def give_constant_attribute(graph, attribute, value):
+def give_constant_attribute(
+    graph: Graph,
+    attribute: Any,
+    value: Any
+) -> None:
+    """
+    Sets the specified attribute to the specified value for all nodes in the graph.
+
+    :param graph: The graph to modify.
+    :type graph: Graph
+    :param attribute: The attribute to set.
+    :type attribute: Any
+    :param value: The value to set the attribute to.
+    :type value: Any
+
+    :return: None
+    """
     for node in graph.nodes:
         graph.nodes[node][attribute] = value
 
 
-def tag_boundary_nodes(graph: Graph, dimensions: Tuple[int, int]) -> None:
+def tag_boundary_nodes(
+    graph: Graph,
+    dimensions: Tuple[int, int]
+) -> None:
+    """
+    Adds the boolean attribute ``boundary_node`` to each node in the graph.
+    If the node is on the boundary of the grid, that node also gets the attribute
+    ``boundary_perim`` which is determined by the function :func:`get_boundary_perim`.
+
+    :param graph: The graph to modify.
+    :type graph: Graph
+    :param dimensions: The dimensions of the grid.
+    :type dimensions: Tuple[int, int]
+
+    :return: None
+    """
     m, n = dimensions
     for node in graph.nodes:
         if node[0] in [0, m - 1] or node[1] in [0, n - 1]:
@@ -148,7 +229,23 @@ def tag_boundary_nodes(graph: Graph, dimensions: Tuple[int, int]) -> None:
             graph.nodes[node]["boundary_node"] = False
 
 
-def get_boundary_perim(node: Tuple[int, int], dimensions: Tuple[int, int]) -> int:
+def get_boundary_perim(
+    node: Tuple[int, int],
+    dimensions: Tuple[int, int]
+) -> int:
+    """
+    Determines the boundary perimeter of a node on the grid.
+    The boundary perimeter is the number of sides of the node that
+    are on the boundary of the grid.
+
+    :param node: The node to check.
+    :type node: Tuple[int, int]
+    :param dimensions: The dimensions of the grid.
+    :type dimensions: Tuple[int, int]
+
+    :return: The boundary perimeter of the node.
+    :rtype: int
+    """
     m, n = dimensions
     if node in [(0, 0), (m - 1, 0), (0, n - 1), (m - 1, n - 1)]:
         return 2
@@ -158,7 +255,7 @@ def get_boundary_perim(node: Tuple[int, int], dimensions: Tuple[int, int]) -> in
         return 0
 
 
-def color_half(node, threshold=5):
+def color_half(node: Tuple[int, int], threshold: int = 5) -> int:
     x = node[0]
     return 0 if x <= threshold else 1
 
@@ -168,19 +265,3 @@ def color_quadrants(node: Tuple[int, int], thresholds: Tuple[int, int]) -> int:
     x_color = 0 if x < thresholds[0] else 1
     y_color = 0 if y < thresholds[1] else 2
     return x_color + y_color
-
-
-def grid_size(parition):
-    """ This is a hardcoded population function
-    for the grid class"""
-
-    L = parition.as_list_of_lists()
-    permit = [3, 4, 5]
-
-    sizes = [0, 0, 0, 0]
-
-    for i in range(len(L)):
-        for j in range(len(L[0])):
-            sizes[L[i][j]] += 1
-
-    return all(x in permit for x in sizes)

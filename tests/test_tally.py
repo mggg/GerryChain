@@ -5,9 +5,9 @@ from gerrychain.accept import always_accept
 from gerrychain.constraints import no_vanishing_districts, single_flip_contiguous
 from gerrychain.grid import Grid
 from gerrychain.proposals import propose_random_flip
-from gerrychain.random import random
+import random
 from gerrychain.updaters.tally import DataTally, Tally
-
+random.seed(2018)
 
 def random_assignment(graph, num_districts):
     return {node: random.choice(range(num_districts)) for node in graph.nodes}

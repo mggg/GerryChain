@@ -1,29 +1,29 @@
 from functools import partial
 from inspect import signature
-from ..random import random
+import random
 
+from gerrychain.partition import Partition
 from ..tree import (
     recursive_tree_part, bipartition_tree, bipartition_tree_random,
     _bipartition_tree_random_all, uniform_spanning_tree,
     find_balanced_edge_cuts_memoization,
 )
+from typing import Callable, Optional, Dict
 
 
 def recom(
-    partition, pop_col, pop_target, epsilon, node_repeats=1, 
-    weight_dict = None,
-    method=bipartition_tree
-):
-    """ReCom proposal.
+    partition: Partition,
+    pop_col: str,
+    pop_target: float,
+    epsilon: float,
+    node_repeats: int = 1,
+    weight_dict: Optional[Dict] = None,
+    method: Callable = bipartition_tree
+) -> Partition:
+    """
+    Example usage:
 
-    Description from MGGG's 2018 Virginia House of Delegates report:
-    At each step, we (uniformly) randomly select a pair of adjacent districts and
-    merge all of their blocks in to a single unit. Then, we generate a spanning tree
-    for the blocks of the merged unit with the Kruskal/Karger algorithm. Finally,
-    we cut an edge of the tree at random, checking that this separates the region
-    into two new districts that are population balanced.
-
-    Example usage::
+    .. code-block:: python
 
         from functools import partial
         from gerrychain import MarkovChain
@@ -41,6 +41,7 @@ def recom(
         chain = MarkovChain(proposal, constraints, accept, partition, total_steps)
 
     """
+
     edge = random.choice(tuple(partition["cut_edges"]))
     parts_to_merge = (partition.assignment.mapping[edge[0]], partition.assignment.mapping[edge[1]])
 

@@ -1,6 +1,6 @@
 import networkx as nx
 from numpy import linalg as LA
-from ..random import random
+import random
 
 
 def spectral_cut(graph, part_labels, weight_type, lap_type):

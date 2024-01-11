@@ -1,9 +1,38 @@
+"""
+This module provides tools and algorithms for manipulating and analyzing graphs,
+particularly focused on partitioning graphs based on population data. It leverages the
+NetworkX library to handle graph structures and implements various algorithms for graph
+partitioning and tree traversal.
+
+Key functionalities include:
+
+- Predecessor and successor functions for graph traversal using breadth-first search.
+- Implementation of random and uniform spanning trees for graph partitioning.
+- The `PopulatedGraph` class, which represents a graph with additional population data,
+  and methods for assessing and modifying this data.
+- Functions for finding balanced edge cuts in a populated graph, either through
+  contraction or memoization techniques.
+- A suite of functions (`bipartition_tree`, `recursive_tree_part`, `get_seed_chunks`, etc.)
+  for partitioning graphs into balanced subsets based on population targets and tolerances.
+- Utility functions like `get_max_prime_factor_less_than` and `recursive_seed_part_inner`
+  to assist in complex partitioning tasks.
+
+Dependencies:
+
+- networkx: Used for graph data structure and algorithms.
+- random: Provides random number generation for probabilistic approaches.
+- typing: Used for type hints.
+
+Last Updated: 11 Jan 2024
+"""
+
+
 import networkx as nx
 from networkx.algorithms import tree
 
 from functools import partial
 from inspect import signature
-from .random import random
+import random
 from collections import deque, namedtuple
 from typing import Any, Callable, Dict, List, Optional, Set, Union, Hashable, Sequence, Tuple
 
@@ -16,27 +45,28 @@ def successors(h: nx.Graph, root: Any) -> Dict:
     return {a: b for a, b in nx.bfs_successors(h, root)}
 
 
-def random_spanning_tree(graph: nx.Graph, weight_dict: Dict) -> nx.Graph:
-    """ 
+def random_spanning_tree(graph: nx.Graph, weight_dict: Optional[Dict] = None) -> nx.Graph:
+    """
     Builds a spanning tree chosen by Kruskal's method using random weights.
-    
+
     :param graph: The input graph to build the spanning tree from. Should be a Networkx Graph.
     :type graph: nx.Graph
-    :param weight_dict: Dictionary of weights to add to the random weights used in region-aware variants.
-    :type weight_dict: Dict
+    :param weight_dict: Dictionary of weights to add to the random weights used in region-aware
+        variants.
+    :type weight_dict: Optional[Dict], optional
     :return: The maximal spanning tree represented as a Networkx Graph.
     :rtype: nx.Graph
     """
     if weight_dict is None:
         weight_dict = dict()
-        
+
     for edge in graph.edges():
         weight = random.random()
         for key, value in weight_dict.items():
             if graph.nodes[edge[0]][key] == graph.nodes[edge[1]][key] and \
                graph.nodes[edge[0]][key] is not None:
                 weight += value
-                
+
         graph.edges[edge]["random_weight"] = weight
 
     spanning_tree = tree.maximum_spanning_tree(
@@ -45,13 +75,14 @@ def random_spanning_tree(graph: nx.Graph, weight_dict: Dict) -> nx.Graph:
     return spanning_tree
 
 
-def uniform_spanning_tree( 
-    graph: nx.Graph, 
+def uniform_spanning_tree(
+    graph: nx.Graph,
     choice: Callable = random.choice
 ) -> nx.Graph:
-    """ 
+    """
     Builds a spanning tree chosen uniformly from the space of all
     spanning trees of the graph. Uses Wilson's algorithm.
+
     :param graph: Networkx Graph
     :type graph: nx.Graph
     :param choice: :func:`random.choice`. Defaults to :func:`random.choice`.
@@ -90,10 +121,11 @@ class PopulatedGraph:
     :type populations: Dict
     :param ideal_pop: The ideal population for each district.
     :type ideal_pop: float
-    :param epsilon: The tolerance for population deviation from the ideal population within each 
-    district.
+    :param epsilon: The tolerance for population deviation from the ideal population within each
+        district.
     :type epsilon: float
     """
+
     def __init__(
         self,
         graph: nx.Graph,
@@ -125,15 +157,26 @@ class PopulatedGraph:
             abs(self.population[node] - self.ideal_pop) < self.epsilon * self.ideal_pop
         )
 
+    def __repr__(self) -> str:
+        graph_info = f"Graph(nodes={len(self.graph.nodes)}, edges={len(self.graph.edges)})"
+        return (
+            f"{self.__class__.__name__}("
+            f"graph={graph_info}, "
+            f"total_population={self.tot_pop}, "
+            f"ideal_population={self.ideal_pop}, "
+            f"epsilon={self.epsilon})"
+        )
 
 
 # Tuple that is used in the find_balanced_edge_cuts function
-# Comment added to make this easier to find
 Cut = namedtuple("Cut", "edge subset")
+Cut.__doc__ = "Represents a cut in a graph."
+Cut.edge.__doc__ = "The edge where the cut is made."
+Cut.subset.__doc__ = "The subset of nodes on one side of the cut."
 
 
 def find_balanced_edge_cuts_contraction(
-    h: PopulatedGraph, 
+    h: PopulatedGraph,
     choice: Callable = random.choice
 ) -> List[Cut]:
     """
@@ -172,9 +215,10 @@ def find_balanced_edge_cuts_memoization(
     """
     Find balanced edge cuts using memoization.
 
-    This function takes a PopulatedGraph object and a choice function as input and returns a list of balanced edge cuts.
-    A balanced edge cut is defined as a cut that divides the graph into two subsets, such that the population of each subset
-    is close to the ideal population defined by the PopulatedGraph object.
+    This function takes a PopulatedGraph object and a choice function as input and returns a list
+    of balanced edge cuts. A balanced edge cut is defined as a cut that divides the graph into
+    two subsets, such that the population of each subset is close to the ideal population
+    defined by the PopulatedGraph object.
 
     :param h: The PopulatedGraph object representing the graph.
     :type h: PopulatedGraph
@@ -183,7 +227,7 @@ def find_balanced_edge_cuts_memoization(
     :return: A list of balanced edge cuts.
     :rtype: List[Any]
     """
-    
+
     root = choice([x for x in h if h.degree(x) > 1])
     pred = predecessors(h.graph, root)
     succ = successors(h.graph, root)
@@ -238,7 +282,7 @@ def bipartition_tree(
     node_repeats: int = 1,
     spanning_tree: Optional[nx.Graph] = None,
     spanning_tree_fn: Callable = random_spanning_tree,
-    weight_dict: Dict = None,
+    weight_dict: Optional[Dict] = None,
     balance_edge_fn: Callable = find_balanced_edge_cuts_memoization,
     choice: Callable = random.choice,
     max_attempts: Optional[int] = 10000
@@ -252,38 +296,37 @@ def bipartition_tree(
     Builds up a connected subgraph with a connected complement whose population
     is ``epsilon * pop_target`` away from ``pop_target``.
 
-
     :param graph: The graph to partition.
     :type graph: nx.Graph
     :param pop_col: The node attribute holding the population of each node.
     :type pop_col: str
     :param pop_target: The target population for the returned subset of nodes.
     :type pop_target: Union[int, float]
-    :param epsilon: The allowable deviation from ``pop_target`` (as a percentage of 
+    :param epsilon: The allowable deviation from ``pop_target`` (as a percentage of
         ``pop_target``) for the subgraph's population.
     :type epsilon: float
-    :param node_repeats: A parameter for the algorithm: how many different choices 
+    :param node_repeats: A parameter for the algorithm: how many different choices
         of root to use before drawing a new spanning tree. Defaults to 1.
     :type node_repeats: int
-    :param spanning_tree: The spanning tree for the algorithm to use (used when the 
+    :param spanning_tree: The spanning tree for the algorithm to use (used when the
         algorithm chooses a new root and for testing).
     :type spanning_tree: Optional[nx.Graph]
-    :param spanning_tree_fn: The random spanning tree algorithm to use if a spanning 
+    :param spanning_tree_fn: The random spanning tree algorithm to use if a spanning
         tree is not provided. Defaults to :func:`random_spanning_tree`.
     :type spanning_tree_fn: Callable
-    :param weight_dict: A dictionary of weights for the spanning tree algorithm. 
+    :param weight_dict: A dictionary of weights for the spanning tree algorithm.
         Defaults to None.
-    :type weight_dict: Dict, optional
-    :param balance_edge_fn: The function to find balanced edge cuts. Defaults to 
+    :type weight_dict: Optional[Dict], optional
+    :param balance_edge_fn: The function to find balanced edge cuts. Defaults to
         :func:`find_balanced_edge_cuts_memoization`.
     :type balance_edge_fn: Callable, optional
     :param choice: The function to make a random choice. Can be substituted for testing.
         Defaults to :func:`random.choice`.
     :type choice: Callable
-    :param max_attempts: The maximum number of attempts that should be made to bipartition. 
+    :param max_attempts: The maximum number of attempts that should be made to bipartition.
         Defaults to 1000.
     :type max_attempts: Optional[int]
-    :return: A subset of nodes of ``graph`` (whose induced subgraph is connected). The other 
+    :return: A subset of nodes of ``graph`` (whose induced subgraph is connected). The other
         part of the partition is the complement of this subset.
     :rtype: Set
     :raises RuntimeError: If a possible cut cannot be found after the maximum number of attempts.
@@ -291,7 +334,7 @@ def bipartition_tree(
     # Try to add the region-aware in if the spanning_tree_fn accepts a weight dictionary
     if 'weight_dict' in signature(spanning_tree_fn).parameters:
         spanning_tree_fn = partial(spanning_tree_fn, weight_dict=weight_dict)
-    
+
     populations = {node: graph.nodes[node][pop_col] for node in graph.node_indices}
 
     possible_cuts = []
@@ -342,26 +385,31 @@ def _bipartition_tree_random_all(
     :type epsilon: float
     :param node_repeats: The number of times to repeat the bipartitioning process. Defaults to 1.
     :type node_repeats: int, optional
-    :param repeat_until_valid: Whether to repeat the bipartitioning process until a valid bipartition is found. Defaults to True.
+    :param repeat_until_valid: Whether to repeat the bipartitioning process until a valid
+        bipartition is found. Defaults to True.
     :type repeat_until_valid: bool, optional
-    :param spanning_tree: The spanning tree to use for bipartitioning. If None, a random spanning tree will be generated. Defaults to None.
+    :param spanning_tree: The spanning tree to use for bipartitioning. If None, a random spanning
+        tree will be generated. Defaults to None.
     :type spanning_tree: Optional[nx.Graph], optional
-    :param spanning_tree_fn: The function to generate a spanning tree. Defaults to random_spanning_tree.
+    :param spanning_tree_fn: The function to generate a spanning tree. Defaults to
+        random_spanning_tree.
     :type spanning_tree_fn: Callable, optional
-    :param balance_edge_fn: The function to find balanced edge cuts. Defaults to find_balanced_edge_cuts_memoization.
+    :param balance_edge_fn: The function to find balanced edge cuts. Defaults to
+        find_balanced_edge_cuts_memoization.
     :type balance_edge_fn: Callable, optional
     :param choice: The function to choose a random element from a list. Defaults to random.choice.
     :type choice: Callable, optional
-    :param max_attempts: The maximum number of attempts to find a valid bipartition. If None, there is no limit. Defaults to None.
+    :param max_attempts: The maximum number of attempts to find a valid bipartition. If None,
+        there is no limit. Defaults to None.
     :type max_attempts: Optional[int], optional
 
     :returns: A list of possible cuts that bipartition the tree into two subgraphs.
     :rtype: List[Tuple[Hashable, Hashable]]
 
-    :raises RuntimeError: If a valid bipartition cannot be found after the specified number of attempts.
+    :raises RuntimeError: If a valid bipartition cannot be found after the specified number of
+        attempts.
     """
 
-    
     populations = {node: graph.nodes[node][pop_col] for node in graph.node_indices}
 
     possible_cuts = []
@@ -414,37 +462,38 @@ def bipartition_tree_random(
     Builds up a connected subgraph with a connected complement whose population
     is ``epsilon * pop_target`` away from ``pop_target``.
 
-    :param graph: The graph to partition (must be an instance of nx.Graph)
+    :param graph: The graph to partition
     :type graph: nx.Graph
-    :param pop_col: The node attribute holding the population of each node (must be a string)
+    :param pop_col: The node attribute holding the population of each node
     :type pop_col: str
-    :param pop_target: The target population for the returned subset of nodes (must be an int or float)
+    :param pop_target: The target population for the returned subset of nodes
     :type pop_target: Union[int, float]
     :param epsilon: The allowable deviation from  ``pop_target`` (as a percentage of
-        ``pop_target``) for the subgraph's population (must be a float)
+        ``pop_target``) for the subgraph's population
     :type epsilon: float
     :param node_repeats: A parameter for the algorithm: how many different choices
-        of root to use before drawing a new spanning tree (default is 1, must be an int)
+        of root to use before drawing a new spanning tree. Defaults to 1.
     :type node_repeats: int
     :param repeat_until_valid: Determines whether to keep drawing spanning trees
         until a tree with a balanced cut is found. If `True`, a set of nodes will
         always be returned; if `False`, `None` will be returned if a valid spanning
-        tree is not found on the first try (default is True, must be a bool)
+        tree is not found on the first try. Defaults to True.
     :type repeat_until_valid: bool
     :param spanning_tree: The spanning tree for the algorithm to use (used when the
-        algorithm chooses a new root and for testing) (must be an instance of nx.Graph or None)
+        algorithm chooses a new root and for testing)
     :type spanning_tree: Optional[nx.Graph]
     :param spanning_tree_fn: The random spanning tree algorithm to use if a spanning
-        tree is not provided (must be a callable)
+        tree is not provided
     :type spanning_tree_fn: Callable
-    :param balance_edge_fn: The algorithm used to find balanced cut edges (must be a callable)
+    :param balance_edge_fn: The algorithm used to find balanced cut edges
     :type balance_edge_fn: Callable
-    :param choice: :func:`random.choice`. Can be substituted for testing. (must be a callable)
+    :param choice: :func:`random.choice`. Can be substituted for testing.
     :type choice: Callable
-    :param max_attempts: The max number of attempts that should be made to bipartition. (must be an int or None)
+    :param max_attempts: The max number of attempts that should be made to bipartition.
     :type max_attempts: Optional[int]
 
-    :return: A subset of nodes of ``graph`` (whose induced subgraph is connected) or None if a valid spanning tree is not found.
+    :return: A subset of nodes of ``graph`` (whose induced subgraph is connected) or None if a
+        valid spanning tree is not found.
     :rtype: Union[Set[Any], None]
     """
     possible_cuts = _bipartition_tree_random_all(
@@ -492,9 +541,10 @@ def recursive_tree_part(
     :param node_repeats: Parameter for :func:`~gerrychain.tree_methods.bipartition_tree` to use.
         Defaluts to 1.
     :type node_repeats: int, optional
-    :param method: The partition method to use. Defaults to 
+    :param method: The partition method to use. Defaults to
         `partial(bipartition_tree, max_attempts=10000)`.
     :type method: Callable, optional
+
     :return: New assignments for the nodes of ``graph``.
     :rtype: dict
     """
@@ -566,12 +616,13 @@ def get_seed_chunks(
     :param epsilon: How far (as a percentage of ``pop_target``) from ``pop_target`` the parts
         of the partition can be
     :type epsilon: float
-    :param node_repeats: Parameter for :func:`~gerrychain.tree_methods.bipartition_tree_random` 
+    :param node_repeats: Parameter for :func:`~gerrychain.tree_methods.bipartition_tree_random`
         to use.
     :type node_repeats: int, optional
     :param method: The method to use for bipartitioning the graph.
         Defaults to :func:`~gerrychain.tree_methods.bipartition_tree_random`
     :type method: Callable, optional
+
     :return: New assignments for the nodes of ``graph``.
     :rtype: dict
     """
@@ -651,14 +702,16 @@ def get_max_prime_factor_less_than(
     n: int, ceil: int
 ) -> Optional[int]:
     """
-    Helper function for recursive_seed_part_inner. Returns the largest prime factor of ``n`` less than
-    ``ceil``, or None if all are greater than ceil.
+    Helper function for recursive_seed_part_inner. Returns the largest prime factor of ``n``
+        less than ``ceil``, or None if all are greater than ceil.
 
     :param n: The number to find the largest prime factor for.
     :type n: int
     :param ceil: The upper limit for the largest prime factor.
     :type ceil: int
-    :return: The largest prime factor of ``n`` less than ``ceil``, or None if all are greater than ceil.
+
+    :return: The largest prime factor of ``n`` less than ``ceil``, or None if all are greater
+        than ceil.
     :rtype: int or None
     """
     if n <= 1 or ceil <= 1:
@@ -668,7 +721,7 @@ def get_max_prime_factor_less_than(
     while n % 2 == 0:
         largest_factor = 2
         n //= 2
-    
+
     i = 3
     while i * i <= n:
         while n % i == 0:
@@ -681,7 +734,6 @@ def get_max_prime_factor_less_than(
         largest_factor = n
 
     return largest_factor
- 
 
 
 def recursive_seed_part_inner(
@@ -702,14 +754,16 @@ def recursive_seed_part_inner(
     Splits graph into num_chunks chunks, and then recursively splits each chunk into
     ``num_dists``/num_chunks chunks.
     The number num_chunks of chunks is chosen based on ``n`` and ``ceil`` as follows:
-        If ``n`` is None, and ``ceil`` is None, num_chunks is the largest prime factor
-        of ``num_dists``.
-        If ``n`` is None and ``ceil`` is an integer at least 2, then num_chunks is the
-        largest prime factor of ``num_dists`` that is less than ``ceil``
-        If ``n`` is a positive integer, num_chunks equals n.
+
+    - If ``n`` is None, and ``ceil`` is None, num_chunks is the largest prime factor
+      of ``num_dists``.
+    - If ``n`` is None and ``ceil`` is an integer at least 2, then num_chunks is the
+      largest prime factor of ``num_dists`` that is less than ``ceil``
+    - If ``n`` is a positive integer, num_chunks equals n.
+
     Finally, if the number of chunks as chosen above does not divide ``num_dists``, then
     this function bites off a single district from the graph and recursively partitions
-    the remaining graph into ``num_dists``-1 districts.
+    the remaining graph into ``num_dists - 1`` districts.
 
     :param graph: The graph
     :param num_dists: number of districts to partition the graph into
@@ -728,9 +782,11 @@ def recursive_seed_part_inner(
         If ``ceil`` is a positive integer then finds the largest factor of ``num_dists`` less
         than or equal to ``ceil``, and recursively splits graph into that number of chunks, or
         bites off a district if that number is 1.
+
     :return: New assignments for the nodes of ``graph``.
     :rtype: List of lists, each list is a district
     """
+
     # Chooses num_chunks
     if n is None:
         if ceil is None:
@@ -760,13 +816,13 @@ def recursive_seed_part_inner(
         )
         remaining_nodes -= nodes
         assignment = [nodes] + recursive_seed_part_inner(graph.subgraph(remaining_nodes),
-            num_dists - 1,
-            pop_target,
-            pop_col,
-            epsilon,
-            method,
-            n=n,
-            ceil=ceil)
+                                                         num_dists - 1,
+                                                         pop_target,
+                                                         pop_col,
+                                                         epsilon,
+                                                         method,
+                                                         n=n,
+                                                         ceil=ceil)
 
     # split graph into num_chunks chunks, and recurse into each chunk
     elif num_dists % num_chunks == 0:
@@ -840,6 +896,7 @@ def recursive_seed_part(
         equal to ``ceil``, and recursively splits graph into that number of chunks, or bites off a
         district if that number is 1. Defaults to None.
     :type ceil: Optional[int]
+
     :return: New assignments for the nodes of ``graph``.
     :rtype: dict
     """
