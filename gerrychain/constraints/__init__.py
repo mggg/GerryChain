@@ -34,7 +34,6 @@ A validator should take in a :class:`~gerrychain.partition.Partition` instance,
 and should return whether or not the instance is valid according to their
 rules. Many top-level functions following this signature in this module are
 examples of this.
-
 """
 
 from .bounds import (LowerBound, SelfConfiguringLowerBound,
