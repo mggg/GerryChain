@@ -1,3 +1,15 @@
+"""
+This module provides tools for working with graphs in the context of geographic data.
+It extends the functionality of the NetworkX library, adding support for spatial data structures,
+geographic projections, and serialization to and from JSON format.
+
+This module is designed to be used in conjunction with geopandas, shapely, and pandas libraries,
+facilitating the integration of graph-based algorithms with geographic information systems (GIS).
+
+Note:
+This module relies on NetworkX, pandas, and geopandas, which should be installed and
+imported as required.
+"""
 import functools
 import json
 from typing import Any
@@ -10,22 +22,37 @@ import pandas as pd
 
 from .adjacency import neighbors
 from .geo import GeometryError, invalid_geometries, reprojected
-from typing import List, Iterable, Optional, Set
+from typing import List, Iterable, Optional, Set, Tuple
 
 
-def json_serialize(input_object):
-    """Serialize json so we can write to file
+def json_serialize(input_object: Any) -> Optional[int]:
+    """
+    This function is used to handle one of the common issues that
+    appears when trying to convert a pandas dataframe into a JSON
+    serializable object. Specifically, it handles the issue of converting
+    the pandas int64 to a python int so that JSON can serialize it.
+    This is specifically used so that we can write graphs out to JSON
+    files.
+
+    :param input_object: The object to be converted
+    :type input_object: Any (expected to be a pd.Int64Dtype)
+
+    :returns: The converted pandas object or None if input is not of type
+        pd.Int64Dtype
+    :rtype: Optional[int]
     """
     if pd.api.types.is_integer_dtype(input_object):  # handle int64
         return int(input_object)
 
+    return None
+
 
 class Graph(networkx.Graph):
-    """Represents a graph to be partitioned. It is based on :class:`networkx.Graph`.
+    """
+    Represents a graph to be partitioned, extending the :class:`networkx.Graph`.
 
-    We have added some classmethods to help construct graphs from shapefiles, and
-    to save and load graphs as JSON files.
-
+    This class includes additional class methods for constructing graphs from shapefiles,
+    and for saving and loading graphs in JSON format.
     """
 
     def __repr__(self):
@@ -33,14 +60,28 @@ class Graph(networkx.Graph):
 
     @classmethod
     def from_networkx(cls, graph: networkx.Graph) -> 'Graph':
+        """
+        Create a Graph instance from a networkx.Graph object.
+
+        :param graph: The networkx graph to be converted.
+        :type graph: networkx.Graph
+
+        :returns: The converted graph as an instance of this class.
+        :rtype: Graph
+        """
         g = cls(graph)
         return g
 
     @classmethod
-    def from_json(cls, json_file):
-        """Load a graph from a JSON file in the NetworkX json_graph format.
+    def from_json(cls, json_file: str) -> 'Graph':
+        """
+        Load a graph from a JSON file in the NetworkX json_graph format.
+
         :param json_file: Path to JSON file.
-        :return: Graph
+        :type json_file: str
+
+        :returns: The loaded graph as an instance of this class.
+        :rtype: Graph
         """
         with open(json_file) as f:
             data = json.load(f)
@@ -49,15 +90,20 @@ class Graph(networkx.Graph):
         graph.issue_warnings()
         return graph
 
-    def to_json(self, json_file: str, *, include_geometries_as_geojson=False) -> None:
-        """Save a graph to a JSON file in the NetworkX json_graph format.
+    def to_json(self, json_file: str, *, include_geometries_as_geojson: bool = False) -> None:
+        """
+        Save a graph to a JSON file in the NetworkX json_graph format.
 
         :param json_file: Path to target JSON file.
-        :param bool include_geometry_as_geojson: (optional) Whether to include
+        :type json_file: str
+        :param bool include_geometry_as_geojson: Whether to include
             any :mod:`shapely` geometry objects encountered in the graph's node
             attributes as GeoJSON. The default (``False``) behavior is to remove
             all geometry objects because they are not serializable. Including the
             GeoJSON will result in a much larger JSON file.
+        :type include_geometries_as_geojson: bool, optional
+
+        :returns: None
         """
         data = json_graph.adjacency_data(self)
 
@@ -78,12 +124,27 @@ class Graph(networkx.Graph):
         reproject: bool = False,
         ignore_errors: bool = False,
     ) -> "Graph":
-        """Create a :class:`Graph` from a shapefile (or GeoPackage, or GeoJSON, or
+        """
+        Create a :class:`Graph` from a shapefile (or GeoPackage, or GeoJSON, or
         any other library that :mod:`geopandas` can read. See :meth:`from_geodataframe`
         for more details.
 
-        :param cols_to_add: (optional) The names of the columns that you want to
-            add to the graph as node attributes. By default, all columns are added.
+        :param filename: Path to the shapefile / GeoPackage / GeoJSON / etc.
+        :type filename: str
+        :param adjacency: The adjacency type to use ("rook" or "queen"). Defaults is "rook"
+        :type adjacency: str, optional
+        :param cols_to_add: The names of the columns that you want to
+            add to the graph as node attributes. Default is None
+        :type cols_to_add: Optional[List[str]], optional
+        :param reproject: Whether to reproject to a UTM projection before
+            creating the graph. Default is False.
+        :type reproject: bool, optional
+        :param ignore_errors: Whether to ignore all invalid geometries and try to continue
+            creating the graph. Default is False.
+        :type ignore_errors: bool, optional
+
+        :returns: The Graph object of the geometries from `filename`.
+        :rtype: Graph
         """
         import geopandas as gp
 
@@ -123,17 +184,23 @@ class Graph(networkx.Graph):
         GeoDataFrame's current coordinate reference system. This option is for users who
         have a preferred CRS they would like to use.
 
-        :param dataframe: :class:`geopandas.GeoDataFrame`
-        :param adjacency: (optional) The adjacency type to use ("rook" or "queen").
+        :param dataframe: The GeoDateFrame to convert
+        :type dataframe: :class:`geopandas.GeoDataFrame`
+        :param adjacency: The adjacency type to use ("rook" or "queen").
             Default is "rook"
-        :param cols_to_add: (optional) The names of the columns that you want to
-            add to the graph as node attributes. By default, all columns are added.
-        :param reproject: (optional) Whether to reproject to a UTM projection before
+        :type adjacency: str, optional
+        :param cols_to_add: The names of the columns that you want to
+            add to the graph as node attributes. Default is None.
+        :type cols_to_add: Optional[List[str]], optional
+        :param reproject: Whether to reproject to a UTM projection before
             creating the graph. Default is ``True``.
-        :param ignore_errors: (optional) Whether to ignore all invalid geometries and
+        :type reproject: bool, optional
+        :param ignore_errors: Whether to ignore all invalid geometries and
             attept to create the graph anyway. Default is ``False``.
-        :return: The adjacency graph of the geometries from `dataframe`.
-        :rtype: :class:`Graph`
+        :type ignore_errors: bool, optional
+
+        :returns: The adjacency graph of the geometries from `dataframe`.
+        :rtype: Graph
         """
         # Validate geometries before reprojection
         if not ignore_errors:
@@ -183,11 +250,17 @@ class Graph(networkx.Graph):
         graph.graph["crs"] = df.crs.to_json()
         return graph
 
-    def lookup(self, node, field):
+    def lookup(self, node: Any, field: Any) -> Any:
         """
         Lookup a node/field attribute.
+
         :param node: Node to look up.
+        :type node: Any
         :param field: Field to look up.
+        :type field: Any
+
+        :returns: The value of the attribute `field` at `node`.
+        :rtype: Any
         """
         return self.nodes[node][field]
 
@@ -201,11 +274,16 @@ class Graph(networkx.Graph):
 
     def add_data(self, df: pd.DataFrame,
                  columns: Optional[Iterable[str]] = None) -> None:
-        """Add columns of a DataFrame to a graph as node attributes using
+        """
+        Add columns of a DataFrame to a graph as node attributes using
         by matching the DataFrame's index to node ids.
 
         :param df: Dataframe containing given columns.
-        :param columns: (optional) List of dataframe column names to add.
+        :type df: :class:`pandas.DataFrame`
+        :param columns: List of dataframe column names to add. Default is None.
+        :type columns: Optional[Iterable[str]], optional
+
+        :returns: None
         """
 
         if columns is None:
@@ -223,16 +301,23 @@ class Graph(networkx.Graph):
 
     def join(self, dataframe: pd.DataFrame, columns: Optional[List[str]] = None,
              left_index: Optional[str] = None, right_index: Optional[str] = None) -> None:
-        """Add data from a dataframe to the graph, matching nodes to rows when
+        """
+        Add data from a dataframe to the graph, matching nodes to rows when
         the node's `left_index` attribute equals the row's `right_index` value.
 
         :param dataframe: DataFrame.
-        :columns: (optional) The columns whose data you wish to add to the graph.
-            If not provided, all columns are added.
-        :left_index: (optional) The node attribute used to match nodes to rows.
-            If not provided, node IDs are used.
-        :right_index: (optional) The DataFrame column name to use to match rows
-            to nodes. If not provided, the DataFrame's index is used.
+        :type dataframe: :class:`pandas.DataFrame`
+        :columns: The columns whose data you wish to add to the graph.
+            If not provided, all columns are added. Default is None.
+        :type columns: Optional[List[str]], optional
+        :left_index: The node attribute used to match nodes to rows.
+            If not provided, node IDs are used. Default is None.
+        :type left_index: Optional[str], optional
+        :right_index: The DataFrame column name to use to match rows
+            to nodes. If not provided, the DataFrame's index is used. Default is None.
+        :type right_index: Optional[str], optional
+
+        :returns: None
         """
         if right_index is not None:
             df = dataframe.set_index(right_index)
@@ -264,11 +349,18 @@ class Graph(networkx.Graph):
 
     @property
     def islands(self) -> Set:
-        """The set of degree-0 nodes."""
+        """
+        :returns: The set of degree-0 nodes.
+        :rtype: Set
+        """
         return set(node for node in self if self.degree[node] == 0)
 
     def warn_for_islands(self) -> None:
-        """Issue a warning if the graph has any islands (degree-0 nodes)."""
+        """
+        :returns: None
+
+        :raises: UserWarning if the graph has any islands (degree-0 nodes).
+        """
         islands = self.islands
         if len(self.islands) > 0:
             warnings.warn(
@@ -276,16 +368,25 @@ class Graph(networkx.Graph):
             )
 
     def issue_warnings(self) -> None:
-        """Issue warnings if the graph has any red flags (right now, only islands)."""
+        """
+        :returns: None
+
+        :raises: UserWarning if the graph has any red flags (right now, only islands).
+        """
         self.warn_for_islands()
 
 
 def add_boundary_perimeters(graph: Graph, geometries: pd.Series) -> None:
-    """Add shared perimeter between nodes and the total geometry boundary.
+    """
+    Add shared perimeter between nodes and the total geometry boundary.
 
     :param graph: NetworkX graph
+    :type graph: :class:`Graph`
     :param geometries: :class:`geopandas.GeoSeries` containing geometry information.
-    :return: The updated graph.
+    :type geometries: :class:`pandas.Series`
+
+    :returns: The updated graph.
+    :rtype: Graph
     """
     from shapely.ops import unary_union
     from shapely.prepared import prep
@@ -306,19 +407,28 @@ def add_boundary_perimeters(graph: Graph, geometries: pd.Series) -> None:
 
 
 def check_dataframe(df: pd.DataFrame) -> None:
+    """
+    :returns: None
+
+    :raises: UserWarning if the dataframe has any NA values.
+    """
     for column in df.columns:
         if sum(df[column].isna()) > 0:
             warnings.warn("NA values found in column {}!".format(column))
 
 
 def remove_geometries(data: networkx.Graph) -> None:
-    """Remove geometry attributes from NetworkX adjacency data object,
+    """
+    Remove geometry attributes from NetworkX adjacency data object,
     because they are not serializable. Mutates the ``data`` object.
 
     Does nothing if no geometry attributes are found.
 
     :param data: an adjacency data object (returned by
         :func:`networkx.readwrite.json_graph.adjacency_data`)
+    :type data: networkx.Graph
+
+    :returns: None
     """
     for node in data["nodes"]:
         bad_keys = []
@@ -332,13 +442,17 @@ def remove_geometries(data: networkx.Graph) -> None:
 
 
 def convert_geometries_to_geojson(data: networkx.Graph) -> None:
-    """Convert geometry attributes in a NetworkX adjacency data object
+    """
+    Convert geometry attributes in a NetworkX adjacency data object
     to GeoJSON, so that they can be serialized. Mutates the ``data`` object.
 
     Does nothing if no geometry attributes are found.
 
     :param data: an adjacency data object (returned by
         :func:`networkx.readwrite.json_graph.adjacency_data`)
+    :type data: networkx.Graph
+
+    :returns: None
     """
     for node in data["nodes"]:
         for key in node:
@@ -352,22 +466,42 @@ def convert_geometries_to_geojson(data: networkx.Graph) -> None:
 
 
 class FrozenGraph:
-    """Represents an immutable graph to be partitioned. It is based off :class:`Graph`.
+    """
+    Represents an immutable graph to be partitioned. It is based off :class:`Graph`.
 
     This speeds up chain runs and prevents having to deal with cache invalidation issues.
     This class behaves slightly differently than :class:`Graph` or :class:`networkx.Graph`.
+
+    Not intended to be a part of the public API.
+
+    :ivar graph: The underlying graph.
+    :type graph: Graph
+    :ivar size: The number of nodes in the graph.
+    :type size: int
+
+    Note
+    ----
+    The class uses `__slots__` for improved memory efficiency.
     """
 
     __slots__ = ["graph", "size"]
 
-    def __init__(self, graph: Graph):
+    def __init__(self, graph: Graph) -> None:
+        """
+        Initialize a FrozenGraph from a Graph.
+
+        :param graph: The mutable Graph to be converted into an immutable graph
+        :type graph: Graph
+
+        :returns: None
+        """
         self.graph = networkx.classes.function.freeze(graph)
         self.graph.join = frozen
         self.graph.add_data = frozen
 
         self.size = len(self.graph)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self.size
 
     def __getattribute__(self, __name: str) -> Any:
@@ -379,28 +513,28 @@ class FrozenGraph:
     def __getitem__(self, __name: str) -> Any:
         return self.graph[__name]
 
-    def __iter__(self):
+    def __iter__(self) -> Iterable[Any]:
         yield from self.node_indices
 
     @functools.lru_cache(16384)
-    def neighbors(self, n):
+    def neighbors(self, n: Any) -> Tuple[Any, ...]:
         return tuple(self.graph.neighbors(n))
 
     @functools.cached_property
-    def node_indices(self):
+    def node_indices(self) -> Iterable[Any]:
         return self.graph.node_indices
 
     @functools.cached_property
-    def edge_indices(self):
+    def edge_indices(self) -> Iterable[Any]:
         return self.graph.edge_indices
 
     @functools.lru_cache(16384)
-    def degree(self, n):
+    def degree(self, n: Any) -> int:
         return self.graph.degree(n)
 
     @functools.lru_cache(65536)
-    def lookup(self, node, field):
+    def lookup(self, node: Any, field: str) -> Any:
         return self.graph.nodes[node][field]
 
-    def subgraph(self, nodes):
+    def subgraph(self, nodes: Iterable[Any]) -> 'FrozenGraph':
         return FrozenGraph(self.graph.subgraph(nodes))
