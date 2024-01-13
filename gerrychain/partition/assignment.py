@@ -1,12 +1,14 @@
 from collections import defaultdict
 from collections.abc import Mapping
-from typing import Dict
+from typing import Dict, Union, Optional, DefaultDict, Set
+from ..graph import Graph
 
 import pandas
 
 
 class Assignment(Mapping):
-    """An assignment of nodes into parts.
+    """
+    An assignment of nodes into parts.
 
     The goal of :class:`Assignment` is to provide an interface that mirrors a
     dictionary (what we have been using for assigning nodes to districts) while making it
@@ -20,7 +22,21 @@ class Assignment(Mapping):
         'mapping'
     ]
 
-    def __init__(self, parts, mapping=None, validate=True):
+    def __init__(self, parts: Dict, mapping: Dict = None, validate: bool = True) -> None:
+        """
+        :param parts: dictionary mapping partition assignments to sets or
+            frozensets of nodes
+        :type parts: Dict
+        :param mapping: dictionary mapping nodes to partition assignments
+        :type mapping: Dict, optional
+        :param validate: whether to validate the assignment
+        :type validate: bool, optional
+
+        :returns: None
+
+        :raises ValueError: if the keys of ``parts`` are not unique
+        :raises TypeError: if the values of ``parts`` are not frozensets
+        """
         if validate:
             number_of_keys = sum(len(keys) for keys in parts.values())
             number_of_unique_keys = len(set().union(*parts.values()))
@@ -51,13 +67,15 @@ class Assignment(Mapping):
         return self.mapping[node]
 
     def copy(self):
-        """Returns a copy of the assignment.
+        """
+        Returns a copy of the assignment.
         Does not duplicate the frozensets of nodes, just the parts dictionary.
         """
         return Assignment(self.parts.copy(), self.mapping.copy(), validate=False)
 
     def update_flows(self, flows):
-        """Update the assignment for some nodes using the given flows.
+        """
+        Update the assignment for some nodes using the given flows.
         """
         for part, flow in flows.items():
             # Union between frozenset and set returns an object whose type
@@ -68,7 +86,8 @@ class Assignment(Mapping):
                 self.mapping[node] = part
 
     def items(self):
-        """Iterate over ``(node, part)`` tuples, where ``node`` is assigned to ``part``.
+        """
+        Iterate over ``(node, part)`` tuples, where ``node`` is assigned to ``part``.
         """
         yield from self.mapping.items()
 
@@ -78,12 +97,16 @@ class Assignment(Mapping):
     def values(self):
         yield from self.mapping.values()
 
-    def update_parts(self, new_parts):
-        """Update some parts of the assignment. Does not check that every node is
+    def update_parts(self, new_parts: Dict) -> None:
+        """
+        Update some parts of the assignment. Does not check that every node is
         still assigned to a part.
 
-        :param dict new_parts: dictionary mapping (some) parts to their new sets or
+        :param new_parts: dictionary mapping (some) parts to their new sets or
             frozensets of nodes
+        :type new_parts: Dict
+
+        :returns: None
         """
         for part, nodes in new_parts.items():
             self.parts[part] = frozenset(nodes)
@@ -91,49 +114,105 @@ class Assignment(Mapping):
             for node in nodes:
                 self.mapping[node] = part
 
-    def to_series(self):
-        """Convert the assignment to a :class:`pandas.Series`."""
+    def to_series(self) -> pandas.Series:
+        """
+        :returns: The assignment as a :class:`pandas.Series`.
+        :rtype: pandas.Series
+        """
         groups = [
             pandas.Series(data=part, index=nodes) for part, nodes in self.parts.items()
         ]
         return pandas.concat(groups)
 
-    def to_dict(self):
-        """Convert the assignment to a ``{node: part}`` dictionary."""
+    def to_dict(self) -> Dict:
+        """
+        :returns: The assignment as a ``{node: part}`` dictionary.
+        :rtype: Dict
+        """
         return self.mapping
 
     @classmethod
-    def from_dict(cls, assignment):
-        """Create an :class:`Assignment` from a dictionary. This is probably the method you want
+    def from_dict(cls, assignment: Dict) -> "Assignment":
+        """
+        Create an :class:`Assignment` from a dictionary. This is probably the method you want
         to use to create a new assignment.
 
         This also works for :class:`pandas.Series`.
+
+        :param assignment: dictionary mapping nodes to partition assignments
+        :type assignment: Dict
+
+        :returns: A new instance of :class:`Assignment` with the same assignments as the
+            passed-in dictionary.
+        :rtype: Assignment
         """
         parts = {part: frozenset(keys) for part, keys in level_sets(assignment).items()}
 
         return cls(parts)
 
 
-def get_assignment(assignment, graph=None):
-    if isinstance(assignment, str):
+def get_assignment(part_assignment: Union[str, Dict, Assignment],
+                   graph: Optional[Graph] = None
+                   ) -> Assignment:
+    """
+    Either extracts an :class:`Assignment` object from the input graph
+    using the provided key or attempts to convert part_assignment into
+    an :class:`Assignment` object.
+
+    :param part_assignment: A node attribute key, dictionary, or
+        :class:`Assignment` object corresponding to the desired assignment.
+    :type part_assignment: str
+    :param graph: The graph from which to extract the assignment.
+    :type graph: Optional[Graph], optional
+
+    :returns: An :class:`Assignment` object containing the assignment
+        corresponding to the part_assignment input
+    :rtype: Assignment
+
+    :raises TypeError: If the part_assignment is a string and the graph
+        is not provided.
+    :raises TypeError: If the part_assignment is not a string or dictionary.
+    """
+    if isinstance(part_assignment, str):
         if graph is None:
             raise TypeError(
-                "You must provide a graph when using a node attribute for the assignment"
+                "You must provide a graph when using a node attribute for the part_assignment"
             )
         return Assignment.from_dict(
-            {node: graph.nodes[node][assignment] for node in graph}
+            {node: graph.nodes[node][part_assignment] for node in graph}
         )
-    elif callable(getattr(assignment, "items", None)):
-        return Assignment.from_dict(assignment)
-    elif isinstance(assignment, Assignment):
-        return assignment
+    # Check if assignment is a dict or a mapping type
+    elif callable(getattr(part_assignment, "items", None)):
+        return Assignment.from_dict(part_assignment)
+    elif isinstance(part_assignment, Assignment):
+        return part_assignment
     else:
         raise TypeError("Assignment must be a dict or a node attribute key")
 
 
-def level_sets(mapping: dict, container=set):
-    """Inverts a dictionary. ``{key: value}`` becomes
-    ``{value: <container of keys that map to value>}``."""
+def level_sets(mapping: Dict, container: Set = set) -> DefaultDict:
+    """
+    Inverts a dictionary. ``{key: value}`` becomes
+    ``{value: <container of keys that map to value>}``.
+
+    :param mapping: A dictionary to invert. Keys and values can be of any type.
+    :type mapping: Dict
+    :param container: A container type used to collect keys that map to the same value.
+        By default, it is a set.
+    :type container: Set
+
+    :return: A dictionary where each key is a value from the original dictionary,
+        and the corresponding value is a container (by default, a set) of keys from
+        the original dictionary that mapped to this value.
+    :rtype: DefaultDict
+
+    Example usage::
+
+    .. code_block:: python
+
+        >>> level_sets({'a': 1, 'b': 1, 'c': 2})
+        defaultdict(<class 'set'>, {1: {'a', 'b'}, 2: {'c'}})
+    """
     sets: Dict = defaultdict(container)
     for source, target in mapping.items():
         sets[target].add(source)

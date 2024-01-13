@@ -21,6 +21,14 @@ def recom(
     method: Callable = bipartition_tree
 ) -> Partition:
     """
+    ReCom (short for ReCombination) is a Markov Chain Monte Carlo (MCMC) algorithm
+    used for redistricting. At each step of the algorithm, a pair of adjacent districts
+    is selected at random and merged into a single district. The region is then split
+    into two new districts by generating a spanning tree using the Kruskal/Karger
+    algorithm and cutting an edge at random. The edge is checked to ensure that it
+    separates the region into two new districts that are population balanced, and,
+    if not, a new edge is selected at random and the process is repeated.
+
     Example usage:
 
     .. code-block:: python
@@ -40,6 +48,25 @@ def recom(
 
         chain = MarkovChain(proposal, constraints, accept, partition, total_steps)
 
+    :param partition: The initial partition.
+    :type partition: Partition
+    :param pop_col: The name of the population column.
+    :type pop_col: str
+    :param pop_target: The target population for each district.
+    :type pop_target: float
+    :param epsilon: The epsilon value for population deviation.
+    :type epsilon: float
+    :param node_repeats: The number of times to repeat the bipartitioning step. Default is 1.
+    :type node_repeats: int, optional
+    :param weight_dict: The weight dictionary for the graph used for region-aware
+        partitioning of the grid. Default is None.
+    :type weight_dict: Optional[Dict], optional
+    :param method: The method used for bipartitioning the tree. Default is
+        :func:`~gerrychain.tree.bipartition_tree`.
+    :type method: Callable, optional
+
+    :returns: The new partition resulting from the ReCom algorithm.
+    :rtype: Partition
     """
 
     edge = random.choice(tuple(partition["cut_edges"]))
@@ -52,7 +79,6 @@ def recom(
     # Try to add the region aware in if the method accepts the weight dictionary
     if 'weight_dict' in signature(method).parameters:
         method = partial(method, weight_dict=weight_dict)
-    
 
     flips = recursive_tree_part(
         subgraph.graph,
@@ -67,10 +93,47 @@ def recom(
     return partition.flip(flips)
 
 
-def reversible_recom(partition, pop_col, pop_target, epsilon,
-                     balance_edge_fn=find_balanced_edge_cuts_memoization, M=1,
-                     repeat_until_valid=False, choice=random.choice):
-    """Reversible ReCom proposal."""
+def reversible_recom(
+    partition: Partition,
+    pop_col: str,
+    pop_target: float,
+    epsilon: float,
+    balance_edge_fn: Callable = find_balanced_edge_cuts_memoization,
+    M: int = 1,
+    repeat_until_valid: bool = False,
+    choice: Callable = random.choice
+) -> Partition:
+    """
+    Reversible ReCom algorithm for redistricting.
+
+    This function performs the reversible ReCom algorithm, which is a Markov Chain Monte
+    Carlo (MCMC) algorithm used for redistricting. For more information, see the paper
+    "Spanning Tree Methods for Sampling Graph Partitions" by Cannon, et al. (2022) at
+    https://arxiv.org/abs/2210.01401
+
+    :param partition: The initial partition.
+    :type partition: Partition
+    :param pop_col: The name of the population column.
+    :type pop_col: str
+    :param pop_target: The target population for each district.
+    :type pop_target: float
+    :param epsilon: The epsilon value for population deviation.
+    :type epsilon: float
+    :param balance_edge_fn: The balance edge function. Default is
+        find_balanced_edge_cuts_memoization.
+    :type balance_edge_fn: Callable, optional
+    :param M: The maximum number of balance edges. Default is 1.
+    :type M: int, optional
+    :param repeat_until_valid: Flag indicating whether to repeat until a valid partition is
+        found. Default is False.
+    :type repeat_until_valid: bool, optional
+    :param choice: The choice function for selecting a random element. Default is random.choice.
+    :type choice: Callable, optional
+
+    :returns: The new partition resulting from the reversible ReCom algorithm.
+    :rtype: Partition
+    """
+
     def dist_pair_edges(part, a, b):
         return set(
             e for e in part.graph.edges
@@ -139,13 +202,35 @@ def reversible_recom(partition, pop_col, pop_target, epsilon,
 
 
 class ReCom:
-    def __init__(self, pop_col, ideal_pop, epsilon, method=bipartition_tree_random):
+    """
+    ReCom (short for ReCombination) is a class that represents a ReCom proposal
+    for redistricting. It is used to create new partitions by recombining existing
+    districts while maintaining population balance.
+
+    """
+
+    def __init__(self,
+                 pop_col: str,
+                 ideal_pop: int,
+                 epsilon: float,
+                 method: Callable = bipartition_tree_random):
+        """
+        :param pop_col: The name of the column in the partition that contains the population data.
+        :type pop_col: str
+        :param ideal_pop: The ideal population for each district.
+        :type ideal_pop: float
+        :param epsilon: The maximum allowable deviation from the ideal population.
+        :type epsilon: float
+        :param method: The method used for bipartitioning the tree.
+            Defaults to `bipartition_tree_random`.
+        :type method: function, optional
+        """
         self.pop_col = pop_col
         self.ideal_pop = ideal_pop
         self.epsilon = epsilon
         self.method = method
 
-    def __call__(self, partition):
+    def __call__(self, partition: Partition):
         return recom(
             partition, self.pop_col, self.ideal_pop, self.epsilon, method=self.method
         )
@@ -153,5 +238,6 @@ class ReCom:
 
 class ReversibilityError(Exception):
     """Raised when the cut edge upper bound is violated."""
+
     def __init__(self, msg):
         self.message = msg

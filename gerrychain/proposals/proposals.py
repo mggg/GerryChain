@@ -1,8 +1,18 @@
 import random
+# from typing import TypeVar
+# Partition = TypeVar("Partition")
+from ..partition import Partition
 
 
-def propose_any_node_flip(partition):
-    """Flip a random node (not necessarily on the boundary) to a random part
+def propose_any_node_flip(partition: Partition) -> Partition:
+    """
+    Flip a random node (not necessarily on the boundary) to a random part
+
+    :param partition: The current partition to propose a flip from.
+    :type partition: Partition
+
+    :returns: A possible next `~gerrychain.Partition`
+    :rtype: Partition
     """
 
     node = random.choice(tuple(partition.graph))
@@ -11,11 +21,15 @@ def propose_any_node_flip(partition):
     return partition.flip({node: newpart})
 
 
-def propose_flip_every_district(partition):
-    """Proposes a random boundary flip for each district in the partition.
+def propose_flip_every_district(partition: Partition) -> Partition:
+    """
+    Proposes a random boundary flip for each district in the partition.
 
-    :param partition: The current partition to propose a flip from.
-    :return: a proposed next `~gerrychain.Partition`
+    :param partition: The current partition to propose the flips from.
+    :type partition: Partition
+
+    :returns: A possible next `~gerrychain.Partition`
+    :rtype: Partition
     """
     flips = dict()
 
@@ -31,11 +45,15 @@ def propose_flip_every_district(partition):
     return partition.flip(flips)
 
 
-def propose_chunk_flip(partition):
-    """Chooses a random boundary node and proposes to flip it and all of its neighbors
+def propose_chunk_flip(partition: Partition) -> Partition:
+    """
+    Chooses a random boundary node and proposes to flip it and all of its neighbors
 
     :param partition: The current partition to propose a flip from.
-    :return: a proposed next `~gerrychain.Partition`
+    :type partition: Partition
+
+    :returns: A possible next `~gerrychain.Partition`
+    :rtype: Partition
     """
     flips = dict()
 
@@ -56,11 +74,15 @@ def propose_chunk_flip(partition):
     return partition.flip(flips)
 
 
-def propose_random_flip(partition):
-    """Proposes a random boundary flip from the partition.
+def propose_random_flip(partition: Partition) -> Partition:
+    """
+    Proposes a random boundary flip from the partition.
 
     :param partition: The current partition to propose a flip from.
-    :return: a proposed next `~gerrychain.Partition`
+    :type partition: Partition
+
+    :returns: A possible next `~gerrychain.Partition`
+    :rtype: Partition
     """
     if len(partition["cut_edges"]) == 0:
         return partition
@@ -71,8 +93,9 @@ def propose_random_flip(partition):
     return partition.flip(flip)
 
 
-def slow_reversible_propose_bi(partition):
-    """Proposes a random boundary flip from the partition in a reversible fasion
+def slow_reversible_propose_bi(partition: Partition) -> Partition:
+    """
+    Proposes a random boundary flip from the partition in a reversible fasion
     for bipartitions by selecting a boundary node at random and uniformly picking
     one of its neighboring parts. For k-partitions this is not uniform since there
     might be multiple parts next to a single node.
@@ -80,7 +103,10 @@ def slow_reversible_propose_bi(partition):
     Temporary version until we make an updater for this set.
 
     :param partition: The current partition to propose a flip from.
-    :return: a proposed next `~gerrychain.Partition`
+    :type partition: Partition
+
+    :returns: A possible next `~gerrychain.Partition`
+    :rtype: Partition
     """
 
     b_nodes = {x[0] for x in partition["cut_edges"]}.union({x[1] for x in partition["cut_edges"]})
@@ -97,14 +123,18 @@ def slow_reversible_propose_bi(partition):
 flip = propose_random_flip
 
 
-def slow_reversible_propose(partition):
-    """Proposes a random boundary flip from the partition in a reversible fasion
+def slow_reversible_propose(partition: Partition) -> Partition:
+    """
+    Proposes a random boundary flip from the partition in a reversible fasion
     by selecting uniformly from the (node, flip) pairs.
 
     Temporary version until we make an updater for this set.
 
     :param partition: The current partition to propose a flip from.
-    :return: a proposed next `~gerrychain.Partition`
+    :type partition: Partition
+
+    :returns: A possible next `~gerrychain.Partition`
+    :rtype: Partition
     """
 
     b_nodes = {(x[0], partition.assignment.mapping[x[1]]) for x in partition["cut_edges"]

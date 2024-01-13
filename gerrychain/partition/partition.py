@@ -111,7 +111,7 @@ class Partition:
         on this partition.
 
         :param flips: dictionary assigning nodes of the graph to their new districts
-        :return: the new :class:`Partition`
+        :returns: the new :class:`Partition`
         :rtype: Partition
         """
         return self.__class__(parent=self, flips=flips)
