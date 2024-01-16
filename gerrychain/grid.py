@@ -266,10 +266,10 @@ def color_half(node: Tuple[int, int], threshold: int) -> int:
 
     :param node: The node to color, represented as a tuple of coordinates (x, y).
     :type node: Tuple[int, int]
-    :param threshold: The x-coordinate value that determines the color assignment. 
+    :param threshold: The x-coordinate value that determines the color assignment.
     :type threshold: int
 
-    :returns: An integer representing the color of the node. Returns 0 for nodes with 
+    :returns: An integer representing the color of the node. Returns 0 for nodes with
         x-coordinate less than or equal to the threshold, and 1 otherwise.
     :rtype: int
     """
@@ -279,7 +279,7 @@ def color_half(node: Tuple[int, int], threshold: int) -> int:
 
 def color_quadrants(node: Tuple[int, int], thresholds: Tuple[int, int]) -> int:
     """
-    Assigns a color (as an integer) to a node based on its position relative to 
+    Assigns a color (as an integer) to a node based on its position relative to
     specified threshold coordinates, effectively dividing the grid into four quadrants.
 
     The function uses two threshold values (one for each axis) to determine the color.
@@ -288,7 +288,7 @@ def color_quadrants(node: Tuple[int, int], thresholds: Tuple[int, int]) -> int:
 
     :param node: The node to color, represented as a tuple of coordinates (x, y).
     :type node: Tuple[int, int]
-    :param thresholds: A tuple of two integers representing the threshold coordinates 
+    :param thresholds: A tuple of two integers representing the threshold coordinates
         (x_threshold, y_threshold).
     :type thresholds: Tuple[int, int]
 

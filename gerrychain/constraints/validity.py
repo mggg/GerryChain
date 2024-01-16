@@ -17,7 +17,7 @@ class Validator:
 
         is_valid = Validator([constraint1, constraint2, constraint3])
         chain = MarkovChain(proposal, is_valid, accept, initial_state, total_steps)
-    
+
     :ivar constraints: List of validator functions that will check partitions.
     :type constraints: List[Callable]
     """
@@ -78,7 +78,7 @@ def within_percent_of_ideal_population(
     :param pop_key: The name of the population
         :class:`Tally <gerrychain.updaters.Tally>`. Default is ``"population"``.
     :type pop_key: str, optional
-    
+
     :returns: A :class:`.Bounds` constraint on the population attribute identified
         by ``pop_key``.
     :rtype: Bounds
@@ -139,7 +139,7 @@ def districts_within_tolerance(
     :param attrName: String that is the name of an updater in partition. Default is
         ``"population"``.
     :type attrName: str, optional
-    :param percentage: What percent (as a number between 0 and 1) difference is allowed. 
+    :param percentage: What percent (as a number between 0 and 1) difference is allowed.
         Default is 0.1.
     :type percentage: float, optional
 
