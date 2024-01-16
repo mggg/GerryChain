@@ -1,19 +1,27 @@
-"""Updaters that compute spanning tree statistics."""
+"""
+Updaters that compute spanning tree statistics.
+"""
 import math
 import numpy
 import networkx
+from typing import Dict
 
 
-def _num_spanning_trees_in_district(partition, district):
-    """Given a district ID, returns the number of spanning trees in the
+def _num_spanning_trees_in_district(partition, district: int) -> int:
+    """
+    Given a district ID, returns the number of spanning trees in the
     subgraph of self corresponding to the district.
 
     Uses Kirchoff's theorem to compute the number of spanning trees.
 
     :param partition: :class:`gerrychain.Partition`
+    :type partition: :class:`gerrychain.Partition`
     :param district: A district label (part) in the partition.
-    :return: The number of spanning trees in the subgraph of the
-    partition corresponding to district
+    :type district: int
+
+    :returns: The number of spanning trees in the subgraph of the
+        partition corresponding to district
+    :rtype: int
     """
     graph = partition.subgraphs[district]
     laplacian = networkx.laplacian_matrix(graph)
@@ -21,8 +29,11 @@ def _num_spanning_trees_in_district(partition, district):
     return math.exp(numpy.linalg.slogdet(L)[1])
 
 
-def num_spanning_trees(partition):
-    """Returns the number of spanning trees in each part (district) of a partition."""
+def num_spanning_trees(partition) -> Dict[int, int]:
+    """
+    :returns: The number of spanning trees in each part (district) of a partition.
+    :rtype: Dict[int, int]
+    """
     return {
         part: _num_spanning_trees_in_district(partition, part)
         for part in partition.parts

@@ -1,25 +1,50 @@
 import collections
 from enum import Enum
+from typing import Callable, Dict
+
 
 CountyInfo = collections.namedtuple("CountyInfo", "split nodes contains")
+"""
+A named tuple to store county split information.
+
+:param split: The county split status. Makes use of
+    :class:`.CountySplit` enum to compute.
+:type split: int
+:param nodes: The nodes that are contained in the county.
+:type nodes: List
+:param contains: The assignment IDs that are contained in the county.
+:type contains: Set
+"""
 
 
 class CountySplit(Enum):
+    """
+    Enum to track county splits in a partition.
+
+    :cvar NOT_SPLIT: The county is not split.
+    :cvar NEW_SPLIT: The county is split in the current partition.
+    :cvar OLD_SPLIT: The county is split in the parent partition.
+    """
     NOT_SPLIT = 0
     NEW_SPLIT = 1
     OLD_SPLIT = 2
 
 
-def county_splits(partition_name, county_field_name):
-    """Track county splits.
+def county_splits(partition_name: str, county_field_name: str) -> Callable:
+    """
+    Update that allows for the tracking of county splits.
 
     :param partition_name: Name that the :class:`.Partition` instance will store.
+    :type partition_name: str
     :param county_field_name: Name of county ID field on the graph.
-    :return: The tracked data is a dictionary keyed on the county ID. The
+    :type county_field_name: str
+
+    :returns: The tracked data is a dictionary keyed on the county ID. The
               stored values are tuples of the form `(split, nodes, seen)`.
               `split` is a :class:`.CountySplit` enum, `nodes` is a list of
               node IDs, and `seen` is a list of assignment IDs that are
               contained in the county.
+    :rtype: Callable
     """
 
     def _get_county_splits(partition):
@@ -28,8 +53,29 @@ def county_splits(partition_name, county_field_name):
     return _get_county_splits
 
 
-def compute_county_splits(partition, county_field, partition_field):
-    """Track nodes in counties and information about their splitting."""
+def compute_county_splits(partition,
+                          county_field: str,
+                          partition_field: str
+                          ) -> Dict[str, CountyInfo]:
+    """
+    Track nodes in counties and information about their splitting.
+
+    :param partition: The partition object to compute county splits for.
+    :type partition: :class:`~gerrychain.partition.Partition`
+    :param county_field: Name of county ID field on the graph.
+    :type county_field: str
+    :param partition_field: Name of the attribute in the graph
+        that stores the partition information. The county
+        split information will be computed with respect to this
+        division of the graph.
+    :type partition_field: str
+
+    :returns: A dict containing the information on how counties changed
+        between the parent and child partitions. If there is no parent
+        partition, then only the OLD_SPLIT and NOT_SPLIT values will be
+        used.
+    :rtype: Dict[str, CountyInfo]
+    """
 
     # Create the initial county data containers.
     if not partition.parent:
