@@ -4,6 +4,7 @@ The metagraph of partitions is the set of partitions that are reachable from the
 current partition by a single flip.
 
 Dependencies:
+
 - itertools: Used for product() function.
 - typing: Used for type hints.
 
@@ -19,11 +20,11 @@ from gerrychain.partition import Partition
 def all_cut_edge_flips(partition: Partition) -> Iterator[Dict]:
     """
     Generate all possible flips of cut edges in a partition
-    without any contraints.
+    without any constraints.
 
     :param partition: The partition object.
     :type partition: Partition
-    :return: An iterator that yields dictionaries representing the flipped edges.
+    :returns: An iterator that yields dictionaries representing the flipped edges.
     :rtype: Iterator[Dict]
     """
     for edge, index in product(partition.cut_edges, (0, 1)):
@@ -46,7 +47,7 @@ def all_valid_states_one_flip_away(
     :param constraints: Constraints to determine the validity of a partition.
                         It can be a single callable or an iterable of callables.
     :type constraints: Union[Iterable[Callable], Callable]
-    :return: An iterator that yields all valid partitions that differ from the
+    :returns: An iterator that yields all valid partitions that differ from the
              given partition by one flip.
     :rtype: Iterator[Partition]
     """
@@ -71,9 +72,10 @@ def all_valid_flips(
 
     :param partition: The initial partition.
     :type partition: Partition
-    :param constraints: The constraints to be satisfied.
+    :param constraints: The constraints to be satisfied. Can be a single
+        constraint or an iterable of constraints.
     :type constraints: Union[Iterable[Callable], Callable]
-    :return: An iterator that yields dictionaries representing valid flips.
+    :returns: An iterator that yields dictionaries representing valid flips.
     :rtype: Iterator[Dict]
     """
     for state in all_valid_states_one_flip_away(partition, constraints):
@@ -85,7 +87,7 @@ def metagraph_degree(
     constraints: Union[Iterable[Callable], Callable]
 ) -> int:
     """
-    Calculate the degree of the metagraph for a given partition.
+    Calculate the degree of the node in the metagraph of the given partition.
     That is to say, compute how many possible valid states are reachable from
     the state given by partition in a single flip subject to the prescribed
     constraints.
@@ -95,7 +97,7 @@ def metagraph_degree(
     :param constraints: The constraints to be applied to the partition.
                         It can be a single constraint or an iterable of constraints.
     :type constraints: Union[Iterable[Callable], Callable]
-    :return: The degree of the metagraph.
+    :returns: The degree of the partition node in the metagraph.
     :rtype: int
     """
     return len(list(all_valid_states_one_flip_away(partition, constraints)))

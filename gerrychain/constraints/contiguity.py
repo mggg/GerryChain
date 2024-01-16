@@ -23,14 +23,17 @@ def are_reachable(
 
     :param G: The networkx graph
     :type G: nx.Graph
-    :param source: The stating node
+    :param source: The starting node
     :type source: int
-    :param avoid: The function that determines if an edge should be avoided
+    :param avoid: The function that determines if an edge should be avoided.
+        It should take in three parameters: the start node, the end node, and
+        the edges to avoid. It should return True if the edge should be avoided,
+        False otherwise.
     :type avoid: Callable
     :param targets: The target nodes that we would like to reach
-    :type targets: int
+    :type targets: Any
 
-    :return: True if all of the targets are reachable from the source node
+    :returns: True if all of the targets are reachable from the source node
         under the avoid condition, False otherwise.
     :rtype: bool
     """
@@ -73,7 +76,7 @@ def single_flip_contiguous(partition: Partition) -> bool:
     :param partition: The proposed next :class:`~gerrychain.partition.Partition`
     :type partition: Partition
 
-    :return: whether the partition is contiguous
+    :returns: whether the partition is contiguous
     :rtype: bool
 
     We assume that `removed_node` belonged to an assignment class that formed a
@@ -104,7 +107,7 @@ def single_flip_contiguous(partition: Partition) -> bool:
             avoid function to have this signature.
         :type edge_attrs: Dict
 
-        :return: True if the edge should be avoided (i.e., if it crosses assignment classes),
+        :returns: True if the edge should be avoided (i.e., if it crosses assignment classes),
             False otherwise.
         :rtype: bool
         """
@@ -147,7 +150,8 @@ def affected_parts(partition: Partition) -> Set[int]:
     :param partition: The proposed next :class:`~gerrychain.partition.Partition`
     :type partition: Partition
 
-    :return: The set of IDs of all parts that gained or lost a node during the last
+    :returns: The set of IDs of all parts that gained or lost a node
+        when compared to the parent partition.
     :rtype: Set[int]
     """
     flips = partition.flips
@@ -171,7 +175,7 @@ def contiguous(partition: Partition) -> bool:
     :param partition: The proposed next :class:`~gerrychain.partition.Partition`
     :type partition: Partition
 
-    :return: Whether the partition is contiguous
+    :returns: Whether the partition is contiguous
     :rtype: bool
     """
     return all(
@@ -187,7 +191,7 @@ def contiguous_bfs(partition: Partition) -> bool:
     :param partition: Instance of Partition
     :type partition: Partition
 
-    :return: Whether the parts of this partition are connected
+    :returns: Whether the parts of this partition are connected
     :rtype: bool
     """
     parts_to_check = affected_parts(partition)
@@ -204,12 +208,10 @@ def contiguous_bfs(partition: Partition) -> bool:
 
 def number_of_contiguous_parts(partition: Partition) -> int:
     """
-    Return the number of non-connected assignment subgraphs.
-
     :param partition: Instance of Partition; contains connected components.
     :type partition: Partition
 
-    :return: number of contiguous districts
+    :returns: Number of contiguous parts in the partition.
     :rtype: int
     """
     parts = partition.assignment.parts
@@ -225,13 +227,13 @@ no_more_discontiguous = SelfConfiguringLowerBound(number_of_contiguous_parts)
 
 def contiguous_components(partition: Partition) -> Dict[int, list]:
     """
-    Return then connected components of each of the subgraphs of the parts
+    Return the connected components of each of the subgraphs of the parts
     of the partition.
 
     :param partition: Instance of Partition; contains connected components.
     :type partition: Partition
 
-    :return: dictionary mapping each part ID to a list holding the connected
+    :returns: dictionary mapping each part ID to a list holding the connected
         subgraphs of that part of the partition
     :rtype: dict
     """
@@ -243,13 +245,13 @@ def contiguous_components(partition: Partition) -> Dict[int, list]:
 
 def _bfs(graph: Dict[int, list]) -> bool:
     """
-    Performs a breadth-first search on the provided graph and returns true or
-    false depending on whether the graph is connected.
+    Performs a breadth-first search on the provided graph and returns True or
+    False depending on whether the graph is connected.
 
     :param graph: Dict-of-lists; an adjacency matrix.
     :type graph: Dict[int, list]
 
-    :return: is this graph connected?
+    :returns: is this graph connected?
     :rtype: bool
     """
     q = [next(iter(graph))]

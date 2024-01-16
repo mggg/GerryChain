@@ -5,9 +5,11 @@ analysis. It allows for the exploration of different districting plans based on 
 constraints and acceptance criteria.
 
 Key Components:
+
 - MarkovChain: The main class used for creating and iterating over Markov chain states.
-- Validator: A helper class for validating proposed states in the Markov chain.
-    see :class:`~gerrychain.constraints.Validator` for more details.
+- Validator: A helper class for validating proposed states in the Markov chain. See
+  :class:`~gerrychain.constraints.Validator` for more details.
+
 
 Usage:
 The primary use of this module is to create an instance of MarkovChain with appropriate
@@ -16,10 +18,12 @@ and then to iterate through the states of the Markov chain, yielding a new propo
 at each step.
 
 Dependencies:
+
 - typing: Used for type hints.
 
 Last Updated: 11 Jan 2024
 """
+
 
 from .constraints import Validator
 from typing import Union, Iterable, Callable, Optional
@@ -34,7 +38,7 @@ class MarkovChain:
     of a Markov chain run in a gerrymandering analysis context.
 
     It allows for the generation of a sequence of partitions (states) of a political
-    districting plans, where each partition represents a possible state in the Markov chain.
+    districting plan, where each partition represents a possible state in the Markov chain.
 
     Example usage:
 
@@ -70,7 +74,7 @@ class MarkovChain:
         :param total_steps: Number of steps to run.
         :type total_steps: int
 
-        :return: None
+        :returns: None
 
         :raises ValueError: If the initial_state is not valid according to the constraints.
         """
@@ -105,7 +109,7 @@ class MarkovChain:
         This method is called when an iterator is required for a container. It sets the
         counter to 0 and resets the state to the initial state.
 
-        :return: Returns itself as an iterator object.
+        :returns: Returns itself as an iterator object.
         :rtype: MarkovChain
         """
         self.counter = 0
@@ -117,12 +121,12 @@ class MarkovChain:
         Advances the Markov chain to the next state.
 
         This method is called to get the next item in the iteration.
-        It proposes the next state and moves to t it if that state is
+        It proposes the next state and moves to it if that state is
         valid according to the constraints and if accepted by the
         acceptance function. If the total number of steps has been
         reached, it raises a StopIteration exception.
 
-        :return: The next state of the Markov chain.
+        :returns: The next state of the Markov chain.
         :rtype: Optional[Partition]
 
         :raises StopIteration: If the total number of steps has been reached.
@@ -148,7 +152,7 @@ class MarkovChain:
         """
         Returns the total number of steps in the Markov chain.
 
-        :return: The total number of steps in the Markov chain.
+        :returns: The total number of steps in the Markov chain.
         :rtype: int
         """
         return self.total_steps
@@ -163,7 +167,7 @@ class MarkovChain:
         Useful for long-running Markov chains where you want to keep track
         of the progress. Requires the `tqdm` package to be installed.
 
-        :return: A tqdm-wrapped Markov chain.
+        :returns: A tqdm-wrapped Markov chain.
         """
         from tqdm.auto import tqdm
 

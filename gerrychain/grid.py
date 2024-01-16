@@ -5,6 +5,7 @@ plans without the need for extensive data processing. This module relies on Netw
 graph operations and integrates with GerryChain's Partition class.
 
 Dependencies:
+
 - math: For math.floor() function.
 - networkx: For graph operations with using the graph structure in
     :class:`~gerrychain.graph.Graph`.
@@ -131,7 +132,7 @@ class Grid(Partition):
         entry is the assigned district of the node in position (i,j) on the
         grid.
 
-        :return: List of lists representing the grid.
+        :returns: List of lists representing the grid.
         :rtype: List[List[int]]
         """
         m, n = self.dimensions
@@ -151,7 +152,7 @@ def create_grid_graph(
     :param with_diagonals: If True, includes diagonal connections.
     :type with_diagonals: bool
 
-    :return: A grid graph.
+    :returns: A grid graph.
     :rtype: Graph
 
     :raises ValueError: If the dimensions are not a tuple of length 2.
@@ -198,7 +199,7 @@ def give_constant_attribute(
     :param value: The value to set the attribute to.
     :type value: Any
 
-    :return: None
+    :returns: None
     """
     for node in graph.nodes:
         graph.nodes[node][attribute] = value
@@ -218,7 +219,7 @@ def tag_boundary_nodes(
     :param dimensions: The dimensions of the grid.
     :type dimensions: Tuple[int, int]
 
-    :return: None
+    :returns: None
     """
     m, n = dimensions
     for node in graph.nodes:
@@ -243,7 +244,7 @@ def get_boundary_perim(
     :param dimensions: The dimensions of the grid.
     :type dimensions: Tuple[int, int]
 
-    :return: The boundary perimeter of the node.
+    :returns: The boundary perimeter of the node.
     :rtype: int
     """
     m, n = dimensions
@@ -255,12 +256,45 @@ def get_boundary_perim(
         return 0
 
 
-def color_half(node: Tuple[int, int], threshold: int = 5) -> int:
+def color_half(node: Tuple[int, int], threshold: int) -> int:
+    """
+    Assigns a color (as an integer) to a node based on its x-coordinate.
+
+    This function is used to partition the grid into two parts based on a given threshold.
+    Nodes with an x-coordinate less than or equal to the threshold are assigned one color,
+    and nodes with an x-coordinate greater than the threshold are assigned another.
+
+    :param node: The node to color, represented as a tuple of coordinates (x, y).
+    :type node: Tuple[int, int]
+    :param threshold: The x-coordinate value that determines the color assignment. 
+    :type threshold: int
+
+    :returns: An integer representing the color of the node. Returns 0 for nodes with 
+        x-coordinate less than or equal to the threshold, and 1 otherwise.
+    :rtype: int
+    """
     x = node[0]
     return 0 if x <= threshold else 1
 
 
 def color_quadrants(node: Tuple[int, int], thresholds: Tuple[int, int]) -> int:
+    """
+    Assigns a color (as an integer) to a node based on its position relative to 
+    specified threshold coordinates, effectively dividing the grid into four quadrants.
+
+    The function uses two threshold values (one for each axis) to determine the color.
+    Each combination of being higher or lower than the threshold on each axis results
+    in a different color.
+
+    :param node: The node to color, represented as a tuple of coordinates (x, y).
+    :type node: Tuple[int, int]
+    :param thresholds: A tuple of two integers representing the threshold coordinates 
+        (x_threshold, y_threshold).
+    :type thresholds: Tuple[int, int]
+
+    :returns: An integer representing the color of the node, determined by its quadrant.
+    :rtype: int
+    """
     x, y = node
     x_color = 0 if x < thresholds[0] else 1
     y_color = 0 if y < thresholds[1] else 2

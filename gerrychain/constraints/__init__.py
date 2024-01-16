@@ -7,8 +7,8 @@ Helper classes
 ===============================================================================
 :class:`Validator`                    Collection of constraints
 :class:`Bounds`                       Bounds on numeric constraints
-:class:`UpperBound`                  Upper bounds on numeric constraints
-:class:`LowerBound`                  Lower bounds on numeric constraints
+:class:`UpperBound`                   Upper bounds on numeric constraints
+:class:`LowerBound`                   Lower bounds on numeric constraints
 :class:`SelfConfiguringUpperBound`    Automatic upper bounds on numeric constraints
 :class:`SelfConfiguringLowerBound`    Automatic lower bounds on numeric constraints
 :class:`WithinPercentRangeOfBounds`   Percentage bounds for numeric constraints

@@ -2,6 +2,7 @@
 This module provides the main acceptance function used in ReCom Markov chains.
 
 Dependencies:
+
 - random: For random number generation for probabilistic acceptance.
 
 Last Updated: 11 Jan 2024
@@ -23,7 +24,7 @@ def cut_edge_accept(partition: Partition) -> bool:
     :param partition: The current partition to accept a flip from.
     :type partition: Partition
 
-    :return: True if accepted, False to remain in place
+    :returns: True if accepted, False to remain in place
     :rtype: bool
     """
     bound = 1.0

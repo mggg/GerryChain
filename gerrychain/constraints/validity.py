@@ -17,19 +17,24 @@ class Validator:
 
         is_valid = Validator([constraint1, constraint2, constraint3])
         chain = MarkovChain(proposal, is_valid, accept, initial_state, total_steps)
+    
+    :ivar constraints: List of validator functions that will check partitions.
+    :type constraints: List[Callable]
     """
 
     def __init__(self, constraints: List[Callable]) -> None:
         """
         :param constraints: List of validator functions that will check partitions.
+        :type constraints: List[Callable]
         """
         self.constraints = constraints
 
     def __call__(self, partition: Partition) -> bool:
-        """Determine if the given partition is valid.
+        """
+        Determine if the given partition is valid.
 
-        :param partition: :class:`Partition` class to check.
-
+        :param partition: The partition to check.
+        :type partition: Partition
         """
         # check each constraint function and fail when a constraint test fails
         for constraint in self.constraints:
@@ -60,17 +65,23 @@ def within_percent_of_ideal_population(
     percent: float = 0.01,
     pop_key: str = "population"
 ) -> Bounds:
-    """Require that all districts are within a certain percent of "ideal" (i.e.,
+    """
+    Require that all districts are within a certain percent of "ideal" (i.e.,
     uniform) population.
 
     Ideal population is defined as "total population / number of districts."
 
     :param initial_partition: Starting partition from which to compute district information.
-    :param percent: (optional) Allowed percentage deviation. Default is 1%.
-    :param pop_key: (optional) The name of the population
+    :type initial_partition: Partition
+    :param percent: Allowed percentage deviation. Default is 1%.
+    :type percent: float, optional
+    :param pop_key: The name of the population
         :class:`Tally <gerrychain.updaters.Tally>`. Default is ``"population"``.
-    :return: A :class:`.Bounds` constraint on the population attribute identified
+    :type pop_key: str, optional
+    
+    :returns: A :class:`.Bounds` constraint on the population attribute identified
         by ``pop_key``.
+    :rtype: Bounds
     """
 
     def population(partition):
@@ -97,9 +108,13 @@ def deviation_from_ideal(
     By "deviation" we mean ``(actual_value - ideal)/ideal`` (not the absolute value).
 
     :param partition: A partition.
-    :param attribute: (optional) The :class:`Tally <gerrychain.updaters.Tally>` to
+    :type partition: Partition
+    :param attribute: The :class:`Tally <gerrychain.updaters.Tally>` to
         compute deviation for. Default is ``"population"``.
-    :return: dictionary from parts to their deviation
+    :type attribute: str, optional
+
+    :returns: dictionary from parts to their deviation
+    :rtype: Dict[int, float]
     """
     number_of_districts = len(partition[attribute].keys())
     total = sum(partition[attribute].values())
@@ -120,10 +135,15 @@ def districts_within_tolerance(
     district, as defined by the given attribute.
 
     :param partition: Partition class instance
-    :param attrName: String that is the name of an updater in partition
-    :param percentage: What percent difference is allowed
+    :type partition: Partition
+    :param attrName: String that is the name of an updater in partition. Default is
+        ``"population"``.
+    :type attrName: str, optional
+    :param percentage: What percent (as a number between 0 and 1) difference is allowed. 
+        Default is 0.1.
+    :type percentage: float, optional
 
-    :return: Whether the districts are within specified tolerance
+    :returns: Whether the districts are within specified tolerance
     :rtype: bool
     """
     if percentage >= 1:
@@ -143,7 +163,7 @@ def refuse_new_splits(partition_county_field: str) -> Callable[[Partition], bool
         :func:`.county_splits`.
     :type partition_county_field: str
 
-    :return: Function that returns ``True`` if the proposal does not split any new counties.
+    :returns: Function that returns ``True`` if the proposal does not split any new counties.
     :rtype: Callable[[Partition], bool]
     """
 
@@ -164,7 +184,7 @@ def no_vanishing_districts(partition: Partition) -> bool:
     :param partition: Partition to check.
     :type partition: Partition
 
-    :return: Whether no districts are completely consumed.
+    :returns: Whether no districts are completely consumed.
     :rtype: bool
     """
     if not partition.parent:

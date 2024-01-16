@@ -144,8 +144,9 @@ class SelfConfiguringLowerBound:
         """
         :param func: Numeric validator function.
         :type func: Callable
-        :param epsilon: Initial population deviation allowable by the validator.
-        :type epsilon: float
+        :param epsilon: Initial population deviation allowable by the validator
+            as a percentage of the ideal population. Defaults to 0.05.
+        :type epsilon: float, optional
         """
         self.func = func
         self.bound = None
@@ -184,7 +185,7 @@ class WithinPercentRangeOfBounds:
         :param percent: Percentage of the initial value to use as the bounds.
         :type percent: float
 
-        :return: None
+        :returns: None
 
         .. Warning::
             The percentage is assumed to be in the range [0.0, 100.0].
