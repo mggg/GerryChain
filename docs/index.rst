@@ -76,3 +76,9 @@ MGGG for the 2019 MIT IAP course `Computational Approaches for Political Redistr
     topics/tools
     topics/realworldplans
     topics/whatislands
+
+.. toctree::
+    :caption: Index
+    :maxdepth: 4
+
+    full_ref
