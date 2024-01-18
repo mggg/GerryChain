@@ -75,6 +75,7 @@ def test_pa_freeze():
     import hashlib
     from gerrychain.proposals import recom
     from functools import partial
+    random.seed(2018)
 
     graph = Graph.from_json("docs/user/PA_VTDs.json")
 
@@ -109,5 +110,7 @@ def test_pa_freeze():
         result += str(len(partition.cut_edges))
         result += str(count) + "\n"
     
-    print(hashlib.sha256(result.encode()).hexdigest())
-    assert hashlib.sha256(result.encode()).hexdigest() == "3bef9ac8c0bfa025fb75e32aea3847757a8fba56b2b2be6f9b3b952088ae3b3c"
+    # print(hashlib.sha256(result.encode()).hexdigest())
+    assert hashlib.sha256(result.encode()).hexdigest() == "957e5bd59fc2730707c6549f52dc8834ac48e5f37f0e37b71a04f6734a287b14"
+    
+    # "3bef9ac8c0bfa025fb75e32aea3847757a8fba56b2b2be6f9b3b952088ae3b3c"
