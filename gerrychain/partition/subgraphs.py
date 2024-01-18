@@ -12,7 +12,8 @@ class SubgraphView:
 
     :ivar graph: The parent graph from which subgraphs are derived.
     :type graph: Graph
-    :ivar parts: A dictionary mapping keys to subsets of nodes in the graph.
+    :ivar parts: A list-of-lists dictionary (so a dict with key values indicated by
+        the list index) mapping keys to subsets of nodes in the graph.
     :type parts: List[List[Any]]
     :ivar subgraphs_cache: Cache to store subgraph views for quick access.
     :type subgraphs_cache: Dict
@@ -28,7 +29,7 @@ class SubgraphView:
         :param graph: The parent graph from which subgraphs are derived.
         :type graph: Graph
         :param parts: A list of lists of nodes corresponding the different
-            parts of the partition of the graph
+            parts of the partition of the graph.
         :type parts: List[List[Any]]
 
         :returns: None

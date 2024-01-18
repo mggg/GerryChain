@@ -95,7 +95,7 @@ def propose_random_flip(partition: Partition) -> Partition:
 
 def slow_reversible_propose_bi(partition: Partition) -> Partition:
     """
-    Proposes a random boundary flip from the partition in a reversible fasion
+    Proposes a random boundary flip from the partition in a reversible fashion
     for bipartitions by selecting a boundary node at random and uniformly picking
     one of its neighboring parts. For k-partitions this is not uniform since there
     might be multiple parts next to a single node.

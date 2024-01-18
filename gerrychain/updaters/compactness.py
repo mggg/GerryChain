@@ -10,8 +10,8 @@ def boundary_nodes(partition, alias: str = "boundary_nodes") -> Set:
     :param partition: A partition of a Graph
     :type partition: :class:`~gerrychain.partition.Partition`
     :param alias: The name of the attribute that the boundary nodes are
-        stored under.
-    :type alias: str
+        stored under. Default is 'boundary_nodes'.
+    :type alias: str, optional
 
     :returns: The set of nodes in the partition that are on the boundary.
     :rtype: Set
@@ -166,6 +166,9 @@ def interior_boundaries(partition, previous: Set, new_edges: Set, old_edges: Set
 
 def flips(partition) -> Dict:
     """
+    :param partition: A partition of a Graph
+    :type partition: :class:`~gerrychain.partition.Partition`
+
     :returns: The flips that were made to get from the parent partition to the
         given partition.
     :rtype: Dict

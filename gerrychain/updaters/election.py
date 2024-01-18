@@ -1,5 +1,5 @@
 import math
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 from gerrychain.updaters.tally import DataTally
 import gerrychain.metrics.partisan as pm
 
@@ -65,7 +65,11 @@ class Election:
     :type alias: str
     """
 
-    def __init__(self, name, parties_to_columns, alias=None):
+    def __init__(self,
+                 name: str,
+                 parties_to_columns: Union[Dict, List],
+                 alias: Optional[str] = None
+                 ) -> None:
         """
         :param name: The name of the election. (e.g. "2008 Presidential")
         :type name: str
@@ -75,9 +79,9 @@ class Election:
             vote totals. Or, a list of strings which will serve as both
             the party names and the node attribute keys.
         :type parties_to_columns: Union[Dict, List]
-        :param alias: (optional) Alias that the election is registered under
+        :param alias: Alias that the election is registered under
             in the Partition's dictionary of updaters.
-        :type alias: str
+        :type alias: Optional[str], optional
         """
         self.name = name
 
@@ -140,7 +144,7 @@ class ElectionUpdater:
             for party in parties
         }
 
-        return ElectionResults(self.election, counts, races=partition.parts)
+        return ElectionResults(self.election, counts, regions=partition.parts)
 
     def get_previous_values(self, partition) -> Dict[str, Dict[int, float]]:
         """
@@ -162,7 +166,18 @@ class ElectionUpdater:
         return previous_totals_for_party
 
 
-def get_percents(counts, totals):
+def get_percents(counts: Dict, totals: Dict) -> Dict:
+    """
+    :param counts: A dictionary mapping each part in a partition to the
+        count of the number of votes that a party received in that part.
+    :type counts: Dict
+    :param totals: A dictionary mapping each part in a partition to the
+        total number of votes cast in that part.
+    :type totals: Dict
+
+    :returns: A dictionary mapping each part in a partition to the percentage
+    :rtype: Dict
+    """
     return {
         part: counts[part] / totals[part] if totals[part] > 0 else math.nan
         for part in totals
@@ -179,19 +194,25 @@ class ElectionResults:
     :ivar totals_for_party: A dictionary mapping party names to the total number of votes
         that party received in each part of the partition.
     :type totals_for_party: Dict[str, Dict[int, float]]
-    :ivar races: A list of races that we would like to consider
-    :type races: List[str]
+    :ivar regions: A list of regions that we would like the results for.
+    :type regions: List[int]
     :ivar totals: A dictionary mapping each part of the partition to the total number
         of votes cast in that part.
     :type totals: Dict[int, int]
     :ivar percents_for_party: A dictionary mapping party names to the percentage of votes
         that party received in each part of the partition.
     :type percents_for_party: Dict[str, Dict[int, float]]
+
+    .. note::
+
+        The variable "regions" is generally called "parts" in other sections of the
+        codebase, but we have changed it here to avoid confusion with the parameter
+        "party" that often appears within the class.
     """
 
     def __init__(self, election: Election,
                  counts: Dict[str, Dict[int, float]],
-                 races: List[str]
+                 regions: List[int]
                  ) -> None:
         """
         :param election: The :class:`Election` object that these results are associated with.
@@ -199,18 +220,19 @@ class ElectionResults:
         :counts: A dictionary mapping party names to the total number of votes that party
             received in each part of the partition.
         :type counts: Dict[str, Dict[int, float]]
-        :param races: A list of races that we would like to consider
-        :type races: List[str]
+        :param regions: A list of regions that we would like to consider (e.g. congressional
+            districts).
+        :type regions: List[int]
 
         :returns: None
         """
         self.election = election
         self.totals_for_party = counts
-        self.races = races
+        self.regions = regions
 
         self.totals = {
-            race: sum(counts[party][race] for party in self.election.parties)
-            for race in self.races
+            region: sum(counts[party][region] for party in self.election.parties)
+            for region in self.regions
         }
 
         self.percents_for_party = {
@@ -234,7 +256,7 @@ class ElectionResults:
         :returns: The number of seats that ``party`` won.
         :rtype: int
         """
-        return sum(self.won(party, race) for race in self.races)
+        return sum(self.won(party, region) for region in self.regions)
 
     def wins(self, party: str) -> int:
         """
@@ -248,21 +270,21 @@ class ElectionResults:
         """
         return self.seats(party)
 
-    def percent(self, party: str, race: Optional[str] = None) -> float:
+    def percent(self, party: str, region: Optional[int] = None) -> float:
         """
         :param party: Party ID.
         :type party: str
-        :param race: ID of the part of the partition whose votes we want to tally.
-        :type race: Optional[str], optional
+        :param region: ID of the part of the partition whose votes we want to tally.
+        :type region: Optional[int], optional
 
-        :returns: The percentage of the vote that ``party`` received in a given race
-            (part of the partition). If ``race`` is omitted, returns the overall vote
+        :returns: The percentage of the vote that ``party`` received in a given region
+            (part of the partition). If ``region`` is omitted, returns the overall vote
             share of ``party``.
         :rtype: float
         """
-        if race is not None:
-            return self.percents_for_party[party][race]
-        return sum(self.votes(party)) / sum(self.totals[race] for race in self.races)
+        if region is not None:
+            return self.percents_for_party[party][region]
+        return sum(self.votes(party)) / sum(self.totals[region] for region in self.regions)
 
     def percents(self, party: str) -> Tuple:
         """
@@ -273,23 +295,23 @@ class ElectionResults:
             in each part of the partition
         :rtype: Tuple
         """
-        return tuple(self.percents_for_party[party][race] for race in self.races)
+        return tuple(self.percents_for_party[party][region] for region in self.regions)
 
-    def count(self, party: str, race: Optional[str] = None) -> int:
+    def count(self, party: str, region: Optional[str] = None) -> int:
         """
         :param party: Party ID.
         :type party: str
-        :param race: ID of the part of the partition whose votes we want to tally.
-        :type race: Optional[str], optional
+        :param region: ID of the part of the partition whose votes we want to tally.
+        :type region: Optional[int], optional
 
-        :returns: The total number of votes that ``party`` received in a given race
-            (part of the partition). If ``race`` is omitted, returns the overall vote
+        :returns: The total number of votes that ``party`` received in a given region
+            (part of the partition). If ``region`` is omitted, returns the overall vote
             total of ``party``.
         :rtype: int
         """
-        if race is not None:
-            return self.totals_for_party[party][race]
-        return sum(self.totals_for_party[party][race] for race in self.races)
+        if region is not None:
+            return self.totals_for_party[party][region]
+        return sum(self.totals_for_party[party][region] for region in self.regions)
 
     def counts(self, party: str) -> Tuple:
         """
@@ -300,7 +322,7 @@ class ElectionResults:
             the partition
         :rtype: Tuple
         """
-        return tuple(self.totals_for_party[party][race] for race in self.races)
+        return tuple(self.totals_for_party[party][region] for region in self.regions)
 
     def votes(self, party: str) -> Tuple:
         """
@@ -315,18 +337,18 @@ class ElectionResults:
         """
         return self.counts(party)
 
-    def won(self, party: str, race: str) -> bool:
+    def won(self, party: str, region: str) -> bool:
         """
         :param party: Party ID
         :type party: str
-        :param race: ID of the part of the partition whose votes we want to tally.
-        :type race: str
+        :param region: ID of the part of the partition whose votes we want to tally.
+        :type region: str
 
-        :returns: Answer to "Did ``party`` win the race in part ``race``?"
+        :returns: Answer to "Did ``party`` win the region in part ``region``?"
         :rtype: bool
         """
         return all(
-            self.totals_for_party[party][race] > self.totals_for_party[opponent][race]
+            self.totals_for_party[party][region] > self.totals_for_party[opponent][region]
             for opponent in self.election.parties if opponent != party
         )
 

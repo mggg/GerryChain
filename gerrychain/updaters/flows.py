@@ -31,7 +31,7 @@ def flows_from_changes(old_partition, new_partition) -> Dict:
     :param new_partition: A partition of a Graph representing the current step.
     :type new_partition: :class:`~gerrychain.partition.Partition`
 
-    :returns: A dictionary mapping each node that changed assingment between
+    :returns: A dictionary mapping each node that changed assignment between
         the previous and current partitions to a dictionary of the form
         `{'in': <set of nodes that flowed in>, 'out': <set of nodes that flowed out>}`.
     :rtype: Dict

@@ -1,6 +1,6 @@
 from collections import defaultdict
 from collections.abc import Mapping
-from typing import Dict, Union, Optional, DefaultDict, Set
+from typing import Dict, Union, Optional, DefaultDict, Set, Type
 from ..graph import Graph
 
 import pandas
@@ -22,14 +22,14 @@ class Assignment(Mapping):
         'mapping'
     ]
 
-    def __init__(self, parts: Dict, mapping: Dict = None, validate: bool = True) -> None:
+    def __init__(self, parts: Dict, mapping: Optional[Dict] = None, validate: bool = True) -> None:
         """
-        :param parts: dictionary mapping partition assignments to sets or
-            frozensets of nodes
+        :param parts: Dictionary mapping partition assignments frozensets of nodes.
         :type parts: Dict
-        :param mapping: dictionary mapping nodes to partition assignments
-        :type mapping: Dict, optional
-        :param validate: whether to validate the assignment
+        :param mapping: Dictionary mapping nodes to partition assignments.
+            Default is None.
+        :type mapping: Optional[Dict], optional
+        :param validate: Whether to validate the assignment. Default is True.
         :type validate: bool, optional
 
         :returns: None
@@ -163,6 +163,7 @@ def get_assignment(part_assignment: Union[str, Dict, Assignment],
         :class:`Assignment` object corresponding to the desired assignment.
     :type part_assignment: str
     :param graph: The graph from which to extract the assignment.
+        Default is None.
     :type graph: Optional[Graph], optional
 
     :returns: An :class:`Assignment` object containing the assignment
@@ -190,7 +191,7 @@ def get_assignment(part_assignment: Union[str, Dict, Assignment],
         raise TypeError("Assignment must be a dict or a node attribute key")
 
 
-def level_sets(mapping: Dict, container: Set = set) -> DefaultDict:
+def level_sets(mapping: Dict, container: Type[Set] = set) -> DefaultDict:
     """
     Inverts a dictionary. ``{key: value}`` becomes
     ``{value: <container of keys that map to value>}``.
@@ -198,8 +199,8 @@ def level_sets(mapping: Dict, container: Set = set) -> DefaultDict:
     :param mapping: A dictionary to invert. Keys and values can be of any type.
     :type mapping: Dict
     :param container: A container type used to collect keys that map to the same value.
-        By default, it is a set.
-    :type container: Set
+        By default, the container type is ``set``.
+    :type container: Type[Set], optional
 
     :return: A dictionary where each key is a value from the original dictionary,
         and the corresponding value is a container (by default, a set) of keys from

@@ -2,6 +2,7 @@
 from collections import defaultdict, Counter
 import networkx as nx
 import math
+from typing import List
 
 
 class LocalitySplits:
@@ -53,20 +54,37 @@ class LocalitySplits:
     :ivar pent_alpha: A number between 0 and 1 which is passed as the
         exponent to :meth:`~LocalitySplits.power_entropy`
     :type pent_alpha: float
-    :ivar localities:
+    :ivar localities: A list containing the unique locality identifiers
+        (e.g. county names, municipality names, etc.) for the partition.
+        This list is populated using the locality data stored on each of
+        the nodes in the graph.
     :type localities: List[str]
-    :ivar localitydict:
+    :ivar localitydict: A dictionary mapping node IDs to locality IDs.
+        This is used to quickly look up the locality of a given node.
     :type localitydict: Dict[str, str]
-    :ivar locality_splits: A dictionary mapping district IDs to
-    :type locality_splits:
+    :ivar locality_splits: A dictionary mapping district IDs to a counter
+        of localities in that district. That is to say, this tells us
+        how many nodes in each district are of the given locality type.
+    :type locality_splits: Dict[int, Counter[str]]
     :ivar locality_splits_inv: The inverted dictionary of locality_splits
-    :type locality_splits_inv:
-    :ivar allowed_pieces:
-    :ivar scores:
+    :type locality_splits_inv: Dict[str, Dict[int, int]]
+    :ivar allowed_pieces: A dictionary that maps each locality to the
+        minimum number of districts that locality must touch. This is
+        computed using the ideal district population. NOT CURRENTLY USED.
+    :type allowed_pieces: Dict[str, int]
+    :ivar scores: A dictionary initialized with the key values from the
+        initializer's scores_to_compute parameter. The initial values are
+        set to none and are updated in each call to store the compted
+        score value for each metric of interest.
+    :type scores: Dict[str, Any]
     """
 
-    def __init__(self, name, col_id, pop_col,
-                 scores_to_compute=["num_parts"], pent_alpha=.05):
+    def __init__(self,
+                 name: str,
+                 col_id: str,
+                 pop_col: str,
+                 scores_to_compute: List[str] = ["num_parts"],
+                 pent_alpha: float = 0.05):
         """
         :param name: The name of the updater (e.g. "countysplits")
         :type name: str
@@ -79,11 +97,13 @@ class LocalitySplits:
             score functions to compute at each step. This should be
             some subcollection of ```['num_parts', 'num_pieces',
             'naked_boundary', 'shannon_entropy', 'power_entropy',
-            'symmetric_entropy', 'num_split_localities']```
-        :type scores_to_compute: List[str]
+            'symmetric_entropy', 'num_split_localities']```.
+            Default is ["num_parts"].
+        :type scores_to_compute: List[str], optional
         :param pent_alpha: A number between 0 and 1 which is
-            passed as the exponent to :meth:`~LocalitySplits.power_entropy`
-        :type pent_alpha: float
+            passed as the exponent to :meth:`~LocalitySplits.power_entropy`.
+            Default is 0.05.
+        :type pent_alpha: float, optional
         """
 
         self.name = name

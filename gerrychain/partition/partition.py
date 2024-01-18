@@ -14,10 +14,14 @@ class Partition:
     the first layer of computations at each step in the Markov chain - basic
     aggregations and calculations that we want to optimize.
 
-    :ivar gerrychain.Graph graph: The underlying graph.
-    :ivar gerrychain.Assignment assignment: Maps node IDs to district IDs.
-    :ivar dict parts: Maps district IDs to the set of nodes in that district.
-    :ivar dict subgraphs: Maps district IDs to the induced subgraph of that district.
+    :ivar graph: The underlying graph.
+    :type graph: :class:`~gerrychain.Graph`
+    :ivar assignment: Maps node IDs to district IDs.
+    :type assignment: :class:`~gerrychain.assignment.Assignment`
+    :ivar parts: Maps district IDs to the set of nodes in that district.
+    :type parts: Dict
+    :ivar subgraphs: Maps district IDs to the induced subgraph of that district.
+    :type subgraphs: Dict
     """
     __slots__ = (
         'graph',

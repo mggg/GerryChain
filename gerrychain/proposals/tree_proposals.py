@@ -8,13 +8,13 @@ from ..tree import (
     _bipartition_tree_random_all, uniform_spanning_tree,
     find_balanced_edge_cuts_memoization,
 )
-from typing import Callable, Optional, Dict
+from typing import Callable, Optional, Dict, Union
 
 
 def recom(
     partition: Partition,
     pop_col: str,
-    pop_target: float,
+    pop_target: Union[int, float],
     epsilon: float,
     node_repeats: int = 1,
     weight_dict: Optional[Dict] = None,
@@ -53,8 +53,9 @@ def recom(
     :param pop_col: The name of the population column.
     :type pop_col: str
     :param pop_target: The target population for each district.
-    :type pop_target: float
-    :param epsilon: The epsilon value for population deviation.
+    :type pop_target: Union[int,float]
+    :param epsilon: The epsilon value for population deviation as a percentage of the
+        target population.
     :type epsilon: float
     :param node_repeats: The number of times to repeat the bipartitioning step. Default is 1.
     :type node_repeats: int, optional
@@ -96,7 +97,7 @@ def recom(
 def reversible_recom(
     partition: Partition,
     pop_col: str,
-    pop_target: float,
+    pop_target: Union[int, float],
     epsilon: float,
     balance_edge_fn: Callable = find_balanced_edge_cuts_memoization,
     M: int = 1,
@@ -116,8 +117,9 @@ def reversible_recom(
     :param pop_col: The name of the population column.
     :type pop_col: str
     :param pop_target: The target population for each district.
-    :type pop_target: float
-    :param epsilon: The epsilon value for population deviation.
+    :type pop_target: Union[int,float]
+    :param epsilon: The epsilon value for population deviation as a percentage of the
+        target population.
     :type epsilon: float
     :param balance_edge_fn: The balance edge function. Default is
         find_balanced_edge_cuts_memoization.
@@ -211,15 +213,16 @@ class ReCom:
 
     def __init__(self,
                  pop_col: str,
-                 ideal_pop: int,
+                 ideal_pop: Union[int, float],
                  epsilon: float,
                  method: Callable = bipartition_tree_random):
         """
         :param pop_col: The name of the column in the partition that contains the population data.
         :type pop_col: str
         :param ideal_pop: The ideal population for each district.
-        :type ideal_pop: float
-        :param epsilon: The maximum allowable deviation from the ideal population.
+        :type ideal_pop: Union[int,float]
+        :param epsilon: The epsilon value for population deviation as a percentage of the
+            target population.
         :type epsilon: float
         :param method: The method used for bipartitioning the tree.
             Defaults to `bipartition_tree_random`.

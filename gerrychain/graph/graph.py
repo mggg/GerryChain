@@ -131,10 +131,10 @@ class Graph(networkx.Graph):
 
         :param filename: Path to the shapefile / GeoPackage / GeoJSON / etc.
         :type filename: str
-        :param adjacency: The adjacency type to use ("rook" or "queen"). Defaults is "rook"
+        :param adjacency: The adjacency type to use ("rook" or "queen"). Default is "rook"
         :type adjacency: str, optional
         :param cols_to_add: The names of the columns that you want to
-            add to the graph as node attributes. Default is None
+            add to the graph as node attributes. Default is None.
         :type cols_to_add: Optional[List[str]], optional
         :param reproject: Whether to reproject to a UTM projection before
             creating the graph. Default is False.
@@ -187,13 +187,13 @@ class Graph(networkx.Graph):
         :param dataframe: The GeoDateFrame to convert
         :type dataframe: :class:`geopandas.GeoDataFrame`
         :param adjacency: The adjacency type to use ("rook" or "queen").
-            Default is "rook"
+            Default is "rook".
         :type adjacency: str, optional
         :param cols_to_add: The names of the columns that you want to
             add to the graph as node attributes. Default is None.
         :type cols_to_add: Optional[List[str]], optional
         :param reproject: Whether to reproject to a UTM projection before
-            creating the graph. Default is ``True``.
+            creating the graph. Default is ``False``.
         :type reproject: bool, optional
         :param ignore_errors: Whether to ignore all invalid geometries and
             attept to create the graph anyway. Default is ``False``.
@@ -275,7 +275,7 @@ class Graph(networkx.Graph):
     def add_data(self, df: pd.DataFrame,
                  columns: Optional[Iterable[str]] = None) -> None:
         """
-        Add columns of a DataFrame to a graph as node attributes using
+        Add columns of a DataFrame to a graph as node attributes
         by matching the DataFrame's index to node ids.
 
         :param df: Dataframe containing given columns.

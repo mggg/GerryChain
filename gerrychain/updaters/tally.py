@@ -3,7 +3,7 @@ import math
 import warnings
 
 from .flows import flows_from_changes, on_flow
-from typing import Dict, Union, List, Optional
+from typing import Dict, Union, List, Optional, Type
 import pandas
 
 
@@ -73,7 +73,7 @@ class Tally:
     """
     An updater for keeping a tally of one or more node attributes.
 
-    :ivar fields: The list of node attributes that you want to tally. Or a just a
+    :ivar fields: The list of node attributes that you want to tally. Or just a
         single attribute name as a string.
     :type fields: Union[str, List[str]]
     :ivar alias: The aliased name of this Tally (meaning, the key corresponding to
@@ -90,17 +90,19 @@ class Tally:
 
     def __init__(self, fields: Union[str, List[str]],
                  alias: Optional[str] = None,
-                 dtype=int
+                 dtype: Type = int
                  ) -> None:
         """
         :param fields: The list of node attributes that you want to tally. Or a just a
             single attribute name as a string.
         :type fields: Union[str, List[str]]
         :param alias: The aliased name of this Tally (meaning, the key corresponding to
-            this Tally in the Partition's updaters dictionary)
-        :type alias: Optional[str]
-        :param dtype: The type (int, float, etc.) that you want the tally to have
-        :type dtype: Any
+            this Tally in the Partition's updaters dictionary).
+            Default is None.
+        :type alias: Optional[str], optional
+        :param dtype: The type (int, float, etc.) that you want the tally to have.
+            Default is int.
+        :type dtype: Any, optional
 
         :returns: None
         """
@@ -176,7 +178,7 @@ def compute_out_flow(graph, fields: Union[str, List[str]], flow: Dict) -> int:
     """
     :param graph: The graph that the partition is defined on.
     :type graph: :class:`~gerrychain.graph.Graph`
-    :param fields: The list of node attributes that you want to tally. Or a just a
+    :param fields: The list of node attributes that you want to tally. Or just a
         single attribute name as a string.
     :type fields: Union[str, List[str]]
     :param flow: A dictionary containing the flow from the parent of this partition
@@ -194,7 +196,7 @@ def compute_in_flow(graph, fields: Union[str, List[str]], flow: Dict) -> int:
     """
     :param graph: The graph that the partition is defined on.
     :type graph: :class:`~gerrychain.graph.Graph`
-    :param fields: The list of node attributes that you want to tally. Or a just a
+    :param fields: The list of node attributes that you want to tally. Or just a
         single attribute name as a string.
     :type fields: Union[str, List[str]]
     :param flow: A dictionary containing the flow from the parent of this partition
