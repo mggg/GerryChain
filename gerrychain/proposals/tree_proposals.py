@@ -6,9 +6,17 @@ from gerrychain.partition import Partition
 from ..tree import (
     recursive_tree_part, bipartition_tree, bipartition_tree_random,
     _bipartition_tree_random_all, uniform_spanning_tree,
-    find_balanced_edge_cuts_memoization,
+    find_balanced_edge_cuts_memoization, ReselectException,
 )
 from typing import Callable, Optional, Dict, Union
+
+
+class MetagraphError(Exception):
+    """
+    Raised when the partition we are trying to split is a low degree
+    node in the metagraph.
+    """
+    pass
 
 
 def recom(
@@ -70,26 +78,52 @@ def recom(
     :rtype: Partition
     """
 
-    edge = random.choice(tuple(partition["cut_edges"]))
-    parts_to_merge = (partition.assignment.mapping[edge[0]], partition.assignment.mapping[edge[1]])
-
-    subgraph = partition.graph.subgraph(
-        partition.parts[parts_to_merge[0]] | partition.parts[parts_to_merge[1]]
-    )
+    bad_district_pairs = set()
+    n_parts = len(partition)
+    tot_pairs = n_parts * (n_parts - 1) / 2  # n choose 2
 
     # Try to add the region aware in if the method accepts the weight dictionary
     if 'weight_dict' in signature(method).parameters:
         method = partial(method, weight_dict=weight_dict)
 
-    flips = recursive_tree_part(
-        subgraph.graph,
-        parts_to_merge,
-        pop_col=pop_col,
-        pop_target=pop_target,
-        epsilon=epsilon,
-        node_repeats=node_repeats,
-        method=method,
-    )
+    while len(bad_district_pairs) < tot_pairs:
+        try:
+            while True:
+                edge = random.choice(tuple(partition["cut_edges"]))
+                # Need to sort the tuple so that the order is consistent
+                # in the bad_district_pairs set
+                parts_to_merge = [partition.assignment.mapping[edge[0]],
+                                  partition.assignment.mapping[edge[1]]]
+                parts_to_merge.sort()
+
+                if tuple(parts_to_merge) not in bad_district_pairs:
+                    break
+
+            subgraph = partition.graph.subgraph(
+                partition.parts[parts_to_merge[0]] | partition.parts[parts_to_merge[1]]
+            )
+
+            flips = recursive_tree_part(
+                subgraph.graph,
+                parts_to_merge,
+                pop_col=pop_col,
+                pop_target=pop_target,
+                epsilon=epsilon,
+                node_repeats=node_repeats,
+                method=method,
+            )
+            break
+
+        except Exception as e:
+            if isinstance(e, ReselectException):
+                bad_district_pairs.add(tuple(parts_to_merge))
+                continue
+            else:
+                raise
+
+    if len(bad_district_pairs) == tot_pairs:
+        raise MetagraphError(f"Bipartitioning failed for all {tot_pairs} district pairs."
+                             f"Consider rerunning the chain with a different random seed.")
 
     return partition.flip(flips)
 

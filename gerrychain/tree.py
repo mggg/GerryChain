@@ -35,6 +35,7 @@ from inspect import signature
 import random
 from collections import deque, namedtuple
 from typing import Any, Callable, Dict, List, Optional, Set, Union, Hashable, Sequence, Tuple
+import warnings
 
 
 def predecessors(h: nx.Graph, root: Any) -> Dict:
@@ -295,6 +296,22 @@ def find_balanced_edge_cuts_memoization(
     return cuts
 
 
+class BipartitionWarning(UserWarning):
+    """
+    Generally raised when it is proving difficult to find a balanced cut.
+    """
+    pass
+
+
+class ReselectException(Exception):
+    """
+    Raised when the algorithm is unable to find a balanced cut after some
+    maximum number of attempts, but the user has allowed the algorithm to
+    reselect the pair of nodes to try and recombine.
+    """
+    pass
+
+
 def bipartition_tree(
     graph: nx.Graph,
     pop_col: str,
@@ -306,7 +323,8 @@ def bipartition_tree(
     weight_dict: Optional[Dict] = None,
     balance_edge_fn: Callable = find_balanced_edge_cuts_memoization,
     choice: Callable = random.choice,
-    max_attempts: Optional[int] = 10000
+    max_attempts: Optional[int] = 10000,
+    allow_pair_reselection: bool = False
 ) -> Set:
     """
     This function finds a balanced 2 partition of a graph by drawing a
@@ -347,10 +365,15 @@ def bipartition_tree(
     :param max_attempts: The maximum number of attempts that should be made to bipartition.
         Defaults to 1000.
     :type max_attempts: Optional[int], optional
+    :param allow_pair_reselection: Whether we would like to return an error to the calling
+        function to ask it to reselect the pair of nodes to try and recombine. Defaults to False.
+    :type allow_pair_reselection: bool, optional
 
     :returns: A subset of nodes of ``graph`` (whose induced subgraph is connected). The other
         part of the partition is the complement of this subset.
     :rtype: Set
+
+    :raises BipartitionWarning: If a possible cut cannot be found after 50 attempts.
     :raises RuntimeError: If a possible cut cannot be found after the maximum number of attempts.
     """
     # Try to add the region-aware in if the spanning_tree_fn accepts a weight dictionary
@@ -377,6 +400,17 @@ def bipartition_tree(
 
         restarts += 1
         attempts += 1
+
+        if attempts == 50 and not allow_pair_reselection:
+            warnings.warn("Failed to find a balanced cut after 50 attempts.\n"
+                          "Consider running with the parameter\n"
+                          "allow_pair_reselection=True to allow the algorithm to\n"
+                          "select a different pair of nodes to try an recombine.",
+                          BipartitionWarning)
+
+    if allow_pair_reselection:
+        raise ReselectException(f"Failed to find a balanced cut after {max_attempts} attempts.\n"
+                                f"Selecting a new district pair")
 
     raise RuntimeError(f"Could not find a possible cut after {max_attempts} attempts.")
 
@@ -589,13 +623,17 @@ def recursive_tree_part(
         min_pop = max(pop_target * (1 - epsilon), pop_target * (1 - epsilon) - debt)
         max_pop = min(pop_target * (1 + epsilon), pop_target * (1 + epsilon) - debt)
         new_pop_target = (min_pop + max_pop) / 2
-        nodes = method(
-            graph.subgraph(remaining_nodes),
-            pop_col=pop_col,
-            pop_target=new_pop_target,
-            epsilon=(max_pop - min_pop) / (2 * new_pop_target),
-            node_repeats=node_repeats,
-        )
+
+        try:
+            nodes = method(
+                graph.subgraph(remaining_nodes),
+                pop_col=pop_col,
+                pop_target=new_pop_target,
+                epsilon=(max_pop - min_pop) / (2 * new_pop_target),
+                node_repeats=node_repeats,
+            )
+        except Exception:
+            raise
 
         if nodes is None:
             raise BalanceError()

@@ -145,6 +145,18 @@ class Graph(networkx.Graph):
 
         :returns: The Graph object of the geometries from `filename`.
         :rtype: Graph
+
+        .. Warning::
+
+            This method requires the optional ``geopandas`` dependency.
+            So please install ``gerrychain`` with the ``geo`` extra
+            via the command:
+
+            .. code-block:: console
+
+                pip install gerrychain[geo]
+
+            or install ``geopandas`` separately.
         """
         import geopandas as gp
 

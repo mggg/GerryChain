@@ -110,7 +110,7 @@ def test_pa_freeze():
         result += str(len(partition.cut_edges))
         result += str(count) + "\n"
     
-    # print(hashlib.sha256(result.encode()).hexdigest())
-    assert hashlib.sha256(result.encode()).hexdigest() == "957e5bd59fc2730707c6549f52dc8834ac48e5f37f0e37b71a04f6734a287b14"
+    # This needs to be changed every time we change the
+    # tests around
+    assert hashlib.sha256(result.encode()).hexdigest() == "0163d0bfff9e090c06ecae4c999a7e8e55e9cee65b08939f485739a72e5c30f4"
     
-    # "3bef9ac8c0bfa025fb75e32aea3847757a8fba56b2b2be6f9b3b952088ae3b3c"

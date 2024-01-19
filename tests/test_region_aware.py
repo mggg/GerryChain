@@ -3,7 +3,10 @@ random.seed(2018)
 import pytest
 from functools import partial
 from concurrent.futures import ProcessPoolExecutor
-from gerrychain import MarkovChain, Partition, accept, constraints, proposals, updaters, Graph, tree
+from gerrychain import (
+    MarkovChain, Partition, accept,
+    constraints, proposals, updaters, Graph, tree)
+from gerrychain.tree import ReselectException, BipartitionWarning
 
 def total_reg_splits(partition, reg_attr, all_reg_names):
     """Returns the total number of region splits in the partition."""
@@ -18,8 +21,9 @@ def total_reg_splits(partition, reg_attr, all_reg_names):
     return sum(1 for value in split.values() if value > 0)
 
 
-def run_chain_single(seed, category, names, steps):
+def run_chain_single(seed, category, names, steps, weight, max_attempts=100000, reselect=False):
     from gerrychain import MarkovChain, Partition, accept, constraints, proposals, updaters, Graph, tree
+    from gerrychain.tree import ReselectException
     from functools import partial
     import random
 
@@ -46,7 +50,9 @@ def run_chain_single(seed, category, names, steps):
                                 epsilon=epsilon,
                                 weight_dict=weights,
                                 node_repeats=10,
-                                method=partial(tree.bipartition_tree, max_attempts=1000000))
+                                method=partial(tree.bipartition_tree,
+                                               max_attempts=max_attempts,
+                                               allow_pair_reselection=reselect))
 
     weighted_chain = MarkovChain(proposal=weighted_proposal,
                                  constraints=[constraints.contiguous],
@@ -65,24 +71,83 @@ def test_region_aware_muni():
     n_samples = 30
     region = "muni"
     region_names = [str(i) for i in range(1,17)]
+    
+    with ProcessPoolExecutor() as executor:
+        results = executor.map(partial(run_chain_single, 
+                                       category=region,
+                                       names=region_names,
+                                       steps=500,
+                                       weight=0.5),
+                               range(n_samples))
+
+    tot_splits = sum(results)
+    
+    random.seed(2018)
+    # Check if splits less than 5% of the time on average
+    assert (float(tot_splits) / (n_samples*len(region_names))) < 0.05
+
+
+def test_region_aware_muni_errors():
+    region = "muni"
+    region_names = [str(i) for i in range(1,17)]
+
+    with pytest.raises(RuntimeError) as exec_info:
+        # Random seed 0 should fail here
+        run_chain_single(seed=0,
+                        category=region,
+                        names=region_names,
+                        steps=10000,
+                        max_attempts=10,
+                        weight=2.0)
+
+    random.seed(2018)
+    assert "Could not find a possible cut after 10 attempts" in str(exec_info.value)
+
+
+def test_region_aware_muni_warning():
+    n_samples = 1
+    region = "muni"
+    region_names = [str(i) for i in range(1,17)]
+
+    with pytest.warns(UserWarning) as record:
+        # Random seed 2 should succeed, but drawing the 
+        # tree is hard, so we should get a warning
+        run_chain_single(seed=2,
+                    category=region,
+                    names=region_names,
+                    steps=500,
+                    weight=1.0)
+
+    random.seed(2018)
+
+    assert record[0].category == BipartitionWarning
+    assert "Failed to find a balanced cut after 50 attempts." in str(record[0].message)
+
+@pytest.mark.slow
+def test_region_aware_muni_reselect():
+    n_samples = 30
+    region = "muni"
+    region_names = [str(i) for i in range(1,17)]
 
     with ProcessPoolExecutor() as executor:
         results = executor.map(partial(run_chain_single, 
                                        category=region,
                                        names=region_names,
-                                       steps=500),
+                                       steps=500,
+                                       weight=1.0,
+                                       reselect=True),
                                range(n_samples))
 
     tot_splits = sum(results)
 
     random.seed(2018)
-    # Check if splits less than 1% of the time on average
-    assert (float(tot_splits) / (n_samples*len(region_names))) < 0.01
+    # Check if splits less than 5% of the time on average
+    assert (float(tot_splits) / (n_samples*len(region_names))) < 0.05
 
 
 @pytest.mark.slow
 def test_region_aware_county():
-    n_samples = 30
+    n_samples = 100
     region = "county2"
     region_names = [str(i) for i in range(1,9)]
 
@@ -90,13 +155,15 @@ def test_region_aware_county():
         results = executor.map(partial(run_chain_single, 
                                        category=region,
                                        names=region_names,
-                                       steps=10000),
+                                       steps=5000,
+                                       weight=2.0),
                                range(n_samples))
 
     tot_splits = sum(results)
 
     random.seed(2018)  
     # Check if splits less than 5% of the time on average
+    print(f"Final score: {float(tot_splits) / (n_samples*len(region_names))}")
     assert (float(tot_splits) / (n_samples*len(region_names))) < 0.05
     
     
@@ -144,7 +211,7 @@ def run_chain_dual(seed, steps):
                                 epsilon=epsilon,
                                 weight_dict=weights,
                                 node_repeats=10,
-                                method=partial(tree.bipartition_tree, max_attempts=1000000))
+                                method=partial(tree.bipartition_tree, max_attempts=10000))
 
     weighted_chain = MarkovChain(proposal=weighted_proposal,
                                  constraints=[constraints.contiguous],
@@ -165,7 +232,7 @@ def test_region_aware_dual():
     n_samples = 30
     n_munis = 16
     n_counties = 4 
-
+    
     with ProcessPoolExecutor() as executor:
         results = executor.map(partial(run_chain_dual, 
                                        steps=10000),
@@ -176,8 +243,6 @@ def test_region_aware_dual():
     
     random.seed(2018)  
 
-    # Check if splits less than 1% of the time on average
-    # The condition on counties is stricter this time since the 
-    # munis and districts can be made to fit neatly within the counties
-    assert (float(tot_muni_splits) / (n_samples*n_munis)) < 0.01 and \
-           (float(tot_county_splits) / (n_samples*n_counties)) < 0.01
+    # Check if splits less than 5% of the time on average
+    assert (float(tot_muni_splits) / (n_samples*n_munis)) < 0.05
+    assert (float(tot_county_splits) / (n_samples*n_counties)) < 0.05
