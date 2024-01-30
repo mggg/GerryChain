@@ -1,0 +1,4 @@
+fiona==1.9.5
+shapely==2.0.2
+pyproj==3.6.1
+geopandas==0.8.1

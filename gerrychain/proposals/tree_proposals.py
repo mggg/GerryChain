@@ -9,12 +9,21 @@ from ..tree import (
     find_balanced_edge_cuts_memoization, ReselectException,
 )
 from typing import Callable, Optional, Dict, Union
+import warnings
 
 
 class MetagraphError(Exception):
     """
     Raised when the partition we are trying to split is a low degree
     node in the metagraph.
+    """
+    pass
+
+
+class ValueWarning(UserWarning):
+    """
+    Raised whe a particular value is technically valid, but may
+    cause issues with the algorithm.
     """
     pass
 
@@ -76,6 +85,9 @@ def recom(
 
     :returns: The new partition resulting from the ReCom algorithm.
     :rtype: Partition
+
+    :raises ValueWarning: Raised when the sum of the weights in the weight dictionary is
+        greater than 1.
     """
 
     bad_district_pairs = set()
@@ -85,6 +97,10 @@ def recom(
     # Try to add the region aware in if the method accepts the weight dictionary
     if 'weight_dict' in signature(method).parameters:
         method = partial(method, weight_dict=weight_dict)
+        if sum(weight_dict.values()) > 1:
+            warnings.warn("\nThe sum of the weights in the weight dictionary is greater than 1.\n"
+                          "Please consider normalizing the weights.",
+                          ValueWarning)
 
     while len(bad_district_pairs) < tot_pairs:
         try:

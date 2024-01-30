@@ -23,7 +23,7 @@ Dependencies:
 - random: Provides random number generation for probabilistic approaches.
 - typing: Used for type hints.
 
-Last Updated: 11 Jan 2024
+Last Updated: 30 Jan 2024
 """
 
 
@@ -402,10 +402,10 @@ def bipartition_tree(
         attempts += 1
 
         if attempts == 50 and not allow_pair_reselection:
-            warnings.warn("Failed to find a balanced cut after 50 attempts.\n"
-                          "Consider running with the parameter\n"
-                          "allow_pair_reselection=True to allow the algorithm to\n"
-                          "select a different pair of nodes to try an recombine.",
+            warnings.warn("\nFailed to find a balanced cut after 50 attempts.\n"
+                          "If possible, consider enabling pair reselection within your\n"
+                          "MarkovChain proposal method to allow the algorithm to select\n"
+                          "a different pair of nodes to try an recombine.",
                           BipartitionWarning)
 
     if allow_pair_reselection:
