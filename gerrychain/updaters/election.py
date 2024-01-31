@@ -65,11 +65,12 @@ class Election:
     :type alias: str
     """
 
-    def __init__(self,
-                 name: str,
-                 parties_to_columns: Union[Dict, List],
-                 alias: Optional[str] = None
-                 ) -> None:
+    def __init__(
+        self,
+        name: str,
+        parties_to_columns: Union[Dict, List],
+        alias: Optional[str] = None,
+    ) -> None:
         """
         :param name: The name of the election. (e.g. "2008 Presidential")
         :type name: str
@@ -210,10 +211,12 @@ class ElectionResults:
         "party" that often appears within the class.
     """
 
-    def __init__(self, election: Election,
-                 counts: Dict[str, Dict[int, float]],
-                 regions: List[int]
-                 ) -> None:
+    def __init__(
+        self,
+        election: Election,
+        counts: Dict[str, Dict[int, float]],
+        regions: List[int],
+    ) -> None:
         """
         :param election: The :class:`Election` object that these results are associated with.
         :type election: Election
@@ -284,7 +287,9 @@ class ElectionResults:
         """
         if region is not None:
             return self.percents_for_party[party][region]
-        return sum(self.votes(party)) / sum(self.totals[region] for region in self.regions)
+        return sum(self.votes(party)) / sum(
+            self.totals[region] for region in self.regions
+        )
 
     def percents(self, party: str) -> Tuple:
         """
@@ -348,8 +353,10 @@ class ElectionResults:
         :rtype: bool
         """
         return all(
-            self.totals_for_party[party][region] > self.totals_for_party[opponent][region]
-            for opponent in self.election.parties if opponent != party
+            self.totals_for_party[party][region]
+            > self.totals_for_party[opponent][region]
+            for opponent in self.election.parties
+            if opponent != party
         )
 
     def total_votes(self) -> int:
@@ -415,7 +422,9 @@ class ElectionResults:
         return pm.partisan_gini(self)
 
 
-def format_part_results(percents_for_party: Dict[str, Dict[int, float]], part: int) -> str:
+def format_part_results(
+    percents_for_party: Dict[str, Dict[int, float]], part: int
+) -> str:
     """
     :param percents_for_party: A dictionary mapping party names to a dict
         containing the percentage of votes that party received in each part

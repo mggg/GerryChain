@@ -26,7 +26,6 @@ Dependencies:
 Last Updated: 30 Jan 2024
 """
 
-
 import networkx as nx
 from networkx.algorithms import tree
 
@@ -34,7 +33,18 @@ from functools import partial
 from inspect import signature
 import random
 from collections import deque, namedtuple
-from typing import Any, Callable, Dict, List, Optional, Set, Union, Hashable, Sequence, Tuple
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Set,
+    Union,
+    Hashable,
+    Sequence,
+    Tuple,
+)
 import warnings
 
 
@@ -46,7 +56,9 @@ def successors(h: nx.Graph, root: Any) -> Dict:
     return {a: b for a, b in nx.bfs_successors(h, root)}
 
 
-def random_spanning_tree(graph: nx.Graph, weight_dict: Optional[Dict] = None) -> nx.Graph:
+def random_spanning_tree(
+    graph: nx.Graph, weight_dict: Optional[Dict] = None
+) -> nx.Graph:
     """
     Builds a spanning tree chosen by Kruskal's method using random weights.
 
@@ -65,8 +77,10 @@ def random_spanning_tree(graph: nx.Graph, weight_dict: Optional[Dict] = None) ->
     for edge in graph.edges():
         weight = random.random()
         for key, value in weight_dict.items():
-            if graph.nodes[edge[0]][key] == graph.nodes[edge[1]][key] and \
-               graph.nodes[edge[0]][key] is not None:
+            if (
+                graph.nodes[edge[0]][key] == graph.nodes[edge[1]][key]
+                and graph.nodes[edge[0]][key] is not None
+            ):
                 weight += value
 
         graph.edges[edge]["random_weight"] = weight
@@ -78,8 +92,7 @@ def random_spanning_tree(graph: nx.Graph, weight_dict: Optional[Dict] = None) ->
 
 
 def uniform_spanning_tree(
-    graph: nx.Graph,
-    choice: Callable = random.choice
+    graph: nx.Graph, choice: Callable = random.choice
 ) -> nx.Graph:
     """
     Builds a spanning tree chosen uniformly from the space of all
@@ -140,7 +153,7 @@ class PopulatedGraph:
         graph: nx.Graph,
         populations: Dict,
         ideal_pop: Union[float, int],
-        epsilon: float
+        epsilon: float,
     ) -> None:
         """
         :param graph: The underlying graph structure.
@@ -178,7 +191,9 @@ class PopulatedGraph:
         )
 
     def __repr__(self) -> str:
-        graph_info = f"Graph(nodes={len(self.graph.nodes)}, edges={len(self.graph.edges)})"
+        graph_info = (
+            f"Graph(nodes={len(self.graph.nodes)}, edges={len(self.graph.edges)})"
+        )
         return (
             f"{self.__class__.__name__}("
             f"graph={graph_info}, "
@@ -196,8 +211,7 @@ Cut.subset.__doc__ = "The subset of nodes on one side of the cut."
 
 
 def find_balanced_edge_cuts_contraction(
-    h: PopulatedGraph,
-    choice: Callable = random.choice
+    h: PopulatedGraph, choice: Callable = random.choice
 ) -> List[Cut]:
     """
     Find balanced edge cuts using contraction.
@@ -230,8 +244,7 @@ def find_balanced_edge_cuts_contraction(
 
 
 def find_balanced_edge_cuts_memoization(
-    h: PopulatedGraph,
-    choice: Callable = random.choice
+    h: PopulatedGraph, choice: Callable = random.choice
 ) -> List[Cut]:
     """
     Find balanced edge cuts using memoization.
@@ -291,8 +304,12 @@ def find_balanced_edge_cuts_memoization(
         if abs(tree_pop - h.ideal_pop) <= h.ideal_pop * h.epsilon:
             cuts.append(Cut(edge=(node, pred[node]), subset=part_nodes(node)))
         elif abs((total_pop - tree_pop) - h.ideal_pop) <= h.ideal_pop * h.epsilon:
-            cuts.append(Cut(edge=(node, pred[node]),
-                            subset=set(h.graph.nodes) - part_nodes(node)))
+            cuts.append(
+                Cut(
+                    edge=(node, pred[node]),
+                    subset=set(h.graph.nodes) - part_nodes(node),
+                )
+            )
     return cuts
 
 
@@ -300,15 +317,18 @@ class BipartitionWarning(UserWarning):
     """
     Generally raised when it is proving difficult to find a balanced cut.
     """
+
     pass
 
 
 class ReselectException(Exception):
     """
-    Raised when the algorithm is unable to find a balanced cut after some
-    maximum number of attempts, but the user has allowed the algorithm to
-    reselect the pair of nodes to try and recombine.
+    Raised when the tree-splitting algorithm is unable to find a
+    balanced cut after some maximum number of attempts, but the
+    user has allowed the algorithm to reselect the pair of
+    districts from parent graph to try and recombine.
     """
+
     pass
 
 
@@ -324,7 +344,7 @@ def bipartition_tree(
     balance_edge_fn: Callable = find_balanced_edge_cuts_memoization,
     choice: Callable = random.choice,
     max_attempts: Optional[int] = 10000,
-    allow_pair_reselection: bool = False
+    allow_pair_reselection: bool = False,
 ) -> Set:
     """
     This function finds a balanced 2 partition of a graph by drawing a
@@ -363,7 +383,7 @@ def bipartition_tree(
         Defaults to :func:`random.choice`.
     :type choice: Callable, optional
     :param max_attempts: The maximum number of attempts that should be made to bipartition.
-        Defaults to 1000.
+        Defaults to 10000.
     :type max_attempts: Optional[int], optional
     :param allow_pair_reselection: Whether we would like to return an error to the calling
         function to ask it to reselect the pair of nodes to try and recombine. Defaults to False.
@@ -374,10 +394,11 @@ def bipartition_tree(
     :rtype: Set
 
     :raises BipartitionWarning: If a possible cut cannot be found after 50 attempts.
-    :raises RuntimeError: If a possible cut cannot be found after the maximum number of attempts.
+    :raises RuntimeError: If a possible cut cannot be found after the maximum number of attempts
+        given by ``max_attempts``.
     """
     # Try to add the region-aware in if the spanning_tree_fn accepts a weight dictionary
-    if 'weight_dict' in signature(spanning_tree_fn).parameters:
+    if "weight_dict" in signature(spanning_tree_fn).parameters:
         spanning_tree_fn = partial(spanning_tree_fn, weight_dict=weight_dict)
 
     populations = {node: graph.nodes[node][pop_col] for node in graph.node_indices}
@@ -402,15 +423,19 @@ def bipartition_tree(
         attempts += 1
 
         if attempts == 50 and not allow_pair_reselection:
-            warnings.warn("\nFailed to find a balanced cut after 50 attempts.\n"
-                          "If possible, consider enabling pair reselection within your\n"
-                          "MarkovChain proposal method to allow the algorithm to select\n"
-                          "a different pair of nodes to try an recombine.",
-                          BipartitionWarning)
+            warnings.warn(
+                "\nFailed to find a balanced cut after 50 attempts.\n"
+                "If possible, consider enabling pair reselection within your\n"
+                "MarkovChain proposal method to allow the algorithm to select\n"
+                "a different pair of districts to try and recombine.",
+                BipartitionWarning,
+            )
 
     if allow_pair_reselection:
-        raise ReselectException(f"Failed to find a balanced cut after {max_attempts} attempts.\n"
-                                f"Selecting a new district pair")
+        raise ReselectException(
+            f"Failed to find a balanced cut after {max_attempts} attempts.\n"
+            f"Selecting a new district pair."
+        )
 
     raise RuntimeError(f"Could not find a possible cut after {max_attempts} attempts.")
 
@@ -426,7 +451,7 @@ def _bipartition_tree_random_all(
     spanning_tree_fn: Callable = random_spanning_tree,
     balance_edge_fn: Callable = find_balanced_edge_cuts_memoization,
     choice: Callable = random.choice,
-    max_attempts: Optional[int] = None
+    max_attempts: Optional[int] = None,
 ) -> List[Tuple[Hashable, Hashable]]:
     """
     Randomly bipartitions a tree into two subgraphs until a valid bipartition is found.
@@ -505,7 +530,7 @@ def bipartition_tree_random(
     spanning_tree_fn: Callable = random_spanning_tree,
     balance_edge_fn: Callable = find_balanced_edge_cuts_memoization,
     choice: Callable = random.choice,
-    max_attempts: Optional[int] = None
+    max_attempts: Optional[int] = None,
 ) -> Union[Set[Any], None]:
     """
     This is like :func:`bipartition_tree` except it chooses a random balanced
@@ -567,7 +592,7 @@ def bipartition_tree_random(
         spanning_tree_fn=spanning_tree_fn,
         balance_edge_fn=balance_edge_fn,
         choice=choice,
-        max_attempts=max_attempts
+        max_attempts=max_attempts,
     )
     if possible_cuts:
         return choice(possible_cuts).subset
@@ -580,7 +605,7 @@ def recursive_tree_part(
     pop_col: str,
     epsilon: float,
     node_repeats: int = 1,
-    method: Callable = partial(bipartition_tree, max_attempts=10000)
+    method: Callable = partial(bipartition_tree, max_attempts=10000),
 ) -> Dict:
     """
     Uses :func:`~gerrychain.tree.bipartition_tree` recursively to partition a tree into
@@ -762,9 +787,7 @@ def get_seed_chunks(
     return list(chunks.values())
 
 
-def get_max_prime_factor_less_than(
-    n: int, ceil: int
-) -> Optional[int]:
+def get_max_prime_factor_less_than(n: int, ceil: int) -> Optional[int]:
     """
     Helper function for recursive_seed_part_inner. Returns the largest prime factor of ``n``
         less than ``ceil``, or None if all are greater than ceil.
@@ -887,28 +910,24 @@ def recursive_seed_part_inner(
             pop_col=pop_col,
             pop_target=pop_target,
             epsilon=epsilon,
-            node_repeats=node_repeats
+            node_repeats=node_repeats,
         )
         remaining_nodes -= nodes
-        assignment = [nodes] + recursive_seed_part_inner(graph.subgraph(remaining_nodes),
-                                                         num_dists - 1,
-                                                         pop_target,
-                                                         pop_col,
-                                                         epsilon,
-                                                         method,
-                                                         n=n,
-                                                         ceil=ceil)
+        assignment = [nodes] + recursive_seed_part_inner(
+            graph.subgraph(remaining_nodes),
+            num_dists - 1,
+            pop_target,
+            pop_col,
+            epsilon,
+            method,
+            n=n,
+            ceil=ceil,
+        )
 
     # split graph into num_chunks chunks, and recurse into each chunk
     elif num_dists % num_chunks == 0:
         chunks = get_seed_chunks(
-            graph,
-            num_chunks,
-            num_dists,
-            pop_target,
-            pop_col,
-            epsilon,
-            method=method
+            graph, num_chunks, num_dists, pop_target, pop_col, epsilon, method=method
         )
 
         assignment = []
@@ -921,7 +940,7 @@ def recursive_seed_part_inner(
                 epsilon,
                 method,
                 n=n,
-                ceil=ceil
+                ceil=ceil,
             )
             assignment += chunk_assignment
 
@@ -937,7 +956,7 @@ def recursive_seed_part(
     method: Callable = partial(bipartition_tree, max_attempts=10000),
     node_repeats: int = 1,
     n: Optional[int] = None,
-    ceil: Optional[int] = None
+    ceil: Optional[int] = None,
 ) -> Dict:
     """
     Returns a partition with ``num_dists`` districts balanced within ``epsilon`` of
@@ -985,7 +1004,7 @@ def recursive_seed_part(
         method=method,
         node_repeats=node_repeats,
         n=n,
-        ceil=ceil
+        ceil=ceil,
     )
     for i in range(len(assignment)):
         for node in assignment[i]:

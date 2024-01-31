@@ -32,10 +32,10 @@ M2 = 3 * E / 8 + 3 * E2 / 32 + 45 * E3 / 1024
 M3 = 15 * E2 / 256 + 45 * E3 / 1024
 M4 = 35 * E3 / 3072
 
-P2 = 3. / 2 * _E - 27. / 32 * _E3 + 269. / 512 * _E5
-P3 = 21. / 16 * _E2 - 55. / 32 * _E4
-P4 = 151. / 96 * _E3 - 417. / 128 * _E5
-P5 = 1097. / 512 * _E4
+P2 = 3.0 / 2 * _E - 27.0 / 32 * _E3 + 269.0 / 512 * _E5
+P3 = 21.0 / 16 * _E2 - 55.0 / 32 * _E4
+P4 = 151.0 / 96 * _E3 - 417.0 / 128 * _E5
+P5 = 1097.0 / 512 * _E4
 
 R = 6378137
 
@@ -78,27 +78,27 @@ def to_latlon(
 ):
     """This function convert an UTM coordinate into Latitude and Longitude
 
-        Parameters
-        ----------
-        easting: int
-            Easting value of UTM coordinate
+     Parameters
+     ----------
+     easting: int
+         Easting value of UTM coordinate
 
-        northing: int
-            Northing value of UTM coordinate
+     northing: int
+         Northing value of UTM coordinate
 
-        zone number: int
-            Zone Number is represented with global map numbers of an UTM Zone
-            Numbers Map. More information see utmzones [1]_
+     zone number: int
+         Zone Number is represented with global map numbers of an UTM Zone
+         Numbers Map. More information see utmzones [1]_
 
-        zone_letter: str
-            Zone Letter can be represented as string values. Where UTM Zone
-            Designators can be accessed in [1]_
+     zone_letter: str
+         Zone Letter can be represented as string values. Where UTM Zone
+         Designators can be accessed in [1]_
 
-        northern: bool
-            You can set True or False to set this parameter. Default is None
+     northern: bool
+         You can set True or False to set this parameter. Default is None
 
 
-       .. _[1]: http://www.jaworski.ca/utmzones.htm
+    .. _[1]: http://www.jaworski.ca/utmzones.htm
 
     """
     if not zone_letter and northern is None:
@@ -133,11 +133,11 @@ def to_latlon(
     mu = m / (R * M1)
 
     p_rad = (
-        mu +
-        P2 * mathlib.sin(2 * mu) +
-        P3 * mathlib.sin(4 * mu) +
-        P4 * mathlib.sin(6 * mu) +
-        P5 * mathlib.sin(8 * mu)
+        mu
+        + P2 * mathlib.sin(2 * mu)
+        + P3 * mathlib.sin(4 * mu)
+        + P4 * mathlib.sin(6 * mu)
+        + P5 * mathlib.sin(8 * mu)
     )
 
     p_sin = mathlib.sin(p_rad)
@@ -155,7 +155,7 @@ def to_latlon(
     n = R / ep_sin_sqrt
     r = (1 - E) / ep_sin
 
-    c = _E * p_cos ** 2
+    c = _E * p_cos**2
     c2 = c * c
 
     d = x / (n * K0)
@@ -166,16 +166,16 @@ def to_latlon(
     d6 = d5 * d
 
     latitude = (
-        p_rad -
-        (p_tan / r) *
-        (d2 / 2 - d4 / 24 * (5 + 3 * p_tan2 + 10 * c - 4 * c2 - 9 * E_P2)) +
-        d6 / 720 * (61 + 90 * p_tan2 + 298 * c + 45 * p_tan4 - 252 * E_P2 - 3 * c2)
+        p_rad
+        - (p_tan / r)
+        * (d2 / 2 - d4 / 24 * (5 + 3 * p_tan2 + 10 * c - 4 * c2 - 9 * E_P2))
+        + d6 / 720 * (61 + 90 * p_tan2 + 298 * c + 45 * p_tan4 - 252 * E_P2 - 3 * c2)
     )
 
     longitude = (
-        d -
-        d3 / 6 * (1 + 2 * p_tan2 + c) +
-        d5 / 120 * (5 - 2 * c + 28 * p_tan2 - 3 * c2 + 8 * E_P2 + 24 * p_tan4)
+        d
+        - d3 / 6 * (1 + 2 * p_tan2 + c)
+        + d5 / 120 * (5 - 2 * c + 28 * p_tan2 - 3 * c2 + 8 * E_P2 + 24 * p_tan4)
     ) / p_cos
 
     return (
@@ -187,20 +187,20 @@ def to_latlon(
 def from_latlon(latitude, longitude, force_zone_number=None, force_zone_letter=None):
     """This function convert Latitude and Longitude to UTM coordinate
 
-        Parameters
-        ----------
-        latitude: float
-            Latitude between 80 deg S and 84 deg N, e.g. (-80.0 to 84.0)
+     Parameters
+     ----------
+     latitude: float
+         Latitude between 80 deg S and 84 deg N, e.g. (-80.0 to 84.0)
 
-        longitude: float
-            Longitude between 180 deg W and 180 deg E, e.g. (-180.0 to 180.0).
+     longitude: float
+         Longitude between 180 deg W and 180 deg E, e.g. (-180.0 to 180.0).
 
-        force_zone number: int
-            Zone Number is represented with global map numbers of an UTM Zone
-            Numbers Map. You may force conversion including one UTM Zone Number.
-            More information see utmzones [1]_
+     force_zone number: int
+         Zone Number is represented with global map numbers of an UTM Zone
+         Numbers Map. You may force conversion including one UTM Zone Number.
+         More information see utmzones [1]_
 
-       .. _[1]: http://www.jaworski.ca/utmzones.htm
+    .. _[1]: http://www.jaworski.ca/utmzones.htm
     """
     if not in_bounds(latitude, -80.0, 84.0):
         raise OutOfRangeError(
@@ -235,8 +235,8 @@ def from_latlon(latitude, longitude, force_zone_number=None, force_zone_letter=N
     central_lon = zone_number_to_central_longitude(zone_number)
     central_lon_rad = mathlib.radians(central_lon)
 
-    n = R / mathlib.sqrt(1 - E * lat_sin ** 2)
-    c = E_P2 * lat_cos ** 2
+    n = R / mathlib.sqrt(1 - E * lat_sin**2)
+    c = E_P2 * lat_cos**2
 
     a = lat_cos * (lon_rad - central_lon_rad)
     a2 = a * a
@@ -246,28 +246,31 @@ def from_latlon(latitude, longitude, force_zone_number=None, force_zone_letter=N
     a6 = a5 * a
 
     m = R * (
-        M1 * lat_rad -
-        M2 * mathlib.sin(2 * lat_rad) +
-        M3 * mathlib.sin(4 * lat_rad) -
-        M4 * mathlib.sin(6 * lat_rad)
+        M1 * lat_rad
+        - M2 * mathlib.sin(2 * lat_rad)
+        + M3 * mathlib.sin(4 * lat_rad)
+        - M4 * mathlib.sin(6 * lat_rad)
     )
 
     easting = (
-        K0 *
-        n *
-        (
-            a +
-            a3 / 6 * (1 - lat_tan2 + c) +
-            a5 / 120 * (5 - 18 * lat_tan2 + lat_tan4 + 72 * c - 58 * E_P2)
-        ) + 500000
+        K0
+        * n
+        * (
+            a
+            + a3 / 6 * (1 - lat_tan2 + c)
+            + a5 / 120 * (5 - 18 * lat_tan2 + lat_tan4 + 72 * c - 58 * E_P2)
+        )
+        + 500000
     )
 
     northing = K0 * (
-        m +
-        n *
-        lat_tan * (
-            a2 / 2 + a4 / 24 * (5 - lat_tan2 + 9 * c + 4 * c ** 2) +
-            a6 / 720 * (61 - 58 * lat_tan2 + lat_tan4 + 600 * c - 330 * E_P2)
+        m
+        + n
+        * lat_tan
+        * (
+            a2 / 2
+            + a4 / 24 * (5 - lat_tan2 + 9 * c + 4 * c**2)
+            + a6 / 720 * (61 - 58 * lat_tan2 + lat_tan4 + 600 * c - 330 * E_P2)
         )
     )
 

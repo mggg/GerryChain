@@ -25,6 +25,7 @@ class CountySplit(Enum):
     :cvar NEW_SPLIT: The county is split in the current partition.
     :cvar OLD_SPLIT: The county is split in the parent partition.
     """
+
     NOT_SPLIT = 0
     NEW_SPLIT = 1
     OLD_SPLIT = 2
@@ -53,10 +54,9 @@ def county_splits(partition_name: str, county_field_name: str) -> Callable:
     return _get_county_splits
 
 
-def compute_county_splits(partition,
-                          county_field: str,
-                          partition_field: str
-                          ) -> Dict[str, CountyInfo]:
+def compute_county_splits(
+    partition, county_field: str, partition_field: str
+) -> Dict[str, CountyInfo]:
     """
     Track nodes in counties and information about their splitting.
 

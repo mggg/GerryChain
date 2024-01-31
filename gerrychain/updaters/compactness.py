@@ -41,7 +41,9 @@ def initialize_exterior_boundaries_as_a_set(partition) -> Dict[int, Set]:
 
 
 @on_flow(initialize_exterior_boundaries_as_a_set, alias="exterior_boundaries_as_a_set")
-def exterior_boundaries_as_a_set(partition, previous: Set, inflow: Set, outflow: Set) -> Set:
+def exterior_boundaries_as_a_set(
+    partition, previous: Set, inflow: Set, outflow: Set
+) -> Set:
     """
     Updater function that responds to the flow of nodes between different partitions.
 
@@ -134,7 +136,9 @@ def initialize_interior_boundaries(partition):
 
 
 @on_edge_flow(initialize_interior_boundaries, alias="interior_boundaries")
-def interior_boundaries(partition, previous: Set, new_edges: Set, old_edges: Set) -> Dict:
+def interior_boundaries(
+    partition, previous: Set, new_edges: Set, old_edges: Set
+) -> Dict:
     """
     Updater function that responds to the flow of nodes between different partitions.
 

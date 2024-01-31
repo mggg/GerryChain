@@ -32,8 +32,7 @@ def all_cut_edge_flips(partition: Partition) -> Iterator[Dict]:
 
 
 def all_valid_states_one_flip_away(
-    partition: Partition,
-    constraints: Union[Iterable[Callable], Callable]
+    partition: Partition, constraints: Union[Iterable[Callable], Callable]
 ) -> Iterator[Partition]:
     """
     Generates all valid Partitions that differ from the given partition
@@ -63,8 +62,7 @@ def all_valid_states_one_flip_away(
 
 
 def all_valid_flips(
-    partition: Partition,
-    constraints: Union[Iterable[Callable], Callable]
+    partition: Partition, constraints: Union[Iterable[Callable], Callable]
 ) -> Iterator[Dict]:
     """
     Generate all valid flips for a given partition subject
@@ -83,8 +81,7 @@ def all_valid_flips(
 
 
 def metagraph_degree(
-    partition: Partition,
-    constraints: Union[Iterable[Callable], Callable]
+    partition: Partition, constraints: Union[Iterable[Callable], Callable]
 ) -> int:
     """
     Calculate the degree of the node in the metagraph of the given partition.

@@ -74,11 +74,9 @@ def initialize_cut_edges(partition):
 
 
 @on_edge_flow(initialize_cut_edges, alias="cut_edges_by_part")
-def cut_edges_by_part(partition,
-                      previous: Set[Tuple],
-                      new_edges: Set[Tuple],
-                      old_edges: Set[Tuple]
-                      ) -> Set[Tuple]:
+def cut_edges_by_part(
+    partition, previous: Set[Tuple], new_edges: Set[Tuple], old_edges: Set[Tuple]
+) -> Set[Tuple]:
     """
     Updater function that responds to the flow of edges between different partitions.
 

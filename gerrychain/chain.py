@@ -24,7 +24,6 @@ Dependencies:
 Last Updated: 11 Jan 2024
 """
 
-
 from .constraints import Validator
 from typing import Union, Iterable, Callable, Optional
 
@@ -56,7 +55,7 @@ class MarkovChain:
         constraints: Union[Iterable[Callable], Validator, Iterable[Bounds], Callable],
         accept: Callable,
         initial_state: Optional[Partition],
-        total_steps: int
+        total_steps: int,
     ) -> None:
         """
         :param proposal: Function proposing the next state from the current state.
@@ -102,7 +101,7 @@ class MarkovChain:
         self.initial_state = initial_state
         self.state = initial_state
 
-    def __iter__(self) -> 'MarkovChain':
+    def __iter__(self) -> "MarkovChain":
         """
         Resets the Markov chain iterator.
 

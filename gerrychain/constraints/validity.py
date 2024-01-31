@@ -61,9 +61,7 @@ class Validator:
 
 
 def within_percent_of_ideal_population(
-    initial_partition: Partition,
-    percent: float = 0.01,
-    pop_key: str = "population"
+    initial_partition: Partition, percent: float = 0.01, pop_key: str = "population"
 ) -> Bounds:
     """
     Require that all districts are within a certain percent of "ideal" (i.e.,
@@ -96,8 +94,7 @@ def within_percent_of_ideal_population(
 
 
 def deviation_from_ideal(
-    partition: Partition,
-    attribute: str = "population"
+    partition: Partition, attribute: str = "population"
 ) -> Dict[int, float]:
     """
     Computes the deviation of the given ``attribute`` from exact equality
@@ -126,9 +123,7 @@ def deviation_from_ideal(
 
 
 def districts_within_tolerance(
-    partition: Partition,
-    attribute_name: str = "population",
-    percentage: float = 0.1
+    partition: Partition, attribute_name: str = "population", percentage: float = 0.1
 ) -> bool:
     """
     Check if all districts are within a certain percentage of the "smallest"

@@ -23,23 +23,29 @@ class Partition:
     :ivar subgraphs: Maps district IDs to the induced subgraph of that district.
     :type subgraphs: Dict
     """
+
     __slots__ = (
-        'graph',
-        'subgraphs',
-        'assignment',
-        'updaters',
-        'parent',
-        'flips',
-        'flows',
-        'edge_flows',
-        '_cache'
+        "graph",
+        "subgraphs",
+        "assignment",
+        "updaters",
+        "parent",
+        "flips",
+        "flows",
+        "edge_flows",
+        "_cache",
     )
 
     default_updaters = {"cut_edges": cut_edges}
 
     def __init__(
-        self, graph=None, assignment=None, updaters=None, parent=None, flips=None,
-        use_default_updaters=True
+        self,
+        graph=None,
+        assignment=None,
+        updaters=None,
+        parent=None,
+        flips=None,
+        use_default_updaters=True,
     ):
         """
         :param graph: Underlying graph.
@@ -189,11 +195,12 @@ class Partition:
         return df.plot(column="assignment", **kwargs)
 
     @classmethod
-    def from_districtr_file(cls,
-                            graph: Graph,
-                            districtr_file: str,
-                            updaters: Optional[Dict[str, Callable]] = None
-                            ) -> "Partition":
+    def from_districtr_file(
+        cls,
+        graph: Graph,
+        districtr_file: str,
+        updaters: Optional[Dict[str, Callable]] = None,
+    ) -> "Partition":
         """
         Create a Partition from a districting plan created with `Districtr`_,
         a free and open-source web app created by MGGG for drawing districts.

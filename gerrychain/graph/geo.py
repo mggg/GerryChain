@@ -7,6 +7,7 @@ within a given GeoDataFrame.
 
 from collections import Counter
 from gerrychain.vendor.utm import from_latlon
+
 # from shapely.geometry.base import BaseGeometry
 from geopandas import GeoDataFrame
 
@@ -44,6 +45,7 @@ def explain_validity(geo) -> str:
     :rtype: str
     """
     import shapely.validation
+
     return shapely.validation.explain_validity(geo)
 
 

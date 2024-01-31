@@ -1,4 +1,5 @@
 import random
+
 # from typing import TypeVar
 # Partition = TypeVar("Partition")
 from ..partition import Partition
@@ -65,7 +66,8 @@ def propose_chunk_flip(partition: Partition) -> Partition:
     valid_flips = [
         nbr
         for nbr in partition.graph.neighbors(flipped_node)
-        if partition.assignment.mapping[nbr] != partition.assignment.mapping[flipped_node]
+        if partition.assignment.mapping[nbr]
+        != partition.assignment.mapping[flipped_node]
     ]
 
     for flipped_neighbor in valid_flips:
@@ -109,11 +111,19 @@ def slow_reversible_propose_bi(partition: Partition) -> Partition:
     :rtype: Partition
     """
 
-    b_nodes = {x[0] for x in partition["cut_edges"]}.union({x[1] for x in partition["cut_edges"]})
+    b_nodes = {x[0] for x in partition["cut_edges"]}.union(
+        {x[1] for x in partition["cut_edges"]}
+    )
 
     flip = random.choice(list(b_nodes))
-    neighbor_assignments = list(set([partition.assignment.mapping[neighbor] for neighbor
-                                in partition.graph.neighbors(flip)]))
+    neighbor_assignments = list(
+        set(
+            [
+                partition.assignment.mapping[neighbor]
+                for neighbor in partition.graph.neighbors(flip)
+            ]
+        )
+    )
     neighbor_assignments.remove(partition.assignment.mapping[flip])
     flips = {flip: random.choice(neighbor_assignments)}
 
@@ -137,8 +147,11 @@ def slow_reversible_propose(partition: Partition) -> Partition:
     :rtype: Partition
     """
 
-    b_nodes = {(x[0], partition.assignment.mapping[x[1]]) for x in partition["cut_edges"]
-               }.union({(x[1], partition.assignment.mapping[x[0]]) for x in partition["cut_edges"]})
+    b_nodes = {
+        (x[0], partition.assignment.mapping[x[1]]) for x in partition["cut_edges"]
+    }.union(
+        {(x[1], partition.assignment.mapping[x[0]]) for x in partition["cut_edges"]}
+    )
 
     flip = random.choice(list(b_nodes))
     return partition.flip({flip[0]: flip[1]})

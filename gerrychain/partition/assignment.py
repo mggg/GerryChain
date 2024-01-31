@@ -17,12 +17,12 @@ class Assignment(Mapping):
     An :class:`Assignment` has a ``parts`` property that is a dictionary of the form
     ``{part: <frozenset of nodes in part>}``.
     """
-    __slots__ = [
-        'parts',
-        'mapping'
-    ]
 
-    def __init__(self, parts: Dict, mapping: Optional[Dict] = None, validate: bool = True) -> None:
+    __slots__ = ["parts", "mapping"]
+
+    def __init__(
+        self, parts: Dict, mapping: Optional[Dict] = None, validate: bool = True
+    ) -> None:
         """
         :param parts: Dictionary mapping partition assignments frozensets of nodes.
         :type parts: Dict
@@ -151,9 +151,9 @@ class Assignment(Mapping):
         return cls(parts)
 
 
-def get_assignment(part_assignment: Union[str, Dict, Assignment],
-                   graph: Optional[Graph] = None
-                   ) -> Assignment:
+def get_assignment(
+    part_assignment: Union[str, Dict, Assignment], graph: Optional[Graph] = None
+) -> Assignment:
     """
     Either extracts an :class:`Assignment` object from the input graph
     using the provided key or attempts to convert part_assignment into

@@ -20,7 +20,7 @@ def neighbor_flips(partition) -> Set[Tuple]:
 
 
 def create_flow():
-    return {'in': set(), 'out': set()}
+    return {"in": set(), "out": set()}
 
 
 @functools.lru_cache(maxsize=2)
@@ -40,8 +40,8 @@ def flows_from_changes(old_partition, new_partition) -> Dict:
     for node, target in new_partition.flips.items():
         source = old_partition.assignment.mapping[node]
         if source != target:
-            flows[target]['in'].add(node)
-            flows[source]['out'].add(node)
+            flows[target]["in"].add(node)
+            flows[source]["out"].add(node)
     return flows
 
 
@@ -82,6 +82,7 @@ def on_flow(initializer: Callable, alias: str) -> Callable:
         wrapped function.
     :rtype: Callable
     """
+
     def decorator(function):
         @functools.wraps(function)
         def wrapped(partition, previous=None):
@@ -94,10 +95,14 @@ def on_flow(initializer: Callable, alias: str) -> Callable:
             new_values = previous.copy()
 
             for part, flow in partition.flows.items():
-                new_values[part] = function(partition, previous[part], flow['in'], flow['out'])
+                new_values[part] = function(
+                    partition, previous[part], flow["in"], flow["out"]
+                )
 
             return new_values
+
         return wrapped
+
     return decorator
 
 
@@ -115,7 +120,7 @@ def compute_edge_flows(partition) -> Dict:
     assignment = partition.assignment
     old_assignment = partition.parent.assignment
 
-    for (node, neighbor) in neighbor_flips(partition):
+    for node, neighbor in neighbor_flips(partition):
         edge = (node, neighbor)
 
         old_source = old_assignment.mapping[node]
@@ -128,22 +133,24 @@ def compute_edge_flows(partition) -> Dict:
         was_cut = old_source != old_target
 
         if not cut and was_cut:
-            edge_flows[old_target]['out'].add(edge)
-            edge_flows[old_source]['out'].add(edge)
+            edge_flows[old_target]["out"].add(edge)
+            edge_flows[old_source]["out"].add(edge)
         elif cut and not was_cut:
-            edge_flows[new_target]['in'].add(edge)
-            edge_flows[new_source]['in'].add(edge)
+            edge_flows[new_target]["in"].add(edge)
+            edge_flows[new_source]["in"].add(edge)
         elif cut and was_cut:
             # If an edge was cut and still is cut, we need to make sure the
             # edge is listed under the correct parts.
-            no_longer_incident_parts = {old_target, old_source} - \
-                {new_target, new_source}
+            no_longer_incident_parts = {old_target, old_source} - {
+                new_target,
+                new_source,
+            }
             for part in no_longer_incident_parts:
-                edge_flows[part]['out'].add(edge)
+                edge_flows[part]["out"].add(edge)
 
             newly_incident_parts = {new_target, new_source} - {old_target, old_source}
             for part in newly_incident_parts:
-                edge_flows[part]['in'].add(edge)
+                edge_flows[part]["in"].add(edge)
     return edge_flows
 
 
@@ -184,6 +191,7 @@ def on_edge_flow(initializer: Callable, alias: str) -> Callable:
         wrapped function.
     :rtype: Callable
     """
+
     def decorator(f):
         @functools.wraps(f)
         def wrapper(partition):
@@ -194,9 +202,14 @@ def on_edge_flow(initializer: Callable, alias: str) -> Callable:
 
             new_values = previous.copy()
             for part in partition.edge_flows:
-                new_values[part] = f(partition, previous[part],
-                                     new_edges=edge_flows[part]['in'],
-                                     old_edges=edge_flows[part]['out'])
+                new_values[part] = f(
+                    partition,
+                    previous[part],
+                    new_edges=edge_flows[part]["in"],
+                    old_edges=edge_flows[part]["out"],
+                )
             return new_values
+
         return wrapper
+
     return decorator

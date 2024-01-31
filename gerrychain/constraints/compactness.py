@@ -44,7 +44,7 @@ def L2_polsby_popper(partition: Partition) -> float:
     :returns: :math:`L^2` norm of the Polsby-Popper scores
     :rtype: float
     """
-    return math.sqrt(sum(value ** 2 for value in partition["polsby_popper"].values()))
+    return math.sqrt(sum(value**2 for value in partition["polsby_popper"].values()))
 
 
 def L_minus_1_polsby_popper(partition):

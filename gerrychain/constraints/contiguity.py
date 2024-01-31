@@ -8,12 +8,7 @@ import random
 from .bounds import SelfConfiguringLowerBound
 
 
-def are_reachable(
-    G: nx.Graph,
-    source: Any,
-    avoid: Callable,
-    targets: Any
-) -> bool:
+def are_reachable(G: nx.Graph, source: Any, avoid: Callable, targets: Any) -> bool:
     """
     A modified version of NetworkX's function
     `networkx.algorithms.shortest_paths.weighted._dijkstra_multisource()`

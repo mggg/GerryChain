@@ -13,6 +13,7 @@ in :mod:`gerrychain.graph.adjacency`, and the class
 :mod:`gerrychain.graph.graph`. See the documentation at the top
 of those files for more information.
 """
+
 from .adjacency import *
 from .geo import *
 from .graph import *

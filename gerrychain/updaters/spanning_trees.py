@@ -1,6 +1,7 @@
 """
 Updaters that compute spanning tree statistics.
 """
+
 import math
 import numpy
 import networkx

@@ -10,6 +10,7 @@ Note:
 This module relies on NetworkX, pandas, and geopandas, which should be installed and
 imported as required.
 """
+
 import functools
 import json
 from typing import Any
@@ -59,7 +60,7 @@ class Graph(networkx.Graph):
         return "<Graph [{} nodes, {} edges]>".format(len(self.nodes), len(self.edges))
 
     @classmethod
-    def from_networkx(cls, graph: networkx.Graph) -> 'Graph':
+    def from_networkx(cls, graph: networkx.Graph) -> "Graph":
         """
         Create a Graph instance from a networkx.Graph object.
 
@@ -73,7 +74,7 @@ class Graph(networkx.Graph):
         return g
 
     @classmethod
-    def from_json(cls, json_file: str) -> 'Graph':
+    def from_json(cls, json_file: str) -> "Graph":
         """
         Load a graph from a JSON file in the NetworkX json_graph format.
 
@@ -90,7 +91,9 @@ class Graph(networkx.Graph):
         graph.issue_warnings()
         return graph
 
-    def to_json(self, json_file: str, *, include_geometries_as_geojson: bool = False) -> None:
+    def to_json(
+        self, json_file: str, *, include_geometries_as_geojson: bool = False
+    ) -> None:
         """
         Save a graph to a JSON file in the NetworkX json_graph format.
 
@@ -178,9 +181,10 @@ class Graph(networkx.Graph):
         adjacency: str = "rook",
         cols_to_add: Optional[List[str]] = None,
         reproject: bool = False,
-        ignore_errors: bool = False
+        ignore_errors: bool = False,
     ) -> "Graph":
-        """Creates the adjacency :class:`Graph` of geometries described by `dataframe`.
+        """
+        Creates the adjacency :class:`Graph` of geometries described by `dataframe`.
         The areas of the polygons are included as node attributes (with key `area`).
         The shared perimeter of neighboring polygons are included as edge attributes
         (with key `shared_perim`).
@@ -284,8 +288,9 @@ class Graph(networkx.Graph):
     def edge_indices(self):
         return set(self.edges)
 
-    def add_data(self, df: pd.DataFrame,
-                 columns: Optional[Iterable[str]] = None) -> None:
+    def add_data(
+        self, df: pd.DataFrame, columns: Optional[Iterable[str]] = None
+    ) -> None:
         """
         Add columns of a DataFrame to a graph as node attributes
         by matching the DataFrame's index to node ids.
@@ -311,8 +316,13 @@ class Graph(networkx.Graph):
         else:
             self.data = df[columns]
 
-    def join(self, dataframe: pd.DataFrame, columns: Optional[List[str]] = None,
-             left_index: Optional[str] = None, right_index: Optional[str] = None) -> None:
+    def join(
+        self,
+        dataframe: pd.DataFrame,
+        columns: Optional[List[str]] = None,
+        left_index: Optional[str] = None,
+        right_index: Optional[str] = None,
+    ) -> None:
         """
         Add data from a dataframe to the graph, matching nodes to rows when
         the node's `left_index` attribute equals the row's `right_index` value.
@@ -548,5 +558,5 @@ class FrozenGraph:
     def lookup(self, node: Any, field: str) -> Any:
         return self.graph.nodes[node][field]
 
-    def subgraph(self, nodes: Iterable[Any]) -> 'FrozenGraph':
+    def subgraph(self, nodes: Iterable[Any]) -> "FrozenGraph":
         return FrozenGraph(self.graph.subgraph(nodes))

@@ -79,12 +79,14 @@ class LocalitySplits:
     :type scores: Dict[str, Any]
     """
 
-    def __init__(self,
-                 name: str,
-                 col_id: str,
-                 pop_col: str,
-                 scores_to_compute: List[str] = ["num_parts"],
-                 pent_alpha: float = 0.05):
+    def __init__(
+        self,
+        name: str,
+        col_id: str,
+        pop_col: str,
+        scores_to_compute: List[str] = ["num_parts"],
+        pent_alpha: float = 0.05,
+    ):
         """
         :param name: The name of the updater (e.g. "countysplits")
         :type name: str
@@ -136,10 +138,11 @@ class LocalitySplits:
             self.localitydict = dict(partition.graph.nodes(data=self.col_id))
             self.localities = set(list(self.localitydict.values()))
 
-        locality_splits = {k: [self.localitydict[v] for v in d]
-                           for k, d in partition.assignment.parts.items()}
-        self.locality_splits = {k: Counter(v)
-                                for k, v in locality_splits.items()}
+        locality_splits = {
+            k: [self.localitydict[v] for v in d]
+            for k, d in partition.assignment.parts.items()
+        }
+        self.locality_splits = {k: Counter(v) for k, v in locality_splits.items()}
 
         self.locality_splits_inv = defaultdict(dict)
         for k, v in self.locality_splits.items():
@@ -158,8 +161,10 @@ class LocalitySplits:
 
             for loc in self.localities:
                 sg = partition.graph.subgraph(
-                    n for n, v in partition.graph.nodes(
-                        data=True) if v[self.col_id] == loc)
+                    n
+                    for n, v in partition.graph.nodes(data=True)
+                    if v[self.col_id] == loc
+                )
 
                 pop = 0
                 for n in sg.nodes():
@@ -169,31 +174,31 @@ class LocalitySplits:
             self.allowed_pieces = allowed_pieces
 
         for s in self.scores:
-            if s == 'num_parts':
+            if s == "num_parts":
                 self.scores[s] = self.num_parts(partition)
 
-            if s == 'num_pieces':
+            if s == "num_pieces":
                 self.scores[s] = self.num_pieces(partition)
 
-            if s == 'naked_boundary':
+            if s == "naked_boundary":
                 self.scores[s] = self.naked_boundary(partition)
 
-            if s == 'shannon_entropy':
+            if s == "shannon_entropy":
                 self.scores[s] = self.shannon_entropy(partition)
 
-            if s == 'power_entropy':
+            if s == "power_entropy":
                 self.scores[s] = self.power_entropy(partition)
 
-            if s == 'symmetric_entropy':
+            if s == "symmetric_entropy":
                 self.scores[s] = self.symmetric_entropy(partition)
 
-            if s == 'num_split_localities':
+            if s == "num_split_localities":
                 self.scores[s] = self.num_split_localities(partition)
 
         return self.scores
 
     def num_parts(self, partition) -> int:
-        '''
+        """
         Calculates the number of unique locality-district pairs.
 
         :param partition: The partition to be scored.
@@ -202,7 +207,7 @@ class LocalitySplits:
         :returns: The number of parts, i.e. the number of unique
            locality-district pairs.
         :rtype: int
-        '''
+        """
 
         counter = 0
         for district in self.locality_splits.keys():
@@ -210,7 +215,7 @@ class LocalitySplits:
         return counter
 
     def num_pieces(self, partition) -> int:
-        '''
+        """
         Calculates the number of pieces.
 
         :param partition: The partition to be scored.
@@ -219,14 +224,15 @@ class LocalitySplits:
         :returns: Number of pieces, where each piece is formed by
             cutting the graph by both locality and district boundaries.
         :rtype: int
-        '''
+        """
         locality_intersections = {}
 
         for n in partition.graph.nodes():
             locality = partition.graph.nodes[n][self.col_id]
             if locality not in locality_intersections:
                 locality_intersections[locality] = set(
-                    [partition.assignment.mapping[n]])
+                    [partition.assignment.mapping[n]]
+                )
 
             locality_intersections[locality].update([partition.assignment.mapping[n]])
 
@@ -234,15 +240,18 @@ class LocalitySplits:
         for locality in locality_intersections:
             for d in locality_intersections[locality]:
                 subgraph = partition.graph.subgraph(
-                    [x for x in partition.parts[d]
-                        if partition.graph.nodes[x][self.col_id] == locality]
+                    [
+                        x
+                        for x in partition.parts[d]
+                        if partition.graph.nodes[x][self.col_id] == locality
+                    ]
                 )
 
                 pieces += nx.number_connected_components(subgraph)
         return pieces
 
     def naked_boundary(self, partition) -> int:
-        '''
+        """
         Computes the number of cut edges inside localities (i.e. the
             number of cut edges with both endpoints in the same locality).
 
@@ -251,7 +260,7 @@ class LocalitySplits:
 
         :returns: The number of cut edges within a locality.
         :rtype: int
-        '''
+        """
 
         cut_edges_within = 0
         cut_edge_set = partition["cut_edges"]
@@ -265,7 +274,7 @@ class LocalitySplits:
         return cut_edges_within
 
     def shannon_entropy(self, partition) -> float:
-        '''
+        """
         Computes the shannon entropy score of a district plan.
 
         :param partition: The partition to be scored.
@@ -273,7 +282,7 @@ class LocalitySplits:
 
         :returns: Shannon entropy score.
         :rtype: float
-        '''
+        """
 
         total_vtds = 0
         for k, v in self.locality_splits.items():
@@ -308,7 +317,7 @@ class LocalitySplits:
         return entropy
 
     def power_entropy(self, partition) -> float:
-        '''
+        """
         Computes the power entropy score of a district plan.
 
         :param partition: The partition to be scored.
@@ -316,7 +325,7 @@ class LocalitySplits:
 
         :returns: Power entropy score.
         :rtype: float
-        '''
+        """
 
         total_vtds = 0  # count the total number of vtds in state
         for k, v in self.locality_splits.items():
@@ -351,7 +360,7 @@ class LocalitySplits:
         return entropy
 
     def symmetric_entropy(self, partition) -> float:  # IN PROGRESS
-        '''
+        """
         Calculates the symmetric entropy score.
 
         Warning::
@@ -363,7 +372,7 @@ class LocalitySplits:
 
         :returns: The symmetric square root entropy score.
         :rtype: float
-        '''
+        """
 
         district_dict = dict(partition.parts)
 
@@ -371,8 +380,9 @@ class LocalitySplits:
             vtds = district_dict[district]
             locality_pop = {k: 0 for k in self.localities}
             for vtd in vtds:
-                locality_pop[self.localitydict[vtd]] += partition.graph.nodes[
-                    vtd][self.pop_col]
+                locality_pop[self.localitydict[vtd]] += partition.graph.nodes[vtd][
+                    self.pop_col
+                ]
             district_dict[district] = locality_pop
 
         district_dict_inv = defaultdict(dict)
@@ -387,8 +397,7 @@ class LocalitySplits:
             total = sum(localities_and_pops.values())
             fractional_sum = 0
             for locality in localities_and_pops.keys():
-                fractional_sum += math.sqrt(
-                    localities_and_pops[locality] / total)
+                fractional_sum += math.sqrt(localities_and_pops[locality] / total)
             score += total * fractional_sum
 
         # how do localities split districts?
@@ -397,14 +406,13 @@ class LocalitySplits:
             total = sum(districts_and_pops.values())
             fractional_sum = 0
             for district in districts_and_pops.keys():
-                fractional_sum += math.sqrt(districts_and_pops[district]
-                                            / total)
+                fractional_sum += math.sqrt(districts_and_pops[district] / total)
             score += total * fractional_sum
 
         return score
 
     def num_split_localities(self, partition) -> int:
-        '''
+        """
         Calculates the number of localities touching 2 or more districts.
 
         :param partition: The partition to be scored.
@@ -413,7 +421,7 @@ class LocalitySplits:
         :returns: The number of split localities, i.e. the number of localities
             touching 2 or more districts.
         :rtype: int
-        '''
+        """
 
         total_splits = 0
 

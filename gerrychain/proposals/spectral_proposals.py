@@ -7,10 +7,7 @@ from typing import Dict, Optional
 
 
 def spectral_cut(
-    graph: Graph,
-    part_labels: Dict,
-    weight_type: str,
-    lap_type: str
+    graph: Graph, part_labels: Dict, weight_type: str, lap_type: str
 ) -> Dict:
     """
     Spectral cut function.
@@ -58,7 +55,7 @@ def spectral_cut(
 def spectral_recom(
     partition: Partition,
     weight_type: Optional[str] = None,
-    lap_type: str = "normalized"
+    lap_type: str = "normalized",
 ) -> Partition:
     """Spectral ReCom proposal.
 
@@ -92,17 +89,15 @@ def spectral_recom(
     """
 
     edge = random.choice(tuple(partition["cut_edges"]))
-    parts_to_merge = (partition.assignment.mapping[edge[0]], partition.assignment.mapping[edge[1]])
+    parts_to_merge = (
+        partition.assignment.mapping[edge[0]],
+        partition.assignment.mapping[edge[1]],
+    )
 
     subgraph = partition.graph.subgraph(
         partition.parts[parts_to_merge[0]] | partition.parts[parts_to_merge[1]]
     )
 
-    flips = spectral_cut(
-        subgraph,
-        parts_to_merge,
-        weight_type,
-        lap_type
-    )
+    flips = spectral_cut(subgraph, parts_to_merge, weight_type, lap_type)
 
     return partition.flip(flips)

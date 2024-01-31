@@ -29,5 +29,5 @@ __all__ = [
     "CountySplit",
     "compute_edge_flows",
     "Election",
-    "num_spanning_trees"
+    "num_spanning_trees",
 ]

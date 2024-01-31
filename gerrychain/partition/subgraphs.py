@@ -18,11 +18,8 @@ class SubgraphView:
     :ivar subgraphs_cache: Cache to store subgraph views for quick access.
     :type subgraphs_cache: Dict
     """
-    __slots__ = [
-        "graph",
-        "parts",
-        "subgraphs_cache"
-    ]
+
+    __slots__ = ["graph", "parts", "subgraphs_cache"]
 
     def __init__(self, graph: Graph, parts: List[List[Any]]) -> None:
         """
@@ -60,5 +57,7 @@ class SubgraphView:
             yield part, self[part]
 
     def __repr__(self) -> str:
-        return (f"<SubgraphView with {len(self.parts)}"
-                f" and {len(self.subgraphs_cache)} cached graphs>")
+        return (
+            f"<SubgraphView with {len(self.parts)}"
+            f" and {len(self.subgraphs_cache)} cached graphs>"
+        )

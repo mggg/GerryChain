@@ -15,7 +15,7 @@ def compute_polsby_popper(area: float, perimeter: float) -> float:
     :rtype: float
     """
     try:
-        return 4 * math.pi * area / perimeter ** 2
+        return 4 * math.pi * area / perimeter**2
     except ZeroDivisionError:
         return math.nan
 

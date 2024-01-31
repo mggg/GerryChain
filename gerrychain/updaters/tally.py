@@ -18,11 +18,8 @@ class DataTally:
     :ivar alias: The name of the tally in the Partition's `updaters` dictionary
     :type alias: str
     """
-    __slots__ = [
-        "data",
-        "alias",
-        "_call"
-    ]
+
+    __slots__ = ["data", "alias", "_call"]
 
     def __init__(self, data: Union[Dict, pandas.Series, str], alias: str) -> None:
         """
@@ -82,16 +79,15 @@ class Tally:
     :ivar dtype: The type (int, float, etc.) that you want the tally to have
     :type dtype: Any
     """
-    __slots__ = [
-        "fields",
-        "alias",
-        "dtype"
-    ]
 
-    def __init__(self, fields: Union[str, List[str]],
-                 alias: Optional[str] = None,
-                 dtype: Type = int
-                 ) -> None:
+    __slots__ = ["fields", "alias", "dtype"]
+
+    def __init__(
+        self,
+        fields: Union[str, List[str]],
+        alias: Optional[str] = None,
+        dtype: Type = int,
+    ) -> None:
         """
         :param fields: The list of node attributes that you want to tally. Or a just a
             single attribute name as a string.

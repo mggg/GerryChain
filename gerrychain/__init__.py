@@ -6,9 +6,9 @@ from .chain import MarkovChain
 from .graph import Graph
 from .partition import GeographicPartition, Partition
 from .updaters.election import Election
-    
+
 # Will need to change this to a logging option later
-# It might be good to see how often this happens 
+# It might be good to see how often this happens
 warnings.simplefilter("once")
 
 try:
@@ -24,5 +24,5 @@ try:
 except ModuleNotFoundError:
     pass
 
-__version__ = get_versions()['version']
+__version__ = get_versions()["version"]
 del get_versions

@@ -4,9 +4,13 @@ import random
 
 from gerrychain.partition import Partition
 from ..tree import (
-    recursive_tree_part, bipartition_tree, bipartition_tree_random,
-    _bipartition_tree_random_all, uniform_spanning_tree,
-    find_balanced_edge_cuts_memoization, ReselectException,
+    recursive_tree_part,
+    bipartition_tree,
+    bipartition_tree_random,
+    _bipartition_tree_random_all,
+    uniform_spanning_tree,
+    find_balanced_edge_cuts_memoization,
+    ReselectException,
 )
 from typing import Callable, Optional, Dict, Union
 import warnings
@@ -17,6 +21,7 @@ class MetagraphError(Exception):
     Raised when the partition we are trying to split is a low degree
     node in the metagraph.
     """
+
     pass
 
 
@@ -25,6 +30,7 @@ class ValueWarning(UserWarning):
     Raised whe a particular value is technically valid, but may
     cause issues with the algorithm.
     """
+
     pass
 
 
@@ -35,7 +41,7 @@ def recom(
     epsilon: float,
     node_repeats: int = 1,
     weight_dict: Optional[Dict] = None,
-    method: Callable = bipartition_tree
+    method: Callable = bipartition_tree,
 ) -> Partition:
     """
     ReCom (short for ReCombination) is a Markov Chain Monte Carlo (MCMC) algorithm
@@ -95,12 +101,14 @@ def recom(
     tot_pairs = n_parts * (n_parts - 1) / 2  # n choose 2
 
     # Try to add the region aware in if the method accepts the weight dictionary
-    if 'weight_dict' in signature(method).parameters:
+    if "weight_dict" in signature(method).parameters:
         method = partial(method, weight_dict=weight_dict)
-        if sum(weight_dict.values()) > 1:
-            warnings.warn("\nThe sum of the weights in the weight dictionary is greater than 1.\n"
-                          "Please consider normalizing the weights.",
-                          ValueWarning)
+        if weight_dict is not None and sum(weight_dict.values()) > 1:
+            warnings.warn(
+                "\nThe sum of the weights in the weight dictionary is greater than 1.\n"
+                "Please consider normalizing the weights.",
+                ValueWarning,
+            )
 
     while len(bad_district_pairs) < tot_pairs:
         try:
@@ -108,8 +116,10 @@ def recom(
                 edge = random.choice(tuple(partition["cut_edges"]))
                 # Need to sort the tuple so that the order is consistent
                 # in the bad_district_pairs set
-                parts_to_merge = [partition.assignment.mapping[edge[0]],
-                                  partition.assignment.mapping[edge[1]]]
+                parts_to_merge = [
+                    partition.assignment.mapping[edge[0]],
+                    partition.assignment.mapping[edge[1]],
+                ]
                 parts_to_merge.sort()
 
                 if tuple(parts_to_merge) not in bad_district_pairs:
@@ -138,8 +148,10 @@ def recom(
                 raise
 
     if len(bad_district_pairs) == tot_pairs:
-        raise MetagraphError(f"Bipartitioning failed for all {tot_pairs} district pairs."
-                             f"Consider rerunning the chain with a different random seed.")
+        raise MetagraphError(
+            f"Bipartitioning failed for all {tot_pairs} district pairs."
+            f"Consider rerunning the chain with a different random seed."
+        )
 
     return partition.flip(flips)
 
@@ -152,7 +164,7 @@ def reversible_recom(
     balance_edge_fn: Callable = find_balanced_edge_cuts_memoization,
     M: int = 1,
     repeat_until_valid: bool = False,
-    choice: Callable = random.choice
+    choice: Callable = random.choice,
 ) -> Partition:
     """
     Reversible ReCom algorithm for redistricting.
@@ -188,23 +200,33 @@ def reversible_recom(
 
     def dist_pair_edges(part, a, b):
         return set(
-            e for e in part.graph.edges
-            if ((part.assignment.mapping[e[0]] == a and part.assignment.mapping[e[1]] == b) or
-                (part.assignment.mapping[e[0]] == b and part.assignment.mapping[e[1]] == a))
+            e
+            for e in part.graph.edges
+            if (
+                (
+                    part.assignment.mapping[e[0]] == a
+                    and part.assignment.mapping[e[1]] == b
+                )
+                or (
+                    part.assignment.mapping[e[0]] == b
+                    and part.assignment.mapping[e[1]] == a
+                )
+            )
         )
 
     def bounded_balance_edge_fn(*args, **kwargs):
         cuts = balance_edge_fn(*args, **kwargs)
         if len(cuts) > M:
-            raise ReversibilityError(f'Found {len(cuts)} balance edges, '
-                                     f'but the upper bound is {M}.')
+            raise ReversibilityError(
+                f"Found {len(cuts)} balance edges, " f"but the upper bound is {M}."
+            )
         return cuts
 
     bipartition_tree_random_reversible = partial(
         _bipartition_tree_random_all,
         repeat_until_valid=repeat_until_valid,
         spanning_tree_fn=uniform_spanning_tree,
-        balance_edge_fn=bounded_balance_edge_fn
+        balance_edge_fn=bounded_balance_edge_fn,
     )
 
     parts = sorted(list(partition.parts.keys()))
@@ -216,28 +238,28 @@ def reversible_recom(
     random_pair = random.choice(dist_pairs)
     pair_edges = dist_pair_edges(partition, *random_pair)
     if random_pair[0] == random_pair[1] or not pair_edges:
-        return partition    # self-loop: no adjacency
+        return partition  # self-loop: no adjacency
 
     edge = random.choice(list(pair_edges))
-    parts_to_merge = (partition.assignment.mapping[edge[0]], partition.assignment.mapping[edge[1]])
+    parts_to_merge = (
+        partition.assignment.mapping[edge[0]],
+        partition.assignment.mapping[edge[1]],
+    )
     subgraph = partition.graph.subgraph(
         partition.parts[parts_to_merge[0]] | partition.parts[parts_to_merge[1]]
     )
 
     all_cuts = bipartition_tree_random_reversible(
-        subgraph,
-        pop_col=pop_col,
-        pop_target=pop_target,
-        epsilon=epsilon
+        subgraph, pop_col=pop_col, pop_target=pop_target, epsilon=epsilon
     )
     if not all_cuts:
-        return partition    # self-loop: no balance edge
+        return partition  # self-loop: no balance edge
 
     nodes = choice(all_cuts).subset
     remaining_nodes = set(subgraph.nodes()) - set(nodes)
     flips = {
         **{node: parts_to_merge[0] for node in nodes},
-        **{node: parts_to_merge[1] for node in remaining_nodes}
+        **{node: parts_to_merge[1] for node in remaining_nodes},
     }
 
     new_part = partition.flip(flips)
@@ -245,12 +267,14 @@ def reversible_recom(
 
     prob = len(all_cuts) / (M * seam_length)
     if prob > 1:
-        raise ReversibilityError(f'Found {len(all_cuts)} balance edges, but '
-                                 f'the upper bound (with seam length 1) is {M}.')
+        raise ReversibilityError(
+            f"Found {len(all_cuts)} balance edges, but "
+            f"the upper bound (with seam length 1) is {M}."
+        )
     if random.random() < prob:
         return new_part
 
-    return partition     # self-loop
+    return partition  # self-loop
 
 
 class ReCom:
@@ -261,11 +285,13 @@ class ReCom:
 
     """
 
-    def __init__(self,
-                 pop_col: str,
-                 ideal_pop: Union[int, float],
-                 epsilon: float,
-                 method: Callable = bipartition_tree_random):
+    def __init__(
+        self,
+        pop_col: str,
+        ideal_pop: Union[int, float],
+        epsilon: float,
+        method: Callable = bipartition_tree_random,
+    ):
         """
         :param pop_col: The name of the column in the partition that contains the population data.
         :type pop_col: str

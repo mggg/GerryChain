@@ -64,7 +64,9 @@ def efficiency_gap(election_results) -> float:
     :returns: The efficiency gap for the given ElectionResults
     :rtype: float
     """
-    party1, party2 = [election_results.counts(party) for party in election_results.election.parties]
+    party1, party2 = [
+        election_results.counts(party) for party in election_results.election.parties
+    ]
     wasted_votes_by_part = map(wasted_votes, party1, party2)
     total_votes = election_results.total_votes()
     numerator = sum(waste2 - waste1 for waste1, waste2 in wasted_votes_by_part)

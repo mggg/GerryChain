@@ -139,10 +139,7 @@ class Grid(Partition):
         return [[self.assignment.mapping[(i, j)] for i in range(m)] for j in range(n)]
 
 
-def create_grid_graph(
-    dimensions: Tuple[int, int],
-    with_diagonals: bool
-) -> Graph:
+def create_grid_graph(dimensions: Tuple[int, int], with_diagonals: bool) -> Graph:
     """
     Creates a grid graph with the specified dimensions.
     Optionally includes diagonal connections between nodes.
@@ -184,11 +181,7 @@ def create_grid_graph(
     return graph
 
 
-def give_constant_attribute(
-    graph: Graph,
-    attribute: Any,
-    value: Any
-) -> None:
+def give_constant_attribute(graph: Graph, attribute: Any, value: Any) -> None:
     """
     Sets the specified attribute to the specified value for all nodes in the graph.
 
@@ -205,10 +198,7 @@ def give_constant_attribute(
         graph.nodes[node][attribute] = value
 
 
-def tag_boundary_nodes(
-    graph: Graph,
-    dimensions: Tuple[int, int]
-) -> None:
+def tag_boundary_nodes(graph: Graph, dimensions: Tuple[int, int]) -> None:
     """
     Adds the boolean attribute ``boundary_node`` to each node in the graph.
     If the node is on the boundary of the grid, that node also gets the attribute
@@ -230,10 +220,7 @@ def tag_boundary_nodes(
             graph.nodes[node]["boundary_node"] = False
 
 
-def get_boundary_perim(
-    node: Tuple[int, int],
-    dimensions: Tuple[int, int]
-) -> int:
+def get_boundary_perim(node: Tuple[int, int], dimensions: Tuple[int, int]) -> int:
     """
     Determines the boundary perimeter of a node on the grid.
     The boundary perimeter is the number of sides of the node that
