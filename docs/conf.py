@@ -119,6 +119,9 @@ html_static_path = ["_static"]
 # 'searchbox.html']``.
 #
 # html_sidebars = {}
+html_css_files = [
+    'css/custom.css',
+]
 
 
 # -- Options for HTMLHelp output ---------------------------------------------

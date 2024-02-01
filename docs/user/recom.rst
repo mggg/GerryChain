@@ -25,6 +25,15 @@ all of the pictures in this guide will use the dual graph as well.
 A Simple Recom Chain
 ====================
 
+.. raw:: html
+
+    <div class="center-container">
+      <a href="_static/gerrymandria.json" class="download-badge" download>
+        Download GerryMandria File
+      </a>
+    </div>
+    <br style="line-height: 5px;">
+
 Let us start by running a simple ReCom chain on this districting plan. Of course,
 the first thing to do is to import the required packages:
 
@@ -461,7 +470,14 @@ As always, the first step is to import everything we need
 Setting up the initial districting plan
 ---------------------------------------
 
-We'll create our graph using the example `Pennsylvania json file`_.
+.. raw:: html
+
+    <div class="center-container">
+      <a href="_static/PA_VTDs.json" class="download-badge" download>Download PA File</a>
+    </div>
+    <br style="line-height: 5px;">
+
+We'll create our graph using the example Pennsylvania json file.
 
 .. code-block:: python
 
@@ -480,8 +496,6 @@ the election data from our file.
         Election("PRES16", {"Democratic": "T16PRESD", "Republican": "T16PRESR"})
     ]
     
-
-.. _`Pennsylvania json file`: https://github.com/mggg/GerryChain/blob/main/docs/user/PA_VTDs.json 
 
 Configuring our updaters
 ++++++++++++++++++++++++

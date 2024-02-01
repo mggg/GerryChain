@@ -40,6 +40,13 @@ a simple example of how to run a Markov chain.
 Creating the initial partition
 ==============================
 
+.. raw:: html
+
+    <div class="center-container">
+      <a href="_static/PA_VTDs.json" class="download-badge" download>Download PA File</a>
+    </div>
+    <br style="line-height: 5px;">
+
 In order to run a Markov chain, we need an
 adjacency :class:`~gerrychain.Graph` of our VTD geometries and
 :class:`~gerrychain.Partition` of our adjacency graph into districts. This Partition

@@ -422,6 +422,7 @@ def bipartition_tree(
         restarts += 1
         attempts += 1
 
+        # Don't forget to change the documentation if you change this number
         if attempts == 50 and not allow_pair_reselection:
             warnings.warn(
                 "\nFailed to find a balanced cut after 50 attempts.\n"
