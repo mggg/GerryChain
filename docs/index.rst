@@ -72,6 +72,7 @@ MGGG for the 2019 MIT IAP course `Computational Approaches for Political Redistr
 
     topics/reproducibility
     topics/tools
+    topics/contributing
 
 
 .. toctree::
