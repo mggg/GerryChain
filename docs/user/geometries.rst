@@ -35,7 +35,7 @@ Loading and Running a Plan
 .. raw:: html
 
     <div class="center-container">
-      <a href="_static/MN_precincts.geojson" class="download-badge" download>Download MN File</a>
+      <a href="../_static/MN.zip" class="download-badge" download>Download MN File</a>
     </div>
     <br style="line-height: 5px;">
 

@@ -24,7 +24,7 @@ Writing Data to JSONL
 .. raw:: html
 
     <div class="center-container">
-      <a href="_static/PA_VTDs.json" class="download-badge" download>Download PA File</a>
+      <a href="../_static/PA_VTDs.json" class="download-badge" download>Download PA File</a>
     </div>
     <br style="line-height: 5px;">
 
