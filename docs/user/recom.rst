@@ -365,7 +365,7 @@ This will output the following sequence of warnings and errors
     MarkovChain proposal method to allow the algorithm to select
     a different pair of nodes to try an recombine.
 
-    RuntimeError: Could not find a possible cut after 10000 attempts.
+    RuntimeError: Could not find a possible cut after 100000 attempts.
 
 Note: if this error does not appear at step 8, then you probalby forgot
 to rerun the part of the script that sets the random seed to 42.

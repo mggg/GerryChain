@@ -6,7 +6,7 @@ from .compactness import (
     interior_boundaries,
     perimeter,
 )
-from .county_splits import CountySplit, county_splits
+from .county_splits import CountySplit, county_splits, tally_region_splits
 from .cut_edges import cut_edges, cut_edges_by_part
 from .election import Election
 from .flows import compute_edge_flows, flows_from_changes
@@ -30,4 +30,5 @@ __all__ = [
     "compute_edge_flows",
     "Election",
     "num_spanning_trees",
+    "tally_region_splits",
 ]

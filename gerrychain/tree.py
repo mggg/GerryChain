@@ -343,7 +343,7 @@ def bipartition_tree(
     weight_dict: Optional[Dict] = None,
     balance_edge_fn: Callable = find_balanced_edge_cuts_memoization,
     choice: Callable = random.choice,
-    max_attempts: Optional[int] = 10000,
+    max_attempts: Optional[int] = 100000,
     allow_pair_reselection: bool = False,
 ) -> Set:
     """
@@ -452,7 +452,7 @@ def _bipartition_tree_random_all(
     spanning_tree_fn: Callable = random_spanning_tree,
     balance_edge_fn: Callable = find_balanced_edge_cuts_memoization,
     choice: Callable = random.choice,
-    max_attempts: Optional[int] = None,
+    max_attempts: Optional[int] = 100000,
 ) -> List[Tuple[Hashable, Hashable]]:
     """
     Randomly bipartitions a tree into two subgraphs until a valid bipartition is found.
@@ -531,7 +531,7 @@ def bipartition_tree_random(
     spanning_tree_fn: Callable = random_spanning_tree,
     balance_edge_fn: Callable = find_balanced_edge_cuts_memoization,
     choice: Callable = random.choice,
-    max_attempts: Optional[int] = None,
+    max_attempts: Optional[int] = 100000,
 ) -> Union[Set[Any], None]:
     """
     This is like :func:`bipartition_tree` except it chooses a random balanced

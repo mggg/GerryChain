@@ -115,3 +115,47 @@ def compute_county_splits(
         new_county_dict[county] = CountyInfo(split, county_info.nodes, seen)
 
     return new_county_dict
+
+
+def tally_region_splits(reg_attr_lst):
+    """
+    A naive updater for tallying the number of times a region attribute is split.
+    for each region attribute in reg_attr_lst.
+
+    :param reg_attr_lst: A list of region names to tally splits for.
+    :type reg_attr_lst: List[str]
+
+    :returns: A function that takes a partition and returns a dictionary which
+        maps the region name to the number of times that it is split in a
+        a particular partition.
+    :rtype: Callable
+    """
+
+    def _get_splits(partition):
+        nonlocal reg_attr_lst
+        if "cut_edges" not in partition.updaters:
+            raise ValueError("The cut_edges updater must be attached to the partition")
+        return {
+            reg_attr: total_reg_splits(partition, reg_attr) for reg_attr in reg_attr_lst
+        }
+
+    return _get_splits
+
+
+def total_reg_splits(partition, reg_attr):
+    """Returns the total number of times that reg_attr is split in the partition."""
+    all_region_names = set(
+        partition.graph.nodes[node][reg_attr] for node in partition.graph.nodes
+    )
+    split = {name: 0 for name in all_region_names}
+    # Require that the cut_edges updater is attached to the partition
+    for node1, node2 in partition["cut_edges"]:
+        if (
+            partition.assignment[node1] != partition.assignment[node2]
+            and partition.graph.nodes[node1][reg_attr]
+            == partition.graph.nodes[node2][reg_attr]
+        ):
+            split[partition.graph.nodes[node1][reg_attr]] += 1
+            split[partition.graph.nodes[node2][reg_attr]] += 1
+
+    return sum(1 for value in split.values() if value > 0)

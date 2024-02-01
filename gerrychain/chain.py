@@ -101,6 +101,55 @@ class MarkovChain:
         self.initial_state = initial_state
         self.state = initial_state
 
+    @property
+    def constraints(self) -> Validator:
+        """
+        Read_only alias for the is_valid property.
+        Returns the constraints of the Markov chain.
+
+        :returns: The constraints of the Markov chain.
+        :rtype: String
+        """
+        return self.is_valid
+
+    @constraints.setter
+    def constraints(
+        self,
+        constraints: Union[Iterable[Callable], Validator, Iterable[Bounds], Callable],
+    ) -> None:
+        """
+        Setter for the is_valid property.
+        Checks if the initial state is valid according to the new constraints.
+        being imposed on the Markov chain, and raises a ValueError if the
+        initial state is not valid and lists the failed constraints.
+
+        :param constraints: The new constraints to be imposed on the Markov chain.
+        :type constraints: Union[Iterable[Callable], Validator, Iterable[Bounds], Callable]
+
+        :returns: None
+
+        :raises ValueError: If the initial_state is not valid according to the new constraints.
+        """
+
+        if callable(constraints):
+            is_valid = Validator([constraints])
+        else:
+            is_valid = Validator(constraints)
+
+        if not is_valid(self.initial_state):
+            failed = [
+                constraint
+                for constraint in is_valid.constraints  # type: ignore
+                if not constraint(self.initial_state)
+            ]
+            message = (
+                "The given initial_state is not valid according to the new constraints. "
+                "The failed constraints were: " + ",".join([f.__name__ for f in failed])
+            )
+            raise ValueError(message)
+
+        self.is_valid = is_valid
+
     def __iter__(self) -> "MarkovChain":
         """
         Resets the Markov chain iterator.

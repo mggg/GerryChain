@@ -8,20 +8,15 @@ from gerrychain import (
     constraints, proposals, updaters, Graph, tree)
 from gerrychain.tree import ReselectException, BipartitionWarning
 
-def total_reg_splits(partition, reg_attr, all_reg_names):
-    """Returns the total number of region splits in the partition."""
-    split = {name: 0 for name in all_reg_names}
-    # Require that the cut_edges updater is attached to the partition
-    for node1, node2 in partition["cut_edges"]:
-        if partition.assignment[node1] != partition.assignment[node2] \
-            and partition.graph.nodes[node1][reg_attr] == partition.graph.nodes[node2][reg_attr]:
-           split[partition.graph.nodes[node1][reg_attr]] += 1
-           split[partition.graph.nodes[node2][reg_attr]] += 1
-           
-    return sum(1 for value in split.values() if value > 0)
 
-
-def run_chain_single(seed, category, names, steps, weight, max_attempts=100000, reselect=False):
+def run_chain_single(
+    seed,
+    category, 
+    steps, 
+    weight, 
+    max_attempts=100000, 
+    reselect=False
+):
     from gerrychain import MarkovChain, Partition, accept, constraints, proposals, updaters, Graph, tree
     from gerrychain.tree import ReselectException
     from functools import partial
@@ -32,9 +27,7 @@ def run_chain_single(seed, category, names, steps, weight, max_attempts=100000, 
 
     updaters = {"population": updaters.Tally(population_col, alias="population"),
                 "cut_edges": updaters.cut_edges,
-                f"{category}_splits": partial(total_reg_splits,
-                                       reg_attr=category,
-                                       all_reg_names=names)
+                f"{category}_splits": updaters.tally_region_splits([category]),
                 }
     initial_partition = Partition(graph, assignment="district", updaters=updaters) 
 
@@ -62,7 +55,7 @@ def run_chain_single(seed, category, names, steps, weight, max_attempts=100000, 
     
     n_splits = -1
     for item in weighted_chain:
-        n_splits = item[f"{category}_splits"]
+        n_splits = item[f"{category}_splits"][category]
     
     return n_splits
 
@@ -70,12 +63,11 @@ def run_chain_single(seed, category, names, steps, weight, max_attempts=100000, 
 def test_region_aware_muni():
     n_samples = 30
     region = "muni"
-    region_names = [str(i) for i in range(1,17)]
+    n_regions = 16
     
     with ProcessPoolExecutor() as executor:
         results = executor.map(partial(run_chain_single, 
                                        category=region,
-                                       names=region_names,
                                        steps=500,
                                        weight=0.5),
                                range(n_samples))
@@ -84,18 +76,16 @@ def test_region_aware_muni():
     
     random.seed(2018)
     # Check if splits less than 5% of the time on average
-    assert (float(tot_splits) / (n_samples*len(region_names))) < 0.05
+    assert (float(tot_splits) / (n_samples*n_regions)) < 0.05
 
 
 def test_region_aware_muni_errors():
     region = "muni"
-    region_names = [str(i) for i in range(1,17)]
 
     with pytest.raises(RuntimeError) as exec_info:
         # Random seed 0 should fail here
         run_chain_single(seed=0,
                         category=region,
-                        names=region_names,
                         steps=10000,
                         max_attempts=10,
                         weight=2.0)
@@ -107,14 +97,12 @@ def test_region_aware_muni_errors():
 def test_region_aware_muni_warning():
     n_samples = 1
     region = "muni"
-    region_names = [str(i) for i in range(1,17)]
 
     with pytest.warns(UserWarning) as record:
         # Random seed 2 should succeed, but drawing the 
         # tree is hard, so we should get a warning
         run_chain_single(seed=2,
                     category=region,
-                    names=region_names,
                     steps=500,
                     weight=1.0)
 
@@ -127,12 +115,11 @@ def test_region_aware_muni_warning():
 def test_region_aware_muni_reselect():
     n_samples = 30
     region = "muni"
-    region_names = [str(i) for i in range(1,17)]
+    n_regions = 16
 
     with ProcessPoolExecutor() as executor:
         results = executor.map(partial(run_chain_single, 
                                        category=region,
-                                       names=region_names,
                                        steps=500,
                                        weight=1.0,
                                        reselect=True),
@@ -142,19 +129,18 @@ def test_region_aware_muni_reselect():
 
     random.seed(2018)
     # Check if splits less than 5% of the time on average
-    assert (float(tot_splits) / (n_samples*len(region_names))) < 0.05
+    assert (float(tot_splits) / (n_samples*n_regions)) < 0.05
 
 
 @pytest.mark.slow
 def test_region_aware_county():
     n_samples = 100
     region = "county2"
-    region_names = [str(i) for i in range(1,9)]
+    n_regions = 8
 
     with ProcessPoolExecutor() as executor:
         results = executor.map(partial(run_chain_single, 
                                        category=region,
-                                       names=region_names,
                                        steps=5000,
                                        weight=2.0),
                                range(n_samples))
@@ -163,8 +149,7 @@ def test_region_aware_county():
 
     random.seed(2018)  
     # Check if splits less than 5% of the time on average
-    print(f"Final score: {float(tot_splits) / (n_samples*len(region_names))}")
-    assert (float(tot_splits) / (n_samples*len(region_names))) < 0.05
+    assert (float(tot_splits) / (n_samples*n_regions)) < 0.05
     
     
 def straddled_regions(partition, reg_attr, all_reg_names):
@@ -188,15 +173,11 @@ def run_chain_dual(seed, steps):
     muni_names= [str(i) for i in range(1,17)]
     county_names = [str(i) for i in range(1,5)]
 
-    updaters = {"population": updaters.Tally(population_col, alias="population"),
-                "cut_edges": updaters.cut_edges,
-                f"muni_splits": partial(total_reg_splits,
-                                       reg_attr="muni",
-                                       all_reg_names=muni_names),
-                f"county_splits": partial(straddled_regions,
-                                       reg_attr="county",
-                                       all_reg_names=county_names)
-                }
+    updaters = {
+        "population": updaters.Tally(population_col, alias="population"),
+        "cut_edges": updaters.cut_edges,
+        "splits": updaters.tally_region_splits(["muni", "county"]),
+    }
     initial_partition = Partition(graph, assignment="district", updaters=updaters) 
 
     ideal_pop = sum(initial_partition["population"].values()) / len(initial_partition)
@@ -222,8 +203,8 @@ def run_chain_dual(seed, steps):
     n_muni_splits = -1
     n_county_splits = -1
     for item in weighted_chain:
-        n_muni_splits = item[f"muni_splits"]
-        n_county_splits = item[f"county_splits"]
+        n_muni_splits = item["splits"]["muni"]
+        n_county_splits = item["splits"]["county"]
     
     return (n_muni_splits, n_county_splits)
 
