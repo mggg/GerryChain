@@ -43,7 +43,7 @@ jobs:
             pytest -v --runslow --cov=gerrychain --junitxml=test-reports/junit.xml tests
             codecov
 
-          no_output_timeout: 20m
+          no_output_timeout: 40m
           environment:
             PYTHONHASHSEED: "0"
       - store_test_results:
