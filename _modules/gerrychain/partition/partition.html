@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>gerrychain.partition.partition &mdash; GerryChain  documentation</title><link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
@@ -13,6 +15,9 @@
         <script src="../../../_static/underscore.js"></script>
         <script src="../../../_static/doctools.js"></script>
         <script src="../../../_static/language_data.js"></script>
+        <script src="../../../_static/clipboard.min.js"></script>
+        <script src="../../../_static/copybutton.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -41,7 +46,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../user/recom.html">Running a chain with ReCom</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/partitions.html">Working with Partitions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/updaters.html">Updaters</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../user/adjacency.html">Handling Adjacencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/data.html">Good Data Practices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/geometries.html">Working With Geometries</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -51,8 +57,11 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../topics/reproducibility.html">Reproducibility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../topics/tools.html">Evaluating districting plans in the real world</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../topics/realworldplans.html">Using <code class="docutils literal notranslate"><span class="pre">maup</span></code> to import a real-life plan in GerryChain</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../topics/whatislands.html">What to do about islands and connectivity</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../topics/contributing.html">Contributing to GerryChain</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Index</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../full_ref.html">Full Package Reference</a></li>
 </ul>
 
         </div>
@@ -87,36 +96,47 @@
 <span class="kn">from</span> <span class="nn">..updaters</span> <span class="kn">import</span> <span class="n">compute_edge_flows</span><span class="p">,</span> <span class="n">flows_from_changes</span><span class="p">,</span> <span class="n">cut_edges</span>
 <span class="kn">from</span> <span class="nn">.assignment</span> <span class="kn">import</span> <span class="n">get_assignment</span>
 <span class="kn">from</span> <span class="nn">.subgraphs</span> <span class="kn">import</span> <span class="n">SubgraphView</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
 
 
-<div class="viewcode-block" id="Partition"><a class="viewcode-back" href="../../../api.html#gerrychain.partition.Partition">[docs]</a><span class="k">class</span> <span class="nc">Partition</span><span class="p">:</span>
+<div class="viewcode-block" id="Partition"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.partition.Partition">[docs]</a><span class="k">class</span> <span class="nc">Partition</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Partition represents a partition of the nodes of the graph. It will perform</span>
 <span class="sd">    the first layer of computations at each step in the Markov chain - basic</span>
 <span class="sd">    aggregations and calculations that we want to optimize.</span>
 
-<span class="sd">    :ivar gerrychain.Graph graph: The underlying graph.</span>
-<span class="sd">    :ivar gerrychain.Assignment assignment: Maps node IDs to district IDs.</span>
-<span class="sd">    :ivar dict parts: Maps district IDs to the set of nodes in that district.</span>
-<span class="sd">    :ivar dict subgraphs: Maps district IDs to the induced subgraph of that district.</span>
+<span class="sd">    :ivar graph: The underlying graph.</span>
+<span class="sd">    :type graph: :class:`~gerrychain.Graph`</span>
+<span class="sd">    :ivar assignment: Maps node IDs to district IDs.</span>
+<span class="sd">    :type assignment: :class:`~gerrychain.assignment.Assignment`</span>
+<span class="sd">    :ivar parts: Maps district IDs to the set of nodes in that district.</span>
+<span class="sd">    :type parts: Dict</span>
+<span class="sd">    :ivar subgraphs: Maps district IDs to the induced subgraph of that district.</span>
+<span class="sd">    :type subgraphs: Dict</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="s1">&#39;graph&#39;</span><span class="p">,</span>
-        <span class="s1">&#39;subgraphs&#39;</span><span class="p">,</span>
-        <span class="s1">&#39;assignment&#39;</span><span class="p">,</span>
-        <span class="s1">&#39;updaters&#39;</span><span class="p">,</span>
-        <span class="s1">&#39;parent&#39;</span><span class="p">,</span>
-        <span class="s1">&#39;flips&#39;</span><span class="p">,</span>
-        <span class="s1">&#39;flows&#39;</span><span class="p">,</span>
-        <span class="s1">&#39;edge_flows&#39;</span><span class="p">,</span>
-        <span class="s1">&#39;_cache&#39;</span>
+        <span class="s2">&quot;graph&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;subgraphs&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;assignment&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;updaters&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;parent&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;flips&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;flows&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;edge_flows&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;_cache&quot;</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="n">default_updaters</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;cut_edges&quot;</span><span class="p">:</span> <span class="n">cut_edges</span><span class="p">}</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">graph</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">assignment</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">updaters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">flips</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">use_default_updaters</span><span class="o">=</span><span class="kc">True</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">graph</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">assignment</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">updaters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">flips</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">use_default_updaters</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        :param graph: Underlying graph.</span>
@@ -165,7 +185,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">flows</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">edge_flows</span> <span class="o">=</span> <span class="kc">None</span>
 
-    <span class="k">def</span> <span class="nf">_from_parent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">flips</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_from_parent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">:</span> <span class="s2">&quot;Partition&quot;</span><span class="p">,</span> <span class="n">flips</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parent</span> <span class="o">=</span> <span class="n">parent</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">flips</span> <span class="o">=</span> <span class="n">flips</span>
 
@@ -188,30 +208,37 @@
     <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parts</span><span class="p">)</span>
 
-<div class="viewcode-block" id="Partition.flip"><a class="viewcode-back" href="../../../api.html#gerrychain.partition.Partition.flip">[docs]</a>    <span class="k">def</span> <span class="nf">flip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flips</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns the new partition obtained by performing the given `flips`</span>
+<div class="viewcode-block" id="Partition.flip"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.partition.Partition.flip">[docs]</a>    <span class="k">def</span> <span class="nf">flip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flips</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Partition&quot;</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the new partition obtained by performing the given `flips`</span>
 <span class="sd">        on this partition.</span>
 
 <span class="sd">        :param flips: dictionary assigning nodes of the graph to their new districts</span>
-<span class="sd">        :return: the new :class:`Partition`</span>
+<span class="sd">        :returns: the new :class:`Partition`</span>
 <span class="sd">        :rtype: Partition</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">flips</span><span class="o">=</span><span class="n">flips</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Partition.crosses_parts"><a class="viewcode-back" href="../../../api.html#gerrychain.partition.Partition.crosses_parts">[docs]</a>    <span class="k">def</span> <span class="nf">crosses_parts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">edge</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Answers the question &quot;Does this edge cross from one part of the</span>
-<span class="sd">        partition to another?</span>
-
+<div class="viewcode-block" id="Partition.crosses_parts"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.partition.Partition.crosses_parts">[docs]</a>    <span class="k">def</span> <span class="nf">crosses_parts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">edge</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        :param edge: tuple of node IDs</span>
+<span class="sd">        :type edge: Tuple</span>
+
+<span class="sd">        :returns: True if the edge crosses from one part of the partition to another</span>
 <span class="sd">        :rtype: bool</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">mapping</span><span class="p">[</span><span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">mapping</span><span class="p">[</span><span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span></div>
 
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Allows accessing the values of updaters computed for this</span>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Allows accessing the values of updaters computed for this</span>
 <span class="sd">        Partition instance.</span>
 
 <span class="sd">        :param key: Property to access.</span>
+<span class="sd">        :type key: str</span>
+
+<span class="sd">        :returns: The value of the updater.</span>
+<span class="sd">        :rtype: Any</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">updaters</span><span class="p">[</span><span class="n">key</span><span class="p">](</span><span class="bp">self</span><span class="p">)</span>
@@ -220,21 +247,26 @@
     <span class="k">def</span> <span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="nf">keys</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">updaters</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+<div class="viewcode-block" id="Partition.keys"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.partition.Partition.keys">[docs]</a>    <span class="k">def</span> <span class="nf">keys</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">updaters</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span></div>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">parts</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">parts</span>
 
-<div class="viewcode-block" id="Partition.plot"><a class="viewcode-back" href="../../../api.html#gerrychain.partition.Partition.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">geometries</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Plot the partition, using the provided geometries.</span>
+<div class="viewcode-block" id="Partition.plot"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.partition.Partition.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">geometries</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Plot the partition, using the provided geometries.</span>
 
 <span class="sd">        :param geometries: A :class:`geopandas.GeoDataFrame` or :class:`geopandas.GeoSeries`</span>
 <span class="sd">            holding the geometries to use for plotting. Its :class:`~pandas.Index` should match</span>
 <span class="sd">            the node labels of the partition&#39;s underlying :class:`~gerrychain.Graph`.</span>
+<span class="sd">        :type geometries: geopandas.GeoDataFrame or geopandas.GeoSeries</span>
 <span class="sd">        :param `**kwargs`: Additional arguments to pass to :meth:`geopandas.GeoDataFrame.plot`</span>
 <span class="sd">            to adjust the plot.</span>
+
+<span class="sd">        :returns: The matplotlib axes object. Which plots the Partition.</span>
+<span class="sd">        :rtype: matplotlib.axes.Axes</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="kn">import</span> <span class="nn">geopandas</span>
 
@@ -253,9 +285,15 @@
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">df</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="s2">&quot;assignment&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Partition.from_districtr_file"><a class="viewcode-back" href="../../../api.html#gerrychain.partition.Partition.from_districtr_file">[docs]</a>    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_districtr_file</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="n">districtr_file</span><span class="p">,</span> <span class="n">updaters</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Create a Partition from a districting plan created with `Districtr`_,</span>
+<div class="viewcode-block" id="Partition.from_districtr_file"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.partition.Partition.from_districtr_file">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_districtr_file</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">graph</span><span class="p">:</span> <span class="n">Graph</span><span class="p">,</span>
+        <span class="n">districtr_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">updaters</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Partition&quot;</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a Partition from a districting plan created with `Districtr`_,</span>
 <span class="sd">        a free and open-source web app created by MGGG for drawing districts.</span>
 
 <span class="sd">        The provided ``graph`` should be created from the same shapefile as the</span>
@@ -266,9 +304,15 @@
 <span class="sd">        .. _`Districtr`: https://mggg.org/Districtr</span>
 <span class="sd">        .. _`mggg-states`: https://github.com/mggg-states</span>
 
-<span class="sd">        :param graph: :class:`~gerrychain.Graph`</span>
+<span class="sd">        :param graph: The graph to create the Partition from</span>
+<span class="sd">        :type graph: :class:`~gerrychain.Graph`</span>
 <span class="sd">        :param districtr_file: the path to the ``.json`` file exported from Districtr</span>
+<span class="sd">        :type districtr_file: str</span>
 <span class="sd">        :param updaters: dictionary of updaters</span>
+<span class="sd">        :type updaters: Optional[Dict[str, Callable]], optional</span>
+
+<span class="sd">        :returns: The partition created from the Districtr file</span>
+<span class="sd">        :rtype: Partition</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">districtr_file</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">districtr_plan</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>

@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>gerrychain.meta.diversity &mdash; GerryChain  documentation</title><link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
@@ -13,6 +15,9 @@
         <script src="../../../_static/underscore.js"></script>
         <script src="../../../_static/doctools.js"></script>
         <script src="../../../_static/language_data.js"></script>
+        <script src="../../../_static/clipboard.min.js"></script>
+        <script src="../../../_static/copybutton.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -41,7 +46,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../user/recom.html">Running a chain with ReCom</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/partitions.html">Working with Partitions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/updaters.html">Updaters</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../user/adjacency.html">Handling Adjacencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/data.html">Good Data Practices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/geometries.html">Working With Geometries</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -51,8 +57,11 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../topics/reproducibility.html">Reproducibility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../topics/tools.html">Evaluating districting plans in the real world</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../topics/realworldplans.html">Using <code class="docutils literal notranslate"><span class="pre">maup</span></code> to import a real-life plan in GerryChain</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../topics/whatislands.html">What to do about islands and connectivity</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../topics/contributing.html">Contributing to GerryChain</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Index</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../full_ref.html">Full Package Reference</a></li>
 </ul>
 
         </div>
@@ -80,20 +89,26 @@
            <div itemprop="articleBody">
              
   <h1>Source code for gerrychain.meta.diversity</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Simple tooling to collect diversity stats on chain runs</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Tuple</span>
 <span class="kn">from</span> <span class="nn">gerrychain.partition</span> <span class="kn">import</span> <span class="n">Partition</span>
 
 
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">Simple tooling to collect diversity stats on chain runs</span>
-<span class="sd">&quot;&quot;&quot;</span>
-
-
-<div class="viewcode-block" id="DiversityStats"><a class="viewcode-back" href="../../../api.html#gerrychain.meta.diversity.DiversityStats">[docs]</a><span class="nd">@dataclass</span>
+<div class="viewcode-block" id="DiversityStats"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.meta.diversity.DiversityStats">[docs]</a><span class="nd">@dataclass</span>
 <span class="k">class</span> <span class="nc">DiversityStats</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Lightweight stats object that reports the diversity of a given chain.</span>
+
+<span class="sd">    :ivar unique_plans: The number of unique plans seen so far.</span>
+<span class="sd">    :type unique_plans: int</span>
+<span class="sd">    :ivar unique_districts: The number of unique districts seen so far.</span>
+<span class="sd">    :type unique_districts: int</span>
+<span class="sd">    :ivar steps_taken: The number of steps taken so far.</span>
+<span class="sd">    :type steps_taken: int</span>
 
 <span class="sd">    Example usage::</span>
 
@@ -105,7 +120,7 @@
     <span class="n">steps_taken</span><span class="p">:</span> <span class="nb">int</span></div>
 
 
-<div class="viewcode-block" id="collect_diversity_stats"><a class="viewcode-back" href="../../../api.html#gerrychain.meta.diversity.collect_diversity_stats">[docs]</a><span class="k">def</span> <span class="nf">collect_diversity_stats</span><span class="p">(</span>
+<div class="viewcode-block" id="collect_diversity_stats"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.meta.diversity.collect_diversity_stats">[docs]</a><span class="k">def</span> <span class="nf">collect_diversity_stats</span><span class="p">(</span>
     <span class="n">chain</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Partition</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Partition</span><span class="p">,</span> <span class="n">DiversityStats</span><span class="p">]]:</span>
     <span class="sd">&quot;&quot;&quot;</span>
@@ -126,7 +141,10 @@
 <span class="sd">            # normal chain stuff here</span>
 
 <span class="sd">    :param chain: A chain object to collect stats on.</span>
-<span class="sd">    :return: An iterable of `(partition, DiversityStat)`.</span>
+<span class="sd">    :type chain: Iterable[Partition]</span>
+
+<span class="sd">    :returns: An iterable of `(partition, DiversityStat)`.</span>
+<span class="sd">    :rtype: Iterable[Tuple[Partition, DiversityStats]]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">seen_plans</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">seen_districts</span> <span class="o">=</span> <span class="p">{}</span>

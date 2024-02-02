@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>gerrychain.graph.adjacency &mdash; GerryChain  documentation</title><link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+        <script src="../../../_static/clipboard.min.js"></script>
+        <script src="../../../_static/copybutton.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #0099cd" >
+            <a href="../../../index.html" class="icon icon-home"> GerryChain
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/intro.html">Overview of the Chain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/quickstart.html">Getting started with GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/recom.html">Running a chain with ReCom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/partitions.html">Working with Partitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/updaters.html">Updaters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/data.html">Good Data Practices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/geometries.html">Working With Geometries</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API Reference</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Topics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../topics/reproducibility.html">Reproducibility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../topics/tools.html">Evaluating districting plans in the real world</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../topics/contributing.html">Contributing to GerryChain</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Index</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../full_ref.html">Full Package Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #0099cd" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">GerryChain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+      <li>gerrychain.graph.adjacency</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for gerrychain.graph.adjacency</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module provides a set of functions to help determine and</span>
+<span class="sd">manipulate the adjacency of geometries within a particular</span>
+<span class="sd">graph. The functions in this module are used internally to ensure</span>
+<span class="sd">that the geometry data that we are working with is sufficiently</span>
+<span class="sd">well-defined to be used for analysis.</span>
+
+<span class="sd">Some of the type hints in this module are intentionally left</span>
+<span class="sd">unspecified because of import issues.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">geopandas</span> <span class="kn">import</span> <span class="n">GeoDataFrame</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span>
+
+
+<div class="viewcode-block" id="neighbors"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.graph.adjacency.neighbors">[docs]</a><span class="k">def</span> <span class="nf">neighbors</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">GeoDataFrame</span><span class="p">,</span> <span class="n">adjacency</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">adjacency</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;rook&quot;</span><span class="p">,</span> <span class="s2">&quot;queen&quot;</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;The adjacency parameter provided is not supported. &quot;</span>
+            <span class="s1">&#39;We support &quot;queen&quot; or &quot;rook&quot; adjacency.&#39;</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">adjacencies</span><span class="p">[</span><span class="n">adjacency</span><span class="p">](</span><span class="n">df</span><span class="o">.</span><span class="n">geometry</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="str_tree"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.graph.adjacency.str_tree">[docs]</a><span class="k">def</span> <span class="nf">str_tree</span><span class="p">(</span><span class="n">geometries</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Add ids to geometries and create a STR tree for spatial indexing.</span>
+<span class="sd">    Use this for all spatial operations!</span>
+
+<span class="sd">    :param geometries: A Shapely geometry object to construct the tree from.</span>
+<span class="sd">    :type geometries: shapely.geometry.BaseGeometry</span>
+
+<span class="sd">    :returns: A Sort-Tile-Recursive tree for spatial indexing.</span>
+<span class="sd">    :rtype: shapely.strtree.STRtree</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">shapely.strtree</span> <span class="kn">import</span> <span class="n">STRtree</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">tree</span> <span class="o">=</span> <span class="n">STRtree</span><span class="p">(</span><span class="n">geometries</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+        <span class="n">tree</span> <span class="o">=</span> <span class="n">STRtree</span><span class="p">(</span><span class="n">geometries</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tree</span></div>
+
+
+<div class="viewcode-block" id="neighboring_geometries"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.graph.adjacency.neighboring_geometries">[docs]</a><span class="k">def</span> <span class="nf">neighboring_geometries</span><span class="p">(</span><span class="n">geometries</span><span class="p">,</span> <span class="n">tree</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generator yielding tuples of the form (id, (ids of neighbors)).</span>
+
+<span class="sd">    :param geometries: A Shapeley geometry object to construct the tree from</span>
+<span class="sd">    :type geometries: shapely.geometry.BaseGeometry</span>
+<span class="sd">    :param tree: A Sort-Tile-Recursive tree for spatial indexing. Default is None.</span>
+<span class="sd">    :type tree: shapely.strtree.STRtree, optional</span>
+
+<span class="sd">    :returns: A generator yielding tuples of the form (id, (ids of neighbors))</span>
+<span class="sd">    :rtype: Generator</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">tree</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tree</span> <span class="o">=</span> <span class="n">str_tree</span><span class="p">(</span><span class="n">geometries</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">geometry_id</span><span class="p">,</span> <span class="n">geometry</span> <span class="ow">in</span> <span class="n">geometries</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">possible</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">geometry</span><span class="p">)</span>
+        <span class="n">actual</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+            <span class="n">geometries</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">p</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">possible</span>
+            <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">geometries</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">p</span><span class="p">]</span><span class="o">.</span><span class="n">is_empty</span><span class="p">)</span> <span class="ow">and</span> <span class="n">geometries</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">p</span><span class="p">]</span> <span class="o">!=</span> <span class="n">geometry_id</span>
+        <span class="p">)</span>
+        <span class="k">yield</span> <span class="p">(</span><span class="n">geometry_id</span><span class="p">,</span> <span class="n">actual</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="intersections_with_neighbors"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.graph.adjacency.intersections_with_neighbors">[docs]</a><span class="k">def</span> <span class="nf">intersections_with_neighbors</span><span class="p">(</span><span class="n">geometries</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generator yielding tuples of the form (id, {neighbor_id: intersection}).</span>
+<span class="sd">    The intersections may be empty!</span>
+
+<span class="sd">    :param geometries: A Shapeley geometry object.</span>
+<span class="sd">    :type geometries: shapely.geometry.BaseGeometry</span>
+
+<span class="sd">    :returns: A generator yielding tuples of the form (id, {neighbor_id: intersection})</span>
+<span class="sd">    :rtype: Generator</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">neighbors</span> <span class="ow">in</span> <span class="n">neighboring_geometries</span><span class="p">(</span><span class="n">geometries</span><span class="p">):</span>
+        <span class="n">intersections</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">j</span><span class="p">:</span> <span class="n">geometries</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">geometries</span><span class="p">[</span><span class="n">j</span><span class="p">])</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">neighbors</span>
+        <span class="p">}</span>
+        <span class="k">yield</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">intersections</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="warn_for_overlaps"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.graph.adjacency.warn_for_overlaps">[docs]</a><span class="k">def</span> <span class="nf">warn_for_overlaps</span><span class="p">(</span><span class="n">intersection_pairs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :param intersection_pairs: An iterable of tuples of</span>
+<span class="sd">        the form (id, {neighbor_id: intersection})</span>
+<span class="sd">    :type intersection_pairs: Iterable</span>
+
+<span class="sd">    :returns: A generator yielding tuples of intersection pairs</span>
+<span class="sd">    :rtype: Generator</span>
+
+<span class="sd">    :raises: UserWarning if there are overlaps among the given polygons</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">overlaps</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">intersections</span> <span class="ow">in</span> <span class="n">intersection_pairs</span><span class="p">:</span>
+        <span class="n">overlaps</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+            <span class="nb">set</span><span class="p">(</span>
+                <span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">([</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]))</span>
+                <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">intersection</span> <span class="ow">in</span> <span class="n">intersections</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">intersection</span><span class="o">.</span><span class="n">area</span> <span class="o">&gt;</span> <span class="mi">0</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">yield</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">intersections</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">overlaps</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="s2">&quot;Found overlaps among the given polygons. Indices of overlaps: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">overlaps</span>
+            <span class="p">)</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="queen"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.graph.adjacency.queen">[docs]</a><span class="k">def</span> <span class="nf">queen</span><span class="p">(</span><span class="n">geometries</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :param geometries: A Shapeley geometry object.</span>
+<span class="sd">    :type geometries: shapely.geometry.BaseGeometry</span>
+
+<span class="sd">    :returns: The queen adjacency dictionary for the given collection of polygons.</span>
+<span class="sd">    :rtype: Dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">intersection_pairs</span> <span class="o">=</span> <span class="n">warn_for_overlaps</span><span class="p">(</span><span class="n">intersections_with_neighbors</span><span class="p">(</span><span class="n">geometries</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="n">i</span><span class="p">:</span> <span class="p">{</span>
+            <span class="n">j</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;shared_perim&quot;</span><span class="p">:</span> <span class="n">intersection</span><span class="o">.</span><span class="n">length</span><span class="p">}</span>
+            <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">intersection</span> <span class="ow">in</span> <span class="n">intersections</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">intersection</span><span class="o">.</span><span class="n">is_empty</span><span class="p">)</span>
+        <span class="p">}</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">intersections</span> <span class="ow">in</span> <span class="n">intersection_pairs</span>
+    <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="rook"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.graph.adjacency.rook">[docs]</a><span class="k">def</span> <span class="nf">rook</span><span class="p">(</span><span class="n">geometries</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :param geometries: A Shapeley geometry object.</span>
+<span class="sd">    :type geometries: shapely.geometry.BaseGeometry</span>
+
+<span class="sd">    :returns: The rook adjacency dictionary for the given collection of polygons.</span>
+<span class="sd">    :rtype: Dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="n">i</span><span class="p">:</span> <span class="p">{</span><span class="n">j</span><span class="p">:</span> <span class="n">data</span> <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">neighbors</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;shared_perim&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">}</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">neighbors</span> <span class="ow">in</span> <span class="n">queen</span><span class="p">(</span><span class="n">geometries</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+    <span class="p">}</span></div>
+
+
+<span class="c1"># Dictionary mapping adjacency types to their corresponding functions.</span>
+<span class="n">adjacencies</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;rook&quot;</span><span class="p">:</span> <span class="n">rook</span><span class="p">,</span> <span class="s2">&quot;queen&quot;</span><span class="p">:</span> <span class="n">queen</span><span class="p">}</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Metric Geometry and Gerrymandering Group.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

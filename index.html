@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GerryChain &mdash; GerryChain  documentation</title><link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/custom.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
@@ -13,6 +15,9 @@
         <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
         <script src="_static/language_data.js"></script>
+        <script src="_static/clipboard.min.js"></script>
+        <script src="_static/copybutton.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -42,7 +47,8 @@
 <li class="toctree-l1"><a class="reference internal" href="user/recom.html">Running a chain with ReCom</a></li>
 <li class="toctree-l1"><a class="reference internal" href="user/partitions.html">Working with Partitions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="user/updaters.html">Updaters</a></li>
-<li class="toctree-l1"><a class="reference internal" href="user/adjacency.html">Handling Adjacencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/data.html">Good Data Practices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/geometries.html">Working With Geometries</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -52,8 +58,11 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="topics/reproducibility.html">Reproducibility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="topics/tools.html">Evaluating districting plans in the real world</a></li>
-<li class="toctree-l1"><a class="reference internal" href="topics/realworldplans.html">Using <code class="docutils literal notranslate"><span class="pre">maup</span></code> to import a real-life plan in GerryChain</a></li>
-<li class="toctree-l1"><a class="reference internal" href="topics/whatislands.html">What to do about islands and connectivity</a></li>
+<li class="toctree-l1"><a class="reference internal" href="topics/contributing.html">Contributing to GerryChain</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Index</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="full_ref.html">Full Package Reference</a></li>
 </ul>
 
         </div>
@@ -86,17 +95,122 @@
 <a class="reference external image-reference" href="https://codecov.io/gh/mggg/GerryChain"><img alt="Code Coverage" src="https://codecov.io/gh/mggg/GerryChain/branch/master/graph/badge.svg" /></a>
 <a class="reference external image-reference" href="https://gerrychain.readthedocs.io/en/latest"><img alt="Documentation Status" src="https://readthedocs.org/projects/gerrychain/badge/?version=latest" /></a>
 <a class="reference external image-reference" href="https://pypi.org/project/gerrychain/"><img alt="PyPI Package" src="https://badge.fury.io/py/gerrychain.svg" /></a>
-<a class="reference external image-reference" href="https://anaconda.org/conda-forge/gerrychain"><img alt="conda-forge Package" src="https://img.shields.io/conda/vn/conda-forge/gerrychain.svg?color=%230099cd" /></a>
 <p>GerryChain is a library for using <a class="reference external" href="https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo">Markov Chain Monte Carlo</a> methods
 to study the problem of political redistricting. Development of the
-library began during the <a class="reference external" href="http://gerrydata.org/">2018 Voting Rights Data Institute</a> (VRDI).</p>
+library began during the 2018 Voting Rights Data Institute (VRDI).</p>
 <p>The project is in active development in the <a class="reference external" href="https://github.com/mggg/GerryChain">mggg/GerryChain</a> GitHub
 repository, where <a class="reference external" href="https://github.com/mggg/gerrychain/issues">bug reports and feature requests</a>, as well as
 <a class="reference external" href="https://github.com/mggg/gerrychain/pulls">contributions</a>, are welcome.</p>
 <div class="section" id="installation">
 <h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="using-pip">
-<h3>Using <code class="docutils literal notranslate"><span class="pre">pip</span></code><a class="headerlink" href="#using-pip" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="supported-python-versions">
+<h3>Supported Python Versions<a class="headerlink" href="#supported-python-versions" title="Permalink to this headline">¶</a></h3>
+<p>The most recent version of GerryChain (as of January 2024) supports</p>
+<ul class="simple">
+<li><p>Python 3.9</p></li>
+<li><p>Python 3.10</p></li>
+<li><p>Python 3.11</p></li>
+</ul>
+<p>If you do not have one of these versions installed on you machine, we
+recommend that you go to the
+<a class="reference external" href="https://www.python.org/downloads/">Python website</a> and
+download the installer for one of these versions. <a class="footnote-reference brackets" href="#id2" id="id1">1</a></p>
+<div class="note admonition">
+<p class="admonition-title">A Note For Windows Users</p>
+<p>If you are using Windows and are new to Python, we recommend that you
+still install Python using the installation package available on
+the Python website. There are several versions of Python available
+on the Windows Store, but they can be… finicky, and experience seems
+to suggest that downloadable available on the Python website produce
+better results.</p>
+<p>In addition, we recommend that you install the
+<a class="reference external" href="https://www.microsoft.com/en-us/p/windows-terminal/9n0dx20hk701?activetab=pivot:overviewtab">Windows Terminal</a>
+from the Microsoft Store. It is still possible to use PowerShell or
+the Command Prompt, but Windows Terminal tends to be more beginner
+friendly and allows for a greater range of utility than the natively
+installed terminal options (for example, it allows for you to install
+the more recent version of PowerShell,
+<a class="reference external" href="https://docs.microsoft.com/en-us/powershell/scripting/install/installing-powershell">PowerShell 7</a>,
+and for the use of the Linux Subsystem for Windows).</p>
+</div>
+</div>
+<div class="section" id="setting-up-a-virtual-environment">
+<h3>Setting Up a Virtual Environment<a class="headerlink" href="#setting-up-a-virtual-environment" title="Permalink to this headline">¶</a></h3>
+<p>Once Python is installed on your system, you will want to open the terminal
+and navigate to the working directory of your project. Here are some brief
+instructions for doing so on different systems:</p>
+<ul>
+<li><p><strong>MacOS</strong>: To open the terminal, you will likely want to use the
+Spotlight Search (the magnifying glass in the top right corner of
+your screen) to find the “Terminal” application (you can also access
+Spotlight Search by pressing “Command (⌘) + Space”). Once you have
+the terminal open, type <code class="docutils literal notranslate"><span class="pre">cd</span></code> followed by the path to your working
+directory. For example, if you are working on a project called
+<code class="docutils literal notranslate"><span class="pre">my_project</span></code> in your <code class="docutils literal notranslate"><span class="pre">Documents</span></code> folder, you may access by typing
+the command</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">cd ~/Documents/my_project</span>
+</pre></div>
+</div>
+<p>into the terminal (here the <code class="docutils literal notranslate"><span class="pre">~</span></code> is a shortcut for your home directory).
+If you do not know what your working directory is, you can find it by
+navigating to the desired folder in your file explorer, and clicking
+on “Get Info”. The path will be labeled “Where” and from there you
+can copy the path to your clipboard and paste it in the terminal.</p>
+</li>
+<li><p><strong>Linux</strong>: Most Linux distributions have the keyboard shortcut
+<code class="docutils literal notranslate"><span class="pre">Ctrl</span> <span class="pre">+</span> <span class="pre">Alt</span> <span class="pre">+</span> <span class="pre">T</span></code> set to open the terminal. From there you may navigate
+to your working directory by typing <code class="docutils literal notranslate"><span class="pre">cd</span></code> followed by the path to your
+working directory. For example, if you are working on a project called
+<code class="docutils literal notranslate"><span class="pre">my_project</span></code> in your <code class="docutils literal notranslate"><span class="pre">Documents</span></code> folder, you may access this via
+the command</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">cd ~/Documents/my_project</span>
+</pre></div>
+</div>
+<p>(here the <code class="docutils literal notranslate"><span class="pre">~</span></code> is a shortcut for your home directory). If you do not
+know what your working directory is, you can find it by navigating to
+the desired folder in your file explorer, and clicking on “Properties”.
+The path will be labeled “Location” and from there you can copy the path
+to your clipboard and paste it in the terminal (to paste in the terminal
+in Linux, you will need to use the keyboard shortcut <code class="docutils literal notranslate"><span class="pre">Ctrl</span> <span class="pre">+</span> <span class="pre">Shift</span> <span class="pre">+</span> <span class="pre">V</span></code>
+instead of <code class="docutils literal notranslate"><span class="pre">Ctrl</span> <span class="pre">+</span> <span class="pre">V</span></code>).</p>
+</li>
+<li><p><strong>Windows</strong>: Open the Windows Terminal and type <code class="docutils literal notranslate"><span class="pre">cd</span></code> followed by the
+path to your working directory. For example, if you are working on a
+project called <code class="docutils literal notranslate"><span class="pre">my_project</span></code> in your <code class="docutils literal notranslate"><span class="pre">Documents</span></code> folder, you may
+access this by typing the command</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">cd ~\Documents\my_project</span>
+</pre></div>
+</div>
+<p>into the terminal (here the <code class="docutils literal notranslate"><span class="pre">~</span></code> is a shortcut for your home directory).
+If you do not know what your working directory is,
+you can find it by navigating to the desired folder in your file
+explorer, and clicking on “Properties”. The path will be labeled
+“Location” and from there you can copy the path to your clipboard
+and paste it in the terminal.</p>
+</li>
+</ul>
+<p>Once you have navigated to your working directory, you will want to
+set up a virtual environment. This is a way of isolating the Python
+packages you install for this project from the packages you have
+installed globally on your system. This is useful because it allows
+you to install different versions of packages for different projects
+without worrying about compatibility issues. To set up a virtual
+environment, type the following command into the terminal:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">python -m venv .venv</span>
+</pre></div>
+</div>
+<p>This will create a virtual environment in your working directory which
+you can see if you list all the files in your working directory via
+the command <code class="docutils literal notranslate"><span class="pre">ls</span> <span class="pre">-a</span></code> (<code class="docutils literal notranslate"><span class="pre">dir</span></code> on Windows). Now we need to activate the
+virtual environment. To do this, type the following command into the
+terminal:</p>
+<ul class="simple">
+<li><p><strong>Windows</strong>: <code class="docutils literal notranslate"><span class="pre">.venv\Scripts\activate</span></code></p></li>
+<li><p><strong>MacOS/Linux</strong>: <code class="docutils literal notranslate"><span class="pre">source</span> <span class="pre">.venv/bin/activate</span></code></p></li>
+</ul>
+<p>You should now see <code class="docutils literal notranslate"><span class="pre">(.venv)</span></code> at the beginning of your terminal prompt
+now. This indicates that you are in the virtual environment, and are now
+ready to install GerryChain.</p>
 <p>To install GerryChain from <a class="reference external" href="https://pypi.org/">PyPI</a>, run <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">gerrychain</span></code> from
 the command line.</p>
 <p>If you plan on using GerryChain’s GIS functions, such as computing
@@ -104,30 +218,126 @@ adjacencies or reading in shapefiles, then run
 <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">gerrychain[geo]</span></code> from the command line.</p>
 <p>This approach sometimes fails due to compatibility issues between our
 different Python GIS dependencies, like <code class="docutils literal notranslate"><span class="pre">geopandas</span></code>, <code class="docutils literal notranslate"><span class="pre">pyproj</span></code>,
-<code class="docutils literal notranslate"><span class="pre">fiona</span></code>, and <code class="docutils literal notranslate"><span class="pre">shapely</span></code>. For this reason, we recommend installing
-from conda-forge for users that encounter difficulty with <a class="reference external" href="https://pypi.org/">PyPI</a>.</p>
+<code class="docutils literal notranslate"><span class="pre">fiona</span></code>, and <code class="docutils literal notranslate"><span class="pre">shapely</span></code>. If you run into this issue, try installing
+the dependencies using the <a class="reference external" href="./geo_settings.txt">geo_settings.txt</a>
+file. To do this, run <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-r</span> <span class="pre">geo_settings.txt</span></code> from the
+command line.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you plan on following through the tutorials present within the
+remainder of this documentation, you will also need to install
+<code class="docutils literal notranslate"><span class="pre">matplotlib</span></code> from <a class="reference external" href="https://pypi.org/">PyPI</a>. This can also be accomplished with
+a simple invocation of <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">matplotlib</span></code> from the command
+line.</p>
 </div>
-<div class="section" id="using-conda">
-<h3>Using conda<a class="headerlink" href="#using-conda" title="Permalink to this headline">¶</a></h3>
-<p>To install GerryChain from <a class="reference external" href="https://conda-forge.org/">conda-forge</a> using <a class="reference external" href="https://conda.io/projects/conda/en/latest/">conda</a>, run</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">conda install -c conda-forge gerrychain</span>
+<dl class="footnote brackets">
+<dt class="label" id="id2"><span class="brackets"><a class="fn-backref" href="#id1">1</a></span></dt>
+<dd><p>Of course, if you are using a Linux system, you will either need to use your
+system’s package manager or install from source. You may also find luck installing
+Python directly from the package manager if you find installing from source to be
+troublesome.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="making-an-environment-reproducible">
+<h3>Making an Environment Reproducible<a class="headerlink" href="#making-an-environment-reproducible" title="Permalink to this headline">¶</a></h3>
+<p>If you are working on a project wherein you would like to ensure
+particular runs are reproducible, it is necessary to invoke</p>
+<ul class="simple">
+<li><p><strong>MacOS/Linux</strong>: <code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">PYTHONHASHSEED=0</span></code></p></li>
+<li><p><strong>Windows</strong>:</p>
+<ul>
+<li><p>PowerShell <code class="docutils literal notranslate"><span class="pre">$env:PYTHONHASHSEED=0</span></code></p></li>
+<li><p>Command Prompt <code class="docutils literal notranslate"><span class="pre">set</span> <span class="pre">PYTHONHASHSEED=0</span></code></p></li>
+</ul>
+</li>
+</ul>
+<p>before running your code. This will ensure that the hash seed is deterministic
+which is important for the replication of spanning trees across your runs. If you
+would prefer to not have to do this every time, then you need to modify the
+activation script for the virtual environment. Again, this is different depending
+on your operating system:</p>
+<ul>
+<li><p><strong>MacOS/Linux</strong>: Open the file <code class="docutils literal notranslate"><span class="pre">.venv/bin/activate</span></code> located in your working
+directory using your favorite text editor
+and add the line <code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">PYTHONHASHSEED=0</span></code> after the <code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">PATH</span></code> command.
+So you should see something like:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">_OLD_VIRTUAL_PATH</span><span class="o">=</span><span class="s2">&quot;$PATH&quot;</span>
+<span class="n">PATH</span><span class="o">=</span><span class="s2">&quot;$VIRTUAL_ENV/Scripts:$PATH&quot;</span>
+<span class="n">export</span> <span class="n">PATH</span>
+
+<span class="n">export</span> <span class="n">PYTHONHASHSEED</span><span class="o">=</span><span class="mi">0</span>
 </pre></div>
 </div>
-<p>For this command to work as intended, you will first need to activate
-the conda environment that you want to install GerryChain in. If
-the environment you want to activate is called <code class="docutils literal notranslate"><span class="pre">vrdi</span></code> (for example),
-then you can do this by running</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">conda activate vrdi</span>
+<p>Then, verify that the hash seed is set to 0 in your Python environment by
+running <code class="docutils literal notranslate"><span class="pre">python</span></code> from the command line and typing
+<code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">os;</span> <span class="pre">print(os.environ['PYTHONHASHSEED'])</span></code>.</p>
+</li>
+<li><p><strong>Windows</strong>: To be safe, you will need to modify 3 files within your virtual
+environment:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">.venv\Scripts\activate</span></code>: Add the line <code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">PYTHONHASHSEED=0</span></code> after
+the <code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">PATH</span></code> command. So you should see something like:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">_OLD_VIRTUAL_PATH</span><span class="o">=</span><span class="s2">&quot;$PATH&quot;</span>
+<span class="n">PATH</span><span class="o">=</span><span class="s2">&quot;$VIRTUAL_ENV/Scripts:$PATH&quot;</span>
+<span class="n">export</span> <span class="n">PATH</span>
+
+<span class="n">export</span> <span class="n">PYTHONHASHSEED</span><span class="o">=</span><span class="mi">0</span>
 </pre></div>
 </div>
-<p>If this command causes problems, make sure conda is up-to-date by
-running</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">conda update conda</span>
-<span class="go">conda init</span>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">.venv\Scripts\activate.bat</span></code>: Add the line <code class="docutils literal notranslate"><span class="pre">set</span> <span class="pre">PYTHONHASHSEED=0</span></code> to the
+end of the file. So you should see something like:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">defined</span> <span class="n">_OLD_VIRTUAL_PATH</span> <span class="nb">set</span> <span class="n">PATH</span><span class="o">=%</span><span class="n">_OLD_VIRTUAL_PATH</span><span class="o">%</span>
+<span class="k">if</span> <span class="ow">not</span> <span class="n">defined</span> <span class="n">_OLD_VIRTUAL_PATH</span> <span class="nb">set</span> <span class="n">_OLD_VIRTUAL_PATH</span><span class="o">=%</span><span class="n">PATH</span><span class="o">%</span>
+
+<span class="nb">set</span> <span class="n">PATH</span><span class="o">=%</span><span class="n">VIRTUAL_ENV</span><span class="o">%</span>\<span class="n">Scripts</span><span class="p">;</span><span class="o">%</span><span class="n">PATH</span><span class="o">%</span>
+<span class="n">rem</span> <span class="nb">set</span> <span class="n">VIRTUAL_ENV_PROMPT</span><span class="o">=</span><span class="p">(</span><span class="o">.</span><span class="n">venv</span><span class="p">)</span>
+<span class="nb">set</span> <span class="n">PYTHONHASHSEED</span><span class="o">=</span><span class="mi">0</span>
 </pre></div>
 </div>
-<p>For more information on using conda to install packages and manage
-dependencies, see <a class="reference external" href="https://conda.io/projects/conda/en/latest/user-guide/getting-started.html">Getting started with conda</a>.</p>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">.venv\Scripts\Activate.ps1</span></code>: Add the line <code class="docutils literal notranslate"><span class="pre">$env:PYTHONHASHSEED=0</span></code> to the
+end of the before the signature block. So you should see something like:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span># Add the venv to the PATH
+Copy-Item -Path Env:PATH -Destination Env:_OLD_VIRTUAL_PATH
+$Env:PATH = &quot;$VenvExecDir$([System.IO.Path]::PathSeparator)$Env:PATH&quot;
+
+$env:PYTHONHASHSEED=0
+
+# SIG # Begin signature block
+</pre></div>
+</div>
+</li>
+</ul>
+</li>
+</ul>
+<p>After you have made these changes, verify that the hash seed is set to 0 in your
+Python environment by running <code class="docutils literal notranslate"><span class="pre">python</span></code> from the command line and typing
+<code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">os;</span> <span class="pre">print(os.environ['PYTHONHASHSEED'])</span></code> in the Python prompt.</p>
+<div class="note admonition">
+<p class="admonition-title">A Note on Jupyter</p>
+<p>If you are using a jupyter notebook, you will need to make sure that you have
+installed the <code class="docutils literal notranslate"><span class="pre">ipykernel</span></code> package in your virtual environment as well as
+either <code class="docutils literal notranslate"><span class="pre">jypyternotebook</span></code> or <code class="docutils literal notranslate"><span class="pre">jupyterlab</span></code>. To install these packages, run
+<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">&lt;package-name&gt;</span></code> from the command line. Then, to use the virtual
+python environment in your jupyter notebook, you need to invoke</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">jupyter notebook</span>
+</pre></div>
+</div>
+<p>or</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">jupyter lab</span>
+</pre></div>
+</div>
+<p>from the command line of your working directory <em>while your virtual environment
+is activated</em>. This will open a jupyter notebook in your default browser. You may
+then check that the hash seed is set to 0 by running the following code in a cell
+of your notebook:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;PYTHONHASHSEED&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
 <div class="toctree-wrapper compound">
 <p class="caption"><span class="caption-text">User Guide</span></p>
 <ul>
@@ -136,8 +346,9 @@ dependencies, see <a class="reference external" href="https://conda.io/projects/
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="user/install.html">Installation</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="user/install.html#using-pip">Using <code class="docutils literal notranslate"><span class="pre">pip</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="user/install.html#using-conda">Using conda</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/install.html#supported-python-versions">Supported Python Versions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/install.html#setting-up-a-virtual-environment">Setting Up a Virtual Environment</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/install.html#making-an-environment-reproducible">Making an Environment Reproducible</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="user/quickstart.html">Getting started with GerryChain</a><ul>
@@ -148,11 +359,10 @@ dependencies, see <a class="reference external" href="https://conda.io/projects/
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="user/recom.html">Running a chain with ReCom</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="user/recom.html#imports">Imports</a></li>
-<li class="toctree-l2"><a class="reference internal" href="user/recom.html#setting-up-the-initial-districting-plan">Setting up the initial districting plan</a></li>
-<li class="toctree-l2"><a class="reference internal" href="user/recom.html#setting-up-the-markov-chain">Setting up the Markov chain</a></li>
-<li class="toctree-l2"><a class="reference internal" href="user/recom.html#running-the-chain">Running the chain</a></li>
-<li class="toctree-l2"><a class="reference internal" href="user/recom.html#create-a-plot">Create a plot</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/recom.html#a-simple-recom-chain">A Simple Recom Chain</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/recom.html#region-aware-recom">Region-Aware ReCom</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/recom.html#what-to-do-if-the-chain-gets-stuck">What to do if the Chain Gets Stuck</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/recom.html#a-real-world-example">A Real-World Example</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="user/partitions.html">Working with Partitions</a><ul>
@@ -169,7 +379,15 @@ dependencies, see <a class="reference external" href="https://conda.io/projects/
 <li class="toctree-l2"><a class="reference internal" href="user/updaters.html#writing-your-own-updater-function">Writing your own updater function</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="user/adjacency.html">Handling Adjacencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/data.html">Good Data Practices</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="user/data.html#writing-data-to-jsonl">Writing Data to JSONL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/data.html#pandas-dataframes">Pandas DataFrames</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="user/geometries.html">Working With Geometries</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="user/geometries.html#loading-and-running-a-plan">Loading and Running a Plan</a></li>
+</ul>
+</li>
 </ul>
 </div>
 <p>We also highly recommend the resources prepared by Daryl R. DeFord of
@@ -198,8 +416,27 @@ MGGG for the 2019 MIT IAP course <a class="reference external" href="https://peo
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="topics/reproducibility.html">Reproducibility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="topics/tools.html">Evaluating districting plans in the real world</a></li>
-<li class="toctree-l1"><a class="reference internal" href="topics/realworldplans.html">Using <code class="docutils literal notranslate"><span class="pre">maup</span></code> to import a real-life plan in GerryChain</a></li>
-<li class="toctree-l1"><a class="reference internal" href="topics/whatislands.html">What to do about islands and connectivity</a></li>
+<li class="toctree-l1"><a class="reference internal" href="topics/contributing.html">Contributing to GerryChain</a></li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">Index</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="full_ref.html">Full Package Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="full_ref.html#accept">Accept</a></li>
+<li class="toctree-l2"><a class="reference internal" href="full_ref.html#chain">Chain</a></li>
+<li class="toctree-l2"><a class="reference internal" href="full_ref.html#grid">Grid</a></li>
+<li class="toctree-l2"><a class="reference internal" href="full_ref.html#metagraph">Metagraph</a></li>
+<li class="toctree-l2"><a class="reference internal" href="full_ref.html#tree">Tree</a></li>
+<li class="toctree-l2"><a class="reference internal" href="full_ref.html#constraints">Constraints</a></li>
+<li class="toctree-l2"><a class="reference internal" href="full_ref.html#graph">Graph</a></li>
+<li class="toctree-l2"><a class="reference internal" href="full_ref.html#meta">Meta</a></li>
+<li class="toctree-l2"><a class="reference internal" href="full_ref.html#metrics">Metrics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="full_ref.html#partition">Partition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="full_ref.html#proposals">Proposals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="full_ref.html#updaters">Updaters</a></li>
+</ul>
+</li>
 </ul>
 </div>
 </div>

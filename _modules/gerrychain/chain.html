@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>gerrychain.chain &mdash; GerryChain  documentation</title><link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/custom.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
@@ -13,6 +15,9 @@
         <script src="../../_static/underscore.js"></script>
         <script src="../../_static/doctools.js"></script>
         <script src="../../_static/language_data.js"></script>
+        <script src="../../_static/clipboard.min.js"></script>
+        <script src="../../_static/copybutton.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
@@ -41,7 +46,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../../user/recom.html">Running a chain with ReCom</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../user/partitions.html">Working with Partitions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../user/updaters.html">Updaters</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../user/adjacency.html">Handling Adjacencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../user/data.html">Good Data Practices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../user/geometries.html">Working With Geometries</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -51,8 +57,11 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../topics/reproducibility.html">Reproducibility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../topics/tools.html">Evaluating districting plans in the real world</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../topics/realworldplans.html">Using <code class="docutils literal notranslate"><span class="pre">maup</span></code> to import a real-life plan in GerryChain</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../topics/whatislands.html">What to do about islands and connectivity</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../topics/contributing.html">Contributing to GerryChain</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Index</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../full_ref.html">Full Package Reference</a></li>
 </ul>
 
         </div>
@@ -80,17 +89,46 @@
            <div itemprop="articleBody">
              
   <h1>Source code for gerrychain.chain</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">.constraints</span> <span class="kn">import</span> <span class="n">Validator</span>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module provides the MarkovChain class, which is designed to facilitate the creation</span>
+<span class="sd">and iteration of Markov chains in the context of political redistricting and gerrymandering</span>
+<span class="sd">analysis. It allows for the exploration of different districting plans based on specified</span>
+<span class="sd">constraints and acceptance criteria.</span>
+
+<span class="sd">Key Components:</span>
+
+<span class="sd">- MarkovChain: The main class used for creating and iterating over Markov chain states.</span>
+<span class="sd">- Validator: A helper class for validating proposed states in the Markov chain. See</span>
+<span class="sd">  :class:`~gerrychain.constraints.Validator` for more details.</span>
+
+
+<span class="sd">Usage:</span>
+<span class="sd">The primary use of this module is to create an instance of MarkovChain with appropriate</span>
+<span class="sd">parameters like proposal function, constraints, acceptance function, and initial state,</span>
+<span class="sd">and then to iterate through the states of the Markov chain, yielding a new proposal</span>
+<span class="sd">at each step.</span>
+
+<span class="sd">Dependencies:</span>
+
+<span class="sd">- typing: Used for type hints.</span>
+
+<span class="sd">Last Updated: 11 Jan 2024</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">.constraints</span> <span class="kn">import</span> <span class="n">Validator</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span>
 
 <span class="kn">from</span> <span class="nn">gerrychain.constraints</span> <span class="kn">import</span> <span class="n">Bounds</span>
 <span class="kn">from</span> <span class="nn">gerrychain.partition</span> <span class="kn">import</span> <span class="n">Partition</span>
 
 
-<div class="viewcode-block" id="MarkovChain"><a class="viewcode-back" href="../../api.html#gerrychain.MarkovChain">[docs]</a><span class="k">class</span> <span class="nc">MarkovChain</span><span class="p">:</span>
+<div class="viewcode-block" id="MarkovChain"><a class="viewcode-back" href="../../full_ref.html#gerrychain.MarkovChain">[docs]</a><span class="k">class</span> <span class="nc">MarkovChain</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    MarkovChain is an iterator that allows the user to iterate over the states</span>
-<span class="sd">    of a Markov chain run.</span>
+<span class="sd">    MarkovChain is a class that creates an iterator for iterating over the states</span>
+<span class="sd">    of a Markov chain run in a gerrymandering analysis context.</span>
+
+<span class="sd">    It allows for the generation of a sequence of partitions (states) of a political</span>
+<span class="sd">    districting plan, where each partition represents a possible state in the Markov chain.</span>
 
 <span class="sd">    Example usage:</span>
 
@@ -108,19 +146,27 @@
         <span class="n">constraints</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="n">Callable</span><span class="p">],</span> <span class="n">Validator</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Bounds</span><span class="p">],</span> <span class="n">Callable</span><span class="p">],</span>
         <span class="n">accept</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
         <span class="n">initial_state</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Partition</span><span class="p">],</span>
-        <span class="n">total_steps</span><span class="p">:</span> <span class="nb">int</span>
+        <span class="n">total_steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        :param proposal: Function proposing the next state from the current state.</span>
+<span class="sd">        :type proposal: Callable</span>
 <span class="sd">        :param constraints: A function with signature ``Partition -&gt; bool`` determining whether</span>
 <span class="sd">            the proposed next state is valid (passes all binary constraints). Usually</span>
 <span class="sd">            this is a :class:`~gerrychain.constraints.Validator` class instance.</span>
+<span class="sd">        :type constraints: Union[Iterable[Callable], Validator, Iterable[Bounds], Callable]</span>
 <span class="sd">        :param accept: Function accepting or rejecting the proposed state. In the most basic</span>
 <span class="sd">            use case, this always returns ``True``. But if the user wanted to use a</span>
 <span class="sd">            Metropolis-Hastings acceptance rule, this is where you would implement it.</span>
+<span class="sd">        :type accept: Callable</span>
 <span class="sd">        :param initial_state: Initial :class:`gerrychain.partition.Partition` class.</span>
+<span class="sd">        :type initial_state: Optional[Partition]</span>
 <span class="sd">        :param total_steps: Number of steps to run.</span>
+<span class="sd">        :type total_steps: int</span>
 
+<span class="sd">        :returns: None</span>
+
+<span class="sd">        :raises ValueError: If the initial_state is not valid according to the constraints.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="n">constraints</span><span class="p">):</span>
             <span class="n">is_valid</span> <span class="o">=</span> <span class="n">Validator</span><span class="p">([</span><span class="n">constraints</span><span class="p">])</span>
@@ -146,12 +192,84 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">initial_state</span> <span class="o">=</span> <span class="n">initial_state</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">initial_state</span>
 
-    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;MarkovChain&#39;</span><span class="p">:</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">constraints</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Validator</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Read_only alias for the is_valid property.</span>
+<span class="sd">        Returns the constraints of the Markov chain.</span>
+
+<span class="sd">        :returns: The constraints of the Markov chain.</span>
+<span class="sd">        :rtype: String</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_valid</span>
+
+    <span class="nd">@constraints</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">constraints</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">constraints</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="n">Callable</span><span class="p">],</span> <span class="n">Validator</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Bounds</span><span class="p">],</span> <span class="n">Callable</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Setter for the is_valid property.</span>
+<span class="sd">        Checks if the initial state is valid according to the new constraints.</span>
+<span class="sd">        being imposed on the Markov chain, and raises a ValueError if the</span>
+<span class="sd">        initial state is not valid and lists the failed constraints.</span>
+
+<span class="sd">        :param constraints: The new constraints to be imposed on the Markov chain.</span>
+<span class="sd">        :type constraints: Union[Iterable[Callable], Validator, Iterable[Bounds], Callable]</span>
+
+<span class="sd">        :returns: None</span>
+
+<span class="sd">        :raises ValueError: If the initial_state is not valid according to the new constraints.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="n">constraints</span><span class="p">):</span>
+            <span class="n">is_valid</span> <span class="o">=</span> <span class="n">Validator</span><span class="p">([</span><span class="n">constraints</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">is_valid</span> <span class="o">=</span> <span class="n">Validator</span><span class="p">(</span><span class="n">constraints</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_valid</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">initial_state</span><span class="p">):</span>
+            <span class="n">failed</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">constraint</span>
+                <span class="k">for</span> <span class="n">constraint</span> <span class="ow">in</span> <span class="n">is_valid</span><span class="o">.</span><span class="n">constraints</span>  <span class="c1"># type: ignore</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">constraint</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">initial_state</span><span class="p">)</span>
+            <span class="p">]</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="s2">&quot;The given initial_state is not valid according to the new constraints. &quot;</span>
+                <span class="s2">&quot;The failed constraints were: &quot;</span> <span class="o">+</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">f</span><span class="o">.</span><span class="vm">__name__</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">failed</span><span class="p">])</span>
+            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_valid</span> <span class="o">=</span> <span class="n">is_valid</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;MarkovChain&quot;</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resets the Markov chain iterator.</span>
+
+<span class="sd">        This method is called when an iterator is required for a container. It sets the</span>
+<span class="sd">        counter to 0 and resets the state to the initial state.</span>
+
+<span class="sd">        :returns: Returns itself as an iterator object.</span>
+<span class="sd">        :rtype: MarkovChain</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">counter</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_state</span>
         <span class="k">return</span> <span class="bp">self</span>
 
     <span class="k">def</span> <span class="fm">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Partition</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Advances the Markov chain to the next state.</span>
+
+<span class="sd">        This method is called to get the next item in the iteration.</span>
+<span class="sd">        It proposes the next state and moves to it if that state is</span>
+<span class="sd">        valid according to the constraints and if accepted by the</span>
+<span class="sd">        acceptance function. If the total number of steps has been</span>
+<span class="sd">        reached, it raises a StopIteration exception.</span>
+
+<span class="sd">        :returns: The next state of the Markov chain.</span>
+<span class="sd">        :rtype: Optional[Partition]</span>
+
+<span class="sd">        :raises StopIteration: If the total number of steps has been reached.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">counter</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">counter</span> <span class="o">+=</span> <span class="mi">1</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span>
@@ -170,15 +288,29 @@
         <span class="k">raise</span> <span class="ne">StopIteration</span>
 
     <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the total number of steps in the Markov chain.</span>
+
+<span class="sd">        :returns: The total number of steps in the Markov chain.</span>
+<span class="sd">        :rtype: int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_steps</span>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="k">return</span> <span class="s2">&quot;&lt;MarkovChain [</span><span class="si">{}</span><span class="s2"> steps]&gt;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
 
-    <span class="k">def</span> <span class="nf">with_progress_bar</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="MarkovChain.with_progress_bar"><a class="viewcode-back" href="../../full_ref.html#gerrychain.MarkovChain.with_progress_bar">[docs]</a>    <span class="k">def</span> <span class="nf">with_progress_bar</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Wraps the Markov chain in a tqdm progress bar.</span>
+
+<span class="sd">        Useful for long-running Markov chains where you want to keep track</span>
+<span class="sd">        of the progress. Requires the `tqdm` package to be installed.</span>
+
+<span class="sd">        :returns: A tqdm-wrapped Markov chain.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="kn">from</span> <span class="nn">tqdm.auto</span> <span class="kn">import</span> <span class="n">tqdm</span>
 
-        <span class="k">return</span> <span class="n">tqdm</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">tqdm</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div></div>
 </pre></div>
 
            </div>

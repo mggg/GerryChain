@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Overview: module code &mdash; GerryChain  documentation</title><link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/custom.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
@@ -13,6 +15,9 @@
         <script src="../_static/underscore.js"></script>
         <script src="../_static/doctools.js"></script>
         <script src="../_static/language_data.js"></script>
+        <script src="../_static/clipboard.min.js"></script>
+        <script src="../_static/copybutton.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
@@ -41,7 +46,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../user/recom.html">Running a chain with ReCom</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/partitions.html">Working with Partitions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/updaters.html">Updaters</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../user/adjacency.html">Handling Adjacencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/data.html">Good Data Practices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/geometries.html">Working With Geometries</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -51,8 +57,11 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../topics/reproducibility.html">Reproducibility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../topics/tools.html">Evaluating districting plans in the real world</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../topics/realworldplans.html">Using <code class="docutils literal notranslate"><span class="pre">maup</span></code> to import a real-life plan in GerryChain</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../topics/whatislands.html">What to do about islands and connectivity</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../topics/contributing.html">Contributing to GerryChain</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Index</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../full_ref.html">Full Package Reference</a></li>
 </ul>
 
         </div>
@@ -79,23 +88,35 @@
            <div itemprop="articleBody">
              
   <h1>All modules for which code is available</h1>
-<ul><li><a href="gerrychain/chain.html">gerrychain.chain</a></li>
+<ul><li><a href="functools.html">functools</a></li>
+<li><a href="gerrychain/accept.html">gerrychain.accept</a></li>
+<li><a href="gerrychain/chain.html">gerrychain.chain</a></li>
 <li><a href="gerrychain/constraints/bounds.html">gerrychain.constraints.bounds</a></li>
+<li><a href="gerrychain/constraints/compactness.html">gerrychain.constraints.compactness</a></li>
 <li><a href="gerrychain/constraints/contiguity.html">gerrychain.constraints.contiguity</a></li>
 <li><a href="gerrychain/constraints/validity.html">gerrychain.constraints.validity</a></li>
+<li><a href="gerrychain/graph/adjacency.html">gerrychain.graph.adjacency</a></li>
+<li><a href="gerrychain/graph/geo.html">gerrychain.graph.geo</a></li>
 <li><a href="gerrychain/graph/graph.html">gerrychain.graph.graph</a></li>
 <li><a href="gerrychain/grid.html">gerrychain.grid</a></li>
 <li><a href="gerrychain/meta/diversity.html">gerrychain.meta.diversity</a></li>
+<li><a href="gerrychain/metagraph.html">gerrychain.metagraph</a></li>
 <li><a href="gerrychain/metrics/compactness.html">gerrychain.metrics.compactness</a></li>
 <li><a href="gerrychain/metrics/partisan.html">gerrychain.metrics.partisan</a></li>
+<li><a href="gerrychain/partition/assignment.html">gerrychain.partition.assignment</a></li>
 <li><a href="gerrychain/partition/geographic.html">gerrychain.partition.geographic</a></li>
 <li><a href="gerrychain/partition/partition.html">gerrychain.partition.partition</a></li>
+<li><a href="gerrychain/partition/subgraphs.html">gerrychain.partition.subgraphs</a></li>
 <li><a href="gerrychain/proposals/proposals.html">gerrychain.proposals.proposals</a></li>
 <li><a href="gerrychain/proposals/spectral_proposals.html">gerrychain.proposals.spectral_proposals</a></li>
 <li><a href="gerrychain/proposals/tree_proposals.html">gerrychain.proposals.tree_proposals</a></li>
 <li><a href="gerrychain/tree.html">gerrychain.tree</a></li>
+<li><a href="gerrychain/updaters/compactness.html">gerrychain.updaters.compactness</a></li>
 <li><a href="gerrychain/updaters/county_splits.html">gerrychain.updaters.county_splits</a></li>
+<li><a href="gerrychain/updaters/cut_edges.html">gerrychain.updaters.cut_edges</a></li>
 <li><a href="gerrychain/updaters/election.html">gerrychain.updaters.election</a></li>
+<li><a href="gerrychain/updaters/flows.html">gerrychain.updaters.flows</a></li>
+<li><a href="gerrychain/updaters/locality_split_scores.html">gerrychain.updaters.locality_split_scores</a></li>
 <li><a href="gerrychain/updaters/spanning_trees.html">gerrychain.updaters.spanning_trees</a></li>
 <li><a href="gerrychain/updaters/tally.html">gerrychain.updaters.tally</a></li>
 </ul>

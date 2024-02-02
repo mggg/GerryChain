@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>gerrychain.updaters.compactness &mdash; GerryChain  documentation</title><link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+        <script src="../../../_static/clipboard.min.js"></script>
+        <script src="../../../_static/copybutton.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #0099cd" >
+            <a href="../../../index.html" class="icon icon-home"> GerryChain
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/intro.html">Overview of the Chain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/quickstart.html">Getting started with GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/recom.html">Running a chain with ReCom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/partitions.html">Working with Partitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/updaters.html">Updaters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/data.html">Good Data Practices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/geometries.html">Working With Geometries</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API Reference</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Topics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../topics/reproducibility.html">Reproducibility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../topics/tools.html">Evaluating districting plans in the real world</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../topics/contributing.html">Contributing to GerryChain</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Index</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../full_ref.html">Full Package Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #0099cd" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">GerryChain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+      <li>gerrychain.updaters.compactness</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for gerrychain.updaters.compactness</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">collections</span>
+
+<span class="kn">from</span> <span class="nn">.flows</span> <span class="kn">import</span> <span class="n">on_flow</span>
+<span class="kn">from</span> <span class="nn">.cut_edges</span> <span class="kn">import</span> <span class="n">on_edge_flow</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Set</span>
+
+
+<div class="viewcode-block" id="boundary_nodes"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.boundary_nodes">[docs]</a><span class="k">def</span> <span class="nf">boundary_nodes</span><span class="p">(</span><span class="n">partition</span><span class="p">,</span> <span class="n">alias</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;boundary_nodes&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Set</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :param partition: A partition of a Graph</span>
+<span class="sd">    :type partition: :class:`~gerrychain.partition.Partition`</span>
+<span class="sd">    :param alias: The name of the attribute that the boundary nodes are</span>
+<span class="sd">        stored under. Default is &#39;boundary_nodes&#39;.</span>
+<span class="sd">    :type alias: str, optional</span>
+
+<span class="sd">    :returns: The set of nodes in the partition that are on the boundary.</span>
+<span class="sd">    :rtype: Set</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">partition</span><span class="o">.</span><span class="n">parent</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">partition</span><span class="o">.</span><span class="n">parent</span><span class="p">[</span><span class="n">alias</span><span class="p">]</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="n">node</span>
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">partition</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span>
+        <span class="k">if</span> <span class="n">partition</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">node</span><span class="p">][</span><span class="s2">&quot;boundary_node&quot;</span><span class="p">]</span>
+    <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="initialize_exterior_boundaries_as_a_set"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.initialize_exterior_boundaries_as_a_set">[docs]</a><span class="k">def</span> <span class="nf">initialize_exterior_boundaries_as_a_set</span><span class="p">(</span><span class="n">partition</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Set</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :param partition: A partition of a Graph</span>
+<span class="sd">    :type partition: :class:`~gerrychain.partition.Partition`</span>
+
+<span class="sd">    :returns: A dictionary mapping each part of a partition to the set of nodes</span>
+<span class="sd">        in that part that are on the boundary.</span>
+<span class="sd">    :rtype: Dict[int, Set]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">part_boundaries</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">partition</span><span class="p">[</span><span class="s2">&quot;boundary_nodes&quot;</span><span class="p">]:</span>
+        <span class="n">part_boundaries</span><span class="p">[</span><span class="n">partition</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">mapping</span><span class="p">[</span><span class="n">node</span><span class="p">]]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">part_boundaries</span></div>
+
+
+<div class="viewcode-block" id="exterior_boundaries_as_a_set"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.exterior_boundaries_as_a_set">[docs]</a><span class="nd">@on_flow</span><span class="p">(</span><span class="n">initialize_exterior_boundaries_as_a_set</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s2">&quot;exterior_boundaries_as_a_set&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">exterior_boundaries_as_a_set</span><span class="p">(</span>
+    <span class="n">partition</span><span class="p">,</span> <span class="n">previous</span><span class="p">:</span> <span class="n">Set</span><span class="p">,</span> <span class="n">inflow</span><span class="p">:</span> <span class="n">Set</span><span class="p">,</span> <span class="n">outflow</span><span class="p">:</span> <span class="n">Set</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Set</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Updater function that responds to the flow of nodes between different partitions.</span>
+
+<span class="sd">    :param partition: A partition of a Graph</span>
+<span class="sd">    :type partition: :class:`~gerrychain.partition.Partition`</span>
+<span class="sd">    :param previous: The previous set of exterior boundary nodes for a</span>
+<span class="sd">        fixed part of the given partition.</span>
+<span class="sd">    :type previous: Set</span>
+<span class="sd">    :param inflow: The set of nodes that have flowed into the given part of the</span>
+<span class="sd">        partition.</span>
+<span class="sd">    :type inflow: Set</span>
+<span class="sd">    :param outflow: The set of nodes that have flowed out of the given part of the</span>
+<span class="sd">        partition.</span>
+<span class="sd">    :type outflow: Set</span>
+
+<span class="sd">    :returns: The new set of exterior boundary nodes for the given part of the</span>
+<span class="sd">        partition.</span>
+<span class="sd">    :rtype: Set</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">graph_boundary</span> <span class="o">=</span> <span class="n">partition</span><span class="p">[</span><span class="s2">&quot;boundary_nodes&quot;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">previous</span> <span class="o">|</span> <span class="p">(</span><span class="n">inflow</span> <span class="o">&amp;</span> <span class="n">graph_boundary</span><span class="p">))</span> <span class="o">-</span> <span class="n">outflow</span></div>
+
+
+<div class="viewcode-block" id="initialize_exterior_boundaries"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.initialize_exterior_boundaries">[docs]</a><span class="k">def</span> <span class="nf">initialize_exterior_boundaries</span><span class="p">(</span><span class="n">partition</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :param partition: A partition of a Graph</span>
+<span class="sd">    :type partition: :class:`~gerrychain.partition.Partition`</span>
+
+<span class="sd">    :returns: A dictionary mapping each part of a partition to the total</span>
+<span class="sd">        perimeter of the boundary nodes in that part.</span>
+<span class="sd">    :rtype: Dict[int, float]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">graph_boundary</span> <span class="o">=</span> <span class="n">partition</span><span class="p">[</span><span class="s2">&quot;boundary_nodes&quot;</span><span class="p">]</span>
+    <span class="n">boundaries</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">graph_boundary</span><span class="p">:</span>
+        <span class="n">part</span> <span class="o">=</span> <span class="n">partition</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">mapping</span><span class="p">[</span><span class="n">node</span><span class="p">]</span>
+        <span class="n">boundaries</span><span class="p">[</span><span class="n">part</span><span class="p">]</span> <span class="o">+=</span> <span class="n">partition</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">node</span><span class="p">][</span><span class="s2">&quot;boundary_perim&quot;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">boundaries</span></div>
+
+
+<div class="viewcode-block" id="exterior_boundaries"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.exterior_boundaries">[docs]</a><span class="nd">@on_flow</span><span class="p">(</span><span class="n">initialize_exterior_boundaries</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s2">&quot;exterior_boundaries&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">exterior_boundaries</span><span class="p">(</span><span class="n">partition</span><span class="p">,</span> <span class="n">previous</span><span class="p">:</span> <span class="n">Set</span><span class="p">,</span> <span class="n">inflow</span><span class="p">:</span> <span class="n">Set</span><span class="p">,</span> <span class="n">outflow</span><span class="p">:</span> <span class="n">Set</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Updater function that responds to the flow of nodes between different partitions.</span>
+
+<span class="sd">    :param partition: A partition of a Graph</span>
+<span class="sd">    :type partition: :class:`~gerrychain.partition.Partition`</span>
+<span class="sd">    :param previous: The previous set of exterior boundary nodes for a</span>
+<span class="sd">        fixed part of the given partition.</span>
+<span class="sd">    :type previous: Set</span>
+<span class="sd">    :param inflow: The set of nodes that have flowed into the given part of the</span>
+<span class="sd">        partition.</span>
+<span class="sd">    :type inflow: Set</span>
+<span class="sd">    :param outflow: The set of nodes that have flowed out of the given part of the</span>
+<span class="sd">        partition.</span>
+<span class="sd">    :type outflow: Set</span>
+
+<span class="sd">    :returns: A dict mapping each part of the partition to the new exterior</span>
+<span class="sd">        boundary of that part.</span>
+<span class="sd">    :rtype: Dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">graph_boundary</span> <span class="o">=</span> <span class="n">partition</span><span class="p">[</span><span class="s2">&quot;boundary_nodes&quot;</span><span class="p">]</span>
+    <span class="n">added_perimeter</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span>
+        <span class="n">partition</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">node</span><span class="p">][</span><span class="s2">&quot;boundary_perim&quot;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">inflow</span> <span class="o">&amp;</span> <span class="n">graph_boundary</span>
+    <span class="p">)</span>
+    <span class="n">removed_perimeter</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span>
+        <span class="n">partition</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">node</span><span class="p">][</span><span class="s2">&quot;boundary_perim&quot;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">outflow</span> <span class="o">&amp;</span> <span class="n">graph_boundary</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">previous</span> <span class="o">+</span> <span class="n">added_perimeter</span> <span class="o">-</span> <span class="n">removed_perimeter</span></div>
+
+
+<div class="viewcode-block" id="initialize_interior_boundaries"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.initialize_interior_boundaries">[docs]</a><span class="k">def</span> <span class="nf">initialize_interior_boundaries</span><span class="p">(</span><span class="n">partition</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :param partition: A partition of a Graph</span>
+<span class="sd">    :type partition: :class:`~gerrychain.partition.Partition`</span>
+
+<span class="sd">    :returns: A dictionary mapping each part of a partition to the total</span>
+<span class="sd">        perimeter the given part shares with other parts.</span>
+<span class="sd">    :rtype: Dict[int, float]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="n">part</span><span class="p">:</span> <span class="nb">sum</span><span class="p">(</span>
+            <span class="n">partition</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">edge</span><span class="p">][</span><span class="s2">&quot;shared_perim&quot;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">partition</span><span class="p">[</span><span class="s2">&quot;cut_edges_by_part&quot;</span><span class="p">][</span><span class="n">part</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">partition</span><span class="o">.</span><span class="n">parts</span>
+    <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="interior_boundaries"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.interior_boundaries">[docs]</a><span class="nd">@on_edge_flow</span><span class="p">(</span><span class="n">initialize_interior_boundaries</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s2">&quot;interior_boundaries&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">interior_boundaries</span><span class="p">(</span>
+    <span class="n">partition</span><span class="p">,</span> <span class="n">previous</span><span class="p">:</span> <span class="n">Set</span><span class="p">,</span> <span class="n">new_edges</span><span class="p">:</span> <span class="n">Set</span><span class="p">,</span> <span class="n">old_edges</span><span class="p">:</span> <span class="n">Set</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Updater function that responds to the flow of nodes between different partitions.</span>
+
+<span class="sd">    :param partition: A partition of a Graph</span>
+<span class="sd">    :type partition: :class:`~gerrychain.partition.Partition`</span>
+<span class="sd">    :param previous: The previous set of exterior boundary nodes for a</span>
+<span class="sd">        fixed part of the given partition.</span>
+<span class="sd">    :type previous: Set</span>
+<span class="sd">    :param new_edges: The set of edges that have flowed into the given part of the</span>
+<span class="sd">        partition.</span>
+<span class="sd">    :type new_edges: Set</span>
+<span class="sd">    :param old_edges: The set of edges that have flowed out of the given part of the</span>
+<span class="sd">        partition.</span>
+<span class="sd">    :type old_edges: Set</span>
+
+
+<span class="sd">    :returns: A dict mapping each part of the partition to the new interior</span>
+<span class="sd">        boundary of that part.</span>
+<span class="sd">    :rtype: Dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">added_perimeter</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span>
+        <span class="n">partition</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">edge</span><span class="p">][</span><span class="s2">&quot;shared_perim&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">new_edges</span>
+    <span class="p">)</span>
+    <span class="n">removed_perimeter</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span>
+        <span class="n">partition</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">edge</span><span class="p">][</span><span class="s2">&quot;shared_perim&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">old_edges</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">previous</span> <span class="o">+</span> <span class="n">added_perimeter</span> <span class="o">-</span> <span class="n">removed_perimeter</span></div>
+
+
+<div class="viewcode-block" id="flips"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.flips">[docs]</a><span class="k">def</span> <span class="nf">flips</span><span class="p">(</span><span class="n">partition</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :param partition: A partition of a Graph</span>
+<span class="sd">    :type partition: :class:`~gerrychain.partition.Partition`</span>
+
+<span class="sd">    :returns: The flips that were made to get from the parent partition to the</span>
+<span class="sd">        given partition.</span>
+<span class="sd">    :rtype: Dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">partition</span><span class="o">.</span><span class="n">flips</span></div>
+
+
+<div class="viewcode-block" id="perimeter_of_part"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.perimeter_of_part">[docs]</a><span class="k">def</span> <span class="nf">perimeter_of_part</span><span class="p">(</span><span class="n">partition</span><span class="p">,</span> <span class="n">part</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Totals up the perimeter of the part in the partition.</span>
+
+<span class="sd">    .. Warning::</span>
+
+<span class="sd">        Requires that &#39;boundary_perim&#39; be a node attribute, &#39;shared_perim&#39; be an edge</span>
+<span class="sd">        attribute, &#39;cut_edges&#39; be an updater, and &#39;exterior_boundaries&#39; be an updater.</span>
+
+<span class="sd">    :param partition: A partition of a Graph</span>
+<span class="sd">    :type partition: :class:`~gerrychain.partition.Partition`</span>
+<span class="sd">    :param part: The id of the part of the partition whose perimeter we want to compute.</span>
+<span class="sd">    :type part: int</span>
+
+<span class="sd">    :returns: The perimeter of the desired part.</span>
+<span class="sd">    :rtype: float</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">exterior_perimeter</span> <span class="o">=</span> <span class="n">partition</span><span class="p">[</span><span class="s2">&quot;exterior_boundaries&quot;</span><span class="p">][</span><span class="n">part</span><span class="p">]</span>
+    <span class="n">interior_perimeter</span> <span class="o">=</span> <span class="n">partition</span><span class="p">[</span><span class="s2">&quot;interior_boundaries&quot;</span><span class="p">][</span><span class="n">part</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">exterior_perimeter</span> <span class="o">+</span> <span class="n">interior_perimeter</span></div>
+
+
+<div class="viewcode-block" id="perimeter"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.perimeter">[docs]</a><span class="k">def</span> <span class="nf">perimeter</span><span class="p">(</span><span class="n">partition</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :param partition: A partition of a Graph</span>
+<span class="sd">    :type partition: :class:`~gerrychain.partition.Partition`</span>
+
+<span class="sd">    :returns: A dictionary mapping each part of a partition to its perimeter.</span>
+<span class="sd">    :rtype: Dict[int, float]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">part</span><span class="p">:</span> <span class="n">perimeter_of_part</span><span class="p">(</span><span class="n">partition</span><span class="p">,</span> <span class="n">part</span><span class="p">)</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">partition</span><span class="o">.</span><span class="n">parts</span><span class="p">}</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Metric Geometry and Gerrymandering Group.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

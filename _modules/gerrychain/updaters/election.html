@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>gerrychain.updaters.election &mdash; GerryChain  documentation</title><link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
@@ -13,6 +15,9 @@
         <script src="../../../_static/underscore.js"></script>
         <script src="../../../_static/doctools.js"></script>
         <script src="../../../_static/language_data.js"></script>
+        <script src="../../../_static/clipboard.min.js"></script>
+        <script src="../../../_static/copybutton.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -41,7 +46,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../user/recom.html">Running a chain with ReCom</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/partitions.html">Working with Partitions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/updaters.html">Updaters</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../user/adjacency.html">Handling Adjacencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/data.html">Good Data Practices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/geometries.html">Working With Geometries</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -51,8 +57,11 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../topics/reproducibility.html">Reproducibility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../topics/tools.html">Evaluating districting plans in the real world</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../topics/realworldplans.html">Using <code class="docutils literal notranslate"><span class="pre">maup</span></code> to import a real-life plan in GerryChain</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../topics/whatislands.html">What to do about islands and connectivity</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../topics/contributing.html">Contributing to GerryChain</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Index</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../full_ref.html">Full Package Reference</a></li>
 </ul>
 
         </div>
@@ -81,13 +90,14 @@
              
   <h1>Source code for gerrychain.updaters.election</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">math</span>
-
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 <span class="kn">from</span> <span class="nn">gerrychain.updaters.tally</span> <span class="kn">import</span> <span class="n">DataTally</span>
 <span class="kn">import</span> <span class="nn">gerrychain.metrics.partisan</span> <span class="k">as</span> <span class="nn">pm</span>
 
 
-<div class="viewcode-block" id="Election"><a class="viewcode-back" href="../../../api.html#gerrychain.updaters.Election">[docs]</a><span class="k">class</span> <span class="nc">Election</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Represents the data of one election, with races conducted in each part of</span>
+<div class="viewcode-block" id="Election"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.Election">[docs]</a><span class="k">class</span> <span class="nc">Election</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Represents the data of one election, with races conducted in each part of</span>
 <span class="sd">    the partition.</span>
 
 <span class="sd">    As we vary the districting plan, we can use the same node-level vote totals</span>
@@ -100,7 +110,9 @@
 <span class="sd">    :meth:`~ElectionResults.wins` or :meth:`~ElectionResults.percent` for common queries</span>
 <span class="sd">    the user might make on election results.</span>
 
-<span class="sd">    Example usage::</span>
+<span class="sd">    Example usage:</span>
+
+<span class="sd">    .. code-block:: python</span>
 
 <span class="sd">        # Assuming your nodes have attributes &quot;2008_D&quot;, &quot;2008_R&quot;</span>
 <span class="sd">        # with (for example) 2008 senate election vote totals</span>
@@ -123,18 +135,45 @@
 <span class="sd">        # vote distribution:</span>
 <span class="sd">        partition[&quot;2008_Sen&quot;].wins(&quot;Republican&quot;)</span>
 
+<span class="sd">    :ivar name: The name of the election. (e.g. &quot;2008 Presidential&quot;)</span>
+<span class="sd">    :type name: str</span>
+<span class="sd">    :ivar parties: A list of the names of the parties in the election.</span>
+<span class="sd">    :type parties: List[str]</span>
+<span class="sd">    :ivar columns: A list of the columns in the graph&#39;s node data that hold</span>
+<span class="sd">        the vote totals for each party.</span>
+<span class="sd">    :type columns: List[str]</span>
+<span class="sd">    :ivar parties_to_columns: A dictionary mapping party names to the columns</span>
+<span class="sd">        in the graph&#39;s node data that hold the vote totals for that party.</span>
+<span class="sd">    :type parties_to_columns: Dict[str, str]</span>
+<span class="sd">    :ivar tallies: A dictionary mapping party names to :class:`DataTally` objects</span>
+<span class="sd">        that manage the vote totals for that party.</span>
+<span class="sd">    :type tallies: Dict[str, DataTally]</span>
+<span class="sd">    :ivar updater: An :class:`ElectionUpdater` object that manages the tallies</span>
+<span class="sd">        and returns an :class:`ElectionResults` object.</span>
+<span class="sd">    :type updater: ElectionUpdater</span>
+<span class="sd">    :ivar alias: The name that the election is registered under in the</span>
+<span class="sd">        partition&#39;s dictionary of updaters.</span>
+<span class="sd">    :type alias: str</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">parties_to_columns</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">parties_to_columns</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">],</span>
+        <span class="n">alias</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        :param name: The name of the election. (e.g. &quot;2008 Presidential&quot;)</span>
+<span class="sd">        :type name: str</span>
 <span class="sd">        :param parties_to_columns: A dictionary matching party names to their</span>
 <span class="sd">            data columns, either as actual columns (list-like, indexed by nodes)</span>
 <span class="sd">            or as string keys for the node attributes that hold the party&#39;s</span>
 <span class="sd">            vote totals. Or, a list of strings which will serve as both</span>
 <span class="sd">            the party names and the node attribute keys.</span>
-<span class="sd">        :param alias: (optional) Alias that the election is registered under</span>
+<span class="sd">        :type parties_to_columns: Union[Dict, List]</span>
+<span class="sd">        :param alias: Alias that the election is registered under</span>
 <span class="sd">            in the Partition&#39;s dictionary of updaters.</span>
+<span class="sd">        :type alias: Optional[str], optional</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
 
@@ -174,14 +213,17 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">updater</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="ElectionUpdater"><a class="viewcode-back" href="../../../api.html#gerrychain.updaters.ElectionUpdater">[docs]</a><span class="k">class</span> <span class="nc">ElectionUpdater</span><span class="p">:</span>
+<div class="viewcode-block" id="ElectionUpdater"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.ElectionUpdater">[docs]</a><span class="k">class</span> <span class="nc">ElectionUpdater</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    The updater for computing the election results in each part of the partition after</span>
 <span class="sd">    each step in the Markov chain. The actual results are returned to the user as</span>
 <span class="sd">    an :class:`ElectionResults` instance.</span>
+
+<span class="sd">    :ivar election: The :class:`Election` object that this updater is associated with.</span>
+<span class="sd">    :type election: Election</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">election</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">election</span><span class="p">:</span> <span class="n">Election</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">election</span> <span class="o">=</span> <span class="n">election</span>
 
     <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partition</span><span class="p">):</span>
@@ -194,9 +236,18 @@
             <span class="k">for</span> <span class="n">party</span> <span class="ow">in</span> <span class="n">parties</span>
         <span class="p">}</span>
 
-        <span class="k">return</span> <span class="n">ElectionResults</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">election</span><span class="p">,</span> <span class="n">counts</span><span class="p">,</span> <span class="n">races</span><span class="o">=</span><span class="n">partition</span><span class="o">.</span><span class="n">parts</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ElectionResults</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">election</span><span class="p">,</span> <span class="n">counts</span><span class="p">,</span> <span class="n">regions</span><span class="o">=</span><span class="n">partition</span><span class="o">.</span><span class="n">parts</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">get_previous_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partition</span><span class="p">):</span>
+<div class="viewcode-block" id="ElectionUpdater.get_previous_values"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.ElectionUpdater.get_previous_values">[docs]</a>    <span class="k">def</span> <span class="nf">get_previous_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partition</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param partition: The partition whose parent we want to obtain the</span>
+<span class="sd">            previous vote totals from.</span>
+<span class="sd">        :type partition: :class:`Partition`</span>
+
+<span class="sd">        :returns: A dictionary mapping party names to the vote totals that</span>
+<span class="sd">            party received in each part of the parent of the current partition.</span>
+<span class="sd">        :rtype: Dict[str, Dict[int, float]]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">parent</span> <span class="o">=</span> <span class="n">partition</span><span class="o">.</span><span class="n">parent</span>
         <span class="k">if</span> <span class="n">parent</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">previous_totals_for_party</span> <span class="o">=</span> <span class="p">{</span><span class="n">party</span><span class="p">:</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">party</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">election</span><span class="o">.</span><span class="n">parties</span><span class="p">}</span>
@@ -204,30 +255,78 @@
             <span class="n">previous_totals_for_party</span> <span class="o">=</span> <span class="n">partition</span><span class="o">.</span><span class="n">parent</span><span class="p">[</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">election</span><span class="o">.</span><span class="n">alias</span>
             <span class="p">]</span><span class="o">.</span><span class="n">totals_for_party</span>
-        <span class="k">return</span> <span class="n">previous_totals_for_party</span></div>
+        <span class="k">return</span> <span class="n">previous_totals_for_party</span></div></div>
 
 
-<span class="k">def</span> <span class="nf">get_percents</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="n">totals</span><span class="p">):</span>
+<div class="viewcode-block" id="get_percents"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.get_percents">[docs]</a><span class="k">def</span> <span class="nf">get_percents</span><span class="p">(</span><span class="n">counts</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">totals</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :param counts: A dictionary mapping each part in a partition to the</span>
+<span class="sd">        count of the number of votes that a party received in that part.</span>
+<span class="sd">    :type counts: Dict</span>
+<span class="sd">    :param totals: A dictionary mapping each part in a partition to the</span>
+<span class="sd">        total number of votes cast in that part.</span>
+<span class="sd">    :type totals: Dict</span>
+
+<span class="sd">    :returns: A dictionary mapping each part in a partition to the percentage</span>
+<span class="sd">    :rtype: Dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="p">{</span>
         <span class="n">part</span><span class="p">:</span> <span class="n">counts</span><span class="p">[</span><span class="n">part</span><span class="p">]</span> <span class="o">/</span> <span class="n">totals</span><span class="p">[</span><span class="n">part</span><span class="p">]</span> <span class="k">if</span> <span class="n">totals</span><span class="p">[</span><span class="n">part</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">math</span><span class="o">.</span><span class="n">nan</span>
         <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">totals</span>
-    <span class="p">}</span>
+    <span class="p">}</span></div>
 
 
-<div class="viewcode-block" id="ElectionResults"><a class="viewcode-back" href="../../../api.html#gerrychain.updaters.ElectionResults">[docs]</a><span class="k">class</span> <span class="nc">ElectionResults</span><span class="p">:</span>
+<div class="viewcode-block" id="ElectionResults"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.ElectionResults">[docs]</a><span class="k">class</span> <span class="nc">ElectionResults</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Represents the results of an election. Provides helpful methods to answer</span>
 <span class="sd">    common questions you might have about an election (Who won? How many seats?, etc.).</span>
+
+<span class="sd">    :ivar election: The :class:`Election` object that these results are associated with.</span>
+<span class="sd">    :type election: Election</span>
+<span class="sd">    :ivar totals_for_party: A dictionary mapping party names to the total number of votes</span>
+<span class="sd">        that party received in each part of the partition.</span>
+<span class="sd">    :type totals_for_party: Dict[str, Dict[int, float]]</span>
+<span class="sd">    :ivar regions: A list of regions that we would like the results for.</span>
+<span class="sd">    :type regions: List[int]</span>
+<span class="sd">    :ivar totals: A dictionary mapping each part of the partition to the total number</span>
+<span class="sd">        of votes cast in that part.</span>
+<span class="sd">    :type totals: Dict[int, int]</span>
+<span class="sd">    :ivar percents_for_party: A dictionary mapping party names to the percentage of votes</span>
+<span class="sd">        that party received in each part of the partition.</span>
+<span class="sd">    :type percents_for_party: Dict[str, Dict[int, float]]</span>
+
+<span class="sd">    .. note::</span>
+
+<span class="sd">        The variable &quot;regions&quot; is generally called &quot;parts&quot; in other sections of the</span>
+<span class="sd">        codebase, but we have changed it here to avoid confusion with the parameter</span>
+<span class="sd">        &quot;party&quot; that often appears within the class.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">election</span><span class="p">,</span> <span class="n">counts</span><span class="p">,</span> <span class="n">races</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">election</span><span class="p">:</span> <span class="n">Election</span><span class="p">,</span>
+        <span class="n">counts</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span>
+        <span class="n">regions</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param election: The :class:`Election` object that these results are associated with.</span>
+<span class="sd">        :type election: Election</span>
+<span class="sd">        :counts: A dictionary mapping party names to the total number of votes that party</span>
+<span class="sd">            received in each part of the partition.</span>
+<span class="sd">        :type counts: Dict[str, Dict[int, float]]</span>
+<span class="sd">        :param regions: A list of regions that we would like to consider (e.g. congressional</span>
+<span class="sd">            districts).</span>
+<span class="sd">        :type regions: List[int]</span>
+
+<span class="sd">        :returns: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">election</span> <span class="o">=</span> <span class="n">election</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">totals_for_party</span> <span class="o">=</span> <span class="n">counts</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">races</span> <span class="o">=</span> <span class="n">races</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">regions</span> <span class="o">=</span> <span class="n">regions</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">totals</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="n">race</span><span class="p">:</span> <span class="nb">sum</span><span class="p">(</span><span class="n">counts</span><span class="p">[</span><span class="n">party</span><span class="p">][</span><span class="n">race</span><span class="p">]</span> <span class="k">for</span> <span class="n">party</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">election</span><span class="o">.</span><span class="n">parties</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">race</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">races</span>
+            <span class="n">region</span><span class="p">:</span> <span class="nb">sum</span><span class="p">(</span><span class="n">counts</span><span class="p">[</span><span class="n">party</span><span class="p">][</span><span class="n">region</span><span class="p">]</span> <span class="k">for</span> <span class="n">party</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">election</span><span class="o">.</span><span class="n">parties</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">region</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">regions</span>
         <span class="p">}</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">percents_for_party</span> <span class="o">=</span> <span class="p">{</span>
@@ -243,110 +342,192 @@
             <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">election</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">results</span><span class="o">=</span><span class="n">results_by_part</span>
         <span class="p">)</span>
 
-<div class="viewcode-block" id="ElectionResults.seats"><a class="viewcode-back" href="../../../api.html#gerrychain.updaters.ElectionResults.seats">[docs]</a>    <span class="k">def</span> <span class="nf">seats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">party</span><span class="p">):</span>
+<div class="viewcode-block" id="ElectionResults.seats"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.ElectionResults.seats">[docs]</a>    <span class="k">def</span> <span class="nf">seats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">party</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns the number of races that ``party`` won.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">won</span><span class="p">(</span><span class="n">party</span><span class="p">,</span> <span class="n">race</span><span class="p">)</span> <span class="k">for</span> <span class="n">race</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">races</span><span class="p">)</span></div>
+<span class="sd">        :param party: Party name</span>
+<span class="sd">        :type party: str</span>
 
-<div class="viewcode-block" id="ElectionResults.wins"><a class="viewcode-back" href="../../../api.html#gerrychain.updaters.ElectionResults.wins">[docs]</a>    <span class="k">def</span> <span class="nf">wins</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">party</span><span class="p">):</span>
+<span class="sd">        :returns: The number of seats that ``party`` won.</span>
+<span class="sd">        :rtype: int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">won</span><span class="p">(</span><span class="n">party</span><span class="p">,</span> <span class="n">region</span><span class="p">)</span> <span class="k">for</span> <span class="n">region</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">regions</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ElectionResults.wins"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.ElectionResults.wins">[docs]</a>    <span class="k">def</span> <span class="nf">wins</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">party</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        An alias for :meth:`seats`.</span>
+
+<span class="sd">        :param party: Party name</span>
+<span class="sd">        :type party: str</span>
+
+<span class="sd">        :returns: The number of seats that ``party`` won.</span>
+<span class="sd">        :rtype: int</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">seats</span><span class="p">(</span><span class="n">party</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="ElectionResults.percent"><a class="viewcode-back" href="../../../api.html#gerrychain.updaters.ElectionResults.percent">[docs]</a>    <span class="k">def</span> <span class="nf">percent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">party</span><span class="p">,</span> <span class="n">race</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="ElectionResults.percent"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.ElectionResults.percent">[docs]</a>    <span class="k">def</span> <span class="nf">percent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">party</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">region</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns the percentage of the vote that ``party`` received in a given race</span>
-<span class="sd">        (part of the partition). If ``race`` is omitted, returns the overall vote</span>
-<span class="sd">        share of ``party``.</span>
-
 <span class="sd">        :param party: Party ID.</span>
-<span class="sd">        :param race: ID of the part of the partition whose votes we want to tally.</span>
+<span class="sd">        :type party: str</span>
+<span class="sd">        :param region: ID of the part of the partition whose votes we want to tally.</span>
+<span class="sd">        :type region: Optional[int], optional</span>
+
+<span class="sd">        :returns: The percentage of the vote that ``party`` received in a given region</span>
+<span class="sd">            (part of the partition). If ``region`` is omitted, returns the overall vote</span>
+<span class="sd">            share of ``party``.</span>
+<span class="sd">        :rtype: float</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">race</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">percents_for_party</span><span class="p">[</span><span class="n">party</span><span class="p">][</span><span class="n">race</span><span class="p">]</span>
-        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">votes</span><span class="p">(</span><span class="n">party</span><span class="p">))</span> <span class="o">/</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">totals</span><span class="p">[</span><span class="n">race</span><span class="p">]</span> <span class="k">for</span> <span class="n">race</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">races</span><span class="p">)</span></div>
+        <span class="k">if</span> <span class="n">region</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">percents_for_party</span><span class="p">[</span><span class="n">party</span><span class="p">][</span><span class="n">region</span><span class="p">]</span>
+        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">votes</span><span class="p">(</span><span class="n">party</span><span class="p">))</span> <span class="o">/</span> <span class="nb">sum</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">totals</span><span class="p">[</span><span class="n">region</span><span class="p">]</span> <span class="k">for</span> <span class="n">region</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">regions</span>
+        <span class="p">)</span></div>
 
-<div class="viewcode-block" id="ElectionResults.percents"><a class="viewcode-back" href="../../../api.html#gerrychain.updaters.ElectionResults.percents">[docs]</a>    <span class="k">def</span> <span class="nf">percents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">party</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        :param party: The party</span>
-<span class="sd">        :return: The tuple of the percentage of votes that ``party`` received</span>
-<span class="sd">            in each part of the partition</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">percents_for_party</span><span class="p">[</span><span class="n">party</span><span class="p">][</span><span class="n">race</span><span class="p">]</span> <span class="k">for</span> <span class="n">race</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">races</span><span class="p">)</span></div>
-
-<div class="viewcode-block" id="ElectionResults.count"><a class="viewcode-back" href="../../../api.html#gerrychain.updaters.ElectionResults.count">[docs]</a>    <span class="k">def</span> <span class="nf">count</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">party</span><span class="p">,</span> <span class="n">race</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns the total number of votes that ``party`` received in a given race</span>
-<span class="sd">        (part of the partition). If ``race`` is omitted, returns the overall vote</span>
-<span class="sd">        total of ``party``.</span>
-
-<span class="sd">        :param party: Party ID.</span>
-<span class="sd">        :param race: ID of the part of the partition whose votes we want to tally.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">race</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">totals_for_party</span><span class="p">[</span><span class="n">party</span><span class="p">][</span><span class="n">race</span><span class="p">]</span>
-        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">totals_for_party</span><span class="p">[</span><span class="n">party</span><span class="p">][</span><span class="n">race</span><span class="p">]</span> <span class="k">for</span> <span class="n">race</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">races</span><span class="p">)</span></div>
-
-<div class="viewcode-block" id="ElectionResults.counts"><a class="viewcode-back" href="../../../api.html#gerrychain.updaters.ElectionResults.counts">[docs]</a>    <span class="k">def</span> <span class="nf">counts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">party</span><span class="p">):</span>
+<div class="viewcode-block" id="ElectionResults.percents"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.ElectionResults.percents">[docs]</a>    <span class="k">def</span> <span class="nf">percents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">party</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        :param party: Party ID</span>
-<span class="sd">        :return: tuple of the total votes cast for ``party`` in each part of</span>
-<span class="sd">            the partition</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">totals_for_party</span><span class="p">[</span><span class="n">party</span><span class="p">][</span><span class="n">race</span><span class="p">]</span> <span class="k">for</span> <span class="n">race</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">races</span><span class="p">)</span></div>
+<span class="sd">        :type party: str</span>
 
-<div class="viewcode-block" id="ElectionResults.votes"><a class="viewcode-back" href="../../../api.html#gerrychain.updaters.ElectionResults.votes">[docs]</a>    <span class="k">def</span> <span class="nf">votes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">party</span><span class="p">):</span>
+<span class="sd">        :returns: The tuple of the percentage of votes that ``party`` received</span>
+<span class="sd">            in each part of the partition</span>
+<span class="sd">        :rtype: Tuple</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">percents_for_party</span><span class="p">[</span><span class="n">party</span><span class="p">][</span><span class="n">region</span><span class="p">]</span> <span class="k">for</span> <span class="n">region</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">regions</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ElectionResults.count"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.ElectionResults.count">[docs]</a>    <span class="k">def</span> <span class="nf">count</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">party</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">region</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param party: Party ID.</span>
+<span class="sd">        :type party: str</span>
+<span class="sd">        :param region: ID of the part of the partition whose votes we want to tally.</span>
+<span class="sd">        :type region: Optional[int], optional</span>
+
+<span class="sd">        :returns: The total number of votes that ``party`` received in a given region</span>
+<span class="sd">            (part of the partition). If ``region`` is omitted, returns the overall vote</span>
+<span class="sd">            total of ``party``.</span>
+<span class="sd">        :rtype: int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">region</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">totals_for_party</span><span class="p">[</span><span class="n">party</span><span class="p">][</span><span class="n">region</span><span class="p">]</span>
+        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">totals_for_party</span><span class="p">[</span><span class="n">party</span><span class="p">][</span><span class="n">region</span><span class="p">]</span> <span class="k">for</span> <span class="n">region</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">regions</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ElectionResults.counts"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.ElectionResults.counts">[docs]</a>    <span class="k">def</span> <span class="nf">counts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">party</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param party: Party ID</span>
+<span class="sd">        :type party: str</span>
+
+<span class="sd">        :returns: tuple of the total votes cast for ``party`` in each part of</span>
+<span class="sd">            the partition</span>
+<span class="sd">        :rtype: Tuple</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">totals_for_party</span><span class="p">[</span><span class="n">party</span><span class="p">][</span><span class="n">region</span><span class="p">]</span> <span class="k">for</span> <span class="n">region</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">regions</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ElectionResults.votes"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.ElectionResults.votes">[docs]</a>    <span class="k">def</span> <span class="nf">votes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">party</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        An alias for :meth:`counts`.</span>
+
+<span class="sd">        :param party: Party ID</span>
+<span class="sd">        :type party: str</span>
+
+<span class="sd">        :returns: tuple of the total votes cast for ``party`` in each part of</span>
+<span class="sd">            the partition</span>
+<span class="sd">        :rtype: Tuple</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">counts</span><span class="p">(</span><span class="n">party</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="ElectionResults.won"><a class="viewcode-back" href="../../../api.html#gerrychain.updaters.ElectionResults.won">[docs]</a>    <span class="k">def</span> <span class="nf">won</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">party</span><span class="p">,</span> <span class="n">race</span><span class="p">):</span>
+<div class="viewcode-block" id="ElectionResults.won"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.ElectionResults.won">[docs]</a>    <span class="k">def</span> <span class="nf">won</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">party</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">region</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Answers &quot;Did ``party`` win the race in part ``race``?&quot; with ``True`` or ``False``.</span>
+<span class="sd">        :param party: Party ID</span>
+<span class="sd">        :type party: str</span>
+<span class="sd">        :param region: ID of the part of the partition whose votes we want to tally.</span>
+<span class="sd">        :type region: str</span>
+
+<span class="sd">        :returns: Answer to &quot;Did ``party`` win the region in part ``region``?&quot;</span>
+<span class="sd">        :rtype: bool</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">all</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">totals_for_party</span><span class="p">[</span><span class="n">party</span><span class="p">][</span><span class="n">race</span><span class="p">]</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">totals_for_party</span><span class="p">[</span><span class="n">opponent</span><span class="p">][</span><span class="n">race</span><span class="p">]</span>
-            <span class="k">for</span> <span class="n">opponent</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">election</span><span class="o">.</span><span class="n">parties</span> <span class="k">if</span> <span class="n">opponent</span> <span class="o">!=</span> <span class="n">party</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">totals_for_party</span><span class="p">[</span><span class="n">party</span><span class="p">][</span><span class="n">region</span><span class="p">]</span>
+            <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">totals_for_party</span><span class="p">[</span><span class="n">opponent</span><span class="p">][</span><span class="n">region</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">opponent</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">election</span><span class="o">.</span><span class="n">parties</span>
+            <span class="k">if</span> <span class="n">opponent</span> <span class="o">!=</span> <span class="n">party</span>
         <span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">total_votes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">totals</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+<div class="viewcode-block" id="ElectionResults.total_votes"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.ElectionResults.total_votes">[docs]</a>    <span class="k">def</span> <span class="nf">total_votes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :returns: The total number of votes cast in the election.</span>
+<span class="sd">        :rtype: int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">totals</span><span class="o">.</span><span class="n">values</span><span class="p">())</span></div>
 
-<div class="viewcode-block" id="ElectionResults.mean_median"><a class="viewcode-back" href="../../../api.html#gerrychain.updaters.ElectionResults.mean_median">[docs]</a>    <span class="k">def</span> <span class="nf">mean_median</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="ElectionResults.mean_median"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.ElectionResults.mean_median">[docs]</a>    <span class="k">def</span> <span class="nf">mean_median</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Computes the mean-median score for this ElectionResults object.</span>
+
+<span class="sd">        See: :func:`~gerrychain.metrics.partisan.mean_median`</span>
+
+<span class="sd">        :returns: The mean-median score for this election.</span>
+<span class="sd">        :rtype: float</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">pm</span><span class="o">.</span><span class="n">mean_median</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="ElectionResults.mean_thirdian"><a class="viewcode-back" href="../../../api.html#gerrychain.updaters.ElectionResults.mean_thirdian">[docs]</a>    <span class="k">def</span> <span class="nf">mean_thirdian</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="ElectionResults.mean_thirdian"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.ElectionResults.mean_thirdian">[docs]</a>    <span class="k">def</span> <span class="nf">mean_thirdian</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Computes the mean-thirdian score for this ElectionResults object.</span>
+
+<span class="sd">        See: :func:`~gerrychain.metrics.partisan.mean_thirdian`</span>
+
+<span class="sd">        :returns: The mean-thirdian score for this election.</span>
+<span class="sd">        :rtype: float</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">pm</span><span class="o">.</span><span class="n">mean_thirdian</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="ElectionResults.efficiency_gap"><a class="viewcode-back" href="../../../api.html#gerrychain.updaters.ElectionResults.efficiency_gap">[docs]</a>    <span class="k">def</span> <span class="nf">efficiency_gap</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="ElectionResults.efficiency_gap"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.ElectionResults.efficiency_gap">[docs]</a>    <span class="k">def</span> <span class="nf">efficiency_gap</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Computes the efficiency gap for this ElectionResults object.</span>
+
+<span class="sd">        See: :func:`~gerrychain.metrics.partisan.efficiency_gap`</span>
+
+<span class="sd">        :returns: The efficiency gap for this election.</span>
+<span class="sd">        :rtype: float</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">pm</span><span class="o">.</span><span class="n">efficiency_gap</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="ElectionResults.partisan_bias"><a class="viewcode-back" href="../../../api.html#gerrychain.updaters.ElectionResults.partisan_bias">[docs]</a>    <span class="k">def</span> <span class="nf">partisan_bias</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="ElectionResults.partisan_bias"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.ElectionResults.partisan_bias">[docs]</a>    <span class="k">def</span> <span class="nf">partisan_bias</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Computes the partisan bias for this ElectionResults object.</span>
+
+<span class="sd">        See: :func:`~gerrychain.metrics.partisan.partisan_bias`</span>
+
+<span class="sd">        :returns: The partisan bias for this election.</span>
+<span class="sd">        :rtype: float</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">pm</span><span class="o">.</span><span class="n">partisan_bias</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="ElectionResults.partisan_gini"><a class="viewcode-back" href="../../../api.html#gerrychain.updaters.ElectionResults.partisan_gini">[docs]</a>    <span class="k">def</span> <span class="nf">partisan_gini</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="ElectionResults.partisan_gini"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.ElectionResults.partisan_gini">[docs]</a>    <span class="k">def</span> <span class="nf">partisan_gini</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Computes the Gini score for this ElectionResults object.</span>
+
+<span class="sd">        See: :func:`~gerrychain.metrics.partisan.partisan_gini`</span>
+
+<span class="sd">        :returns: The partisan Gini score for this election.</span>
+<span class="sd">        :rtype: float</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">pm</span><span class="o">.</span><span class="n">partisan_gini</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div></div>
 
 
-<span class="k">def</span> <span class="nf">format_part_results</span><span class="p">(</span><span class="n">percents_for_party</span><span class="p">,</span> <span class="n">part</span><span class="p">):</span>
+<div class="viewcode-block" id="format_part_results"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.format_part_results">[docs]</a><span class="k">def</span> <span class="nf">format_part_results</span><span class="p">(</span>
+    <span class="n">percents_for_party</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span> <span class="n">part</span><span class="p">:</span> <span class="nb">int</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :param percents_for_party: A dictionary mapping party names to a dict</span>
+<span class="sd">        containing the percentage of votes that party received in each part</span>
+<span class="sd">        of the partition.</span>
+<span class="sd">    :type percents_for_party: Dict[str, Dict[int, float]]</span>
+<span class="sd">    :param part: The part of the partition whose results we want to format.</span>
+<span class="sd">    :type part: int</span>
+
+<span class="sd">    :returns: A formatted string containing the results for the given part</span>
+<span class="sd">        of the partition.</span>
+<span class="sd">    :rtype: str</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">heading</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{part}</span><span class="s2">:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">part</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">part</span><span class="p">))</span>
     <span class="n">body</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
         <span class="s2">&quot;  </span><span class="si">{party}</span><span class="s2">: </span><span class="si">{percent}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
@@ -354,7 +535,7 @@
         <span class="p">)</span>
         <span class="k">for</span> <span class="n">party</span> <span class="ow">in</span> <span class="n">percents_for_party</span>
     <span class="p">)</span>
-    <span class="k">return</span> <span class="n">heading</span> <span class="o">+</span> <span class="n">body</span>
+    <span class="k">return</span> <span class="n">heading</span> <span class="o">+</span> <span class="n">body</span></div>
 </pre></div>
 
            </div>

@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>gerrychain.updaters.spanning_trees &mdash; GerryChain  documentation</title><link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
@@ -13,6 +15,9 @@
         <script src="../../../_static/underscore.js"></script>
         <script src="../../../_static/doctools.js"></script>
         <script src="../../../_static/language_data.js"></script>
+        <script src="../../../_static/clipboard.min.js"></script>
+        <script src="../../../_static/copybutton.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -41,7 +46,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../user/recom.html">Running a chain with ReCom</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/partitions.html">Working with Partitions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/updaters.html">Updaters</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../user/adjacency.html">Handling Adjacencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/data.html">Good Data Practices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/geometries.html">Working With Geometries</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -51,8 +57,11 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../topics/reproducibility.html">Reproducibility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../topics/tools.html">Evaluating districting plans in the real world</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../topics/realworldplans.html">Using <code class="docutils literal notranslate"><span class="pre">maup</span></code> to import a real-life plan in GerryChain</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../topics/whatislands.html">What to do about islands and connectivity</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../topics/contributing.html">Contributing to GerryChain</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Index</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../full_ref.html">Full Package Reference</a></li>
 </ul>
 
         </div>
@@ -80,22 +89,31 @@
            <div itemprop="articleBody">
              
   <h1>Source code for gerrychain.updaters.spanning_trees</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Updaters that compute spanning tree statistics.&quot;&quot;&quot;</span>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Updaters that compute spanning tree statistics.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
 <span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">import</span> <span class="nn">numpy</span>
 <span class="kn">import</span> <span class="nn">networkx</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span>
 
 
-<span class="k">def</span> <span class="nf">_num_spanning_trees_in_district</span><span class="p">(</span><span class="n">partition</span><span class="p">,</span> <span class="n">district</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Given a district ID, returns the number of spanning trees in the</span>
+<span class="k">def</span> <span class="nf">_num_spanning_trees_in_district</span><span class="p">(</span><span class="n">partition</span><span class="p">,</span> <span class="n">district</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a district ID, returns the number of spanning trees in the</span>
 <span class="sd">    subgraph of self corresponding to the district.</span>
 
 <span class="sd">    Uses Kirchoff&#39;s theorem to compute the number of spanning trees.</span>
 
 <span class="sd">    :param partition: :class:`gerrychain.Partition`</span>
+<span class="sd">    :type partition: :class:`gerrychain.Partition`</span>
 <span class="sd">    :param district: A district label (part) in the partition.</span>
-<span class="sd">    :return: The number of spanning trees in the subgraph of the</span>
-<span class="sd">    partition corresponding to district</span>
+<span class="sd">    :type district: int</span>
+
+<span class="sd">    :returns: The number of spanning trees in the subgraph of the</span>
+<span class="sd">        partition corresponding to district</span>
+<span class="sd">    :rtype: int</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">graph</span> <span class="o">=</span> <span class="n">partition</span><span class="o">.</span><span class="n">subgraphs</span><span class="p">[</span><span class="n">district</span><span class="p">]</span>
     <span class="n">laplacian</span> <span class="o">=</span> <span class="n">networkx</span><span class="o">.</span><span class="n">laplacian_matrix</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
@@ -103,8 +121,11 @@
     <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">slogdet</span><span class="p">(</span><span class="n">L</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
 
 
-<div class="viewcode-block" id="num_spanning_trees"><a class="viewcode-back" href="../../../api.html#gerrychain.updaters.num_spanning_trees">[docs]</a><span class="k">def</span> <span class="nf">num_spanning_trees</span><span class="p">(</span><span class="n">partition</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Returns the number of spanning trees in each part (district) of a partition.&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="num_spanning_trees"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.num_spanning_trees">[docs]</a><span class="k">def</span> <span class="nf">num_spanning_trees</span><span class="p">(</span><span class="n">partition</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :returns: The number of spanning trees in each part (district) of a partition.</span>
+<span class="sd">    :rtype: Dict[int, int]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="p">{</span>
         <span class="n">part</span><span class="p">:</span> <span class="n">_num_spanning_trees_in_district</span><span class="p">(</span><span class="n">partition</span><span class="p">,</span> <span class="n">part</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">partition</span><span class="o">.</span><span class="n">parts</span>

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>gerrychain.graph.geo &mdash; GerryChain  documentation</title><link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+        <script src="../../../_static/clipboard.min.js"></script>
+        <script src="../../../_static/copybutton.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #0099cd" >
+            <a href="../../../index.html" class="icon icon-home"> GerryChain
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/intro.html">Overview of the Chain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/quickstart.html">Getting started with GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/recom.html">Running a chain with ReCom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/partitions.html">Working with Partitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/updaters.html">Updaters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/data.html">Good Data Practices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/geometries.html">Working With Geometries</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API Reference</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Topics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../topics/reproducibility.html">Reproducibility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../topics/tools.html">Evaluating districting plans in the real world</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../topics/contributing.html">Contributing to GerryChain</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Index</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../full_ref.html">Full Package Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #0099cd" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">GerryChain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+      <li>gerrychain.graph.geo</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for gerrychain.graph.geo</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module contains functions for working with GeoDataFrames and Shapely</span>
+<span class="sd">geometries. Specifically, it contains functions for handling and reprojecting</span>
+<span class="sd">the Universal Transverse Mercator projection, and for identifying bad geometries</span>
+<span class="sd">within a given GeoDataFrame.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">Counter</span>
+<span class="kn">from</span> <span class="nn">gerrychain.vendor.utm</span> <span class="kn">import</span> <span class="n">from_latlon</span>
+
+<span class="c1"># from shapely.geometry.base import BaseGeometry</span>
+<span class="kn">from</span> <span class="nn">geopandas</span> <span class="kn">import</span> <span class="n">GeoDataFrame</span>
+
+
+<div class="viewcode-block" id="utm_of_point"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.graph.geo.utm_of_point">[docs]</a><span class="k">def</span> <span class="nf">utm_of_point</span><span class="p">(</span><span class="n">point</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a point, return the Universal Transverse Mercator zone number</span>
+<span class="sd">    for that point.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">from_latlon</span><span class="p">(</span><span class="n">point</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">point</span><span class="o">.</span><span class="n">x</span><span class="p">)[</span><span class="mi">2</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="identify_utm_zone"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.graph.geo.identify_utm_zone">[docs]</a><span class="k">def</span> <span class="nf">identify_utm_zone</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">GeoDataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a GeoDataFrame, identify the Universal Transverse Mercator zone</span>
+<span class="sd">    number for the centroid of the geometries in the dataframe.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">wgs_df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">to_crs</span><span class="p">(</span><span class="s2">&quot;+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs&quot;</span><span class="p">)</span>
+    <span class="n">utm_counts</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">utm_of_point</span><span class="p">(</span><span class="n">point</span><span class="p">)</span> <span class="k">for</span> <span class="n">point</span> <span class="ow">in</span> <span class="n">wgs_df</span><span class="p">[</span><span class="s2">&quot;geometry&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">centroid</span><span class="p">)</span>
+    <span class="c1"># most_common returns a list of tuples, and we want the 0,0th entry</span>
+    <span class="n">most_common</span> <span class="o">=</span> <span class="n">utm_counts</span><span class="o">.</span><span class="n">most_common</span><span class="p">(</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">most_common</span></div>
+
+
+<span class="c1"># Explicit type hint intentionally omitted here because of import issues.</span>
+<div class="viewcode-block" id="explain_validity"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.graph.geo.explain_validity">[docs]</a><span class="k">def</span> <span class="nf">explain_validity</span><span class="p">(</span><span class="n">geo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a geometry that is shapely interpretable, explain the validity.</span>
+<span class="sd">    Light wrapper around shapely&#39;s explain_validity.</span>
+
+<span class="sd">    :param geo: Shapely geometry object</span>
+<span class="sd">    :type geo: shapely.geometry.BaseGeometry</span>
+
+<span class="sd">    :returns: Explanation for the validity of the geometry</span>
+<span class="sd">    :rtype: str</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">shapely.validation</span>
+
+    <span class="k">return</span> <span class="n">shapely</span><span class="o">.</span><span class="n">validation</span><span class="o">.</span><span class="n">explain_validity</span><span class="p">(</span><span class="n">geo</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="invalid_geometries"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.graph.geo.invalid_geometries">[docs]</a><span class="k">def</span> <span class="nf">invalid_geometries</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a GeoDataFrame, returns a list of row indices</span>
+<span class="sd">    with invalid geometries.</span>
+
+<span class="sd">    :param df: The GeoDataFrame to examine</span>
+<span class="sd">    :type df: :class:`geopandas.GeoDataFrame`</span>
+
+<span class="sd">    :returns: List of row indices with invalid geometries</span>
+<span class="sd">    :rtype: list of int</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">invalid</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+        <span class="n">validity</span> <span class="o">=</span> <span class="n">explain_validity</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">geometry</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">validity</span> <span class="o">!=</span> <span class="s2">&quot;Valid Geometry&quot;</span><span class="p">:</span>
+            <span class="n">invalid</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">invalid</span></div>
+
+
+<div class="viewcode-block" id="reprojected"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.graph.geo.reprojected">[docs]</a><span class="k">def</span> <span class="nf">reprojected</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns a copy of `df`, projected into the coordinate reference system of a suitable</span>
+<span class="sd">        `Universal Transverse Mercator`_ zone.</span>
+
+<span class="sd">    :param df: The GeoDataFrame to reproject</span>
+<span class="sd">    :type df: :class:`geopandas.GeoDataFrame`</span>
+
+<span class="sd">    :returns: A copy of `df`, projected into the coordinate reference system of a suitable</span>
+<span class="sd">        UTM zone.</span>
+<span class="sd">    :rtype: :class:`geopandas.GeoDataFrame`</span>
+
+<span class="sd">    .. _`Universal Transverse Mercator`: https://en.wikipedia.org/wiki/UTM_coordinate_system</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">utm</span> <span class="o">=</span> <span class="n">identify_utm_zone</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">df</span><span class="o">.</span><span class="n">to_crs</span><span class="p">(</span>
+        <span class="s2">&quot;+proj=utm +zone=</span><span class="si">{utm}</span><span class="s2"> +ellps=WGS84 +datum=WGS84 +units=m +no_defs&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">utm</span><span class="o">=</span><span class="n">utm</span>
+        <span class="p">)</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="GeometryError"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.graph.geo.GeometryError">[docs]</a><span class="k">class</span> <span class="nc">GeometryError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Wrapper error class for projection failures.</span>
+<span class="sd">    Changing a map&#39;s projection may create invalid geometries, which may</span>
+<span class="sd">    or may not be repairable using the `.buffer(0)`_ trick.</span>
+
+<span class="sd">    .. _`.buffer(0)`: https://shapely.readthedocs.io/en/stable/manual.html#constructive-methods</span>
+<span class="sd">    &quot;&quot;&quot;</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Metric Geometry and Gerrymandering Group.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contributing to GerryChain &mdash; GerryChain  documentation</title><link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script src="../_static/clipboard.min.js"></script>
+        <script src="../_static/copybutton.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Full Package Reference" href="../full_ref.html" />
+    <link rel="prev" title="Evaluating districting plans in the real world" href="tools.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #0099cd" >
+            <a href="../index.html" class="icon icon-home"> GerryChain
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../user/intro.html">Overview of the Chain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/quickstart.html">Getting started with GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/recom.html">Running a chain with ReCom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/partitions.html">Working with Partitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/updaters.html">Updaters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/data.html">Good Data Practices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/geometries.html">Working With Geometries</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">API Reference</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Topics</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="reproducibility.html">Reproducibility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tools.html">Evaluating districting plans in the real world</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Contributing to GerryChain</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#quick-start">Quick Start</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#contributing-guidelines">Contributing Guidelines</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#pull-request-process">Pull Request Process</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#community-guidelines">Community Guidelines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#thank-you">Thank You</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">Index</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../full_ref.html">Full Package Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #0099cd" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">GerryChain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Contributing to GerryChain</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/topics/contributing.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="contributing-to-gerrychain">
+<h1>Contributing to GerryChain<a class="headerlink" href="#contributing-to-gerrychain" title="Permalink to this headline">¶</a></h1>
+<p>Thank you for your interest in contributing to GerryChain! This document provides
+guidelines for contributing to the GerryChain project. All contributions and
+feedback are welcome and appreciated 😊.</p>
+<div class="section" id="quick-start">
+<h2>Quick Start<a class="headerlink" href="#quick-start" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic simple">
+<li><p><strong>Fork the repository</strong> on GitHub.</p></li>
+<li><p><strong>Clone your fork locally</strong>.</p></li>
+<li><p><strong>Configure the upstream repo</strong> <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">remote</span> <span class="pre">add</span> <span class="pre">upstream</span> <span class="pre">https://github.com/mggg/GerryChain.git</span></code></p></li>
+<li><p><strong>Create a new branch</strong> for your contribution <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">checkout</span> <span class="pre">-b</span> <span class="pre">my-new-feature</span></code>.</p></li>
+<li><p><strong>Make your changes</strong> and commit them <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">commit</span> <span class="pre">-am</span> <span class="pre">'Add</span> <span class="pre">some</span> <span class="pre">feature'</span></code>.</p></li>
+<li><p><strong>Run Tests and Linter</strong> with <code class="docutils literal notranslate"><span class="pre">pytest</span> <span class="pre">--runslow</span> <span class="pre">tests/</span></code> and <code class="docutils literal notranslate"><span class="pre">flake8</span> <span class="pre">gerrychain/</span></code>.</p></li>
+<li><p><strong>Pull the latest changes from upstream</strong> and rebase your branch if necessary.</p></li>
+<li><p><strong>Push your branch</strong> to GitHub <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">push</span> <span class="pre">origin</span> <span class="pre">my-new-feature</span></code>.</p></li>
+<li><p><strong>Open a Pull Request</strong> on GitHub.</p></li>
+</ol>
+</div>
+<div class="section" id="prerequisites">
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this headline">¶</a></h2>
+<p>Before you can contribute to GerryChain, you need the following installed on your machine:</p>
+<ul class="simple">
+<li><p><strong>Python (3.9 or later)</strong>: GerryChain is written in Python, so you’ll need Python installed.</p></li>
+<li><p><strong>Git</strong>: Version control is essential for contributing to open-source projects.</p></li>
+</ul>
+<p>We also recommend that for any development work, you use a python virtual environment to
+manage dependencies. For more information on setting up your environment, please see
+the <a class="reference external" href="../user/install.html">installation</a> section of the documentation. However, rather
+than using the <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">gerrychain</span></code> command, you should instead install the package
+from source by running <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-e</span> <span class="pre">.</span></code> from the root of the repository.</p>
+</div>
+<div class="section" id="contributing-guidelines">
+<h2>Contributing Guidelines<a class="headerlink" href="#contributing-guidelines" title="Permalink to this headline">¶</a></h2>
+<p><strong>Coding Standards</strong>: GerryChain follows PEP 8 guidelines for coding style, so we
+ask that any contributors do the same to ensure that the codebase is consistent. For
+more information, see the <a class="reference external" href="https://www.python.org/dev/peps/pep-0008/">PEP 8 Style Guide</a>.</p>
+<p><strong>Writing Tests</strong>: If you write a new feature, please make sure that it is
+included in a test somewhere. GerryChain uses pytest for testing and has a
+special <code class="docutils literal notranslate"><span class="pre">--runslow</span></code> flag for tests that take a long time to run. Please make
+sure to check against these slow tests as well before submitting a PR. For any
+tests that you write that run for longer than ~10 seconds, please mark them with
+the <code class="docutils literal notranslate"><span class="pre">&#64;pytest.mark.slow</span></code> decorator.</p>
+<p><strong>Documentation</strong>: For any new features that you add, please make sure to include
+a comprehensive docstring. We have a defined format for docstrings that we use
+throughout the codebase, so please make sure that any additions are consistent
+with that format.</p>
+<div class="section" id="pull-request-process">
+<h3>Pull Request Process<a class="headerlink" href="#pull-request-process" title="Permalink to this headline">¶</a></h3>
+<ol class="arabic simple">
+<li><p>Ensure your branch is up to date with the <code class="docutils literal notranslate"><span class="pre">main</span></code> branch and that the tests are passing.</p></li>
+<li><p>Open a pull request against the <code class="docutils literal notranslate"><span class="pre">main</span></code> branch of the GerryChain repository. With a detailed comment explaining the changes you made and the reasoning behind them.</p></li>
+<li><p>The project maintainers will review your changes and provide feedback.</p></li>
+</ol>
+</div>
+</div>
+<div class="section" id="community-guidelines">
+<h2>Community Guidelines<a class="headerlink" href="#community-guidelines" title="Permalink to this headline">¶</a></h2>
+<p>We follow the Python Community Code of Conduct, which, in essence, means that we
+expect community members</p>
+<ul class="simple">
+<li><p><strong>Be respectful</strong> of different viewpoints and experience levels.</p></li>
+<li><p><strong>Gracefully accept constructive criticism</strong>.</p></li>
+<li><p><strong>Focus on what is best for the community</strong>.</p></li>
+</ul>
+</div>
+<div class="section" id="thank-you">
+<h2>Thank You<a class="headerlink" href="#thank-you" title="Permalink to this headline">¶</a></h2>
+<p>Thank you for contributing to GerryChain! We appreciate all the time and
+effort that you put into making this package the best that it can be!</p>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="tools.html" class="btn btn-neutral float-left" title="Evaluating districting plans in the real world" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../full_ref.html" class="btn btn-neutral float-right" title="Full Package Reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Metric Geometry and Gerrymandering Group.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

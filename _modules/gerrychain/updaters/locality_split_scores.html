@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>gerrychain.updaters.locality_split_scores &mdash; GerryChain  documentation</title><link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+        <script src="../../../_static/clipboard.min.js"></script>
+        <script src="../../../_static/copybutton.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #0099cd" >
+            <a href="../../../index.html" class="icon icon-home"> GerryChain
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/intro.html">Overview of the Chain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/quickstart.html">Getting started with GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/recom.html">Running a chain with ReCom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/partitions.html">Working with Partitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/updaters.html">Updaters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/data.html">Good Data Practices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/geometries.html">Working With Geometries</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API Reference</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Topics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../topics/reproducibility.html">Reproducibility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../topics/tools.html">Evaluating districting plans in the real world</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../topics/contributing.html">Contributing to GerryChain</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Index</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../full_ref.html">Full Package Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #0099cd" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">GerryChain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+      <li>gerrychain.updaters.locality_split_scores</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for gerrychain.updaters.locality_split_scores</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Imports</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span><span class="p">,</span> <span class="n">Counter</span>
+<span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+
+
+<div class="viewcode-block" id="LocalitySplits"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.locality_split_scores.LocalitySplits">[docs]</a><span class="k">class</span> <span class="nc">LocalitySplits</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes various splitting measures for a partition</span>
+
+<span class="sd">    Can be used to compute how a districting plan splits</span>
+<span class="sd">    against any static attribute. The prototypical example</span>
+<span class="sd">    is to consider how a districting plan subdivides counties</span>
+<span class="sd">    or municipalities, but other units, such as city</span>
+<span class="sd">    neighborhoods, state legislative districts, or Census</span>
+<span class="sd">    tracts could be treated as &#39;localities&#39;</span>
+
+<span class="sd">    Example usage::</span>
+
+<span class="sd">        # Assuming your nodes have attributes &quot;countyID&quot;</span>
+<span class="sd">        # with (for example) the name of the county that</span>
+<span class="sd">        # node lies in and a population attribute &quot;pop&quot;:</span>
+<span class="sd">        county_splits = LocalitySplits(</span>
+<span class="sd">            &quot;countysplits&quot;,</span>
+<span class="sd">            &quot;countyID&quot;,</span>
+<span class="sd">            &quot;pop&quot;,</span>
+<span class="sd">            [&quot;num_parts&quot;, &quot;symmetric_entropy&quot;,&quot;power_entropy&quot;],</span>
+<span class="sd">            pent_alpha = 0.8</span>
+<span class="sd">        )</span>
+<span class="sd">        # Assuming you already have a graph and assignment:</span>
+<span class="sd">        partition = Partition(</span>
+<span class="sd">            graph,</span>
+<span class="sd">            assignment,</span>
+<span class="sd">            updaters={&quot;county_splits&quot; : county_splits}</span>
+<span class="sd">        )</span>
+<span class="sd">        # The updater returns an dictionary instance, which</span>
+<span class="sd">        # at each step of the chain has the name of the score</span>
+<span class="sd">        # and its value at that step</span>
+
+<span class="sd">    :ivar name: The name of the updater (e.g. &quot;countysplits&quot;)</span>
+<span class="sd">    :type name: str</span>
+<span class="sd">    :ivar col_id: The name of the column containing the locality</span>
+<span class="sd">        attribute (i.e. county ids, municipality names, etc.)</span>
+<span class="sd">    :type col_id: str</span>
+<span class="sd">    :ivar pop_col: The name of the column containing population counts.</span>
+<span class="sd">    :type pop_col: str</span>
+<span class="sd">    :ivar scores_to_compute: A list/tuple/set of strings naming the</span>
+<span class="sd">        score functions to compute at each step. This will generally be</span>
+<span class="sd">        some subcollection of ```[&#39;num_parts&#39;, &#39;num_pieces&#39;,</span>
+<span class="sd">        &#39;naked_boundary&#39;, &#39;shannon_entropy&#39;, &#39;power_entropy&#39;,</span>
+<span class="sd">        &#39;symmetric_entropy&#39;, &#39;num_split_localities&#39;]```</span>
+<span class="sd">    :type scores_to_compute: List[str]</span>
+<span class="sd">    :ivar pent_alpha: A number between 0 and 1 which is passed as the</span>
+<span class="sd">        exponent to :meth:`~LocalitySplits.power_entropy`</span>
+<span class="sd">    :type pent_alpha: float</span>
+<span class="sd">    :ivar localities: A list containing the unique locality identifiers</span>
+<span class="sd">        (e.g. county names, municipality names, etc.) for the partition.</span>
+<span class="sd">        This list is populated using the locality data stored on each of</span>
+<span class="sd">        the nodes in the graph.</span>
+<span class="sd">    :type localities: List[str]</span>
+<span class="sd">    :ivar localitydict: A dictionary mapping node IDs to locality IDs.</span>
+<span class="sd">        This is used to quickly look up the locality of a given node.</span>
+<span class="sd">    :type localitydict: Dict[str, str]</span>
+<span class="sd">    :ivar locality_splits: A dictionary mapping district IDs to a counter</span>
+<span class="sd">        of localities in that district. That is to say, this tells us</span>
+<span class="sd">        how many nodes in each district are of the given locality type.</span>
+<span class="sd">    :type locality_splits: Dict[int, Counter[str]]</span>
+<span class="sd">    :ivar locality_splits_inv: The inverted dictionary of locality_splits</span>
+<span class="sd">    :type locality_splits_inv: Dict[str, Dict[int, int]]</span>
+<span class="sd">    :ivar allowed_pieces: A dictionary that maps each locality to the</span>
+<span class="sd">        minimum number of districts that locality must touch. This is</span>
+<span class="sd">        computed using the ideal district population. NOT CURRENTLY USED.</span>
+<span class="sd">    :type allowed_pieces: Dict[str, int]</span>
+<span class="sd">    :ivar scores: A dictionary initialized with the key values from the</span>
+<span class="sd">        initializer&#39;s scores_to_compute parameter. The initial values are</span>
+<span class="sd">        set to none and are updated in each call to store the compted</span>
+<span class="sd">        score value for each metric of interest.</span>
+<span class="sd">    :type scores: Dict[str, Any]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">col_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">pop_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">scores_to_compute</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;num_parts&quot;</span><span class="p">],</span>
+        <span class="n">pent_alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param name: The name of the updater (e.g. &quot;countysplits&quot;)</span>
+<span class="sd">        :type name: str</span>
+<span class="sd">        :param col_id: The name of the column containing the locality</span>
+<span class="sd">            attribute (i.e. county ids, municipality names, etc.)</span>
+<span class="sd">        :type col_id: str</span>
+<span class="sd">        :param pop_col: The name of the column containing population counts.</span>
+<span class="sd">        :type pop_col: str</span>
+<span class="sd">        :param scores_to_compute: A list/tuple/set of strings naming the</span>
+<span class="sd">            score functions to compute at each step. This should be</span>
+<span class="sd">            some subcollection of ```[&#39;num_parts&#39;, &#39;num_pieces&#39;,</span>
+<span class="sd">            &#39;naked_boundary&#39;, &#39;shannon_entropy&#39;, &#39;power_entropy&#39;,</span>
+<span class="sd">            &#39;symmetric_entropy&#39;, &#39;num_split_localities&#39;]```.</span>
+<span class="sd">            Default is [&quot;num_parts&quot;].</span>
+<span class="sd">        :type scores_to_compute: List[str], optional</span>
+<span class="sd">        :param pent_alpha: A number between 0 and 1 which is</span>
+<span class="sd">            passed as the exponent to :meth:`~LocalitySplits.power_entropy`.</span>
+<span class="sd">            Default is 0.05.</span>
+<span class="sd">        :type pent_alpha: float, optional</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">col_id</span> <span class="o">=</span> <span class="n">col_id</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">pop_col</span> <span class="o">=</span> <span class="n">pop_col</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">pent_alpha</span> <span class="o">=</span> <span class="n">pent_alpha</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">localities</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">localitydict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">locality_splits</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">locality_splits_inv</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># A dictionary containing the number minimum number</span>
+        <span class="c1"># of districts which a locality must touch. I.e. if</span>
+        <span class="c1"># the ideal district population is 10,000 and a</span>
+        <span class="c1"># locality has 35,000 people, then that locality</span>
+        <span class="c1"># must be in at least four districts.  Not</span>
+        <span class="c1"># presently used to compute any score functions,</span>
+        <span class="c1"># but may be useful for future development or</span>
+        <span class="c1"># certain use cases.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">allowed_pieces</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">scores</span> <span class="o">=</span> <span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">scores_to_compute</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partition</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">localities</span> <span class="o">==</span> <span class="p">[]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">localitydict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">partition</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">col_id</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">localities</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">localitydict</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+
+        <span class="n">locality_splits</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">k</span><span class="p">:</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">localitydict</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">d</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">partition</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">parts</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">locality_splits</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">Counter</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">locality_splits</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">locality_splits_inv</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">locality_splits</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">k2</span><span class="p">,</span> <span class="n">v2</span> <span class="ow">in</span> <span class="n">v</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">locality_splits_inv</span><span class="p">[</span><span class="n">k2</span><span class="p">][</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v2</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">allowed_pieces</span> <span class="o">==</span> <span class="p">{}:</span>
+
+            <span class="n">allowed_pieces</span> <span class="o">=</span> <span class="p">{}</span>
+
+            <span class="n">totpop</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">partition</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
+                <span class="n">totpop</span> <span class="o">+=</span> <span class="n">partition</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">node</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">pop_col</span><span class="p">]</span>
+
+            <span class="n">num_districts</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">partition</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">parts</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+            <span class="k">for</span> <span class="n">loc</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">localities</span><span class="p">:</span>
+                <span class="n">sg</span> <span class="o">=</span> <span class="n">partition</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">subgraph</span><span class="p">(</span>
+                    <span class="n">n</span>
+                    <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">partition</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">v</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">col_id</span><span class="p">]</span> <span class="o">==</span> <span class="n">loc</span>
+                <span class="p">)</span>
+
+                <span class="n">pop</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">sg</span><span class="o">.</span><span class="n">nodes</span><span class="p">():</span>
+                    <span class="n">pop</span> <span class="o">+=</span> <span class="n">sg</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">pop_col</span><span class="p">]</span>
+
+                <span class="n">allowed_pieces</span><span class="p">[</span><span class="n">loc</span><span class="p">]</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">pop</span> <span class="o">/</span> <span class="p">(</span><span class="n">totpop</span> <span class="o">/</span> <span class="n">num_districts</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">allowed_pieces</span> <span class="o">=</span> <span class="n">allowed_pieces</span>
+
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">scores</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">s</span> <span class="o">==</span> <span class="s2">&quot;num_parts&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">scores</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_parts</span><span class="p">(</span><span class="n">partition</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">s</span> <span class="o">==</span> <span class="s2">&quot;num_pieces&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">scores</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_pieces</span><span class="p">(</span><span class="n">partition</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">s</span> <span class="o">==</span> <span class="s2">&quot;naked_boundary&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">scores</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">naked_boundary</span><span class="p">(</span><span class="n">partition</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">s</span> <span class="o">==</span> <span class="s2">&quot;shannon_entropy&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">scores</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shannon_entropy</span><span class="p">(</span><span class="n">partition</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">s</span> <span class="o">==</span> <span class="s2">&quot;power_entropy&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">scores</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">power_entropy</span><span class="p">(</span><span class="n">partition</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">s</span> <span class="o">==</span> <span class="s2">&quot;symmetric_entropy&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">scores</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">symmetric_entropy</span><span class="p">(</span><span class="n">partition</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">s</span> <span class="o">==</span> <span class="s2">&quot;num_split_localities&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">scores</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_split_localities</span><span class="p">(</span><span class="n">partition</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">scores</span>
+
+<div class="viewcode-block" id="LocalitySplits.num_parts"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.locality_split_scores.LocalitySplits.num_parts">[docs]</a>    <span class="k">def</span> <span class="nf">num_parts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partition</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculates the number of unique locality-district pairs.</span>
+
+<span class="sd">        :param partition: The partition to be scored.</span>
+<span class="sd">        :type partition: :class:`~gerrychain.Partition`</span>
+
+<span class="sd">        :returns: The number of parts, i.e. the number of unique</span>
+<span class="sd">           locality-district pairs.</span>
+<span class="sd">        :rtype: int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">counter</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">district</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">locality_splits</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">counter</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">locality_splits</span><span class="p">[</span><span class="n">district</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">counter</span></div>
+
+<div class="viewcode-block" id="LocalitySplits.num_pieces"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.locality_split_scores.LocalitySplits.num_pieces">[docs]</a>    <span class="k">def</span> <span class="nf">num_pieces</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partition</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculates the number of pieces.</span>
+
+<span class="sd">        :param partition: The partition to be scored.</span>
+<span class="sd">        :type partition: :class:`~gerrychain.Partition`</span>
+
+<span class="sd">        :returns: Number of pieces, where each piece is formed by</span>
+<span class="sd">            cutting the graph by both locality and district boundaries.</span>
+<span class="sd">        :rtype: int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">locality_intersections</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">partition</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">():</span>
+            <span class="n">locality</span> <span class="o">=</span> <span class="n">partition</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">col_id</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">locality</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">locality_intersections</span><span class="p">:</span>
+                <span class="n">locality_intersections</span><span class="p">[</span><span class="n">locality</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span>
+                    <span class="p">[</span><span class="n">partition</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">mapping</span><span class="p">[</span><span class="n">n</span><span class="p">]]</span>
+                <span class="p">)</span>
+
+            <span class="n">locality_intersections</span><span class="p">[</span><span class="n">locality</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">([</span><span class="n">partition</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">mapping</span><span class="p">[</span><span class="n">n</span><span class="p">]])</span>
+
+        <span class="n">pieces</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">locality</span> <span class="ow">in</span> <span class="n">locality_intersections</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">locality_intersections</span><span class="p">[</span><span class="n">locality</span><span class="p">]:</span>
+                <span class="n">subgraph</span> <span class="o">=</span> <span class="n">partition</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">subgraph</span><span class="p">(</span>
+                    <span class="p">[</span>
+                        <span class="n">x</span>
+                        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">partition</span><span class="o">.</span><span class="n">parts</span><span class="p">[</span><span class="n">d</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="n">partition</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">x</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">col_id</span><span class="p">]</span> <span class="o">==</span> <span class="n">locality</span>
+                    <span class="p">]</span>
+                <span class="p">)</span>
+
+                <span class="n">pieces</span> <span class="o">+=</span> <span class="n">nx</span><span class="o">.</span><span class="n">number_connected_components</span><span class="p">(</span><span class="n">subgraph</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">pieces</span></div>
+
+<div class="viewcode-block" id="LocalitySplits.naked_boundary"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.locality_split_scores.LocalitySplits.naked_boundary">[docs]</a>    <span class="k">def</span> <span class="nf">naked_boundary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partition</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computes the number of cut edges inside localities (i.e. the</span>
+<span class="sd">            number of cut edges with both endpoints in the same locality).</span>
+
+<span class="sd">        :param partition: The partition to be scored.</span>
+<span class="sd">        :type partition: :class:`~gerrychain.Partition`</span>
+
+<span class="sd">        :returns: The number of cut edges within a locality.</span>
+<span class="sd">        :rtype: int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">cut_edges_within</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">cut_edge_set</span> <span class="o">=</span> <span class="n">partition</span><span class="p">[</span><span class="s2">&quot;cut_edges&quot;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">cut_edge_set</span><span class="p">:</span>
+            <span class="n">vtd_1</span> <span class="o">=</span> <span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">vtd_2</span> <span class="o">=</span> <span class="n">i</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">county_1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">localitydict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">vtd_1</span><span class="p">)</span>
+            <span class="n">county_2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">localitydict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">vtd_2</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">county_1</span> <span class="o">==</span> <span class="n">county_2</span><span class="p">:</span>  <span class="c1"># not on county boundary</span>
+                <span class="n">cut_edges_within</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">cut_edges_within</span></div>
+
+<div class="viewcode-block" id="LocalitySplits.shannon_entropy"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.locality_split_scores.LocalitySplits.shannon_entropy">[docs]</a>    <span class="k">def</span> <span class="nf">shannon_entropy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partition</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computes the shannon entropy score of a district plan.</span>
+
+<span class="sd">        :param partition: The partition to be scored.</span>
+<span class="sd">        :type partition: :class:`~gerrychain.Partition`</span>
+
+<span class="sd">        :returns: Shannon entropy score.</span>
+<span class="sd">        :rtype: float</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">total_vtds</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">locality_splits</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
+                <span class="n">total_vtds</span> <span class="o">+=</span> <span class="n">x</span>
+
+        <span class="n">entropy</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">locality_j</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">localities</span><span class="p">:</span>  <span class="c1"># iter thru locs to get total count</span>
+            <span class="n">tot_county_vtds</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="c1"># iter thru counters</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">locality_splits</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">v</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">locality_j</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+                    <span class="n">tot_county_vtds</span> <span class="o">+=</span> <span class="n">v</span><span class="p">[</span><span class="n">locality_j</span><span class="p">]</span>
+
+            <span class="n">inner_sum</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">q</span> <span class="o">=</span> <span class="n">tot_county_vtds</span> <span class="o">/</span> <span class="n">total_vtds</span>
+
+            <span class="c1"># iter thru districts to get vtds in county in district</span>
+            <span class="c1"># for district in range(num_districts):</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">locality_splits</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="c1"># counter = dict(locality_splits[district+1])</span>
+                <span class="n">count</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">locality_j</span> <span class="ow">in</span> <span class="n">count</span><span class="p">:</span>
+                    <span class="n">intersection</span> <span class="o">=</span> <span class="n">count</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">locality_j</span><span class="p">)]</span>
+                    <span class="n">p</span> <span class="o">=</span> <span class="n">intersection</span> <span class="o">/</span> <span class="n">tot_county_vtds</span>
+
+                    <span class="k">if</span> <span class="n">p</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">inner_sum</span> <span class="o">+=</span> <span class="n">p</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">p</span><span class="p">)</span>
+
+            <span class="n">entropy</span> <span class="o">+=</span> <span class="n">q</span> <span class="o">*</span> <span class="p">(</span><span class="n">inner_sum</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">entropy</span></div>
+
+<div class="viewcode-block" id="LocalitySplits.power_entropy"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.locality_split_scores.LocalitySplits.power_entropy">[docs]</a>    <span class="k">def</span> <span class="nf">power_entropy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partition</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computes the power entropy score of a district plan.</span>
+
+<span class="sd">        :param partition: The partition to be scored.</span>
+<span class="sd">        :type partition: :class:`~gerrychain.Partition`</span>
+
+<span class="sd">        :returns: Power entropy score.</span>
+<span class="sd">        :rtype: float</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">total_vtds</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># count the total number of vtds in state</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">locality_splits</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
+                <span class="n">total_vtds</span> <span class="o">+=</span> <span class="n">x</span>
+
+        <span class="n">entropy</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">locality_j</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">localities</span><span class="p">:</span>  <span class="c1"># iter thru locs to get total count</span>
+            <span class="n">tot_county_vtds</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="c1"># iter thru counters</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">locality_splits</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">v</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">locality_j</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+                    <span class="n">tot_county_vtds</span> <span class="o">+=</span> <span class="n">v</span><span class="p">[</span><span class="n">locality_j</span><span class="p">]</span>
+
+            <span class="n">inner_sum</span> <span class="o">=</span> <span class="mi">0</span>
+
+            <span class="n">q</span> <span class="o">=</span> <span class="n">tot_county_vtds</span> <span class="o">/</span> <span class="n">total_vtds</span>
+            <span class="c1"># iter thru districts to get vtds in county in district</span>
+            <span class="c1"># for district in range(num_districts):</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">locality_splits</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="c1"># counter = dict(locality_splits[district+1])</span>
+                <span class="n">count</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">locality_j</span> <span class="ow">in</span> <span class="n">count</span><span class="p">:</span>
+                    <span class="n">intersection</span> <span class="o">=</span> <span class="n">count</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">locality_j</span><span class="p">)]</span>
+                    <span class="n">p</span> <span class="o">=</span> <span class="n">intersection</span> <span class="o">/</span> <span class="n">tot_county_vtds</span>
+
+                    <span class="k">if</span> <span class="n">p</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">inner_sum</span> <span class="o">+=</span> <span class="n">p</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">pent_alpha</span><span class="p">)</span>
+
+            <span class="n">entropy</span> <span class="o">+=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">q</span> <span class="o">*</span> <span class="p">(</span><span class="n">inner_sum</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">entropy</span></div>
+
+<div class="viewcode-block" id="LocalitySplits.symmetric_entropy"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.locality_split_scores.LocalitySplits.symmetric_entropy">[docs]</a>    <span class="k">def</span> <span class="nf">symmetric_entropy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partition</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>  <span class="c1"># IN PROGRESS</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculates the symmetric entropy score.</span>
+
+<span class="sd">        Warning::</span>
+
+<span class="sd">            This function is previously marked incomplete.</span>
+
+<span class="sd">        :param partition: The partition to be scored.</span>
+<span class="sd">        :type partition: :class:`~gerrychain.Partition`</span>
+
+<span class="sd">        :returns: The symmetric square root entropy score.</span>
+<span class="sd">        :rtype: float</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">district_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">partition</span><span class="o">.</span><span class="n">parts</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">district</span> <span class="ow">in</span> <span class="n">district_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">vtds</span> <span class="o">=</span> <span class="n">district_dict</span><span class="p">[</span><span class="n">district</span><span class="p">]</span>
+            <span class="n">locality_pop</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">localities</span><span class="p">}</span>
+            <span class="k">for</span> <span class="n">vtd</span> <span class="ow">in</span> <span class="n">vtds</span><span class="p">:</span>
+                <span class="n">locality_pop</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">localitydict</span><span class="p">[</span><span class="n">vtd</span><span class="p">]]</span> <span class="o">+=</span> <span class="n">partition</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">vtd</span><span class="p">][</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">pop_col</span>
+                <span class="p">]</span>
+            <span class="n">district_dict</span><span class="p">[</span><span class="n">district</span><span class="p">]</span> <span class="o">=</span> <span class="n">locality_pop</span>
+
+        <span class="n">district_dict_inv</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">district_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">k2</span><span class="p">,</span> <span class="n">v2</span> <span class="ow">in</span> <span class="n">v</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">district_dict_inv</span><span class="p">[</span><span class="n">k2</span><span class="p">][</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v2</span>
+
+        <span class="c1"># how do districts split localities?</span>
+        <span class="n">score</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">district</span> <span class="ow">in</span> <span class="n">district_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">localities_and_pops</span> <span class="o">=</span> <span class="n">district_dict</span><span class="p">[</span><span class="n">district</span><span class="p">]</span>
+            <span class="n">total</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">localities_and_pops</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+            <span class="n">fractional_sum</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">locality</span> <span class="ow">in</span> <span class="n">localities_and_pops</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">fractional_sum</span> <span class="o">+=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">localities_and_pops</span><span class="p">[</span><span class="n">locality</span><span class="p">]</span> <span class="o">/</span> <span class="n">total</span><span class="p">)</span>
+            <span class="n">score</span> <span class="o">+=</span> <span class="n">total</span> <span class="o">*</span> <span class="n">fractional_sum</span>
+
+        <span class="c1"># how do localities split districts?</span>
+        <span class="k">for</span> <span class="n">locality</span> <span class="ow">in</span> <span class="n">district_dict_inv</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">districts_and_pops</span> <span class="o">=</span> <span class="n">district_dict_inv</span><span class="p">[</span><span class="n">locality</span><span class="p">]</span>
+            <span class="n">total</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">districts_and_pops</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+            <span class="n">fractional_sum</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">district</span> <span class="ow">in</span> <span class="n">districts_and_pops</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">fractional_sum</span> <span class="o">+=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">districts_and_pops</span><span class="p">[</span><span class="n">district</span><span class="p">]</span> <span class="o">/</span> <span class="n">total</span><span class="p">)</span>
+            <span class="n">score</span> <span class="o">+=</span> <span class="n">total</span> <span class="o">*</span> <span class="n">fractional_sum</span>
+
+        <span class="k">return</span> <span class="n">score</span></div>
+
+<div class="viewcode-block" id="LocalitySplits.num_split_localities"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.locality_split_scores.LocalitySplits.num_split_localities">[docs]</a>    <span class="k">def</span> <span class="nf">num_split_localities</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partition</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculates the number of localities touching 2 or more districts.</span>
+
+<span class="sd">        :param partition: The partition to be scored.</span>
+<span class="sd">        :type partition: :class:`~gerrychain.Partition`</span>
+
+<span class="sd">        :returns: The number of split localities, i.e. the number of localities</span>
+<span class="sd">            touching 2 or more districts.</span>
+<span class="sd">        :rtype: int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">total_splits</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">locality_splits_inv</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">total_splits</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">return</span> <span class="n">total_splits</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Metric Geometry and Gerrymandering Group.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

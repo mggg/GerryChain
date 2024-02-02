@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>gerrychain.tree &mdash; GerryChain  documentation</title><link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/custom.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
@@ -13,6 +15,9 @@
         <script src="../../_static/underscore.js"></script>
         <script src="../../_static/doctools.js"></script>
         <script src="../../_static/language_data.js"></script>
+        <script src="../../_static/clipboard.min.js"></script>
+        <script src="../../_static/copybutton.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
@@ -41,7 +46,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../../user/recom.html">Running a chain with ReCom</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../user/partitions.html">Working with Partitions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../user/updaters.html">Updaters</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../user/adjacency.html">Handling Adjacencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../user/data.html">Good Data Practices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../user/geometries.html">Working With Geometries</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -51,8 +57,11 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../topics/reproducibility.html">Reproducibility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../topics/tools.html">Evaluating districting plans in the real world</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../topics/realworldplans.html">Using <code class="docutils literal notranslate"><span class="pre">maup</span></code> to import a real-life plan in GerryChain</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../topics/whatislands.html">What to do about islands and connectivity</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../topics/contributing.html">Contributing to GerryChain</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Index</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../full_ref.html">Full Package Reference</a></li>
 </ul>
 
         </div>
@@ -80,36 +89,92 @@
            <div itemprop="articleBody">
              
   <h1>Source code for gerrychain.tree</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module provides tools and algorithms for manipulating and analyzing graphs,</span>
+<span class="sd">particularly focused on partitioning graphs based on population data. It leverages the</span>
+<span class="sd">NetworkX library to handle graph structures and implements various algorithms for graph</span>
+<span class="sd">partitioning and tree traversal.</span>
+
+<span class="sd">Key functionalities include:</span>
+
+<span class="sd">- Predecessor and successor functions for graph traversal using breadth-first search.</span>
+<span class="sd">- Implementation of random and uniform spanning trees for graph partitioning.</span>
+<span class="sd">- The `PopulatedGraph` class, which represents a graph with additional population data,</span>
+<span class="sd">  and methods for assessing and modifying this data.</span>
+<span class="sd">- Functions for finding balanced edge cuts in a populated graph, either through</span>
+<span class="sd">  contraction or memoization techniques.</span>
+<span class="sd">- A suite of functions (`bipartition_tree`, `recursive_tree_part`, `get_seed_chunks`, etc.)</span>
+<span class="sd">  for partitioning graphs into balanced subsets based on population targets and tolerances.</span>
+<span class="sd">- Utility functions like `get_max_prime_factor_less_than` and `recursive_seed_part_inner`</span>
+<span class="sd">  to assist in complex partitioning tasks.</span>
+
+<span class="sd">Dependencies:</span>
+
+<span class="sd">- networkx: Used for graph data structure and algorithms.</span>
+<span class="sd">- random: Provides random number generation for probabilistic approaches.</span>
+<span class="sd">- typing: Used for type hints.</span>
+
+<span class="sd">Last Updated: 30 Jan 2024</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
 <span class="kn">from</span> <span class="nn">networkx.algorithms</span> <span class="kn">import</span> <span class="n">tree</span>
 
 <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
-<span class="kn">from</span> <span class="nn">.random</span> <span class="kn">import</span> <span class="n">random</span>
+<span class="kn">from</span> <span class="nn">inspect</span> <span class="kn">import</span> <span class="n">signature</span>
+<span class="kn">import</span> <span class="nn">random</span>
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">deque</span><span class="p">,</span> <span class="n">namedtuple</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Any</span><span class="p">,</span>
+    <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">Dict</span><span class="p">,</span>
+    <span class="n">List</span><span class="p">,</span>
+    <span class="n">Optional</span><span class="p">,</span>
+    <span class="n">Set</span><span class="p">,</span>
+    <span class="n">Union</span><span class="p">,</span>
+    <span class="n">Hashable</span><span class="p">,</span>
+    <span class="n">Sequence</span><span class="p">,</span>
+    <span class="n">Tuple</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
 
 
-<span class="k">def</span> <span class="nf">predecessors</span><span class="p">(</span><span class="n">h</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
-    <span class="k">return</span> <span class="p">{</span><span class="n">a</span><span class="p">:</span> <span class="n">b</span> <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">nx</span><span class="o">.</span><span class="n">bfs_predecessors</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">root</span><span class="p">)}</span>
+<div class="viewcode-block" id="predecessors"><a class="viewcode-back" href="../../full_ref.html#gerrychain.tree.predecessors">[docs]</a><span class="k">def</span> <span class="nf">predecessors</span><span class="p">(</span><span class="n">h</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">a</span><span class="p">:</span> <span class="n">b</span> <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">nx</span><span class="o">.</span><span class="n">bfs_predecessors</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">root</span><span class="p">)}</span></div>
 
 
-<span class="k">def</span> <span class="nf">successors</span><span class="p">(</span><span class="n">h</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
-    <span class="k">return</span> <span class="p">{</span><span class="n">a</span><span class="p">:</span> <span class="n">b</span> <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">nx</span><span class="o">.</span><span class="n">bfs_successors</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">root</span><span class="p">)}</span>
+<div class="viewcode-block" id="successors"><a class="viewcode-back" href="../../full_ref.html#gerrychain.tree.successors">[docs]</a><span class="k">def</span> <span class="nf">successors</span><span class="p">(</span><span class="n">h</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">a</span><span class="p">:</span> <span class="n">b</span> <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">nx</span><span class="o">.</span><span class="n">bfs_successors</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">root</span><span class="p">)}</span></div>
 
 
-<div class="viewcode-block" id="random_spanning_tree"><a class="viewcode-back" href="../../api.html#gerrychain.tree.random_spanning_tree">[docs]</a><span class="k">def</span> <span class="nf">random_spanning_tree</span><span class="p">(</span><span class="n">graph</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot; Builds a spanning tree chosen by Kruskal&#39;s method using random weights.</span>
-<span class="sd">        :param graph: FrozenGraph</span>
+<div class="viewcode-block" id="random_spanning_tree"><a class="viewcode-back" href="../../full_ref.html#gerrychain.tree.random_spanning_tree">[docs]</a><span class="k">def</span> <span class="nf">random_spanning_tree</span><span class="p">(</span>
+    <span class="n">graph</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">,</span> <span class="n">weight_dict</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Builds a spanning tree chosen by Kruskal&#39;s method using random weights.</span>
 
-<span class="sd">        Important Note:</span>
-<span class="sd">        The key is specifically labelled &quot;random_weight&quot; instead of the previously</span>
-<span class="sd">        used &quot;weight&quot;. Turns out that networkx uses the &quot;weight&quot; keyword for other</span>
-<span class="sd">        operations, like when computing the laplacian or the adjacency matrix.</span>
-<span class="sd">        This meant that the laplacian would change for the graph step to step,</span>
-<span class="sd">        something that we do not intend!!</span>
+<span class="sd">    :param graph: The input graph to build the spanning tree from. Should be a Networkx Graph.</span>
+<span class="sd">    :type graph: nx.Graph</span>
+<span class="sd">    :param weight_dict: Dictionary of weights to add to the random weights used in region-aware</span>
+<span class="sd">        variants.</span>
+<span class="sd">    :type weight_dict: Optional[Dict], optional</span>
+
+<span class="sd">    :returns: The maximal spanning tree represented as a Networkx Graph.</span>
+<span class="sd">    :rtype: nx.Graph</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">edge_indices</span><span class="p">:</span>
-        <span class="n">graph</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">edge</span><span class="p">][</span><span class="s2">&quot;random_weight&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">weight_dict</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">weight_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">edges</span><span class="p">():</span>
+        <span class="n">weight</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">weight_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">]][</span><span class="n">key</span><span class="p">]</span> <span class="o">==</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">]][</span><span class="n">key</span><span class="p">]</span>
+                <span class="ow">and</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">]][</span><span class="n">key</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="p">):</span>
+                <span class="n">weight</span> <span class="o">+=</span> <span class="n">value</span>
+
+        <span class="n">graph</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">edge</span><span class="p">][</span><span class="s2">&quot;random_weight&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">weight</span>
 
     <span class="n">spanning_tree</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">maximum_spanning_tree</span><span class="p">(</span>
         <span class="n">graph</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s2">&quot;kruskal&quot;</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="s2">&quot;random_weight&quot;</span>
@@ -117,11 +182,20 @@
     <span class="k">return</span> <span class="n">spanning_tree</span></div>
 
 
-<div class="viewcode-block" id="uniform_spanning_tree"><a class="viewcode-back" href="../../api.html#gerrychain.tree.uniform_spanning_tree">[docs]</a><span class="k">def</span> <span class="nf">uniform_spanning_tree</span><span class="p">(</span><span class="n">graph</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">,</span> <span class="n">choice</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot; Builds a spanning tree chosen uniformly from the space of all</span>
-<span class="sd">        spanning trees of the graph.</span>
-<span class="sd">        :param graph: Networkx Graph</span>
-<span class="sd">        :param choice: :func:`random.choice`</span>
+<div class="viewcode-block" id="uniform_spanning_tree"><a class="viewcode-back" href="../../full_ref.html#gerrychain.tree.uniform_spanning_tree">[docs]</a><span class="k">def</span> <span class="nf">uniform_spanning_tree</span><span class="p">(</span>
+    <span class="n">graph</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">,</span> <span class="n">choice</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Builds a spanning tree chosen uniformly from the space of all</span>
+<span class="sd">    spanning trees of the graph. Uses Wilson&#39;s algorithm.</span>
+
+<span class="sd">    :param graph: Networkx Graph</span>
+<span class="sd">    :type graph: nx.Graph</span>
+<span class="sd">    :param choice: :func:`random.choice`. Defaults to :func:`random.choice`.</span>
+<span class="sd">    :type choice: Callable, optional</span>
+
+<span class="sd">    :returns: A spanning tree of the graph chosen uniformly at random.</span>
+<span class="sd">    :rtype: nx.Graph</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">root</span> <span class="o">=</span> <span class="n">choice</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">node_indices</span><span class="p">))</span>
     <span class="n">tree_nodes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">root</span><span class="p">])</span>
@@ -146,14 +220,43 @@
     <span class="k">return</span> <span class="n">G</span></div>
 
 
-<span class="k">class</span> <span class="nc">PopulatedGraph</span><span class="p">:</span>
+<div class="viewcode-block" id="PopulatedGraph"><a class="viewcode-back" href="../../full_ref.html#gerrychain.tree.PopulatedGraph">[docs]</a><span class="k">class</span> <span class="nc">PopulatedGraph</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A class representing a graph with population information.</span>
+
+<span class="sd">    :ivar graph: The underlying graph structure.</span>
+<span class="sd">    :type graph: nx.Graph</span>
+<span class="sd">    :ivar subsets: A dictionary mapping nodes to their subsets.</span>
+<span class="sd">    :type subsets: Dict</span>
+<span class="sd">    :ivar population: A dictionary mapping nodes to their populations.</span>
+<span class="sd">    :type population: Dict</span>
+<span class="sd">    :ivar tot_pop: The total population of the graph.</span>
+<span class="sd">    :type tot_pop: Union[int, float]</span>
+<span class="sd">    :ivar ideal_pop: The ideal population for each district.</span>
+<span class="sd">    :type ideal_pop: float</span>
+<span class="sd">    :ivar epsilon: The tolerance for population deviation from the ideal population within each</span>
+<span class="sd">        district.</span>
+<span class="sd">    :type epsilon: float</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">graph</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">,</span>
         <span class="n">populations</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span>
-        <span class="n">ideal_pop</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-        <span class="n">epsilon</span><span class="p">:</span> <span class="nb">float</span>
+        <span class="n">ideal_pop</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+        <span class="n">epsilon</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param graph: The underlying graph structure.</span>
+<span class="sd">        :type graph: nx.Graph</span>
+<span class="sd">        :param populations: A dictionary mapping nodes to their populations.</span>
+<span class="sd">        :type populations: Dict</span>
+<span class="sd">        :param ideal_pop: The ideal population for each district.</span>
+<span class="sd">        :type ideal_pop: Union[float, int]</span>
+<span class="sd">        :param epsilon: The tolerance for population deviation as a percentage of</span>
+<span class="sd">            the ideal population within each district.</span>
+<span class="sd">        :type epsilon: float</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">graph</span> <span class="o">=</span> <span class="n">graph</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">subsets</span> <span class="o">=</span> <span class="p">{</span><span class="n">node</span><span class="p">:</span> <span class="p">{</span><span class="n">node</span><span class="p">}</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">population</span> <span class="o">=</span> <span class="n">populations</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
@@ -165,26 +268,54 @@
     <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">degree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_degrees</span><span class="p">[</span><span class="n">node</span><span class="p">]</span>
+<div class="viewcode-block" id="PopulatedGraph.degree"><a class="viewcode-back" href="../../full_ref.html#gerrychain.tree.PopulatedGraph.degree">[docs]</a>    <span class="k">def</span> <span class="nf">degree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_degrees</span><span class="p">[</span><span class="n">node</span><span class="p">]</span></div>
 
-    <span class="k">def</span> <span class="nf">contract_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">parent</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="PopulatedGraph.contract_node"><a class="viewcode-back" href="../../full_ref.html#gerrychain.tree.PopulatedGraph.contract_node">[docs]</a>    <span class="k">def</span> <span class="nf">contract_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">parent</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="p">[</span><span class="n">parent</span><span class="p">]</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="p">[</span><span class="n">node</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">subsets</span><span class="p">[</span><span class="n">parent</span><span class="p">]</span> <span class="o">|=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subsets</span><span class="p">[</span><span class="n">node</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_degrees</span><span class="p">[</span><span class="n">parent</span><span class="p">]</span> <span class="o">-=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_degrees</span><span class="p">[</span><span class="n">parent</span><span class="p">]</span> <span class="o">-=</span> <span class="mi">1</span></div>
 
-    <span class="k">def</span> <span class="nf">has_ideal_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<div class="viewcode-block" id="PopulatedGraph.has_ideal_population"><a class="viewcode-back" href="../../full_ref.html#gerrychain.tree.PopulatedGraph.has_ideal_population">[docs]</a>    <span class="k">def</span> <span class="nf">has_ideal_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">(</span>
             <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">ideal_pop</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ideal_pop</span>
+        <span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">graph_info</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Graph(nodes={len(self.graph.nodes)}, edges={len(self.graph.edges)})&quot;</span>
         <span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{self.__class__.__name__}</span><span class="s2">(&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;graph=</span><span class="si">{graph_info}</span><span class="s2">, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;total_population=</span><span class="si">{self.tot_pop}</span><span class="s2">, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;ideal_population=</span><span class="si">{self.ideal_pop}</span><span class="s2">, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;epsilon=</span><span class="si">{self.epsilon}</span><span class="s2">)&quot;</span>
+        <span class="p">)</span></div>
 
 
+<span class="c1"># Tuple that is used in the find_balanced_edge_cuts function</span>
 <span class="n">Cut</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;Cut&quot;</span><span class="p">,</span> <span class="s2">&quot;edge subset&quot;</span><span class="p">)</span>
+<span class="n">Cut</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="s2">&quot;Represents a cut in a graph.&quot;</span>
+<span class="n">Cut</span><span class="o">.</span><span class="n">edge</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="s2">&quot;The edge where the cut is made.&quot;</span>
+<span class="n">Cut</span><span class="o">.</span><span class="n">subset</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="s2">&quot;The subset of nodes on one side of the cut.&quot;</span>
 
 
-<span class="k">def</span> <span class="nf">find_balanced_edge_cuts_contraction</span><span class="p">(</span>
-        <span class="n">h</span><span class="p">:</span> <span class="n">PopulatedGraph</span><span class="p">,</span> <span class="n">choice</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Cut</span><span class="p">]:</span>
-    <span class="c1"># this used to be greater than 2 but failed on small grids:(</span>
+<div class="viewcode-block" id="find_balanced_edge_cuts_contraction"><a class="viewcode-back" href="../../full_ref.html#gerrychain.tree.find_balanced_edge_cuts_contraction">[docs]</a><span class="k">def</span> <span class="nf">find_balanced_edge_cuts_contraction</span><span class="p">(</span>
+    <span class="n">h</span><span class="p">:</span> <span class="n">PopulatedGraph</span><span class="p">,</span> <span class="n">choice</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Cut</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Find balanced edge cuts using contraction.</span>
+
+<span class="sd">    :param h: The populated graph.</span>
+<span class="sd">    :type h: PopulatedGraph</span>
+<span class="sd">    :param choice: The function used to make random choices.</span>
+<span class="sd">    :type choice: Callable, optional</span>
+
+<span class="sd">    :returns: A list of balanced edge cuts.</span>
+<span class="sd">    :rtype: List[Cut]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="n">root</span> <span class="o">=</span> <span class="n">choice</span><span class="p">([</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">h</span> <span class="k">if</span> <span class="n">h</span><span class="o">.</span><span class="n">degree</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">])</span>
     <span class="c1"># BFS predecessors for iteratively contracting leaves</span>
     <span class="n">pred</span> <span class="o">=</span> <span class="n">predecessors</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">graph</span><span class="p">,</span> <span class="n">root</span><span class="p">)</span>
@@ -200,13 +331,29 @@
         <span class="n">h</span><span class="o">.</span><span class="n">contract_node</span><span class="p">(</span><span class="n">leaf</span><span class="p">,</span> <span class="n">parent</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">h</span><span class="o">.</span><span class="n">degree</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">parent</span> <span class="o">!=</span> <span class="n">root</span><span class="p">:</span>
             <span class="n">leaves</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">cuts</span>
+    <span class="k">return</span> <span class="n">cuts</span></div>
 
 
-<span class="k">def</span> <span class="nf">find_balanced_edge_cuts_memoization</span><span class="p">(</span>
-    <span class="n">h</span><span class="p">:</span> <span class="n">PopulatedGraph</span><span class="p">,</span>
-    <span class="n">choice</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
+<div class="viewcode-block" id="find_balanced_edge_cuts_memoization"><a class="viewcode-back" href="../../full_ref.html#gerrychain.tree.find_balanced_edge_cuts_memoization">[docs]</a><span class="k">def</span> <span class="nf">find_balanced_edge_cuts_memoization</span><span class="p">(</span>
+    <span class="n">h</span><span class="p">:</span> <span class="n">PopulatedGraph</span><span class="p">,</span> <span class="n">choice</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Cut</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Find balanced edge cuts using memoization.</span>
+
+<span class="sd">    This function takes a PopulatedGraph object and a choice function as input and returns a list</span>
+<span class="sd">    of balanced edge cuts. A balanced edge cut is defined as a cut that divides the graph into</span>
+<span class="sd">    two subsets, such that the population of each subset is close to the ideal population</span>
+<span class="sd">    defined by the PopulatedGraph object.</span>
+
+<span class="sd">    :param h: The PopulatedGraph object representing the graph.</span>
+<span class="sd">    :type h: PopulatedGraph</span>
+<span class="sd">    :param choice: The choice function used to select the root node.</span>
+<span class="sd">    :type choice: Callable, optional</span>
+
+<span class="sd">    :returns: A list of balanced edge cuts.</span>
+<span class="sd">    :rtype: List[Cut]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="n">root</span> <span class="o">=</span> <span class="n">choice</span><span class="p">([</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">h</span> <span class="k">if</span> <span class="n">h</span><span class="o">.</span><span class="n">degree</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">])</span>
     <span class="n">pred</span> <span class="o">=</span> <span class="n">predecessors</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">graph</span><span class="p">,</span> <span class="n">root</span><span class="p">)</span>
     <span class="n">succ</span> <span class="o">=</span> <span class="n">successors</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">graph</span><span class="p">,</span> <span class="n">root</span><span class="p">)</span>
@@ -248,12 +395,35 @@
         <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">tree_pop</span> <span class="o">-</span> <span class="n">h</span><span class="o">.</span><span class="n">ideal_pop</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">h</span><span class="o">.</span><span class="n">ideal_pop</span> <span class="o">*</span> <span class="n">h</span><span class="o">.</span><span class="n">epsilon</span><span class="p">:</span>
             <span class="n">cuts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Cut</span><span class="p">(</span><span class="n">edge</span><span class="o">=</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">pred</span><span class="p">[</span><span class="n">node</span><span class="p">]),</span> <span class="n">subset</span><span class="o">=</span><span class="n">part_nodes</span><span class="p">(</span><span class="n">node</span><span class="p">)))</span>
         <span class="k">elif</span> <span class="nb">abs</span><span class="p">((</span><span class="n">total_pop</span> <span class="o">-</span> <span class="n">tree_pop</span><span class="p">)</span> <span class="o">-</span> <span class="n">h</span><span class="o">.</span><span class="n">ideal_pop</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">h</span><span class="o">.</span><span class="n">ideal_pop</span> <span class="o">*</span> <span class="n">h</span><span class="o">.</span><span class="n">epsilon</span><span class="p">:</span>
-            <span class="n">cuts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Cut</span><span class="p">(</span><span class="n">edge</span><span class="o">=</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">pred</span><span class="p">[</span><span class="n">node</span><span class="p">]),</span>
-                            <span class="n">subset</span><span class="o">=</span><span class="nb">set</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span> <span class="o">-</span> <span class="n">part_nodes</span><span class="p">(</span><span class="n">node</span><span class="p">)))</span>
-    <span class="k">return</span> <span class="n">cuts</span>
+            <span class="n">cuts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">Cut</span><span class="p">(</span>
+                    <span class="n">edge</span><span class="o">=</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">pred</span><span class="p">[</span><span class="n">node</span><span class="p">]),</span>
+                    <span class="n">subset</span><span class="o">=</span><span class="nb">set</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span> <span class="o">-</span> <span class="n">part_nodes</span><span class="p">(</span><span class="n">node</span><span class="p">),</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+    <span class="k">return</span> <span class="n">cuts</span></div>
 
 
-<div class="viewcode-block" id="bipartition_tree"><a class="viewcode-back" href="../../api.html#gerrychain.tree.bipartition_tree">[docs]</a><span class="k">def</span> <span class="nf">bipartition_tree</span><span class="p">(</span>
+<div class="viewcode-block" id="BipartitionWarning"><a class="viewcode-back" href="../../full_ref.html#gerrychain.tree.BipartitionWarning">[docs]</a><span class="k">class</span> <span class="nc">BipartitionWarning</span><span class="p">(</span><span class="ne">UserWarning</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generally raised when it is proving difficult to find a balanced cut.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="ReselectException"><a class="viewcode-back" href="../../full_ref.html#gerrychain.tree.ReselectException">[docs]</a><span class="k">class</span> <span class="nc">ReselectException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Raised when the tree-splitting algorithm is unable to find a</span>
+<span class="sd">    balanced cut after some maximum number of attempts, but the</span>
+<span class="sd">    user has allowed the algorithm to reselect the pair of</span>
+<span class="sd">    districts from parent graph to try and recombine.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="bipartition_tree"><a class="viewcode-back" href="../../full_ref.html#gerrychain.tree.bipartition_tree">[docs]</a><span class="k">def</span> <span class="nf">bipartition_tree</span><span class="p">(</span>
     <span class="n">graph</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">,</span>
     <span class="n">pop_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">pop_target</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
@@ -261,11 +431,14 @@
     <span class="n">node_repeats</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
     <span class="n">spanning_tree</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">spanning_tree_fn</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">random_spanning_tree</span><span class="p">,</span>
+    <span class="n">weight_dict</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">balance_edge_fn</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">find_balanced_edge_cuts_memoization</span><span class="p">,</span>
     <span class="n">choice</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">,</span>
-    <span class="n">max_attempts</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">max_attempts</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">100000</span><span class="p">,</span>
+    <span class="n">allow_pair_reselection</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Set</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;This function finds a balanced 2 partition of a graph by drawing a</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function finds a balanced 2 partition of a graph by drawing a</span>
 <span class="sd">    spanning tree and finding an edge to cut that leaves at most an epsilon</span>
 <span class="sd">    imbalance between the populations of the parts. If a root fails, new roots</span>
 <span class="sd">    are tried until node_repeats in which case a new tree is drawn.</span>
@@ -273,23 +446,52 @@
 <span class="sd">    Builds up a connected subgraph with a connected complement whose population</span>
 <span class="sd">    is ``epsilon * pop_target`` away from ``pop_target``.</span>
 
-<span class="sd">    Returns a subset of nodes of ``graph`` (whose induced subgraph is connected).</span>
-<span class="sd">    The other part of the partition is the complement of this subset.</span>
-
-<span class="sd">    :param graph: The graph to partition</span>
-<span class="sd">    :param pop_col: The node attribute holding the population of each node</span>
-<span class="sd">    :param pop_target: The target population for the returned subset of nodes</span>
-<span class="sd">    :param epsilon: The allowable deviation from  ``pop_target`` (as a percentage of</span>
-<span class="sd">        ``pop_target``) for the subgraph&#39;s population</span>
+<span class="sd">    :param graph: The graph to partition.</span>
+<span class="sd">    :type graph: nx.Graph</span>
+<span class="sd">    :param pop_col: The node attribute holding the population of each node.</span>
+<span class="sd">    :type pop_col: str</span>
+<span class="sd">    :param pop_target: The target population for the returned subset of nodes.</span>
+<span class="sd">    :type pop_target: Union[int, float]</span>
+<span class="sd">    :param epsilon: The allowable deviation from ``pop_target`` (as a percentage of</span>
+<span class="sd">        ``pop_target``) for the subgraph&#39;s population.</span>
+<span class="sd">    :type epsilon: float</span>
 <span class="sd">    :param node_repeats: A parameter for the algorithm: how many different choices</span>
-<span class="sd">        of root to use before drawing a new spanning tree.</span>
+<span class="sd">        of root to use before drawing a new spanning tree. Defaults to 1.</span>
+<span class="sd">    :type node_repeats: int, optional</span>
 <span class="sd">    :param spanning_tree: The spanning tree for the algorithm to use (used when the</span>
-<span class="sd">        algorithm chooses a new root and for testing)</span>
+<span class="sd">        algorithm chooses a new root and for testing).</span>
+<span class="sd">    :type spanning_tree: Optional[nx.Graph], optional</span>
 <span class="sd">    :param spanning_tree_fn: The random spanning tree algorithm to use if a spanning</span>
-<span class="sd">        tree is not provided</span>
-<span class="sd">    :param choice: :func:`random.choice`. Can be substituted for testing.</span>
-<span class="sd">    :param max_atempts: The max number of attempts that should be made to bipartition.</span>
+<span class="sd">        tree is not provided. Defaults to :func:`random_spanning_tree`.</span>
+<span class="sd">    :type spanning_tree_fn: Callable, optional</span>
+<span class="sd">    :param weight_dict: A dictionary of weights for the spanning tree algorithm.</span>
+<span class="sd">        Defaults to None.</span>
+<span class="sd">    :type weight_dict: Optional[Dict], optional</span>
+<span class="sd">    :param balance_edge_fn: The function to find balanced edge cuts. Defaults to</span>
+<span class="sd">        :func:`find_balanced_edge_cuts_memoization`.</span>
+<span class="sd">    :type balance_edge_fn: Callable, optional</span>
+<span class="sd">    :param choice: The function to make a random choice. Can be substituted for testing.</span>
+<span class="sd">        Defaults to :func:`random.choice`.</span>
+<span class="sd">    :type choice: Callable, optional</span>
+<span class="sd">    :param max_attempts: The maximum number of attempts that should be made to bipartition.</span>
+<span class="sd">        Defaults to 10000.</span>
+<span class="sd">    :type max_attempts: Optional[int], optional</span>
+<span class="sd">    :param allow_pair_reselection: Whether we would like to return an error to the calling</span>
+<span class="sd">        function to ask it to reselect the pair of nodes to try and recombine. Defaults to False.</span>
+<span class="sd">    :type allow_pair_reselection: bool, optional</span>
+
+<span class="sd">    :returns: A subset of nodes of ``graph`` (whose induced subgraph is connected). The other</span>
+<span class="sd">        part of the partition is the complement of this subset.</span>
+<span class="sd">    :rtype: Set</span>
+
+<span class="sd">    :raises BipartitionWarning: If a possible cut cannot be found after 50 attempts.</span>
+<span class="sd">    :raises RuntimeError: If a possible cut cannot be found after the maximum number of attempts</span>
+<span class="sd">        given by ``max_attempts``.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Try to add the region-aware in if the spanning_tree_fn accepts a weight dictionary</span>
+    <span class="k">if</span> <span class="s2">&quot;weight_dict&quot;</span> <span class="ow">in</span> <span class="n">signature</span><span class="p">(</span><span class="n">spanning_tree_fn</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">:</span>
+        <span class="n">spanning_tree_fn</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">spanning_tree_fn</span><span class="p">,</span> <span class="n">weight_dict</span><span class="o">=</span><span class="n">weight_dict</span><span class="p">)</span>
+
     <span class="n">populations</span> <span class="o">=</span> <span class="p">{</span><span class="n">node</span><span class="p">:</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">node</span><span class="p">][</span><span class="n">pop_col</span><span class="p">]</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">node_indices</span><span class="p">}</span>
 
     <span class="n">possible_cuts</span> <span class="o">=</span> <span class="p">[]</span>
@@ -311,6 +513,22 @@
         <span class="n">restarts</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="n">attempts</span> <span class="o">+=</span> <span class="mi">1</span>
 
+        <span class="c1"># Don&#39;t forget to change the documentation if you change this number</span>
+        <span class="k">if</span> <span class="n">attempts</span> <span class="o">==</span> <span class="mi">50</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">allow_pair_reselection</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Failed to find a balanced cut after 50 attempts.</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;If possible, consider enabling pair reselection within your</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;MarkovChain proposal method to allow the algorithm to select</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;a different pair of districts to try and recombine.&quot;</span><span class="p">,</span>
+                <span class="n">BipartitionWarning</span><span class="p">,</span>
+            <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">allow_pair_reselection</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">ReselectException</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Failed to find a balanced cut after </span><span class="si">{max_attempts}</span><span class="s2"> attempts.</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Selecting a new district pair.&quot;</span>
+        <span class="p">)</span>
+
     <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not find a possible cut after </span><span class="si">{max_attempts}</span><span class="s2"> attempts.&quot;</span><span class="p">)</span></div>
 
 
@@ -325,9 +543,47 @@
     <span class="n">spanning_tree_fn</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">random_spanning_tree</span><span class="p">,</span>
     <span class="n">balance_edge_fn</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">find_balanced_edge_cuts_memoization</span><span class="p">,</span>
     <span class="n">choice</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">,</span>
-    <span class="n">max_attempts</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Randomly bipartitions a graph and returns all cuts.&quot;&quot;&quot;</span>
+    <span class="n">max_attempts</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">100000</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="n">Hashable</span><span class="p">]]:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Randomly bipartitions a tree into two subgraphs until a valid bipartition is found.</span>
+
+<span class="sd">    :param graph: The input graph.</span>
+<span class="sd">    :type graph: nx.Graph</span>
+<span class="sd">    :param pop_col: The name of the column in the graph nodes that contains the population data.</span>
+<span class="sd">    :type pop_col: str</span>
+<span class="sd">    :param pop_target: The target population for each subgraph.</span>
+<span class="sd">    :type pop_target: Union[int, float]</span>
+<span class="sd">    :param epsilon: The allowed deviation from the target population as a percentage of</span>
+<span class="sd">        pop_target.</span>
+<span class="sd">    :type epsilon: float</span>
+<span class="sd">    :param node_repeats: The number of times to repeat the bipartitioning process. Defaults to 1.</span>
+<span class="sd">    :type node_repeats: int, optional</span>
+<span class="sd">    :param repeat_until_valid: Whether to repeat the bipartitioning process until a valid</span>
+<span class="sd">        bipartition is found. Defaults to True.</span>
+<span class="sd">    :type repeat_until_valid: bool, optional</span>
+<span class="sd">    :param spanning_tree: The spanning tree to use for bipartitioning. If None, a random spanning</span>
+<span class="sd">        tree will be generated. Defaults to None.</span>
+<span class="sd">    :type spanning_tree: Optional[nx.Graph], optional</span>
+<span class="sd">    :param spanning_tree_fn: The function to generate a spanning tree. Defaults to</span>
+<span class="sd">        random_spanning_tree.</span>
+<span class="sd">    :type spanning_tree_fn: Callable, optional</span>
+<span class="sd">    :param balance_edge_fn: The function to find balanced edge cuts. Defaults to</span>
+<span class="sd">        find_balanced_edge_cuts_memoization.</span>
+<span class="sd">    :type balance_edge_fn: Callable, optional</span>
+<span class="sd">    :param choice: The function to choose a random element from a list. Defaults to random.choice.</span>
+<span class="sd">    :type choice: Callable, optional</span>
+<span class="sd">    :param max_attempts: The maximum number of attempts to find a valid bipartition. If None,</span>
+<span class="sd">        there is no limit. Defaults to None.</span>
+<span class="sd">    :type max_attempts: Optional[int], optional</span>
+
+<span class="sd">    :returns: A list of possible cuts that bipartition the tree into two subgraphs.</span>
+<span class="sd">    :rtype: List[Tuple[Hashable, Hashable]]</span>
+
+<span class="sd">    :raises RuntimeError: If a valid bipartition cannot be found after the specified number of</span>
+<span class="sd">        attempts.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="n">populations</span> <span class="o">=</span> <span class="p">{</span><span class="n">node</span><span class="p">:</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">node</span><span class="p">][</span><span class="n">pop_col</span><span class="p">]</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">node_indices</span><span class="p">}</span>
 
     <span class="n">possible_cuts</span> <span class="o">=</span> <span class="p">[]</span>
@@ -355,7 +611,7 @@
     <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not find a possible cut after </span><span class="si">{max_attempts}</span><span class="s2"> attempts.&quot;</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="bipartition_tree_random"><a class="viewcode-back" href="../../api.html#gerrychain.tree.bipartition_tree_random">[docs]</a><span class="k">def</span> <span class="nf">bipartition_tree_random</span><span class="p">(</span>
+<div class="viewcode-block" id="bipartition_tree_random"><a class="viewcode-back" href="../../full_ref.html#gerrychain.tree.bipartition_tree_random">[docs]</a><span class="k">def</span> <span class="nf">bipartition_tree_random</span><span class="p">(</span>
     <span class="n">graph</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">,</span>
     <span class="n">pop_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">pop_target</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
@@ -366,9 +622,10 @@
     <span class="n">spanning_tree_fn</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">random_spanning_tree</span><span class="p">,</span>
     <span class="n">balance_edge_fn</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">find_balanced_edge_cuts_memoization</span><span class="p">,</span>
     <span class="n">choice</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">,</span>
-    <span class="n">max_attempts</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;This is like :func:`bipartition_tree` except it chooses a random balanced</span>
+    <span class="n">max_attempts</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">100000</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Set</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="kc">None</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This is like :func:`bipartition_tree` except it chooses a random balanced</span>
 <span class="sd">    cut, rather than the first cut it finds.</span>
 
 <span class="sd">    This function finds a balanced 2 partition of a graph by drawing a</span>
@@ -379,27 +636,42 @@
 <span class="sd">    Builds up a connected subgraph with a connected complement whose population</span>
 <span class="sd">    is ``epsilon * pop_target`` away from ``pop_target``.</span>
 
-<span class="sd">    Returns a subset of nodes of ``graph`` (whose induced subgraph is connected).</span>
-<span class="sd">    The other part of the partition is the complement of this subset.</span>
-
 <span class="sd">    :param graph: The graph to partition</span>
+<span class="sd">    :type graph: nx.Graph</span>
 <span class="sd">    :param pop_col: The node attribute holding the population of each node</span>
+<span class="sd">    :type pop_col: str</span>
 <span class="sd">    :param pop_target: The target population for the returned subset of nodes</span>
+<span class="sd">    :type pop_target: Union[int, float]</span>
 <span class="sd">    :param epsilon: The allowable deviation from  ``pop_target`` (as a percentage of</span>
 <span class="sd">        ``pop_target``) for the subgraph&#39;s population</span>
+<span class="sd">    :type epsilon: float</span>
 <span class="sd">    :param node_repeats: A parameter for the algorithm: how many different choices</span>
-<span class="sd">        of root to use before drawing a new spanning tree.</span>
+<span class="sd">        of root to use before drawing a new spanning tree. Defaults to 1.</span>
+<span class="sd">    :type node_repeats: int</span>
 <span class="sd">    :param repeat_until_valid: Determines whether to keep drawing spanning trees</span>
 <span class="sd">        until a tree with a balanced cut is found. If `True`, a set of nodes will</span>
 <span class="sd">        always be returned; if `False`, `None` will be returned if a valid spanning</span>
-<span class="sd">        tree is not found on the first try.</span>
+<span class="sd">        tree is not found on the first try. Defaults to True.</span>
+<span class="sd">    :type repeat_until_valid: bool, optional</span>
 <span class="sd">    :param spanning_tree: The spanning tree for the algorithm to use (used when the</span>
-<span class="sd">        algorithm chooses a new root and for testing)</span>
+<span class="sd">        algorithm chooses a new root and for testing). Defaults to None.</span>
+<span class="sd">    :type spanning_tree: Optional[nx.Graph], optional</span>
 <span class="sd">    :param spanning_tree_fn: The random spanning tree algorithm to use if a spanning</span>
-<span class="sd">        tree is not provided</span>
-<span class="sd">    :param balance_edge_fn: The algorithm used to find balanced cut edges</span>
-<span class="sd">    :param choice: :func:`random.choice`. Can be substituted for testing.</span>
-<span class="sd">    :param max_atempts: The max number of attempts that should be made to bipartition.</span>
+<span class="sd">        tree is not provided. Defaults to :func:`random_spanning_tree`.</span>
+<span class="sd">    :type spanning_tree_fn: Callable, optional</span>
+<span class="sd">    :param balance_edge_fn: The algorithm used to find balanced cut edges. Defaults to</span>
+<span class="sd">        :func:`find_balanced_edge_cuts_memoization`.</span>
+<span class="sd">    :type balance_edge_fn: Callable, optional</span>
+<span class="sd">    :param choice: The random choice function. Can be substituted for testing. Defaults</span>
+<span class="sd">        to :func:`random.choice`.</span>
+<span class="sd">    :type choice: Callable, optional</span>
+<span class="sd">    :param max_attempts: The max number of attempts that should be made to bipartition.</span>
+<span class="sd">        Defaults to None.</span>
+<span class="sd">    :type max_attempts: Optional[int], optional</span>
+
+<span class="sd">    :returns: A subset of nodes of ``graph`` (whose induced subgraph is connected) or None if a</span>
+<span class="sd">        valid spanning tree is not found.</span>
+<span class="sd">    :rtype: Union[Set[Any], None]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">possible_cuts</span> <span class="o">=</span> <span class="n">_bipartition_tree_random_all</span><span class="p">(</span>
         <span class="n">graph</span><span class="o">=</span><span class="n">graph</span><span class="p">,</span>
@@ -412,34 +684,45 @@
         <span class="n">spanning_tree_fn</span><span class="o">=</span><span class="n">spanning_tree_fn</span><span class="p">,</span>
         <span class="n">balance_edge_fn</span><span class="o">=</span><span class="n">balance_edge_fn</span><span class="p">,</span>
         <span class="n">choice</span><span class="o">=</span><span class="n">choice</span><span class="p">,</span>
-        <span class="n">max_attempts</span><span class="o">=</span><span class="n">max_attempts</span>
+        <span class="n">max_attempts</span><span class="o">=</span><span class="n">max_attempts</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="k">if</span> <span class="n">possible_cuts</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">choice</span><span class="p">(</span><span class="n">possible_cuts</span><span class="p">)</span><span class="o">.</span><span class="n">subset</span></div>
 
 
-<div class="viewcode-block" id="recursive_tree_part"><a class="viewcode-back" href="../../api.html#gerrychain.tree.recursive_tree_part">[docs]</a><span class="k">def</span> <span class="nf">recursive_tree_part</span><span class="p">(</span>
+<div class="viewcode-block" id="recursive_tree_part"><a class="viewcode-back" href="../../full_ref.html#gerrychain.tree.recursive_tree_part">[docs]</a><span class="k">def</span> <span class="nf">recursive_tree_part</span><span class="p">(</span>
     <span class="n">graph</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">,</span>
     <span class="n">parts</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">,</span>
     <span class="n">pop_target</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
     <span class="n">pop_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">epsilon</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">node_repeats</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
-    <span class="n">method</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">bipartition_tree</span><span class="p">,</span> <span class="n">max_attempts</span><span class="o">=</span><span class="mi">10000</span><span class="p">)</span>
+    <span class="n">method</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">bipartition_tree</span><span class="p">,</span> <span class="n">max_attempts</span><span class="o">=</span><span class="mi">10000</span><span class="p">),</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Uses :func:`~gerrychain.tree.bipartition_tree` recursively to partition a tree into</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Uses :func:`~gerrychain.tree.bipartition_tree` recursively to partition a tree into</span>
 <span class="sd">    ``len(parts)`` parts of population ``pop_target`` (within ``epsilon``). Can be used to</span>
 <span class="sd">    generate initial seed plans or to implement ReCom-like &quot;merge walk&quot; proposals.</span>
 
 <span class="sd">    :param graph: The graph</span>
-<span class="sd">    :param parts: Iterable of part labels (like ``[0,1,2]`` or ``range(4)``</span>
+<span class="sd">    :type graph: nx.Graph</span>
+<span class="sd">    :param parts: Iterable of part labels (like ``[0,1,2]`` or ``range(4)``)</span>
+<span class="sd">    :type parts: Sequence</span>
 <span class="sd">    :param pop_target: Target population for each part of the partition</span>
+<span class="sd">    :type pop_target: Union[float, int]</span>
 <span class="sd">    :param pop_col: Node attribute key holding population data</span>
+<span class="sd">    :type pop_col: str</span>
 <span class="sd">    :param epsilon: How far (as a percentage of ``pop_target``) from ``pop_target`` the parts</span>
 <span class="sd">        of the partition can be</span>
+<span class="sd">    :type epsilon: float</span>
 <span class="sd">    :param node_repeats: Parameter for :func:`~gerrychain.tree_methods.bipartition_tree` to use.</span>
-<span class="sd">    :param method: The partition method to use.</span>
-<span class="sd">    :return: New assignments for the nodes of ``graph``.</span>
+<span class="sd">        Defaluts to 1.</span>
+<span class="sd">    :type node_repeats: int, optional</span>
+<span class="sd">    :param method: The partition method to use. Defaults to</span>
+<span class="sd">        `partial(bipartition_tree, max_attempts=10000)`.</span>
+<span class="sd">    :type method: Callable, optional</span>
+
+<span class="sd">    :returns: New assignments for the nodes of ``graph``.</span>
 <span class="sd">    :rtype: dict</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">flips</span> <span class="o">=</span> <span class="p">{}</span>
@@ -457,13 +740,17 @@
         <span class="n">min_pop</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">pop_target</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">epsilon</span><span class="p">),</span> <span class="n">pop_target</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">epsilon</span><span class="p">)</span> <span class="o">-</span> <span class="n">debt</span><span class="p">)</span>
         <span class="n">max_pop</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">pop_target</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">epsilon</span><span class="p">),</span> <span class="n">pop_target</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">epsilon</span><span class="p">)</span> <span class="o">-</span> <span class="n">debt</span><span class="p">)</span>
         <span class="n">new_pop_target</span> <span class="o">=</span> <span class="p">(</span><span class="n">min_pop</span> <span class="o">+</span> <span class="n">max_pop</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
-        <span class="n">nodes</span> <span class="o">=</span> <span class="n">method</span><span class="p">(</span>
-            <span class="n">graph</span><span class="o">.</span><span class="n">subgraph</span><span class="p">(</span><span class="n">remaining_nodes</span><span class="p">),</span>
-            <span class="n">pop_col</span><span class="o">=</span><span class="n">pop_col</span><span class="p">,</span>
-            <span class="n">pop_target</span><span class="o">=</span><span class="n">new_pop_target</span><span class="p">,</span>
-            <span class="n">epsilon</span><span class="o">=</span><span class="p">(</span><span class="n">max_pop</span> <span class="o">-</span> <span class="n">min_pop</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">new_pop_target</span><span class="p">),</span>
-            <span class="n">node_repeats</span><span class="o">=</span><span class="n">node_repeats</span><span class="p">,</span>
-        <span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">nodes</span> <span class="o">=</span> <span class="n">method</span><span class="p">(</span>
+                <span class="n">graph</span><span class="o">.</span><span class="n">subgraph</span><span class="p">(</span><span class="n">remaining_nodes</span><span class="p">),</span>
+                <span class="n">pop_col</span><span class="o">=</span><span class="n">pop_col</span><span class="p">,</span>
+                <span class="n">pop_target</span><span class="o">=</span><span class="n">new_pop_target</span><span class="p">,</span>
+                <span class="n">epsilon</span><span class="o">=</span><span class="p">(</span><span class="n">max_pop</span> <span class="o">-</span> <span class="n">min_pop</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">new_pop_target</span><span class="p">),</span>
+                <span class="n">node_repeats</span><span class="o">=</span><span class="n">node_repeats</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">raise</span>
 
         <span class="k">if</span> <span class="n">nodes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">BalanceError</span><span class="p">()</span>
@@ -483,7 +770,7 @@
     <span class="k">return</span> <span class="n">flips</span></div>
 
 
-<div class="viewcode-block" id="get_seed_chunks"><a class="viewcode-back" href="../../api.html#gerrychain.tree.get_seed_chunks">[docs]</a><span class="k">def</span> <span class="nf">get_seed_chunks</span><span class="p">(</span>
+<div class="viewcode-block" id="get_seed_chunks"><a class="viewcode-back" href="../../full_ref.html#gerrychain.tree.get_seed_chunks">[docs]</a><span class="k">def</span> <span class="nf">get_seed_chunks</span><span class="p">(</span>
     <span class="n">graph</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">,</span>
     <span class="n">num_chunks</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">num_dists</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -498,14 +785,27 @@
 <span class="sd">    balanced within new_epsilon &lt;= ``epsilon`` of a balanced target population.</span>
 
 <span class="sd">    :param graph: The graph</span>
-<span class="sd">    :param parts: Iterable of part labels (like ``[0,1,2]`` or ``range(4)``</span>
-<span class="sd">    :param pop_target: target population of the districts (not of the chunks)</span>
+<span class="sd">    :type graph: nx.Graph</span>
+<span class="sd">    :param num_chunks: The number of chunks to partition the graph into</span>
+<span class="sd">    :type num_chunks: int</span>
+<span class="sd">    :param num_dists: The number of districts</span>
+<span class="sd">    :type num_dists: int</span>
+<span class="sd">    :param pop_target: The target population of the districts (not of the chunks)</span>
+<span class="sd">    :type pop_target: Union[int, float]</span>
 <span class="sd">    :param pop_col: Node attribute key holding population data</span>
+<span class="sd">    :type pop_col: str</span>
 <span class="sd">    :param epsilon: How far (as a percentage of ``pop_target``) from ``pop_target`` the parts</span>
 <span class="sd">        of the partition can be</span>
-<span class="sd">    :param node_repeats: Parameter for :func:`~gerrychain.tree_methods.bipartition_tree` to use.</span>
-<span class="sd">    :return: New assignments for the nodes of ``graph``.</span>
-<span class="sd">    :rtype: dict</span>
+<span class="sd">    :type epsilon: float</span>
+<span class="sd">    :param node_repeats: Parameter for :func:`~gerrychain.tree_methods.bipartition_tree_random`</span>
+<span class="sd">        to use. Defaults to 1.</span>
+<span class="sd">    :type node_repeats: int, optional</span>
+<span class="sd">    :param method: The method to use for bipartitioning the graph.</span>
+<span class="sd">        Defaults to :func:`~gerrychain.tree_methods.bipartition_tree_random`</span>
+<span class="sd">    :type method: Callable, optional</span>
+
+<span class="sd">    :returns: New assignments for the nodes of ``graph``.</span>
+<span class="sd">    :rtype: List[List[int]]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">num_chunks_left</span> <span class="o">=</span> <span class="n">num_dists</span> <span class="o">//</span> <span class="n">num_chunks</span>
     <span class="n">parts</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_chunks</span><span class="p">)</span>
@@ -579,33 +879,43 @@
     <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">chunks</span><span class="o">.</span><span class="n">values</span><span class="p">())</span></div>
 
 
-<div class="viewcode-block" id="get_max_prime_factor_less_than"><a class="viewcode-back" href="../../api.html#gerrychain.tree.get_max_prime_factor_less_than">[docs]</a><span class="k">def</span> <span class="nf">get_max_prime_factor_less_than</span><span class="p">(</span>
-    <span class="n">n</span><span class="p">,</span> <span class="n">ceil</span>
-<span class="p">):</span>
+<div class="viewcode-block" id="get_max_prime_factor_less_than"><a class="viewcode-back" href="../../full_ref.html#gerrychain.tree.get_max_prime_factor_less_than">[docs]</a><span class="k">def</span> <span class="nf">get_max_prime_factor_less_than</span><span class="p">(</span><span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">ceil</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Helper function for recursive_seed_part. Returns the largest prime factor of ``n`` less than</span>
-<span class="sd">    ``ceil``, or None if all are greater than ceil.</span>
+<span class="sd">    Helper function for recursive_seed_part_inner. Returns the largest prime factor of ``n``</span>
+<span class="sd">        less than ``ceil``, or None if all are greater than ceil.</span>
+
+<span class="sd">    :param n: The number to find the largest prime factor for.</span>
+<span class="sd">    :type n: int</span>
+<span class="sd">    :param ceil: The upper limit for the largest prime factor.</span>
+<span class="sd">    :type ceil: int</span>
+
+<span class="sd">    :returns: The largest prime factor of ``n`` less than ``ceil``, or None if all are greater</span>
+<span class="sd">        than ceil.</span>
+<span class="sd">    :rtype: Optional[int]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">factors</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">i</span> <span class="o">=</span> <span class="mi">2</span>
-    <span class="k">while</span> <span class="n">i</span> <span class="o">*</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="n">n</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">n</span> <span class="o">%</span> <span class="n">i</span><span class="p">:</span>
-            <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">n</span> <span class="o">//=</span> <span class="n">i</span>
-            <span class="n">factors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="n">factors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">factors</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">return</span> <span class="mi">1</span>
-    <span class="n">m</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">factors</span> <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="n">ceil</span><span class="p">]</span>
-    <span class="k">if</span> <span class="n">m</span> <span class="o">==</span> <span class="p">[]:</span>
+    <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;=</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">ceil</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">None</span>
-    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">m</span><span class="p">))</span></div>
+
+    <span class="n">largest_factor</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">while</span> <span class="n">n</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">largest_factor</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">n</span> <span class="o">//=</span> <span class="mi">2</span>
+
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="k">while</span> <span class="n">i</span> <span class="o">*</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="n">n</span><span class="p">:</span>
+        <span class="k">while</span> <span class="n">n</span> <span class="o">%</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="n">ceil</span><span class="p">:</span>
+                <span class="n">largest_factor</span> <span class="o">=</span> <span class="n">i</span>
+            <span class="n">n</span> <span class="o">//=</span> <span class="n">i</span>
+        <span class="n">i</span> <span class="o">+=</span> <span class="mi">2</span>
+
+    <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">n</span> <span class="o">&lt;=</span> <span class="n">ceil</span><span class="p">:</span>
+        <span class="n">largest_factor</span> <span class="o">=</span> <span class="n">n</span>
+
+    <span class="k">return</span> <span class="n">largest_factor</span></div>
 
 
-<div class="viewcode-block" id="recursive_seed_part_inner"><a class="viewcode-back" href="../../api.html#gerrychain.tree.recursive_seed_part_inner">[docs]</a><span class="k">def</span> <span class="nf">recursive_seed_part_inner</span><span class="p">(</span>
+<div class="viewcode-block" id="recursive_seed_part_inner"><a class="viewcode-back" href="../../full_ref.html#gerrychain.tree.recursive_seed_part_inner">[docs]</a><span class="k">def</span> <span class="nf">recursive_seed_part_inner</span><span class="p">(</span>
     <span class="n">graph</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">,</span>
     <span class="n">num_dists</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">pop_target</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
@@ -614,7 +924,7 @@
     <span class="n">method</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">bipartition_tree</span><span class="p">,</span> <span class="n">max_attempts</span><span class="o">=</span><span class="mi">10000</span><span class="p">),</span>
     <span class="n">node_repeats</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
     <span class="n">n</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">ceil</span><span class="p">:</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">ceil</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Set</span><span class="p">]:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Inner function for recursive_seed_part.</span>
@@ -623,35 +933,50 @@
 <span class="sd">    Splits graph into num_chunks chunks, and then recursively splits each chunk into</span>
 <span class="sd">    ``num_dists``/num_chunks chunks.</span>
 <span class="sd">    The number num_chunks of chunks is chosen based on ``n`` and ``ceil`` as follows:</span>
-<span class="sd">        If ``n`` is None, and ``ceil`` is None, num_chunks is the largest prime factor</span>
-<span class="sd">        of ``num_dists``.</span>
-<span class="sd">        If ``n`` is None and ``ceil`` is an integer at least 2, then num_chunks is the</span>
-<span class="sd">        largest prime factor of ``num_dists`` that is less than ``ceil``</span>
-<span class="sd">        If ``n`` is a positive integer, num_chunks equals n.</span>
+
+<span class="sd">    - If ``n`` is None, and ``ceil`` is None, num_chunks is the largest prime factor</span>
+<span class="sd">      of ``num_dists``.</span>
+<span class="sd">    - If ``n`` is None and ``ceil`` is an integer at least 2, then num_chunks is the</span>
+<span class="sd">      largest prime factor of ``num_dists`` that is less than ``ceil``</span>
+<span class="sd">    - If ``n`` is a positive integer, num_chunks equals n.</span>
+
 <span class="sd">    Finally, if the number of chunks as chosen above does not divide ``num_dists``, then</span>
 <span class="sd">    this function bites off a single district from the graph and recursively partitions</span>
-<span class="sd">    the remaining graph into ``num_dists``-1 districts.</span>
+<span class="sd">    the remaining graph into ``num_dists - 1`` districts.</span>
 
-<span class="sd">    :param graph: The graph</span>
+<span class="sd">    :param graph: The underlying graph structure.</span>
+<span class="sd">    :type graph: nx.Graph</span>
 <span class="sd">    :param num_dists: number of districts to partition the graph into</span>
+<span class="sd">    :type num_dists: int</span>
 <span class="sd">    :param pop_target: Target population for each part of the partition</span>
+<span class="sd">    :type pop_target: Union[float, int]</span>
 <span class="sd">    :param pop_col: Node attribute key holding population data</span>
+<span class="sd">    :type pop_col: str</span>
 <span class="sd">    :param epsilon: How far (as a percentage of ``pop_target``) from ``pop_target`` the parts</span>
 <span class="sd">        of the partition can be</span>
-<span class="sd">    :param method: Function used to find balanced partitions at the 2-district level</span>
+<span class="sd">    :type epsilon: float</span>
+<span class="sd">    :param method: Function used to find balanced partitions at the 2-district level.</span>
+<span class="sd">        Defaults to :func:`~gerrychain.tree_methods.bipartition_tree`</span>
+<span class="sd">    :type method: Callable, optional</span>
 <span class="sd">    :param node_repeats: Parameter for :func:`~gerrychain.tree_methods.bipartition_tree` to use.</span>
+<span class="sd">        Defaults to 1.</span>
+<span class="sd">    :type node_repeats: int, optional</span>
 <span class="sd">    :param n: Either a positive integer (greater than 1) or None. If n is a positive integer,</span>
 <span class="sd">        this function will recursively create a seed plan by either biting off districts from</span>
 <span class="sd">        graph or dividing graph into n chunks and recursing into each of these. If n is None,</span>
 <span class="sd">        this function prime factors ``num_dists``=n_1*n_2*...*n_k (n_1 &gt; n_2 &gt; ... n_k) and</span>
-<span class="sd">        recursively partitions graph into n_1 chunks.</span>
+<span class="sd">        recursively partitions graph into n_1 chunks. Defaults to None.</span>
+<span class="sd">    :type n: Optional[int], optional</span>
 <span class="sd">    :param ceil: Either a positive integer (at least 2) or None. Relevant only if n is None.</span>
 <span class="sd">        If ``ceil`` is a positive integer then finds the largest factor of ``num_dists`` less</span>
 <span class="sd">        than or equal to ``ceil``, and recursively splits graph into that number of chunks, or</span>
-<span class="sd">        bites off a district if that number is 1.</span>
-<span class="sd">    :return: New assignments for the nodes of ``graph``.</span>
+<span class="sd">        bites off a district if that number is 1. Defaults to None.</span>
+<span class="sd">    :type ceil: Optional[int], optional</span>
+
+<span class="sd">    :returns: New assignments for the nodes of ``graph``.</span>
 <span class="sd">    :rtype: List of lists, each list is a district</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="c1"># Chooses num_chunks</span>
     <span class="k">if</span> <span class="n">n</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">ceil</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -677,28 +1002,24 @@
             <span class="n">pop_col</span><span class="o">=</span><span class="n">pop_col</span><span class="p">,</span>
             <span class="n">pop_target</span><span class="o">=</span><span class="n">pop_target</span><span class="p">,</span>
             <span class="n">epsilon</span><span class="o">=</span><span class="n">epsilon</span><span class="p">,</span>
-            <span class="n">node_repeats</span><span class="o">=</span><span class="n">node_repeats</span>
+            <span class="n">node_repeats</span><span class="o">=</span><span class="n">node_repeats</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">remaining_nodes</span> <span class="o">-=</span> <span class="n">nodes</span>
-        <span class="n">assignment</span> <span class="o">=</span> <span class="p">[</span><span class="n">nodes</span><span class="p">]</span> <span class="o">+</span> <span class="n">recursive_seed_part_inner</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">subgraph</span><span class="p">(</span><span class="n">remaining_nodes</span><span class="p">),</span>
+        <span class="n">assignment</span> <span class="o">=</span> <span class="p">[</span><span class="n">nodes</span><span class="p">]</span> <span class="o">+</span> <span class="n">recursive_seed_part_inner</span><span class="p">(</span>
+            <span class="n">graph</span><span class="o">.</span><span class="n">subgraph</span><span class="p">(</span><span class="n">remaining_nodes</span><span class="p">),</span>
             <span class="n">num_dists</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
             <span class="n">pop_target</span><span class="p">,</span>
             <span class="n">pop_col</span><span class="p">,</span>
             <span class="n">epsilon</span><span class="p">,</span>
             <span class="n">method</span><span class="p">,</span>
             <span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">,</span>
-            <span class="n">ceil</span><span class="o">=</span><span class="n">ceil</span><span class="p">)</span>
+            <span class="n">ceil</span><span class="o">=</span><span class="n">ceil</span><span class="p">,</span>
+        <span class="p">)</span>
 
     <span class="c1"># split graph into num_chunks chunks, and recurse into each chunk</span>
     <span class="k">elif</span> <span class="n">num_dists</span> <span class="o">%</span> <span class="n">num_chunks</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="n">chunks</span> <span class="o">=</span> <span class="n">get_seed_chunks</span><span class="p">(</span>
-            <span class="n">graph</span><span class="p">,</span>
-            <span class="n">num_chunks</span><span class="p">,</span>
-            <span class="n">num_dists</span><span class="p">,</span>
-            <span class="n">pop_target</span><span class="p">,</span>
-            <span class="n">pop_col</span><span class="p">,</span>
-            <span class="n">epsilon</span><span class="p">,</span>
-            <span class="n">method</span><span class="o">=</span><span class="n">method</span>
+            <span class="n">graph</span><span class="p">,</span> <span class="n">num_chunks</span><span class="p">,</span> <span class="n">num_dists</span><span class="p">,</span> <span class="n">pop_target</span><span class="p">,</span> <span class="n">pop_col</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="n">method</span>
         <span class="p">)</span>
 
         <span class="n">assignment</span> <span class="o">=</span> <span class="p">[]</span>
@@ -711,14 +1032,14 @@
                 <span class="n">epsilon</span><span class="p">,</span>
                 <span class="n">method</span><span class="p">,</span>
                 <span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">,</span>
-                <span class="n">ceil</span><span class="o">=</span><span class="n">ceil</span>
+                <span class="n">ceil</span><span class="o">=</span><span class="n">ceil</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="n">assignment</span> <span class="o">+=</span> <span class="n">chunk_assignment</span>
 
     <span class="k">return</span> <span class="n">assignment</span></div>
 
 
-<div class="viewcode-block" id="recursive_seed_part"><a class="viewcode-back" href="../../api.html#gerrychain.tree.recursive_seed_part">[docs]</a><span class="k">def</span> <span class="nf">recursive_seed_part</span><span class="p">(</span>
+<div class="viewcode-block" id="recursive_seed_part"><a class="viewcode-back" href="../../full_ref.html#gerrychain.tree.recursive_seed_part">[docs]</a><span class="k">def</span> <span class="nf">recursive_seed_part</span><span class="p">(</span>
     <span class="n">graph</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">,</span>
     <span class="n">parts</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">,</span>
     <span class="n">pop_target</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
@@ -727,30 +1048,42 @@
     <span class="n">method</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">bipartition_tree</span><span class="p">,</span> <span class="n">max_attempts</span><span class="o">=</span><span class="mi">10000</span><span class="p">),</span>
     <span class="n">node_repeats</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
     <span class="n">n</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">ceil</span><span class="p">:</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">ceil</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Returns a partition with ``num_dists`` districts balanced within ``epsilon`` of</span>
 <span class="sd">    ``pop_target`` by recursively splitting graph using recursive_seed_part_inner.</span>
 
 <span class="sd">    :param graph: The graph</span>
+<span class="sd">    :type graph: nx.Graph</span>
 <span class="sd">    :param parts: Iterable of part labels (like ``[0,1,2]`` or ``range(4)``</span>
+<span class="sd">    :type parts: Sequence</span>
 <span class="sd">    :param pop_target: Target population for each part of the partition</span>
+<span class="sd">    :type pop_target: Union[float, int]</span>
 <span class="sd">    :param pop_col: Node attribute key holding population data</span>
+<span class="sd">    :type pop_col: str</span>
 <span class="sd">    :param epsilon: How far (as a percentage of ``pop_target``) from ``pop_target`` the parts</span>
 <span class="sd">        of the partition can be</span>
+<span class="sd">    :type epsilon: float</span>
 <span class="sd">    :param method: Function used to find balanced partitions at the 2-district level</span>
+<span class="sd">        Defaults to :func:`~gerrychain.tree_methods.bipartition_tree`</span>
+<span class="sd">    :type method: Callable, optional</span>
 <span class="sd">    :param node_repeats: Parameter for :func:`~gerrychain.tree_methods.bipartition_tree` to use.</span>
+<span class="sd">        Defaults to 1.</span>
+<span class="sd">    :type node_repeats: int, optional</span>
 <span class="sd">    :param n: Either a positive integer (greater than 1) or None. If n is a positive integer,</span>
-<span class="sd">    this function will recursively create a seed plan by either biting off districts from graph</span>
-<span class="sd">    or dividing graph into n chunks and recursing into each of these. If n is None, this</span>
-<span class="sd">    function prime factors ``num_dists``=n_1*n_2*...*n_k (n_1 &gt; n_2 &gt; ... n_k) and recursively</span>
-<span class="sd">    partitions graph into n_1 chunks.</span>
+<span class="sd">        this function will recursively create a seed plan by either biting off districts from graph</span>
+<span class="sd">        or dividing graph into n chunks and recursing into each of these. If n is None, this</span>
+<span class="sd">        function prime factors ``num_dists``=n_1*n_2*...*n_k (n_1 &gt; n_2 &gt; ... n_k) and recursively</span>
+<span class="sd">        partitions graph into n_1 chunks. Defaults to None.</span>
+<span class="sd">    :type n: Optional[int], optional</span>
 <span class="sd">    :param ceil: Either a positive integer (at least 2) or None. Relevant only if n is None. If</span>
-<span class="sd">    ``ceil`` is a positive integer then finds the largest factor of ``num_dists`` less than or</span>
-<span class="sd">    equal to ``ceil``, and recursively splits graph into that number of chunks, or bites off a</span>
-<span class="sd">    district if that number is 1.</span>
-<span class="sd">    :return: New assignments for the nodes of ``graph``.</span>
+<span class="sd">        ``ceil`` is a positive integer then finds the largest factor of ``num_dists`` less than or</span>
+<span class="sd">        equal to ``ceil``, and recursively splits graph into that number of chunks, or bites off a</span>
+<span class="sd">        district if that number is 1. Defaults to None.</span>
+<span class="sd">    :type ceil: Optional[int], optional</span>
+
+<span class="sd">    :returns: New assignments for the nodes of ``graph``.</span>
 <span class="sd">    :rtype: dict</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">flips</span> <span class="o">=</span> <span class="p">{}</span>
@@ -763,7 +1096,7 @@
         <span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span>
         <span class="n">node_repeats</span><span class="o">=</span><span class="n">node_repeats</span><span class="p">,</span>
         <span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">,</span>
-        <span class="n">ceil</span><span class="o">=</span><span class="n">ceil</span>
+        <span class="n">ceil</span><span class="o">=</span><span class="n">ceil</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">assignment</span><span class="p">)):</span>
         <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">assignment</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
@@ -771,7 +1104,7 @@
     <span class="k">return</span> <span class="n">flips</span></div>
 
 
-<div class="viewcode-block" id="BalanceError"><a class="viewcode-back" href="../../api.html#gerrychain.tree.BalanceError">[docs]</a><span class="k">class</span> <span class="nc">BalanceError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+<div class="viewcode-block" id="BalanceError"><a class="viewcode-back" href="../../full_ref.html#gerrychain.tree.BalanceError">[docs]</a><span class="k">class</span> <span class="nc">BalanceError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Raised when a balanced cut cannot be found.&quot;&quot;&quot;</span></div>
 </pre></div>
 

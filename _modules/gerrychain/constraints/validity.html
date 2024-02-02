@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>gerrychain.constraints.validity &mdash; GerryChain  documentation</title><link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
@@ -13,6 +15,9 @@
         <script src="../../../_static/underscore.js"></script>
         <script src="../../../_static/doctools.js"></script>
         <script src="../../../_static/language_data.js"></script>
+        <script src="../../../_static/clipboard.min.js"></script>
+        <script src="../../../_static/copybutton.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -41,7 +46,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../user/recom.html">Running a chain with ReCom</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/partitions.html">Working with Partitions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/updaters.html">Updaters</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../user/adjacency.html">Handling Adjacencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/data.html">Good Data Practices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/geometries.html">Working With Geometries</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -51,8 +57,11 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../topics/reproducibility.html">Reproducibility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../topics/tools.html">Evaluating districting plans in the real world</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../topics/realworldplans.html">Using <code class="docutils literal notranslate"><span class="pre">maup</span></code> to import a real-life plan in GerryChain</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../topics/whatislands.html">What to do about islands and connectivity</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../topics/contributing.html">Contributing to GerryChain</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Index</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../full_ref.html">Full Package Reference</a></li>
 </ul>
 
         </div>
@@ -83,9 +92,11 @@
 <span></span><span class="kn">from</span> <span class="nn">..updaters</span> <span class="kn">import</span> <span class="n">CountySplit</span>
 <span class="kn">from</span> <span class="nn">.bounds</span> <span class="kn">import</span> <span class="n">Bounds</span>
 <span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span>
+<span class="kn">from</span> <span class="nn">..partition</span> <span class="kn">import</span> <span class="n">Partition</span>
 
 
-<div class="viewcode-block" id="Validator"><a class="viewcode-back" href="../../../api.html#gerrychain.constraints.Validator">[docs]</a><span class="k">class</span> <span class="nc">Validator</span><span class="p">:</span>
+<div class="viewcode-block" id="Validator"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.constraints.Validator">[docs]</a><span class="k">class</span> <span class="nc">Validator</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;A single callable for checking that a partition passes a collection of</span>
 <span class="sd">    constraints. Intended to be passed as the ``is_valid`` parameter when</span>
 <span class="sd">    instantiating :class:`~gerrychain.MarkovChain`.</span>
@@ -97,19 +108,24 @@
 
 <span class="sd">        is_valid = Validator([constraint1, constraint2, constraint3])</span>
 <span class="sd">        chain = MarkovChain(proposal, is_valid, accept, initial_state, total_steps)</span>
+
+<span class="sd">    :ivar constraints: List of validator functions that will check partitions.</span>
+<span class="sd">    :type constraints: List[Callable]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">constraints</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">constraints</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Callable</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        :param constraints: List of validator functions that will check partitions.</span>
+<span class="sd">        :type constraints: List[Callable]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">constraints</span> <span class="o">=</span> <span class="n">constraints</span>
 
-    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partition</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Determine if the given partition is valid.</span>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partition</span><span class="p">:</span> <span class="n">Partition</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Determine if the given partition is valid.</span>
 
-<span class="sd">        :param partition: :class:`Partition` class to check.</span>
-
+<span class="sd">        :param partition: The partition to check.</span>
+<span class="sd">        :type partition: Partition</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># check each constraint function and fail when a constraint test fails</span>
         <span class="k">for</span> <span class="n">constraint</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraints</span><span class="p">:</span>
@@ -128,23 +144,33 @@
                 <span class="p">)</span>
 
         <span class="c1"># all constraints are satisfied</span>
-        <span class="k">return</span> <span class="kc">True</span></div>
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">constraint_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">constraint</span><span class="o">.</span><span class="vm">__name__</span> <span class="k">for</span> <span class="n">constraint</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraints</span><span class="p">]</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Validator(constraints=</span><span class="si">{constraint_names}</span><span class="s2">)&quot;</span></div>
 
 
-<div class="viewcode-block" id="within_percent_of_ideal_population"><a class="viewcode-back" href="../../../api.html#gerrychain.constraints.within_percent_of_ideal_population">[docs]</a><span class="k">def</span> <span class="nf">within_percent_of_ideal_population</span><span class="p">(</span>
-    <span class="n">initial_partition</span><span class="p">,</span> <span class="n">percent</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">pop_key</span><span class="o">=</span><span class="s2">&quot;population&quot;</span>
-<span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Require that all districts are within a certain percent of &quot;ideal&quot; (i.e.,</span>
+<div class="viewcode-block" id="within_percent_of_ideal_population"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.constraints.within_percent_of_ideal_population">[docs]</a><span class="k">def</span> <span class="nf">within_percent_of_ideal_population</span><span class="p">(</span>
+    <span class="n">initial_partition</span><span class="p">:</span> <span class="n">Partition</span><span class="p">,</span> <span class="n">percent</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.01</span><span class="p">,</span> <span class="n">pop_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;population&quot;</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Bounds</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Require that all districts are within a certain percent of &quot;ideal&quot; (i.e.,</span>
 <span class="sd">    uniform) population.</span>
 
 <span class="sd">    Ideal population is defined as &quot;total population / number of districts.&quot;</span>
 
 <span class="sd">    :param initial_partition: Starting partition from which to compute district information.</span>
-<span class="sd">    :param percent: (optional) Allowed percentage deviation. Default is 1%.</span>
-<span class="sd">    :param pop_key: (optional) The name of the population</span>
+<span class="sd">    :type initial_partition: Partition</span>
+<span class="sd">    :param percent: Allowed percentage deviation. Default is 1%.</span>
+<span class="sd">    :type percent: float, optional</span>
+<span class="sd">    :param pop_key: The name of the population</span>
 <span class="sd">        :class:`Tally &lt;gerrychain.updaters.Tally&gt;`. Default is ``&quot;population&quot;``.</span>
-<span class="sd">    :return: A :class:`.Bounds` constraint on the population attribute identified</span>
+<span class="sd">    :type pop_key: str, optional</span>
+
+<span class="sd">    :returns: A :class:`.Bounds` constraint on the population attribute identified</span>
 <span class="sd">        by ``pop_key``.</span>
+<span class="sd">    :rtype: Bounds</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">population</span><span class="p">(</span><span class="n">partition</span><span class="p">):</span>
@@ -158,8 +184,11 @@
     <span class="k">return</span> <span class="n">Bounds</span><span class="p">(</span><span class="n">population</span><span class="p">,</span> <span class="n">bounds</span><span class="o">=</span><span class="n">bounds</span><span class="p">)</span></div>
 
 
-<span class="k">def</span> <span class="nf">deviation_from_ideal</span><span class="p">(</span><span class="n">partition</span><span class="p">,</span> <span class="n">attribute</span><span class="o">=</span><span class="s2">&quot;population&quot;</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Computes the deviation of the given ``attribute`` from exact equality</span>
+<div class="viewcode-block" id="deviation_from_ideal"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.constraints.deviation_from_ideal">[docs]</a><span class="k">def</span> <span class="nf">deviation_from_ideal</span><span class="p">(</span>
+    <span class="n">partition</span><span class="p">:</span> <span class="n">Partition</span><span class="p">,</span> <span class="n">attribute</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;population&quot;</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes the deviation of the given ``attribute`` from exact equality</span>
 <span class="sd">    among parts of the partition. Usually ``attribute`` is the population, and</span>
 <span class="sd">    this function is used to compute how far a districting plan is from exact population</span>
 <span class="sd">    equality.</span>
@@ -167,9 +196,13 @@
 <span class="sd">    By &quot;deviation&quot; we mean ``(actual_value - ideal)/ideal`` (not the absolute value).</span>
 
 <span class="sd">    :param partition: A partition.</span>
-<span class="sd">    :param attribute: (optional) The :class:`Tally &lt;gerrychain.updaters.Tally&gt;` to</span>
+<span class="sd">    :type partition: Partition</span>
+<span class="sd">    :param attribute: The :class:`Tally &lt;gerrychain.updaters.Tally&gt;` to</span>
 <span class="sd">        compute deviation for. Default is ``&quot;population&quot;``.</span>
-<span class="sd">    :return: dictionary from parts to their deviation</span>
+<span class="sd">    :type attribute: str, optional</span>
+
+<span class="sd">    :returns: dictionary from parts to their deviation</span>
+<span class="sd">    :rtype: Dict[int, float]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">number_of_districts</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">partition</span><span class="p">[</span><span class="n">attribute</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
     <span class="n">total</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">partition</span><span class="p">[</span><span class="n">attribute</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
@@ -177,17 +210,26 @@
 
     <span class="k">return</span> <span class="p">{</span>
         <span class="n">part</span><span class="p">:</span> <span class="p">(</span><span class="n">value</span> <span class="o">-</span> <span class="n">ideal</span><span class="p">)</span> <span class="o">/</span> <span class="n">ideal</span> <span class="k">for</span> <span class="n">part</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">partition</span><span class="p">[</span><span class="n">attribute</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
-    <span class="p">}</span>
+    <span class="p">}</span></div>
 
 
-<div class="viewcode-block" id="districts_within_tolerance"><a class="viewcode-back" href="../../../api.html#gerrychain.constraints.districts_within_tolerance">[docs]</a><span class="k">def</span> <span class="nf">districts_within_tolerance</span><span class="p">(</span><span class="n">partition</span><span class="p">,</span> <span class="n">attribute_name</span><span class="o">=</span><span class="s2">&quot;population&quot;</span><span class="p">,</span> <span class="n">percentage</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Check if all districts are within a certain percentage of the &quot;smallest&quot;</span>
+<div class="viewcode-block" id="districts_within_tolerance"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.constraints.districts_within_tolerance">[docs]</a><span class="k">def</span> <span class="nf">districts_within_tolerance</span><span class="p">(</span>
+    <span class="n">partition</span><span class="p">:</span> <span class="n">Partition</span><span class="p">,</span> <span class="n">attribute_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;population&quot;</span><span class="p">,</span> <span class="n">percentage</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Check if all districts are within a certain percentage of the &quot;smallest&quot;</span>
 <span class="sd">    district, as defined by the given attribute.</span>
 
-<span class="sd">    :param partition: partition class instance</span>
-<span class="sd">    :param attrName: string that is the name of an updater in partition</span>
-<span class="sd">    :param percentage: what percent difference is allowed</span>
-<span class="sd">    :return: whether the districts are within specified tolerance</span>
+<span class="sd">    :param partition: Partition class instance</span>
+<span class="sd">    :type partition: Partition</span>
+<span class="sd">    :param attrName: String that is the name of an updater in partition. Default is</span>
+<span class="sd">        ``&quot;population&quot;``.</span>
+<span class="sd">    :type attrName: str, optional</span>
+<span class="sd">    :param percentage: What percent (as a number between 0 and 1) difference is allowed.</span>
+<span class="sd">        Default is 0.1.</span>
+<span class="sd">    :type percentage: float, optional</span>
+
+<span class="sd">    :returns: Whether the districts are within specified tolerance</span>
 <span class="sd">    :rtype: bool</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">percentage</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
@@ -200,14 +242,19 @@
     <span class="k">return</span> <span class="n">within_tolerance</span></div>
 
 
-<div class="viewcode-block" id="refuse_new_splits"><a class="viewcode-back" href="../../../api.html#gerrychain.constraints.refuse_new_splits">[docs]</a><span class="k">def</span> <span class="nf">refuse_new_splits</span><span class="p">(</span><span class="n">partition_county_field</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Refuse all proposals that split a county that was previous unsplit.</span>
+<div class="viewcode-block" id="refuse_new_splits"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.constraints.refuse_new_splits">[docs]</a><span class="k">def</span> <span class="nf">refuse_new_splits</span><span class="p">(</span><span class="n">partition_county_field</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Partition</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Refuse all proposals that split a county that was previous unsplit.</span>
 
 <span class="sd">    :param partition_county_field: Name of field for county information generated by</span>
 <span class="sd">        :func:`.county_splits`.</span>
+<span class="sd">    :type partition_county_field: str</span>
+
+<span class="sd">    :returns: Function that returns ``True`` if the proposal does not split any new counties.</span>
+<span class="sd">    :rtype: Callable[[Partition], bool]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">_refuse_new_splits</span><span class="p">(</span><span class="n">partition</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_refuse_new_splits</span><span class="p">(</span><span class="n">partition</span><span class="p">:</span> <span class="n">Partition</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">county_info</span> <span class="ow">in</span> <span class="n">partition</span><span class="p">[</span><span class="n">partition_county_field</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
             <span class="k">if</span> <span class="n">county_info</span><span class="o">.</span><span class="n">split</span> <span class="o">==</span> <span class="n">CountySplit</span><span class="o">.</span><span class="n">NEW_SPLIT</span><span class="p">:</span>
                 <span class="k">return</span> <span class="kc">False</span>
@@ -217,8 +264,16 @@
     <span class="k">return</span> <span class="n">_refuse_new_splits</span></div>
 
 
-<div class="viewcode-block" id="no_vanishing_districts"><a class="viewcode-back" href="../../../api.html#gerrychain.constraints.no_vanishing_districts">[docs]</a><span class="k">def</span> <span class="nf">no_vanishing_districts</span><span class="p">(</span><span class="n">partition</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Require that no districts be completely consumed.&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="no_vanishing_districts"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.constraints.no_vanishing_districts">[docs]</a><span class="k">def</span> <span class="nf">no_vanishing_districts</span><span class="p">(</span><span class="n">partition</span><span class="p">:</span> <span class="n">Partition</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Require that no districts be completely consumed.</span>
+
+<span class="sd">    :param partition: Partition to check.</span>
+<span class="sd">    :type partition: Partition</span>
+
+<span class="sd">    :returns: Whether no districts are completely consumed.</span>
+<span class="sd">    :rtype: bool</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">partition</span><span class="o">.</span><span class="n">parent</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">True</span>
     <span class="k">return</span> <span class="nb">all</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">part</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">partition</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">parts</span><span class="o">.</span><span class="n">values</span><span class="p">())</span></div>

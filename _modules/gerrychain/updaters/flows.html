@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>gerrychain.updaters.flows &mdash; GerryChain  documentation</title><link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+        <script src="../../../_static/clipboard.min.js"></script>
+        <script src="../../../_static/copybutton.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #0099cd" >
+            <a href="../../../index.html" class="icon icon-home"> GerryChain
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/intro.html">Overview of the Chain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/quickstart.html">Getting started with GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/recom.html">Running a chain with ReCom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/partitions.html">Working with Partitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/updaters.html">Updaters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/data.html">Good Data Practices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/geometries.html">Working With Geometries</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API Reference</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Topics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../topics/reproducibility.html">Reproducibility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../topics/tools.html">Evaluating districting plans in the real world</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../topics/contributing.html">Contributing to GerryChain</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Index</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../full_ref.html">Full Package Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #0099cd" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">GerryChain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+      <li>gerrychain.updaters.flows</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for gerrychain.updaters.flows</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">collections</span>
+<span class="kn">import</span> <span class="nn">functools</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Callable</span>
+
+
+<div class="viewcode-block" id="neighbor_flips"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.neighbor_flips">[docs]</a><span class="nd">@functools</span><span class="o">.</span><span class="n">lru_cache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">neighbor_flips</span><span class="p">(</span><span class="n">partition</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Set</span><span class="p">[</span><span class="n">Tuple</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :param partition: A partition of a Graph</span>
+<span class="sd">    :type partition: :class:`~gerrychain.partition.Partition`</span>
+
+<span class="sd">    :returns: The set of edges that were flipped in the given partition.</span>
+<span class="sd">    :rtype: Set[Tuple]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">((</span><span class="n">node</span><span class="p">,</span> <span class="n">neighbor</span><span class="p">)))</span>
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">partition</span><span class="o">.</span><span class="n">flips</span>
+        <span class="k">for</span> <span class="n">neighbor</span> <span class="ow">in</span> <span class="n">partition</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+    <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="create_flow"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.create_flow">[docs]</a><span class="k">def</span> <span class="nf">create_flow</span><span class="p">():</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;in&quot;</span><span class="p">:</span> <span class="nb">set</span><span class="p">(),</span> <span class="s2">&quot;out&quot;</span><span class="p">:</span> <span class="nb">set</span><span class="p">()}</span></div>
+
+
+<div class="viewcode-block" id="flows_from_changes"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.flows_from_changes">[docs]</a><span class="nd">@functools</span><span class="o">.</span><span class="n">lru_cache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">flows_from_changes</span><span class="p">(</span><span class="n">old_partition</span><span class="p">,</span> <span class="n">new_partition</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :param old_partition: A partition of a Graph representing the previous step.</span>
+<span class="sd">    :type old_partition: :class:`~gerrychain.partition.Partition`</span>
+<span class="sd">    :param new_partition: A partition of a Graph representing the current step.</span>
+<span class="sd">    :type new_partition: :class:`~gerrychain.partition.Partition`</span>
+
+<span class="sd">    :returns: A dictionary mapping each node that changed assignment between</span>
+<span class="sd">        the previous and current partitions to a dictionary of the form</span>
+<span class="sd">        `{&#39;in&#39;: &lt;set of nodes that flowed in&gt;, &#39;out&#39;: &lt;set of nodes that flowed out&gt;}`.</span>
+<span class="sd">    :rtype: Dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">flows</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">defaultdict</span><span class="p">(</span><span class="n">create_flow</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">node</span><span class="p">,</span> <span class="n">target</span> <span class="ow">in</span> <span class="n">new_partition</span><span class="o">.</span><span class="n">flips</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="n">old_partition</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">mapping</span><span class="p">[</span><span class="n">node</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">source</span> <span class="o">!=</span> <span class="n">target</span><span class="p">:</span>
+            <span class="n">flows</span><span class="p">[</span><span class="n">target</span><span class="p">][</span><span class="s2">&quot;in&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+            <span class="n">flows</span><span class="p">[</span><span class="n">source</span><span class="p">][</span><span class="s2">&quot;out&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">flows</span></div>
+
+
+<div class="viewcode-block" id="on_flow"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.on_flow">[docs]</a><span class="k">def</span> <span class="nf">on_flow</span><span class="p">(</span><span class="n">initializer</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">alias</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Use this decorator to create an updater that responds to flows of nodes</span>
+<span class="sd">    between parts of the partition.</span>
+
+<span class="sd">    Decorate a function that takes:</span>
+<span class="sd">    - The partition</span>
+<span class="sd">    - The previous value of the updater on a fixed part P_i</span>
+<span class="sd">    - The new nodes that are just joining P_i at this step</span>
+<span class="sd">    - The old nodes that are just leaving P_i at this step</span>
+<span class="sd">    and returns:</span>
+<span class="sd">    - The new value of the updater for the fixed part P_i.</span>
+
+<span class="sd">    This will create an updater whose values are dictionaries of the</span>
+<span class="sd">    form `{part: &lt;value of the given function on the part&gt;}`.</span>
+
+<span class="sd">    The initializer, by contrast, should take the entire partition and</span>
+<span class="sd">    return the entire `{part: &lt;value&gt;}` dictionary.</span>
+
+<span class="sd">    Example:</span>
+
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">        @on_flow(initializer, alias=&#39;my_updater&#39;)</span>
+<span class="sd">        def my_updater(partition, previous, new_nodes, old_nodes):</span>
+<span class="sd">            # return new value for the part</span>
+
+<span class="sd">    :param initializer: A function that takes the partition and returns a</span>
+<span class="sd">        dictionary of the form `{part: &lt;value&gt;}`.</span>
+<span class="sd">    :type initializer: Callable</span>
+<span class="sd">    :param alias: The name of the updater to be created.</span>
+<span class="sd">    :type alias: str</span>
+
+<span class="sd">    :returns: A decorator that takes a function as input and returns a</span>
+<span class="sd">        wrapped function.</span>
+<span class="sd">    :rtype: Callable</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">decorator</span><span class="p">(</span><span class="n">function</span><span class="p">):</span>
+        <span class="nd">@functools</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">function</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">wrapped</span><span class="p">(</span><span class="n">partition</span><span class="p">,</span> <span class="n">previous</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">partition</span><span class="o">.</span><span class="n">parent</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">initializer</span><span class="p">(</span><span class="n">partition</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">previous</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">previous</span> <span class="o">=</span> <span class="n">partition</span><span class="o">.</span><span class="n">parent</span><span class="p">[</span><span class="n">alias</span><span class="p">]</span>
+
+            <span class="n">new_values</span> <span class="o">=</span> <span class="n">previous</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+            <span class="k">for</span> <span class="n">part</span><span class="p">,</span> <span class="n">flow</span> <span class="ow">in</span> <span class="n">partition</span><span class="o">.</span><span class="n">flows</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">new_values</span><span class="p">[</span><span class="n">part</span><span class="p">]</span> <span class="o">=</span> <span class="n">function</span><span class="p">(</span>
+                    <span class="n">partition</span><span class="p">,</span> <span class="n">previous</span><span class="p">[</span><span class="n">part</span><span class="p">],</span> <span class="n">flow</span><span class="p">[</span><span class="s2">&quot;in&quot;</span><span class="p">],</span> <span class="n">flow</span><span class="p">[</span><span class="s2">&quot;out&quot;</span><span class="p">]</span>
+                <span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">new_values</span>
+
+        <span class="k">return</span> <span class="n">wrapped</span>
+
+    <span class="k">return</span> <span class="n">decorator</span></div>
+
+
+<div class="viewcode-block" id="compute_edge_flows"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.compute_edge_flows">[docs]</a><span class="k">def</span> <span class="nf">compute_edge_flows</span><span class="p">(</span><span class="n">partition</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :param partition: A partition of a Graph</span>
+<span class="sd">    :type partition: :class:`~gerrychain.partition.Partition`</span>
+
+<span class="sd">    :returns: A flow dictionary containing the flow from the parent of this partition</span>
+<span class="sd">        to this partition. This dictionary is of the form</span>
+<span class="sd">        `{part: {&#39;in&#39;: &lt;set of edges that flowed in&gt;, &#39;out&#39;: &lt;set of edges that flowed out&gt;}}`.</span>
+<span class="sd">    :rtype: Dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">edge_flows</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">defaultdict</span><span class="p">(</span><span class="n">create_flow</span><span class="p">)</span>
+    <span class="n">assignment</span> <span class="o">=</span> <span class="n">partition</span><span class="o">.</span><span class="n">assignment</span>
+    <span class="n">old_assignment</span> <span class="o">=</span> <span class="n">partition</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">assignment</span>
+
+    <span class="k">for</span> <span class="n">node</span><span class="p">,</span> <span class="n">neighbor</span> <span class="ow">in</span> <span class="n">neighbor_flips</span><span class="p">(</span><span class="n">partition</span><span class="p">):</span>
+        <span class="n">edge</span> <span class="o">=</span> <span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">neighbor</span><span class="p">)</span>
+
+        <span class="n">old_source</span> <span class="o">=</span> <span class="n">old_assignment</span><span class="o">.</span><span class="n">mapping</span><span class="p">[</span><span class="n">node</span><span class="p">]</span>
+        <span class="n">old_target</span> <span class="o">=</span> <span class="n">old_assignment</span><span class="o">.</span><span class="n">mapping</span><span class="p">[</span><span class="n">neighbor</span><span class="p">]</span>
+
+        <span class="n">new_source</span> <span class="o">=</span> <span class="n">assignment</span><span class="o">.</span><span class="n">mapping</span><span class="p">[</span><span class="n">node</span><span class="p">]</span>
+        <span class="n">new_target</span> <span class="o">=</span> <span class="n">assignment</span><span class="o">.</span><span class="n">mapping</span><span class="p">[</span><span class="n">neighbor</span><span class="p">]</span>
+
+        <span class="n">cut</span> <span class="o">=</span> <span class="n">new_source</span> <span class="o">!=</span> <span class="n">new_target</span>
+        <span class="n">was_cut</span> <span class="o">=</span> <span class="n">old_source</span> <span class="o">!=</span> <span class="n">old_target</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">cut</span> <span class="ow">and</span> <span class="n">was_cut</span><span class="p">:</span>
+            <span class="n">edge_flows</span><span class="p">[</span><span class="n">old_target</span><span class="p">][</span><span class="s2">&quot;out&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">edge</span><span class="p">)</span>
+            <span class="n">edge_flows</span><span class="p">[</span><span class="n">old_source</span><span class="p">][</span><span class="s2">&quot;out&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">edge</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">cut</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">was_cut</span><span class="p">:</span>
+            <span class="n">edge_flows</span><span class="p">[</span><span class="n">new_target</span><span class="p">][</span><span class="s2">&quot;in&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">edge</span><span class="p">)</span>
+            <span class="n">edge_flows</span><span class="p">[</span><span class="n">new_source</span><span class="p">][</span><span class="s2">&quot;in&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">edge</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">cut</span> <span class="ow">and</span> <span class="n">was_cut</span><span class="p">:</span>
+            <span class="c1"># If an edge was cut and still is cut, we need to make sure the</span>
+            <span class="c1"># edge is listed under the correct parts.</span>
+            <span class="n">no_longer_incident_parts</span> <span class="o">=</span> <span class="p">{</span><span class="n">old_target</span><span class="p">,</span> <span class="n">old_source</span><span class="p">}</span> <span class="o">-</span> <span class="p">{</span>
+                <span class="n">new_target</span><span class="p">,</span>
+                <span class="n">new_source</span><span class="p">,</span>
+            <span class="p">}</span>
+            <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">no_longer_incident_parts</span><span class="p">:</span>
+                <span class="n">edge_flows</span><span class="p">[</span><span class="n">part</span><span class="p">][</span><span class="s2">&quot;out&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">edge</span><span class="p">)</span>
+
+            <span class="n">newly_incident_parts</span> <span class="o">=</span> <span class="p">{</span><span class="n">new_target</span><span class="p">,</span> <span class="n">new_source</span><span class="p">}</span> <span class="o">-</span> <span class="p">{</span><span class="n">old_target</span><span class="p">,</span> <span class="n">old_source</span><span class="p">}</span>
+            <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">newly_incident_parts</span><span class="p">:</span>
+                <span class="n">edge_flows</span><span class="p">[</span><span class="n">part</span><span class="p">][</span><span class="s2">&quot;in&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">edge</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">edge_flows</span></div>
+
+
+<div class="viewcode-block" id="on_edge_flow"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.updaters.on_edge_flow">[docs]</a><span class="k">def</span> <span class="nf">on_edge_flow</span><span class="p">(</span><span class="n">initializer</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">alias</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Use this decorator to create an updater that responds to flows of cut</span>
+<span class="sd">    edges between parts of the partition.</span>
+
+<span class="sd">    Decorate a function that takes:</span>
+<span class="sd">    - The partition</span>
+<span class="sd">    - The previous value of the updater for a fixed part P_i</span>
+<span class="sd">    - The new cut edges that are just joining P_i at this step</span>
+<span class="sd">    - The old cut edges that are just leaving P_i at this step</span>
+<span class="sd">    and returns:</span>
+<span class="sd">    - The new value of the updater for the fixed part P_i.</span>
+
+<span class="sd">    This will create an updater whose values are dictionaries of the</span>
+<span class="sd">    form `{part: &lt;value of the given function on the part&gt;}`.</span>
+
+<span class="sd">    The initializer, by contrast, should take the entire partition and</span>
+<span class="sd">    return the entire `{part: &lt;value&gt;}` dictionary.</span>
+
+<span class="sd">    Example:</span>
+
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">        @on_edge_flow(initializer, alias=&#39;my_updater&#39;)</span>
+<span class="sd">        def my_updater(partition, previous, new_edges, old_edges):</span>
+<span class="sd">            # return new value of the part</span>
+
+<span class="sd">    :param initializer: A function that takes the partition and returns a</span>
+<span class="sd">        dictionary of the form `{part: &lt;value&gt;}`.</span>
+<span class="sd">    :type initializer: Callable</span>
+<span class="sd">    :param alias: The name of the updater to be created.</span>
+<span class="sd">    :type alias: str</span>
+
+<span class="sd">    :returns: A decorator that takes a function as input and returns a</span>
+<span class="sd">        wrapped function.</span>
+<span class="sd">    :rtype: Callable</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">decorator</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+        <span class="nd">@functools</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="n">partition</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">partition</span><span class="o">.</span><span class="n">parent</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">initializer</span><span class="p">(</span><span class="n">partition</span><span class="p">)</span>
+            <span class="n">edge_flows</span> <span class="o">=</span> <span class="n">partition</span><span class="o">.</span><span class="n">edge_flows</span>
+            <span class="n">previous</span> <span class="o">=</span> <span class="n">partition</span><span class="o">.</span><span class="n">parent</span><span class="p">[</span><span class="n">alias</span><span class="p">]</span>
+
+            <span class="n">new_values</span> <span class="o">=</span> <span class="n">previous</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">partition</span><span class="o">.</span><span class="n">edge_flows</span><span class="p">:</span>
+                <span class="n">new_values</span><span class="p">[</span><span class="n">part</span><span class="p">]</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span>
+                    <span class="n">partition</span><span class="p">,</span>
+                    <span class="n">previous</span><span class="p">[</span><span class="n">part</span><span class="p">],</span>
+                    <span class="n">new_edges</span><span class="o">=</span><span class="n">edge_flows</span><span class="p">[</span><span class="n">part</span><span class="p">][</span><span class="s2">&quot;in&quot;</span><span class="p">],</span>
+                    <span class="n">old_edges</span><span class="o">=</span><span class="n">edge_flows</span><span class="p">[</span><span class="n">part</span><span class="p">][</span><span class="s2">&quot;out&quot;</span><span class="p">],</span>
+                <span class="p">)</span>
+            <span class="k">return</span> <span class="n">new_values</span>
+
+        <span class="k">return</span> <span class="n">wrapper</span>
+
+    <span class="k">return</span> <span class="n">decorator</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Metric Geometry and Gerrymandering Group.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

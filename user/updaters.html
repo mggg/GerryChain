@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Updaters &mdash; GerryChain  documentation</title><link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/custom.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
@@ -13,10 +15,13 @@
         <script src="../_static/underscore.js"></script>
         <script src="../_static/doctools.js"></script>
         <script src="../_static/language_data.js"></script>
+        <script src="../_static/clipboard.min.js"></script>
+        <script src="../_static/copybutton.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Handling Adjacencies" href="adjacency.html" />
+    <link rel="next" title="Good Data Practices" href="data.html" />
     <link rel="prev" title="Working with Partitions" href="partitions.html" /> 
 </head>
 
@@ -47,7 +52,8 @@
 <li class="toctree-l2"><a class="reference internal" href="#writing-your-own-updater-function">Writing your own updater function</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="adjacency.html">Handling Adjacencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data.html">Good Data Practices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="geometries.html">Working With Geometries</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -57,8 +63,11 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../topics/reproducibility.html">Reproducibility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../topics/tools.html">Evaluating districting plans in the real world</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../topics/realworldplans.html">Using <code class="docutils literal notranslate"><span class="pre">maup</span></code> to import a real-life plan in GerryChain</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../topics/whatislands.html">What to do about islands and connectivity</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../topics/contributing.html">Contributing to GerryChain</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Index</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../full_ref.html">Full Package Reference</a></li>
 </ul>
 
         </div>
@@ -77,7 +86,7 @@
       <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
       <li>Updaters</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/user/updaters.md.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/user/updaters.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -96,33 +105,43 @@ results using the districts defined by the partition.</p>
 <p>The <code class="docutils literal notranslate"><span class="pre">Partition</span></code> class allows you to define custom properties for the partitions
 in your Markov chain. You can do this by providing a dictionary of updater
 functions when you first create a partition.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">gerrychain</span> <span class="kn">import</span> <span class="n">Partition</span><span class="p">,</span> <span class="n">Graph</span>
-<span class="go">&gt;&gt;&gt;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">graph</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">graph</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">assignment</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="mi">2</span><span class="p">}</span>
-<span class="go">&gt;&gt;&gt;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">my_updater</span><span class="p">(</span><span class="n">partition</span><span class="p">):</span>
-<span class="gp">... </span>    <span class="k">return</span> <span class="s2">&quot;Hello!&quot;</span>
-<span class="go">&gt;&gt;&gt;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">partition</span> <span class="o">=</span> <span class="n">Partition</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">assignment</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;my_custom_property&quot;</span><span class="p">:</span> <span class="n">my_updater</span><span class="p">})</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">partition</span><span class="p">[</span><span class="s2">&quot;my_custom_property&quot;</span><span class="p">]</span>
-<span class="go">&#39;Hello!&#39;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">partition</span><span class="o">.</span><span class="n">my_custom_property</span>
-<span class="go">&#39;Hello!&#39;</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">gerrychain</span> <span class="kn">import</span> <span class="n">Partition</span><span class="p">,</span> <span class="n">Graph</span>
+
+<span class="n">graph</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">()</span>
+<span class="n">graph</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)])</span>
+<span class="n">assignment</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="mi">2</span><span class="p">}</span>
+
+<span class="k">def</span> <span class="nf">my_updater</span><span class="p">(</span><span class="n">partition</span><span class="p">):</span>
+    <span class="k">return</span> <span class="s2">&quot;Hello!&quot;</span>
+
+<span class="n">partition</span> <span class="o">=</span> <span class="n">Partition</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">assignment</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;my_custom_property&quot;</span><span class="p">:</span> <span class="n">my_updater</span><span class="p">})</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">partition</span><span class="p">[</span><span class="s2">&quot;my_custom_property&quot;</span><span class="p">])</span>
 </pre></div>
 </div>
-<p>As shown in this example, you can access the value of this updater using either
-the “attribute-style” syntax <code class="docutils literal notranslate"><span class="pre">partition.my_custom_property</span></code> or the
-“dictionary-style” syntax <code class="docutils literal notranslate"><span class="pre">partition[&quot;my_custom_property&quot;]</span></code>.</p>
+<p>This will output:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">Hello!</span>
+</pre></div>
+</div>
+<p>Recall from <a class="reference external" href="./partitions.html">the Partitions section</a> that we can also
+access this property using:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">partition</span><span class="o">.</span><span class="n">my_custom_property</span>
+</pre></div>
+</div>
+<p>Which also outputs:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">&#39;Hello!&#39;</span>
+</pre></div>
+</div>
 <p>This partition and all subsequent partitions in the chain will have this
 <code class="docutils literal notranslate"><span class="pre">my_custom_property</span></code> attribute. If we flip a node in <code class="docutils literal notranslate"><span class="pre">partition</span></code> to create a new
 partition, we can still access this property:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">new_partition</span> <span class="o">=</span> <span class="n">partition</span><span class="o">.</span><span class="n">flip</span><span class="p">({</span><span class="mi">1</span><span class="p">:</span> <span class="mi">2</span><span class="p">})</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">new_partition</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">partition</span>
-<span class="go">True</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">new_partition</span><span class="p">[</span><span class="s2">&quot;my_custom_property&quot;</span><span class="p">]</span>
-<span class="go">&#39;Hello!&#39;</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">new_partition</span> <span class="o">=</span> <span class="n">partition</span><span class="o">.</span><span class="n">flip</span><span class="p">({</span><span class="mi">1</span><span class="p">:</span> <span class="mi">2</span><span class="p">})</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Are the partitions different? {new_partition is not partition}&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">new_partition</span><span class="p">[</span><span class="s2">&quot;my_custom_property&quot;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>This outputs:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">Are the partitions different? True</span>
+<span class="go">Hello!</span>
 </pre></div>
 </div>
 <div class="section" id="useful-updater-functions-in-gerrychain">
@@ -137,25 +156,33 @@ different parts of the partition) of the partition. This is required for
 most of the proposal functions in <code class="docutils literal notranslate"><span class="pre">gerrychain.proposals</span></code>.</p></li>
 </ul>
 <p>Here is an example using both of these updaters:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">gerrychain.updaters</span> <span class="kn">import</span> <span class="n">cut_edges</span><span class="p">,</span> <span class="n">Tally</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># We&#39;ll use a 2x2 grid graph:</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">graph</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">graph</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">)])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Give each of the nodes population 100:</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">graph</span><span class="p">:</span>
-<span class="gp">... </span>    <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">node</span><span class="p">][</span><span class="s2">&quot;population&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">100</span>
-<span class="go">&gt;&gt;&gt;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Partition the grid into two halves:</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">assignment</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">partition</span> <span class="o">=</span> <span class="n">Partition</span><span class="p">(</span>
-<span class="gp">... </span>    <span class="n">graph</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="n">assignment</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="n">updaters</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;cut_edges&quot;</span><span class="p">:</span> <span class="n">cut_edges</span><span class="p">,</span> <span class="s2">&quot;population&quot;</span><span class="p">:</span> <span class="n">Tally</span><span class="p">(</span><span class="s2">&quot;population&quot;</span><span class="p">)}</span>
-<span class="gp">... </span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">partition</span><span class="p">[</span><span class="s2">&quot;population&quot;</span><span class="p">]</span>
-<span class="go">{0: 200, 1: 200}</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">partition</span><span class="p">[</span><span class="s2">&quot;cut_edges&quot;</span><span class="p">]</span>
-<span class="go">{(1, 2), (0, 3)}</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">gerrychain.updaters</span> <span class="kn">import</span> <span class="n">cut_edges</span><span class="p">,</span> <span class="n">Tally</span>
+<span class="c1"># We&#39;ll use a 2x2 grid graph:</span>
+<span class="n">graph</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">()</span>
+<span class="n">graph</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">)])</span>
+<span class="c1"># Give each of the nodes population 100:</span>
+<span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">graph</span><span class="p">:</span>
+    <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">node</span><span class="p">][</span><span class="s2">&quot;population&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">100</span>
+
+<span class="c1"># Partition the grid into two halves:</span>
+<span class="n">assignment</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
+<span class="n">partition</span> <span class="o">=</span> <span class="n">Partition</span><span class="p">(</span>
+    <span class="n">graph</span><span class="p">,</span>
+    <span class="n">assignment</span><span class="p">,</span>
+    <span class="n">updaters</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;cut_edges&quot;</span><span class="p">:</span> <span class="n">cut_edges</span><span class="p">,</span>
+        <span class="s2">&quot;population&quot;</span><span class="p">:</span> <span class="n">Tally</span><span class="p">(</span><span class="s2">&quot;population&quot;</span><span class="p">)</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Population by district:</span><span class="se">\n\t</span><span class="si">{partition[&#39;population&#39;]}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cut edges in partition:</span><span class="se">\n\t</span><span class="si">{partition[&#39;cut_edges&#39;]}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This outputs:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">Population by district:</span>
+<span class="go">    {0: 200, 1: 200}</span>
+<span class="go">Cut edges in partition:</span>
+<span class="go">    {(1, 2), (0, 3)}</span>
 </pre></div>
 </div>
 <p>Our <code class="docutils literal notranslate"><span class="pre">cut_edges</span></code> updater returns a set of edges, each represented as a tuple of
@@ -164,11 +191,16 @@ the partition to the total population in that part. Since we divided our grid in
 half, we see parts <code class="docutils literal notranslate"><span class="pre">0</span></code> and <code class="docutils literal notranslate"><span class="pre">1</span></code> both have population 200.</p>
 <p>Now when we create a new partition by flipping a node of <code class="docutils literal notranslate"><span class="pre">partition</span></code>, we see the
 values of the updaters change:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">new_partition</span> <span class="o">=</span> <span class="n">partition</span><span class="o">.</span><span class="n">flip</span><span class="p">({</span><span class="mi">0</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">new_partition</span><span class="p">[</span><span class="s2">&quot;population&quot;</span><span class="p">]</span>
-<span class="go">{0: 100, 1: 300}</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">new_partition</span><span class="p">[</span><span class="s2">&quot;cut_edges&quot;</span><span class="p">]</span>
-<span class="go">{(1, 2), (0, 1)}</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">new_partition</span> <span class="o">=</span> <span class="n">partition</span><span class="o">.</span><span class="n">flip</span><span class="p">({</span><span class="mi">0</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Population by district:</span><span class="se">\n\t</span><span class="si">{new_partition[&#39;population&#39;]}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cut edges in partition:</span><span class="se">\n\t</span><span class="si">{new_partition[&#39;cut_edges&#39;]}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This outputs:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">Population by district:</span>
+<span class="go">    {0: 100, 1: 300}</span>
+<span class="go">Cut edges in partition:</span>
+<span class="go">    {(0, 1), (1, 2)}</span>
 </pre></div>
 </div>
 <p>As we should expect, flipping node <code class="docutils literal notranslate"><span class="pre">0</span></code> into part <code class="docutils literal notranslate"><span class="pre">1</span></code> increases the population of
@@ -183,34 +215,43 @@ rules, there usually comes a point when you need to implement a new updater. As
 we saw in the first example, an updater is a function that takes the partition
 as its argument and returns any type of value.</p>
 <p>Let’s create an updater that returns the number of cut edges in the partition.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">number_of_cut_edges</span><span class="p">(</span><span class="n">partition</span><span class="p">):</span>
-<span class="gp">... </span>    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">partition</span><span class="p">[</span><span class="s2">&quot;cut_edges&quot;</span><span class="p">])</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">number_of_cut_edges</span><span class="p">(</span><span class="n">partition</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">partition</span><span class="p">[</span><span class="s2">&quot;cut_edges&quot;</span><span class="p">])</span>
 </pre></div>
 </div>
+<div class="admonition attention">
+<p class="admonition-title">Attention</p>
 <p>Note that this updater uses the value of the <code class="docutils literal notranslate"><span class="pre">cut_edges</span></code> updater in its
 computation. This is completely allowed! All you need to do is make sure that
 any updater that your updater depends on is included in the <code class="docutils literal notranslate"><span class="pre">updaters</span></code>
 dictionary that we pass to <code class="docutils literal notranslate"><span class="pre">Partition</span></code>. We also need to make sure that we have
-no cyclic depedencies: if the <code class="docutils literal notranslate"><span class="pre">cut_edges</span></code> updater also depended on
+no cyclic dependencies: if the <code class="docutils literal notranslate"><span class="pre">cut_edges</span></code> updater also depended on
 <code class="docutils literal notranslate"><span class="pre">number_of_cut_edges</span></code>, we would fall into an infinite loop when we called either
 of them, resulting in a <code class="docutils literal notranslate"><span class="pre">RuntimeError:</span> <span class="pre">maximum</span> <span class="pre">recursion</span> <span class="pre">depth</span> <span class="pre">exceeded</span></code> error.</p>
+</div>
 <p>To try out our updater, we’ll use <a class="reference external" href="https://networkx.github.io">NetworkX</a> to
 create a complete graph on 4 nodes, which we’ll partition in halves like the 2x2
 grid. NetworkX is the graph library that GerryChain uses under the hood in its
 <code class="docutils literal notranslate"><span class="pre">Graph</span></code> class.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">networkx</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">graph</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">(</span><span class="n">networkx</span><span class="o">.</span><span class="n">complete_graph</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">assignment</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">my_updaters</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;cut_edges&quot;</span><span class="p">:</span> <span class="n">cut_edges</span><span class="p">,</span> <span class="s2">&quot;number_of_cut_edges&quot;</span><span class="p">:</span> <span class="n">number_of_cut_edges</span><span class="p">}</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">partition</span> <span class="o">=</span> <span class="n">Partition</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">assignment</span><span class="p">,</span> <span class="n">my_updaters</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">networkx</span>
+<span class="n">graph</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">(</span><span class="n">networkx</span><span class="o">.</span><span class="n">complete_graph</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
+<span class="n">assignment</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
+<span class="n">my_updaters</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;cut_edges&quot;</span><span class="p">:</span> <span class="n">cut_edges</span><span class="p">,</span>
+    <span class="s2">&quot;number_of_cut_edges&quot;</span><span class="p">:</span> <span class="n">number_of_cut_edges</span>
+<span class="p">}</span>
+<span class="n">partition</span> <span class="o">=</span> <span class="n">Partition</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">assignment</span><span class="p">,</span> <span class="n">my_updaters</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Now we can try out our custom <code class="docutils literal notranslate"><span class="pre">number_of_cut_edges</span></code> updater, and verify that its
 value changes when the partition changes:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">partition</span><span class="p">[</span><span class="s2">&quot;number_of_cut_edges&quot;</span><span class="p">]</span>
-<span class="go">4</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">new_partition</span> <span class="o">=</span> <span class="n">partition</span><span class="o">.</span><span class="n">flip</span><span class="p">({</span><span class="mi">0</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">new_partition</span><span class="p">[</span><span class="s2">&quot;number_of_cut_edges&quot;</span><span class="p">]</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">partition</span><span class="p">[</span><span class="s2">&quot;number_of_cut_edges&quot;</span><span class="p">])</span>
+<span class="n">new_partition</span> <span class="o">=</span> <span class="n">partition</span><span class="o">.</span><span class="n">flip</span><span class="p">({</span><span class="mi">0</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">new_partition</span><span class="p">[</span><span class="s2">&quot;number_of_cut_edges&quot;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>This will output:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">4</span>
 <span class="go">3</span>
 </pre></div>
 </div>
@@ -222,7 +263,7 @@ value changes when the partition changes:</p>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="partitions.html" class="btn btn-neutral float-left" title="Working with Partitions" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="adjacency.html" class="btn btn-neutral float-right" title="Handling Adjacencies" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="data.html" class="btn btn-neutral float-right" title="Good Data Practices" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

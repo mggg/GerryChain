@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>gerrychain.proposals.tree_proposals &mdash; GerryChain  documentation</title><link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
@@ -13,6 +15,9 @@
         <script src="../../../_static/underscore.js"></script>
         <script src="../../../_static/doctools.js"></script>
         <script src="../../../_static/language_data.js"></script>
+        <script src="../../../_static/clipboard.min.js"></script>
+        <script src="../../../_static/copybutton.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -41,7 +46,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../user/recom.html">Running a chain with ReCom</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/partitions.html">Working with Partitions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/updaters.html">Updaters</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../user/adjacency.html">Handling Adjacencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/data.html">Good Data Practices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/geometries.html">Working With Geometries</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -51,8 +57,11 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../topics/reproducibility.html">Reproducibility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../topics/tools.html">Evaluating districting plans in the real world</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../topics/realworldplans.html">Using <code class="docutils literal notranslate"><span class="pre">maup</span></code> to import a real-life plan in GerryChain</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../topics/whatislands.html">What to do about islands and connectivity</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../topics/contributing.html">Contributing to GerryChain</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Index</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../full_ref.html">Full Package Reference</a></li>
 </ul>
 
         </div>
@@ -81,28 +90,62 @@
              
   <h1>Source code for gerrychain.proposals.tree_proposals</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
-<span class="kn">from</span> <span class="nn">..random</span> <span class="kn">import</span> <span class="n">random</span>
+<span class="kn">from</span> <span class="nn">inspect</span> <span class="kn">import</span> <span class="n">signature</span>
+<span class="kn">import</span> <span class="nn">random</span>
 
+<span class="kn">from</span> <span class="nn">gerrychain.partition</span> <span class="kn">import</span> <span class="n">Partition</span>
 <span class="kn">from</span> <span class="nn">..tree</span> <span class="kn">import</span> <span class="p">(</span>
-    <span class="n">recursive_tree_part</span><span class="p">,</span> <span class="n">bipartition_tree</span><span class="p">,</span> <span class="n">bipartition_tree_random</span><span class="p">,</span>
-    <span class="n">_bipartition_tree_random_all</span><span class="p">,</span> <span class="n">uniform_spanning_tree</span><span class="p">,</span>
+    <span class="n">recursive_tree_part</span><span class="p">,</span>
+    <span class="n">bipartition_tree</span><span class="p">,</span>
+    <span class="n">bipartition_tree_random</span><span class="p">,</span>
+    <span class="n">_bipartition_tree_random_all</span><span class="p">,</span>
+    <span class="n">uniform_spanning_tree</span><span class="p">,</span>
     <span class="n">find_balanced_edge_cuts_memoization</span><span class="p">,</span>
+    <span class="n">ReselectException</span><span class="p">,</span>
 <span class="p">)</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
 
 
-<div class="viewcode-block" id="recom"><a class="viewcode-back" href="../../../api.html#gerrychain.proposals.recom">[docs]</a><span class="k">def</span> <span class="nf">recom</span><span class="p">(</span>
-    <span class="n">partition</span><span class="p">,</span> <span class="n">pop_col</span><span class="p">,</span> <span class="n">pop_target</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">,</span> <span class="n">node_repeats</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="n">bipartition_tree</span>
-<span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;ReCom proposal.</span>
+<div class="viewcode-block" id="MetagraphError"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.proposals.MetagraphError">[docs]</a><span class="k">class</span> <span class="nc">MetagraphError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Raised when the partition we are trying to split is a low degree</span>
+<span class="sd">    node in the metagraph.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
-<span class="sd">    Description from MGGG&#39;s 2018 Virginia House of Delegates report:</span>
-<span class="sd">    At each step, we (uniformly) randomly select a pair of adjacent districts and</span>
-<span class="sd">    merge all of their blocks in to a single unit. Then, we generate a spanning tree</span>
-<span class="sd">    for the blocks of the merged unit with the Kruskal/Karger algorithm. Finally,</span>
-<span class="sd">    we cut an edge of the tree at random, checking that this separates the region</span>
-<span class="sd">    into two new districts that are population balanced.</span>
+    <span class="k">pass</span></div>
 
-<span class="sd">    Example usage::</span>
+
+<div class="viewcode-block" id="ValueWarning"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.proposals.ValueWarning">[docs]</a><span class="k">class</span> <span class="nc">ValueWarning</span><span class="p">(</span><span class="ne">UserWarning</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Raised whe a particular value is technically valid, but may</span>
+<span class="sd">    cause issues with the algorithm.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="recom"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.proposals.recom">[docs]</a><span class="k">def</span> <span class="nf">recom</span><span class="p">(</span>
+    <span class="n">partition</span><span class="p">:</span> <span class="n">Partition</span><span class="p">,</span>
+    <span class="n">pop_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">pop_target</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
+    <span class="n">epsilon</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">node_repeats</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">weight_dict</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">method</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">bipartition_tree</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Partition</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    ReCom (short for ReCombination) is a Markov Chain Monte Carlo (MCMC) algorithm</span>
+<span class="sd">    used for redistricting. At each step of the algorithm, a pair of adjacent districts</span>
+<span class="sd">    is selected at random and merged into a single district. The region is then split</span>
+<span class="sd">    into two new districts by generating a spanning tree using the Kruskal/Karger</span>
+<span class="sd">    algorithm and cutting an edge at random. The edge is checked to ensure that it</span>
+<span class="sd">    separates the region into two new districts that are population balanced, and,</span>
+<span class="sd">    if not, a new edge is selected at random and the process is repeated.</span>
+
+<span class="sd">    Example usage:</span>
+
+<span class="sd">    .. code-block:: python</span>
 
 <span class="sd">        from functools import partial</span>
 <span class="sd">        from gerrychain import MarkovChain</span>
@@ -119,50 +162,162 @@
 
 <span class="sd">        chain = MarkovChain(proposal, constraints, accept, partition, total_steps)</span>
 
+<span class="sd">    :param partition: The initial partition.</span>
+<span class="sd">    :type partition: Partition</span>
+<span class="sd">    :param pop_col: The name of the population column.</span>
+<span class="sd">    :type pop_col: str</span>
+<span class="sd">    :param pop_target: The target population for each district.</span>
+<span class="sd">    :type pop_target: Union[int,float]</span>
+<span class="sd">    :param epsilon: The epsilon value for population deviation as a percentage of the</span>
+<span class="sd">        target population.</span>
+<span class="sd">    :type epsilon: float</span>
+<span class="sd">    :param node_repeats: The number of times to repeat the bipartitioning step. Default is 1.</span>
+<span class="sd">    :type node_repeats: int, optional</span>
+<span class="sd">    :param weight_dict: The weight dictionary for the graph used for region-aware</span>
+<span class="sd">        partitioning of the grid. Default is None.</span>
+<span class="sd">    :type weight_dict: Optional[Dict], optional</span>
+<span class="sd">    :param method: The method used for bipartitioning the tree. Default is</span>
+<span class="sd">        :func:`~gerrychain.tree.bipartition_tree`.</span>
+<span class="sd">    :type method: Callable, optional</span>
+
+<span class="sd">    :returns: The new partition resulting from the ReCom algorithm.</span>
+<span class="sd">    :rtype: Partition</span>
+
+<span class="sd">    :raises ValueWarning: Raised when the sum of the weights in the weight dictionary is</span>
+<span class="sd">        greater than 1.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">edge</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">partition</span><span class="p">[</span><span class="s2">&quot;cut_edges&quot;</span><span class="p">]))</span>
-    <span class="n">parts_to_merge</span> <span class="o">=</span> <span class="p">(</span><span class="n">partition</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">mapping</span><span class="p">[</span><span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">partition</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">mapping</span><span class="p">[</span><span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
 
-    <span class="n">subgraph</span> <span class="o">=</span> <span class="n">partition</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">subgraph</span><span class="p">(</span>
-        <span class="n">partition</span><span class="o">.</span><span class="n">parts</span><span class="p">[</span><span class="n">parts_to_merge</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">|</span> <span class="n">partition</span><span class="o">.</span><span class="n">parts</span><span class="p">[</span><span class="n">parts_to_merge</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
-    <span class="p">)</span>
+    <span class="n">bad_district_pairs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="n">n_parts</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">partition</span><span class="p">)</span>
+    <span class="n">tot_pairs</span> <span class="o">=</span> <span class="n">n_parts</span> <span class="o">*</span> <span class="p">(</span><span class="n">n_parts</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>  <span class="c1"># n choose 2</span>
 
-    <span class="n">flips</span> <span class="o">=</span> <span class="n">recursive_tree_part</span><span class="p">(</span>
-        <span class="n">subgraph</span><span class="o">.</span><span class="n">graph</span><span class="p">,</span>
-        <span class="n">parts_to_merge</span><span class="p">,</span>
-        <span class="n">pop_col</span><span class="o">=</span><span class="n">pop_col</span><span class="p">,</span>
-        <span class="n">pop_target</span><span class="o">=</span><span class="n">pop_target</span><span class="p">,</span>
-        <span class="n">epsilon</span><span class="o">=</span><span class="n">epsilon</span><span class="p">,</span>
-        <span class="n">node_repeats</span><span class="o">=</span><span class="n">node_repeats</span><span class="p">,</span>
-        <span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span>
-    <span class="p">)</span>
+    <span class="c1"># Try to add the region aware in if the method accepts the weight dictionary</span>
+    <span class="k">if</span> <span class="s2">&quot;weight_dict&quot;</span> <span class="ow">in</span> <span class="n">signature</span><span class="p">(</span><span class="n">method</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">:</span>
+        <span class="n">method</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="n">weight_dict</span><span class="o">=</span><span class="n">weight_dict</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">weight_dict</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">sum</span><span class="p">(</span><span class="n">weight_dict</span><span class="o">.</span><span class="n">values</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">The sum of the weights in the weight dictionary is greater than 1.</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Please consider normalizing the weights.&quot;</span><span class="p">,</span>
+                <span class="n">ValueWarning</span><span class="p">,</span>
+            <span class="p">)</span>
+
+    <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">bad_district_pairs</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">tot_pairs</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">edge</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">partition</span><span class="p">[</span><span class="s2">&quot;cut_edges&quot;</span><span class="p">]))</span>
+                <span class="c1"># Need to sort the tuple so that the order is consistent</span>
+                <span class="c1"># in the bad_district_pairs set</span>
+                <span class="n">parts_to_merge</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="n">partition</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">mapping</span><span class="p">[</span><span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span>
+                    <span class="n">partition</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">mapping</span><span class="p">[</span><span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span>
+                <span class="p">]</span>
+                <span class="n">parts_to_merge</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+
+                <span class="k">if</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">parts_to_merge</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">bad_district_pairs</span><span class="p">:</span>
+                    <span class="k">break</span>
+
+            <span class="n">subgraph</span> <span class="o">=</span> <span class="n">partition</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">subgraph</span><span class="p">(</span>
+                <span class="n">partition</span><span class="o">.</span><span class="n">parts</span><span class="p">[</span><span class="n">parts_to_merge</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">|</span> <span class="n">partition</span><span class="o">.</span><span class="n">parts</span><span class="p">[</span><span class="n">parts_to_merge</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+            <span class="p">)</span>
+
+            <span class="n">flips</span> <span class="o">=</span> <span class="n">recursive_tree_part</span><span class="p">(</span>
+                <span class="n">subgraph</span><span class="o">.</span><span class="n">graph</span><span class="p">,</span>
+                <span class="n">parts_to_merge</span><span class="p">,</span>
+                <span class="n">pop_col</span><span class="o">=</span><span class="n">pop_col</span><span class="p">,</span>
+                <span class="n">pop_target</span><span class="o">=</span><span class="n">pop_target</span><span class="p">,</span>
+                <span class="n">epsilon</span><span class="o">=</span><span class="n">epsilon</span><span class="p">,</span>
+                <span class="n">node_repeats</span><span class="o">=</span><span class="n">node_repeats</span><span class="p">,</span>
+                <span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">break</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">ReselectException</span><span class="p">):</span>
+                <span class="n">bad_district_pairs</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">parts_to_merge</span><span class="p">))</span>
+                <span class="k">continue</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">bad_district_pairs</span><span class="p">)</span> <span class="o">==</span> <span class="n">tot_pairs</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">MetagraphError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Bipartitioning failed for all </span><span class="si">{tot_pairs}</span><span class="s2"> district pairs.&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Consider rerunning the chain with a different random seed.&quot;</span>
+        <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">partition</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="n">flips</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="reversible_recom"><a class="viewcode-back" href="../../../api.html#gerrychain.proposals.reversible_recom">[docs]</a><span class="k">def</span> <span class="nf">reversible_recom</span><span class="p">(</span><span class="n">partition</span><span class="p">,</span> <span class="n">pop_col</span><span class="p">,</span> <span class="n">pop_target</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">,</span>
-                     <span class="n">balance_edge_fn</span><span class="o">=</span><span class="n">find_balanced_edge_cuts_memoization</span><span class="p">,</span> <span class="n">M</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-                     <span class="n">repeat_until_valid</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">choice</span><span class="o">=</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Reversible ReCom proposal.&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="reversible_recom"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.proposals.reversible_recom">[docs]</a><span class="k">def</span> <span class="nf">reversible_recom</span><span class="p">(</span>
+    <span class="n">partition</span><span class="p">:</span> <span class="n">Partition</span><span class="p">,</span>
+    <span class="n">pop_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">pop_target</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
+    <span class="n">epsilon</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">balance_edge_fn</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">find_balanced_edge_cuts_memoization</span><span class="p">,</span>
+    <span class="n">M</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">repeat_until_valid</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">choice</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Partition</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Reversible ReCom algorithm for redistricting.</span>
+
+<span class="sd">    This function performs the reversible ReCom algorithm, which is a Markov Chain Monte</span>
+<span class="sd">    Carlo (MCMC) algorithm used for redistricting. For more information, see the paper</span>
+<span class="sd">    &quot;Spanning Tree Methods for Sampling Graph Partitions&quot; by Cannon, et al. (2022) at</span>
+<span class="sd">    https://arxiv.org/abs/2210.01401</span>
+
+<span class="sd">    :param partition: The initial partition.</span>
+<span class="sd">    :type partition: Partition</span>
+<span class="sd">    :param pop_col: The name of the population column.</span>
+<span class="sd">    :type pop_col: str</span>
+<span class="sd">    :param pop_target: The target population for each district.</span>
+<span class="sd">    :type pop_target: Union[int,float]</span>
+<span class="sd">    :param epsilon: The epsilon value for population deviation as a percentage of the</span>
+<span class="sd">        target population.</span>
+<span class="sd">    :type epsilon: float</span>
+<span class="sd">    :param balance_edge_fn: The balance edge function. Default is</span>
+<span class="sd">        find_balanced_edge_cuts_memoization.</span>
+<span class="sd">    :type balance_edge_fn: Callable, optional</span>
+<span class="sd">    :param M: The maximum number of balance edges. Default is 1.</span>
+<span class="sd">    :type M: int, optional</span>
+<span class="sd">    :param repeat_until_valid: Flag indicating whether to repeat until a valid partition is</span>
+<span class="sd">        found. Default is False.</span>
+<span class="sd">    :type repeat_until_valid: bool, optional</span>
+<span class="sd">    :param choice: The choice function for selecting a random element. Default is random.choice.</span>
+<span class="sd">    :type choice: Callable, optional</span>
+
+<span class="sd">    :returns: The new partition resulting from the reversible ReCom algorithm.</span>
+<span class="sd">    :rtype: Partition</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="nf">dist_pair_edges</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">set</span><span class="p">(</span>
-            <span class="n">e</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">part</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">edges</span>
-            <span class="k">if</span> <span class="p">((</span><span class="n">part</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">mapping</span><span class="p">[</span><span class="n">e</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">==</span> <span class="n">a</span> <span class="ow">and</span> <span class="n">part</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">mapping</span><span class="p">[</span><span class="n">e</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">==</span> <span class="n">b</span><span class="p">)</span> <span class="ow">or</span>
-                <span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">mapping</span><span class="p">[</span><span class="n">e</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">==</span> <span class="n">b</span> <span class="ow">and</span> <span class="n">part</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">mapping</span><span class="p">[</span><span class="n">e</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">==</span> <span class="n">a</span><span class="p">))</span>
+            <span class="n">e</span>
+            <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">part</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">edges</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="p">(</span>
+                    <span class="n">part</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">mapping</span><span class="p">[</span><span class="n">e</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">==</span> <span class="n">a</span>
+                    <span class="ow">and</span> <span class="n">part</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">mapping</span><span class="p">[</span><span class="n">e</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">==</span> <span class="n">b</span>
+                <span class="p">)</span>
+                <span class="ow">or</span> <span class="p">(</span>
+                    <span class="n">part</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">mapping</span><span class="p">[</span><span class="n">e</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">==</span> <span class="n">b</span>
+                    <span class="ow">and</span> <span class="n">part</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">mapping</span><span class="p">[</span><span class="n">e</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">==</span> <span class="n">a</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
         <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">bounded_balance_edge_fn</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="n">cuts</span> <span class="o">=</span> <span class="n">balance_edge_fn</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cuts</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">M</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">ReversibilityError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Found {len(cuts)} balance edges, &#39;</span>
-                                     <span class="sa">f</span><span class="s1">&#39;but the upper bound is </span><span class="si">{M}</span><span class="s1">.&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">ReversibilityError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Found {len(cuts)} balance edges, &quot;</span> <span class="sa">f</span><span class="s2">&quot;but the upper bound is </span><span class="si">{M}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span>
         <span class="k">return</span> <span class="n">cuts</span>
 
     <span class="n">bipartition_tree_random_reversible</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span>
         <span class="n">_bipartition_tree_random_all</span><span class="p">,</span>
         <span class="n">repeat_until_valid</span><span class="o">=</span><span class="n">repeat_until_valid</span><span class="p">,</span>
         <span class="n">spanning_tree_fn</span><span class="o">=</span><span class="n">uniform_spanning_tree</span><span class="p">,</span>
-        <span class="n">balance_edge_fn</span><span class="o">=</span><span class="n">bounded_balance_edge_fn</span>
+        <span class="n">balance_edge_fn</span><span class="o">=</span><span class="n">bounded_balance_edge_fn</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="n">parts</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">partition</span><span class="o">.</span><span class="n">parts</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
@@ -174,28 +329,28 @@
     <span class="n">random_pair</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">dist_pairs</span><span class="p">)</span>
     <span class="n">pair_edges</span> <span class="o">=</span> <span class="n">dist_pair_edges</span><span class="p">(</span><span class="n">partition</span><span class="p">,</span> <span class="o">*</span><span class="n">random_pair</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">random_pair</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">random_pair</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">pair_edges</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">partition</span>    <span class="c1"># self-loop: no adjacency</span>
+        <span class="k">return</span> <span class="n">partition</span>  <span class="c1"># self-loop: no adjacency</span>
 
     <span class="n">edge</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">pair_edges</span><span class="p">))</span>
-    <span class="n">parts_to_merge</span> <span class="o">=</span> <span class="p">(</span><span class="n">partition</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">mapping</span><span class="p">[</span><span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">partition</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">mapping</span><span class="p">[</span><span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+    <span class="n">parts_to_merge</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">partition</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">mapping</span><span class="p">[</span><span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span>
+        <span class="n">partition</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">mapping</span><span class="p">[</span><span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span>
+    <span class="p">)</span>
     <span class="n">subgraph</span> <span class="o">=</span> <span class="n">partition</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">subgraph</span><span class="p">(</span>
         <span class="n">partition</span><span class="o">.</span><span class="n">parts</span><span class="p">[</span><span class="n">parts_to_merge</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">|</span> <span class="n">partition</span><span class="o">.</span><span class="n">parts</span><span class="p">[</span><span class="n">parts_to_merge</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
     <span class="p">)</span>
 
     <span class="n">all_cuts</span> <span class="o">=</span> <span class="n">bipartition_tree_random_reversible</span><span class="p">(</span>
-        <span class="n">subgraph</span><span class="p">,</span>
-        <span class="n">pop_col</span><span class="o">=</span><span class="n">pop_col</span><span class="p">,</span>
-        <span class="n">pop_target</span><span class="o">=</span><span class="n">pop_target</span><span class="p">,</span>
-        <span class="n">epsilon</span><span class="o">=</span><span class="n">epsilon</span>
+        <span class="n">subgraph</span><span class="p">,</span> <span class="n">pop_col</span><span class="o">=</span><span class="n">pop_col</span><span class="p">,</span> <span class="n">pop_target</span><span class="o">=</span><span class="n">pop_target</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="n">epsilon</span>
     <span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">all_cuts</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">partition</span>    <span class="c1"># self-loop: no balance edge</span>
+        <span class="k">return</span> <span class="n">partition</span>  <span class="c1"># self-loop: no balance edge</span>
 
     <span class="n">nodes</span> <span class="o">=</span> <span class="n">choice</span><span class="p">(</span><span class="n">all_cuts</span><span class="p">)</span><span class="o">.</span><span class="n">subset</span>
     <span class="n">remaining_nodes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">subgraph</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span>
     <span class="n">flips</span> <span class="o">=</span> <span class="p">{</span>
         <span class="o">**</span><span class="p">{</span><span class="n">node</span><span class="p">:</span> <span class="n">parts_to_merge</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">},</span>
-        <span class="o">**</span><span class="p">{</span><span class="n">node</span><span class="p">:</span> <span class="n">parts_to_merge</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">remaining_nodes</span><span class="p">}</span>
+        <span class="o">**</span><span class="p">{</span><span class="n">node</span><span class="p">:</span> <span class="n">parts_to_merge</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">remaining_nodes</span><span class="p">},</span>
     <span class="p">}</span>
 
     <span class="n">new_part</span> <span class="o">=</span> <span class="n">partition</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="n">flips</span><span class="p">)</span>
@@ -203,31 +358,59 @@
 
     <span class="n">prob</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_cuts</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">M</span> <span class="o">*</span> <span class="n">seam_length</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">prob</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="n">ReversibilityError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Found {len(all_cuts)} balance edges, but &#39;</span>
-                                 <span class="sa">f</span><span class="s1">&#39;the upper bound (with seam length 1) is </span><span class="si">{M}</span><span class="s1">.&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">ReversibilityError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Found {len(all_cuts)} balance edges, but &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;the upper bound (with seam length 1) is </span><span class="si">{M}</span><span class="s2">.&quot;</span>
+        <span class="p">)</span>
     <span class="k">if</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">prob</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">new_part</span>
 
-    <span class="k">return</span> <span class="n">partition</span>     <span class="c1"># self-loop</span></div>
+    <span class="k">return</span> <span class="n">partition</span>  <span class="c1"># self-loop</span></div>
 
 
-<span class="k">class</span> <span class="nc">ReCom</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pop_col</span><span class="p">,</span> <span class="n">ideal_pop</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="n">bipartition_tree_random</span><span class="p">):</span>
+<div class="viewcode-block" id="ReCom"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.proposals.ReCom">[docs]</a><span class="k">class</span> <span class="nc">ReCom</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    ReCom (short for ReCombination) is a class that represents a ReCom proposal</span>
+<span class="sd">    for redistricting. It is used to create new partitions by recombining existing</span>
+<span class="sd">    districts while maintaining population balance.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">pop_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">ideal_pop</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
+        <span class="n">epsilon</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">method</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">bipartition_tree_random</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param pop_col: The name of the column in the partition that contains the population data.</span>
+<span class="sd">        :type pop_col: str</span>
+<span class="sd">        :param ideal_pop: The ideal population for each district.</span>
+<span class="sd">        :type ideal_pop: Union[int,float]</span>
+<span class="sd">        :param epsilon: The epsilon value for population deviation as a percentage of the</span>
+<span class="sd">            target population.</span>
+<span class="sd">        :type epsilon: float</span>
+<span class="sd">        :param method: The method used for bipartitioning the tree.</span>
+<span class="sd">            Defaults to `bipartition_tree_random`.</span>
+<span class="sd">        :type method: function, optional</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pop_col</span> <span class="o">=</span> <span class="n">pop_col</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ideal_pop</span> <span class="o">=</span> <span class="n">ideal_pop</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span> <span class="o">=</span> <span class="n">epsilon</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="n">method</span>
 
-    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partition</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partition</span><span class="p">:</span> <span class="n">Partition</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">recom</span><span class="p">(</span>
             <span class="n">partition</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pop_col</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ideal_pop</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">method</span>
-        <span class="p">)</span>
+        <span class="p">)</span></div>
 
 
-<span class="k">class</span> <span class="nc">ReversibilityError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+<div class="viewcode-block" id="ReversibilityError"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.proposals.ReversibilityError">[docs]</a><span class="k">class</span> <span class="nc">ReversibilityError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Raised when the cut edge upper bound is violated.&quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">msg</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">msg</span></div>
 </pre></div>
 
            </div>

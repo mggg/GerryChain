@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>gerrychain.grid &mdash; GerryChain  documentation</title><link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/custom.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
@@ -13,6 +15,9 @@
         <script src="../../_static/underscore.js"></script>
         <script src="../../_static/doctools.js"></script>
         <script src="../../_static/language_data.js"></script>
+        <script src="../../_static/clipboard.min.js"></script>
+        <script src="../../_static/copybutton.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
@@ -41,7 +46,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../../user/recom.html">Running a chain with ReCom</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../user/partitions.html">Working with Partitions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../user/updaters.html">Updaters</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../user/adjacency.html">Handling Adjacencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../user/data.html">Good Data Practices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../user/geometries.html">Working With Geometries</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -51,8 +57,11 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../topics/reproducibility.html">Reproducibility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../topics/tools.html">Evaluating districting plans in the real world</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../topics/realworldplans.html">Using <code class="docutils literal notranslate"><span class="pre">maup</span></code> to import a real-life plan in GerryChain</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../topics/whatislands.html">What to do about islands and connectivity</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../topics/contributing.html">Contributing to GerryChain</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Index</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../full_ref.html">Full Package Reference</a></li>
 </ul>
 
         </div>
@@ -80,10 +89,22 @@
            <div itemprop="articleBody">
              
   <h1>Source code for gerrychain.grid</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">math</span>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module provides a Grid class used for creating and manipulating grid partitions.</span>
+<span class="sd">It&#39;s part of the GerryChain suite, designed to facilitate experiments with redistricting</span>
+<span class="sd">plans without the need for extensive data processing. This module relies on NetworkX for</span>
+<span class="sd">graph operations and integrates with GerryChain&#39;s Partition class.</span>
 
+<span class="sd">Dependencies:</span>
+
+<span class="sd">- math: For math.floor() function.</span>
+<span class="sd">- networkx: For graph operations with using the graph structure in</span>
+<span class="sd">    :class:`~gerrychain.graph.Graph`.</span>
+<span class="sd">- typing: Used for type hints.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">import</span> <span class="nn">networkx</span>
-
 <span class="kn">from</span> <span class="nn">gerrychain.partition</span> <span class="kn">import</span> <span class="n">Partition</span>
 <span class="kn">from</span> <span class="nn">gerrychain.graph</span> <span class="kn">import</span> <span class="n">Graph</span>
 <span class="kn">from</span> <span class="nn">gerrychain.updaters</span> <span class="kn">import</span> <span class="p">(</span>
@@ -96,11 +117,10 @@
     <span class="n">perimeter</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span> <span class="nn">gerrychain.metrics</span> <span class="kn">import</span> <span class="n">polsby_popper</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Any</span>
 
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
 
-
-<div class="viewcode-block" id="Grid"><a class="viewcode-back" href="../../api.html#gerrychain.grid.Grid">[docs]</a><span class="k">class</span> <span class="nc">Grid</span><span class="p">(</span><span class="n">Partition</span><span class="p">):</span>
+<div class="viewcode-block" id="Grid"><a class="viewcode-back" href="../../full_ref.html#gerrychain.grid.Grid">[docs]</a><span class="k">class</span> <span class="nc">Grid</span><span class="p">(</span><span class="n">Partition</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    The :class:`Grid` class represents a grid partitioned into districts.</span>
 <span class="sd">    It is useful for running little experiments with GerryChain without needing to do</span>
@@ -136,15 +156,35 @@
         <span class="n">flips</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        :param dimensions: tuple (m,n) of the desired dimensions of the grid.</span>
-<span class="sd">        :param with_diagonals: (optional, defaults to False) whether to include diagonals</span>
-<span class="sd">            as edges of the graph (i.e., whether to use &#39;queen&#39; adjacency rather than</span>
-<span class="sd">            &#39;rook&#39; adjacency).</span>
-<span class="sd">        :param assignment: (optional) dict matching nodes to their districts. If not</span>
-<span class="sd">            provided, partitions the grid into 4 quarters of roughly equal size.</span>
-<span class="sd">        :param updaters: (optional) dict matching names of attributes of the Partition</span>
-<span class="sd">            to functions that compute their values. If not provided, the Grid</span>
-<span class="sd">            configures the cut_edges updater for convenience.</span>
+<span class="sd">        If the updaters are not specified, the default updaters are used, which are as follows::</span>
+
+<span class="sd">            default_updaters = {</span>
+<span class="sd">                &quot;cut_edges&quot;: cut_edges,</span>
+<span class="sd">                &quot;population&quot;: Tally(&quot;population&quot;),</span>
+<span class="sd">                &quot;perimeter&quot;: perimeter,</span>
+<span class="sd">                &quot;exterior_boundaries&quot;: exterior_boundaries,</span>
+<span class="sd">                &quot;interior_boundaries&quot;: interior_boundaries,</span>
+<span class="sd">                &quot;boundary_nodes&quot;: boundary_nodes,</span>
+<span class="sd">                &quot;area&quot;: Tally(&quot;area&quot;, alias=&quot;area&quot;),</span>
+<span class="sd">                &quot;polsby_popper&quot;: polsby_popper,</span>
+<span class="sd">                &quot;cut_edges_by_part&quot;: cut_edges_by_part,</span>
+<span class="sd">            }</span>
+
+
+<span class="sd">        :param dimensions: The grid dimensions (rows, columns), defaults to None.</span>
+<span class="sd">        :type dimensions: Tuple[int, int], optional</span>
+<span class="sd">        :param with_diagonals: If True, includes diagonal connections, defaults to False.</span>
+<span class="sd">        :type with_diagonals: bool, optional</span>
+<span class="sd">        :param assignment: Node-to-district assignments, defaults to None.</span>
+<span class="sd">        :type assignment: Dict, optional</span>
+<span class="sd">        :param updaters: Custom updater functions, defaults to None.</span>
+<span class="sd">        :type updaters: Dict[str, Callable], optional</span>
+<span class="sd">        :param parent: Parent Grid object for inheritance, defaults to None.</span>
+<span class="sd">        :type parent: Grid, optional</span>
+<span class="sd">        :param flips: Node flips for partition changes, defaults to None.</span>
+<span class="sd">        :type flips: Dict[Tuple[int, int], int], optional</span>
+
+<span class="sd">        :raises Exception: If neither dimensions nor parent is provided.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">dimensions</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span> <span class="o">=</span> <span class="n">dimensions</span>
@@ -177,17 +217,34 @@
         <span class="n">s</span> <span class="o">=</span> <span class="s2">&quot;s&quot;</span> <span class="k">if</span> <span class="n">number_of_parts</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
         <span class="k">return</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> Grid</span><span class="se">\n</span><span class="s2">Partitioned into </span><span class="si">{}</span><span class="s2"> part</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dims</span><span class="p">,</span> <span class="n">number_of_parts</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>
 
-<div class="viewcode-block" id="Grid.as_list_of_lists"><a class="viewcode-back" href="../../api.html#gerrychain.grid.Grid.as_list_of_lists">[docs]</a>    <span class="k">def</span> <span class="nf">as_list_of_lists</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Grid.as_list_of_lists"><a class="viewcode-back" href="../../full_ref.html#gerrychain.grid.Grid.as_list_of_lists">[docs]</a>    <span class="k">def</span> <span class="nf">as_list_of_lists</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the grid as a list of lists (like a matrix), where the (i,j)th</span>
 <span class="sd">        entry is the assigned district of the node in position (i,j) on the</span>
 <span class="sd">        grid.</span>
+
+<span class="sd">        :returns: List of lists representing the grid.</span>
+<span class="sd">        :rtype: List[List[int]]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">m</span><span class="p">,</span> <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span>
         <span class="k">return</span> <span class="p">[[</span><span class="bp">self</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">mapping</span><span class="p">[(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">m</span><span class="p">)]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">)]</span></div></div>
 
 
-<span class="k">def</span> <span class="nf">create_grid_graph</span><span class="p">(</span><span class="n">dimensions</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">with_diagonals</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Graph</span><span class="p">:</span>
+<div class="viewcode-block" id="create_grid_graph"><a class="viewcode-back" href="../../full_ref.html#gerrychain.grid.create_grid_graph">[docs]</a><span class="k">def</span> <span class="nf">create_grid_graph</span><span class="p">(</span><span class="n">dimensions</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">with_diagonals</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Graph</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates a grid graph with the specified dimensions.</span>
+<span class="sd">    Optionally includes diagonal connections between nodes.</span>
+
+<span class="sd">    :param dimensions: The grid dimensions (rows, columns).</span>
+<span class="sd">    :type dimensions: Tuple[int, int]</span>
+<span class="sd">    :param with_diagonals: If True, includes diagonal connections.</span>
+<span class="sd">    :type with_diagonals: bool</span>
+
+<span class="sd">    :returns: A grid graph.</span>
+<span class="sd">    :rtype: Graph</span>
+
+<span class="sd">    :raises ValueError: If the dimensions are not a tuple of length 2.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dimensions</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Expected two dimensions.&quot;</span><span class="p">)</span>
     <span class="n">m</span><span class="p">,</span> <span class="n">n</span> <span class="o">=</span> <span class="n">dimensions</span>
@@ -212,60 +269,114 @@
 
     <span class="n">tag_boundary_nodes</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">dimensions</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">graph</span>
+    <span class="k">return</span> <span class="n">graph</span></div>
 
 
-<span class="k">def</span> <span class="nf">give_constant_attribute</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">attribute</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<div class="viewcode-block" id="give_constant_attribute"><a class="viewcode-back" href="../../full_ref.html#gerrychain.grid.give_constant_attribute">[docs]</a><span class="k">def</span> <span class="nf">give_constant_attribute</span><span class="p">(</span><span class="n">graph</span><span class="p">:</span> <span class="n">Graph</span><span class="p">,</span> <span class="n">attribute</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sets the specified attribute to the specified value for all nodes in the graph.</span>
+
+<span class="sd">    :param graph: The graph to modify.</span>
+<span class="sd">    :type graph: Graph</span>
+<span class="sd">    :param attribute: The attribute to set.</span>
+<span class="sd">    :type attribute: Any</span>
+<span class="sd">    :param value: The value to set the attribute to.</span>
+<span class="sd">    :type value: Any</span>
+
+<span class="sd">    :returns: None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
-        <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">node</span><span class="p">][</span><span class="n">attribute</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">node</span><span class="p">][</span><span class="n">attribute</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span></div>
 
 
-<span class="k">def</span> <span class="nf">tag_boundary_nodes</span><span class="p">(</span><span class="n">graph</span><span class="p">:</span> <span class="n">Graph</span><span class="p">,</span> <span class="n">dimensions</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="tag_boundary_nodes"><a class="viewcode-back" href="../../full_ref.html#gerrychain.grid.tag_boundary_nodes">[docs]</a><span class="k">def</span> <span class="nf">tag_boundary_nodes</span><span class="p">(</span><span class="n">graph</span><span class="p">:</span> <span class="n">Graph</span><span class="p">,</span> <span class="n">dimensions</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Adds the boolean attribute ``boundary_node`` to each node in the graph.</span>
+<span class="sd">    If the node is on the boundary of the grid, that node also gets the attribute</span>
+<span class="sd">    ``boundary_perim`` which is determined by the function :func:`get_boundary_perim`.</span>
+
+<span class="sd">    :param graph: The graph to modify.</span>
+<span class="sd">    :type graph: Graph</span>
+<span class="sd">    :param dimensions: The dimensions of the grid.</span>
+<span class="sd">    :type dimensions: Tuple[int, int]</span>
+
+<span class="sd">    :returns: None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">m</span><span class="p">,</span> <span class="n">n</span> <span class="o">=</span> <span class="n">dimensions</span>
     <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">node</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">m</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="ow">or</span> <span class="n">node</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]:</span>
             <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">node</span><span class="p">][</span><span class="s2">&quot;boundary_node&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">node</span><span class="p">][</span><span class="s2">&quot;boundary_perim&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_boundary_perim</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">dimensions</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">node</span><span class="p">][</span><span class="s2">&quot;boundary_node&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">node</span><span class="p">][</span><span class="s2">&quot;boundary_node&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div>
 
 
-<span class="k">def</span> <span class="nf">get_boundary_perim</span><span class="p">(</span><span class="n">node</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">dimensions</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<div class="viewcode-block" id="get_boundary_perim"><a class="viewcode-back" href="../../full_ref.html#gerrychain.grid.get_boundary_perim">[docs]</a><span class="k">def</span> <span class="nf">get_boundary_perim</span><span class="p">(</span><span class="n">node</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">dimensions</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Determines the boundary perimeter of a node on the grid.</span>
+<span class="sd">    The boundary perimeter is the number of sides of the node that</span>
+<span class="sd">    are on the boundary of the grid.</span>
+
+<span class="sd">    :param node: The node to check.</span>
+<span class="sd">    :type node: Tuple[int, int]</span>
+<span class="sd">    :param dimensions: The dimensions of the grid.</span>
+<span class="sd">    :type dimensions: Tuple[int, int]</span>
+
+<span class="sd">    :returns: The boundary perimeter of the node.</span>
+<span class="sd">    :rtype: int</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">m</span><span class="p">,</span> <span class="n">n</span> <span class="o">=</span> <span class="n">dimensions</span>
     <span class="k">if</span> <span class="n">node</span> <span class="ow">in</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="n">m</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="n">m</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)]:</span>
         <span class="k">return</span> <span class="mi">2</span>
     <span class="k">elif</span> <span class="n">node</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">m</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="ow">or</span> <span class="n">node</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]:</span>
         <span class="k">return</span> <span class="mi">1</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="mi">0</span></div>
 
 
-<span class="k">def</span> <span class="nf">color_half</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
+<div class="viewcode-block" id="color_half"><a class="viewcode-back" href="../../full_ref.html#gerrychain.grid.color_half">[docs]</a><span class="k">def</span> <span class="nf">color_half</span><span class="p">(</span><span class="n">node</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">threshold</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Assigns a color (as an integer) to a node based on its x-coordinate.</span>
+
+<span class="sd">    This function is used to partition the grid into two parts based on a given threshold.</span>
+<span class="sd">    Nodes with an x-coordinate less than or equal to the threshold are assigned one color,</span>
+<span class="sd">    and nodes with an x-coordinate greater than the threshold are assigned another.</span>
+
+<span class="sd">    :param node: The node to color, represented as a tuple of coordinates (x, y).</span>
+<span class="sd">    :type node: Tuple[int, int]</span>
+<span class="sd">    :param threshold: The x-coordinate value that determines the color assignment.</span>
+<span class="sd">    :type threshold: int</span>
+
+<span class="sd">    :returns: An integer representing the color of the node. Returns 0 for nodes with</span>
+<span class="sd">        x-coordinate less than or equal to the threshold, and 1 otherwise.</span>
+<span class="sd">    :rtype: int</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">x</span> <span class="o">=</span> <span class="n">node</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="k">return</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">x</span> <span class="o">&lt;=</span> <span class="n">threshold</span> <span class="k">else</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">x</span> <span class="o">&lt;=</span> <span class="n">threshold</span> <span class="k">else</span> <span class="mi">1</span></div>
 
 
-<span class="k">def</span> <span class="nf">color_quadrants</span><span class="p">(</span><span class="n">node</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">thresholds</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<div class="viewcode-block" id="color_quadrants"><a class="viewcode-back" href="../../full_ref.html#gerrychain.grid.color_quadrants">[docs]</a><span class="k">def</span> <span class="nf">color_quadrants</span><span class="p">(</span><span class="n">node</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">thresholds</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Assigns a color (as an integer) to a node based on its position relative to</span>
+<span class="sd">    specified threshold coordinates, effectively dividing the grid into four quadrants.</span>
+
+<span class="sd">    The function uses two threshold values (one for each axis) to determine the color.</span>
+<span class="sd">    Each combination of being higher or lower than the threshold on each axis results</span>
+<span class="sd">    in a different color.</span>
+
+<span class="sd">    :param node: The node to color, represented as a tuple of coordinates (x, y).</span>
+<span class="sd">    :type node: Tuple[int, int]</span>
+<span class="sd">    :param thresholds: A tuple of two integers representing the threshold coordinates</span>
+<span class="sd">        (x_threshold, y_threshold).</span>
+<span class="sd">    :type thresholds: Tuple[int, int]</span>
+
+<span class="sd">    :returns: An integer representing the color of the node, determined by its quadrant.</span>
+<span class="sd">    :rtype: int</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">node</span>
     <span class="n">x_color</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">thresholds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">else</span> <span class="mi">1</span>
     <span class="n">y_color</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">thresholds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">else</span> <span class="mi">2</span>
-    <span class="k">return</span> <span class="n">x_color</span> <span class="o">+</span> <span class="n">y_color</span>
-
-
-<span class="k">def</span> <span class="nf">grid_size</span><span class="p">(</span><span class="n">parition</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; This is a hardcoded population function</span>
-<span class="sd">    for the grid class&quot;&quot;&quot;</span>
-
-    <span class="n">L</span> <span class="o">=</span> <span class="n">parition</span><span class="o">.</span><span class="n">as_list_of_lists</span><span class="p">()</span>
-    <span class="n">permit</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">]</span>
-
-    <span class="n">sizes</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
-
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">L</span><span class="p">)):</span>
-        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">L</span><span class="p">[</span><span class="mi">0</span><span class="p">])):</span>
-            <span class="n">sizes</span><span class="p">[</span><span class="n">L</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]]</span> <span class="o">+=</span> <span class="mi">1</span>
-
-    <span class="k">return</span> <span class="nb">all</span><span class="p">(</span><span class="n">x</span> <span class="ow">in</span> <span class="n">permit</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">sizes</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">x_color</span> <span class="o">+</span> <span class="n">y_color</span></div>
 </pre></div>
 
            </div>

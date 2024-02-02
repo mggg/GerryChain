@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>gerrychain.metrics.partisan &mdash; GerryChain  documentation</title><link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
@@ -13,6 +15,9 @@
         <script src="../../../_static/underscore.js"></script>
         <script src="../../../_static/doctools.js"></script>
         <script src="../../../_static/language_data.js"></script>
+        <script src="../../../_static/clipboard.min.js"></script>
+        <script src="../../../_static/copybutton.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -41,7 +46,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../user/recom.html">Running a chain with ReCom</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/partitions.html">Working with Partitions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/updaters.html">Updaters</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../user/adjacency.html">Handling Adjacencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/data.html">Good Data Practices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/geometries.html">Working With Geometries</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -51,8 +57,11 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../topics/reproducibility.html">Reproducibility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../topics/tools.html">Evaluating districting plans in the real world</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../topics/realworldplans.html">Using <code class="docutils literal notranslate"><span class="pre">maup</span></code> to import a real-life plan in GerryChain</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../topics/whatislands.html">What to do about islands and connectivity</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../topics/contributing.html">Contributing to GerryChain</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Index</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../full_ref.html">Full Package Reference</a></li>
 </ul>
 
         </div>
@@ -80,14 +89,29 @@
            <div itemprop="articleBody">
              
   <h1>Source code for gerrychain.metrics.partisan</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">numpy</span>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">The partisan metrics in this file are later used in the module</span>
+<span class="sd">gerrychain.updaters.election.py. Thus, all of the election</span>
+<span class="sd">results objects here are implicilty typed as ElectionResults,</span>
+<span class="sd">but cannot be given an explicit type annotation due to problems</span>
+<span class="sd">with circular imports.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span>
 
 
-<div class="viewcode-block" id="mean_median"><a class="viewcode-back" href="../../../api.html#gerrychain.metrics.mean_median">[docs]</a><span class="k">def</span> <span class="nf">mean_median</span><span class="p">(</span><span class="n">election_results</span><span class="p">):</span>
+<div class="viewcode-block" id="mean_median"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.metrics.mean_median">[docs]</a><span class="k">def</span> <span class="nf">mean_median</span><span class="p">(</span><span class="n">election_results</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Computes the Mean-Median score for the given ElectionResults.</span>
 <span class="sd">    A positive value indicates an advantage for the first party listed</span>
 <span class="sd">    in the Election&#39;s parties_to_columns dictionary.</span>
+
+<span class="sd">    :param election_results: An ElectionResults object</span>
+<span class="sd">    :type election_results: ElectionResults</span>
+
+<span class="sd">    :returns: The Mean-Median score for the given ElectionResults</span>
+<span class="sd">    :rtype: float</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">first_party</span> <span class="o">=</span> <span class="n">election_results</span><span class="o">.</span><span class="n">election</span><span class="o">.</span><span class="n">parties</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">data</span> <span class="o">=</span> <span class="n">election_results</span><span class="o">.</span><span class="n">percents</span><span class="p">(</span><span class="n">first_party</span><span class="p">)</span>
@@ -95,7 +119,7 @@
     <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">-</span> <span class="n">numpy</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">data</span><span class="p">)</span></div>
 
 
-<span class="k">def</span> <span class="nf">mean_thirdian</span><span class="p">(</span><span class="n">election_results</span><span class="p">):</span>
+<div class="viewcode-block" id="mean_thirdian"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.metrics.mean_thirdian">[docs]</a><span class="k">def</span> <span class="nf">mean_thirdian</span><span class="p">(</span><span class="n">election_results</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Computes the Mean-Median score for the given ElectionResults.</span>
 <span class="sd">    A positive value indicates an advantage for the first party listed</span>
@@ -103,6 +127,12 @@
 
 <span class="sd">    The motivation for this score is that the minority party in many</span>
 <span class="sd">    states struggles to win even a third of the seats.</span>
+
+<span class="sd">    :param election_results: An ElectionResults object</span>
+<span class="sd">    :type election_results: ElectionResults</span>
+
+<span class="sd">    :returns: The Mean-Thirdian score for the given ElectionResults</span>
+<span class="sd">    :rtype: float</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">first_party</span> <span class="o">=</span> <span class="n">election_results</span><span class="o">.</span><span class="n">election</span><span class="o">.</span><span class="n">parties</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">data</span> <span class="o">=</span> <span class="n">election_results</span><span class="o">.</span><span class="n">percents</span><span class="p">(</span><span class="n">first_party</span><span class="p">)</span>
@@ -110,27 +140,40 @@
     <span class="n">thirdian_index</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">/</span> <span class="mi">3</span><span class="p">)</span>
     <span class="n">thirdian</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">data</span><span class="p">)[</span><span class="n">thirdian_index</span><span class="p">]</span>
 
-    <span class="k">return</span> <span class="n">thirdian</span> <span class="o">-</span> <span class="n">numpy</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">thirdian</span> <span class="o">-</span> <span class="n">numpy</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">data</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="efficiency_gap"><a class="viewcode-back" href="../../../api.html#gerrychain.metrics.efficiency_gap">[docs]</a><span class="k">def</span> <span class="nf">efficiency_gap</span><span class="p">(</span><span class="n">results</span><span class="p">):</span>
+<div class="viewcode-block" id="efficiency_gap"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.metrics.efficiency_gap">[docs]</a><span class="k">def</span> <span class="nf">efficiency_gap</span><span class="p">(</span><span class="n">election_results</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Computes the efficiency gap for the given ElectionResults.</span>
 <span class="sd">    A positive value indicates an advantage for the first party listed</span>
 <span class="sd">    in the Election&#39;s parties_to_columns dictionary.</span>
+
+<span class="sd">    :param election_results: An ElectionResults object</span>
+<span class="sd">    :type election_results: ElectionResults</span>
+
+<span class="sd">    :returns: The efficiency gap for the given ElectionResults</span>
+<span class="sd">    :rtype: float</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">party1</span><span class="p">,</span> <span class="n">party2</span> <span class="o">=</span> <span class="p">[</span><span class="n">results</span><span class="o">.</span><span class="n">counts</span><span class="p">(</span><span class="n">party</span><span class="p">)</span> <span class="k">for</span> <span class="n">party</span> <span class="ow">in</span> <span class="n">results</span><span class="o">.</span><span class="n">election</span><span class="o">.</span><span class="n">parties</span><span class="p">]</span>
+    <span class="n">party1</span><span class="p">,</span> <span class="n">party2</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">election_results</span><span class="o">.</span><span class="n">counts</span><span class="p">(</span><span class="n">party</span><span class="p">)</span> <span class="k">for</span> <span class="n">party</span> <span class="ow">in</span> <span class="n">election_results</span><span class="o">.</span><span class="n">election</span><span class="o">.</span><span class="n">parties</span>
+    <span class="p">]</span>
     <span class="n">wasted_votes_by_part</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">wasted_votes</span><span class="p">,</span> <span class="n">party1</span><span class="p">,</span> <span class="n">party2</span><span class="p">)</span>
-    <span class="n">total_votes</span> <span class="o">=</span> <span class="n">results</span><span class="o">.</span><span class="n">total_votes</span><span class="p">()</span>
+    <span class="n">total_votes</span> <span class="o">=</span> <span class="n">election_results</span><span class="o">.</span><span class="n">total_votes</span><span class="p">()</span>
     <span class="n">numerator</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">waste2</span> <span class="o">-</span> <span class="n">waste1</span> <span class="k">for</span> <span class="n">waste1</span><span class="p">,</span> <span class="n">waste2</span> <span class="ow">in</span> <span class="n">wasted_votes_by_part</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">numerator</span> <span class="o">/</span> <span class="n">total_votes</span></div>
 
 
-<div class="viewcode-block" id="wasted_votes"><a class="viewcode-back" href="../../../api.html#gerrychain.metrics.wasted_votes">[docs]</a><span class="k">def</span> <span class="nf">wasted_votes</span><span class="p">(</span><span class="n">party1_votes</span><span class="p">,</span> <span class="n">party2_votes</span><span class="p">):</span>
+<div class="viewcode-block" id="wasted_votes"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.metrics.wasted_votes">[docs]</a><span class="k">def</span> <span class="nf">wasted_votes</span><span class="p">(</span><span class="n">party1_votes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">party2_votes</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Computes the wasted votes for each party in the given race.</span>
-<span class="sd">    :party1_votes: the number of votes party1 received in the race</span>
-<span class="sd">    :party2_votes: the number of votes party2 received in the race</span>
+<span class="sd">    :param party1_votes: the number of votes party1 received in the race</span>
+<span class="sd">    :type party1_votes: int</span>
+<span class="sd">    :param party2_votes: the number of votes party2 received in the race</span>
+<span class="sd">    :type party2_votes: int</span>
+
+<span class="sd">    :returns: a tuple of the wasted votes for each party</span>
+<span class="sd">    :rtype: Tuple[int, int]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">total_votes</span> <span class="o">=</span> <span class="n">party1_votes</span> <span class="o">+</span> <span class="n">party2_votes</span>
     <span class="k">if</span> <span class="n">party1_votes</span> <span class="o">&gt;</span> <span class="n">party2_votes</span><span class="p">:</span>
@@ -142,12 +185,18 @@
     <span class="k">return</span> <span class="n">party1_waste</span><span class="p">,</span> <span class="n">party2_waste</span></div>
 
 
-<div class="viewcode-block" id="partisan_bias"><a class="viewcode-back" href="../../../api.html#gerrychain.metrics.partisan_bias">[docs]</a><span class="k">def</span> <span class="nf">partisan_bias</span><span class="p">(</span><span class="n">election_results</span><span class="p">):</span>
+<div class="viewcode-block" id="partisan_bias"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.metrics.partisan_bias">[docs]</a><span class="k">def</span> <span class="nf">partisan_bias</span><span class="p">(</span><span class="n">election_results</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Computes the partisan bias for the given ElectionResults.</span>
 <span class="sd">    The partisan bias is defined as the number of districts with above-mean</span>
 <span class="sd">    vote share by the first party divided by the total number of districts,</span>
 <span class="sd">    minus 1/2.</span>
+
+<span class="sd">    :param election_results: An ElectionResults object</span>
+<span class="sd">    :type election_results: ElectionResults</span>
+
+<span class="sd">    :returns: The partisan bias for the given ElectionResults</span>
+<span class="sd">    :rtype: float</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">first_party</span> <span class="o">=</span> <span class="n">election_results</span><span class="o">.</span><span class="n">election</span><span class="o">.</span><span class="n">parties</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">party_shares</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">election_results</span><span class="o">.</span><span class="n">percents</span><span class="p">(</span><span class="n">first_party</span><span class="p">))</span>
@@ -156,26 +205,24 @@
     <span class="k">return</span> <span class="p">(</span><span class="n">above_mean_districts</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">party_shares</span><span class="p">))</span> <span class="o">-</span> <span class="mf">0.5</span></div>
 
 
-<div class="viewcode-block" id="partisan_gini"><a class="viewcode-back" href="../../../api.html#gerrychain.metrics.partisan_gini">[docs]</a><span class="k">def</span> <span class="nf">partisan_gini</span><span class="p">(</span><span class="n">election_results</span><span class="p">):</span>
+<div class="viewcode-block" id="partisan_gini"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.metrics.partisan_gini">[docs]</a><span class="k">def</span> <span class="nf">partisan_gini</span><span class="p">(</span><span class="n">election_results</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Computes the partisan Gini score for the given ElectionResults.</span>
 <span class="sd">    The partisan Gini score is defined as the area between the seats-votes</span>
 <span class="sd">    curve and its reflection about (.5, .5).</span>
+
+<span class="sd">    For more information on the computation, see Definition 1 in:</span>
+<span class="sd">    https://arxiv.org/pdf/2008.06930.pdf</span>
+
+<span class="sd">    :param election_results: An ElectionResults object</span>
+<span class="sd">    :type election_results: ElectionResults</span>
+
+<span class="sd">    :returns: The partisan Gini score for the given ElectionResults</span>
+<span class="sd">    :rtype: float</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># For two parties, the Gini score is symmetric--it does not vary by party.</span>
     <span class="n">party</span> <span class="o">=</span> <span class="n">election_results</span><span class="o">.</span><span class="n">election</span><span class="o">.</span><span class="n">parties</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
-    <span class="c1"># To find seats as a function of votes, we assume uniform partisan swing.</span>
-    <span class="c1"># That is, if the statewide popular vote share for a party swings by some</span>
-    <span class="c1"># delta, the vote share for that party swings by that delta in each</span>
-    <span class="c1"># district.</span>
-    <span class="c1"># We calculate the necessary delta to shift the district with the highest</span>
-    <span class="c1"># vote share for the party to a vote share of 0.5. This delta, subtracted</span>
-    <span class="c1"># from the original popular vote share, gives the minimum popular vote</span>
-    <span class="c1"># share that yields 1 seat to the party.</span>
-    <span class="c1"># We repeat this process for the district with the second-highest vote</span>
-    <span class="c1"># share, which gives the minimum popular vote share yielding 2 seats,</span>
-    <span class="c1"># and so on.</span>
     <span class="n">overall_result</span> <span class="o">=</span> <span class="n">election_results</span><span class="o">.</span><span class="n">percent</span><span class="p">(</span><span class="n">party</span><span class="p">)</span>
     <span class="n">race_results</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">election_results</span><span class="o">.</span><span class="n">percents</span><span class="p">(</span><span class="n">party</span><span class="p">),</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">seats_votes</span> <span class="o">=</span> <span class="p">[</span><span class="n">overall_result</span> <span class="o">-</span> <span class="n">r</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">race_results</span><span class="p">]</span>
@@ -183,10 +230,9 @@
     <span class="c1"># Apply reflection of seats-votes curve about (.5, .5)</span>
     <span class="n">reflected_sv</span> <span class="o">=</span> <span class="nb">reversed</span><span class="p">([</span><span class="mi">1</span> <span class="o">-</span> <span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">seats_votes</span><span class="p">])</span>
     <span class="c1"># Calculate the unscaled, unsigned area between the seats-votes curve</span>
-    <span class="c1"># and its reflection. For each possible number of seats attained, we find</span>
-    <span class="c1"># the area of a rectangle of unit height, with a width determined by the</span>
-    <span class="c1"># horizontal distance between the curves at that number of seats.</span>
+    <span class="c1"># and its reflection.</span>
     <span class="n">unscaled_area</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">s</span> <span class="o">-</span> <span class="n">r</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">seats_votes</span><span class="p">,</span> <span class="n">reflected_sv</span><span class="p">))</span>
+
     <span class="c1"># We divide by area by the number of seats to obtain a partisan Gini score</span>
     <span class="c1"># between 0 and 1.</span>
     <span class="k">return</span> <span class="n">unscaled_area</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">race_results</span><span class="p">)</span></div>
