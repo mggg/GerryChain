@@ -28,7 +28,7 @@ A Simple Recom Chain
 .. raw:: html
 
     <div class="center-container">
-      <a href="../_static/gerrymandria.json" class="download-badge" download>
+      <a href="https://github.com/mggg/GerryChain/blob/main/docs/_static/gerrymandria.json" class="download-badge" download>
         Download GerryMandria File
       </a>
     </div>
@@ -473,7 +473,7 @@ Setting up the initial districting plan
 .. raw:: html
 
     <div class="center-container">
-      <a href="../_static/PA_VTDs.json" class="download-badge" download>Download PA File</a>
+      <a href="https://github.com/mggg/GerryChain/blob/main/docs/_static/PA_VTDs.json" class="download-badge" download>Download PA File</a>
     </div>
     <br style="line-height: 5px;">
 
