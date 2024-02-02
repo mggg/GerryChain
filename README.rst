@@ -14,9 +14,6 @@ GerryChain
 .. image:: https://badge.fury.io/py/gerrychain.svg
     :target: https://pypi.org/project/gerrychain/
     :alt: PyPI Package
-.. image:: https://img.shields.io/conda/vn/conda-forge/gerrychain.svg?color=%230099cd
-    :target: https://anaconda.org/conda-forge/gerrychain
-    :alt: conda-forge Package
 
 GerryChain is a Python library for building ensembles of districting plans
 using `Markov chain Monte Carlo`_. It is developed and maintained by the
