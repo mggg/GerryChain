@@ -76,6 +76,7 @@ in the conda documentation.
 If you've published your code on GitHub, it is a good idea to include your ``environment.yml``
 file in the root folder of your code repository.
 
+.. _`conda`: https://conda.io/projects/conda/en/latest/index.html
 .. _`Sharing your environment`: https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#sharing-an-environment
 .. _`Creating an environment from an environment.yml file`: https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-from-an-environment-yml-file
 
@@ -155,7 +156,7 @@ Python environment by running ``python`` from the command line and typing
 
   If you are using a jupyter notebook, you will need to make sure that you have
   installed the ``ipykernel`` package in your virtual environment as well as
-  either ``jypyternotebook`` or ``jupyterlab``. To install these packages, run
+  either ``jupyternotebook`` or ``jupyterlab``. To install these packages, run
   ``pip install <package-name>`` from the command line. Then, to use the virtual
   python environment in your jupyter notebook, you need to invoke
   

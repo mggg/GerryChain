@@ -3,7 +3,7 @@ Evaluating districting plans in the real world
 ==============================================
 
 GerryChain is used to analyze redistricting plans in the real world. For example, it's
-been used in states ranging from Pennsylvania to North Carolina to Wisconsin for to
+been used in states ranging from Pennsylvania to North Carolina to Wisconsin for
 defend civil rights. So, `MGGG`_ has developed a toolkit of functions for use to analyze
 a redistricting plan. Here, we will describe these tools and how they are used to
 analyze real-world districting plans.

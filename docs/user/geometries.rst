@@ -2,7 +2,7 @@
 Working With Geometries
 =======================
 
-In the course of working with legislative redistricting data, it is inevitalble that
+In the course of working with legislative redistricting data, it is inevitable that
 we will have to work with files that contain geometries. Most often, these geometries
 come in the form of shapefiles, which, while nice in theory, can be a bit of a pain to
 work with in practice. For now, we will focus on the basics of working with geometries,
@@ -40,10 +40,11 @@ Loading and Running a Plan
     <br style="line-height: 5px;">
 
 For this example, we will make use of a Minnesota GeoJSON file that contains
-the geometries of the state's precincts. We will follow a similar workflow to
-what we already covered in the `Recom Section <./recom.html>`_, but with an
-eye towards some of the conveniences afforded by ``GeographicPartition``
-objects. As always, we'll start with the imports:
+the geometries of the state's precincts (you will need to unzip the above
+folder to get to the file -- it's a bit large). We will follow a similar workflow to
+what we already covered in the `ReCom Section <./recom.html>`_, but with an eye
+towards some of the conveniences afforded by ``GeographicPartition`` objects. As always,
+we'll start with the imports:
 
 .. code-block:: python
 
@@ -88,8 +89,8 @@ The observant reader will notice that we have added two new updaters, ``perimete
 and ``area``, [1]_ and we are now using the ``GeographicPartition`` class instead of the
 ``Partition`` class. The ``GeographicPartition`` class is a subclass of the
 ``Partition`` class that allows us the capability of working with geometries throughout
-our Markov chain, and the``perimeter`` and ``area`` updaters are examples of such a 
-geometric updater that was previously unavailable to us. These updaters necessary for
+our Markov chain, and the ``perimeter`` and ``area`` updaters are examples of such a 
+geometric updater that was previously unavailable to us. These updaters are necessary for
 monitoring things like geometric compactness and area via metrics such as the Polsby-Popper
 test. [2]_ 
 
@@ -104,7 +105,7 @@ we can plot our map and see the initial partition!
     :align: center
     :height: 400px
 
-of course, this isn't very pretty, so let's pass it some additional arguments to 
+Of course, this isn't very pretty, so let's pass it some additional arguments to 
 things a bit nicer:
 
 .. code-block:: python
@@ -119,7 +120,7 @@ things a bit nicer:
     :align: center
     :height: 400px
 
-Under the hood, the ``plot`` method is using the``geodataframe.plot`` method from
+Under the hood, the ``plot`` method is using the ``geodataframe.plot`` method from
 `geopandas <https://geopandas.org/>`_ to plot the geometries, and all of this is 
 built on top of ``matplotlib``, so most of the standard methods for modifying a
 ``matplotlib`` plot will work here as well.
@@ -155,7 +156,7 @@ watch the chain work!
 
     %matplotlib inline
     import matplotlib_inline.backend_inline
-    matplotlib_inline.backend_inline.set_matplotlib_formats('png')  
+    matplotlib_inline.backend_inline.set_matplotlib_formats('png')
 
     import pandas as pd
 
@@ -172,10 +173,10 @@ watch the chain work!
 
     for i, partition in enumerate(recom_chain):
         for district_name in partition.perimeter.keys():
-            perimeter = partition.perimeter[district_name]
             population = partition.population[district_name]
-            area = partition.polsby_popper[district_name]
-            district_data.append((i, district_name, perimeter, population, area))
+            perimeter = partition.perimeter[district_name]
+            area = partition.area[district_name]
+            district_data.append((i, district_name, population, perimeter, area))
 
         buffer = io.BytesIO()
         fig, ax = plt.subplots(figsize=(10,10))
@@ -189,12 +190,12 @@ watch the chain work!
         plt.close(fig)
 
     df = pd.DataFrame(
-        district_data, 
+        district_data,
         columns=[
-            'step', 
-            'district_name', 
-            'perimeter', 
-            'population', 
+            'step',
+            'district_name',
+            'population',
+            'perimeter',
             'area'
         ]
     )
@@ -220,19 +221,23 @@ and our dataframe has collected all of the data we were interested in:
     df.head(5)
   
 
-+---+------+---------------+---------------+------------+----------+
-|   | step | district_name |   perimeter   | population |   area   |
-+===+======+===============+===============+============+==========+
-| 0 |  0   |       8       | 1.804646e+06  |  662998.0  | 0.301259 |
-+---+------+---------------+---------------+------------+----------+
-| 1 |  0   |       6       | 6.616450e+05  |  662979.0  | 0.225759 |
-+---+------+---------------+---------------+------------+----------+
-| 2 |  0   |       5       | 1.133867e+05  |  662985.0  | 0.359509 |
-+---+------+---------------+---------------+------------+----------+
-| 3 |  0   |       3       | 2.625007e+05  |  662994.0  | 0.275271 |
-+---+------+---------------+---------------+------------+----------+
-| 4 |  0   |       7       | 2.288428e+06  |  662997.0  | 0.219926 |
-+---+------+---------------+---------------+------------+----------+
++---+------+---------------+------------+---------------+--------------+
+|   | step | district_name | population |   perimeter   |     area     |
++===+======+===============+============+===============+==============+
+| 0 |  0   |       8       |  662998.0  | 1.804646e+06  | 7.807545e+10 |
++---+------+---------------+------------+---------------+--------------+
+| 1 |  0   |       6       |  662979.0  | 6.616450e+05  | 7.864760e+09 |
++---+------+---------------+------------+---------------+--------------+
+| 2 |  0   |       5       |  662985.0  | 1.133867e+05  | 3.678103e+08 |
++---+------+---------------+------------+---------------+--------------+
+| 3 |  0   |       3       |  662994.0  | 2.625007e+05  | 1.509425e+09 |
++---+------+---------------+------------+---------------+--------------+
+| 4 |  0   |       7       |  662997.0  | 2.288428e+06  | 9.165192e+10 |
++---+------+---------------+------------+---------------+--------------+
+
+
+
+
 
 
 .. [1] The ``perimeter`` and ``area`` attributes are actually not present in the 
