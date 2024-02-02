@@ -1,0 +1,29 @@
+.download-badge {
+    display: inline-block;
+    padding: 8px 15px;
+    margin: 10px;
+    background-color: #0099CD;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    font-size: 16px;
+}
+.download-badge:hover {
+    background-color: #2980B9;
+}
+
+.center-container {
+    text-align: center;
+    width: 100%;
+}
+
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+th, td {
+    border: 1px solid #DDDDDD;
+    padding: 8px;
+    text-align: center;
+}

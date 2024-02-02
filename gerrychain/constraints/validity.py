@@ -1,6 +1,8 @@
 from ..updaters import CountySplit
 from .bounds import Bounds
 import numpy
+from typing import Callable, List, Dict
+from ..partition import Partition
 
 
 class Validator:
@@ -15,19 +17,24 @@ class Validator:
 
         is_valid = Validator([constraint1, constraint2, constraint3])
         chain = MarkovChain(proposal, is_valid, accept, initial_state, total_steps)
+
+    :ivar constraints: List of validator functions that will check partitions.
+    :type constraints: List[Callable]
     """
 
-    def __init__(self, constraints):
+    def __init__(self, constraints: List[Callable]) -> None:
         """
         :param constraints: List of validator functions that will check partitions.
+        :type constraints: List[Callable]
         """
         self.constraints = constraints
 
-    def __call__(self, partition):
-        """Determine if the given partition is valid.
+    def __call__(self, partition: Partition) -> bool:
+        """
+        Determine if the given partition is valid.
 
-        :param partition: :class:`Partition` class to check.
-
+        :param partition: The partition to check.
+        :type partition: Partition
         """
         # check each constraint function and fail when a constraint test fails
         for constraint in self.constraints:
@@ -48,21 +55,31 @@ class Validator:
         # all constraints are satisfied
         return True
 
+    def __repr__(self) -> str:
+        constraint_names = [constraint.__name__ for constraint in self.constraints]
+        return f"Validator(constraints={constraint_names})"
+
 
 def within_percent_of_ideal_population(
-    initial_partition, percent=0.01, pop_key="population"
-):
-    """Require that all districts are within a certain percent of "ideal" (i.e.,
+    initial_partition: Partition, percent: float = 0.01, pop_key: str = "population"
+) -> Bounds:
+    """
+    Require that all districts are within a certain percent of "ideal" (i.e.,
     uniform) population.
 
     Ideal population is defined as "total population / number of districts."
 
     :param initial_partition: Starting partition from which to compute district information.
-    :param percent: (optional) Allowed percentage deviation. Default is 1%.
-    :param pop_key: (optional) The name of the population
+    :type initial_partition: Partition
+    :param percent: Allowed percentage deviation. Default is 1%.
+    :type percent: float, optional
+    :param pop_key: The name of the population
         :class:`Tally <gerrychain.updaters.Tally>`. Default is ``"population"``.
-    :return: A :class:`.Bounds` constraint on the population attribute identified
+    :type pop_key: str, optional
+
+    :returns: A :class:`.Bounds` constraint on the population attribute identified
         by ``pop_key``.
+    :rtype: Bounds
     """
 
     def population(partition):
@@ -76,8 +93,11 @@ def within_percent_of_ideal_population(
     return Bounds(population, bounds=bounds)
 
 
-def deviation_from_ideal(partition, attribute="population"):
-    """Computes the deviation of the given ``attribute`` from exact equality
+def deviation_from_ideal(
+    partition: Partition, attribute: str = "population"
+) -> Dict[int, float]:
+    """
+    Computes the deviation of the given ``attribute`` from exact equality
     among parts of the partition. Usually ``attribute`` is the population, and
     this function is used to compute how far a districting plan is from exact population
     equality.
@@ -85,9 +105,13 @@ def deviation_from_ideal(partition, attribute="population"):
     By "deviation" we mean ``(actual_value - ideal)/ideal`` (not the absolute value).
 
     :param partition: A partition.
-    :param attribute: (optional) The :class:`Tally <gerrychain.updaters.Tally>` to
+    :type partition: Partition
+    :param attribute: The :class:`Tally <gerrychain.updaters.Tally>` to
         compute deviation for. Default is ``"population"``.
-    :return: dictionary from parts to their deviation
+    :type attribute: str, optional
+
+    :returns: dictionary from parts to their deviation
+    :rtype: Dict[int, float]
     """
     number_of_districts = len(partition[attribute].keys())
     total = sum(partition[attribute].values())
@@ -98,14 +122,23 @@ def deviation_from_ideal(partition, attribute="population"):
     }
 
 
-def districts_within_tolerance(partition, attribute_name="population", percentage=0.1):
-    """Check if all districts are within a certain percentage of the "smallest"
+def districts_within_tolerance(
+    partition: Partition, attribute_name: str = "population", percentage: float = 0.1
+) -> bool:
+    """
+    Check if all districts are within a certain percentage of the "smallest"
     district, as defined by the given attribute.
 
-    :param partition: partition class instance
-    :param attrName: string that is the name of an updater in partition
-    :param percentage: what percent difference is allowed
-    :return: whether the districts are within specified tolerance
+    :param partition: Partition class instance
+    :type partition: Partition
+    :param attrName: String that is the name of an updater in partition. Default is
+        ``"population"``.
+    :type attrName: str, optional
+    :param percentage: What percent (as a number between 0 and 1) difference is allowed.
+        Default is 0.1.
+    :type percentage: float, optional
+
+    :returns: Whether the districts are within specified tolerance
     :rtype: bool
     """
     if percentage >= 1:
@@ -118,14 +151,19 @@ def districts_within_tolerance(partition, attribute_name="population", percentag
     return within_tolerance
 
 
-def refuse_new_splits(partition_county_field):
-    """Refuse all proposals that split a county that was previous unsplit.
+def refuse_new_splits(partition_county_field: str) -> Callable[[Partition], bool]:
+    """
+    Refuse all proposals that split a county that was previous unsplit.
 
     :param partition_county_field: Name of field for county information generated by
         :func:`.county_splits`.
+    :type partition_county_field: str
+
+    :returns: Function that returns ``True`` if the proposal does not split any new counties.
+    :rtype: Callable[[Partition], bool]
     """
 
-    def _refuse_new_splits(partition):
+    def _refuse_new_splits(partition: Partition) -> bool:
         for county_info in partition[partition_county_field].values():
             if county_info.split == CountySplit.NEW_SPLIT:
                 return False
@@ -135,8 +173,16 @@ def refuse_new_splits(partition_county_field):
     return _refuse_new_splits
 
 
-def no_vanishing_districts(partition):
-    """Require that no districts be completely consumed."""
+def no_vanishing_districts(partition: Partition) -> bool:
+    """
+    Require that no districts be completely consumed.
+
+    :param partition: Partition to check.
+    :type partition: Partition
+
+    :returns: Whether no districts are completely consumed.
+    :rtype: bool
+    """
     if not partition.parent:
         return True
     return all(len(part) > 0 for part in partition.assignment.parts.values())

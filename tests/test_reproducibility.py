@@ -2,6 +2,8 @@ import os
 
 import pytest
 
+import random
+random.seed(2018)
 
 @pytest.mark.skipif(
     True or os.environ.get("PYTHONHASHSEED", 1) != "0",
@@ -73,12 +75,13 @@ def test_pa_freeze():
     import hashlib
     from gerrychain.proposals import recom
     from functools import partial
+    random.seed(2018)
 
-    graph = Graph.from_json("docs/user/PA_VTDs.json")
+    graph = Graph.from_json("docs/_static/PA_VTDs.json")
 
-    my_updaters = {"population": updaters.Tally("TOTPOP", alias="population")}
+    my_updaters = {"population": updaters.Tally("TOT_POP", alias="population")}
     initial_partition = GeographicPartition(
-        graph, assignment="CD_2011", updaters=my_updaters
+        graph, assignment="2011_PLA_1", updaters=my_updaters
     )
 
     ideal_population = sum(initial_partition["population"].values()) / len(
@@ -88,7 +91,7 @@ def test_pa_freeze():
     # We use functools.partial to bind the extra parameters (pop_col, pop_target, epsilon, node_repeats)
     # of the recom proposal.
     proposal = partial(
-        recom, pop_col="TOTPOP", pop_target=ideal_population, epsilon=0.02, node_repeats=2
+        recom, pop_col="TOT_POP", pop_target=ideal_population, epsilon=0.02, node_repeats=2
     )
 
     pop_constraint = constraints.within_percent_of_ideal_population(initial_partition, 0.02)
@@ -106,5 +109,8 @@ def test_pa_freeze():
         result += str(list(sorted(partition.population.values())))
         result += str(len(partition.cut_edges))
         result += str(count) + "\n"
-
-    assert hashlib.sha256(result.encode()).hexdigest() == "309316e6ca5685c8b3601268b1814a966771e00715a6c69973a8ede810f4c8cf"
+    
+    # This needs to be changed every time we change the
+    # tests around
+    assert hashlib.sha256(result.encode()).hexdigest() == "9f811f294e4fdcd805a9bcbe65e0a32634b8732ae2aafac92bb946f0ea0a61f4"
+    

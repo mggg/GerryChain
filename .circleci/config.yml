@@ -1,9 +1,12 @@
-version: 2
+version: 2.1
 
 jobs:
   test:
+    parameters:
+      python-version:
+        type: string
     docker:
-      - image: python:3.8
+      - image: cimg/python:<< parameters.python-version >>
     working_directory: ~/repo
     steps:
       - checkout
@@ -39,6 +42,8 @@ jobs:
             echo "backend: Agg" > "matplotlibrc"
             pytest -v --runslow --cov=gerrychain --junitxml=test-reports/junit.xml tests
             codecov
+
+          no_output_timeout: 40m
           environment:
             PYTHONHASHSEED: "0"
       - store_test_results:
@@ -48,7 +53,7 @@ jobs:
 
   deploy:
     docker:
-      - image: python:3.8
+      - image: python:3.9
     working_directory: ~/repo
     steps:
       - checkout
@@ -74,10 +79,13 @@ jobs:
             twine upload dist/*
 
 workflows:
-  version: 2
+  version: 2.1
   test_and_deploy:
     jobs:
-      - test
+      - test:
+          matrix:
+            parameters:
+              python-version: ["3.9", "3.10", "3.11"]
       - deploy:
           requires:
             - test

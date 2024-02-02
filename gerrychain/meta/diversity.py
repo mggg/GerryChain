@@ -1,17 +1,23 @@
-from dataclasses import dataclass
-from typing import Iterable, Tuple
-from gerrychain.partition import Partition
-
-
 """
 Simple tooling to collect diversity stats on chain runs
 """
+
+from dataclasses import dataclass
+from typing import Iterable, Tuple
+from gerrychain.partition import Partition
 
 
 @dataclass
 class DiversityStats:
     """
     Lightweight stats object that reports the diversity of a given chain.
+
+    :ivar unique_plans: The number of unique plans seen so far.
+    :type unique_plans: int
+    :ivar unique_districts: The number of unique districts seen so far.
+    :type unique_districts: int
+    :ivar steps_taken: The number of steps taken so far.
+    :type steps_taken: int
 
     Example usage::
 
@@ -44,7 +50,10 @@ def collect_diversity_stats(
             # normal chain stuff here
 
     :param chain: A chain object to collect stats on.
-    :return: An iterable of `(partition, DiversityStat)`.
+    :type chain: Iterable[Partition]
+
+    :returns: An iterable of `(partition, DiversityStat)`.
+    :rtype: Iterable[Tuple[Partition, DiversityStats]]
     """
     seen_plans = {}
     seen_districts = {}
