@@ -155,7 +155,7 @@ SciPy sparse matrix, or a PyGraphviz graph.</p>
 </div>
 <dl class="method">
 <dt id="gerrychain.graph.graph.Graph.add_data">
-<code class="sig-name descname">add_data</code><span class="sig-paren">(</span><em class="sig-param">df: &lt;Mock name='mock.DataFrame' id='139849168410512'&gt;</em>, <em class="sig-param">columns: Optional[Iterable[str]] = None</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/gerrychain/graph/graph.html#Graph.add_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gerrychain.graph.graph.Graph.add_data" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">add_data</code><span class="sig-paren">(</span><em class="sig-param">df: &lt;Mock name='mock.DataFrame' id='139951870502704'&gt;</em>, <em class="sig-param">columns: Optional[Iterable[str]] = None</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/gerrychain/graph/graph.html#Graph.add_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gerrychain.graph.graph.Graph.add_data" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add columns of a DataFrame to a graph as node attributes
 by matching the DataFrame’s index to node ids.</p>
 <dl class="field-list simple">
@@ -211,7 +211,7 @@ via the command:</p>
 
 <dl class="method">
 <dt id="gerrychain.graph.graph.Graph.from_geodataframe">
-<em class="property">classmethod </em><code class="sig-name descname">from_geodataframe</code><span class="sig-paren">(</span><em class="sig-param">dataframe: &lt;Mock name='mock.DataFrame' id='139849168410512'&gt;</em>, <em class="sig-param">adjacency: str = 'rook'</em>, <em class="sig-param">cols_to_add: Optional[List[str]] = None</em>, <em class="sig-param">reproject: bool = False</em>, <em class="sig-param">ignore_errors: bool = False</em><span class="sig-paren">)</span> &#x2192; gerrychain.graph.graph.Graph<a class="reference internal" href="_modules/gerrychain/graph/graph.html#Graph.from_geodataframe"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gerrychain.graph.graph.Graph.from_geodataframe" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><code class="sig-name descname">from_geodataframe</code><span class="sig-paren">(</span><em class="sig-param">dataframe: &lt;Mock name='mock.DataFrame' id='139951870502704'&gt;</em>, <em class="sig-param">adjacency: str = 'rook'</em>, <em class="sig-param">cols_to_add: Optional[List[str]] = None</em>, <em class="sig-param">reproject: bool = False</em>, <em class="sig-param">ignore_errors: bool = False</em><span class="sig-paren">)</span> &#x2192; gerrychain.graph.graph.Graph<a class="reference internal" href="_modules/gerrychain/graph/graph.html#Graph.from_geodataframe"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gerrychain.graph.graph.Graph.from_geodataframe" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates the adjacency <a class="reference internal" href="#gerrychain.graph.graph.Graph" title="gerrychain.graph.graph.Graph"><code class="xref py py-class docutils literal notranslate"><span class="pre">Graph</span></code></a> of geometries described by <cite>dataframe</cite>.
 The areas of the polygons are included as node attributes (with key <cite>area</cite>).
 The shared perimeter of neighboring polygons are included as edge attributes
@@ -311,7 +311,7 @@ attept to create the graph anyway. Default is <code class="docutils literal notr
 
 <dl class="method">
 <dt id="gerrychain.graph.graph.Graph.join">
-<code class="sig-name descname">join</code><span class="sig-paren">(</span><em class="sig-param">dataframe: &lt;Mock name='mock.DataFrame' id='139849168410512'&gt;</em>, <em class="sig-param">columns: Optional[List[str]] = None</em>, <em class="sig-param">left_index: Optional[str] = None</em>, <em class="sig-param">right_index: Optional[str] = None</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/gerrychain/graph/graph.html#Graph.join"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gerrychain.graph.graph.Graph.join" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">join</code><span class="sig-paren">(</span><em class="sig-param">dataframe: &lt;Mock name='mock.DataFrame' id='139951870502704'&gt;</em>, <em class="sig-param">columns: Optional[List[str]] = None</em>, <em class="sig-param">left_index: Optional[str] = None</em>, <em class="sig-param">right_index: Optional[str] = None</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/gerrychain/graph/graph.html#Graph.join"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gerrychain.graph.graph.Graph.join" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add data from a dataframe to the graph, matching nodes to rows when
 the node’s <cite>left_index</cite> attribute equals the row’s <cite>right_index</cite> value.</p>
 <dl class="field-list simple">
@@ -1328,7 +1328,7 @@ Default is int.</p></li>
 
 <dl class="class">
 <dt id="gerrychain.updaters.DataTally">
-<em class="property">class </em><code class="sig-prename descclassname">gerrychain.updaters.</code><code class="sig-name descname">DataTally</code><span class="sig-paren">(</span><em class="sig-param">data: Union[Dict, &lt;Mock name='mock.Series' id='139849168410608'&gt;, str], alias: str</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gerrychain/updaters/tally.html#DataTally"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gerrychain.updaters.DataTally" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">gerrychain.updaters.</code><code class="sig-name descname">DataTally</code><span class="sig-paren">(</span><em class="sig-param">data: Union[Dict, &lt;Mock name='mock.Series' id='139951870502800'&gt;, str], alias: str</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gerrychain/updaters/tally.html#DataTally"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gerrychain.updaters.DataTally" title="Permalink to this definition">¶</a></dt>
 <dd><p>An updater for tallying numerical data that is not necessarily stored as
 node attributes</p>
 <dl class="field-list simple">
