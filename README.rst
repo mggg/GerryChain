@@ -40,7 +40,7 @@ Getting started
 
 See our `Getting started guide`_ for the basics of using GerryChain.
 
-.. _`Getting started guide`: https://gerrychain.readthedocs.io/en/latest/user/quickstart.html
+.. _`Getting started guide`: https://gerrychain.readthedocs.io/en/latest/user/quickstart/
 
 We also highly recommend the resources prepared by Daryl R. DeFord of MGGG
 for the 2019 MIT IAP course `Computational Approaches for Political Redistricting`_.
