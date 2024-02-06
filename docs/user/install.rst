@@ -120,8 +120,8 @@ terminal:
 - **Windows**: ``.venv\Scripts\activate``
 - **MacOS/Linux**: ``source .venv/bin/activate``
 
-You should now see ``(.venv)`` at the beginning of your terminal prompt
-now. This indicates that you are in the virtual environment, and are now
+You should now see ``(.venv)`` at the beginning of your terminal prompt. 
+This indicates that you are in the virtual environment, and are now
 ready to install GerryChain.
 
 To install GerryChain from PyPI_, run ``pip install gerrychain`` from
