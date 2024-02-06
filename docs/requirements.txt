@@ -4,4 +4,4 @@ sphinx-copybutton==0.5.2
 networkx==2.7.1
 geopandas==0.8.2
 matplotlib==3.5.1
-scipy==1.8.0
+scipy==1.10.0
