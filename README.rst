@@ -51,11 +51,11 @@ for the 2019 MIT IAP course `Computational Approaches for Political Redistrictin
 Useful links
 ============
 
-- `Documentation`_ (**Warning:** The documentation on ReadtheDocs is out-of-date. Please use the provided link.)
+- `Documentation`_
 - `Bug reports and feature requests`_
 - `Contributions welcome!`_
 
-.. _`Documentation`: https://mggg.github.io/GerryChain/
+.. _`Documentation`: https://gerrychain.readthedocs.io/en/latest/
 .. _`Bug reports and feature requests`: https://github.com/mggg/gerrychain/issues
 .. _`Contributions welcome!`: https://github.com/mggg/gerrychain/pulls
 
