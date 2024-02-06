@@ -64,13 +64,16 @@ Pull Request Process
 Community Guidelines
 ====================
 
-We follow the Python Community Code of Conduct, which, in essence, means that we
-expect community members
+We follow an adaptation of the Contributor Covenant Code of Conduct, which, 
+in essence, means that we expect community members to
 
 - **Be respectful** of different viewpoints and experience levels.
 - **Gracefully accept constructive criticism**.
 - **Focus on what is best for the community**.
 
+For more detailed information about our community guidelines, please see the
+`Code of Conduct <https://github.com/mggg/GerryChain/blob/main/CODE_OF_CONDUCT.md>`_ 
+page of the main repository.
 
 
 Thank You

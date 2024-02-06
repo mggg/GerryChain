@@ -134,7 +134,8 @@ adjacencies or reading in shapefiles, then run
 This approach sometimes fails due to compatibility issues between our
 different Python GIS dependencies, like ``geopandas``, ``pyproj``,
 ``fiona``, and ``shapely``. If you run into this issue, try installing
-the dependencies using the `geo_settings.txt <./geo_settings.txt>`_
+the dependencies using the 
+`geo_settings.txt <https://github.com/mggg/GerryChain/blob/main/docs/geo_settings.txt>`_
 file. To do this, run ``pip install -r geo_settings.txt`` from the
 command line.
 
