@@ -176,7 +176,7 @@ Fortunately, ``gerrychain`` has a built-in functionality that allows for
 region-aware ReCom chains which create ensembles
 of districting plans that try to keep particular regions of interest together.
 And it only takes one extra line of code: we simply update
-our proposal to include a ``weight_dict`` which increases the importance of the
+our proposal to include a ``region_surcharge`` which increases the importance of the
 edges within the municipalities.
 
 .. code-block:: python
@@ -187,7 +187,7 @@ edges within the municipalities.
         pop_target=ideal_population,
         epsilon=0.01,
         node_repeats=2,
-        weight_dict={"muni": 0.8},
+        region_surcharge={"muni": 0.8},
     )
 
 And this will produce the following ensemble:
@@ -210,7 +210,7 @@ and so it is not going to be possible to keep all of the water districts togethe
 and all of the municipalities together in one plan. However, we can try to keep
 the water districts together as much as possible, and then, within those water
 districts, try to be sensitive to the boundaries of the municipalities. Again, 
-this only requires for us to edit the ``weight_dict`` parameter of the proposal
+this only requires for us to edit the ``region_surcharge`` parameter of the proposal
 
 .. code-block:: python
 
@@ -220,7 +220,7 @@ this only requires for us to edit the ``weight_dict`` parameter of the proposal
         pop_target=ideal_population,
         epsilon=0.01,
         node_repeats=2,
-        weight_dict={"muni": 0.2, "water": 0.8},
+        region_surcharge={"muni": 0.2, "water": 0.8},
     )
 
 Since we are trying to be sensitive to multiple bits of information, we should probably
@@ -251,45 +251,44 @@ while also being sensitive to the municipalities
     :align: center
 
     The last map in the ensemble from the 10000 step region-aware ReCom chain with
-    weights of 0.2 for the municipalities and 0.8 for the water districts.
+    surcharges of 0.2 for the municipalities and 0.8 for the water districts.
 
 .. raw:: html
 
    <div style="display: flex; justify-content: space-around;">
        <figure style="text-align: center;">
-           <img src="../_images/gerrymandria_cities.png" style="width: 100%;">
+           <img src="../../_images/gerrymandria_cities.png" style="width: 100%;">
            <figcaption><em>Municipalities of Gerrymandria</em></figcaption>
        </figure>
        <figure style="text-align: center;">
-           <img src="../_images/gerrymandria_water.png" style="width: 100%;">
+           <img src="../../_images/gerrymandria_water.png" style="width: 100%;">
            <figcaption><em>Water Districts of GerryMandria</em><figcaption>
        </figure>
    </div>
 
 
-.. _weight-dict-warning:
 
-.. attention::
+.. .. attention::
 
-  The ``weight_dict`` parameter is a dictionary that assigns a weight to each
-  edge within a particular region that is determined by the keys of the dictionary.
-  In the event that multiple regions are specified, the weights are added together,
-  and if the weights add to more than 1, then the following warning will be printed 
-  to the user:
+..   The ``region_surcharge`` parameter is a dictionary that assigns a surcharge to each
+..   edge within a particular region that is determined by the keys of the dictionary.
+..   In the event that multiple regions are specified, the surcharges are added together,
+..   and if the surcharges add to more than 1, then the following warning will be printed 
+..   to the user:
 
-  .. code-block:: console
+..   .. code-block:: console
     
-    ValueWarning: 
-    The sum of the weights in the weight dictionary is greater than 1.
-    Please consider normalizing the weights.
+..     ValueWarning: 
+..     The sum of the surcharges in the surcharge dictionary is greater than 1.
+..     Please consider normalizing the surcharges.
 
-  It is generally inadvisable to set the weight of a region to 1 or more. When
-  using :meth:`~gerrychain.proposals.recom` with a ``weight_dict``, the proposal
-  will try to draw a minimum spanning tree using Kruskal's algorithm where,
-  the weights are in the range :math:`[0,1]`, then the weights from the weight
-  dictionary are added to them. In the event that
-  many edges within the tree have a weight above 1, then it can sometimes
-  cause the biparitioning step to stall.
+..   It is generally inadvisable to set the surcharge of a region to 1 or more. When
+..   using :meth:`~gerrychain.proposals.recom` with a ``region_surcharge``, the proposal
+..   will try to draw a minimum spanning tree using Kruskal's algorithm where,
+..   the surcharges are in the range :math:`[0,1]`, then the surcharges from the surcharge
+..   dictionary are added to them. In the event that
+..   many edges within the tree have a surcharge above 1, then it can sometimes
+..   cause the biparitioning step to stall.
 
 
 What to do if the Chain Gets Stuck
@@ -334,7 +333,7 @@ district, then the chain will get stuck and throw an error. Here is the setup:
         pop_target=ideal_population,
         epsilon=0.01,
         node_repeats=1,
-        weight_dict={"muni": 1.0, "water_dist": 1.0},
+        region_surcharge={"muni": 1.0, "water_dist": 1.0},
     )
 
     recom_chain = MarkovChain(
@@ -355,10 +354,6 @@ This will output the following sequence of warnings and errors
 
 .. code-block:: console
 
-    ValueWarning: 
-    The sum of the weights in the weight dictionary is greater than 1.
-    Please consider normalizing the weights.
-
     BipartitionWarning: 
     Failed to find a balanced cut after 50 attempts.
     If possible, consider enabling pair reselection within your
@@ -374,12 +369,6 @@ Let's break down what is happening in each of these:
 .. raw:: html
 
   <ul>
-    <li><strong>ValueWarning</strong> 
-      This is just telling us that we have made an ill-advised
-      choice of weights for our regions. See <a href="#weight-dict-warning">the above warning</a> 
-      for more information.
-    </li>
-    <br style="line-height: 5px;">
     <li><strong>BipartitionWarning</strong>
       This is telling us that somewhere along the way, 
       we picked a pair of districts that were difficult to bipartition underneath
@@ -419,7 +408,7 @@ node repeats:
         pop_target=ideal_population,
         epsilon=0.01,
         node_repeats=100,
-        weight_dict={"muni": 1.0, "water_dist": 1.0},
+        region_surcharge={"muni": 1.0, "water_dist": 1.0},
     )
 
 Running this code, we can see that we get stuck once again, so this was not the fix.
@@ -435,7 +424,7 @@ Let's try to enable reselection instead:
         pop_target=ideal_population,
         epsilon=0.01,
         node_repeats=1,
-        weight_dict={"muni": 1.0, "water_dist": 1.0},
+        region_surcharge={"muni": 1.0, "water_dist": 1.0},
         method=method
     )
 

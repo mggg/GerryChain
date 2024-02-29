@@ -33,6 +33,7 @@ from functools import partial
 from inspect import signature
 import random
 from collections import deque, namedtuple
+from dataclasses import dataclass, field
 from typing import (
     Any,
     Callable,
@@ -57,35 +58,35 @@ def successors(h: nx.Graph, root: Any) -> Dict:
 
 
 def random_spanning_tree(
-    graph: nx.Graph, weight_dict: Optional[Dict] = None
+    graph: nx.Graph, region_surcharge: Optional[Dict] = None
 ) -> nx.Graph:
     """
     Builds a spanning tree chosen by Kruskal's method using random weights.
 
     :param graph: The input graph to build the spanning tree from. Should be a Networkx Graph.
     :type graph: nx.Graph
-    :param weight_dict: Dictionary of weights to add to the random weights used in region-aware
+    :param region_surcharge: Dictionary of surcharges to add to the random weights used in region-aware
         variants.
-    :type weight_dict: Optional[Dict], optional
+    :type region_surcharge: Optional[Dict], optional
 
     :returns: The maximal spanning tree represented as a Networkx Graph.
     :rtype: nx.Graph
     """
-    if weight_dict is None:
-        weight_dict = dict()
+    if region_surcharge is None:
+        region_surcharge = dict()
 
     for edge in graph.edges():
         weight = random.random()
-        for key, value in weight_dict.items():
+        for key, value in region_surcharge.items():
             if (
-                graph.nodes[edge[0]][key] == graph.nodes[edge[1]][key]
+                graph.nodes[edge[0]][key] != graph.nodes[edge[1]][key]
                 and graph.nodes[edge[0]][key] is not None
             ):
                 weight += value
 
         graph.edges[edge]["random_weight"] = weight
 
-    spanning_tree = tree.maximum_spanning_tree(
+    spanning_tree = tree.minimum_spanning_tree(
         graph, algorithm="kruskal", weight="random_weight"
     )
     return spanning_tree
@@ -204,10 +205,12 @@ class PopulatedGraph:
 
 
 # Tuple that is used in the find_balanced_edge_cuts function
-Cut = namedtuple("Cut", "edge subset")
+Cut = namedtuple("Cut", "edge weight subset")
+Cut.__new__.__defaults__ = (None,None,None)
 Cut.__doc__ = "Represents a cut in a graph."
-Cut.edge.__doc__ = "The edge where the cut is made."
-Cut.subset.__doc__ = "The subset of nodes on one side of the cut."
+Cut.edge.__doc__ = "The edge where the cut is made. Defaults to None."
+Cut.edge.__doc__ = "The weight assigned to the edge (if any). Defaults to None."
+Cut.subset.__doc__ = "The subset of nodes on one side of the cut. Defaults to None."
 
 
 def find_balanced_edge_cuts_contraction(
@@ -234,7 +237,14 @@ def find_balanced_edge_cuts_contraction(
     while len(leaves) > 0:
         leaf = leaves.popleft()
         if h.has_ideal_population(leaf):
-            cuts.append(Cut(edge=(leaf, pred[leaf]), subset=h.subsets[leaf].copy()))
+            e = (leaf, pred[leaf])
+            cuts.append(
+                Cut(
+                    edge=e, 
+                    weight=h.graph.edges[e].get("random_weight", random.random()),
+                    subset=h.subsets[leaf].copy()
+                )
+            )
         # Contract the leaf:
         parent = pred[leaf]
         h.contract_node(leaf, parent)
@@ -302,11 +312,20 @@ def find_balanced_edge_cuts_memoization(
             return nodes
 
         if abs(tree_pop - h.ideal_pop) <= h.ideal_pop * h.epsilon:
-            cuts.append(Cut(edge=(node, pred[node]), subset=part_nodes(node)))
-        elif abs((total_pop - tree_pop) - h.ideal_pop) <= h.ideal_pop * h.epsilon:
+            e = (node, pred[node])
             cuts.append(
                 Cut(
-                    edge=(node, pred[node]),
+                    edge=e, 
+                    weight=h.graph.edges[e].get("random_weight", random.random()),
+                    subset=part_nodes(node)
+                )
+            )
+        elif abs((total_pop - tree_pop) - h.ideal_pop) <= h.ideal_pop * h.epsilon:
+            e = (node, pred[node])
+            cuts.append(
+                Cut(
+                    edge=e,
+                    weight=h.graph.edges[e].get("random_weight", random.random()),
                     subset=set(h.graph.nodes) - part_nodes(node),
                 )
             )
@@ -332,6 +351,49 @@ class ReselectException(Exception):
     pass
 
 
+def _max_weight_choice(
+    cut_edge_list: List[Cut]
+) -> Cut:
+    """
+    Each Cut object in the list is assigned a random weight
+    either coming from the implementation of Kruskal's algorithm
+    or it is generated during the selection of the balanced edges
+    (cf. :meth:`find_balanced_edge_cuts_memoization` and 
+    :meth:`find_balanced_edge_cuts_contraction`).
+    This function returns the cut with the highest weight.
+    
+    In the case of a situation where a region aware chain is run, 
+    this will preferentially select for cuts that are between
+    regions, rather than within them (the likelihood of this
+    is generally controlled by the ``region_surcharge`` parameter).
+    
+    In all other cases, this is effectively the same as calling
+    random.choice() on the list of cuts since all of the weights
+    on the cuts are randomly generated on the interval [0,1], and
+    there is no mechanism in place weight any cut edge over another.
+    
+    :param cut_edge_list: A list of Cut objects. Each object has an 
+        edge, a weight, and a subset attribute.
+    :type cut_edge_list: List[Cut]
+    
+    :returns: The cut with the highest random weight.
+    :rtype: Cut    
+    """
+
+    # Just in case, default to random choice
+    if not isinstance(cut_edge_list[0], Cut) or cut_edge_list[0].weight is None:
+        return random.choice(cut_edge_list)
+    
+    max_weight = float("-inf")
+    cut_edge = None
+
+    for cut in cut_edge_list:
+        if cut.weight > max_weight:
+            max_weight = cut.weight
+            cut_edge = cut
+
+    return cut_edge
+
 def bipartition_tree(
     graph: nx.Graph,
     pop_col: str,
@@ -340,11 +402,13 @@ def bipartition_tree(
     node_repeats: int = 1,
     spanning_tree: Optional[nx.Graph] = None,
     spanning_tree_fn: Callable = random_spanning_tree,
-    weight_dict: Optional[Dict] = None,
+    region_surcharge: Optional[Dict] = None,
     balance_edge_fn: Callable = find_balanced_edge_cuts_memoization,
     choice: Callable = random.choice,
     max_attempts: Optional[int] = 100000,
+    warn_attempts: int = 1000,
     allow_pair_reselection: bool = False,
+    cut_choice: Callable = _max_weight_choice,
 ) -> Set:
     """
     This function finds a balanced 2 partition of a graph by drawing a
@@ -373,37 +437,44 @@ def bipartition_tree(
     :param spanning_tree_fn: The random spanning tree algorithm to use if a spanning
         tree is not provided. Defaults to :func:`random_spanning_tree`.
     :type spanning_tree_fn: Callable, optional
-    :param weight_dict: A dictionary of weights for the spanning tree algorithm.
+    :param region_surcharge: A dictionary of surcharges for the spanning tree algorithm.
         Defaults to None.
-    :type weight_dict: Optional[Dict], optional
+    :type region_surcharge: Optional[Dict], optional
     :param balance_edge_fn: The function to find balanced edge cuts. Defaults to
         :func:`find_balanced_edge_cuts_memoization`.
     :type balance_edge_fn: Callable, optional
-    :param choice: The function to make a random choice. Can be substituted for testing.
-        Defaults to :func:`random.choice`.
+    :param choice: The function to make a random choice. Passed to ``balance_edge_fn``.
+        Can be substituted for testing.
+        Defaults to :func:`random.random()`.
     :type choice: Callable, optional
     :param max_attempts: The maximum number of attempts that should be made to bipartition.
         Defaults to 10000.
     :type max_attempts: Optional[int], optional
+    :param warn_attempts: The number of attempts after which a warning is issued if a balanced
+        cut cannot be found. Defaults to 1000.
+    :type warn_attempts: int, optional
     :param allow_pair_reselection: Whether we would like to return an error to the calling
         function to ask it to reselect the pair of nodes to try and recombine. Defaults to False.
     :type allow_pair_reselection: bool, optional
+    :param cut_choice: The function used to select the cut edge from the list of possible
+        balanced cuts. Defaults to :meth:`_max_weight_choice` .
+    :type cut_choice: Callable, optional
 
     :returns: A subset of nodes of ``graph`` (whose induced subgraph is connected). The other
         part of the partition is the complement of this subset.
     :rtype: Set
 
-    :raises BipartitionWarning: If a possible cut cannot be found after 50 attempts.
+    :raises BipartitionWarning: If a possible cut cannot be found after 1000 attempts.
     :raises RuntimeError: If a possible cut cannot be found after the maximum number of attempts
         given by ``max_attempts``.
     """
-    # Try to add the region-aware in if the spanning_tree_fn accepts a weight dictionary
-    if "weight_dict" in signature(spanning_tree_fn).parameters:
-        spanning_tree_fn = partial(spanning_tree_fn, weight_dict=weight_dict)
+    # Try to add the region-aware in if the spanning_tree_fn accepts a surcharge dictionary
+    if "region_surcharge" in signature(spanning_tree_fn).parameters:
+        spanning_tree_fn = partial(spanning_tree_fn, region_surcharge=region_surcharge)
 
     populations = {node: graph.nodes[node][pop_col] for node in graph.node_indices}
 
-    possible_cuts = []
+    possible_cuts: List[Cut] = []
     if spanning_tree is None:
         spanning_tree = spanning_tree_fn(graph)
 
@@ -414,21 +485,23 @@ def bipartition_tree(
             spanning_tree = spanning_tree_fn(graph)
             restarts = 0
         h = PopulatedGraph(spanning_tree, populations, pop_target, epsilon)
+        
+        # This returns a list of Cut objects with attributes edge and subset
         possible_cuts = balance_edge_fn(h, choice=choice)
 
         if len(possible_cuts) != 0:
-            return choice(possible_cuts).subset
+            return cut_choice(possible_cuts).subset
 
         restarts += 1
         attempts += 1
 
         # Don't forget to change the documentation if you change this number
-        if attempts == 50 and not allow_pair_reselection:
+        if attempts == warn_attempts and not allow_pair_reselection:
             warnings.warn(
-                "\nFailed to find a balanced cut after 50 attempts.\n"
+                f"\nFailed to find a balanced cut after {warn_attempts} attempts.\n"
                 "If possible, consider enabling pair reselection within your\n"
                 "MarkovChain proposal method to allow the algorithm to select\n"
-                "a different pair of districts to try and recombine.",
+                "a different pair of districts for recombination.",
                 BipartitionWarning,
             )
 
@@ -499,9 +572,9 @@ def _bipartition_tree_random_all(
     if spanning_tree is None:
         spanning_tree = spanning_tree_fn(graph)
 
-    repeat = True
     restarts = 0
     attempts = 0
+
     while max_attempts is None or attempts < max_attempts:
         if restarts == node_repeats:
             spanning_tree = spanning_tree_fn(graph)
@@ -509,9 +582,7 @@ def _bipartition_tree_random_all(
         h = PopulatedGraph(spanning_tree, populations, pop_target, epsilon)
         possible_cuts = balance_edge_fn(h, choice=choice)
 
-        repeat = repeat_until_valid
-
-        if not (repeat and len(possible_cuts) == 0):
+        if not (repeat_until_valid and len(possible_cuts) == 0):
             return possible_cuts
 
         restarts += 1
