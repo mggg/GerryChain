@@ -210,7 +210,7 @@ Cut.__new__.__defaults__ = (None, None, None)
 Cut.__doc__ = "Represents a cut in a graph."
 Cut.edge.__doc__ = "The edge where the cut is made. Defaults to None."
 Cut.weight.__doc__ = "The weight assigned to the edge (if any). Defaults to None."
-Cut.subset.__doc__ = "The subset of nodes on one side of the cut. Defaults to None."
+Cut.subset.__doc__ = "The (frozen) subset of nodes on one side of the cut. Defaults to None."
 
 
 def find_balanced_edge_cuts_contraction(
@@ -242,7 +242,7 @@ def find_balanced_edge_cuts_contraction(
                 Cut(
                     edge=e,
                     weight=h.graph.edges[e].get("random_weight", random.random()),
-                    subset=h.subsets[leaf].copy()
+                    subset=frozenset(h.subsets[leaf].copy())
                 )
             )
         # Contract the leaf:
@@ -351,7 +351,7 @@ def find_balanced_edge_cuts_memoization(
                 Cut(
                     edge=e,
                     weight=h.graph.edges[e].get("random_weight", wt),
-                    subset=_part_nodes(node, succ)
+                    subset=frozenset(_part_nodes(node, succ))
                 )
             )
         elif abs((total_pop - tree_pop) - h.ideal_pop) <= h.ideal_pop * h.epsilon:
@@ -361,7 +361,7 @@ def find_balanced_edge_cuts_memoization(
                 Cut(
                     edge=e,
                     weight=h.graph.edges[e].get("random_weight", wt),
-                    subset=set(h.graph.nodes) - _part_nodes(node, succ),
+                    subset=frozenset(set(h.graph.nodes) - _part_nodes(node, succ)),
                 )
             )
     return cuts
@@ -390,22 +390,25 @@ def _max_weight_choice(
     cut_edge_list: List[Cut]
 ) -> Cut:
     """
-    Each Cut object in the list is assigned a random weight
-    either coming from the implementation of Kruskal's algorithm
+    Each Cut object in the list is assigned a random weight.
+    This random weight is either assigned during the call to
+    the minimum spanning tree algorithm (Kruskal's) algorithm
     or it is generated during the selection of the balanced edges
     (cf. :meth:`find_balanced_edge_cuts_memoization` and
     :meth:`find_balanced_edge_cuts_contraction`).
     This function returns the cut with the highest weight.
 
-    In the case of a situation where a region aware chain is run,
-    this will preferentially select for cuts that are between
-    regions, rather than within them (the likelihood of this
+    In the case where a region aware chain is run, this will
+    preferentially select for cuts that span different regions, rather
+    than cuts that are interior to that region (the likelihood of this
     is generally controlled by the ``region_surcharge`` parameter).
 
-    In all other cases, this is effectively the same as calling
-    random.choice() on the list of cuts since all of the weights
+    In any case where the surcharges are either not set or zero,
+    this is effectively the same as calling random.choice() on the
+    list of cuts. Under the above conditions, all of the weights
     on the cuts are randomly generated on the interval [0,1], and
-    there is no mechanism in place weight any cut edge over another.
+    there is no outside force that might make the weight assigned
+    to a particular type of cut higher than another.
 
     :param cut_edge_list: A list of Cut objects. Each object has an
         edge, a weight, and a subset attribute.
@@ -452,14 +455,14 @@ def _region_preferred_max_weight_choice(
     """
     This function is used in the case of a region-aware chain. It
     is similar to the as :meth:`_max_weight_choice` function except
-    that it will preferentially select one of the cuts that
-    has the highest surcharge preferentially. So, if we have a
-    weight dict of the form ``{region1: wt1, region2: wt2}`` , then
-    this function first looks for a cut that is a cut edge for both
-    ``region1`` and ``region2`` and then selects the one with the
-    highest weight. If no such cut exists, then it will then look for
-    a cut that is a cut edge for the region with the highest surcharge
-    (presumably the region that we care more about not splitting).
+    that it will preferentially select one of the cuts that has the
+    highest surcharge. So, if we have a weight dict of the form
+    ``{region1: wt1, region2: wt2}`` , then this function first looks
+    for a cut that is a cut edge for both ``region1`` and ``region2``
+    and then selects the one with the highest weight. If no such cut
+    exists, then it will then look for a cut that is a cut edge for the
+    region with the highest surcharge (presumably the region that we care
+    more about not splitting).
 
     In the case of 3 regions, it will first look for a cut that is a
     cut edge for all 3 regions, then for a cut that is a cut edge for
@@ -537,7 +540,7 @@ def bipartition_tree(
     max_attempts: Optional[int] = 100000,
     warn_attempts: int = 1000,
     allow_pair_reselection: bool = False,
-    cut_choice: Callable = random.choice
+    cut_choice: Callable = _region_preferred_max_weight_choice
 ) -> Set:
     """
     This function finds a balanced 2 partition of a graph by drawing a
@@ -572,8 +575,8 @@ def bipartition_tree(
     :param balance_edge_fn: The function to find balanced edge cuts. Defaults to
         :func:`find_balanced_edge_cuts_memoization`.
     :type balance_edge_fn: Callable, optional
-    :param choice: The function to make a random choice. Passed to ``balance_edge_fn``.
-        Can be substituted for testing.
+    :param choice: The function to make a random choice of root node for the population
+        tree. Passed to ``balance_edge_fn``. Can be substituted for testing.
         Defaults to :func:`random.random()`.
     :type choice: Callable, optional
     :param max_attempts: The maximum number of attempts that should be made to bipartition.
@@ -586,7 +589,7 @@ def bipartition_tree(
         function to ask it to reselect the pair of nodes to try and recombine. Defaults to False.
     :type allow_pair_reselection: bool, optional
     :param cut_choice: The function used to select the cut edge from the list of possible
-        balanced cuts. Defaults to :meth:`_max_weight_choice` .
+        balanced cuts. Defaults to :meth:`_region_preferred_max_weight_choice` .
     :type cut_choice: Callable, optional
 
     :returns: A subset of nodes of ``graph`` (whose induced subgraph is connected). The other

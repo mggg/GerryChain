@@ -53,7 +53,7 @@ def twelve_by_twelve_with_pop():
 def test_bipartition_tree_returns_a_subset_of_nodes(graph_with_pop):
     ideal_pop = sum(graph_with_pop.nodes[node]["pop"] for node in graph_with_pop) / 2
     result = bipartition_tree(graph_with_pop, "pop", ideal_pop, 0.25, 10)
-    assert isinstance(result, set)
+    assert isinstance(result, frozenset)
     assert all(node in graph_with_pop.nodes for node in result)
 
 
@@ -240,7 +240,7 @@ def test_prime_bound():
 def test_bipartition_tree_random_returns_a_subset_of_nodes(graph_with_pop):
     ideal_pop = sum(graph_with_pop.nodes[node]["pop"] for node in graph_with_pop) / 2
     result = bipartition_tree_random(graph_with_pop, "pop", ideal_pop, 0.25, 10)
-    assert isinstance(result, set)
+    assert isinstance(result, frozenset)
     assert all(node in graph_with_pop.nodes for node in result)
 
 

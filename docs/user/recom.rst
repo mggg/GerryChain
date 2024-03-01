@@ -236,7 +236,7 @@ also increase the length of our chain to make sure that we have time to mix prop
         total_steps=10000
     )
 
-Then, we can run the chain and look at the last 20 assignments in the ensemble
+Then, we can run the chain and look at the last 40 assignments in the ensemble
 
 .. image:: ./images/gerrymandria_water_muni_ensamble.gif
     :width: 400px
@@ -267,6 +267,67 @@ while also being sensitive to the municipalities
    </div>
 
 
+How the Region Aware Implementation Works
+-----------------------------------------
+
+When working with region-aware ReCom chains, it is worth knowing how the spanning tree
+of the dual graph is being split. Weights are randomly assigned to the edges of the graph
+and then the surcharges are applied to the edges in the graph that span different regions
+specified by the ``region_surcharge`` dictionary. So if we have
+``region_surcharge={"muni": 0.2, "water": 0.8}``, then the edges that span different
+municipalities will be upweighted by 0.2 and the edges that span different water districts
+will be upweighted by 0.8. We then draw a minimum spanning tree using Kruskal's algorithm,
+which picks the edges interior to the region first before picking the edges that bridge
+different regions. 
+
+This makes it very likely that each region is largely contained in a connected subtree
+attached to a bridge node. Thus, when we make a cut, the regions attached to the
+bridge node are more likely to be (mostly) preserved in the subtree on either side
+of the cut.
+
+In the implementation of :meth:`~gerrychain.tree.biparition_tree` we further bias this
+choice by deterministically selecting bridge edges first. In the event that multiple
+types of regions are specified, the surcharges are added together, and edges are selected
+first by the number of types of regions that they span, and then by the surcharge added to
+those weights. So, if we have a region surcharge dictionary of ``{"a": 1, "b": 4, "c": 2}``
+then we we look for edges according to the order
+
+- ("a", "b", "c")
+- ("b", "c")
+- ("a", "b")
+- ("a", "c")
+- ("b")
+- ("c")
+- ("a")
+- random
+
+where the tuples indicate that a desired cut edge bridges both types of region in
+the tuple. In the event that this is not the desired behaviour, then the user can simply
+alter the ``cut_choice`` function in the constraints to be different. So, if the user
+would prefer the cut edge to be a random edge with no deference to bridge edges,
+then they might use ``random.choice()`` in the following way:
+
+.. code-block:: python
+
+    proposal = partial(
+        recom,
+        pop_col="TOTPOP",
+        pop_target=ideal_population,
+        epsilon=0.01,
+        node_repeats=1,
+        region_surcharge={
+            "muni": 2.0,
+            "water_dist": 2.0
+        },
+        method = partial(
+            bipartition_tree,
+            cut_choice = random.choice,
+        )
+    )
+
+**Note**: When ``region_surcharge`` is not specified, ``bipartition_tree`` will behave as if
+``cut_choice`` is set to ``random.choice``.
+
 
 .. .. attention::
 
@@ -288,7 +349,7 @@ while also being sensitive to the municipalities
 ..   the surcharges are in the range :math:`[0,1]`, then the surcharges from the surcharge
 ..   dictionary are added to them. In the event that
 ..   many edges within the tree have a surcharge above 1, then it can sometimes
-..   cause the biparitioning step to stall.
+..   cause the bipartitioning step to stall.
 
 
 What to do if the Chain Gets Stuck
