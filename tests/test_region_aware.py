@@ -126,6 +126,7 @@ def test_region_aware_muni_reselect():
                 steps=500,
                 surcharge=1.0,
                 reselect=True,
+                max_attempts=100,
             ),
             range(n_samples),
         )

@@ -33,7 +33,7 @@ from functools import partial
 from inspect import signature
 import random
 from collections import deque, namedtuple
-from dataclasses import dataclass, field
+import itertools
 from typing import (
     Any,
     Callable,
@@ -65,8 +65,8 @@ def random_spanning_tree(
 
     :param graph: The input graph to build the spanning tree from. Should be a Networkx Graph.
     :type graph: nx.Graph
-    :param region_surcharge: Dictionary of surcharges to add to the random weights used in region-aware
-        variants.
+    :param region_surcharge: Dictionary of surcharges to add to the random
+        weights used in region-aware variants.
     :type region_surcharge: Optional[Dict], optional
 
     :returns: The maximal spanning tree represented as a Networkx Graph.
@@ -206,10 +206,10 @@ class PopulatedGraph:
 
 # Tuple that is used in the find_balanced_edge_cuts function
 Cut = namedtuple("Cut", "edge weight subset")
-Cut.__new__.__defaults__ = (None,None,None)
+Cut.__new__.__defaults__ = (None, None, None)
 Cut.__doc__ = "Represents a cut in a graph."
 Cut.edge.__doc__ = "The edge where the cut is made. Defaults to None."
-Cut.edge.__doc__ = "The weight assigned to the edge (if any). Defaults to None."
+Cut.weight.__doc__ = "The weight assigned to the edge (if any). Defaults to None."
 Cut.subset.__doc__ = "The subset of nodes on one side of the cut. Defaults to None."
 
 
@@ -240,7 +240,7 @@ def find_balanced_edge_cuts_contraction(
             e = (leaf, pred[leaf])
             cuts.append(
                 Cut(
-                    edge=e, 
+                    edge=e,
                     weight=h.graph.edges[e].get("random_weight", random.random()),
                     subset=h.subsets[leaf].copy()
                 )
@@ -251,6 +251,68 @@ def find_balanced_edge_cuts_contraction(
         if h.degree(parent) == 1 and parent != root:
             leaves.append(parent)
     return cuts
+
+
+def _calc_pops(succ, root, h):
+    """
+    Calculates the population of each subtree in the graph
+    by traversing the graph using a depth-first search.
+
+    :param succ: The successors of the graph.
+    :type succ: Dict
+    :param root: The root node of the graph.
+    :type root: Any
+    :param h: The populated graph.
+    :type h: PopulatedGraph
+
+    :returns: A dictionary mapping nodes to their subtree populations.
+    :rtype: Dict
+    """
+    subtree_pops: Dict[Any, Union[int, float]] = {}
+    stack = deque(n for n in succ[root])
+    while stack:
+        next_node = stack.pop()
+        if next_node not in subtree_pops:
+            if next_node in succ:
+                children = succ[next_node]
+                if all(c in subtree_pops for c in children):
+                    subtree_pops[next_node] = sum(subtree_pops[c] for c in children)
+                    subtree_pops[next_node] += h.population[next_node]
+                else:
+                    stack.append(next_node)
+                    for c in children:
+                        if c not in subtree_pops:
+                            stack.append(c)
+            else:
+                subtree_pops[next_node] = h.population[next_node]
+
+    return subtree_pops
+
+
+def part_nodes(start, succ):
+    """
+    Partitions the nodes of a graph into two sets.
+    based on the start node and the successors of the graph.
+
+    :param start: The start node.
+    :type start: Any
+    :param succ: The successors of the graph.
+    :type succ: Dict
+
+    :returns: A set of nodes for a particular district (only one side of the cut).
+    :rtype: Set
+    """
+    nodes = set()
+    queue = deque([start])
+    while queue:
+        next_node = queue.pop()
+        if next_node not in nodes:
+            nodes.add(next_node)
+            if next_node in succ:
+                for c in succ[next_node]:
+                    if c not in nodes:
+                        queue.append(c)
+    return nodes
 
 
 def find_balanced_edge_cuts_memoization(
@@ -277,56 +339,29 @@ def find_balanced_edge_cuts_memoization(
     pred = predecessors(h.graph, root)
     succ = successors(h.graph, root)
     total_pop = h.tot_pop
-    subtree_pops: Dict[Any, Union[int, float]] = {}
-    stack = deque(n for n in succ[root])
-    while stack:
-        next_node = stack.pop()
-        if next_node not in subtree_pops:
-            if next_node in succ:
-                children = succ[next_node]
-                if all(c in subtree_pops for c in children):
-                    subtree_pops[next_node] = sum(subtree_pops[c] for c in children)
-                    subtree_pops[next_node] += h.population[next_node]
-                else:
-                    stack.append(next_node)
-                    for c in children:
-                        if c not in subtree_pops:
-                            stack.append(c)
-            else:
-                subtree_pops[next_node] = h.population[next_node]
+
+    subtree_pops = _calc_pops(succ, root, h)
 
     cuts = []
     for node, tree_pop in subtree_pops.items():
-
-        def part_nodes(start):
-            nodes = set()
-            queue = deque([start])
-            while queue:
-                next_node = queue.pop()
-                if next_node not in nodes:
-                    nodes.add(next_node)
-                    if next_node in succ:
-                        for c in succ[next_node]:
-                            if c not in nodes:
-                                queue.append(c)
-            return nodes
-
         if abs(tree_pop - h.ideal_pop) <= h.ideal_pop * h.epsilon:
             e = (node, pred[node])
+            wt = random.random()
             cuts.append(
                 Cut(
-                    edge=e, 
-                    weight=h.graph.edges[e].get("random_weight", random.random()),
-                    subset=part_nodes(node)
+                    edge=e,
+                    weight=h.graph.edges[e].get("random_weight", wt),
+                    subset=part_nodes(node, succ)
                 )
             )
         elif abs((total_pop - tree_pop) - h.ideal_pop) <= h.ideal_pop * h.epsilon:
             e = (node, pred[node])
+            wt = random.random()
             cuts.append(
                 Cut(
                     edge=e,
-                    weight=h.graph.edges[e].get("random_weight", random.random()),
-                    subset=set(h.graph.nodes) - part_nodes(node),
+                    weight=h.graph.edges[e].get("random_weight", wt),
+                    subset=set(h.graph.nodes) - part_nodes(node, succ),
                 )
             )
     return cuts
@@ -358,41 +393,135 @@ def _max_weight_choice(
     Each Cut object in the list is assigned a random weight
     either coming from the implementation of Kruskal's algorithm
     or it is generated during the selection of the balanced edges
-    (cf. :meth:`find_balanced_edge_cuts_memoization` and 
+    (cf. :meth:`find_balanced_edge_cuts_memoization` and
     :meth:`find_balanced_edge_cuts_contraction`).
     This function returns the cut with the highest weight.
-    
-    In the case of a situation where a region aware chain is run, 
+
+    In the case of a situation where a region aware chain is run,
     this will preferentially select for cuts that are between
     regions, rather than within them (the likelihood of this
     is generally controlled by the ``region_surcharge`` parameter).
-    
+
     In all other cases, this is effectively the same as calling
     random.choice() on the list of cuts since all of the weights
     on the cuts are randomly generated on the interval [0,1], and
     there is no mechanism in place weight any cut edge over another.
-    
-    :param cut_edge_list: A list of Cut objects. Each object has an 
+
+    :param cut_edge_list: A list of Cut objects. Each object has an
         edge, a weight, and a subset attribute.
     :type cut_edge_list: List[Cut]
-    
+
     :returns: The cut with the highest random weight.
-    :rtype: Cut    
+    :rtype: Cut
     """
 
     # Just in case, default to random choice
     if not isinstance(cut_edge_list[0], Cut) or cut_edge_list[0].weight is None:
         return random.choice(cut_edge_list)
-    
-    max_weight = float("-inf")
-    cut_edge = None
 
-    for cut in cut_edge_list:
-        if cut.weight > max_weight:
-            max_weight = cut.weight
-            cut_edge = cut
+    return max(cut_edge_list, key=lambda cut: cut.weight)
 
-    return cut_edge
+
+def _power_set_sorted_by_size_then_sum(d):
+    power_set = [
+        s
+        for i in range(1, len(d) + 1)
+        for s in itertools.combinations(d.keys(), i)
+    ]
+
+    # Sort the subsets in descending order based on
+    # the sum of their corresponding values in the dictionary
+    sorted_power_set = sorted(
+        power_set,
+        key=lambda s: (len(s), sum(d[i] for i in s)),
+        reverse=True
+    )
+
+    return sorted_power_set
+
+
+# Note that the populated graph and the region surcharge are passed
+# by object reference. This means that a copy is not made since we
+# are not modifying the object in the function, and the speed of
+# this randomized selection will not suffer for it.
+def _region_preferred_max_weight_choice(
+    populated_graph: PopulatedGraph,
+    region_surcharge: Dict,
+    cut_edge_list: List[Cut]
+) -> Cut:
+    """
+    This function is used in the case of a region-aware chain. It
+    is similar to the as :meth:`_max_weight_choice` function except
+    that it will preferentially select one of the cuts that
+    has the highest surcharge preferentially. So, if we have a
+    weight dict of the form ``{region1: wt1, region2: wt2}`` , then
+    this function first looks for a cut that is a cut edge for both
+    ``region1`` and ``region2`` and then selects the one with the
+    highest weight. If no such cut exists, then it will then look for
+    a cut that is a cut edge for the region with the highest surcharge
+    (presumably the region that we care more about not splitting).
+
+    In the case of 3 regions, it will first look for a cut that is a
+    cut edge for all 3 regions, then for a cut that is a cut edge for
+    2 regions sorted by the highest total surcharge, and then for a cut
+    that is a cut edge for the region with the highest surcharge.
+
+    For the case of 4 or more regions, the power set starts to get a bit
+    large, so we default back to the :meth:`_max_weight_choice` function
+    and just select the cut with the highest weight, which will still
+    preferentially select for cuts that span the most regions that we
+    care about.
+
+    :param populated_graph: The populated graph.
+    :type populated_graph: PopulatedGraph
+    :param region_surcharge: A dictionary of surcharges for the spanning
+        tree algorithm.
+    :type region_surcharge: Dict
+    :param cut_edge_list: A list of Cut objects. Each object has an
+        edge, a weight, and a subset attribute.
+    :type cut_edge_list: List[Cut]
+
+    :returns: A random Cut from the set of possible Cuts with the highest
+        surcharge.
+    :rtype: Cut
+    """
+    if (
+        not isinstance(region_surcharge, dict)
+        or not isinstance(cut_edge_list[0], Cut)
+        or cut_edge_list[0].weight is None
+    ):
+        return random.choice(cut_edge_list)
+
+    # Early return for simple cases
+    if len(region_surcharge) < 1 or len(region_surcharge) > 3:
+        return _max_weight_choice(cut_edge_list)
+
+    # Prepare data for efficient access
+    edge_region_info = {
+        cut: {
+            key: (populated_graph.graph.nodes[cut.edge[0]].get(key),
+                  populated_graph.graph.nodes[cut.edge[1]].get(key))
+            for key in region_surcharge
+        }
+        for cut in cut_edge_list
+    }
+
+    # Generate power set sorted by surcharge, then filter cuts based
+    # on region matching
+    power_set = _power_set_sorted_by_size_then_sum(region_surcharge)
+    for region_combination in power_set:
+        suitable_cuts = [
+            cut for cut in cut_edge_list
+            if all(
+                edge_region_info[cut][key][0] != edge_region_info[cut][key][1]
+                for key in region_combination
+            )
+        ]
+        if suitable_cuts:
+            return _max_weight_choice(suitable_cuts)
+
+    return _max_weight_choice(cut_edge_list)
+
 
 def bipartition_tree(
     graph: nx.Graph,
@@ -408,7 +537,7 @@ def bipartition_tree(
     max_attempts: Optional[int] = 100000,
     warn_attempts: int = 1000,
     allow_pair_reselection: bool = False,
-    cut_choice: Callable = _max_weight_choice,
+    cut_choice: Callable = random.choice
 ) -> Set:
     """
     This function finds a balanced 2 partition of a graph by drawing a
@@ -480,16 +609,25 @@ def bipartition_tree(
 
     restarts = 0
     attempts = 0
+
     while max_attempts is None or attempts < max_attempts:
         if restarts == node_repeats:
             spanning_tree = spanning_tree_fn(graph)
             restarts = 0
         h = PopulatedGraph(spanning_tree, populations, pop_target, epsilon)
-        
+
+        is_region_cut = (
+            "region_surcharge" in signature(cut_choice).parameters
+            and "populated_graph" in signature(cut_choice).parameters
+        )
+
         # This returns a list of Cut objects with attributes edge and subset
         possible_cuts = balance_edge_fn(h, choice=choice)
 
         if len(possible_cuts) != 0:
+            if is_region_cut:
+                return cut_choice(h, region_surcharge, possible_cuts).subset
+
             return cut_choice(possible_cuts).subset
 
         restarts += 1

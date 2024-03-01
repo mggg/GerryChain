@@ -112,5 +112,5 @@ def test_pa_freeze():
     
     # This needs to be changed every time we change the
     # tests around
-    assert hashlib.sha256(result.encode()).hexdigest() == "46ec97875c6b15e4bd765c66ab404c26cf2d304ce1beaf211181c0a300d3c388"
+    assert hashlib.sha256(result.encode()).hexdigest() == "2e0d148c22f4d2f7f9ae39c8950892f4574ea65d197657c14446c359c5ccfd8e"
     

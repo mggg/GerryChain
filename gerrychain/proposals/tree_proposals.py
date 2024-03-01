@@ -13,7 +13,6 @@ from ..tree import (
     ReselectException,
 )
 from typing import Callable, Optional, Dict, Union
-import warnings
 
 
 class MetagraphError(Exception):
@@ -100,7 +99,6 @@ def recom(
     # Try to add the region aware in if the method accepts the surcharge dictionary
     if "region_surcharge" in signature(method).parameters:
         method = partial(method, region_surcharge=region_surcharge)
-
 
     while len(bad_district_pairs) < tot_pairs:
         try:
