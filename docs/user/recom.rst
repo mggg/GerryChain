@@ -28,7 +28,7 @@ A Simple Recom Chain
 .. raw:: html
 
     <div class="center-container">
-      <a href="https://github.com/mggg/GerryChain/blob/main/docs/_static/gerrymandria.json" class="download-badge" download>
+      <a href="https://github.com/mggg/GerryChain/raw/main/docs/_static/gerrymandria.json" class="download-badge" download>
         Download GerryMandria File
       </a>
     </div>
@@ -49,7 +49,7 @@ the first thing to do is to import the required packages:
 
     # Set the random seed so that the results are reproducible!
     import random
-    random.seed(42)
+    random.seed(2024)
 
 Now we set up the initial partition:
 
@@ -94,7 +94,7 @@ We can now set up the chain:
         constraints=[contiguous],
         accept=accept.always_accept,
         initial_state=initial_partition,
-        total_steps=20
+        total_steps=40
     )
 
 and run it with
@@ -131,12 +131,12 @@ bad idea to do this for a chain with a large number of steps).
         pos = {node :(data['x'],data['y']) for node, data in graph.nodes(data=True)}
         node_colors = [mcm.tab20(int(assignment_list[i][node]) % 20) for node in graph.nodes()]
         node_labels = {node: str(assignment_list[i][node]) for node in graph.nodes()}
-        
+
         nx.draw_networkx_nodes(graph, pos, node_color=node_colors)
         nx.draw_networkx_edges(graph, pos)
         nx.draw_networkx_labels(graph, pos, labels=node_labels)
         plt.axis('off')
-        
+
         buffer = io.BytesIO()
         plt.savefig(buffer, format='png')
         buffer.seek(0)
@@ -187,7 +187,7 @@ edges within the municipalities.
         pop_target=ideal_population,
         epsilon=0.01,
         node_repeats=2,
-        region_surcharge={"muni": 0.8},
+        region_surcharge={"muni": 1.0},
     )
 
 And this will produce the following ensemble:
@@ -310,7 +310,7 @@ district, then the chain will get stuck and throw an error. Here is the setup:
     from gerrychain.constraints import contiguous
     from functools import partial
     import random
-    random.seed(42)
+    random.seed(0)
 
     graph = Graph.from_json("./gerrymandria.json")
 
@@ -333,7 +333,14 @@ district, then the chain will get stuck and throw an error. Here is the setup:
         pop_target=ideal_population,
         epsilon=0.01,
         node_repeats=1,
-        region_surcharge={"muni": 1.0, "water_dist": 1.0},
+        region_surcharge={
+            "muni": 2.0,
+            "water_dist": 2.0
+        },
+        method = partial(
+            bipartition_tree, 
+            max_attempts=100,
+        )
     )
 
     recom_chain = MarkovChain(
@@ -341,14 +348,14 @@ district, then the chain will get stuck and throw an error. Here is the setup:
         constraints=[contiguous],
         accept=accept.always_accept,
         initial_state=initial_partition,
-        total_steps=20
+        total_steps=20,
     )
 
     assignment_list = []
 
     for i, item in enumerate(recom_chain):
         print(f"Finished step {i + 1}/{len(recom_chain)}", end="\r")
-        assignment_list.append(item.assignment)
+        assignment_list.append(item.assignment))
 
 This will output the following sequence of warnings and errors
 
@@ -408,7 +415,10 @@ node repeats:
         pop_target=ideal_population,
         epsilon=0.01,
         node_repeats=100,
-        region_surcharge={"muni": 1.0, "water_dist": 1.0},
+        region_surcharge={
+            "muni": 1.0, 
+            "water_dist": 1.0
+        },
     )
 
 Running this code, we can see that we get stuck once again, so this was not the fix.
@@ -416,7 +426,11 @@ Let's try to enable reselection instead:
 
 .. code-block:: python 
 
-    method = partial(bipartition_tree, allow_pair_reselection=True)
+    method = partial(
+        bipartition_tree,
+        max_attempts=100,
+        allow_pair_reselection=True
+    )
 
     proposal = partial(
         recom,
@@ -424,7 +438,10 @@ Let's try to enable reselection instead:
         pop_target=ideal_population,
         epsilon=0.01,
         node_repeats=1,
-        region_surcharge={"muni": 1.0, "water_dist": 1.0},
+        region_surcharge={
+            "muni": 1.0,
+            "water_dist": 1.0
+        },
         method=method
     )
 
@@ -462,7 +479,7 @@ Setting up the initial districting plan
 .. raw:: html
 
     <div class="center-container">
-      <a href="https://github.com/mggg/GerryChain/blob/main/docs/_static/PA_VTDs.json" class="download-badge" download>Download PA File</a>
+      <a href="https://github.com/mggg/GerryChain/raw/main/docs/_static/PA_VTDs.json" class="download-badge" download>Download PA File</a>
     </div>
     <br style="line-height: 5px;">
 
