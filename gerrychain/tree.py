@@ -289,7 +289,7 @@ def _calc_pops(succ, root, h):
     return subtree_pops
 
 
-def part_nodes(start, succ):
+def _part_nodes(start, succ):
     """
     Partitions the nodes of a graph into two sets.
     based on the start node and the successors of the graph.
@@ -351,7 +351,7 @@ def find_balanced_edge_cuts_memoization(
                 Cut(
                     edge=e,
                     weight=h.graph.edges[e].get("random_weight", wt),
-                    subset=part_nodes(node, succ)
+                    subset=_part_nodes(node, succ)
                 )
             )
         elif abs((total_pop - tree_pop) - h.ideal_pop) <= h.ideal_pop * h.epsilon:
@@ -361,7 +361,7 @@ def find_balanced_edge_cuts_memoization(
                 Cut(
                     edge=e,
                     weight=h.graph.edges[e].get("random_weight", wt),
-                    subset=set(h.graph.nodes) - part_nodes(node, succ),
+                    subset=set(h.graph.nodes) - _part_nodes(node, succ),
                 )
             )
     return cuts
