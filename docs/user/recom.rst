@@ -286,11 +286,11 @@ bridge node are more likely to be (mostly) preserved in the subtree on either si
 of the cut.
 
 In the implementation of :meth:`~gerrychain.tree.biparition_tree` we further bias this
-choice by deterministically selecting bridge edges first. In the event that multiple
-types of regions are specified, the surcharges are added together, and edges are selected
-first by the number of types of regions that they span, and then by the surcharge added to
-those weights. So, if we have a region surcharge dictionary of ``{"a": 1, "b": 4, "c": 2}``
-then we we look for edges according to the order
+choice by deterministically cutting bridge edges first (when possible). In the event that
+multiple types of regions are specified, the surcharges are added together, and edges are
+selected first by the number of types of regions that they span, and then by the
+surcharge added to those weights. So, if we have a region surcharge dictionary of
+``{"a": 1, "b": 4, "c": 2}`` then we we look for edges according to the order
 
 - ("a", "b", "c")
 - ("b", "c")
