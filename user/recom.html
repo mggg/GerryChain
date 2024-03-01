@@ -47,7 +47,10 @@
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Getting started with GerryChain</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Running a chain with ReCom</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#a-simple-recom-chain">A Simple Recom Chain</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#region-aware-recom">Region-Aware ReCom</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#region-aware-recom">Region-Aware ReCom</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#how-the-region-aware-implementation-works">How the Region Aware Implementation Works</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#what-to-do-if-the-chain-gets-stuck">What to do if the Chain Gets Stuck</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#a-real-world-example">A Real-World Example</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#imports">Imports</a></li>
@@ -127,7 +130,7 @@ all of the pictures in this guide will use the dual graph as well.</p>
 <div class="section" id="a-simple-recom-chain">
 <h2>A Simple Recom Chain<a class="headerlink" href="#a-simple-recom-chain" title="Permalink to this headline">¶</a></h2>
 <div class="center-container">
-  <a href="https://github.com/mggg/GerryChain/blob/main/docs/_static/gerrymandria.json" class="download-badge" download>
+  <a href="https://github.com/mggg/GerryChain/raw/main/docs/_static/gerrymandria.json" class="download-badge" download>
     Download GerryMandria File
   </a>
 </div>
@@ -143,7 +146,7 @@ the first thing to do is to import the required packages:</p>
 
 <span class="c1"># Set the random seed so that the results are reproducible!</span>
 <span class="kn">import</span> <span class="nn">random</span>
-<span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">2024</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Now we set up the initial partition:</p>
@@ -182,7 +185,7 @@ the first thing to do is to import the required packages:</p>
     <span class="n">constraints</span><span class="o">=</span><span class="p">[</span><span class="n">contiguous</span><span class="p">],</span>
     <span class="n">accept</span><span class="o">=</span><span class="n">accept</span><span class="o">.</span><span class="n">always_accept</span><span class="p">,</span>
     <span class="n">initial_state</span><span class="o">=</span><span class="n">initial_partition</span><span class="p">,</span>
-    <span class="n">total_steps</span><span class="o">=</span><span class="mi">20</span>
+    <span class="n">total_steps</span><span class="o">=</span><span class="mi">40</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -252,7 +255,7 @@ together. Here is a picture of the municipalities in GerryMandria:</p>
 region-aware ReCom chains which create ensembles
 of districting plans that try to keep particular regions of interest together.
 And it only takes one extra line of code: we simply update
-our proposal to include a <code class="docutils literal notranslate"><span class="pre">weight_dict</span></code> which increases the importance of the
+our proposal to include a <code class="docutils literal notranslate"><span class="pre">region_surcharge</span></code> which increases the importance of the
 edges within the municipalities.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">proposal</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span>
     <span class="n">recom</span><span class="p">,</span>
@@ -260,7 +263,7 @@ edges within the municipalities.</p>
     <span class="n">pop_target</span><span class="o">=</span><span class="n">ideal_population</span><span class="p">,</span>
     <span class="n">epsilon</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
     <span class="n">node_repeats</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
-    <span class="n">weight_dict</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;muni&quot;</span><span class="p">:</span> <span class="mf">0.8</span><span class="p">},</span>
+    <span class="n">region_surcharge</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;muni&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">},</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -276,14 +279,14 @@ and so it is not going to be possible to keep all of the water districts togethe
 and all of the municipalities together in one plan. However, we can try to keep
 the water districts together as much as possible, and then, within those water
 districts, try to be sensitive to the boundaries of the municipalities. Again,
-this only requires for us to edit the <code class="docutils literal notranslate"><span class="pre">weight_dict</span></code> parameter of the proposal</p>
+this only requires for us to edit the <code class="docutils literal notranslate"><span class="pre">region_surcharge</span></code> parameter of the proposal</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">proposal</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span>
     <span class="n">recom</span><span class="p">,</span>
     <span class="n">pop_col</span><span class="o">=</span><span class="s2">&quot;TOTPOP&quot;</span><span class="p">,</span>
     <span class="n">pop_target</span><span class="o">=</span><span class="n">ideal_population</span><span class="p">,</span>
     <span class="n">epsilon</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
     <span class="n">node_repeats</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
-    <span class="n">weight_dict</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;muni&quot;</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span> <span class="s2">&quot;water&quot;</span><span class="p">:</span> <span class="mf">0.8</span><span class="p">},</span>
+    <span class="n">region_surcharge</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;muni&quot;</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span> <span class="s2">&quot;water&quot;</span><span class="p">:</span> <span class="mf">0.8</span><span class="p">},</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -298,7 +301,7 @@ also increase the length of our chain to make sure that we have time to mix prop
 <span class="p">)</span>
 </pre></div>
 </div>
-<p>Then, we can run the chain and look at the last 20 assignments in the ensemble</p>
+<p>Then, we can run the chain and look at the last 40 assignments in the ensemble</p>
 <a class="reference internal image-reference" href="../_images/gerrymandria_water_muni_ensamble.gif"><img alt="../_images/gerrymandria_water_muni_ensamble.gif" class="align-center" src="../_images/gerrymandria_water_muni_ensamble.gif" style="width: 400px;" /></a>
 <p>Comparing the last map with the municipality and water district maps, we can see
 that the chain has done a pretty good job of keeping the water districts together
@@ -306,36 +309,73 @@ while also being sensitive to the municipalities</p>
 <div class="figure align-center" id="id1">
 <a class="reference internal image-reference" href="../_images/gerrymandria_water_and_muni_aware.png"><img alt="../_images/gerrymandria_water_and_muni_aware.png" src="../_images/gerrymandria_water_and_muni_aware.png" style="width: 400px;" /></a>
 <p class="caption"><span class="caption-text">The last map in the ensemble from the 10000 step region-aware ReCom chain with
-weights of 0.2 for the municipalities and 0.8 for the water districts.</span><a class="headerlink" href="#id1" title="Permalink to this image">¶</a></p>
+surcharges of 0.2 for the municipalities and 0.8 for the water districts.</span><a class="headerlink" href="#id1" title="Permalink to this image">¶</a></p>
 </div>
 <div style="display: flex; justify-content: space-around;">
     <figure style="text-align: center;">
-        <img src="../_images/gerrymandria_cities.png" style="width: 100%;">
+        <img src="../../_images/gerrymandria_cities.png" style="width: 100%;">
         <figcaption><em>Municipalities of Gerrymandria</em></figcaption>
     </figure>
     <figure style="text-align: center;">
-        <img src="../_images/gerrymandria_water.png" style="width: 100%;">
+        <img src="../../_images/gerrymandria_water.png" style="width: 100%;">
         <figcaption><em>Water Districts of GerryMandria</em><figcaption>
     </figure>
-</div><div class="admonition attention" id="weight-dict-warning">
-<p class="admonition-title">Attention</p>
-<p>The <code class="docutils literal notranslate"><span class="pre">weight_dict</span></code> parameter is a dictionary that assigns a weight to each
-edge within a particular region that is determined by the keys of the dictionary.
-In the event that multiple regions are specified, the weights are added together,
-and if the weights add to more than 1, then the following warning will be printed
-to the user:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">ValueWarning:</span>
-<span class="go">The sum of the weights in the weight dictionary is greater than 1.</span>
-<span class="go">Please consider normalizing the weights.</span>
+</div><div class="section" id="how-the-region-aware-implementation-works">
+<h3>How the Region Aware Implementation Works<a class="headerlink" href="#how-the-region-aware-implementation-works" title="Permalink to this headline">¶</a></h3>
+<p>When working with region-aware ReCom chains, it is worth knowing how the spanning tree
+of the dual graph is being split. Weights from the interval <span class="math notranslate nohighlight">\([0,1]\)</span> are randomly
+assigned to the edges of the graph and then the surcharges are applied to the edges in
+the graph that span different regions specified by the <code class="docutils literal notranslate"><span class="pre">region_surcharge</span></code> dictionary.
+So if we have <code class="docutils literal notranslate"><span class="pre">region_surcharge={&quot;muni&quot;:</span> <span class="pre">0.2,</span> <span class="pre">&quot;water&quot;:</span> <span class="pre">0.8}</span></code>, then the edges that
+span different municipalities will be upweighted by 0.2 and the edges that span different
+water districts will be upweighted by 0.8. We then draw a minimum spanning tree using
+by greedily selecting the lowest-weight edges via Kruskal’s algorithm. The surcharges on
+the edges helps ensure that the algorithm picks the edges interior to the region
+before it picks the edges that bridge different regions.</p>
+<p>This makes it very likely that each region is largely contained in a connected subtree
+attached to a bridge node. Thus, when we make a cut, the regions attached to the
+bridge node are more likely to be (mostly) preserved in the subtree on either side
+of the cut.</p>
+<p>In the implementation of <code class="xref py py-meth docutils literal notranslate"><span class="pre">biparition_tree()</span></code> we further bias this
+choice by deterministically cutting bridge edges first (when possible). In the event that
+multiple types of regions are specified, the surcharges are added together, and edges are
+selected first by the number of types of regions that they span, and then by the
+surcharge added to those weights. So, if we have a region surcharge dictionary of
+<code class="docutils literal notranslate"><span class="pre">{&quot;a&quot;:</span> <span class="pre">1,</span> <span class="pre">&quot;b&quot;:</span> <span class="pre">4,</span> <span class="pre">&quot;c&quot;:</span> <span class="pre">2}</span></code> then we we look for edges according to the order</p>
+<ul class="simple">
+<li><p>(“a”, “b”, “c”)</p></li>
+<li><p>(“b”, “c”)</p></li>
+<li><p>(“a”, “b”)</p></li>
+<li><p>(“a”, “c”)</p></li>
+<li><p>(“b”)</p></li>
+<li><p>(“c”)</p></li>
+<li><p>(“a”)</p></li>
+<li><p>random</p></li>
+</ul>
+<p>where the tuples indicate that a desired cut edge bridges both types of region in
+the tuple. In the event that this is not the desired behaviour, then the user can simply
+alter the <code class="docutils literal notranslate"><span class="pre">cut_choice</span></code> function in the constraints to be different. So, if the user
+would prefer the cut edge to be a random edge with no deference to bridge edges,
+then they might use <code class="docutils literal notranslate"><span class="pre">random.choice()</span></code> in the following way:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">proposal</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span>
+    <span class="n">recom</span><span class="p">,</span>
+    <span class="n">pop_col</span><span class="o">=</span><span class="s2">&quot;TOTPOP&quot;</span><span class="p">,</span>
+    <span class="n">pop_target</span><span class="o">=</span><span class="n">ideal_population</span><span class="p">,</span>
+    <span class="n">epsilon</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
+    <span class="n">node_repeats</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">region_surcharge</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;muni&quot;</span><span class="p">:</span> <span class="mf">2.0</span><span class="p">,</span>
+        <span class="s2">&quot;water_dist&quot;</span><span class="p">:</span> <span class="mf">2.0</span>
+    <span class="p">},</span>
+    <span class="n">method</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span>
+        <span class="n">bipartition_tree</span><span class="p">,</span>
+        <span class="n">cut_choice</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">,</span>
+    <span class="p">)</span>
+<span class="p">)</span>
 </pre></div>
 </div>
-<p>It is generally inadvisable to set the weight of a region to 1 or more. When
-using <a class="reference internal" href="../api.html#gerrychain.proposals.recom" title="gerrychain.proposals.recom"><code class="xref py py-meth docutils literal notranslate"><span class="pre">recom()</span></code></a> with a <code class="docutils literal notranslate"><span class="pre">weight_dict</span></code>, the proposal
-will try to draw a minimum spanning tree using Kruskal’s algorithm where,
-the weights are in the range <span class="math notranslate nohighlight">\([0,1]\)</span>, then the weights from the weight
-dictionary are added to them. In the event that
-many edges within the tree have a weight above 1, then it can sometimes
-cause the biparitioning step to stall.</p>
+<p><strong>Note</strong>: When <code class="docutils literal notranslate"><span class="pre">region_surcharge</span></code> is not specified, <code class="docutils literal notranslate"><span class="pre">bipartition_tree</span></code> will behave as if
+<code class="docutils literal notranslate"><span class="pre">cut_choice</span></code> is set to <code class="docutils literal notranslate"><span class="pre">random.choice</span></code>.</p>
 </div>
 </div>
 <div class="section" id="what-to-do-if-the-chain-gets-stuck">
@@ -353,7 +393,7 @@ district, then the chain will get stuck and throw an error. Here is the setup:</
 <span class="kn">from</span> <span class="nn">gerrychain.constraints</span> <span class="kn">import</span> <span class="n">contiguous</span>
 <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
 <span class="kn">import</span> <span class="nn">random</span>
-<span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
 <span class="n">graph</span> <span class="o">=</span> <span class="n">Graph</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="s2">&quot;./gerrymandria.json&quot;</span><span class="p">)</span>
 
@@ -376,7 +416,14 @@ district, then the chain will get stuck and throw an error. Here is the setup:</
     <span class="n">pop_target</span><span class="o">=</span><span class="n">ideal_population</span><span class="p">,</span>
     <span class="n">epsilon</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
     <span class="n">node_repeats</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-    <span class="n">weight_dict</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;muni&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s2">&quot;water_dist&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">},</span>
+    <span class="n">region_surcharge</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;muni&quot;</span><span class="p">:</span> <span class="mf">2.0</span><span class="p">,</span>
+        <span class="s2">&quot;water_dist&quot;</span><span class="p">:</span> <span class="mf">2.0</span>
+    <span class="p">},</span>
+    <span class="n">method</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span>
+        <span class="n">bipartition_tree</span><span class="p">,</span>
+        <span class="n">max_attempts</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+    <span class="p">)</span>
 <span class="p">)</span>
 
 <span class="n">recom_chain</span> <span class="o">=</span> <span class="n">MarkovChain</span><span class="p">(</span>
@@ -384,22 +431,18 @@ district, then the chain will get stuck and throw an error. Here is the setup:</
     <span class="n">constraints</span><span class="o">=</span><span class="p">[</span><span class="n">contiguous</span><span class="p">],</span>
     <span class="n">accept</span><span class="o">=</span><span class="n">accept</span><span class="o">.</span><span class="n">always_accept</span><span class="p">,</span>
     <span class="n">initial_state</span><span class="o">=</span><span class="n">initial_partition</span><span class="p">,</span>
-    <span class="n">total_steps</span><span class="o">=</span><span class="mi">20</span>
+    <span class="n">total_steps</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="n">assignment_list</span> <span class="o">=</span> <span class="p">[]</span>
 
 <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">recom_chain</span><span class="p">):</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Finished step {i + 1}/{len(recom_chain)}&quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\r</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">assignment_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">assignment</span><span class="p">)</span>
+    <span class="n">assignment_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">assignment</span><span class="p">))</span>
 </pre></div>
 </div>
 <p>This will output the following sequence of warnings and errors</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">ValueWarning:</span>
-<span class="go">The sum of the weights in the weight dictionary is greater than 1.</span>
-<span class="go">Please consider normalizing the weights.</span>
-
-<span class="go">BipartitionWarning:</span>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">BipartitionWarning:</span>
 <span class="go">Failed to find a balanced cut after 50 attempts.</span>
 <span class="go">If possible, consider enabling pair reselection within your</span>
 <span class="go">MarkovChain proposal method to allow the algorithm to select</span>
@@ -412,12 +455,6 @@ district, then the chain will get stuck and throw an error. Here is the setup:</
 to rerun the part of the script that sets the random seed to 42.
 Let’s break down what is happening in each of these:</p>
 <ul>
-  <li><strong>ValueWarning</strong>
-    This is just telling us that we have made an ill-advised
-    choice of weights for our regions. See <a href="#weight-dict-warning">the above warning</a>
-    for more information.
-  </li>
-  <br style="line-height: 5px;">
   <li><strong>BipartitionWarning</strong>
     This is telling us that somewhere along the way,
     we picked a pair of districts that were difficult to bipartition underneath
@@ -452,13 +489,20 @@ node repeats:</p>
     <span class="n">pop_target</span><span class="o">=</span><span class="n">ideal_population</span><span class="p">,</span>
     <span class="n">epsilon</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
     <span class="n">node_repeats</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
-    <span class="n">weight_dict</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;muni&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s2">&quot;water_dist&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">},</span>
+    <span class="n">region_surcharge</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;muni&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="s2">&quot;water_dist&quot;</span><span class="p">:</span> <span class="mf">1.0</span>
+    <span class="p">},</span>
 <span class="p">)</span>
 </pre></div>
 </div>
 <p>Running this code, we can see that we get stuck once again, so this was not the fix.
 Let’s try to enable reselection instead:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">method</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">bipartition_tree</span><span class="p">,</span> <span class="n">allow_pair_reselection</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">method</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span>
+    <span class="n">bipartition_tree</span><span class="p">,</span>
+    <span class="n">max_attempts</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+    <span class="n">allow_pair_reselection</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
 
 <span class="n">proposal</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span>
     <span class="n">recom</span><span class="p">,</span>
@@ -466,7 +510,10 @@ Let’s try to enable reselection instead:</p>
     <span class="n">pop_target</span><span class="o">=</span><span class="n">ideal_population</span><span class="p">,</span>
     <span class="n">epsilon</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
     <span class="n">node_repeats</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-    <span class="n">weight_dict</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;muni&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s2">&quot;water_dist&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">},</span>
+    <span class="n">region_surcharge</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;muni&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="s2">&quot;water_dist&quot;</span><span class="p">:</span> <span class="mf">1.0</span>
+    <span class="p">},</span>
     <span class="n">method</span><span class="o">=</span><span class="n">method</span>
 <span class="p">)</span>
 </pre></div>
@@ -494,7 +541,7 @@ by our ReCom chain.</p>
 <div class="section" id="setting-up-the-initial-districting-plan">
 <h3>Setting up the initial districting plan<a class="headerlink" href="#setting-up-the-initial-districting-plan" title="Permalink to this headline">¶</a></h3>
 <div class="center-container">
-  <a href="https://github.com/mggg/GerryChain/blob/main/docs/_static/PA_VTDs.json" class="download-badge" download>Download PA File</a>
+  <a href="https://github.com/mggg/GerryChain/raw/main/docs/_static/PA_VTDs.json" class="download-badge" download>Download PA File</a>
 </div>
 <br style="line-height: 5px;"><p>We’ll create our graph using the example Pennsylvania json file.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">graph</span> <span class="o">=</span> <span class="n">Graph</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="s2">&quot;./PA_VTDs.json&quot;</span><span class="p">)</span>

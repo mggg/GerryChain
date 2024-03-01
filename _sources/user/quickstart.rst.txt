@@ -13,7 +13,7 @@ What you'll need
 Before we can start running Markov chains, you'll need to:
 
 * Install ``gerrychain`` from PyPI. See the :doc:`installation guide <./install>` for instructions.
-* Download `this example json of Pennsylvania's VTDs <https://github.com/mggg/GerryChain/blob/main/docs/_static/PA_VTDs.json>`_.
+* Download `this example json of Pennsylvania's VTDs <https://github.com/mggg/GerryChain/raw/main/docs/_static/PA_VTDs.json>`_.
 * Open your preferred Python environment (e.g. JupyterLab, IPython, or a ``.py`` file
   in your favorite editor) in the directory containing the ``PA_VTDs.json`` file
   that you downloaded.
@@ -43,7 +43,7 @@ Creating the initial partition
 .. raw:: html
 
     <div class="center-container">
-      <a href="https://github.com/mggg/GerryChain/blob/main/docs/_static/PA_VTDs.json" class="download-badge" download>Download PA File</a>
+      <a href="https://github.com/mggg/GerryChain/raw/main/docs/_static/PA_VTDs.json" class="download-badge" download>Download PA File</a>
     </div>
     <br style="line-height: 5px;">
 

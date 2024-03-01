@@ -4,7 +4,7 @@ Working with Partitions
 .. raw:: html
 
     <div class="center-container">
-      <a href="https://github.com/mggg/GerryChain/blob/main/docs/_static/PA_VTDs.json" class="download-badge" download>Download PA File</a>
+      <a href="https://github.com/mggg/GerryChain/raw/main/docs/_static/PA_VTDs.json" class="download-badge" download>Download PA File</a>
     </div>
     <br style="line-height: 5px;">
 
@@ -17,7 +17,7 @@ GerryChain ``Partition`` object.
     from gerrychain.updaters import cut_edges
 
 We'll use our 
-`Pennsylvania VTD json <https://github.com/mggg/GerryChain/blob/main/docs/_static/PA_VTDs.json>`_ 
+`Pennsylvania VTD json <https://github.com/mggg/GerryChain/raw/main/docs/_static/PA_VTDs.json>`_ 
 to create the graph we'll use in these examples.
 
 .. code-block:: python

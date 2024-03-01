@@ -9,6 +9,7 @@ The most recent version of GerryChain (as of January 2024) supports
 - Python 3.9
 - Python 3.10
 - Python 3.11
+- Python 3.12
 
 If you do not have one of these versions installed on you machine, we
 recommend that you go to the 
@@ -135,7 +136,7 @@ This approach sometimes fails due to compatibility issues between our
 different Python GIS dependencies, like ``geopandas``, ``pyproj``,
 ``fiona``, and ``shapely``. If you run into this issue, try installing
 the dependencies using the 
-`geo_settings.txt <https://github.com/mggg/GerryChain/blob/main/docs/geo_settings.txt>`_
+`geo_settings.txt <https://github.com/mggg/GerryChain/raw/main/docs/geo_settings.txt>`_
 file. To do this, run ``pip install -r geo_settings.txt`` from the
 command line.
 
