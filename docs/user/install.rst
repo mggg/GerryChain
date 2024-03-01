@@ -9,6 +9,7 @@ The most recent version of GerryChain (as of January 2024) supports
 - Python 3.9
 - Python 3.10
 - Python 3.11
+- Python 3.12
 
 If you do not have one of these versions installed on you machine, we
 recommend that you go to the 
