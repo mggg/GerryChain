@@ -13,7 +13,6 @@ from ..tree import (
     ReselectException,
 )
 from typing import Callable, Optional, Dict, Union
-import warnings
 
 
 class MetagraphError(Exception):
@@ -40,7 +39,7 @@ def recom(
     pop_target: Union[int, float],
     epsilon: float,
     node_repeats: int = 1,
-    weight_dict: Optional[Dict] = None,
+    region_surcharge: Optional[Dict] = None,
     method: Callable = bipartition_tree,
 ) -> Partition:
     """
@@ -82,33 +81,24 @@ def recom(
     :type epsilon: float
     :param node_repeats: The number of times to repeat the bipartitioning step. Default is 1.
     :type node_repeats: int, optional
-    :param weight_dict: The weight dictionary for the graph used for region-aware
+    :param region_surcharge: The surcharge dictionary for the graph used for region-aware
         partitioning of the grid. Default is None.
-    :type weight_dict: Optional[Dict], optional
+    :type region_surcharge: Optional[Dict], optional
     :param method: The method used for bipartitioning the tree. Default is
         :func:`~gerrychain.tree.bipartition_tree`.
     :type method: Callable, optional
 
     :returns: The new partition resulting from the ReCom algorithm.
     :rtype: Partition
-
-    :raises ValueWarning: Raised when the sum of the weights in the weight dictionary is
-        greater than 1.
     """
 
     bad_district_pairs = set()
     n_parts = len(partition)
     tot_pairs = n_parts * (n_parts - 1) / 2  # n choose 2
 
-    # Try to add the region aware in if the method accepts the weight dictionary
-    if "weight_dict" in signature(method).parameters:
-        method = partial(method, weight_dict=weight_dict)
-        if weight_dict is not None and sum(weight_dict.values()) > 1:
-            warnings.warn(
-                "\nThe sum of the weights in the weight dictionary is greater than 1.\n"
-                "Please consider normalizing the weights.",
-                ValueWarning,
-            )
+    # Try to add the region aware in if the method accepts the surcharge dictionary
+    if "region_surcharge" in signature(method).parameters:
+        method = partial(method, region_surcharge=region_surcharge)
 
     while len(bad_district_pairs) < tot_pairs:
         try:

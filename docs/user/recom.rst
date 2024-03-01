@@ -28,7 +28,7 @@ A Simple Recom Chain
 .. raw:: html
 
     <div class="center-container">
-      <a href="https://github.com/mggg/GerryChain/blob/main/docs/_static/gerrymandria.json" class="download-badge" download>
+      <a href="https://github.com/mggg/GerryChain/raw/main/docs/_static/gerrymandria.json" class="download-badge" download>
         Download GerryMandria File
       </a>
     </div>
@@ -49,7 +49,7 @@ the first thing to do is to import the required packages:
 
     # Set the random seed so that the results are reproducible!
     import random
-    random.seed(42)
+    random.seed(2024)
 
 Now we set up the initial partition:
 
@@ -94,7 +94,7 @@ We can now set up the chain:
         constraints=[contiguous],
         accept=accept.always_accept,
         initial_state=initial_partition,
-        total_steps=20
+        total_steps=40
     )
 
 and run it with
@@ -131,12 +131,12 @@ bad idea to do this for a chain with a large number of steps).
         pos = {node :(data['x'],data['y']) for node, data in graph.nodes(data=True)}
         node_colors = [mcm.tab20(int(assignment_list[i][node]) % 20) for node in graph.nodes()]
         node_labels = {node: str(assignment_list[i][node]) for node in graph.nodes()}
-        
+
         nx.draw_networkx_nodes(graph, pos, node_color=node_colors)
         nx.draw_networkx_edges(graph, pos)
         nx.draw_networkx_labels(graph, pos, labels=node_labels)
         plt.axis('off')
-        
+
         buffer = io.BytesIO()
         plt.savefig(buffer, format='png')
         buffer.seek(0)
@@ -176,7 +176,7 @@ Fortunately, ``gerrychain`` has a built-in functionality that allows for
 region-aware ReCom chains which create ensembles
 of districting plans that try to keep particular regions of interest together.
 And it only takes one extra line of code: we simply update
-our proposal to include a ``weight_dict`` which increases the importance of the
+our proposal to include a ``region_surcharge`` which increases the importance of the
 edges within the municipalities.
 
 .. code-block:: python
@@ -187,7 +187,7 @@ edges within the municipalities.
         pop_target=ideal_population,
         epsilon=0.01,
         node_repeats=2,
-        weight_dict={"muni": 0.8},
+        region_surcharge={"muni": 1.0},
     )
 
 And this will produce the following ensemble:
@@ -210,7 +210,7 @@ and so it is not going to be possible to keep all of the water districts togethe
 and all of the municipalities together in one plan. However, we can try to keep
 the water districts together as much as possible, and then, within those water
 districts, try to be sensitive to the boundaries of the municipalities. Again, 
-this only requires for us to edit the ``weight_dict`` parameter of the proposal
+this only requires for us to edit the ``region_surcharge`` parameter of the proposal
 
 .. code-block:: python
 
@@ -220,7 +220,7 @@ this only requires for us to edit the ``weight_dict`` parameter of the proposal
         pop_target=ideal_population,
         epsilon=0.01,
         node_repeats=2,
-        weight_dict={"muni": 0.2, "water": 0.8},
+        region_surcharge={"muni": 0.2, "water": 0.8},
     )
 
 Since we are trying to be sensitive to multiple bits of information, we should probably
@@ -236,7 +236,7 @@ also increase the length of our chain to make sure that we have time to mix prop
         total_steps=10000
     )
 
-Then, we can run the chain and look at the last 20 assignments in the ensemble
+Then, we can run the chain and look at the last 40 assignments in the ensemble
 
 .. image:: ./images/gerrymandria_water_muni_ensamble.gif
     :width: 400px
@@ -251,45 +251,106 @@ while also being sensitive to the municipalities
     :align: center
 
     The last map in the ensemble from the 10000 step region-aware ReCom chain with
-    weights of 0.2 for the municipalities and 0.8 for the water districts.
+    surcharges of 0.2 for the municipalities and 0.8 for the water districts.
 
 .. raw:: html
 
    <div style="display: flex; justify-content: space-around;">
        <figure style="text-align: center;">
-           <img src="../_images/gerrymandria_cities.png" style="width: 100%;">
+           <img src="../../_images/gerrymandria_cities.png" style="width: 100%;">
            <figcaption><em>Municipalities of Gerrymandria</em></figcaption>
        </figure>
        <figure style="text-align: center;">
-           <img src="../_images/gerrymandria_water.png" style="width: 100%;">
+           <img src="../../_images/gerrymandria_water.png" style="width: 100%;">
            <figcaption><em>Water Districts of GerryMandria</em><figcaption>
        </figure>
    </div>
 
 
-.. _weight-dict-warning:
+How the Region Aware Implementation Works
+-----------------------------------------
 
-.. attention::
+When working with region-aware ReCom chains, it is worth knowing how the spanning tree
+of the dual graph is being split. Weights from the interval :math:`[0,1]` are randomly
+assigned to the edges of the graph and then the surcharges are applied to the edges in
+the graph that span different regions specified by the ``region_surcharge`` dictionary.
+So if we have ``region_surcharge={"muni": 0.2, "water": 0.8}``, then the edges that
+span different municipalities will be upweighted by 0.2 and the edges that span different
+water districts will be upweighted by 0.8. We then draw a minimum spanning tree using
+by greedily selecting the lowest-weight edges via Kruskal's algorithm. The surcharges on
+the edges helps ensure that the algorithm picks the edges interior to the region
+before it picks the edges that bridge different regions. 
 
-  The ``weight_dict`` parameter is a dictionary that assigns a weight to each
-  edge within a particular region that is determined by the keys of the dictionary.
-  In the event that multiple regions are specified, the weights are added together,
-  and if the weights add to more than 1, then the following warning will be printed 
-  to the user:
+This makes it very likely that each region is largely contained in a connected subtree
+attached to a bridge node. Thus, when we make a cut, the regions attached to the
+bridge node are more likely to be (mostly) preserved in the subtree on either side
+of the cut.
 
-  .. code-block:: console
+In the implementation of :meth:`~gerrychain.tree.biparition_tree` we further bias this
+choice by deterministically cutting bridge edges first (when possible). In the event that
+multiple types of regions are specified, the surcharges are added together, and edges are
+selected first by the number of types of regions that they span, and then by the
+surcharge added to those weights. So, if we have a region surcharge dictionary of
+``{"a": 1, "b": 4, "c": 2}`` then we we look for edges according to the order
+
+- ("a", "b", "c")
+- ("b", "c")
+- ("a", "b")
+- ("a", "c")
+- ("b")
+- ("c")
+- ("a")
+- random
+
+where the tuples indicate that a desired cut edge bridges both types of region in
+the tuple. In the event that this is not the desired behaviour, then the user can simply
+alter the ``cut_choice`` function in the constraints to be different. So, if the user
+would prefer the cut edge to be a random edge with no deference to bridge edges,
+then they might use ``random.choice()`` in the following way:
+
+.. code-block:: python
+
+    proposal = partial(
+        recom,
+        pop_col="TOTPOP",
+        pop_target=ideal_population,
+        epsilon=0.01,
+        node_repeats=1,
+        region_surcharge={
+            "muni": 2.0,
+            "water_dist": 2.0
+        },
+        method = partial(
+            bipartition_tree,
+            cut_choice = random.choice,
+        )
+    )
+
+**Note**: When ``region_surcharge`` is not specified, ``bipartition_tree`` will behave as if
+``cut_choice`` is set to ``random.choice``.
+
+
+.. .. attention::
+
+..   The ``region_surcharge`` parameter is a dictionary that assigns a surcharge to each
+..   edge within a particular region that is determined by the keys of the dictionary.
+..   In the event that multiple regions are specified, the surcharges are added together,
+..   and if the surcharges add to more than 1, then the following warning will be printed 
+..   to the user:
+
+..   .. code-block:: console
     
-    ValueWarning: 
-    The sum of the weights in the weight dictionary is greater than 1.
-    Please consider normalizing the weights.
+..     ValueWarning: 
+..     The sum of the surcharges in the surcharge dictionary is greater than 1.
+..     Please consider normalizing the surcharges.
 
-  It is generally inadvisable to set the weight of a region to 1 or more. When
-  using :meth:`~gerrychain.proposals.recom` with a ``weight_dict``, the proposal
-  will try to draw a minimum spanning tree using Kruskal's algorithm where,
-  the weights are in the range :math:`[0,1]`, then the weights from the weight
-  dictionary are added to them. In the event that
-  many edges within the tree have a weight above 1, then it can sometimes
-  cause the biparitioning step to stall.
+..   It is generally inadvisable to set the surcharge of a region to 1 or more. When
+..   using :meth:`~gerrychain.proposals.recom` with a ``region_surcharge``, the proposal
+..   will try to draw a minimum spanning tree using Kruskal's algorithm where,
+..   the surcharges are in the range :math:`[0,1]`, then the surcharges from the surcharge
+..   dictionary are added to them. In the event that
+..   many edges within the tree have a surcharge above 1, then it can sometimes
+..   cause the bipartitioning step to stall.
 
 
 What to do if the Chain Gets Stuck
@@ -311,7 +372,7 @@ district, then the chain will get stuck and throw an error. Here is the setup:
     from gerrychain.constraints import contiguous
     from functools import partial
     import random
-    random.seed(42)
+    random.seed(0)
 
     graph = Graph.from_json("./gerrymandria.json")
 
@@ -334,7 +395,14 @@ district, then the chain will get stuck and throw an error. Here is the setup:
         pop_target=ideal_population,
         epsilon=0.01,
         node_repeats=1,
-        weight_dict={"muni": 1.0, "water_dist": 1.0},
+        region_surcharge={
+            "muni": 2.0,
+            "water_dist": 2.0
+        },
+        method = partial(
+            bipartition_tree, 
+            max_attempts=100,
+        )
     )
 
     recom_chain = MarkovChain(
@@ -342,22 +410,18 @@ district, then the chain will get stuck and throw an error. Here is the setup:
         constraints=[contiguous],
         accept=accept.always_accept,
         initial_state=initial_partition,
-        total_steps=20
+        total_steps=20,
     )
 
     assignment_list = []
 
     for i, item in enumerate(recom_chain):
         print(f"Finished step {i + 1}/{len(recom_chain)}", end="\r")
-        assignment_list.append(item.assignment)
+        assignment_list.append(item.assignment))
 
 This will output the following sequence of warnings and errors
 
 .. code-block:: console
-
-    ValueWarning: 
-    The sum of the weights in the weight dictionary is greater than 1.
-    Please consider normalizing the weights.
 
     BipartitionWarning: 
     Failed to find a balanced cut after 50 attempts.
@@ -374,12 +438,6 @@ Let's break down what is happening in each of these:
 .. raw:: html
 
   <ul>
-    <li><strong>ValueWarning</strong> 
-      This is just telling us that we have made an ill-advised
-      choice of weights for our regions. See <a href="#weight-dict-warning">the above warning</a> 
-      for more information.
-    </li>
-    <br style="line-height: 5px;">
     <li><strong>BipartitionWarning</strong>
       This is telling us that somewhere along the way, 
       we picked a pair of districts that were difficult to bipartition underneath
@@ -419,7 +477,10 @@ node repeats:
         pop_target=ideal_population,
         epsilon=0.01,
         node_repeats=100,
-        weight_dict={"muni": 1.0, "water_dist": 1.0},
+        region_surcharge={
+            "muni": 1.0, 
+            "water_dist": 1.0
+        },
     )
 
 Running this code, we can see that we get stuck once again, so this was not the fix.
@@ -427,7 +488,11 @@ Let's try to enable reselection instead:
 
 .. code-block:: python 
 
-    method = partial(bipartition_tree, allow_pair_reselection=True)
+    method = partial(
+        bipartition_tree,
+        max_attempts=100,
+        allow_pair_reselection=True
+    )
 
     proposal = partial(
         recom,
@@ -435,7 +500,10 @@ Let's try to enable reselection instead:
         pop_target=ideal_population,
         epsilon=0.01,
         node_repeats=1,
-        weight_dict={"muni": 1.0, "water_dist": 1.0},
+        region_surcharge={
+            "muni": 1.0,
+            "water_dist": 1.0
+        },
         method=method
     )
 
@@ -473,7 +541,7 @@ Setting up the initial districting plan
 .. raw:: html
 
     <div class="center-container">
-      <a href="https://github.com/mggg/GerryChain/blob/main/docs/_static/PA_VTDs.json" class="download-badge" download>Download PA File</a>
+      <a href="https://github.com/mggg/GerryChain/raw/main/docs/_static/PA_VTDs.json" class="download-badge" download>Download PA File</a>
     </div>
     <br style="line-height: 5px;">
 
