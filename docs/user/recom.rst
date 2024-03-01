@@ -271,14 +271,15 @@ How the Region Aware Implementation Works
 -----------------------------------------
 
 When working with region-aware ReCom chains, it is worth knowing how the spanning tree
-of the dual graph is being split. Weights are randomly assigned to the edges of the graph
-and then the surcharges are applied to the edges in the graph that span different regions
-specified by the ``region_surcharge`` dictionary. So if we have
-``region_surcharge={"muni": 0.2, "water": 0.8}``, then the edges that span different
-municipalities will be upweighted by 0.2 and the edges that span different water districts
-will be upweighted by 0.8. We then draw a minimum spanning tree using Kruskal's algorithm,
-which picks the edges interior to the region first before picking the edges that bridge
-different regions. 
+of the dual graph is being split. Weights from the interval :math:`[0,1]` are randomly
+assigned to the edges of the graph and then the surcharges are applied to the edges in
+the graph that span different regions specified by the ``region_surcharge`` dictionary.
+So if we have ``region_surcharge={"muni": 0.2, "water": 0.8}``, then the edges that
+span different municipalities will be upweighted by 0.2 and the edges that span different
+water districts will be upweighted by 0.8. We then draw a minimum spanning tree using
+by greedily selecting the lowest-weight edges via Kruskal's algorithm. The surcharges on
+the edges helps ensure that the algorithm picks the edges interior to the region
+before it picks the edges that bridge different regions. 
 
 This makes it very likely that each region is largely contained in a connected subtree
 attached to a bridge node. Thus, when we make a cut, the regions attached to the
