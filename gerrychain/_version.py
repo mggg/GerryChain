@@ -51,7 +51,7 @@ def get_config() -> VersioneerConfig:
     cfg = VersioneerConfig()
     cfg.VCS = "git"
     cfg.style = ""
-    cfg.tag_prefix = ""
+    cfg.tag_prefix = "'v'"
     cfg.parentdir_prefix = "gerrychain-"
     cfg.versionfile_source = "gerrychain/_version.py"
     cfg.verbose = False
