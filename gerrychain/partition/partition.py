@@ -1,11 +1,11 @@
 import json
-import geopandas
 import networkx
 
 from gerrychain.graph.graph import FrozenGraph, Graph
 from ..updaters import compute_edge_flows, flows_from_changes, cut_edges
 from .assignment import get_assignment
 from .subgraphs import SubgraphView
+from typing import Any, Callable, Dict, Optional, Tuple
 
 
 class Partition:
@@ -14,26 +14,38 @@ class Partition:
     the first layer of computations at each step in the Markov chain - basic
     aggregations and calculations that we want to optimize.
 
-    :ivar gerrychain.Graph graph: The underlying graph.
-    :ivar gerrychain.Assignment assignment: Maps node IDs to district IDs.
-    :ivar dict parts: Maps district IDs to the set of nodes in that district.
-    :ivar dict subgraphs: Maps district IDs to the induced subgraph of that district.
+    :ivar graph: The underlying graph.
+    :type graph: :class:`~gerrychain.Graph`
+    :ivar assignment: Maps node IDs to district IDs.
+    :type assignment: :class:`~gerrychain.assignment.Assignment`
+    :ivar parts: Maps district IDs to the set of nodes in that district.
+    :type parts: Dict
+    :ivar subgraphs: Maps district IDs to the induced subgraph of that district.
+    :type subgraphs: Dict
     """
+
     __slots__ = (
-        'graph',
-        'subgraphs',
-        'assignment',
-        'updaters',
-        'parent',
-        'flips',
-        'flows',
-        'edge_flows',
-        '_cache'
+        "graph",
+        "subgraphs",
+        "assignment",
+        "updaters",
+        "parent",
+        "flips",
+        "flows",
+        "edge_flows",
+        "_cache",
     )
 
+    default_updaters = {"cut_edges": cut_edges}
+
     def __init__(
-        self, graph=None, assignment=None, updaters=None, parent=None, flips=None,
-        use_cut_edges=True
+        self,
+        graph=None,
+        assignment=None,
+        updaters=None,
+        parent=None,
+        flips=None,
+        use_default_updaters=True,
     ):
         """
         :param graph: Underlying graph.
@@ -41,18 +53,17 @@ class Partition:
         :param updaters: Dictionary of functions to track data about the partition.
             The keys are stored as attributes on the partition class,
             which the functions compute.
-        :param use_cut_edges: If `False`, do not include `cut_edges` updater by default
-            and do not calculate edge flows.
+        :param use_default_updaters: If `False`, do not include default updaters.
         """
         if parent is None:
-            self._first_time(graph, assignment, updaters, use_cut_edges)
+            self._first_time(graph, assignment, updaters, use_default_updaters)
         else:
             self._from_parent(parent, flips)
 
         self._cache = dict()
         self.subgraphs = SubgraphView(self.graph, self.parts)
 
-    def _first_time(self, graph, assignment, updaters, use_cut_edges):
+    def _first_time(self, graph, assignment, updaters, use_default_updaters):
         if isinstance(graph, Graph):
             self.graph = FrozenGraph(graph)
         elif isinstance(graph, networkx.Graph):
@@ -61,7 +72,7 @@ class Partition:
         elif isinstance(graph, FrozenGraph):
             self.graph = graph
         else:
-            raise TypeError("Unsupported Graph object")
+            raise TypeError(f"Unsupported Graph object with type {type(graph)}")
 
         self.assignment = get_assignment(assignment, graph)
 
@@ -71,8 +82,8 @@ class Partition:
         if updaters is None:
             updaters = dict()
 
-        if use_cut_edges:
-            self.updaters = {"cut_edges": cut_edges}
+        if use_default_updaters:
+            self.updaters = self.default_updaters
         else:
             self.updaters = {}
 
@@ -83,7 +94,7 @@ class Partition:
         self.flows = None
         self.edge_flows = None
 
-    def _from_parent(self, parent, flips):
+    def _from_parent(self, parent: "Partition", flips: Dict) -> None:
         self.parent = parent
         self.flips = flips
 
@@ -106,30 +117,37 @@ class Partition:
     def __len__(self):
         return len(self.parts)
 
-    def flip(self, flips):
-        """Returns the new partition obtained by performing the given `flips`
+    def flip(self, flips: Dict) -> "Partition":
+        """
+        Returns the new partition obtained by performing the given `flips`
         on this partition.
 
         :param flips: dictionary assigning nodes of the graph to their new districts
-        :return: the new :class:`Partition`
+        :returns: the new :class:`Partition`
         :rtype: Partition
         """
         return self.__class__(parent=self, flips=flips)
 
-    def crosses_parts(self, edge):
-        """Answers the question "Does this edge cross from one part of the
-        partition to another?
-
+    def crosses_parts(self, edge: Tuple) -> bool:
+        """
         :param edge: tuple of node IDs
+        :type edge: Tuple
+
+        :returns: True if the edge crosses from one part of the partition to another
         :rtype: bool
         """
         return self.assignment.mapping[edge[0]] != self.assignment.mapping[edge[1]]
 
-    def __getitem__(self, key):
-        """Allows accessing the values of updaters computed for this
+    def __getitem__(self, key: str) -> Any:
+        """
+        Allows accessing the values of updaters computed for this
         Partition instance.
 
         :param key: Property to access.
+        :type key: str
+
+        :returns: The value of the updater.
+        :rtype: Any
         """
         if key not in self._cache:
             self._cache[key] = self.updaters[key](self)
@@ -146,14 +164,21 @@ class Partition:
         return self.assignment.parts
 
     def plot(self, geometries=None, **kwargs):
-        """Plot the partition, using the provided geometries.
+        """
+        Plot the partition, using the provided geometries.
 
         :param geometries: A :class:`geopandas.GeoDataFrame` or :class:`geopandas.GeoSeries`
             holding the geometries to use for plotting. Its :class:`~pandas.Index` should match
             the node labels of the partition's underlying :class:`~gerrychain.Graph`.
+        :type geometries: geopandas.GeoDataFrame or geopandas.GeoSeries
         :param `**kwargs`: Additional arguments to pass to :meth:`geopandas.GeoDataFrame.plot`
             to adjust the plot.
+
+        :returns: The matplotlib axes object. Which plots the Partition.
+        :rtype: matplotlib.axes.Axes
         """
+        import geopandas
+
         if geometries is None:
             geometries = self.graph.geometry
 
@@ -170,8 +195,14 @@ class Partition:
         return df.plot(column="assignment", **kwargs)
 
     @classmethod
-    def from_districtr_file(cls, graph, districtr_file, updaters=None):
-        """Create a Partition from a districting plan created with `Districtr`_,
+    def from_districtr_file(
+        cls,
+        graph: Graph,
+        districtr_file: str,
+        updaters: Optional[Dict[str, Callable]] = None,
+    ) -> "Partition":
+        """
+        Create a Partition from a districting plan created with `Districtr`_,
         a free and open-source web app created by MGGG for drawing districts.
 
         The provided ``graph`` should be created from the same shapefile as the
@@ -182,9 +213,15 @@ class Partition:
         .. _`Districtr`: https://mggg.org/Districtr
         .. _`mggg-states`: https://github.com/mggg-states
 
-        :param graph: :class:`~gerrychain.Graph`
+        :param graph: The graph to create the Partition from
+        :type graph: :class:`~gerrychain.Graph`
         :param districtr_file: the path to the ``.json`` file exported from Districtr
+        :type districtr_file: str
         :param updaters: dictionary of updaters
+        :type updaters: Optional[Dict[str, Callable]], optional
+
+        :returns: The partition created from the Districtr file
+        :rtype: Partition
         """
         with open(districtr_file) as f:
             districtr_plan = json.load(f)

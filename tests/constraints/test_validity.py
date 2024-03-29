@@ -8,7 +8,8 @@ from gerrychain.constraints import (SelfConfiguringLowerBound, Validator,
                                     contiguous, contiguous_bfs,
                                     districts_within_tolerance,
                                     no_vanishing_districts,
-                                    single_flip_contiguous)
+                                    single_flip_contiguous,
+                                    deviation_from_ideal)
 from gerrychain.partition import Partition
 from gerrychain.partition.partition import get_assignment
 from gerrychain.graph import Graph
@@ -173,3 +174,8 @@ def test_no_vanishing_districts_works():
     partition.assignment.update_flows({1: {"out": set(), "in": {2}}, 2: {"out": {2}, "in": set()}})
 
     assert not no_vanishing_districts(partition)
+
+def test_deviation_from_ideal():
+    mock_partition = {"population": {0: 99.0, 1: 101.0}}
+    assert deviation_from_ideal(mock_partition, "population") == \
+        {0: -0.01, 1: 0.01}

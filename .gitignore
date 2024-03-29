@@ -63,7 +63,8 @@ target/
 
 # pyenv python configuration file
 .python-version
-
+.venv
+.docs_venv
 junit.xml
 
 # crapple
@@ -75,3 +76,6 @@ junit.xml
 # Pytest cache
 .pytest_cache/
 Dockerfile
+
+# Extra Documentation Stuff
+release_notes.md

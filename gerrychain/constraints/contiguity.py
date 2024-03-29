@@ -2,23 +2,35 @@ from heapq import heappop, heappush
 from itertools import count
 
 import networkx as nx
-
-from ..random import random
+from typing import Callable, Any, Dict, Set
+from ..partition import Partition
+import random
 from .bounds import SelfConfiguringLowerBound
 
 
-def are_reachable(G, source, avoid, targets):
-    """Check that source can reach targets while avoiding given edges.
-    This function is a modified form of NetworkX's ``_dijkstra_multisource()``.
+def are_reachable(G: nx.Graph, source: Any, avoid: Callable, targets: Any) -> bool:
+    """
+    A modified version of NetworkX's function
+    `networkx.algorithms.shortest_paths.weighted._dijkstra_multisource()`
 
-    :param G: NetworkX graph.
-    :param source: Starting node.
-    :param weight: Function with (u, v, data) input that returns that edges weight.
-    :param targets: Nodes required to find.
-    :return:
-        A mapping from node to shortest distance to that node from one
-        of the source nodes.
-    :rtype: dict
+    This function checks if the targets are reachable from the source node
+    while avoiding edges based on the avoid condition function.
+
+    :param G: The networkx graph
+    :type G: nx.Graph
+    :param source: The starting node
+    :type source: int
+    :param avoid: The function that determines if an edge should be avoided.
+        It should take in three parameters: the start node, the end node, and
+        the edges to avoid. It should return True if the edge should be avoided,
+        False otherwise.
+    :type avoid: Callable
+    :param targets: The target nodes that we would like to reach
+    :type targets: Any
+
+    :returns: True if all of the targets are reachable from the source node
+        under the avoid condition, False otherwise.
+    :rtype: bool
     """
     G_succ = G._succ if G.is_directed() else G._adj
 
@@ -51,20 +63,21 @@ def are_reachable(G, source, avoid, targets):
     return all(t in seen for t in targets)
 
 
-def single_flip_contiguous(partition):
-    """Check if swapping the given node from its old assignment disconnects the
+def single_flip_contiguous(partition: Partition) -> bool:
+    """
+    Check if swapping the given node from its old assignment disconnects the
     old assignment class.
 
     :param partition: The proposed next :class:`~gerrychain.partition.Partition`
+    :type partition: Partition
 
-    :return: whether the partition is contiguous
+    :returns: whether the partition is contiguous
     :rtype: bool
 
     We assume that `removed_node` belonged to an assignment class that formed a
     connected subgraph. To see if its removal left the subgraph connected, we
     check that the neighbors of the removed node are still connected through
     the changed graph.
-
     """
     parent = partition.parent
     flips = partition.flips
@@ -74,16 +87,26 @@ def single_flip_contiguous(partition):
     graph = partition.graph
     assignment = partition.assignment
 
-    def partition_edge_avoid(start_node, end_node, edge_attrs):
-        """Compute the district edge weight, which is 1 if the nodes have the same
-        assignment, and infinity otherwise.
+    def partition_edge_avoid(start_node: Any, end_node: Any, edge_attrs: Dict):
         """
-        if assignment.mapping[start_node] != assignment.mapping[end_node]:
-            # Fun fact: networkx actually refuses to take edges with None
-            # weight.
-            return True
+        Helper function used in the graph traversal to avoid edges that cross between different
+        assignments. It's crucial for ensuring that the traversal only considers paths within
+        the same assignment class.
 
-        return False
+        :param start_node: The start node of the edge.
+        :type start_node: Any
+        :param end_node: The end node of the edge.
+        :type end_node: Any
+        :param edge_attrs: The attributes of the edge (not used in this function). Needed
+            because this function is passed to :func:`are_reachable`, which expects the
+            avoid function to have this signature.
+        :type edge_attrs: Dict
+
+        :returns: True if the edge should be avoided (i.e., if it crosses assignment classes),
+            False otherwise.
+        :rtype: bool
+        """
+        return assignment.mapping[start_node] != assignment.mapping[end_node]
 
     for changed_node in flips:
         old_assignment = partition.parent.assignment.mapping[changed_node]
@@ -94,17 +117,15 @@ def single_flip_contiguous(partition):
             if assignment.mapping[node] == old_assignment
         ]
 
+        # Under our assumptions, if there are no old neighbors, then the
+        # old_assignment district has vanished. It is trivially connected.
+        # We consider the empty district to be disconnected.
         if not old_neighbors:
-            # Under our assumptions, if there are no old neighbors, then the
-            # old_assignment district has vanished. It is trivially connected.
-
-            # However, we actually don't want any districts to disappear because
-            # it ends up breaking a lot of our other updaters. So we consider
-            # the empty district to be disconnected.
             return False
 
         start_neighbor = random.choice(old_neighbors)
 
+        # Check if all old neighbors in the same assignment are still reachable.
         connected = are_reachable(
             graph, start_neighbor, partition_edge_avoid, old_neighbors
         )
@@ -117,9 +138,16 @@ def single_flip_contiguous(partition):
     return True
 
 
-def affected_parts(partition):
-    """Returns the set of IDs of all parts that gained or lost a node during the last
-    flip.
+def affected_parts(partition: Partition) -> Set[int]:
+    """
+    Checks which partitions were affected by the change of nodes.
+
+    :param partition: The proposed next :class:`~gerrychain.partition.Partition`
+    :type partition: Partition
+
+    :returns: The set of IDs of all parts that gained or lost a node
+        when compared to the parent partition.
+    :rtype: Set[int]
     """
     flips = partition.flips
     parent = partition.parent
@@ -135,12 +163,14 @@ def affected_parts(partition):
     return affected
 
 
-def contiguous(partition):
-    """Check if the parts of a partition are connected using :func:`networkx.is_connected`.
+def contiguous(partition: Partition) -> bool:
+    """
+    Check if the parts of a partition are connected using :func:`networkx.is_connected`.
 
     :param partition: The proposed next :class:`~gerrychain.partition.Partition`
+    :type partition: Partition
 
-    :return: whether the partition is contiguous
+    :returns: Whether the partition is contiguous
     :rtype: bool
     """
     return all(
@@ -148,12 +178,15 @@ def contiguous(partition):
     )
 
 
-def contiguous_bfs(partition):
-    """Checks that a given partition's parts are connected as graphs using a simple
+def contiguous_bfs(partition: Partition) -> bool:
+    """
+    Checks that a given partition's parts are connected as graphs using a simple
     breadth-first search.
 
     :param partition: Instance of Partition
-    :return: Whether the parts of this partition are connected
+    :type partition: Partition
+
+    :returns: Whether the parts of this partition are connected
     :rtype: bool
     """
     parts_to_check = affected_parts(partition)
@@ -168,23 +201,34 @@ def contiguous_bfs(partition):
     return True
 
 
-def number_of_contiguous_parts(partition):
-    """Return the number of non-connected assignment subgraphs.
-
+def number_of_contiguous_parts(partition: Partition) -> int:
+    """
     :param partition: Instance of Partition; contains connected components.
-    :return: number of contiguous districts
+    :type partition: Partition
+
+    :returns: Number of contiguous parts in the partition.
     :rtype: int
     """
     parts = partition.assignment.parts
     return sum(1 for part in parts if nx.is_connected(partition.subgraphs[part]))
 
 
-def contiguous_components(partition):
-    """Return then connected components of each of the subgraphs of the parts
+# Create an instance of SelfConfiguringLowerBound using the number_of_contiguous_parts function.
+# This instance, no_more_discontiguous, is configured to maintain a lower bound on the number of
+# contiguous parts in a partition. This is still callable since the class
+# SelfConfiguringLowerBound implements the __call__ magic method.
+no_more_discontiguous = SelfConfiguringLowerBound(number_of_contiguous_parts)
+
+
+def contiguous_components(partition: Partition) -> Dict[int, list]:
+    """
+    Return the connected components of each of the subgraphs of the parts
     of the partition.
 
     :param partition: Instance of Partition; contains connected components.
-    :return: dictionary mapping each part ID to a list holding the connected
+    :type partition: Partition
+
+    :returns: dictionary mapping each part ID to a list holding the connected
         subgraphs of that part of the partition
     :rtype: dict
     """
@@ -194,15 +238,15 @@ def contiguous_components(partition):
     }
 
 
-no_more_discontiguous = SelfConfiguringLowerBound(number_of_contiguous_parts)
-
-
-def _bfs(graph):
-    """Performs a breadth-first search on the provided graph and returns true or
-    false depending on whether the graph is connected.
+def _bfs(graph: Dict[int, list]) -> bool:
+    """
+    Performs a breadth-first search on the provided graph and returns True or
+    False depending on whether the graph is connected.
 
     :param graph: Dict-of-lists; an adjacency matrix.
-    :return: is this graph connected?
+    :type graph: Dict[int, list]
+
+    :returns: is this graph connected?
     :rtype: bool
     """
     q = [next(iter(graph))]

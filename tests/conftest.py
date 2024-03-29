@@ -1,9 +1,10 @@
 import pytest
 
 from gerrychain import Graph, Partition
-from gerrychain.random import random
+import random
 from gerrychain.updaters import cut_edges
 import networkx
+random.seed(2018)
 
 
 @pytest.fixture

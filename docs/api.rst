@@ -1,15 +1,23 @@
+.. _api_reference:
+
+
 API Reference
-===================
+=============
 
 .. module:: gerrychain
 
 .. contents:: Table of Contents
     :local:
 
+
+.. Only the graph class in intended to be a part of the public API, so 
+    we only document that here.
+
 Adjacency graphs
 ----------------
 
-.. autoclass:: gerrychain.Graph
+.. autoclass:: gerrychain.graph.graph.Graph
+    :members:
 
 Partitions
 ----------
@@ -36,17 +44,6 @@ Binary constraints
 .. automodule:: gerrychain.constraints
     :members:
 
-.. autoclass:: gerrychain.constraints.Validator
-
-.. autoclass:: gerrychain.constraints.UpperBound
-
-.. autoclass:: gerrychain.constraints.LowerBound
-
-.. autoclass:: gerrychain.constraints.SelfConfiguringLowerBound
-
-.. autoclass:: gerrychain.constraints.SelfConfiguringUpperBound
-
-.. autoclass:: gerrychain.constraints.WithinPercentRangeOfBounds
 
 Updaters
 --------
@@ -91,4 +88,11 @@ Metrics
 -------
 
 .. automodule:: gerrychain.metrics
+    :members:
+
+
+Diversity stats
+---------------
+
+.. automodule:: gerrychain.meta.diversity
     :members:

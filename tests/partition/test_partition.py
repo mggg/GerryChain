@@ -24,6 +24,12 @@ def test_Partition_misnamed_vertices_raises_keyerror():
         Partition(graph, assignment, {"cut_edges": cut_edges})
 
 
+def test_Partition_graph_raises_typeerror():
+    assignment = {"0": 1, "1": 1, "2": 2}
+    with pytest.raises(TypeError):
+        Partition("not a graph", assignment, {"cut_edges": cut_edges})
+
+
 def test_Partition_unlabelled_vertices_raises_keyerror():
     graph = Graph.from_networkx(networkx.complete_graph(3))
     assignment = {0: 1, 2: 2}
@@ -153,3 +159,25 @@ def test_partition_has_default_updaters(example_partition):
 
 def test_partition_has_keys(example_partition):
     assert "cut_edges" in set(example_partition.keys())
+
+
+def test_geographic_partition_has_keys(example_geographic_partition):
+    keys = set(example_geographic_partition.updaters.keys())
+
+    assert "perimeter" in keys
+    assert "exterior_boundaries" in keys
+    assert "interior_boundaries" in keys
+    assert "boundary_nodes" in keys
+    assert "cut_edges" in keys
+    assert "area" in keys
+    assert "cut_edges_by_part" in keys
+
+
+def test_geographic_partition_has_default_updaters(example_geographic_partition):
+    assert hasattr(example_geographic_partition, "perimeter")
+    assert hasattr(example_geographic_partition, "exterior_boundaries")
+    assert hasattr(example_geographic_partition, "interior_boundaries")
+    assert hasattr(example_geographic_partition, "boundary_nodes")
+    assert hasattr(example_geographic_partition, "cut_edges")
+    assert hasattr(example_geographic_partition, "area")
+    assert hasattr(example_geographic_partition, "cut_edges_by_part")

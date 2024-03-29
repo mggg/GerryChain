@@ -15,4 +15,3 @@ __all__ = [
     "polsby_popper",
     "wasted_votes",
 ]
-

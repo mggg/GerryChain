@@ -11,7 +11,8 @@ from gerrychain.updaters import (
 
 
 class GeographicPartition(Partition):
-    """A :class:`Partition` with areas, perimeters, and boundary information included.
+    """
+    A :class:`Partition` with areas, perimeters, and boundary information included.
     These additional data allow you to compute compactness scores like
     `Polsby-Popper <https://en.wikipedia.org/wiki/Polsby-Popper_Test>`_.
     """
