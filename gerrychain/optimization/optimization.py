@@ -1,7 +1,7 @@
 from ..chain import MarkovChain
 from .. partition import Partition
 from ..accept import always_accept
-from ..random import random
+import random
 from typing import Union, Callable, List, Any
 from tqdm import tqdm
 import math
