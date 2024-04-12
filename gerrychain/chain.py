@@ -24,10 +24,9 @@ Dependencies:
 Last Updated: 11 Jan 2024
 """
 
-from .constraints import Validator
 from typing import Union, Iterable, Callable, Optional
 
-from gerrychain.constraints import Bounds
+from gerrychain.constraints import Validator, Bounds
 from gerrychain.partition import Partition
 
 
@@ -54,7 +53,7 @@ class MarkovChain:
         proposal: Callable,
         constraints: Union[Iterable[Callable], Validator, Iterable[Bounds], Callable],
         accept: Callable,
-        initial_state: Optional[Partition],
+        initial_state: Partition,
         total_steps: int,
     ) -> None:
         """
@@ -69,7 +68,7 @@ class MarkovChain:
             Metropolis-Hastings acceptance rule, this is where you would implement it.
         :type accept: Callable
         :param initial_state: Initial :class:`gerrychain.partition.Partition` class.
-        :type initial_state: Optional[Partition]
+        :type initial_state: Partition
         :param total_steps: Number of steps to run.
         :type total_steps: int
 
