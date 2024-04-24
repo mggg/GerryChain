@@ -4,7 +4,7 @@ import random
 
 from gerrychain.partition import Partition
 from ..tree import (
-    recursive_tree_part,
+    epsilon_tree_bipartition,
     bipartition_tree,
     bipartition_tree_random,
     _bipartition_tree_random_all,
@@ -119,7 +119,7 @@ def recom(
                 partition.parts[parts_to_merge[0]] | partition.parts[parts_to_merge[1]]
             )
 
-            flips = recursive_tree_part(
+            flips = epsilon_tree_bipartition(
                 subgraph.graph,
                 parts_to_merge,
                 pop_col=pop_col,
