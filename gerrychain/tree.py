@@ -78,9 +78,11 @@ def random_spanning_tree(
     for edge in graph.edges():
         weight = random.random()
         for key, value in region_surcharge.items():
+            # We surcharge edges that cross regions and those that are not in any region
             if (
                 graph.nodes[edge[0]][key] != graph.nodes[edge[1]][key]
-                and graph.nodes[edge[0]][key] is not None
+                or graph.nodes[edge[0]][key] is None
+                or graph.nodes[edge[1]][key] is None
             ):
                 weight += value
 
@@ -1287,7 +1289,7 @@ def recursive_seed_part_inner(
     :type ceil: Optional[int], optional
 
     :returns: New assignments for the nodes of ``graph``.
-    :rtype: List of lists, each list is a district
+    :rtype: List of sets, each set is a district
     """
 
     # Chooses num_chunks
