@@ -5,6 +5,7 @@ from gerrychain.graph.graph import FrozenGraph, Graph
 from ..updaters import compute_edge_flows, flows_from_changes, cut_edges
 from .assignment import get_assignment
 from .subgraphs import SubgraphView
+from ..tree import recursive_tree_part
 from typing import Any, Callable, Dict, Optional, Tuple
 
 
@@ -62,6 +63,61 @@ class Partition:
 
         self._cache = dict()
         self.subgraphs = SubgraphView(self.graph, self.parts)
+
+    @classmethod
+    def from_random_assignment(
+        cls,
+        graph: Graph,
+        n_parts: int,
+        epsilon: float,
+        pop_col: str,
+        updaters: Optional[Dict[str, Callable]] = None,
+        use_default_updaters: bool = True,
+        flips: Optional[Dict] = None,
+        method: Callable = recursive_tree_part,
+    ) -> "Partition":
+        """
+        Create a Partition with a random assignment of nodes to districts.
+
+        :param graph: The graph to create the Partition from
+        :type graph: :class:`~gerrychain.Graph`
+        :param n_parts: The number of districts to divide the nodes into
+        :type n_parts: int
+        :param epsilon: The maximum relative population deviation from the ideal
+            population. Should be in [0,1]
+        :type epsilon: float
+        :param pop_col: The column of the graph's node data that holds the population data
+        :type pop_col: str
+        :param updaters: dictionary of updaters
+        :type updaters: Optional[Dict[str, Callable]], optional
+        :param use_default_updaters: If `False`, do not include default updaters.
+        :type use_default_updaters: bool, optional
+        :param flips: dictionary assigning nodes of the graph to their new districts
+        :type flips: Optional[Dict], optional
+        :param method: The function to use to partition the graph into ``n_parts``. Defaults to
+            :func:`~gerrychain.tree.recursive_tree_part`.
+        :type method: Callable, optional
+
+        :returns: The partition created with a random assignment
+        :rtype: Partition
+        """
+        total_pop = sum(graph.nodes[n][pop_col] for n in graph)
+        ideal_pop = total_pop / n_parts
+
+        assignment = method(
+            graph=graph,
+            parts=range(n_parts),
+            pop_target=ideal_pop,
+            pop_col=pop_col,
+            epsilon=epsilon,
+        )
+
+        return cls(
+            graph,
+            assignment,
+            updaters,
+            use_default_updaters=use_default_updaters,
+        )
 
     def _first_time(self, graph, assignment, updaters, use_default_updaters):
         if isinstance(graph, Graph):
