@@ -84,8 +84,6 @@ class Gingleator(SingleMetricOptimizer):
             initial_state.updaters.update(perc_up)
             minority_perc_col = min_perc_column_name
 
-        print(f"Perc_up keys: {perc_up.keys()}")
-        print(f"Minority_co: {perc_up.keys()}")
         score = partial(
             score_function, minority_perc_col=minority_perc_col, threshold=threshold
         )

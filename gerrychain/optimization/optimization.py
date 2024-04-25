@@ -59,8 +59,9 @@ class SingleMetricOptimizer:
         :type step_indexer: str, optional
 
 
-        Returns:
-            A SingleMetricOptimizer object
+
+        :return: A SingleMetricOptimizer object
+        :rtype: SingleMetricOptimizer
         """
         self._initial_part = initial_state
         self._proposal = proposal
@@ -158,7 +159,6 @@ class SingleMetricOptimizer:
         """
         Function factory that binds and returns a simulated annealing acceptance function.
 
-
         :param beta_function: Function (f: t -> beta, where beta is in [0,1]) defining temperature
             over time.  f(t) = 0 the chain is hot and every proposal is accepted.  At f(t) = 1 the
             chain is cold and worse proposal have a low probability of being accepted relative to
@@ -212,12 +212,69 @@ class SingleMetricOptimizer:
         cls, duration_hot: int, duration_cooldown: int, duration_cold: int
     ) -> Callable[[int], float]:
         """
-        IMPLEMENT THIS!!!
+        Class method that binds and returns a simple linear hot-cool cycle beta temperature
+        function, where the chain runs hot for some given duration, cools down linearly for some
+        duration, and then runs cold for some duration before warming up again and repeating.
+
+        :param duration_hot: Number of steps to run chain hot.
+        :type duration_hot: int
+        :param duration_cooldown: Number of steps needed to transition from hot to cold or
+            vice-versa.
+        :type duration_cooldown: int
+        :param duration_cold: Number of steps to run chain cold.
+        :type duration_cold: int
+
+        :return: Beta function defining linear hot-cool cycle.
+        :rtype: Callable[[int], float]
+        """
+        cycle_length = duration_hot + 2 * duration_cooldown + duration_cold
+
+        def beta_function(step: int):
+            time_in_cycle = step % cycle_length
+            if time_in_cycle < duration_hot:
+                return 0
+            elif time_in_cycle < duration_hot + duration_cooldown:
+                return (time_in_cycle - duration_hot) / duration_cooldown
+            elif time_in_cycle < cycle_length - duration_cooldown:
+                return 1
+            else:
+                return (
+                    1
+                    - (time_in_cycle - cycle_length + duration_cooldown)
+                    / duration_cooldown
+                )
+
+        return beta_function
+
+    @classmethod
+    def linear_jumpcycle_beta_function(
+        cls, duration_hot: int, duration_cooldown, duration_cold: int
+    ):
+        """
+        Class method that binds and returns a simple linear hot-cool cycle beta temperature
+        function, where the chain runs hot for some given duration, cools down linearly for some
+        duration, and then runs cold for some duration before jumping back to hot and repeating.
+
+        :param duration_hot: Number of steps to run chain hot.
+        :type duration_hot: int
+        :param duration_cooldown: Number of steps needed to transition from hot to cold.
+        :type duration_cooldown: int
+        :param duration_cold: Number of steps to run chain cold.
+        :type duration_cold: int
+
+        :return: Beta function defining linear hot-cool cycle.
+        :rtype: Callable[[int], float]
         """
         cycle_length = duration_hot + duration_cooldown + duration_cold
 
         def beta_function(step: int):
-            pass
+            time_in_cycle = step % cycle_length
+            if time_in_cycle < duration_hot:
+                return 0
+            elif time_in_cycle < duration_hot + duration_cooldown:
+                return (time_in_cycle - duration_hot) / duration_cooldown
+            else:
+                return 1
 
         return beta_function
 
@@ -226,12 +283,76 @@ class SingleMetricOptimizer:
         cls, duration_hot: int, duration_cooldown: int, duration_cold: int
     ) -> Callable[[int], float]:
         """
-        IMPLEMENT THIS!!!
+        Class method that binds and returns a logit hot-cool cycle beta temperature function, where
+        the chain runs hot for some given duration, down according to the logit function
+
+        :math:`f(x) = (log(x/(1-x)) + 5)/10`
+
+        for some duration, and then runs cold for some duration before warming up again
+        using the :math:`1-f(x)` and repeating.
+
+        :param duration_hot: Number of steps to run chain hot.
+        :type duration_hot: int
+        :param duration_cooldown: Number of steps needed to transition from hot to cold or
+            vice-versa.
+        :type duration_cooldown: int
+        :param duration_cold: Number of steps to run chain cold.
+        :type duration_cold: int
         """
-        cycle_length = duration_hot + duration_cooldown + duration_cold
+        cycle_length = duration_hot + 2 * duration_cooldown + duration_cold
+
+        # this will scale from 0 to 1 approximately
+        logit = lambda x: (math.log(x / (1 - x)) + 5) / 10
 
         def beta_function(step: int):
-            pass
+            time_in_cycle = step % cycle_length
+            if time_in_cycle <= duration_hot:
+                return 0
+            elif time_in_cycle < duration_hot + duration_cooldown:
+                value = logit((time_in_cycle - duration_hot) / duration_cooldown)
+                if value < 0:
+                    return 0
+                if value > 1:
+                    return 1
+                return value
+            elif time_in_cycle <= cycle_length - duration_cooldown:
+                return 1
+            else:
+                value = 1 - logit(
+                    (time_in_cycle - cycle_length + duration_cooldown)
+                    / duration_cooldown
+                )
+                if value < 0:
+                    return 0
+                if value > 1:
+                    return 1
+                return value
+
+        return beta_function
+
+    @classmethod
+    def logit_jumpcycle_beta_function(
+        cls, duration_hot: int, duration_cooldown: int, duration_cold: int
+    ) -> Callable[[int], float]:
+
+        cycle_length = duration_hot + duration_cooldown + duration_cold
+
+        # this will scale from 0 to 1 approximately
+        logit = lambda x: (math.log(x / (1 - x)) + 5) / 10
+
+        def beta_function(step: int):
+            time_in_cycle = step % cycle_length
+            if time_in_cycle <= duration_hot:
+                return 0
+            elif time_in_cycle < duration_hot + duration_cooldown:
+                value = logit((time_in_cycle - duration_hot) / duration_cooldown)
+                if value < 0:
+                    return 0
+                if value > 1:
+                    return 1
+                return value
+            else:
+                return 1
 
         return beta_function
 
