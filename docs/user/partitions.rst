@@ -4,7 +4,7 @@ Working with Partitions
 .. raw:: html
 
     <div class="center-container">
-      <a href="https://github.com/mggg/GerryChain/raw/main/docs/_static/PA_VTDs.json" class="download-badge" download>Download PA File</a>
+      <a href="https://github.com/mggg/GerryChain/tree/main/docs/_static/PA_VTDs.json" class="download-badge" download>Download PA File</a>
     </div>
     <br style="line-height: 5px;">
 
@@ -17,7 +17,7 @@ GerryChain ``Partition`` object.
     from gerrychain.updaters import cut_edges
 
 We'll use our 
-`Pennsylvania VTD json <https://github.com/mggg/GerryChain/raw/main/docs/_static/PA_VTDs.json>`_ 
+`Pennsylvania VTD json <https://github.com/mggg/GerryChain/tree/main/docs/_static/PA_VTDs.json>`_ 
 to create the graph we'll use in these examples.
 
 .. code-block:: python
@@ -27,7 +27,20 @@ to create the graph we'll use in these examples.
 Creating a partition
 --------------------
 
-Here is how you can create a Partition:
+There are a couple of ways in which we could make a partition. The first way is to
+just make a random assignment with a population balance of :math:`\varepsilon`
+
+.. code-block:: python
+
+    partition = Partition.from_random_assignment(
+        graph=graph,
+        n_parts=2,
+        epsilon=0.01,
+        pop_col="TOT_POP"
+    )
+
+However, in this example we will create a partition based on the "2011_PLA_1" plan
+that already exists in the file:
 
 .. code-block:: python
 

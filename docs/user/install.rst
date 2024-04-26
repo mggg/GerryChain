@@ -4,7 +4,7 @@ Installation
 Supported Python Versions
 -------------------------
 
-The most recent version of GerryChain (as of January 2024) supports
+The most recent version of GerryChain (as of April 2024) supports
 
 - Python 3.9
 - Python 3.10
@@ -36,6 +36,8 @@ download the installer for one of these versions. [1]_
   `PowerShell 7 <https://docs.microsoft.com/en-us/powershell/scripting/install/installing-powershell>`_,
   and for the use of the Linux Subsystem for Windows).
 
+
+.. _virtual-envs:
 
 Setting Up a Virtual Environment
 --------------------------------
@@ -136,7 +138,7 @@ This approach sometimes fails due to compatibility issues between our
 different Python GIS dependencies, like ``geopandas``, ``pyproj``,
 ``fiona``, and ``shapely``. If you run into this issue, try installing
 the dependencies using the 
-`geo_settings.txt <https://github.com/mggg/GerryChain/raw/main/docs/geo_settings.txt>`_
+`geo_settings.txt <https://github.com/mggg/GerryChain/tree/main/docs/geo_settings.txt>`_
 file. To do this, run ``pip install -r geo_settings.txt`` from the
 command line.
 
@@ -154,101 +156,5 @@ command line.
   Python directly from the package manager if you find installing from source to be
   troublesome.
 
-Making an Environment Reproducible
-----------------------------------
 
-If you are working on a project wherein you would like to ensure
-particular runs are reproducible, it is necessary to invoke
-
-- **MacOS/Linux**: ``export PYTHONHASHSEED=0``
-- **Windows**: 
-
-  - PowerShell ``$env:PYTHONHASHSEED=0``
-  - Command Prompt ``set PYTHONHASHSEED=0``
-
-before running your code. This will ensure that the hash seed is deterministic
-which is important for the replication of spanning trees across your runs. If you
-would prefer to not have to do this every time, then you need to modify the
-activation script for the virtual environment. Again, this is different depending
-on your operating system:
-
-- **MacOS/Linux**: Open the file ``.venv/bin/activate`` located in your working
-  directory using your favorite text editor
-  and add the line ``export PYTHONHASHSEED=0`` after the ``export PATH`` command. 
-  So you should see something like:: 
-
-    _OLD_VIRTUAL_PATH="$PATH"
-    PATH="$VIRTUAL_ENV/Scripts:$PATH"
-    export PATH
-
-    export PYTHONHASHSEED=0
-  
-  Then, verify that the hash seed is set to 0 in your Python environment by
-  running ``python`` from the command line and typing 
-  ``import os; print(os.environ['PYTHONHASHSEED'])``.
-
-- **Windows**: To be safe, you will need to modify 3 files within your virtual
-  environment:
-
-  - ``.venv\Scripts\activate``: Add the line ``export PYTHONHASHSEED=0`` after
-    the ``export PATH`` command. So you should see something like:: 
-
-      _OLD_VIRTUAL_PATH="$PATH"
-      PATH="$VIRTUAL_ENV/Scripts:$PATH"
-      export PATH
-
-      export PYTHONHASHSEED=0
-
-  - ``.venv\Scripts\activate.bat``: Add the line ``set PYTHONHASHSEED=0`` to the
-    end of the file. So you should see something like::
-
-      if defined _OLD_VIRTUAL_PATH set PATH=%_OLD_VIRTUAL_PATH%
-      if not defined _OLD_VIRTUAL_PATH set _OLD_VIRTUAL_PATH=%PATH%
-
-      set PATH=%VIRTUAL_ENV%\Scripts;%PATH%
-      rem set VIRTUAL_ENV_PROMPT=(.venv) 
-      set PYTHONHASHSEED=0
-
-  - ``.venv\Scripts\Activate.ps1``: Add the line ``$env:PYTHONHASHSEED=0`` to the
-    end of the before the signature block. So you should see something like::
-
-      # Add the venv to the PATH
-      Copy-Item -Path Env:PATH -Destination Env:_OLD_VIRTUAL_PATH
-      $Env:PATH = "$VenvExecDir$([System.IO.Path]::PathSeparator)$Env:PATH"
-
-      $env:PYTHONHASHSEED=0
-
-      # SIG # Begin signature block
-
-After you have made these changes, verify that the hash seed is set to 0 in your
-Python environment by running ``python`` from the command line and typing 
-``import os; print(os.environ['PYTHONHASHSEED'])`` in the Python prompt.
-
-.. admonition:: A Note on Jupyter
-  :class: note
-
-  If you are using a jupyter notebook, you will need to make sure that you have
-  installed the ``ipykernel`` package in your virtual environment as well as
-  either ``jypyternotebook`` or ``jupyterlab``. To install these packages, run
-  ``pip install <package-name>`` from the command line. Then, to use the virtual
-  python environment in your jupyter notebook, you need to invoke
-  
-  .. code-block:: console
-
-    jupyter notebook
-
-  or
-
-  .. code-block:: console
-
-    jupyter lab
-
-  from the command line of your working directory *while your virtual environment
-  is activated*. This will open a jupyter notebook in your default browser. You may
-  then check that the hash seed is set to 0 by running the following code in a cell
-  of your notebook:
-
-  .. code-block:: python
-
-    import os
-    print(os.environ['PYTHONHASHSEED'])
+.. include:: ../repeated_subsections/reproducible_envs.rst

@@ -28,7 +28,7 @@ A Simple Recom Chain
 .. raw:: html
 
     <div class="center-container">
-      <a href="https://github.com/mggg/GerryChain/raw/main/docs/_static/gerrymandria.json" class="download-badge" download>
+      <a href="https://github.com/mggg/GerryChain/tree/main/docs/_static/gerrymandria.json" class="download-badge" download>
         Download GerryMandria File
       </a>
     </div>
@@ -155,7 +155,7 @@ bad idea to do this for a chain with a large number of steps).
 And this should generate a little widget that you can move through to see the chain
 in action! Here is a gif of what it should look like:
 
-.. image:: ./images/gerrymandria_ensamble.gif
+.. image:: ./images/gerrymandria_ensemble.gif
     :width: 400px
     :align: center
 
@@ -192,7 +192,7 @@ edges within the municipalities.
 
 And this will produce the following ensemble:
 
-.. image:: ./images/gerrymandria_region_ensamble.gif
+.. image:: ./images/gerrymandria_region_ensemble.gif
     :width: 400px
     :align: center
 
@@ -238,7 +238,7 @@ also increase the length of our chain to make sure that we have time to mix prop
 
 Then, we can run the chain and look at the last 40 assignments in the ensemble
 
-.. image:: ./images/gerrymandria_water_muni_ensamble.gif
+.. image:: ./images/gerrymandria_water_muni_ensemble.gif
     :width: 400px
     :align: center
 
@@ -372,7 +372,7 @@ district, then the chain will get stuck and throw an error. Here is the setup:
     from gerrychain.constraints import contiguous
     from functools import partial
     import random
-    random.seed(0)
+    random.seed(5)
 
     graph = Graph.from_json("./gerrymandria.json")
 
@@ -417,7 +417,7 @@ district, then the chain will get stuck and throw an error. Here is the setup:
 
     for i, item in enumerate(recom_chain):
         print(f"Finished step {i + 1}/{len(recom_chain)}", end="\r")
-        assignment_list.append(item.assignment))
+        assignment_list.append(item.assignment)
 
 This will output the following sequence of warnings and errors
 
@@ -429,10 +429,8 @@ This will output the following sequence of warnings and errors
     MarkovChain proposal method to allow the algorithm to select
     a different pair of nodes to try an recombine.
 
-    RuntimeError: Could not find a possible cut after 100000 attempts.
+    RuntimeError: Could not find a possible cut after 100 attempts.
 
-Note: if this error does not appear at step 8, then you probalby forgot
-to rerun the part of the script that sets the random seed to 42.
 Let's break down what is happening in each of these:
 
 .. raw:: html
@@ -471,28 +469,74 @@ node repeats:
 
 .. code-block:: python
 
+    random.seed(5)
+
+    graph = Graph.from_json("./gerrymandria.json")
+
+    my_updaters = {
+        "population": updaters.Tally("TOTPOP"),
+        "cut_edges": updaters.cut_edges
+    }
+
+    initial_partition = Partition(
+        graph,
+        assignment="district",
+        updaters=my_updaters
+    )
+
+    ideal_population = sum(initial_partition["population"].values()) / len(initial_partition)
+
     proposal = partial(
         recom,
         pop_col="TOTPOP",
         pop_target=ideal_population,
         epsilon=0.01,
-        node_repeats=100,
+        node_repeats=100,                # <-- This is the only change
         region_surcharge={
-            "muni": 1.0, 
-            "water_dist": 1.0
+            "muni": 2.0,
+            "water_dist": 2.0
         },
+        method = partial(
+            bipartition_tree,
+            max_attempts=100,
+        )
     )
+
+    recom_chain = MarkovChain(
+        proposal=proposal,
+        constraints=[contiguous],
+        accept=accept.always_accept,
+        initial_state=initial_partition,
+        total_steps=20,
+    )
+
+    assignment_list = []
+
+    for i, item in enumerate(recom_chain):
+        print(f"Finished step {i + 1}/{len(recom_chain)}", end="\r")
+        assignment_list.append(item.assignment)
 
 Running this code, we can see that we get stuck once again, so this was not the fix.
 Let's try to enable reselection instead:
 
 .. code-block:: python 
 
-    method = partial(
-        bipartition_tree,
-        max_attempts=100,
-        allow_pair_reselection=True
+    random.seed(5)
+
+    graph = Graph.from_json("./gerrymandria.json")
+
+    my_updaters = {
+        "population": updaters.Tally("TOTPOP"),
+        "cut_edges": updaters.cut_edges
+    }
+
+    initial_partition = Partition(
+        graph,
+        assignment="district",
+        updaters=my_updaters
     )
+
+    ideal_population = sum(initial_partition["population"].values()) / len(initial_partition)
 
     proposal = partial(
         recom,
@@ -501,11 +545,29 @@ Let's try to enable reselection instead:
         epsilon=0.01,
         node_repeats=1,
         region_surcharge={
-            "muni": 1.0,
-            "water_dist": 1.0
+            "muni": 2.0,
+            "water_dist": 2.0
         },
-        method=method
+        method = partial(
+            bipartition_tree,
+            max_attempts=100,
+            allow_pair_reselection=True  # <-- This is the only change
+        )
     )
+
+    recom_chain = MarkovChain(
+        proposal=proposal,
+        constraints=[contiguous],
+        accept=accept.always_accept,
+        initial_state=initial_partition,
+        total_steps=20,
+    )
+
+    assignment_list = []
+
+    for i, item in enumerate(recom_chain):
+        print(f"Finished step {i + 1}/{len(recom_chain)}", end="\r")
+        assignment_list.append(item.assignment)
 
 And this time it works! 
 
@@ -541,7 +603,7 @@ Setting up the initial districting plan
 .. raw:: html
 
     <div class="center-container">
-      <a href="https://github.com/mggg/GerryChain/raw/main/docs/_static/PA_VTDs.json" class="download-badge" download>Download PA File</a>
+      <a href="https://github.com/mggg/GerryChain/tree/main/docs/_static/PA_VTDs.json" class="download-badge" download>Download PA File</a>
     </div>
     <br style="line-height: 5px;">
 
