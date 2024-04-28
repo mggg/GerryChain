@@ -159,7 +159,8 @@ class Gingleator(SingleMetricOptimizer):
             (or opportunity) district.
         :type threshold: float
 
-        :returns: Number of opportunity districts + (1 - the next highest district's distance from
+        :returns: Number of opportunity districts +
+            (next highest district - (threshold - 0.1)) * 10
         :rtype: float
         """
         dist_percs = part[minority_perc_col].values()
@@ -188,7 +189,7 @@ class Gingleator(SingleMetricOptimizer):
             (or opportunity) district.
         :type threshold: float
 
-        :returns: Number of opportunity districts + (1 - the maximum excess)
+        :returns: Number of opportunity districts + (1 - the maximum excess) / (1 - threshold)
         :rtype: float
         """
         dist_percs = part[minority_perc_col].values()

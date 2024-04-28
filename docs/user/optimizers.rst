@@ -137,7 +137,7 @@ And now we can run each of the optimization methods and collect some data!
 
     # Tilted Runs
     min_scores_tilt = np.zeros(total_steps)
-    for i, part in enumerate(optimizer.tilted_run(total_steps, p=0.125, with_progress_bar=true)):
+    for i, part in enumerate(optimizer.tilted_run(total_steps, p=0.125, with_progress_bar=True)):
         min_scores_tilt[i] = optimizer.best_score
 
 We can then plot the results to see how each method performed:
@@ -195,9 +195,7 @@ Likewise, the methods are similar as well:
     scores_sb = np.zeros(total_steps)
     for i, part in enumerate(gingles.short_bursts(10, 1000, with_progress_bar=True)):
         max_scores_sb[i] = gingles.best_score
-        scores_sb[i] = gingles.score(part)    min_scores_sb = np.zeros(total_steps)
-        for i, part in enumerate(gingles.short_bursts(5, 2000, with_progress_bar=True)):
-            min_scores_sb[i] = gingles.best_score
+        scores_sb[i] = gingles.score(part)    
 
     # Simulated Annealing
     max_scores_anneal = np.zeros(total_steps)

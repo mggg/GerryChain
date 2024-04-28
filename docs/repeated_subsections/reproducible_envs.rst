@@ -125,7 +125,7 @@ explorer (or by using the File menu) and selecting "New File".
    &nbsp;
 
 Then, you will want to save the file with the extension ``.ipynb`` since we are making
-a jupyter notebook. Then we will want to open the file and select the Python interpreter
+a jupyter notebook. We can now open the file and select the Python interpreter
 that we would like to use:
 
 
@@ -138,7 +138,8 @@ that we would like to use:
 .. image:: ../user/images/vscode_tutorial/selecting_correct_venv.png
   :align: center
 
-And now we are done! We can now use all of the packages in our ``.venv`` virtual environment.
+And now we are done! We can now use all of the packages in our ``.venv`` virtual environment
+inside of our jupyter notebook:
 
 .. image:: ../user/images/vscode_tutorial/show_gerrychain_import.png
   :align: center
@@ -176,6 +177,52 @@ You will now see that the ``.venv`` is available in your list of kernels:
 
 .. image:: ../user/images/jupyter_tutorial/jupyter_lab.png
   :align: center
+
+
+.. warning::
+
+  As opposed to VSCode, Jupyter Lab does not automatically use the virtual environment that
+  you have in your project, so you will need to make sure that you have the correct kernel
+  installed before opening the lab. You can see which kernel you are using by looking at the
+  output of the following command:
+
+  .. code:: console
+
+    jupyter kernelspec list
+
+  this will output something like
+
+  .. code:: console
+
+    Available kernels:
+      .venv      /Users/username/.local/share/jupyter/kernels/.venv
+      python3    /usr/local/share/jupyter/kernels/python3
+
+  You will then need to inspect the output of this command to see where the kernel is located.
+  In the above example, we can see that the kernel ``.venv`` is located at 
+  ``/Users/username/.local/share/jupyter/kernels/.venv`` which is the correct location for the
+  current working project. However, if we were to make a new project in 
+  ``/Users/username/Desktop/another_project`` and make a new virtual environment in this
+  location with the same name of ``.venv``, then, after running the command
+  ``python -m ipykernel install --user --name=.venv``,
+  the kernel will still look like it is located at 
+  ``/Users/username/.local/share/jupyter/kernels/.venv``, BUT this new kernel is actually
+  the one for for the second project and not the original! This is important to note because
+  if you are working on multiple projects and you have the same kernel name for each project,
+  things can get a little confusing, so it is best to always reinstall the appropriate kernel
+  before opening the project in Jupyter.
+
+  Of course, an easy fix for this is to just use a different name for the kernel in each project.
+  For example, I might make my kernel name for the project in 
+  ``/Users/username/Desktop/gerrychain_docs``
+  ``venv_gerrychain_docs`` via the command
+
+  .. code:: console
+
+    python -m ipykernel install --user --name=venv_gerrychain_docs
+
+  and the kernel name for the project in 
+  ``/Users/username/Desktop/another_project`` ``venv_another_project``.
 
 
 We can now make a new notebook and select the kernel that we would like to use: 
