@@ -182,6 +182,7 @@ class Graph(networkx.Graph):
         cols_to_add: Optional[List[str]] = None,
         reproject: bool = False,
         ignore_errors: bool = False,
+        crs_override: Optional[str | int] = None,
     ) -> "Graph":
         """
         Creates the adjacency :class:`Graph` of geometries described by `dataframe`.
@@ -214,6 +215,9 @@ class Graph(networkx.Graph):
         :param ignore_errors: Whether to ignore all invalid geometries and
             attept to create the graph anyway. Default is ``False``.
         :type ignore_errors: bool, optional
+        :param crs_override: Value to override the CRS of the GeoDataFrame.
+            Default is None.
+        :type crs_override: Optional[str | int], optional
 
         :returns: The adjacency graph of the geometries from `dataframe`.
         :rtype: Graph
@@ -263,7 +267,21 @@ class Graph(networkx.Graph):
         networkx.set_node_attributes(graph, name="area", values=areas)
 
         graph.add_data(df, columns=cols_to_add)
-        graph.graph["crs"] = df.crs.to_json()
+
+        if crs_override is not None:
+            df.set_crs(crs_override, inplace=True)
+
+        if df.crs is None:
+            warnings.warn(
+                "GeoDataFrame has no CRS. Did you forget to set it? "
+                "If you're sure this is correct, you can ignore this warning. "
+                "Otherwise, please set the CRS using the `crs_override` parameter. "
+                "Attempting to proceed without a CRS."
+            )
+            graph.graph["crs"] = None
+        else:
+            graph.graph["crs"] = df.crs.to_json()
+
         return graph
 
     def lookup(self, node: Any, field: Any) -> Any:
