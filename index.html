@@ -49,6 +49,7 @@
 <li class="toctree-l1"><a class="reference internal" href="user/updaters.html">Updaters</a></li>
 <li class="toctree-l1"><a class="reference internal" href="user/data.html">Good Data Practices</a></li>
 <li class="toctree-l1"><a class="reference internal" href="user/geometries.html">Working With Geometries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/optimizers.html">Optimization Methods of GerryChain</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -59,6 +60,7 @@
 <li class="toctree-l1"><a class="reference internal" href="topics/reproducibility.html">Reproducibility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="topics/tools.html">Evaluating districting plans in the real world</a></li>
 <li class="toctree-l1"><a class="reference internal" href="topics/contributing.html">Contributing to GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="topics/reporting.html">Reporting Issues</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Index</span></p>
 <ul>
@@ -105,7 +107,7 @@ repository, where <a class="reference external" href="https://github.com/mggg/ge
 <h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="supported-python-versions">
 <h3>Supported Python Versions<a class="headerlink" href="#supported-python-versions" title="Permalink to this headline">¶</a></h3>
-<p>The most recent version of GerryChain (as of January 2024) supports</p>
+<p>The most recent version of GerryChain (as of April 2024) supports</p>
 <ul class="simple">
 <li><p>Python 3.9</p></li>
 <li><p>Python 3.10</p></li>
@@ -136,7 +138,7 @@ and for the use of the Linux Subsystem for Windows).</p>
 </div>
 </div>
 <div class="section" id="setting-up-a-virtual-environment">
-<h3>Setting Up a Virtual Environment<a class="headerlink" href="#setting-up-a-virtual-environment" title="Permalink to this headline">¶</a></h3>
+<span id="virtual-envs"></span><h3>Setting Up a Virtual Environment<a class="headerlink" href="#setting-up-a-virtual-environment" title="Permalink to this headline">¶</a></h3>
 <p>Once Python is installed on your system, you will want to open the terminal
 and navigate to the working directory of your project. Here are some brief
 instructions for doing so on different systems:</p>
@@ -221,7 +223,7 @@ adjacencies or reading in shapefiles, then run
 different Python GIS dependencies, like <code class="docutils literal notranslate"><span class="pre">geopandas</span></code>, <code class="docutils literal notranslate"><span class="pre">pyproj</span></code>,
 <code class="docutils literal notranslate"><span class="pre">fiona</span></code>, and <code class="docutils literal notranslate"><span class="pre">shapely</span></code>. If you run into this issue, try installing
 the dependencies using the
-<a class="reference external" href="https://github.com/mggg/GerryChain/raw/main/docs/geo_settings.txt">geo_settings.txt</a>
+<a class="reference external" href="https://github.com/mggg/GerryChain/tree/main/docs/geo_settings.txt">geo_settings.txt</a>
 file. To do this, run <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-r</span> <span class="pre">geo_settings.txt</span></code> from the
 command line.</p>
 <div class="admonition note">
@@ -240,106 +242,6 @@ Python directly from the package manager if you find installing from source to b
 troublesome.</p>
 </dd>
 </dl>
-</div>
-<div class="section" id="making-an-environment-reproducible">
-<h3>Making an Environment Reproducible<a class="headerlink" href="#making-an-environment-reproducible" title="Permalink to this headline">¶</a></h3>
-<p>If you are working on a project wherein you would like to ensure
-particular runs are reproducible, it is necessary to invoke</p>
-<ul class="simple">
-<li><p><strong>MacOS/Linux</strong>: <code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">PYTHONHASHSEED=0</span></code></p></li>
-<li><p><strong>Windows</strong>:</p>
-<ul>
-<li><p>PowerShell <code class="docutils literal notranslate"><span class="pre">$env:PYTHONHASHSEED=0</span></code></p></li>
-<li><p>Command Prompt <code class="docutils literal notranslate"><span class="pre">set</span> <span class="pre">PYTHONHASHSEED=0</span></code></p></li>
-</ul>
-</li>
-</ul>
-<p>before running your code. This will ensure that the hash seed is deterministic
-which is important for the replication of spanning trees across your runs. If you
-would prefer to not have to do this every time, then you need to modify the
-activation script for the virtual environment. Again, this is different depending
-on your operating system:</p>
-<ul>
-<li><p><strong>MacOS/Linux</strong>: Open the file <code class="docutils literal notranslate"><span class="pre">.venv/bin/activate</span></code> located in your working
-directory using your favorite text editor
-and add the line <code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">PYTHONHASHSEED=0</span></code> after the <code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">PATH</span></code> command.
-So you should see something like:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">_OLD_VIRTUAL_PATH</span><span class="o">=</span><span class="s2">&quot;$PATH&quot;</span>
-<span class="n">PATH</span><span class="o">=</span><span class="s2">&quot;$VIRTUAL_ENV/Scripts:$PATH&quot;</span>
-<span class="n">export</span> <span class="n">PATH</span>
-
-<span class="n">export</span> <span class="n">PYTHONHASHSEED</span><span class="o">=</span><span class="mi">0</span>
-</pre></div>
-</div>
-<p>Then, verify that the hash seed is set to 0 in your Python environment by
-running <code class="docutils literal notranslate"><span class="pre">python</span></code> from the command line and typing
-<code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">os;</span> <span class="pre">print(os.environ['PYTHONHASHSEED'])</span></code>.</p>
-</li>
-<li><p><strong>Windows</strong>: To be safe, you will need to modify 3 files within your virtual
-environment:</p>
-<ul>
-<li><p><code class="docutils literal notranslate"><span class="pre">.venv\Scripts\activate</span></code>: Add the line <code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">PYTHONHASHSEED=0</span></code> after
-the <code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">PATH</span></code> command. So you should see something like:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">_OLD_VIRTUAL_PATH</span><span class="o">=</span><span class="s2">&quot;$PATH&quot;</span>
-<span class="n">PATH</span><span class="o">=</span><span class="s2">&quot;$VIRTUAL_ENV/Scripts:$PATH&quot;</span>
-<span class="n">export</span> <span class="n">PATH</span>
-
-<span class="n">export</span> <span class="n">PYTHONHASHSEED</span><span class="o">=</span><span class="mi">0</span>
-</pre></div>
-</div>
-</li>
-<li><p><code class="docutils literal notranslate"><span class="pre">.venv\Scripts\activate.bat</span></code>: Add the line <code class="docutils literal notranslate"><span class="pre">set</span> <span class="pre">PYTHONHASHSEED=0</span></code> to the
-end of the file. So you should see something like:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">defined</span> <span class="n">_OLD_VIRTUAL_PATH</span> <span class="nb">set</span> <span class="n">PATH</span><span class="o">=%</span><span class="n">_OLD_VIRTUAL_PATH</span><span class="o">%</span>
-<span class="k">if</span> <span class="ow">not</span> <span class="n">defined</span> <span class="n">_OLD_VIRTUAL_PATH</span> <span class="nb">set</span> <span class="n">_OLD_VIRTUAL_PATH</span><span class="o">=%</span><span class="n">PATH</span><span class="o">%</span>
-
-<span class="nb">set</span> <span class="n">PATH</span><span class="o">=%</span><span class="n">VIRTUAL_ENV</span><span class="o">%</span>\<span class="n">Scripts</span><span class="p">;</span><span class="o">%</span><span class="n">PATH</span><span class="o">%</span>
-<span class="n">rem</span> <span class="nb">set</span> <span class="n">VIRTUAL_ENV_PROMPT</span><span class="o">=</span><span class="p">(</span><span class="o">.</span><span class="n">venv</span><span class="p">)</span>
-<span class="nb">set</span> <span class="n">PYTHONHASHSEED</span><span class="o">=</span><span class="mi">0</span>
-</pre></div>
-</div>
-</li>
-<li><p><code class="docutils literal notranslate"><span class="pre">.venv\Scripts\Activate.ps1</span></code>: Add the line <code class="docutils literal notranslate"><span class="pre">$env:PYTHONHASHSEED=0</span></code> to the
-end of the before the signature block. So you should see something like:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span># Add the venv to the PATH
-Copy-Item -Path Env:PATH -Destination Env:_OLD_VIRTUAL_PATH
-$Env:PATH = &quot;$VenvExecDir$([System.IO.Path]::PathSeparator)$Env:PATH&quot;
-
-$env:PYTHONHASHSEED=0
-
-# SIG # Begin signature block
-</pre></div>
-</div>
-</li>
-</ul>
-</li>
-</ul>
-<p>After you have made these changes, verify that the hash seed is set to 0 in your
-Python environment by running <code class="docutils literal notranslate"><span class="pre">python</span></code> from the command line and typing
-<code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">os;</span> <span class="pre">print(os.environ['PYTHONHASHSEED'])</span></code> in the Python prompt.</p>
-<div class="note admonition">
-<p class="admonition-title">A Note on Jupyter</p>
-<p>If you are using a jupyter notebook, you will need to make sure that you have
-installed the <code class="docutils literal notranslate"><span class="pre">ipykernel</span></code> package in your virtual environment as well as
-either <code class="docutils literal notranslate"><span class="pre">jypyternotebook</span></code> or <code class="docutils literal notranslate"><span class="pre">jupyterlab</span></code>. To install these packages, run
-<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">&lt;package-name&gt;</span></code> from the command line. Then, to use the virtual
-python environment in your jupyter notebook, you need to invoke</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">jupyter notebook</span>
-</pre></div>
-</div>
-<p>or</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">jupyter lab</span>
-</pre></div>
-</div>
-<p>from the command line of your working directory <em>while your virtual environment
-is activated</em>. This will open a jupyter notebook in your default browser. You may
-then check that the hash seed is set to 0 by running the following code in a cell
-of your notebook:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;PYTHONHASHSEED&#39;</span><span class="p">])</span>
-</pre></div>
-</div>
-</div>
 <div class="toctree-wrapper compound">
 <p class="caption"><span class="caption-text">User Guide</span></p>
 <ul>
@@ -390,6 +292,11 @@ of your notebook:</p>
 <li class="toctree-l2"><a class="reference internal" href="user/geometries.html#loading-and-running-a-plan">Loading and Running a Plan</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="user/optimizers.html">Optimization Methods of GerryChain</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="user/optimizers.html#using-singlemetricoptimizer">Using <code class="docutils literal notranslate"><span class="pre">SingleMetricOptimizer</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/optimizers.html#using-gingleator">Using <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code></a></li>
+</ul>
+</li>
 </ul>
 </div>
 <p>We also highly recommend the resources prepared by Daryl R. DeFord of
@@ -399,16 +306,16 @@ MGGG for the 2019 MIT IAP course <a class="reference external" href="https://peo
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="api.html#adjacency-graphs">Adjacency graphs</a></li>
-<li class="toctree-l2"><a class="reference internal" href="api.html#module-gerrychain.partition">Partitions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#partitions">Partitions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="api.html#markov-chains">Markov chains</a></li>
-<li class="toctree-l2"><a class="reference internal" href="api.html#module-gerrychain.proposals">Proposals</a></li>
-<li class="toctree-l2"><a class="reference internal" href="api.html#module-gerrychain.constraints">Binary constraints</a></li>
-<li class="toctree-l2"><a class="reference internal" href="api.html#module-gerrychain.updaters">Updaters</a></li>
-<li class="toctree-l2"><a class="reference internal" href="api.html#module-gerrychain.updaters.election">Elections</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#proposals">Proposals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#binary-constraints">Binary constraints</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#updaters">Updaters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#elections">Elections</a></li>
 <li class="toctree-l2"><a class="reference internal" href="api.html#grids">Grids</a></li>
 <li class="toctree-l2"><a class="reference internal" href="api.html#spanning-tree-methods">Spanning tree methods</a></li>
-<li class="toctree-l2"><a class="reference internal" href="api.html#module-gerrychain.metrics">Metrics</a></li>
-<li class="toctree-l2"><a class="reference internal" href="api.html#module-gerrychain.meta.diversity">Diversity stats</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#metrics">Metrics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#diversity-stats">Diversity stats</a></li>
 </ul>
 </li>
 </ul>
@@ -419,6 +326,7 @@ MGGG for the 2019 MIT IAP course <a class="reference external" href="https://peo
 <li class="toctree-l1"><a class="reference internal" href="topics/reproducibility.html">Reproducibility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="topics/tools.html">Evaluating districting plans in the real world</a></li>
 <li class="toctree-l1"><a class="reference internal" href="topics/contributing.html">Contributing to GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="topics/reporting.html">Reporting Issues</a></li>
 </ul>
 </div>
 <div class="toctree-wrapper compound">

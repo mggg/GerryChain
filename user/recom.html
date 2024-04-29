@@ -75,6 +75,7 @@
 <li class="toctree-l1"><a class="reference internal" href="updaters.html">Updaters</a></li>
 <li class="toctree-l1"><a class="reference internal" href="data.html">Good Data Practices</a></li>
 <li class="toctree-l1"><a class="reference internal" href="geometries.html">Working With Geometries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="optimizers.html">Optimization Methods of GerryChain</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -85,6 +86,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../topics/reproducibility.html">Reproducibility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../topics/tools.html">Evaluating districting plans in the real world</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../topics/contributing.html">Contributing to GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../topics/reporting.html">Reporting Issues</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Index</span></p>
 <ul>
@@ -130,7 +132,7 @@ all of the pictures in this guide will use the dual graph as well.</p>
 <div class="section" id="a-simple-recom-chain">
 <h2>A Simple Recom Chain<a class="headerlink" href="#a-simple-recom-chain" title="Permalink to this headline">¶</a></h2>
 <div class="center-container">
-  <a href="https://github.com/mggg/GerryChain/raw/main/docs/_static/gerrymandria.json" class="download-badge" download>
+  <a href="https://github.com/mggg/GerryChain/tree/main/docs/_static/gerrymandria.json" class="download-badge" download>
     Download GerryMandria File
   </a>
 </div>
@@ -241,7 +243,7 @@ bad idea to do this for a chain with a large number of steps).</p>
 </div>
 <p>And this should generate a little widget that you can move through to see the chain
 in action! Here is a gif of what it should look like:</p>
-<a class="reference internal image-reference" href="../_images/gerrymandria_ensamble.gif"><img alt="../_images/gerrymandria_ensamble.gif" class="align-center" src="../_images/gerrymandria_ensamble.gif" style="width: 400px;" /></a>
+<a class="reference internal image-reference" href="../_images/gerrymandria_ensemble.gif"><img alt="../_images/gerrymandria_ensemble.gif" class="align-center" src="../_images/gerrymandria_ensemble.gif" style="width: 400px;" /></a>
 </div>
 <div class="section" id="region-aware-recom">
 <h2>Region-Aware ReCom<a class="headerlink" href="#region-aware-recom" title="Permalink to this headline">¶</a></h2>
@@ -268,7 +270,7 @@ edges within the municipalities.</p>
 </pre></div>
 </div>
 <p>And this will produce the following ensemble:</p>
-<a class="reference internal image-reference" href="../_images/gerrymandria_region_ensamble.gif"><img alt="../_images/gerrymandria_region_ensamble.gif" class="align-center" src="../_images/gerrymandria_region_ensamble.gif" style="width: 400px;" /></a>
+<a class="reference internal image-reference" href="../_images/gerrymandria_region_ensemble.gif"><img alt="../_images/gerrymandria_region_ensemble.gif" class="align-center" src="../_images/gerrymandria_region_ensemble.gif" style="width: 400px;" /></a>
 <p>Now, the legislature of GerryMandria has decided that it would also like to try
 to keep the counties together as well. They mention to you that it would be nice
 to keep the municipalities together, but that it is more important to keep the
@@ -302,7 +304,7 @@ also increase the length of our chain to make sure that we have time to mix prop
 </pre></div>
 </div>
 <p>Then, we can run the chain and look at the last 40 assignments in the ensemble</p>
-<a class="reference internal image-reference" href="../_images/gerrymandria_water_muni_ensamble.gif"><img alt="../_images/gerrymandria_water_muni_ensamble.gif" class="align-center" src="../_images/gerrymandria_water_muni_ensamble.gif" style="width: 400px;" /></a>
+<a class="reference internal image-reference" href="../_images/gerrymandria_water_muni_ensemble.gif"><img alt="../_images/gerrymandria_water_muni_ensemble.gif" class="align-center" src="../_images/gerrymandria_water_muni_ensemble.gif" style="width: 400px;" /></a>
 <p>Comparing the last map with the municipality and water district maps, we can see
 that the chain has done a pretty good job of keeping the water districts together
 while also being sensitive to the municipalities</p>
@@ -393,7 +395,7 @@ district, then the chain will get stuck and throw an error. Here is the setup:</
 <span class="kn">from</span> <span class="nn">gerrychain.constraints</span> <span class="kn">import</span> <span class="n">contiguous</span>
 <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
 <span class="kn">import</span> <span class="nn">random</span>
-<span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
 
 <span class="n">graph</span> <span class="o">=</span> <span class="n">Graph</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="s2">&quot;./gerrymandria.json&quot;</span><span class="p">)</span>
 
@@ -438,7 +440,7 @@ district, then the chain will get stuck and throw an error. Here is the setup:</
 
 <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">recom_chain</span><span class="p">):</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Finished step {i + 1}/{len(recom_chain)}&quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\r</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">assignment_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">assignment</span><span class="p">))</span>
+    <span class="n">assignment_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">assignment</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>This will output the following sequence of warnings and errors</p>
@@ -448,12 +450,10 @@ district, then the chain will get stuck and throw an error. Here is the setup:</
 <span class="go">MarkovChain proposal method to allow the algorithm to select</span>
 <span class="go">a different pair of nodes to try an recombine.</span>
 
-<span class="go">RuntimeError: Could not find a possible cut after 100000 attempts.</span>
+<span class="go">RuntimeError: Could not find a possible cut after 100 attempts.</span>
 </pre></div>
 </div>
-<p>Note: if this error does not appear at step 8, then you probalby forgot
-to rerun the part of the script that sets the random seed to 42.
-Let’s break down what is happening in each of these:</p>
+<p>Let’s break down what is happening in each of these:</p>
 <ul>
   <li><strong>BipartitionWarning</strong>
     This is telling us that somewhere along the way,
@@ -483,26 +483,72 @@ Let’s break down what is happening in each of these:</p>
   </li>
 </ul><p>Okay, let’s see if we can fix this. First, we’ll try to increase the number of
 node repeats:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">proposal</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+
+<span class="n">graph</span> <span class="o">=</span> <span class="n">Graph</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="s2">&quot;./gerrymandria.json&quot;</span><span class="p">)</span>
+
+<span class="n">my_updaters</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;population&quot;</span><span class="p">:</span> <span class="n">updaters</span><span class="o">.</span><span class="n">Tally</span><span class="p">(</span><span class="s2">&quot;TOTPOP&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;cut_edges&quot;</span><span class="p">:</span> <span class="n">updaters</span><span class="o">.</span><span class="n">cut_edges</span>
+<span class="p">}</span>
+
+<span class="n">initial_partition</span> <span class="o">=</span> <span class="n">Partition</span><span class="p">(</span>
+    <span class="n">graph</span><span class="p">,</span>
+    <span class="n">assignment</span><span class="o">=</span><span class="s2">&quot;district&quot;</span><span class="p">,</span>
+    <span class="n">updaters</span><span class="o">=</span><span class="n">my_updaters</span>
+<span class="p">)</span>
+
+<span class="n">ideal_population</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">initial_partition</span><span class="p">[</span><span class="s2">&quot;population&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">())</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">initial_partition</span><span class="p">)</span>
+
+<span class="n">proposal</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span>
     <span class="n">recom</span><span class="p">,</span>
     <span class="n">pop_col</span><span class="o">=</span><span class="s2">&quot;TOTPOP&quot;</span><span class="p">,</span>
     <span class="n">pop_target</span><span class="o">=</span><span class="n">ideal_population</span><span class="p">,</span>
     <span class="n">epsilon</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
-    <span class="n">node_repeats</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+    <span class="n">node_repeats</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>                <span class="c1"># &lt;-- This is the only change</span>
     <span class="n">region_surcharge</span><span class="o">=</span><span class="p">{</span>
-        <span class="s2">&quot;muni&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
-        <span class="s2">&quot;water_dist&quot;</span><span class="p">:</span> <span class="mf">1.0</span>
+        <span class="s2">&quot;muni&quot;</span><span class="p">:</span> <span class="mf">2.0</span><span class="p">,</span>
+        <span class="s2">&quot;water_dist&quot;</span><span class="p">:</span> <span class="mf">2.0</span>
     <span class="p">},</span>
+    <span class="n">method</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span>
+        <span class="n">bipartition_tree</span><span class="p">,</span>
+        <span class="n">max_attempts</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+    <span class="p">)</span>
 <span class="p">)</span>
+
+<span class="n">recom_chain</span> <span class="o">=</span> <span class="n">MarkovChain</span><span class="p">(</span>
+    <span class="n">proposal</span><span class="o">=</span><span class="n">proposal</span><span class="p">,</span>
+    <span class="n">constraints</span><span class="o">=</span><span class="p">[</span><span class="n">contiguous</span><span class="p">],</span>
+    <span class="n">accept</span><span class="o">=</span><span class="n">accept</span><span class="o">.</span><span class="n">always_accept</span><span class="p">,</span>
+    <span class="n">initial_state</span><span class="o">=</span><span class="n">initial_partition</span><span class="p">,</span>
+    <span class="n">total_steps</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">assignment_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">recom_chain</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Finished step {i + 1}/{len(recom_chain)}&quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\r</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">assignment_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">assignment</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Running this code, we can see that we get stuck once again, so this was not the fix.
 Let’s try to enable reselection instead:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">method</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span>
-    <span class="n">bipartition_tree</span><span class="p">,</span>
-    <span class="n">max_attempts</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
-    <span class="n">allow_pair_reselection</span><span class="o">=</span><span class="kc">True</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+
+<span class="n">graph</span> <span class="o">=</span> <span class="n">Graph</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="s2">&quot;./gerrymandria.json&quot;</span><span class="p">)</span>
+
+<span class="n">my_updaters</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;population&quot;</span><span class="p">:</span> <span class="n">updaters</span><span class="o">.</span><span class="n">Tally</span><span class="p">(</span><span class="s2">&quot;TOTPOP&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;cut_edges&quot;</span><span class="p">:</span> <span class="n">updaters</span><span class="o">.</span><span class="n">cut_edges</span>
+<span class="p">}</span>
+
+<span class="n">initial_partition</span> <span class="o">=</span> <span class="n">Partition</span><span class="p">(</span>
+    <span class="n">graph</span><span class="p">,</span>
+    <span class="n">assignment</span><span class="o">=</span><span class="s2">&quot;district&quot;</span><span class="p">,</span>
+    <span class="n">updaters</span><span class="o">=</span><span class="n">my_updaters</span>
 <span class="p">)</span>
+
+<span class="n">ideal_population</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">initial_partition</span><span class="p">[</span><span class="s2">&quot;population&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">())</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">initial_partition</span><span class="p">)</span>
 
 <span class="n">proposal</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span>
     <span class="n">recom</span><span class="p">,</span>
@@ -511,11 +557,29 @@ Let’s try to enable reselection instead:</p>
     <span class="n">epsilon</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
     <span class="n">node_repeats</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
     <span class="n">region_surcharge</span><span class="o">=</span><span class="p">{</span>
-        <span class="s2">&quot;muni&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
-        <span class="s2">&quot;water_dist&quot;</span><span class="p">:</span> <span class="mf">1.0</span>
+        <span class="s2">&quot;muni&quot;</span><span class="p">:</span> <span class="mf">2.0</span><span class="p">,</span>
+        <span class="s2">&quot;water_dist&quot;</span><span class="p">:</span> <span class="mf">2.0</span>
     <span class="p">},</span>
-    <span class="n">method</span><span class="o">=</span><span class="n">method</span>
+    <span class="n">method</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span>
+        <span class="n">bipartition_tree</span><span class="p">,</span>
+        <span class="n">max_attempts</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+        <span class="n">allow_pair_reselection</span><span class="o">=</span><span class="kc">True</span>  <span class="c1"># &lt;-- This is the only change</span>
+    <span class="p">)</span>
 <span class="p">)</span>
+
+<span class="n">recom_chain</span> <span class="o">=</span> <span class="n">MarkovChain</span><span class="p">(</span>
+    <span class="n">proposal</span><span class="o">=</span><span class="n">proposal</span><span class="p">,</span>
+    <span class="n">constraints</span><span class="o">=</span><span class="p">[</span><span class="n">contiguous</span><span class="p">],</span>
+    <span class="n">accept</span><span class="o">=</span><span class="n">accept</span><span class="o">.</span><span class="n">always_accept</span><span class="p">,</span>
+    <span class="n">initial_state</span><span class="o">=</span><span class="n">initial_partition</span><span class="p">,</span>
+    <span class="n">total_steps</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">assignment_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">recom_chain</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Finished step {i + 1}/{len(recom_chain)}&quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\r</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">assignment_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">assignment</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>And this time it works!</p>
@@ -541,7 +605,7 @@ by our ReCom chain.</p>
 <div class="section" id="setting-up-the-initial-districting-plan">
 <h3>Setting up the initial districting plan<a class="headerlink" href="#setting-up-the-initial-districting-plan" title="Permalink to this headline">¶</a></h3>
 <div class="center-container">
-  <a href="https://github.com/mggg/GerryChain/raw/main/docs/_static/PA_VTDs.json" class="download-badge" download>Download PA File</a>
+  <a href="https://github.com/mggg/GerryChain/tree/main/docs/_static/PA_VTDs.json" class="download-badge" download>Download PA File</a>
 </div>
 <br style="line-height: 5px;"><p>We’ll create our graph using the example Pennsylvania json file.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">graph</span> <span class="o">=</span> <span class="n">Graph</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="s2">&quot;./PA_VTDs.json&quot;</span><span class="p">)</span>
@@ -643,7 +707,7 @@ before we can use it as our proposal function.</p>
 <p>To keep districts about as compact as the original plan, we would like to
 constrain the number of cut edges between all of the districts (this will
 keep our districts from being too snake-like).
-We can do this using the <a class="reference internal" href="../api.html#gerrychain.constraints.UpperBound" title="gerrychain.constraints.UpperBound"><code class="xref py py-class docutils literal notranslate"><span class="pre">UpperBound</span></code></a> constraint,
+We can do this using the <code class="xref py py-class docutils literal notranslate"><span class="pre">UpperBound</span></code> constraint,
 and, as a general heuristic, we’ll bound the number of cut edges by twice the
 number of cut edges in the initial plan.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">cut_edges_length</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>

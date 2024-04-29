@@ -46,7 +46,14 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Installation</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#supported-python-versions">Supported Python Versions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#setting-up-a-virtual-environment">Setting Up a Virtual Environment</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#making-an-environment-reproducible">Making an Environment Reproducible</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#making-an-environment-reproducible">Making an Environment Reproducible</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#reproducible-environments-in-vscode-and-jupyter-lab">Reproducible Environments in VSCode and Jupyter Lab</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id3">VSCode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#jupyter-lab-notebook">Jupyter Lab / Notebook</a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Getting started with GerryChain</a></li>
@@ -55,6 +62,7 @@
 <li class="toctree-l1"><a class="reference internal" href="updaters.html">Updaters</a></li>
 <li class="toctree-l1"><a class="reference internal" href="data.html">Good Data Practices</a></li>
 <li class="toctree-l1"><a class="reference internal" href="geometries.html">Working With Geometries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="optimizers.html">Optimization Methods of GerryChain</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -65,6 +73,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../topics/reproducibility.html">Reproducibility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../topics/tools.html">Evaluating districting plans in the real world</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../topics/contributing.html">Contributing to GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../topics/reporting.html">Reporting Issues</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Index</span></p>
 <ul>
@@ -99,7 +108,7 @@
 <h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="supported-python-versions">
 <h2>Supported Python Versions<a class="headerlink" href="#supported-python-versions" title="Permalink to this headline">¶</a></h2>
-<p>The most recent version of GerryChain (as of January 2024) supports</p>
+<p>The most recent version of GerryChain (as of April 2024) supports</p>
 <ul class="simple">
 <li><p>Python 3.9</p></li>
 <li><p>Python 3.10</p></li>
@@ -130,7 +139,7 @@ and for the use of the Linux Subsystem for Windows).</p>
 </div>
 </div>
 <div class="section" id="setting-up-a-virtual-environment">
-<h2>Setting Up a Virtual Environment<a class="headerlink" href="#setting-up-a-virtual-environment" title="Permalink to this headline">¶</a></h2>
+<span id="virtual-envs"></span><h2>Setting Up a Virtual Environment<a class="headerlink" href="#setting-up-a-virtual-environment" title="Permalink to this headline">¶</a></h2>
 <p>Once Python is installed on your system, you will want to open the terminal
 and navigate to the working directory of your project. Here are some brief
 instructions for doing so on different systems:</p>
@@ -215,7 +224,7 @@ adjacencies or reading in shapefiles, then run
 different Python GIS dependencies, like <code class="docutils literal notranslate"><span class="pre">geopandas</span></code>, <code class="docutils literal notranslate"><span class="pre">pyproj</span></code>,
 <code class="docutils literal notranslate"><span class="pre">fiona</span></code>, and <code class="docutils literal notranslate"><span class="pre">shapely</span></code>. If you run into this issue, try installing
 the dependencies using the
-<a class="reference external" href="https://github.com/mggg/GerryChain/raw/main/docs/geo_settings.txt">geo_settings.txt</a>
+<a class="reference external" href="https://github.com/mggg/GerryChain/tree/main/docs/geo_settings.txt">geo_settings.txt</a>
 file. To do this, run <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-r</span> <span class="pre">geo_settings.txt</span></code> from the
 command line.</p>
 <div class="admonition note">
@@ -311,27 +320,112 @@ $env:PYTHONHASHSEED=0
 <p>After you have made these changes, verify that the hash seed is set to 0 in your
 Python environment by running <code class="docutils literal notranslate"><span class="pre">python</span></code> from the command line and typing
 <code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">os;</span> <span class="pre">print(os.environ['PYTHONHASHSEED'])</span></code> in the Python prompt.</p>
-<div class="note admonition">
-<p class="admonition-title">A Note on Jupyter</p>
-<p>If you are using a jupyter notebook, you will need to make sure that you have
-installed the <code class="docutils literal notranslate"><span class="pre">ipykernel</span></code> package in your virtual environment as well as
-either <code class="docutils literal notranslate"><span class="pre">jypyternotebook</span></code> or <code class="docutils literal notranslate"><span class="pre">jupyterlab</span></code>. To install these packages, run
-<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">&lt;package-name&gt;</span></code> from the command line. Then, to use the virtual
-python environment in your jupyter notebook, you need to invoke</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">jupyter notebook</span>
+<div class="section" id="reproducible-environments-in-vscode-and-jupyter-lab">
+<h3>Reproducible Environments in VSCode and Jupyter Lab<a class="headerlink" href="#reproducible-environments-in-vscode-and-jupyter-lab" title="Permalink to this headline">¶</a></h3>
+<p>In general, it is easier to use jupyter notebooks with bespoke virtual environments
+through a text editor like <a class="reference external" href="https://code.visualstudio.com/download">VSCode</a>, but
+we will also show how to do this using the standard Jupyter Lab interface as well.</p>
+<p>Regardless of which method you prefer, you will need to make sure that you have
+installed the <code class="docutils literal notranslate"><span class="pre">ipykernel</span></code> package into the virtual environment that you will be
+working with:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">pip install ipykernel</span>
 </pre></div>
 </div>
-<p>or</p>
+<div class="section" id="id3">
+<h4>VSCode<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h4>
+<p>First you will want to make sure that you have
+<a class="reference external" href="https://code.visualstudio.com/download">installed VSCode</a>.
+Then, you can click on “File” in the upper-left and select “Open Folder” to open the
+folder with your project and virtual environment in it. This should look something like
+this:</p>
+<img alt="../_images/open_the_folder2.png" class="align-center" src="../_images/open_the_folder2.png" />
+<p>Notice that I have the folder <code class="docutils literal notranslate"><span class="pre">.venv</span></code> in my file explorer. This is just my virtual
+environment that I created for this project.</p>
+<p>To install the Python extension, open the extensions view by clicking on the square
+icon on the left side of the window. Then, search for “Python” and install the
+extension that is published by Microsoft. This will allow you to use the Python
+interpreter in your virtual environment and will give you some helpful things like
+code completion and debugging in the event that you would like it.</p>
+<img alt="../_images/python_extension_vscode2.png" class="align-center" src="../_images/python_extension_vscode2.png" />
+<p>Likewise, we will want to install the “Jupyter” extension:</p>
+<img alt="../_images/jupyter_extension_vscode2.png" class="align-center" src="../_images/jupyter_extension_vscode2.png" />
+<p>Now let’s make a new jupyter notebook. You can do this by right-clicking in the file
+explorer (or by using the File menu) and selecting “New File”.</p>
+<img alt="../_images/Make_a_new_file2.png" class="align-center" src="../_images/Make_a_new_file2.png" />
+&nbsp;<p>Then, you will want to save the file with the extension <code class="docutils literal notranslate"><span class="pre">.ipynb</span></code> since we are making
+a jupyter notebook. We can now open the file and select the Python interpreter
+that we would like to use:</p>
+<img alt="../_images/select_kernel_vscode2.png" class="align-center" src="../_images/select_kernel_vscode2.png" />
+<img alt="../_images/select_python_env2.png" class="align-center" src="../_images/select_python_env2.png" />
+<img alt="../_images/selecting_correct_venv2.png" class="align-center" src="../_images/selecting_correct_venv2.png" />
+<p>And now we are done! We can now use all of the packages in our <code class="docutils literal notranslate"><span class="pre">.venv</span></code> virtual environment
+inside of our jupyter notebook:</p>
+<img alt="../_images/show_gerrychain_import2.png" class="align-center" src="../_images/show_gerrychain_import2.png" />
+<p>Of course, if you would like to, you may also use a different name for your virtual environment,
+or you can even use the same process to allow for multiple virtual environments in the same
+project!</p>
+</div>
+<div class="section" id="jupyter-lab-notebook">
+<h4>Jupyter Lab / Notebook<a class="headerlink" href="#jupyter-lab-notebook" title="Permalink to this headline">¶</a></h4>
+<p>In order to use Jupyter Lab or Jupyter Notebook, we will need to make sure that it is installed
+for our virtual environment. This can be done by running the following command:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">pip install jupyter</span>
+</pre></div>
+</div>
+<p>Then, we will want to install the kernel for our virtual environment. This can be done by running
+the following command:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">python -m ipykernel install --user --name=.venv</span>
+</pre></div>
+</div>
+<p>Now, we can open Jupyter Lab by running the following command:</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">jupyter lab</span>
 </pre></div>
 </div>
-<p>from the command line of your working directory <em>while your virtual environment
-is activated</em>. This will open a jupyter notebook in your default browser. You may
-then check that the hash seed is set to 0 by running the following code in a cell
-of your notebook:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;PYTHONHASHSEED&#39;</span><span class="p">])</span>
+<p>You will now see that the <code class="docutils literal notranslate"><span class="pre">.venv</span></code> is available in your list of kernels:</p>
+<img alt="../_images/jupyter_lab2.png" class="align-center" src="../_images/jupyter_lab2.png" />
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>As opposed to VSCode, Jupyter Lab does not automatically use the virtual environment that
+you have in your project, so you will need to make sure that you have the correct kernel
+installed before opening the lab. You can see which kernel you are using by looking at the
+output of the following command:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">jupyter kernelspec list</span>
 </pre></div>
+</div>
+<p>this will output something like</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">Available kernels:</span>
+<span class="go">  .venv      /Users/username/.local/share/jupyter/kernels/.venv</span>
+<span class="go">  python3    /usr/local/share/jupyter/kernels/python3</span>
+</pre></div>
+</div>
+<p>You will then need to inspect the output of this command to see where the kernel is located.
+In the above example, we can see that the kernel <code class="docutils literal notranslate"><span class="pre">.venv</span></code> is located at
+<code class="docutils literal notranslate"><span class="pre">/Users/username/.local/share/jupyter/kernels/.venv</span></code> which is the correct location for the
+current working project. However, if we were to make a new project in
+<code class="docutils literal notranslate"><span class="pre">/Users/username/Desktop/another_project</span></code> and make a new virtual environment in this
+location with the same name of <code class="docutils literal notranslate"><span class="pre">.venv</span></code>, then, after running the command
+<code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">ipykernel</span> <span class="pre">install</span> <span class="pre">--user</span> <span class="pre">--name=.venv</span></code>,
+the kernel will still look like it is located at
+<code class="docutils literal notranslate"><span class="pre">/Users/username/.local/share/jupyter/kernels/.venv</span></code>, BUT this new kernel is actually
+the one for for the second project and not the original! This is important to note because
+if you are working on multiple projects and you have the same kernel name for each project,
+things can get a little confusing, so it is best to always reinstall the appropriate kernel
+before opening the project in Jupyter.</p>
+<p>Of course, an easy fix for this is to just use a different name for the kernel in each project.
+For example, I might make my kernel name for the project in
+<code class="docutils literal notranslate"><span class="pre">/Users/username/Desktop/gerrychain_docs</span></code>
+<code class="docutils literal notranslate"><span class="pre">venv_gerrychain_docs</span></code> via the command</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">python -m ipykernel install --user --name=venv_gerrychain_docs</span>
+</pre></div>
+</div>
+<p>and the kernel name for the project in
+<code class="docutils literal notranslate"><span class="pre">/Users/username/Desktop/another_project</span></code> <code class="docutils literal notranslate"><span class="pre">venv_another_project</span></code>.</p>
+</div>
+<p>We can now make a new notebook and select the kernel that we would like to use:</p>
+<img alt="../_images/make_new_file2.png" class="align-center" src="../_images/make_new_file2.png" />
+<img alt="../_images/select_kernel2.png" class="align-center" src="../_images/select_kernel2.png" />
+&nbsp;<p>Lastly, we can import GerryChain and use it in our notebook:</p>
+<img alt="../_images/show_import_working2.png" class="align-center" src="../_images/show_import_working2.png" />
 </div>
 </div>
 </div>

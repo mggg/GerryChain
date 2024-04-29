@@ -58,6 +58,7 @@
 <li class="toctree-l1"><a class="reference internal" href="updaters.html">Updaters</a></li>
 <li class="toctree-l1"><a class="reference internal" href="data.html">Good Data Practices</a></li>
 <li class="toctree-l1"><a class="reference internal" href="geometries.html">Working With Geometries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="optimizers.html">Optimization Methods of GerryChain</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -68,6 +69,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../topics/reproducibility.html">Reproducibility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../topics/tools.html">Evaluating districting plans in the real world</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../topics/contributing.html">Contributing to GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../topics/reporting.html">Reporting Issues</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Index</span></p>
 <ul>
@@ -101,7 +103,7 @@
   <div class="section" id="working-with-partitions">
 <h1>Working with Partitions<a class="headerlink" href="#working-with-partitions" title="Permalink to this headline">¶</a></h1>
 <div class="center-container">
-  <a href="https://github.com/mggg/GerryChain/raw/main/docs/_static/PA_VTDs.json" class="download-badge" download>Download PA File</a>
+  <a href="https://github.com/mggg/GerryChain/tree/main/docs/_static/PA_VTDs.json" class="download-badge" download>Download PA File</a>
 </div>
 <br style="line-height: 5px;"><p>This document walks you through the most common ways that you might work with a
 GerryChain <code class="docutils literal notranslate"><span class="pre">Partition</span></code> object.</p>
@@ -110,14 +112,25 @@ GerryChain <code class="docutils literal notranslate"><span class="pre">Partitio
 </pre></div>
 </div>
 <p>We’ll use our
-<a class="reference external" href="https://github.com/mggg/GerryChain/raw/main/docs/_static/PA_VTDs.json">Pennsylvania VTD json</a>
+<a class="reference external" href="https://github.com/mggg/GerryChain/tree/main/docs/_static/PA_VTDs.json">Pennsylvania VTD json</a>
 to create the graph we’ll use in these examples.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">graph</span> <span class="o">=</span> <span class="n">Graph</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="s2">&quot;./PA_VTDs.json&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 <div class="section" id="creating-a-partition">
 <h2>Creating a partition<a class="headerlink" href="#creating-a-partition" title="Permalink to this headline">¶</a></h2>
-<p>Here is how you can create a Partition:</p>
+<p>There are a couple of ways in which we could make a partition. The first way is to
+just make a random assignment with a population balance of <span class="math notranslate nohighlight">\(\varepsilon\)</span></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">partition</span> <span class="o">=</span> <span class="n">Partition</span><span class="o">.</span><span class="n">from_random_assignment</span><span class="p">(</span>
+    <span class="n">graph</span><span class="o">=</span><span class="n">graph</span><span class="p">,</span>
+    <span class="n">n_parts</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">epsilon</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
+    <span class="n">pop_col</span><span class="o">=</span><span class="s2">&quot;TOT_POP&quot;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>However, in this example we will create a partition based on the “2011_PLA_1” plan
+that already exists in the file:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">partition</span> <span class="o">=</span> <span class="n">Partition</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="s2">&quot;2011_PLA_1&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;cut_edges&quot;</span><span class="p">:</span> <span class="n">cut_edges</span><span class="p">})</span>
 </pre></div>
 </div>

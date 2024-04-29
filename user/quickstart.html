@@ -60,6 +60,7 @@
 <li class="toctree-l1"><a class="reference internal" href="updaters.html">Updaters</a></li>
 <li class="toctree-l1"><a class="reference internal" href="data.html">Good Data Practices</a></li>
 <li class="toctree-l1"><a class="reference internal" href="geometries.html">Working With Geometries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="optimizers.html">Optimization Methods of GerryChain</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -70,6 +71,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../topics/reproducibility.html">Reproducibility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../topics/tools.html">Evaluating districting plans in the real world</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../topics/contributing.html">Contributing to GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../topics/reporting.html">Reporting Issues</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Index</span></p>
 <ul>
@@ -108,7 +110,7 @@
 <p>Before we can start running Markov chains, you’ll need to:</p>
 <ul class="simple">
 <li><p>Install <code class="docutils literal notranslate"><span class="pre">gerrychain</span></code> from PyPI. See the <a class="reference internal" href="install.html"><span class="doc">installation guide</span></a> for instructions.</p></li>
-<li><p>Download <a class="reference external" href="https://github.com/mggg/GerryChain/raw/main/docs/_static/PA_VTDs.json">this example json of Pennsylvania’s VTDs</a>.</p></li>
+<li><p>Download <a class="reference external" href="https://github.com/mggg/GerryChain/tree/main/docs/_static/PA_VTDs.json">this example json of Pennsylvania’s VTDs</a>.</p></li>
 <li><p>Open your preferred Python environment (e.g. JupyterLab, IPython, or a <code class="docutils literal notranslate"><span class="pre">.py</span></code> file
 in your favorite editor) in the directory containing the <code class="docutils literal notranslate"><span class="pre">PA_VTDs.json</span></code> file
 that you downloaded.</p></li>
@@ -130,7 +132,7 @@ issues, feel free to send us a message at code[at]mggg[dot]org.</p>
 <div class="section" id="creating-the-initial-partition">
 <h2>Creating the initial partition<a class="headerlink" href="#creating-the-initial-partition" title="Permalink to this headline">¶</a></h2>
 <div class="center-container">
-  <a href="https://github.com/mggg/GerryChain/raw/main/docs/_static/PA_VTDs.json" class="download-badge" download>Download PA File</a>
+  <a href="https://github.com/mggg/GerryChain/tree/main/docs/_static/PA_VTDs.json" class="download-badge" download>Download PA File</a>
 </div>
 <br style="line-height: 5px;"><p>In order to run a Markov chain, we need an
 adjacency <code class="xref py py-class docutils literal notranslate"><span class="pre">Graph</span></code> of our VTD geometries and
@@ -217,7 +219,7 @@ population (that’s why we can call the <code class="docutils literal notransla
 </div>
 <div class="section" id="running-a-chain">
 <h2>Running a chain<a class="headerlink" href="#running-a-chain" title="Permalink to this headline">¶</a></h2>
-<p>Now that we have our initial partition, we can configure and run a <a class="reference internal" href="../api.html#gerrychain.MarkovChain" title="gerrychain.MarkovChain"><code class="xref py py-class docutils literal notranslate"><span class="pre">Markov</span> <span class="pre">chain</span></code></a>.
+<p>Now that we have our initial partition, we can configure and run a <code class="xref py py-class docutils literal notranslate"><span class="pre">Markov</span> <span class="pre">chain</span></code>.
 Let’s configure a short Markov chain to make sure everything works properly.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">gerrychain</span> <span class="kn">import</span> <span class="n">MarkovChain</span>
 <span class="kn">from</span> <span class="nn">gerrychain.constraints</span> <span class="kn">import</span> <span class="n">single_flip_contiguous</span>
@@ -264,7 +266,7 @@ rejected (by <code class="docutils literal notranslate"><span class="pre">accept
 </dd>
 </dl>
 <p>For more information on the details of our Markov chain implementation, consult
-the <a class="reference internal" href="../api.html#gerrychain.MarkovChain" title="gerrychain.MarkovChain"><code class="xref py py-class docutils literal notranslate"><span class="pre">gerrychain.MarkovChain</span></code></a> documentation and source code.</p>
+the <code class="xref py py-class docutils literal notranslate"><span class="pre">gerrychain.MarkovChain</span></code> documentation and source code.</p>
 <p>The above code configures a Markov chain called <code class="docutils literal notranslate"><span class="pre">chain</span></code>, but does <em>NOT</em> run it yet. We run the chain
 by iterating through all of the states using a <code class="docutils literal notranslate"><span class="pre">for</span></code> loop. As an example, let’s iterate through
 this chain and print out the population of district 1.</p>

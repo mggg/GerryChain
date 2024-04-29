@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Making an Environment Reproducible &mdash; GerryChain  documentation</title><link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script src="../_static/clipboard.min.js"></script>
+        <script src="../_static/copybutton.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #0099cd" >
+            <a href="../index.html" class="icon icon-home"> GerryChain
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../user/intro.html">Overview of the Chain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/quickstart.html">Getting started with GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/recom.html">Running a chain with ReCom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/partitions.html">Working with Partitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/updaters.html">Updaters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/data.html">Good Data Practices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/geometries.html">Working With Geometries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/optimizers.html">Optimization Methods of GerryChain</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">API Reference</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Topics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../topics/reproducibility.html">Reproducibility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../topics/tools.html">Evaluating districting plans in the real world</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../topics/contributing.html">Contributing to GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../topics/reporting.html">Reporting Issues</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Index</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../full_ref.html">Full Package Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #0099cd" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">GerryChain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Making an Environment Reproducible</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/repeated_subsections/reproducible_envs.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="making-an-environment-reproducible">
+<h1>Making an Environment Reproducible<a class="headerlink" href="#making-an-environment-reproducible" title="Permalink to this headline">¶</a></h1>
+<p>If you are working on a project wherein you would like to ensure
+particular runs are reproducible, it is necessary to invoke</p>
+<ul class="simple">
+<li><p><strong>MacOS/Linux</strong>: <code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">PYTHONHASHSEED=0</span></code></p></li>
+<li><p><strong>Windows</strong>:</p>
+<ul>
+<li><p>PowerShell <code class="docutils literal notranslate"><span class="pre">$env:PYTHONHASHSEED=0</span></code></p></li>
+<li><p>Command Prompt <code class="docutils literal notranslate"><span class="pre">set</span> <span class="pre">PYTHONHASHSEED=0</span></code></p></li>
+</ul>
+</li>
+</ul>
+<p>before running your code. This will ensure that the hash seed is deterministic
+which is important for the replication of spanning trees across your runs. If you
+would prefer to not have to do this every time, then you need to modify the
+activation script for the virtual environment. Again, this is different depending
+on your operating system:</p>
+<ul>
+<li><p><strong>MacOS/Linux</strong>: Open the file <code class="docutils literal notranslate"><span class="pre">.venv/bin/activate</span></code> located in your working
+directory using your favorite text editor
+and add the line <code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">PYTHONHASHSEED=0</span></code> after the <code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">PATH</span></code> command.
+So you should see something like:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">_OLD_VIRTUAL_PATH</span><span class="o">=</span><span class="s2">&quot;$PATH&quot;</span>
+<span class="n">PATH</span><span class="o">=</span><span class="s2">&quot;$VIRTUAL_ENV/Scripts:$PATH&quot;</span>
+<span class="n">export</span> <span class="n">PATH</span>
+
+<span class="n">export</span> <span class="n">PYTHONHASHSEED</span><span class="o">=</span><span class="mi">0</span>
+</pre></div>
+</div>
+<p>Then, verify that the hash seed is set to 0 in your Python environment by
+running <code class="docutils literal notranslate"><span class="pre">python</span></code> from the command line and typing
+<code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">os;</span> <span class="pre">print(os.environ['PYTHONHASHSEED'])</span></code>.</p>
+</li>
+<li><p><strong>Windows</strong>: To be safe, you will need to modify 3 files within your virtual
+environment:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">.venv\Scripts\activate</span></code>: Add the line <code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">PYTHONHASHSEED=0</span></code> after
+the <code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">PATH</span></code> command. So you should see something like:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">_OLD_VIRTUAL_PATH</span><span class="o">=</span><span class="s2">&quot;$PATH&quot;</span>
+<span class="n">PATH</span><span class="o">=</span><span class="s2">&quot;$VIRTUAL_ENV/Scripts:$PATH&quot;</span>
+<span class="n">export</span> <span class="n">PATH</span>
+
+<span class="n">export</span> <span class="n">PYTHONHASHSEED</span><span class="o">=</span><span class="mi">0</span>
+</pre></div>
+</div>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">.venv\Scripts\activate.bat</span></code>: Add the line <code class="docutils literal notranslate"><span class="pre">set</span> <span class="pre">PYTHONHASHSEED=0</span></code> to the
+end of the file. So you should see something like:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">defined</span> <span class="n">_OLD_VIRTUAL_PATH</span> <span class="nb">set</span> <span class="n">PATH</span><span class="o">=%</span><span class="n">_OLD_VIRTUAL_PATH</span><span class="o">%</span>
+<span class="k">if</span> <span class="ow">not</span> <span class="n">defined</span> <span class="n">_OLD_VIRTUAL_PATH</span> <span class="nb">set</span> <span class="n">_OLD_VIRTUAL_PATH</span><span class="o">=%</span><span class="n">PATH</span><span class="o">%</span>
+
+<span class="nb">set</span> <span class="n">PATH</span><span class="o">=%</span><span class="n">VIRTUAL_ENV</span><span class="o">%</span>\<span class="n">Scripts</span><span class="p">;</span><span class="o">%</span><span class="n">PATH</span><span class="o">%</span>
+<span class="n">rem</span> <span class="nb">set</span> <span class="n">VIRTUAL_ENV_PROMPT</span><span class="o">=</span><span class="p">(</span><span class="o">.</span><span class="n">venv</span><span class="p">)</span>
+<span class="nb">set</span> <span class="n">PYTHONHASHSEED</span><span class="o">=</span><span class="mi">0</span>
+</pre></div>
+</div>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">.venv\Scripts\Activate.ps1</span></code>: Add the line <code class="docutils literal notranslate"><span class="pre">$env:PYTHONHASHSEED=0</span></code> to the
+end of the before the signature block. So you should see something like:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span># Add the venv to the PATH
+Copy-Item -Path Env:PATH -Destination Env:_OLD_VIRTUAL_PATH
+$Env:PATH = &quot;$VenvExecDir$([System.IO.Path]::PathSeparator)$Env:PATH&quot;
+
+$env:PYTHONHASHSEED=0
+
+# SIG # Begin signature block
+</pre></div>
+</div>
+</li>
+</ul>
+</li>
+</ul>
+<p>After you have made these changes, verify that the hash seed is set to 0 in your
+Python environment by running <code class="docutils literal notranslate"><span class="pre">python</span></code> from the command line and typing
+<code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">os;</span> <span class="pre">print(os.environ['PYTHONHASHSEED'])</span></code> in the Python prompt.</p>
+<div class="section" id="reproducible-environments-in-vscode-and-jupyter-lab">
+<h2>Reproducible Environments in VSCode and Jupyter Lab<a class="headerlink" href="#reproducible-environments-in-vscode-and-jupyter-lab" title="Permalink to this headline">¶</a></h2>
+<p>In general, it is easier to use jupyter notebooks with bespoke virtual environments
+through a text editor like <a class="reference external" href="https://code.visualstudio.com/download">VSCode</a>, but
+we will also show how to do this using the standard Jupyter Lab interface as well.</p>
+<p>Regardless of which method you prefer, you will need to make sure that you have
+installed the <code class="docutils literal notranslate"><span class="pre">ipykernel</span></code> package into the virtual environment that you will be
+working with:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">pip install ipykernel</span>
+</pre></div>
+</div>
+<div class="section" id="id1">
+<h3>VSCode<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<p>First you will want to make sure that you have
+<a class="reference external" href="https://code.visualstudio.com/download">installed VSCode</a>.
+Then, you can click on “File” in the upper-left and select “Open Folder” to open the
+folder with your project and virtual environment in it. This should look something like
+this:</p>
+<img alt="../_images/open_the_folder.png" class="align-center" src="../_images/open_the_folder.png" />
+<p>Notice that I have the folder <code class="docutils literal notranslate"><span class="pre">.venv</span></code> in my file explorer. This is just my virtual
+environment that I created for this project.</p>
+<p>To install the Python extension, open the extensions view by clicking on the square
+icon on the left side of the window. Then, search for “Python” and install the
+extension that is published by Microsoft. This will allow you to use the Python
+interpreter in your virtual environment and will give you some helpful things like
+code completion and debugging in the event that you would like it.</p>
+<img alt="../_images/python_extension_vscode.png" class="align-center" src="../_images/python_extension_vscode.png" />
+<p>Likewise, we will want to install the “Jupyter” extension:</p>
+<img alt="../_images/jupyter_extension_vscode.png" class="align-center" src="../_images/jupyter_extension_vscode.png" />
+<p>Now let’s make a new jupyter notebook. You can do this by right-clicking in the file
+explorer (or by using the File menu) and selecting “New File”.</p>
+<img alt="../_images/Make_a_new_file.png" class="align-center" src="../_images/Make_a_new_file.png" />
+&nbsp;<p>Then, you will want to save the file with the extension <code class="docutils literal notranslate"><span class="pre">.ipynb</span></code> since we are making
+a jupyter notebook. We can now open the file and select the Python interpreter
+that we would like to use:</p>
+<img alt="../_images/select_kernel_vscode.png" class="align-center" src="../_images/select_kernel_vscode.png" />
+<img alt="../_images/select_python_env.png" class="align-center" src="../_images/select_python_env.png" />
+<img alt="../_images/selecting_correct_venv.png" class="align-center" src="../_images/selecting_correct_venv.png" />
+<p>And now we are done! We can now use all of the packages in our <code class="docutils literal notranslate"><span class="pre">.venv</span></code> virtual environment
+inside of our jupyter notebook:</p>
+<img alt="../_images/show_gerrychain_import.png" class="align-center" src="../_images/show_gerrychain_import.png" />
+<p>Of course, if you would like to, you may also use a different name for your virtual environment,
+or you can even use the same process to allow for multiple virtual environments in the same
+project!</p>
+</div>
+<div class="section" id="jupyter-lab-notebook">
+<h3>Jupyter Lab / Notebook<a class="headerlink" href="#jupyter-lab-notebook" title="Permalink to this headline">¶</a></h3>
+<p>In order to use Jupyter Lab or Jupyter Notebook, we will need to make sure that it is installed
+for our virtual environment. This can be done by running the following command:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">pip install jupyter</span>
+</pre></div>
+</div>
+<p>Then, we will want to install the kernel for our virtual environment. This can be done by running
+the following command:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">python -m ipykernel install --user --name=.venv</span>
+</pre></div>
+</div>
+<p>Now, we can open Jupyter Lab by running the following command:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">jupyter lab</span>
+</pre></div>
+</div>
+<p>You will now see that the <code class="docutils literal notranslate"><span class="pre">.venv</span></code> is available in your list of kernels:</p>
+<img alt="../_images/jupyter_lab.png" class="align-center" src="../_images/jupyter_lab.png" />
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>As opposed to VSCode, Jupyter Lab does not automatically use the virtual environment that
+you have in your project, so you will need to make sure that you have the correct kernel
+installed before opening the lab. You can see which kernel you are using by looking at the
+output of the following command:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">jupyter kernelspec list</span>
+</pre></div>
+</div>
+<p>this will output something like</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">Available kernels:</span>
+<span class="go">  .venv      /Users/username/.local/share/jupyter/kernels/.venv</span>
+<span class="go">  python3    /usr/local/share/jupyter/kernels/python3</span>
+</pre></div>
+</div>
+<p>You will then need to inspect the output of this command to see where the kernel is located.
+In the above example, we can see that the kernel <code class="docutils literal notranslate"><span class="pre">.venv</span></code> is located at
+<code class="docutils literal notranslate"><span class="pre">/Users/username/.local/share/jupyter/kernels/.venv</span></code> which is the correct location for the
+current working project. However, if we were to make a new project in
+<code class="docutils literal notranslate"><span class="pre">/Users/username/Desktop/another_project</span></code> and make a new virtual environment in this
+location with the same name of <code class="docutils literal notranslate"><span class="pre">.venv</span></code>, then, after running the command
+<code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">ipykernel</span> <span class="pre">install</span> <span class="pre">--user</span> <span class="pre">--name=.venv</span></code>,
+the kernel will still look like it is located at
+<code class="docutils literal notranslate"><span class="pre">/Users/username/.local/share/jupyter/kernels/.venv</span></code>, BUT this new kernel is actually
+the one for for the second project and not the original! This is important to note because
+if you are working on multiple projects and you have the same kernel name for each project,
+things can get a little confusing, so it is best to always reinstall the appropriate kernel
+before opening the project in Jupyter.</p>
+<p>Of course, an easy fix for this is to just use a different name for the kernel in each project.
+For example, I might make my kernel name for the project in
+<code class="docutils literal notranslate"><span class="pre">/Users/username/Desktop/gerrychain_docs</span></code>
+<code class="docutils literal notranslate"><span class="pre">venv_gerrychain_docs</span></code> via the command</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">python -m ipykernel install --user --name=venv_gerrychain_docs</span>
+</pre></div>
+</div>
+<p>and the kernel name for the project in
+<code class="docutils literal notranslate"><span class="pre">/Users/username/Desktop/another_project</span></code> <code class="docutils literal notranslate"><span class="pre">venv_another_project</span></code>.</p>
+</div>
+<p>We can now make a new notebook and select the kernel that we would like to use:</p>
+<img alt="../_images/make_new_file.png" class="align-center" src="../_images/make_new_file.png" />
+<img alt="../_images/select_kernel.png" class="align-center" src="../_images/select_kernel.png" />
+&nbsp;<p>Lastly, we can import GerryChain and use it in our notebook:</p>
+<img alt="../_images/show_import_working.png" class="align-center" src="../_images/show_import_working.png" />
+</div>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Metric Geometry and Gerrymandering Group.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
