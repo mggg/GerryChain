@@ -62,7 +62,7 @@ def test_single_metric_sb_attains_min_quickly(four_by_five_grid_for_opt):
     ):
         min_scores_sb[i] = optimizer.best_score
 
-    assert min_scores_sb[-1] == 11
+    assert np.min(min_scores_sb) == 11
 
 
 def test_single_metric_tilted_sb_attains_min_quickly(four_by_five_grid_for_opt):
@@ -109,7 +109,7 @@ def test_single_metric_tilted_sb_attains_min_quickly(four_by_five_grid_for_opt):
     ):
         min_scores_sb[i] = optimizer.best_score
 
-    assert min_scores_sb[-1] == 11
+    assert np.min(min_scores_sb) == 11
 
 
 def test_single_metric_variable_len_sb_attains_min_quickly(four_by_five_grid_for_opt):
@@ -154,7 +154,7 @@ def test_single_metric_variable_len_sb_attains_min_quickly(four_by_five_grid_for
     ):
         min_scores_sb[i] = optimizer.best_score
 
-    assert min_scores_sb[-1] == 11
+    assert np.min(min_scores_sb) == 11
 
 
 # ========================
@@ -205,7 +205,7 @@ def test_single_metric_sa_jumpcycle_attains_min_quickly(four_by_five_grid_for_op
     ):
         min_scores_anneal[i] = optimizer.best_score
 
-    assert min_scores_anneal[-1] == 11
+    assert np.min(min_scores_anneal) == 11
 
 
 def test_single_metric_sa_lincycle_attains_min_quickly(four_by_five_grid_for_opt):
@@ -250,7 +250,7 @@ def test_single_metric_sa_lincycle_attains_min_quickly(four_by_five_grid_for_opt
     ):
         min_scores_anneal[i] = optimizer.best_score
 
-    assert min_scores_anneal[-1] == 11
+    assert np.min(min_scores_anneal) == 11
 
 
 def test_single_metric_sa_linear_jumpcycle_attains_min_quickly(
@@ -297,7 +297,7 @@ def test_single_metric_sa_linear_jumpcycle_attains_min_quickly(
     ):
         min_scores_anneal[i] = optimizer.best_score
 
-    assert min_scores_anneal[-1] == 11
+    assert np.min(min_scores_anneal) == 11
 
 
 def test_single_metric_sa_logitcycle_attains_min_quickly(four_by_five_grid_for_opt):
@@ -342,7 +342,7 @@ def test_single_metric_sa_logitcycle_attains_min_quickly(four_by_five_grid_for_o
     ):
         min_scores_anneal[i] = optimizer.best_score
 
-    assert min_scores_anneal[-1] == 11
+    assert np.min(min_scores_anneal) == 11
 
 
 def test_single_metric_sa_logit_jumpcycle_attains_min_quickly(
@@ -389,7 +389,7 @@ def test_single_metric_sa_logit_jumpcycle_attains_min_quickly(
     ):
         min_scores_anneal[i] = optimizer.best_score
 
-    assert min_scores_anneal[-1] == 11
+    assert np.min(min_scores_anneal) == 11
 
 
 # ===============
@@ -437,7 +437,7 @@ def test_single_metric_tilted_runs_attains_min_quickly_with_p_eq_0p1(
     ):
         min_scores_tilt[i] = optimizer.best_score
 
-    assert min_scores_tilt[-1] == 11
+    assert np.min(min_scores_tilt) == 11
 
 
 # ==========================

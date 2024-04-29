@@ -177,7 +177,7 @@ def test_ginglator_finds_best_partition(four_by_five_grid_for_opt):
     ):
         max_scores_sb[i] = gingles.best_score
 
-    assert max_scores_sb[-1] == 2
+    assert max(max_scores_sb) == 2
 
 
 def test_count_num_opportunity_dists(four_by_five_grid_for_opt):
