@@ -52,7 +52,8 @@ class SingleMetricOptimizer:
         :param optimization_metric: The score function with which to optimize over. This should have
             the signature: ``Partition -> 'a`` where 'a is comparable.
         :type optimization_metric: Callable[[Partition], Any]
-        :param maximize: Boolean indicating whether to maximize or minimize the function. Defaults to True for maximize.
+        :param maximize: Boolean indicating whether to maximize or minimize the function.
+            Defaults to True for maximize.
         :type maximize: bool, optional
         :param step_indexer: Name of the updater tracking the partitions step in the chain. If not
             implemented on the partition the constructor creates and adds it. Defaults to "step".
@@ -522,7 +523,8 @@ class SingleMetricOptimizer:
         :param stuck_buffer: How many bursts of a given length with no improvement to allow before
             increasing the burst length.
         :type stuck_buffer: int
-        :param accept: Function accepting or rejecting the proposed state. Defaults to :func:`~gerrychain.accept.always_accept`.
+        :param accept: Function accepting or rejecting the proposed state. Defaults to
+            :func:`~gerrychain.accept.always_accept`.
         :type accept: Callable[[Partition], bool], optional
         :param with_progress_bar: Whether or not to draw tqdm progress bar. Defaults to False.
         :type with_progress_bar: bool, optional
