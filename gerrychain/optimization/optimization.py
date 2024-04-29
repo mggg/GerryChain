@@ -12,7 +12,7 @@ class SingleMetricOptimizer:
     SingleMetricOptimizer represents the class of algorithms / chains that optimize plans with
     respect to a single metric.  An instance of this class encapsulates the following state
     information:
-        * the dualgraph and updaters via the initial partition,
+        * the dual graph and updaters via the initial partition,
         * the constraints new proposals are subject to,
         * the metric over which to optimize,
         * and whether or not to seek maximal or minimal values of the metric.
@@ -50,7 +50,7 @@ class SingleMetricOptimizer:
         :param initial_state: Initial state of the optimizer.
         :type initial_state: Partition
         :param optimization_metric: The score function with which to optimize over. This should have
-            the signature: ``Partition -> 'a`` where 'a is Comparable
+            the signature: ``Partition -> 'a`` where 'a is comparable.
         :type optimization_metric: Callable[[Partition], Any]
         :param maximize: Boolean indicating whether to maximize or minimize the function. Defaults to True for maximize.
         :type maximize: bool, optional
@@ -135,7 +135,7 @@ class SingleMetricOptimizer:
         :param p: The probability of accepting a worse score.
         :type p: float
 
-        :return: A acceptance function for tilted chains.
+        :return: An acceptance function for tilted chains.
         :rtype: Callable[[Partition], bool]
         """
 
@@ -284,7 +284,7 @@ class SingleMetricOptimizer:
     ) -> Callable[[int], float]:
         """
         Class method that binds and returns a logit hot-cool cycle beta temperature function, where
-        the chain runs hot for some given duration, down according to the logit function
+        the chain runs hot for some given duration, cools down according to the logit function
 
         :math:`f(x) = (log(x/(1-x)) + 5)/10`
 
@@ -334,7 +334,23 @@ class SingleMetricOptimizer:
     def logit_jumpcycle_beta_function(
         cls, duration_hot: int, duration_cooldown: int, duration_cold: int
     ) -> Callable[[int], float]:
+        """
+        Class method that binds and returns a logit hot-cool cycle beta temperature function, where
+        the chain runs hot for some given duration, cools down according to the logit function
 
+        :math:`f(x) = (log(x/(1-x)) + 5)/10`
+
+        for some duration, and then runs cold for some duration before jumping back to hot and
+        repeating.
+
+        :param duration_hot: Number of steps to run chain hot.
+        :type duration_hot: int
+        :param duration_cooldown: Number of steps needed to transition from hot to cold or
+            vice-versa.
+        :type duration_cooldown: int
+        :param duration_cold: Number of steps to run chain cold.
+        :type duration_cold: int
+        """
         cycle_length = duration_hot + duration_cooldown + duration_cold
 
         # this will scale from 0 to 1 approximately
@@ -375,6 +391,8 @@ class SingleMetricOptimizer:
         :param accept: Function accepting or rejecting the proposed state. Defaults to
             :func:`~gerrychain.accept.always_accept`.
         :type accept: Callable[[Partition], bool], optional
+        :param with_progress_bar: Whether or not to draw tqdm progress bar. Defaults to False.
+        :type with_progress_bar: bool, optional
 
         :return: Partition generator.
         :rtype: Generator[Partition]
@@ -423,7 +441,8 @@ class SingleMetricOptimizer:
             the magnitude of change in score.
         :type beta_function: Callable[[int], float]
         :param beta_magnitude: Scaling parameter for how much to weight changes in score.
-        :type beta_magnitude: float
+            Defaults to 1.
+        :type beta_magnitude: float, optional
         :param with_progress_bar: Whether or not to draw tqdm progress bar. Defaults to False.
         :type with_progress_bar: bool, optional
 

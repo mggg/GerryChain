@@ -79,20 +79,20 @@ class Partition:
         """
         Create a Partition with a random assignment of nodes to districts.
 
-        :param graph: The graph to create the Partition from
+        :param graph: The graph to create the Partition from.
         :type graph: :class:`~gerrychain.Graph`
-        :param n_parts: The number of districts to divide the nodes into
+        :param n_parts: The number of districts to divide the nodes into.
         :type n_parts: int
         :param epsilon: The maximum relative population deviation from the ideal
-            population. Should be in [0,1]
         :type epsilon: float
-        :param pop_col: The column of the graph's node data that holds the population data
+            population. Should be in [0,1].
+        :param pop_col: The column of the graph's node data that holds the population data.
         :type pop_col: str
-        :param updaters: dictionary of updaters
+        :param updaters: Dictionary of updaters
         :type updaters: Optional[Dict[str, Callable]], optional
         :param use_default_updaters: If `False`, do not include default updaters.
         :type use_default_updaters: bool, optional
-        :param flips: dictionary assigning nodes of the graph to their new districts
+        :param flips: Dictionary assigning nodes of the graph to their new districts.
         :type flips: Optional[Dict], optional
         :param method: The function to use to partition the graph into ``n_parts``. Defaults to
             :func:`~gerrychain.tree.recursive_tree_part`.

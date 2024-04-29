@@ -821,14 +821,14 @@ def bipartition_tree_random(
     Builds up a connected subgraph with a connected complement whose population
     is ``epsilon * pop_target`` away from ``pop_target``.
 
-    :param graph: The graph to partition
+    :param graph: The graph to partition.
     :type graph: nx.Graph
-    :param pop_col: The node attribute holding the population of each node
+    :param pop_col: The node attribute holding the population of each node.
     :type pop_col: str
-    :param pop_target: The target population for the returned subset of nodes
+    :param pop_target: The target population for the returned subset of nodes.
     :type pop_target: Union[int, float]
     :param epsilon: The allowable deviation from  ``pop_target`` (as a percentage of
-        ``pop_target``) for the subgraph's population
+        ``pop_target``) for the subgraph's population.
     :type epsilon: float
     :param node_repeats: A parameter for the algorithm: how many different choices
         of root to use before drawing a new spanning tree. Defaults to 1.
@@ -898,19 +898,19 @@ def epsilon_tree_bipartition(
     Uses :func:`~gerrychain.tree.bipartition_tree` to partition a tree into
     two parts of population ``pop_target`` (within ``epsilon``).
 
-    :param graph: The graph
+    :param graph: The graph to partition into two :math:`\varepsilon`-balanced parts.
     :type graph: nx.Graph
-    :param parts: Iterable of part labels (like ``[0,1,2]`` or ``range(4)``)
+    :param parts: Iterable of part (district) labels (like ``[0,1,2]`` or ``range(4)``).
     :type parts: Sequence
-    :param pop_target: Target population for each part of the partition
+    :param pop_target: Target population for each part of the partition.
     :type pop_target: Union[float, int]
-    :param pop_col: Node attribute key holding population data
+    :param pop_col: Node attribute key holding population data.
     :type pop_col: str
     :param epsilon: How far (as a percentage of ``pop_target``) from ``pop_target`` the parts
-        of the partition can be
+        of the partition can be.
     :type epsilon: float
     :param node_repeats: Parameter for :func:`~gerrychain.tree_methods.bipartition_tree` to use.
-        Defaluts to 1.
+        Defaults to 1.
     :type node_repeats: int, optional
     :param method: The partition method to use. Defaults to
         `partial(bipartition_tree, max_attempts=10000)`.
@@ -982,16 +982,16 @@ def recursive_tree_part(
     ``len(parts)`` parts of population ``pop_target`` (within ``epsilon``). Can be used to
     generate initial seed plans or to implement ReCom-like "merge walk" proposals.
 
-    :param graph: The graph
+    :param graph: The graph to partition into ``len(parts)`` :math:`\varepsilon`-balanced parts.
     :type graph: nx.Graph
-    :param parts: Iterable of part labels (like ``[0,1,2]`` or ``range(4)``)
+    :param parts: Iterable of part (district) labels (like ``[0,1,2]`` or ``range(4)``).
     :type parts: Sequence
-    :param pop_target: Target population for each part of the partition
+    :param pop_target: Target population for each part of the partition.
     :type pop_target: Union[float, int]
-    :param pop_col: Node attribute key holding population data
+    :param pop_col: Node attribute key holding population data.
     :type pop_col: str
     :param epsilon: How far (as a percentage of ``pop_target``) from ``pop_target`` the parts
-        of the partition can be
+        of the partition can be.
     :type epsilon: float
     :param node_repeats: Parameter for :func:`~gerrychain.tree_methods.bipartition_tree` to use.
         Defaluts to 1.

@@ -73,7 +73,7 @@ Reproducible Environments in VSCode and Jupyter Lab
 
 In general, it is easier to use jupyter notebooks with bespoke virtual environments
 through a text editor like `VSCode <https://code.visualstudio.com/download>`_, but
-we will show how to do this using the standard Jupyter Lab interface as well.
+we will also show how to do this using the standard Jupyter Lab interface as well.
 
 Regardless of which method you prefer, you will need to make sure that you have
 installed the ``ipykernel`` package into the virtual environment that you will be

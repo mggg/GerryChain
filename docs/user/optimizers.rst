@@ -3,26 +3,29 @@ Optimization Methods of GerryChain
 ==================================
 
 In GerryChain, we provide a class known as the ``SingleMetricOptimizer`` as well as a
-``Gingelator``` subclass that allow us to perform optimization runs.
+``Gingelator`` subclass that allow us to perform optimization runs.
 
 
 Currently, there are 3 different optimization methods available in GerryChain:
 
 - **Short Bursts**: This method chains together a series of neutral explorers. The main
-    idea is to run the chain for a short period of time (short burst) and then continue
-    the chain from the partition that maximizes the objective function within the most
-    recent short burst. For more information, please refer to 
-    `this paper <https://arxiv.org/abs/2011.02288>`_.
+  idea is to run the chain for a short period of time (short burst) and then continue
+  the chain from the partition that maximizes the objective function within the most
+  recent short burst. For more information, please refer to 
+  `this paper <https://arxiv.org/abs/2011.02288>`_.
+
 - **Simulated Annealing**: This method varies the probablity of accepting a worse plan
-   according to a temperature schedule which ranges from 0 to 1.
-- **Tilted Runs**: This method accepts a worse plan with a fixed probability :math:`p`. 
+  according to a temperature schedule which ranges from 0 to 1.
+
+- **Tilted Runs**: This method accepts a worse plan with a fixed probability :math:`p`,
+  and always accepts better plans.
 
 
 While sampling naively with GerryChain can give us an understanding of the neutral
 baseline for a state, there are often cases where we want to find plans with
 properties that are rare to encounter in a neutral run. Many states have
 laws/guidelines that state that plans should be as compact as feasibly possible, maximize
-preservation of political boundaries and/or communities of interest, some even look to
+preservation of political boundaries and/or communities of interest; some even look to
 minimize double bunking of incumbents or seek proportionality/competitiveness in
 contests. Heuristic optimization methods can be used to find example plans with these
 properties and to explore the trade-offs between them.
@@ -96,8 +99,8 @@ And now we load in our file and set up our initial chain.
 Using ``SingleMetricOptimizer``
 -------------------------------
 
-Now the `SingleMetricOptimizer` is set up as a wrapper around our basic `MarkovChain`
-class, so interacting with it should be familiar. To set up our optimizer, we, we simply
+Now the ``SingleMetricOptimizer`` is set up as a wrapper around our basic ``MarkovChain``
+class, so interacting with it should be familiar. To set up our optimizer, we simply
 pass it a proposal function, some constraints, an initial state, and the objective function:
 
 .. code:: python
@@ -164,13 +167,12 @@ This should give you something like:
 Using ``Gingleator``
 --------------------
 
-Named for the Supreme Court case *Thornburg v. Gingles*, which created their precedent
-as one of the litmus tests in bringing forth a VRA court case, **Gingles' Districts** are
+Named for the Supreme Court case *Thornburg v. Gingles*, **Gingles' Districts** are
 districts that are 50% + 1 of a minority population subgroup (more colloquially called
 majority-minority districts).  It is common to seek plans with greater/maximal numbers
-of gingles districts to understand the landscape of the state space.
+of Gingles' districts to understand the landscape of the state space.
 
-The `Gingleator` class is a subclass of the `SingleMetricOptimizer` class, so much of
+The ``Gingleator`` class is a subclass of the ``SingleMetricOptimizer`` class, so much of
 the setup is the same:
 
 .. code:: python
@@ -237,8 +239,7 @@ This should give you something like:
     :align: center
     :alt: Gingleator Optimization Method Comparison Image
 
-And we can see a little better how each method performs over the course of the run
-by looking at all of the scores relative to the previous graph:
+And we can see a little better how each method performs over the course of the run:
 
 .. image:: ./images/gingleator_all.png
     :align: center

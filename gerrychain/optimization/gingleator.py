@@ -39,26 +39,29 @@ class Gingleator(SingleMetricOptimizer):
         :type constraints: Union[Iterable[Callable], Validator, Iterable[Bounds], Callable]
         :param initial_state: Initial :class:`gerrychain.partition.Partition` class.
         :type initial_state: Partition
-        :param minority_perc_col: Which updater is a mapping of district ids to the fraction of
-            minority population within that district. Defaults to none.
-        :type minority_perc_col: str
-        :param threshold: Beyond which fraction to consider something a "Gingles"
+        :param minority_perc_col: The name of the updater mapping of district ids to the 
+            fraction of minority population within that district. If no updater is 
+            specified, one is made according to the ``min_perc_column_name`` parameter.
+            Defaults to None.
+        :type minority_perc_col: Optional[str]
+        :param threshold: Fraction beyond which to consider something a "Gingles"
             (or opportunity) district. Defaults to 0.5.
-        :type threshold: float
-        :param score_function: The function to using doing optimization.  Should have the
+        :type threshold: float, optional
+        :param score_function: The function to use during optimization.  Should have the
             signature ``Partition * str (minority_perc_col) * float (threshold) ->
             'a where 'a is Comparable``.  This class implements a few potential choices as class
             methods. Defaults to None.
-        :type score_function: Callable
-        :param minority_pop_col:  If minority_perc_col is defined, the minority population column
-            with which to compute percentage. Defaults to None.
-        :type minority_pop_col: str
+        :type score_function: Optional[Callable]
+        :param minority_pop_col:  If minority_perc_col is not defined, the minority population 
+            column with which to compute percentage. Defaults to None.
+        :type minority_pop_col: Optional[str]
         :param total_pop_col: If minority_perc_col is defined, the total population column with
             which to compute percentage. Defaults to "TOTPOP".
-        :type total_pop_col: str
-        :param min_perc_column_name: If minority_perc_col is defined, the name to give the created
-            percentage updater. Defaults to "_gingleator_auxiliary_helper_updater_min_perc_col".
-        :type min_perc_column_name: str
+        :type total_pop_col: str, optional
+        :param min_perc_column_name: If minority_perc_col is not defined, the name to give the 
+            created percentage updater. Defaults to 
+            "_gingleator_auxiliary_helper_updater_min_perc_col".
+        :type min_perc_column_name: str, optional
         """
         if minority_perc_col is None and minority_pop_col is None:
             raise ValueError(
@@ -103,10 +106,10 @@ class Gingleator(SingleMetricOptimizer):
 
         :param part: Partition to score.
         :type part: Partition
-        :param minority_perc_col: Which updater is a mapping of district ids to the fraction of
-            minority population within that district.
+        :param minority_perc_col: The name of the updater mapping of district ids to the 
+            fraction of minority population within that district. 
         :type minority_perc_col: str
-        :param threshold: Beyond which fraction to consider something a "Gingles"
+        :param threshold: Fraction beyond which to consider something a "Gingles"
             (or opportunity) district.
         :type threshold: float
 
@@ -126,10 +129,10 @@ class Gingleator(SingleMetricOptimizer):
 
         :param part: Partition to score.
         :type part: Partition
-        :param minority_perc_col: Which updater is a mapping of district ids to the fraction of
-            minority population within that district.
+        :param minority_perc_col: The name of the updater mapping of district ids to the 
+            fraction of minority population within that district. 
         :type minority_perc_col: str
-        :param threshold: Beyond which fraction to consider something a "Gingles"
+        :param threshold: Fraction beyond which to consider something a "Gingles"
             (or opportunity) district.
         :type threshold: float
 
@@ -152,10 +155,10 @@ class Gingleator(SingleMetricOptimizer):
 
         :param part: Partition to score.
         :type part: Partition
-        :param minority_perc_col: Which updater is a mapping of district ids to the fraction of
-            minority population within that district.
+        :param minority_perc_col: The name of the updater mapping of district ids to the 
+            fraction of minority population within that district. 
         :type minority_perc_col: str
-        :param threshold: Beyond which fraction to consider something a "Gingles"
+        :param threshold: Fraction beyond which to consider something a "Gingles"
             (or opportunity) district.
         :type threshold: float
 
@@ -182,10 +185,10 @@ class Gingleator(SingleMetricOptimizer):
 
         :param part: Partition to score.
         :type part: Partition
-        :param minority_perc_col: Which updater is a mapping of district ids to the fraction of
-            minority population within that district.
+        :param minority_perc_col: The name of the updater mapping of district ids to the 
+            fraction of minority population within that district. 
         :type minority_perc_col: str
-        :param threshold: Beyond which fraction to consider something a "Gingles"
+        :param threshold: Fraction beyond which to consider something a "Gingles"
             (or opportunity) district.
         :type threshold: float
 
@@ -210,10 +213,10 @@ class Gingleator(SingleMetricOptimizer):
 
         :param part: Partition to score.
         :type part: Partition
-        :param minority_perc_col: Which updater is a mapping of district ids to the fraction of
-            minority population within that district.
+        :param minority_perc_col: The name of the updater mapping of district ids to the 
+            fraction of minority population within that district. 
         :type minority_perc_col: str
-        :param threshold: Beyond which fraction to consider something a "Gingles"
+        :param threshold: Fraction beyond which to consider something a "Gingles"
             (or opportunity) district.
         :type threshold: float
 
