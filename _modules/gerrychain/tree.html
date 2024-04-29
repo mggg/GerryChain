@@ -48,6 +48,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../user/updaters.html">Updaters</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../user/data.html">Good Data Practices</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../user/geometries.html">Working With Geometries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../user/optimizers.html">Optimization Methods of GerryChain</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -58,6 +59,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../topics/reproducibility.html">Reproducibility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../topics/tools.html">Evaluating districting plans in the real world</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../topics/contributing.html">Contributing to GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../topics/reporting.html">Reporting Issues</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Index</span></p>
 <ul>
@@ -114,7 +116,7 @@
 <span class="sd">- random: Provides random number generation for probabilistic approaches.</span>
 <span class="sd">- typing: Used for type hints.</span>
 
-<span class="sd">Last Updated: 30 Jan 2024</span>
+<span class="sd">Last Updated: 25 April 2024</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
@@ -169,9 +171,11 @@
     <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">edges</span><span class="p">():</span>
         <span class="n">weight</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">region_surcharge</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c1"># We surcharge edges that cross regions and those that are not in any region</span>
             <span class="k">if</span> <span class="p">(</span>
                 <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">]][</span><span class="n">key</span><span class="p">]</span> <span class="o">!=</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">]][</span><span class="n">key</span><span class="p">]</span>
-                <span class="ow">and</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">]][</span><span class="n">key</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                <span class="ow">or</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">]][</span><span class="n">key</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span>
+                <span class="ow">or</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">]][</span><span class="n">key</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span>
             <span class="p">):</span>
                 <span class="n">weight</span> <span class="o">+=</span> <span class="n">value</span>
 
@@ -277,9 +281,32 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">subsets</span><span class="p">[</span><span class="n">parent</span><span class="p">]</span> <span class="o">|=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subsets</span><span class="p">[</span><span class="n">node</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_degrees</span><span class="p">[</span><span class="n">parent</span><span class="p">]</span> <span class="o">-=</span> <span class="mi">1</span></div>
 
-<div class="viewcode-block" id="PopulatedGraph.has_ideal_population"><a class="viewcode-back" href="../../full_ref.html#gerrychain.tree.PopulatedGraph.has_ideal_population">[docs]</a>    <span class="k">def</span> <span class="nf">has_ideal_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<div class="viewcode-block" id="PopulatedGraph.has_ideal_population"><a class="viewcode-back" href="../../full_ref.html#gerrychain.tree.PopulatedGraph.has_ideal_population">[docs]</a>    <span class="k">def</span> <span class="nf">has_ideal_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">one_sided_cut</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Checks if a node has an ideal population within the graph up to epsilon.</span>
+
+<span class="sd">        :param node: The node to check.</span>
+<span class="sd">        :type node: Any</span>
+<span class="sd">        :param one_sided_cut: Whether or not we are cutting off a single district. When</span>
+<span class="sd">            set to False, we check if the node we are cutting and the remaining graph</span>
+<span class="sd">            are both within epsilon of the ideal population. When set to True, we only</span>
+<span class="sd">            check if the node we are cutting is within epsilon of the ideal population.</span>
+<span class="sd">            Defaults to False.</span>
+<span class="sd">        :type one_sided_cut: bool, optional</span>
+
+<span class="sd">        :returns: True if the node has an ideal population within the graph up to epsilon.</span>
+<span class="sd">        :rtype: bool</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">one_sided_cut</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span>
+                <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">ideal_pop</span><span class="p">)</span>
+                <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ideal_pop</span>
+            <span class="p">)</span>
+
         <span class="k">return</span> <span class="p">(</span>
-            <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">ideal_pop</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ideal_pop</span>
+            <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">ideal_pop</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ideal_pop</span>
+            <span class="ow">and</span> <span class="nb">abs</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">tot_pop</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="p">[</span><span class="n">node</span><span class="p">])</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">ideal_pop</span><span class="p">)</span>
+            <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ideal_pop</span>
         <span class="p">)</span></div>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -301,17 +328,25 @@
 <span class="n">Cut</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="s2">&quot;Represents a cut in a graph.&quot;</span>
 <span class="n">Cut</span><span class="o">.</span><span class="n">edge</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="s2">&quot;The edge where the cut is made. Defaults to None.&quot;</span>
 <span class="n">Cut</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="s2">&quot;The weight assigned to the edge (if any). Defaults to None.&quot;</span>
-<span class="n">Cut</span><span class="o">.</span><span class="n">subset</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="s2">&quot;The (frozen) subset of nodes on one side of the cut. Defaults to None.&quot;</span>
+<span class="n">Cut</span><span class="o">.</span><span class="n">subset</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">&quot;The (frozen) subset of nodes on one side of the cut. Defaults to None.&quot;</span>
+<span class="p">)</span>
 
 
 <div class="viewcode-block" id="find_balanced_edge_cuts_contraction"><a class="viewcode-back" href="../../full_ref.html#gerrychain.tree.find_balanced_edge_cuts_contraction">[docs]</a><span class="k">def</span> <span class="nf">find_balanced_edge_cuts_contraction</span><span class="p">(</span>
-    <span class="n">h</span><span class="p">:</span> <span class="n">PopulatedGraph</span><span class="p">,</span> <span class="n">choice</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span>
+    <span class="n">h</span><span class="p">:</span> <span class="n">PopulatedGraph</span><span class="p">,</span> <span class="n">one_sided_cut</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">choice</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Cut</span><span class="p">]:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Find balanced edge cuts using contraction.</span>
 
 <span class="sd">    :param h: The populated graph.</span>
 <span class="sd">    :type h: PopulatedGraph</span>
+<span class="sd">    :param one_sided_cut: Whether or not we are cutting off a single district. When</span>
+<span class="sd">        set to False, we check if the node we are cutting and the remaining graph</span>
+<span class="sd">        are both within epsilon of the ideal population. When set to True, we only</span>
+<span class="sd">        check if the node we are cutting is within epsilon of the ideal population.</span>
+<span class="sd">        Defaults to False.</span>
+<span class="sd">    :type one_sided_cut: bool, optional</span>
 <span class="sd">    :param choice: The function used to make random choices.</span>
 <span class="sd">    :type choice: Callable, optional</span>
 
@@ -327,13 +362,13 @@
     <span class="n">leaves</span> <span class="o">=</span> <span class="n">deque</span><span class="p">(</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">h</span> <span class="k">if</span> <span class="n">h</span><span class="o">.</span><span class="n">degree</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
     <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">leaves</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="n">leaf</span> <span class="o">=</span> <span class="n">leaves</span><span class="o">.</span><span class="n">popleft</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">h</span><span class="o">.</span><span class="n">has_ideal_population</span><span class="p">(</span><span class="n">leaf</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">h</span><span class="o">.</span><span class="n">has_ideal_population</span><span class="p">(</span><span class="n">leaf</span><span class="p">,</span> <span class="n">one_sided_cut</span><span class="o">=</span><span class="n">one_sided_cut</span><span class="p">):</span>
             <span class="n">e</span> <span class="o">=</span> <span class="p">(</span><span class="n">leaf</span><span class="p">,</span> <span class="n">pred</span><span class="p">[</span><span class="n">leaf</span><span class="p">])</span>
             <span class="n">cuts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                 <span class="n">Cut</span><span class="p">(</span>
                     <span class="n">edge</span><span class="o">=</span><span class="n">e</span><span class="p">,</span>
                     <span class="n">weight</span><span class="o">=</span><span class="n">h</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">e</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;random_weight&quot;</span><span class="p">,</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()),</span>
-                    <span class="n">subset</span><span class="o">=</span><span class="nb">frozenset</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">subsets</span><span class="p">[</span><span class="n">leaf</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+                    <span class="n">subset</span><span class="o">=</span><span class="nb">frozenset</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">subsets</span><span class="p">[</span><span class="n">leaf</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()),</span>
                 <span class="p">)</span>
             <span class="p">)</span>
         <span class="c1"># Contract the leaf:</span>
@@ -407,7 +442,7 @@
 
 
 <div class="viewcode-block" id="find_balanced_edge_cuts_memoization"><a class="viewcode-back" href="../../full_ref.html#gerrychain.tree.find_balanced_edge_cuts_memoization">[docs]</a><span class="k">def</span> <span class="nf">find_balanced_edge_cuts_memoization</span><span class="p">(</span>
-    <span class="n">h</span><span class="p">:</span> <span class="n">PopulatedGraph</span><span class="p">,</span> <span class="n">choice</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span>
+    <span class="n">h</span><span class="p">:</span> <span class="n">PopulatedGraph</span><span class="p">,</span> <span class="n">one_sided_cut</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">choice</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Cut</span><span class="p">]:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Find balanced edge cuts using memoization.</span>
@@ -419,6 +454,12 @@
 
 <span class="sd">    :param h: The PopulatedGraph object representing the graph.</span>
 <span class="sd">    :type h: PopulatedGraph</span>
+<span class="sd">    :param one_sided_cut: Whether or not we are cutting off a single district. When</span>
+<span class="sd">        set to False, we check if the node we are cutting and the remaining graph</span>
+<span class="sd">        are both within epsilon of the ideal population. When set to True, we only</span>
+<span class="sd">        check if the node we are cutting is within epsilon of the ideal population.</span>
+<span class="sd">        Defaults to False.</span>
+<span class="sd">    :type one_sided_cut: bool, optional</span>
 <span class="sd">    :param choice: The choice function used to select the root node.</span>
 <span class="sd">    :type choice: Callable, optional</span>
 
@@ -434,18 +475,36 @@
     <span class="n">subtree_pops</span> <span class="o">=</span> <span class="n">_calc_pops</span><span class="p">(</span><span class="n">succ</span><span class="p">,</span> <span class="n">root</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span>
 
     <span class="n">cuts</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">node</span><span class="p">,</span> <span class="n">tree_pop</span> <span class="ow">in</span> <span class="n">subtree_pops</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">tree_pop</span> <span class="o">-</span> <span class="n">h</span><span class="o">.</span><span class="n">ideal_pop</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">h</span><span class="o">.</span><span class="n">ideal_pop</span> <span class="o">*</span> <span class="n">h</span><span class="o">.</span><span class="n">epsilon</span><span class="p">:</span>
-            <span class="n">e</span> <span class="o">=</span> <span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">pred</span><span class="p">[</span><span class="n">node</span><span class="p">])</span>
-            <span class="n">wt</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span>
-            <span class="n">cuts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                <span class="n">Cut</span><span class="p">(</span>
-                    <span class="n">edge</span><span class="o">=</span><span class="n">e</span><span class="p">,</span>
-                    <span class="n">weight</span><span class="o">=</span><span class="n">h</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">e</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;random_weight&quot;</span><span class="p">,</span> <span class="n">wt</span><span class="p">),</span>
-                    <span class="n">subset</span><span class="o">=</span><span class="nb">frozenset</span><span class="p">(</span><span class="n">_part_nodes</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">succ</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">one_sided_cut</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">node</span><span class="p">,</span> <span class="n">tree_pop</span> <span class="ow">in</span> <span class="n">subtree_pops</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">tree_pop</span> <span class="o">-</span> <span class="n">h</span><span class="o">.</span><span class="n">ideal_pop</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">h</span><span class="o">.</span><span class="n">ideal_pop</span> <span class="o">*</span> <span class="n">h</span><span class="o">.</span><span class="n">epsilon</span><span class="p">:</span>
+                <span class="n">e</span> <span class="o">=</span> <span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">pred</span><span class="p">[</span><span class="n">node</span><span class="p">])</span>
+                <span class="n">wt</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span>
+                <span class="n">cuts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">Cut</span><span class="p">(</span>
+                        <span class="n">edge</span><span class="o">=</span><span class="n">e</span><span class="p">,</span>
+                        <span class="n">weight</span><span class="o">=</span><span class="n">h</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">e</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;random_weight&quot;</span><span class="p">,</span> <span class="n">wt</span><span class="p">),</span>
+                        <span class="n">subset</span><span class="o">=</span><span class="nb">frozenset</span><span class="p">(</span><span class="n">_part_nodes</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">succ</span><span class="p">)),</span>
+                    <span class="p">)</span>
                 <span class="p">)</span>
-            <span class="p">)</span>
-        <span class="k">elif</span> <span class="nb">abs</span><span class="p">((</span><span class="n">total_pop</span> <span class="o">-</span> <span class="n">tree_pop</span><span class="p">)</span> <span class="o">-</span> <span class="n">h</span><span class="o">.</span><span class="n">ideal_pop</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">h</span><span class="o">.</span><span class="n">ideal_pop</span> <span class="o">*</span> <span class="n">h</span><span class="o">.</span><span class="n">epsilon</span><span class="p">:</span>
+            <span class="k">elif</span> <span class="nb">abs</span><span class="p">((</span><span class="n">total_pop</span> <span class="o">-</span> <span class="n">tree_pop</span><span class="p">)</span> <span class="o">-</span> <span class="n">h</span><span class="o">.</span><span class="n">ideal_pop</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">h</span><span class="o">.</span><span class="n">ideal_pop</span> <span class="o">*</span> <span class="n">h</span><span class="o">.</span><span class="n">epsilon</span><span class="p">:</span>
+                <span class="n">e</span> <span class="o">=</span> <span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">pred</span><span class="p">[</span><span class="n">node</span><span class="p">])</span>
+                <span class="n">wt</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span>
+                <span class="n">cuts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">Cut</span><span class="p">(</span>
+                        <span class="n">edge</span><span class="o">=</span><span class="n">e</span><span class="p">,</span>
+                        <span class="n">weight</span><span class="o">=</span><span class="n">h</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">e</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;random_weight&quot;</span><span class="p">,</span> <span class="n">wt</span><span class="p">),</span>
+                        <span class="n">subset</span><span class="o">=</span><span class="nb">frozenset</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span> <span class="o">-</span> <span class="n">_part_nodes</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">succ</span><span class="p">)),</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">cuts</span>
+
+    <span class="k">for</span> <span class="n">node</span><span class="p">,</span> <span class="n">tree_pop</span> <span class="ow">in</span> <span class="n">subtree_pops</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">tree_pop</span> <span class="o">-</span> <span class="n">h</span><span class="o">.</span><span class="n">ideal_pop</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">h</span><span class="o">.</span><span class="n">ideal_pop</span> <span class="o">*</span> <span class="n">h</span><span class="o">.</span><span class="n">epsilon</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
+            <span class="nb">abs</span><span class="p">((</span><span class="n">total_pop</span> <span class="o">-</span> <span class="n">tree_pop</span><span class="p">)</span> <span class="o">-</span> <span class="n">h</span><span class="o">.</span><span class="n">ideal_pop</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">h</span><span class="o">.</span><span class="n">ideal_pop</span> <span class="o">*</span> <span class="n">h</span><span class="o">.</span><span class="n">epsilon</span>
+        <span class="p">):</span>
             <span class="n">e</span> <span class="o">=</span> <span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">pred</span><span class="p">[</span><span class="n">node</span><span class="p">])</span>
             <span class="n">wt</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span>
             <span class="n">cuts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
@@ -477,9 +536,7 @@
     <span class="k">pass</span></div>
 
 
-<span class="k">def</span> <span class="nf">_max_weight_choice</span><span class="p">(</span>
-    <span class="n">cut_edge_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Cut</span><span class="p">]</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Cut</span><span class="p">:</span>
+<span class="k">def</span> <span class="nf">_max_weight_choice</span><span class="p">(</span><span class="n">cut_edge_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Cut</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Cut</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Each Cut object in the list is assigned a random weight.</span>
 <span class="sd">    This random weight is either assigned during the call to</span>
@@ -518,17 +575,13 @@
 
 <span class="k">def</span> <span class="nf">_power_set_sorted_by_size_then_sum</span><span class="p">(</span><span class="n">d</span><span class="p">):</span>
     <span class="n">power_set</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="n">s</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">combinations</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">i</span><span class="p">)</span>
+        <span class="n">s</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">combinations</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">i</span><span class="p">)</span>
     <span class="p">]</span>
 
     <span class="c1"># Sort the subsets in descending order based on</span>
     <span class="c1"># the sum of their corresponding values in the dictionary</span>
     <span class="n">sorted_power_set</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
-        <span class="n">power_set</span><span class="p">,</span>
-        <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">),</span> <span class="nb">sum</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">s</span><span class="p">)),</span>
-        <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span>
+        <span class="n">power_set</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">),</span> <span class="nb">sum</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">s</span><span class="p">)),</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span>
     <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">sorted_power_set</span>
@@ -539,9 +592,7 @@
 <span class="c1"># are not modifying the object in the function, and the speed of</span>
 <span class="c1"># this randomized selection will not suffer for it.</span>
 <span class="k">def</span> <span class="nf">_region_preferred_max_weight_choice</span><span class="p">(</span>
-    <span class="n">populated_graph</span><span class="p">:</span> <span class="n">PopulatedGraph</span><span class="p">,</span>
-    <span class="n">region_surcharge</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span>
-    <span class="n">cut_edge_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Cut</span><span class="p">]</span>
+    <span class="n">populated_graph</span><span class="p">:</span> <span class="n">PopulatedGraph</span><span class="p">,</span> <span class="n">region_surcharge</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">cut_edge_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Cut</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Cut</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This function is used in the case of a region-aware chain. It</span>
@@ -593,8 +644,10 @@
     <span class="c1"># Prepare data for efficient access</span>
     <span class="n">edge_region_info</span> <span class="o">=</span> <span class="p">{</span>
         <span class="n">cut</span><span class="p">:</span> <span class="p">{</span>
-            <span class="n">key</span><span class="p">:</span> <span class="p">(</span><span class="n">populated_graph</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">cut</span><span class="o">.</span><span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">),</span>
-                  <span class="n">populated_graph</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">cut</span><span class="o">.</span><span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">))</span>
+            <span class="n">key</span><span class="p">:</span> <span class="p">(</span>
+                <span class="n">populated_graph</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">cut</span><span class="o">.</span><span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">),</span>
+                <span class="n">populated_graph</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">cut</span><span class="o">.</span><span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">),</span>
+            <span class="p">)</span>
             <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">region_surcharge</span>
         <span class="p">}</span>
         <span class="k">for</span> <span class="n">cut</span> <span class="ow">in</span> <span class="n">cut_edge_list</span>
@@ -605,7 +658,8 @@
     <span class="n">power_set</span> <span class="o">=</span> <span class="n">_power_set_sorted_by_size_then_sum</span><span class="p">(</span><span class="n">region_surcharge</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">region_combination</span> <span class="ow">in</span> <span class="n">power_set</span><span class="p">:</span>
         <span class="n">suitable_cuts</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">cut</span> <span class="k">for</span> <span class="n">cut</span> <span class="ow">in</span> <span class="n">cut_edge_list</span>
+            <span class="n">cut</span>
+            <span class="k">for</span> <span class="n">cut</span> <span class="ow">in</span> <span class="n">cut_edge_list</span>
             <span class="k">if</span> <span class="nb">all</span><span class="p">(</span>
                 <span class="n">edge_region_info</span><span class="p">[</span><span class="n">cut</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">edge_region_info</span><span class="p">[</span><span class="n">cut</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
                 <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">region_combination</span>
@@ -627,11 +681,12 @@
     <span class="n">spanning_tree_fn</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">random_spanning_tree</span><span class="p">,</span>
     <span class="n">region_surcharge</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">balance_edge_fn</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">find_balanced_edge_cuts_memoization</span><span class="p">,</span>
+    <span class="n">one_sided_cut</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">choice</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">,</span>
     <span class="n">max_attempts</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">100000</span><span class="p">,</span>
     <span class="n">warn_attempts</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
     <span class="n">allow_pair_reselection</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="n">cut_choice</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">_region_preferred_max_weight_choice</span>
+    <span class="n">cut_choice</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">_region_preferred_max_weight_choice</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Set</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This function finds a balanced 2 partition of a graph by drawing a</span>
@@ -666,6 +721,13 @@
 <span class="sd">    :param balance_edge_fn: The function to find balanced edge cuts. Defaults to</span>
 <span class="sd">        :func:`find_balanced_edge_cuts_memoization`.</span>
 <span class="sd">    :type balance_edge_fn: Callable, optional</span>
+<span class="sd">    :param one_sided_cut: Passed to the ``balance_edge_fn``. Determines whether or not we are</span>
+<span class="sd">        cutting off a single district when partitioning the tree. When</span>
+<span class="sd">        set to False, we check if the node we are cutting and the remaining graph</span>
+<span class="sd">        are both within epsilon of the ideal population. When set to True, we only</span>
+<span class="sd">        check if the node we are cutting is within epsilon of the ideal population.</span>
+<span class="sd">        Defaults to False.</span>
+<span class="sd">    :type one_sided_cut: bool, optional</span>
 <span class="sd">    :param choice: The function to make a random choice of root node for the population</span>
 <span class="sd">        tree. Passed to ``balance_edge_fn``. Can be substituted for testing.</span>
 <span class="sd">        Defaults to :func:`random.random()`.</span>
@@ -694,6 +756,9 @@
     <span class="c1"># Try to add the region-aware in if the spanning_tree_fn accepts a surcharge dictionary</span>
     <span class="k">if</span> <span class="s2">&quot;region_surcharge&quot;</span> <span class="ow">in</span> <span class="n">signature</span><span class="p">(</span><span class="n">spanning_tree_fn</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">:</span>
         <span class="n">spanning_tree_fn</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">spanning_tree_fn</span><span class="p">,</span> <span class="n">region_surcharge</span><span class="o">=</span><span class="n">region_surcharge</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="s2">&quot;one_sided_cut&quot;</span> <span class="ow">in</span> <span class="n">signature</span><span class="p">(</span><span class="n">balance_edge_fn</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">:</span>
+        <span class="n">balance_edge_fn</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">balance_edge_fn</span><span class="p">,</span> <span class="n">one_sided_cut</span><span class="o">=</span><span class="n">one_sided_cut</span><span class="p">)</span>
 
     <span class="n">populations</span> <span class="o">=</span> <span class="p">{</span><span class="n">node</span><span class="p">:</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">node</span><span class="p">][</span><span class="n">pop_col</span><span class="p">]</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">node_indices</span><span class="p">}</span>
 
@@ -833,6 +898,7 @@
     <span class="n">spanning_tree</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">spanning_tree_fn</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">random_spanning_tree</span><span class="p">,</span>
     <span class="n">balance_edge_fn</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">find_balanced_edge_cuts_memoization</span><span class="p">,</span>
+    <span class="n">one_sided_cut</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">choice</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">,</span>
     <span class="n">max_attempts</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">100000</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Set</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="kc">None</span><span class="p">]:</span>
@@ -848,14 +914,14 @@
 <span class="sd">    Builds up a connected subgraph with a connected complement whose population</span>
 <span class="sd">    is ``epsilon * pop_target`` away from ``pop_target``.</span>
 
-<span class="sd">    :param graph: The graph to partition</span>
+<span class="sd">    :param graph: The graph to partition.</span>
 <span class="sd">    :type graph: nx.Graph</span>
-<span class="sd">    :param pop_col: The node attribute holding the population of each node</span>
+<span class="sd">    :param pop_col: The node attribute holding the population of each node.</span>
 <span class="sd">    :type pop_col: str</span>
-<span class="sd">    :param pop_target: The target population for the returned subset of nodes</span>
+<span class="sd">    :param pop_target: The target population for the returned subset of nodes.</span>
 <span class="sd">    :type pop_target: Union[int, float]</span>
 <span class="sd">    :param epsilon: The allowable deviation from  ``pop_target`` (as a percentage of</span>
-<span class="sd">        ``pop_target``) for the subgraph&#39;s population</span>
+<span class="sd">        ``pop_target``) for the subgraph&#39;s population.</span>
 <span class="sd">    :type epsilon: float</span>
 <span class="sd">    :param node_repeats: A parameter for the algorithm: how many different choices</span>
 <span class="sd">        of root to use before drawing a new spanning tree. Defaults to 1.</span>
@@ -874,6 +940,13 @@
 <span class="sd">    :param balance_edge_fn: The algorithm used to find balanced cut edges. Defaults to</span>
 <span class="sd">        :func:`find_balanced_edge_cuts_memoization`.</span>
 <span class="sd">    :type balance_edge_fn: Callable, optional</span>
+<span class="sd">    :param one_sided_cut: Passed to the ``balance_edge_fn``. Determines whether or not we are</span>
+<span class="sd">        cutting off a single district when partitioning the tree. When</span>
+<span class="sd">        set to False, we check if the node we are cutting and the remaining graph</span>
+<span class="sd">        are both within epsilon of the ideal population. When set to True, we only</span>
+<span class="sd">        check if the node we are cutting is within epsilon of the ideal population.</span>
+<span class="sd">        Defaults to False.</span>
+<span class="sd">    :type one_sided_cut: bool, optional</span>
 <span class="sd">    :param choice: The random choice function. Can be substituted for testing. Defaults</span>
 <span class="sd">        to :func:`random.choice`.</span>
 <span class="sd">    :type choice: Callable, optional</span>
@@ -885,6 +958,9 @@
 <span class="sd">        valid spanning tree is not found.</span>
 <span class="sd">    :rtype: Union[Set[Any], None]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="s2">&quot;one_sided_cut&quot;</span> <span class="ow">in</span> <span class="n">signature</span><span class="p">(</span><span class="n">balance_edge_fn</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">:</span>
+        <span class="n">balance_edge_fn</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">balance_edge_fn</span><span class="p">,</span> <span class="n">one_sided_cut</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
     <span class="n">possible_cuts</span> <span class="o">=</span> <span class="n">_bipartition_tree_random_all</span><span class="p">(</span>
         <span class="n">graph</span><span class="o">=</span><span class="n">graph</span><span class="p">,</span>
         <span class="n">pop_col</span><span class="o">=</span><span class="n">pop_col</span><span class="p">,</span>
@@ -902,6 +978,89 @@
         <span class="k">return</span> <span class="n">choice</span><span class="p">(</span><span class="n">possible_cuts</span><span class="p">)</span><span class="o">.</span><span class="n">subset</span></div>
 
 
+<div class="viewcode-block" id="epsilon_tree_bipartition"><a class="viewcode-back" href="../../full_ref.html#gerrychain.tree.epsilon_tree_bipartition">[docs]</a><span class="k">def</span> <span class="nf">epsilon_tree_bipartition</span><span class="p">(</span>
+    <span class="n">graph</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">,</span>
+    <span class="n">parts</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">,</span>
+    <span class="n">pop_target</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+    <span class="n">pop_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">epsilon</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">node_repeats</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">method</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">bipartition_tree</span><span class="p">,</span> <span class="n">max_attempts</span><span class="o">=</span><span class="mi">10000</span><span class="p">),</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Uses :func:`~gerrychain.tree.bipartition_tree` to partition a tree into</span>
+<span class="sd">    two parts of population ``pop_target`` (within ``epsilon``).</span>
+
+<span class="sd">    :param graph: The graph to partition into two :math:`\varepsilon`-balanced parts.</span>
+<span class="sd">    :type graph: nx.Graph</span>
+<span class="sd">    :param parts: Iterable of part (district) labels (like ``[0,1,2]`` or ``range(4)``).</span>
+<span class="sd">    :type parts: Sequence</span>
+<span class="sd">    :param pop_target: Target population for each part of the partition.</span>
+<span class="sd">    :type pop_target: Union[float, int]</span>
+<span class="sd">    :param pop_col: Node attribute key holding population data.</span>
+<span class="sd">    :type pop_col: str</span>
+<span class="sd">    :param epsilon: How far (as a percentage of ``pop_target``) from ``pop_target`` the parts</span>
+<span class="sd">        of the partition can be.</span>
+<span class="sd">    :type epsilon: float</span>
+<span class="sd">    :param node_repeats: Parameter for :func:`~gerrychain.tree_methods.bipartition_tree` to use.</span>
+<span class="sd">        Defaults to 1.</span>
+<span class="sd">    :type node_repeats: int, optional</span>
+<span class="sd">    :param method: The partition method to use. Defaults to</span>
+<span class="sd">        `partial(bipartition_tree, max_attempts=10000)`.</span>
+<span class="sd">    :type method: Callable, optional</span>
+
+<span class="sd">    :returns: New assignments for the nodes of ``graph``.</span>
+<span class="sd">    :rtype: dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;This function only supports bipartitioning. Please ensure that there&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot; are exactly 2 parts in the parts list.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">flips</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">remaining_nodes</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">node_indices</span>
+
+    <span class="n">lb_pop</span> <span class="o">=</span> <span class="n">pop_target</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">epsilon</span><span class="p">)</span>
+    <span class="n">ub_pop</span> <span class="o">=</span> <span class="n">pop_target</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">epsilon</span><span class="p">)</span>
+    <span class="n">check_pop</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">lb_pop</span> <span class="o">&lt;=</span> <span class="n">x</span> <span class="o">&lt;=</span> <span class="n">ub_pop</span>
+
+    <span class="n">nodes</span> <span class="o">=</span> <span class="n">method</span><span class="p">(</span>
+        <span class="n">graph</span><span class="o">.</span><span class="n">subgraph</span><span class="p">(</span><span class="n">remaining_nodes</span><span class="p">),</span>
+        <span class="n">pop_col</span><span class="o">=</span><span class="n">pop_col</span><span class="p">,</span>
+        <span class="n">pop_target</span><span class="o">=</span><span class="n">pop_target</span><span class="p">,</span>
+        <span class="n">epsilon</span><span class="o">=</span><span class="n">epsilon</span><span class="p">,</span>
+        <span class="n">node_repeats</span><span class="o">=</span><span class="n">node_repeats</span><span class="p">,</span>
+        <span class="n">one_sided_cut</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">nodes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">BalanceError</span><span class="p">()</span>
+
+    <span class="n">part_pop</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">:</span>
+        <span class="n">flips</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">part_pop</span> <span class="o">+=</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">node</span><span class="p">][</span><span class="n">pop_col</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">check_pop</span><span class="p">(</span><span class="n">part_pop</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">PopulationBalanceError</span><span class="p">()</span>
+
+    <span class="n">remaining_nodes</span> <span class="o">-=</span> <span class="n">nodes</span>
+
+    <span class="c1"># All of the remaining nodes go in the last part</span>
+    <span class="n">part_pop</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">remaining_nodes</span><span class="p">:</span>
+        <span class="n">flips</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">part_pop</span> <span class="o">+=</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">node</span><span class="p">][</span><span class="n">pop_col</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">check_pop</span><span class="p">(</span><span class="n">part_pop</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">PopulationBalanceError</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">flips</span></div>
+
+
+<span class="c1"># TODO: Move these recursive partition functions to their own module. They are not</span>
+<span class="c1"># central to the operation of the recom function despite being tree methods.</span>
 <div class="viewcode-block" id="recursive_tree_part"><a class="viewcode-back" href="../../full_ref.html#gerrychain.tree.recursive_tree_part">[docs]</a><span class="k">def</span> <span class="nf">recursive_tree_part</span><span class="p">(</span>
     <span class="n">graph</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">,</span>
     <span class="n">parts</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">,</span>
@@ -916,16 +1075,16 @@
 <span class="sd">    ``len(parts)`` parts of population ``pop_target`` (within ``epsilon``). Can be used to</span>
 <span class="sd">    generate initial seed plans or to implement ReCom-like &quot;merge walk&quot; proposals.</span>
 
-<span class="sd">    :param graph: The graph</span>
+<span class="sd">    :param graph: The graph to partition into ``len(parts)`` :math:`\varepsilon`-balanced parts.</span>
 <span class="sd">    :type graph: nx.Graph</span>
-<span class="sd">    :param parts: Iterable of part labels (like ``[0,1,2]`` or ``range(4)``)</span>
+<span class="sd">    :param parts: Iterable of part (district) labels (like ``[0,1,2]`` or ``range(4)``).</span>
 <span class="sd">    :type parts: Sequence</span>
-<span class="sd">    :param pop_target: Target population for each part of the partition</span>
+<span class="sd">    :param pop_target: Target population for each part of the partition.</span>
 <span class="sd">    :type pop_target: Union[float, int]</span>
-<span class="sd">    :param pop_col: Node attribute key holding population data</span>
+<span class="sd">    :param pop_col: Node attribute key holding population data.</span>
 <span class="sd">    :type pop_col: str</span>
 <span class="sd">    :param epsilon: How far (as a percentage of ``pop_target``) from ``pop_target`` the parts</span>
-<span class="sd">        of the partition can be</span>
+<span class="sd">        of the partition can be.</span>
 <span class="sd">    :type epsilon: float</span>
 <span class="sd">    :param node_repeats: Parameter for :func:`~gerrychain.tree_methods.bipartition_tree` to use.</span>
 <span class="sd">        Defaluts to 1.</span>
@@ -948,7 +1107,11 @@
     <span class="c1"># 98% of the target population and the target population.</span>
     <span class="n">debt</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
 
-    <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">parts</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+    <span class="n">lb_pop</span> <span class="o">=</span> <span class="n">pop_target</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">epsilon</span><span class="p">)</span>
+    <span class="n">ub_pop</span> <span class="o">=</span> <span class="n">pop_target</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">epsilon</span><span class="p">)</span>
+    <span class="n">check_pop</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">lb_pop</span> <span class="o">&lt;=</span> <span class="n">x</span> <span class="o">&lt;=</span> <span class="n">ub_pop</span>
+
+    <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">parts</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]:</span>
         <span class="n">min_pop</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">pop_target</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">epsilon</span><span class="p">),</span> <span class="n">pop_target</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">epsilon</span><span class="p">)</span> <span class="o">-</span> <span class="n">debt</span><span class="p">)</span>
         <span class="n">max_pop</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">pop_target</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">epsilon</span><span class="p">),</span> <span class="n">pop_target</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">epsilon</span><span class="p">)</span> <span class="o">-</span> <span class="n">debt</span><span class="p">)</span>
         <span class="n">new_pop_target</span> <span class="o">=</span> <span class="p">(</span><span class="n">min_pop</span> <span class="o">+</span> <span class="n">max_pop</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
@@ -960,6 +1123,7 @@
                 <span class="n">pop_target</span><span class="o">=</span><span class="n">new_pop_target</span><span class="p">,</span>
                 <span class="n">epsilon</span><span class="o">=</span><span class="p">(</span><span class="n">max_pop</span> <span class="o">-</span> <span class="n">min_pop</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">new_pop_target</span><span class="p">),</span>
                 <span class="n">node_repeats</span><span class="o">=</span><span class="n">node_repeats</span><span class="p">,</span>
+                <span class="n">one_sided_cut</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">raise</span>
@@ -972,12 +1136,44 @@
             <span class="n">flips</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="n">part</span>
             <span class="n">part_pop</span> <span class="o">+=</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">node</span><span class="p">][</span><span class="n">pop_col</span><span class="p">]</span>
 
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">check_pop</span><span class="p">(</span><span class="n">part_pop</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">PopulationBalanceError</span><span class="p">()</span>
+
         <span class="n">debt</span> <span class="o">+=</span> <span class="n">part_pop</span> <span class="o">-</span> <span class="n">pop_target</span>
         <span class="n">remaining_nodes</span> <span class="o">-=</span> <span class="n">nodes</span>
 
+    <span class="c1"># After making n-2 districts, we need to make sure that the last</span>
+    <span class="c1"># two districts are both balanced.</span>
+    <span class="n">nodes</span> <span class="o">=</span> <span class="n">method</span><span class="p">(</span>
+        <span class="n">graph</span><span class="o">.</span><span class="n">subgraph</span><span class="p">(</span><span class="n">remaining_nodes</span><span class="p">),</span>
+        <span class="n">pop_col</span><span class="o">=</span><span class="n">pop_col</span><span class="p">,</span>
+        <span class="n">pop_target</span><span class="o">=</span><span class="n">pop_target</span><span class="p">,</span>
+        <span class="n">epsilon</span><span class="o">=</span><span class="n">epsilon</span><span class="p">,</span>
+        <span class="n">node_repeats</span><span class="o">=</span><span class="n">node_repeats</span><span class="p">,</span>
+        <span class="n">one_sided_cut</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">nodes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">BalanceError</span><span class="p">()</span>
+
+    <span class="n">part_pop</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">:</span>
+        <span class="n">flips</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">part_pop</span> <span class="o">+=</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">node</span><span class="p">][</span><span class="n">pop_col</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">check_pop</span><span class="p">(</span><span class="n">part_pop</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">PopulationBalanceError</span><span class="p">()</span>
+
+    <span class="n">remaining_nodes</span> <span class="o">-=</span> <span class="n">nodes</span>
+
     <span class="c1"># All of the remaining nodes go in the last part</span>
+    <span class="n">part_pop</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">remaining_nodes</span><span class="p">:</span>
         <span class="n">flips</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">part_pop</span> <span class="o">+=</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">node</span><span class="p">][</span><span class="n">pop_col</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">check_pop</span><span class="p">(</span><span class="n">part_pop</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">PopulationBalanceError</span><span class="p">()</span>
 
     <span class="k">return</span> <span class="n">flips</span></div>
 
@@ -1094,7 +1290,7 @@
 <div class="viewcode-block" id="get_max_prime_factor_less_than"><a class="viewcode-back" href="../../full_ref.html#gerrychain.tree.get_max_prime_factor_less_than">[docs]</a><span class="k">def</span> <span class="nf">get_max_prime_factor_less_than</span><span class="p">(</span><span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">ceil</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Helper function for recursive_seed_part_inner. Returns the largest prime factor of ``n``</span>
-<span class="sd">        less than ``ceil``, or None if all are greater than ceil.</span>
+<span class="sd">    less than ``ceil``, or None if all are greater than ceil.</span>
 
 <span class="sd">    :param n: The number to find the largest prime factor for.</span>
 <span class="sd">    :type n: int</span>
@@ -1186,7 +1382,7 @@
 <span class="sd">    :type ceil: Optional[int], optional</span>
 
 <span class="sd">    :returns: New assignments for the nodes of ``graph``.</span>
-<span class="sd">    :rtype: List of lists, each list is a district</span>
+<span class="sd">    :rtype: List of sets, each set is a district</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="c1"># Chooses num_chunks</span>
@@ -1206,6 +1402,18 @@
     <span class="k">if</span> <span class="n">num_dists</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">[</span><span class="nb">set</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">)]</span>
 
+    <span class="k">if</span> <span class="n">num_dists</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">nodes</span> <span class="o">=</span> <span class="n">method</span><span class="p">(</span>
+            <span class="n">graph</span><span class="p">,</span>
+            <span class="n">pop_col</span><span class="o">=</span><span class="n">pop_col</span><span class="p">,</span>
+            <span class="n">pop_target</span><span class="o">=</span><span class="n">pop_target</span><span class="p">,</span>
+            <span class="n">epsilon</span><span class="o">=</span><span class="n">epsilon</span><span class="p">,</span>
+            <span class="n">node_repeats</span><span class="o">=</span><span class="n">node_repeats</span><span class="p">,</span>
+            <span class="n">one_sided_cut</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">[</span><span class="nb">set</span><span class="p">(</span><span class="n">nodes</span><span class="p">),</span> <span class="nb">set</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">nodes</span><span class="p">)]</span>
+
     <span class="c1"># bite off a district and recurse into the remaining subgraph</span>
     <span class="k">elif</span> <span class="n">num_chunks</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">num_dists</span> <span class="o">%</span> <span class="n">num_chunks</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
         <span class="n">remaining_nodes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span>
@@ -1215,6 +1423,7 @@
             <span class="n">pop_target</span><span class="o">=</span><span class="n">pop_target</span><span class="p">,</span>
             <span class="n">epsilon</span><span class="o">=</span><span class="n">epsilon</span><span class="p">,</span>
             <span class="n">node_repeats</span><span class="o">=</span><span class="n">node_repeats</span><span class="p">,</span>
+            <span class="n">one_sided_cut</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">remaining_nodes</span> <span class="o">-=</span> <span class="n">nodes</span>
         <span class="n">assignment</span> <span class="o">=</span> <span class="p">[</span><span class="n">nodes</span><span class="p">]</span> <span class="o">+</span> <span class="n">recursive_seed_part_inner</span><span class="p">(</span>
@@ -1231,7 +1440,13 @@
     <span class="c1"># split graph into num_chunks chunks, and recurse into each chunk</span>
     <span class="k">elif</span> <span class="n">num_dists</span> <span class="o">%</span> <span class="n">num_chunks</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="n">chunks</span> <span class="o">=</span> <span class="n">get_seed_chunks</span><span class="p">(</span>
-            <span class="n">graph</span><span class="p">,</span> <span class="n">num_chunks</span><span class="p">,</span> <span class="n">num_dists</span><span class="p">,</span> <span class="n">pop_target</span><span class="p">,</span> <span class="n">pop_col</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="n">method</span>
+            <span class="n">graph</span><span class="p">,</span>
+            <span class="n">num_chunks</span><span class="p">,</span>
+            <span class="n">num_dists</span><span class="p">,</span>
+            <span class="n">pop_target</span><span class="p">,</span>
+            <span class="n">pop_col</span><span class="p">,</span>
+            <span class="n">epsilon</span><span class="p">,</span>
+            <span class="n">method</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="n">one_sided_cut</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
         <span class="p">)</span>
 
         <span class="n">assignment</span> <span class="o">=</span> <span class="p">[]</span>
@@ -1318,6 +1533,10 @@
 
 <div class="viewcode-block" id="BalanceError"><a class="viewcode-back" href="../../full_ref.html#gerrychain.tree.BalanceError">[docs]</a><span class="k">class</span> <span class="nc">BalanceError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Raised when a balanced cut cannot be found.&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="PopulationBalanceError"><a class="viewcode-back" href="../../full_ref.html#gerrychain.tree.PopulationBalanceError">[docs]</a><span class="k">class</span> <span class="nc">PopulationBalanceError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Raised when the population of a district is outside the acceptable epsilon range.&quot;&quot;&quot;</span></div>
 </pre></div>
 
            </div>

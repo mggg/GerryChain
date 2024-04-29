@@ -48,6 +48,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../user/updaters.html">Updaters</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/data.html">Good Data Practices</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/geometries.html">Working With Geometries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/optimizers.html">Optimization Methods of GerryChain</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -58,6 +59,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../topics/reproducibility.html">Reproducibility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../topics/tools.html">Evaluating districting plans in the real world</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../topics/contributing.html">Contributing to GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../topics/reporting.html">Reporting Issues</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Index</span></p>
 <ul>
@@ -96,6 +98,7 @@
 <span class="kn">from</span> <span class="nn">..updaters</span> <span class="kn">import</span> <span class="n">compute_edge_flows</span><span class="p">,</span> <span class="n">flows_from_changes</span><span class="p">,</span> <span class="n">cut_edges</span>
 <span class="kn">from</span> <span class="nn">.assignment</span> <span class="kn">import</span> <span class="n">get_assignment</span>
 <span class="kn">from</span> <span class="nn">.subgraphs</span> <span class="kn">import</span> <span class="n">SubgraphView</span>
+<span class="kn">from</span> <span class="nn">..tree</span> <span class="kn">import</span> <span class="n">recursive_tree_part</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
 
 
@@ -153,6 +156,61 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">subgraphs</span> <span class="o">=</span> <span class="n">SubgraphView</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parts</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Partition.from_random_assignment"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.partition.Partition.from_random_assignment">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_random_assignment</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">graph</span><span class="p">:</span> <span class="n">Graph</span><span class="p">,</span>
+        <span class="n">n_parts</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">epsilon</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">pop_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">updaters</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">use_default_updaters</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">flips</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">method</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">recursive_tree_part</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Partition&quot;</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a Partition with a random assignment of nodes to districts.</span>
+
+<span class="sd">        :param graph: The graph to create the Partition from.</span>
+<span class="sd">        :type graph: :class:`~gerrychain.Graph`</span>
+<span class="sd">        :param n_parts: The number of districts to divide the nodes into.</span>
+<span class="sd">        :type n_parts: int</span>
+<span class="sd">        :param epsilon: The maximum relative population deviation from the ideal</span>
+<span class="sd">        :type epsilon: float</span>
+<span class="sd">            population. Should be in [0,1].</span>
+<span class="sd">        :param pop_col: The column of the graph&#39;s node data that holds the population data.</span>
+<span class="sd">        :type pop_col: str</span>
+<span class="sd">        :param updaters: Dictionary of updaters</span>
+<span class="sd">        :type updaters: Optional[Dict[str, Callable]], optional</span>
+<span class="sd">        :param use_default_updaters: If `False`, do not include default updaters.</span>
+<span class="sd">        :type use_default_updaters: bool, optional</span>
+<span class="sd">        :param flips: Dictionary assigning nodes of the graph to their new districts.</span>
+<span class="sd">        :type flips: Optional[Dict], optional</span>
+<span class="sd">        :param method: The function to use to partition the graph into ``n_parts``. Defaults to</span>
+<span class="sd">            :func:`~gerrychain.tree.recursive_tree_part`.</span>
+<span class="sd">        :type method: Callable, optional</span>
+
+<span class="sd">        :returns: The partition created with a random assignment</span>
+<span class="sd">        :rtype: Partition</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">total_pop</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="n">pop_col</span><span class="p">]</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">graph</span><span class="p">)</span>
+        <span class="n">ideal_pop</span> <span class="o">=</span> <span class="n">total_pop</span> <span class="o">/</span> <span class="n">n_parts</span>
+
+        <span class="n">assignment</span> <span class="o">=</span> <span class="n">method</span><span class="p">(</span>
+            <span class="n">graph</span><span class="o">=</span><span class="n">graph</span><span class="p">,</span>
+            <span class="n">parts</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="n">n_parts</span><span class="p">),</span>
+            <span class="n">pop_target</span><span class="o">=</span><span class="n">ideal_pop</span><span class="p">,</span>
+            <span class="n">pop_col</span><span class="o">=</span><span class="n">pop_col</span><span class="p">,</span>
+            <span class="n">epsilon</span><span class="o">=</span><span class="n">epsilon</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">graph</span><span class="p">,</span>
+            <span class="n">assignment</span><span class="p">,</span>
+            <span class="n">updaters</span><span class="p">,</span>
+            <span class="n">use_default_updaters</span><span class="o">=</span><span class="n">use_default_updaters</span><span class="p">,</span>
+        <span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">_first_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="n">assignment</span><span class="p">,</span> <span class="n">updaters</span><span class="p">,</span> <span class="n">use_default_updaters</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">Graph</span><span class="p">):</span>

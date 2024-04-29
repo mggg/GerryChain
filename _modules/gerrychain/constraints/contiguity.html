@@ -48,6 +48,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../user/updaters.html">Updaters</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/data.html">Good Data Practices</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/geometries.html">Working With Geometries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/optimizers.html">Optimization Methods of GerryChain</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -58,6 +59,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../topics/reproducibility.html">Reproducibility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../topics/tools.html">Evaluating districting plans in the real world</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../topics/contributing.html">Contributing to GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../topics/reporting.html">Reporting Issues</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Index</span></p>
 <ul>
@@ -245,6 +247,9 @@
 
     <span class="k">if</span> <span class="n">flips</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">partition</span><span class="o">.</span><span class="n">parts</span>
+
+    <span class="k">if</span> <span class="n">parent</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">set</span><span class="p">(</span><span class="n">flips</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
 
     <span class="n">affected</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
     <span class="k">for</span> <span class="n">node</span><span class="p">,</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">flips</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>

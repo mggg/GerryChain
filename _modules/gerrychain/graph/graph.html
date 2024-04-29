@@ -48,6 +48,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../user/updaters.html">Updaters</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/data.html">Good Data Practices</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/geometries.html">Working With Geometries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/optimizers.html">Optimization Methods of GerryChain</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -58,6 +59,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../topics/reproducibility.html">Reproducibility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../topics/tools.html">Evaluating districting plans in the real world</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../topics/contributing.html">Contributing to GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../topics/reporting.html">Reporting Issues</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Index</span></p>
 <ul>
@@ -114,7 +116,7 @@
 
 <span class="kn">from</span> <span class="nn">.adjacency</span> <span class="kn">import</span> <span class="n">neighbors</span>
 <span class="kn">from</span> <span class="nn">.geo</span> <span class="kn">import</span> <span class="n">GeometryError</span><span class="p">,</span> <span class="n">invalid_geometries</span><span class="p">,</span> <span class="n">reprojected</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
 
 <div class="viewcode-block" id="json_serialize"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.graph.graph.json_serialize">[docs]</a><span class="k">def</span> <span class="nf">json_serialize</span><span class="p">(</span><span class="n">input_object</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
@@ -273,6 +275,7 @@
         <span class="n">cols_to_add</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">reproject</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">ignore_errors</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">crs_override</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Graph&quot;</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Creates the adjacency :class:`Graph` of geometries described by `dataframe`.</span>
@@ -305,6 +308,9 @@
 <span class="sd">        :param ignore_errors: Whether to ignore all invalid geometries and</span>
 <span class="sd">            attept to create the graph anyway. Default is ``False``.</span>
 <span class="sd">        :type ignore_errors: bool, optional</span>
+<span class="sd">        :param crs_override: Value to override the CRS of the GeoDataFrame.</span>
+<span class="sd">            Default is None.</span>
+<span class="sd">        :type crs_override: Optional[Union[str,int]], optional</span>
 
 <span class="sd">        :returns: The adjacency graph of the geometries from `dataframe`.</span>
 <span class="sd">        :rtype: Graph</span>
@@ -354,7 +360,21 @@
         <span class="n">networkx</span><span class="o">.</span><span class="n">set_node_attributes</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;area&quot;</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="n">areas</span><span class="p">)</span>
 
         <span class="n">graph</span><span class="o">.</span><span class="n">add_data</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">cols_to_add</span><span class="p">)</span>
-        <span class="n">graph</span><span class="o">.</span><span class="n">graph</span><span class="p">[</span><span class="s2">&quot;crs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">crs</span><span class="o">.</span><span class="n">to_json</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">crs_override</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">set_crs</span><span class="p">(</span><span class="n">crs_override</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">crs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s2">&quot;GeoDataFrame has no CRS. Did you forget to set it? &quot;</span>
+                <span class="s2">&quot;If you&#39;re sure this is correct, you can ignore this warning. &quot;</span>
+                <span class="s2">&quot;Otherwise, please set the CRS using the `crs_override` parameter. &quot;</span>
+                <span class="s2">&quot;Attempting to proceed without a CRS.&quot;</span>
+            <span class="p">)</span>
+            <span class="n">graph</span><span class="o">.</span><span class="n">graph</span><span class="p">[</span><span class="s2">&quot;crs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">graph</span><span class="o">.</span><span class="n">graph</span><span class="p">[</span><span class="s2">&quot;crs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">crs</span><span class="o">.</span><span class="n">to_json</span><span class="p">()</span>
+
         <span class="k">return</span> <span class="n">graph</span></div>
 
 <div class="viewcode-block" id="Graph.lookup"><a class="viewcode-back" href="../../../full_ref.html#gerrychain.graph.graph.Graph.lookup">[docs]</a>    <span class="k">def</span> <span class="nf">lookup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">field</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>

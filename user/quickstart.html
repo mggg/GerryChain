@@ -219,7 +219,7 @@ population (that’s why we can call the <code class="docutils literal notransla
 </div>
 <div class="section" id="running-a-chain">
 <h2>Running a chain<a class="headerlink" href="#running-a-chain" title="Permalink to this headline">¶</a></h2>
-<p>Now that we have our initial partition, we can configure and run a <code class="xref py py-class docutils literal notranslate"><span class="pre">Markov</span> <span class="pre">chain</span></code>.
+<p>Now that we have our initial partition, we can configure and run a <a class="reference internal" href="../api.html#gerrychain.MarkovChain" title="gerrychain.MarkovChain"><code class="xref py py-class docutils literal notranslate"><span class="pre">Markov</span> <span class="pre">chain</span></code></a>.
 Let’s configure a short Markov chain to make sure everything works properly.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">gerrychain</span> <span class="kn">import</span> <span class="n">MarkovChain</span>
 <span class="kn">from</span> <span class="nn">gerrychain.constraints</span> <span class="kn">import</span> <span class="n">single_flip_contiguous</span>
@@ -266,7 +266,7 @@ rejected (by <code class="docutils literal notranslate"><span class="pre">accept
 </dd>
 </dl>
 <p>For more information on the details of our Markov chain implementation, consult
-the <code class="xref py py-class docutils literal notranslate"><span class="pre">gerrychain.MarkovChain</span></code> documentation and source code.</p>
+the <a class="reference internal" href="../api.html#gerrychain.MarkovChain" title="gerrychain.MarkovChain"><code class="xref py py-class docutils literal notranslate"><span class="pre">gerrychain.MarkovChain</span></code></a> documentation and source code.</p>
 <p>The above code configures a Markov chain called <code class="docutils literal notranslate"><span class="pre">chain</span></code>, but does <em>NOT</em> run it yet. We run the chain
 by iterating through all of the states using a <code class="docutils literal notranslate"><span class="pre">for</span></code> loop. As an example, let’s iterate through
 this chain and print out the population of district 1.</p>

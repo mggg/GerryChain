@@ -707,7 +707,7 @@ before we can use it as our proposal function.</p>
 <p>To keep districts about as compact as the original plan, we would like to
 constrain the number of cut edges between all of the districts (this will
 keep our districts from being too snake-like).
-We can do this using the <code class="xref py py-class docutils literal notranslate"><span class="pre">UpperBound</span></code> constraint,
+We can do this using the <a class="reference internal" href="../api.html#gerrychain.constraints.UpperBound" title="gerrychain.constraints.UpperBound"><code class="xref py py-class docutils literal notranslate"><span class="pre">UpperBound</span></code></a> constraint,
 and, as a general heuristic, we’ll bound the number of cut edges by twice the
 number of cut edges in the initial plan.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">cut_edges_length</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>

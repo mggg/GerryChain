@@ -48,6 +48,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../user/updaters.html">Updaters</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/data.html">Good Data Practices</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/geometries.html">Working With Geometries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/optimizers.html">Optimization Methods of GerryChain</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -58,6 +59,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../topics/reproducibility.html">Reproducibility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../topics/tools.html">Evaluating districting plans in the real world</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../topics/contributing.html">Contributing to GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../topics/reporting.html">Reporting Issues</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Index</span></p>
 <ul>
@@ -95,7 +97,7 @@
 
 <span class="kn">from</span> <span class="nn">gerrychain.partition</span> <span class="kn">import</span> <span class="n">Partition</span>
 <span class="kn">from</span> <span class="nn">..tree</span> <span class="kn">import</span> <span class="p">(</span>
-    <span class="n">recursive_tree_part</span><span class="p">,</span>
+    <span class="n">epsilon_tree_bipartition</span><span class="p">,</span>
     <span class="n">bipartition_tree</span><span class="p">,</span>
     <span class="n">bipartition_tree_random</span><span class="p">,</span>
     <span class="n">_bipartition_tree_random_all</span><span class="p">,</span>
@@ -210,7 +212,7 @@
                 <span class="n">partition</span><span class="o">.</span><span class="n">parts</span><span class="p">[</span><span class="n">parts_to_merge</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">|</span> <span class="n">partition</span><span class="o">.</span><span class="n">parts</span><span class="p">[</span><span class="n">parts_to_merge</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
             <span class="p">)</span>
 
-            <span class="n">flips</span> <span class="o">=</span> <span class="n">recursive_tree_part</span><span class="p">(</span>
+            <span class="n">flips</span> <span class="o">=</span> <span class="n">epsilon_tree_bipartition</span><span class="p">(</span>
                 <span class="n">subgraph</span><span class="o">.</span><span class="n">graph</span><span class="p">,</span>
                 <span class="n">parts_to_merge</span><span class="p">,</span>
                 <span class="n">pop_col</span><span class="o">=</span><span class="n">pop_col</span><span class="p">,</span>
