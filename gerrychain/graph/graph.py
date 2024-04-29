@@ -23,7 +23,7 @@ import pandas as pd
 
 from .adjacency import neighbors
 from .geo import GeometryError, invalid_geometries, reprojected
-from typing import List, Iterable, Optional, Set, Tuple
+from typing import List, Iterable, Optional, Set, Tuple, Union
 
 
 def json_serialize(input_object: Any) -> Optional[int]:
@@ -182,7 +182,7 @@ class Graph(networkx.Graph):
         cols_to_add: Optional[List[str]] = None,
         reproject: bool = False,
         ignore_errors: bool = False,
-        crs_override: Optional[str | int] = None,
+        crs_override: Optional[Union[str, int]] = None,
     ) -> "Graph":
         """
         Creates the adjacency :class:`Graph` of geometries described by `dataframe`.
@@ -217,7 +217,7 @@ class Graph(networkx.Graph):
         :type ignore_errors: bool, optional
         :param crs_override: Value to override the CRS of the GeoDataFrame.
             Default is None.
-        :type crs_override: Optional[str | int], optional
+        :type crs_override: Optional[Union[str,int]], optional
 
         :returns: The adjacency graph of the geometries from `dataframe`.
         :rtype: Graph
