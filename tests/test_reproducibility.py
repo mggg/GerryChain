@@ -1,9 +1,9 @@
 import os
-
 import pytest
-
 import random
+
 random.seed(2018)
+
 
 @pytest.mark.skipif(
     True or os.environ.get("PYTHONHASHSEED", 1) != "0",
@@ -61,7 +61,8 @@ def test_repeatable(three_by_three_grid):
     print(flips)
     assert flips == expected_flips
 
-@pytest.mark.slow
+
+# @pytest.mark.slow
 def test_pa_freeze():
     from gerrychain import (
         GeographicPartition,
@@ -75,6 +76,7 @@ def test_pa_freeze():
     import hashlib
     from gerrychain.proposals import recom
     from functools import partial
+
     random.seed(2018)
 
     graph = Graph.from_json("docs/_static/PA_VTDs.json")
@@ -91,10 +93,16 @@ def test_pa_freeze():
     # We use functools.partial to bind the extra parameters (pop_col, pop_target, epsilon, node_repeats)
     # of the recom proposal.
     proposal = partial(
-        recom, pop_col="TOT_POP", pop_target=ideal_population, epsilon=0.02, node_repeats=2
+        recom,
+        pop_col="TOT_POP",
+        pop_target=ideal_population,
+        epsilon=0.02,
+        node_repeats=2,
     )
 
-    pop_constraint = constraints.within_percent_of_ideal_population(initial_partition, 0.02)
+    pop_constraint = constraints.within_percent_of_ideal_population(
+        initial_partition, 0.02
+    )
 
     chain = MarkovChain(
         proposal=proposal,
@@ -109,8 +117,10 @@ def test_pa_freeze():
         result += str(list(sorted(partition.population.values())))
         result += str(len(partition.cut_edges))
         result += str(count) + "\n"
-    
+
     # This needs to be changed every time we change the
     # tests around
-    assert hashlib.sha256(result.encode()).hexdigest() == "7f355cd0f7c235f4d285db1c7593ba0d4a5558c404b70521c9837125df418384"
-    
+    assert (
+        hashlib.sha256(result.encode()).hexdigest()
+        == "aa7a5f7116c7b10b7857aeb3555fd88d8dfc5d810dc0b706f8772efba3c78607"
+    )

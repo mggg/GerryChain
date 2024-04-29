@@ -4,10 +4,12 @@ import pytest
 
 from gerrychain import MarkovChain, Partition, proposals
 from gerrychain.accept import always_accept
-from gerrychain.constraints import (no_vanishing_districts,
-                                    single_flip_contiguous)
+from gerrychain.constraints import no_vanishing_districts, contiguous
 from gerrychain.grid import Grid
 from gerrychain.updaters import cut_edges, cut_edges_by_part
+import random
+
+random.seed(2018)
 
 # This is copied and pasted, but should be done with some proper
 # pytest configuration instead:
@@ -27,7 +29,7 @@ def invalid_cut_edges(partition):
 
 
 def test_cut_edges_doesnt_duplicate_edges_with_different_order_of_nodes(
-    three_by_three_grid
+    three_by_three_grid,
 ):
     graph = three_by_three_grid
     assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
@@ -65,7 +67,7 @@ def test_cut_edges_can_handle_multiple_flips(three_by_three_grid):
 
 
 def test_cut_edges_by_part_doesnt_duplicate_edges_with_opposite_order_of_nodes(
-    three_by_three_grid
+    three_by_three_grid,
 ):
     graph = three_by_three_grid
     assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
@@ -144,7 +146,7 @@ def test_cut_edges_matches_naive_cut_edges_at_every_step(proposal, number_of_ste
 
     chain = MarkovChain(
         proposal,
-        [single_flip_contiguous, no_vanishing_districts],
+        [contiguous, no_vanishing_districts],
         always_accept,
         partition,
         number_of_steps,

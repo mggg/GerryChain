@@ -63,127 +63,33 @@ running process and is compatible across future and past releases of GerryChain.
 Use the same versions of all of your dependencies
 -------------------------------------------------
 
+
 You will want to make sure that anyone who tries to repeat your analysis by
 running your code will have the exact same versions of all of the software and packages
 that you use, including the same version of Python.
 
-The easiest way to do this is to use `conda`_ to manage all of your dependencies.
-You can use conda to export an ``environment.yml`` file that anyone can use to replicate your
-environment by running the command ``conda env create -f environment.yml``. For instructions on
-how to do this, see `Sharing your environment`_ and `Creating an environment from an environment.yml file`_
-in the conda documentation.
+The best way to do this is to create a `virtual environment <../user/install.html#virtual-envs>`_ 
+and then save all of the dependencies to a file. This will allow anyone to recreate the
+exact same environment that you used to run your code. To save the packages that are in
+your current virtual environment, simply run
 
-If you've published your code on GitHub, it is a good idea to include your ``environment.yml``
-file in the root folder of your code repository.
+.. code:: console 
 
-.. _`conda`: https://conda.io/projects/conda/en/latest/index.html
-.. _`Sharing your environment`: https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#sharing-an-environment
-.. _`Creating an environment from an environment.yml file`: https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-from-an-environment-yml-file
+  pip freeze > requirements.txt
 
+and this will save the versions of all of your packages to a file called
+``requirements.txt``. You can then share this file with anyone who wants to run your code,
+and they can create the same virtual environment by running
 
-Making Your Environment Reproducible
-------------------------------------
+.. code:: console
 
-If you are working on a project wherein you would like to ensure
-particuluar runs are reproducible, it is necessary to invoke
+  pip install -r requirements.txt
 
-- **MacOS/Linux**: ``export PYTHONHASHSEED=0``
-- **Windows**: 
-
-  - PowerShell ``$env:PYTHONHASHSEED=0``
-  - Command Prompt ``set PYTHONHASHSEED=0``
-
-before running your code. This will ensure that the hash seed is deterministic
-which is important for the replication of spanning trees accross your runs. If you
-would prefer to not have to do this every time, then you need to modify the
-activation script for the virtual environment. Again, this is different depending
-on your operating system:
-
-- **MacOS/Linux**: Open the file ``.venv/bin/activate`` located in your working
-  directory using your favorite text editor
-  and add the line ``export PYTHONHASHSEED=0`` after the ``export PATH`` command. 
-  So you should see something like:: 
-
-    _OLD_VIRTUAL_PATH="$PATH"
-    PATH="$VIRTUAL_ENV/Scripts:$PATH"
-    export PATH
-
-    export PYTHONHASHSEED=0
-  
-  Then, verify that the hash seed is set to 0 in your Python environment by
-  running ``python`` from the command line and typing 
-  ``import os; print(os.environ['PYTHONHASHSEED'])``.
-
-- **Windows**: To be safe, you will need to modify 3 files within your virtual
-  environment:
-
-  - ``.venv\Scripts\activate``: Add the line ``export PYTHONHASHSEED=0`` after
-    the ``export PATH`` command. So you should see something like:: 
-
-      _OLD_VIRTUAL_PATH="$PATH"
-      PATH="$VIRTUAL_ENV/Scripts:$PATH"
-      export PATH
-
-      export PYTHONHASHSEED=0
-
-  - ``.venv\Scripts\activate.bat``: Add the line ``set PYTHONHASHSEED=0`` to the
-    end of the file. So you should see something like::
-
-      if defined _OLD_VIRTUAL_PATH set PATH=%_OLD_VIRTUAL_PATH%
-      if not defined _OLD_VIRTUAL_PATH set _OLD_VIRTUAL_PATH=%PATH%
-
-      set PATH=%VIRTUAL_ENV%\Scripts;%PATH%
-      rem set VIRTUAL_ENV_PROMPT=(.venv) 
-      set PYTHONHASHSEED=0
-
-  - ``.venv\Scripts\Activate.ps1``: Add the line ``$env:PYTHONHASHSEED=0`` to the
-    end of the before the signature bolck. So you should see something like::
-
-      # Add the venv to the PATH
-      Copy-Item -Path Env:PATH -Destination Env:_OLD_VIRTUAL_PATH
-      $Env:PATH = "$VenvExecDir$([System.IO.Path]::PathSeparator)$Env:PATH"
-
-      $env:PYTHONHASHSEED=0
-
-      # SIG # Begin signature block
-
-After you have made these changes, verify that the hash seed is set to 0 in your
-Python environment by running ``python`` from the command line and typing 
-``import os; print(os.environ['PYTHONHASHSEED'])`` in the Python prompt.
-
-.. admonition:: A Note on Jupyter
-  :class: note
-
-  If you are using a jupyter notebook, you will need to make sure that you have
-  installed the ``ipykernel`` package in your virtual environment as well as
-  either ``jupyternotebook`` or ``jupyterlab``. To install these packages, run
-  ``pip install <package-name>`` from the command line. Then, to use the virtual
-  python environment in your jupyter notebook, you need to invoke
-  
-  .. code-block:: console
-
-    jupyter notebook
-
-  or
-
-  .. code-block:: console
-
-    jupyter lab
-
-  from the command line of your working directory *while your virtual environment
-  is activated*. This will open a jupyter notebook in your default browser. You may
-  then check that the hash seed is set to 0 by running the following code in a cell
-  of your notebook:
-
-  .. code-block:: python
-
-    import os
-    print(os.environ['PYTHONHASHSEED'])
+Of course, you will both be responsible for making sure that your virtual environments
+have the same ``PYTHONHASHSEED`` set. How to do this is detailed in the next section.
 
 
-Of course, once this is all done, it would be a good idea to save the random seed
-that you used somewhere so that others may replicate your work in the future.
+.. include:: ../repeated_subsections/reproducible_envs.rst
 
-.. _`environment variable`: https://en.wikipedia.org/wiki/Environment_variable
 .. _`pcompress`: https://github.com/mggg/pcompress
 .. _`install Cargo`: https://doc.rust-lang.org/cargo/getting-started/installation.html

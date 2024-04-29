@@ -155,6 +155,9 @@ def affected_parts(partition: Partition) -> Set[int]:
     if flips is None:
         return partition.parts
 
+    if parent is None:
+        return set(flips.values())
+
     affected = set()
     for node, part in flips.items():
         affected.add(part)

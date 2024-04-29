@@ -23,7 +23,7 @@ Dependencies:
 - random: Provides random number generation for probabilistic approaches.
 - typing: Used for type hints.
 
-Last Updated: 30 Jan 2024
+Last Updated: 25 April 2024
 """
 
 import networkx as nx
@@ -78,9 +78,11 @@ def random_spanning_tree(
     for edge in graph.edges():
         weight = random.random()
         for key, value in region_surcharge.items():
+            # We surcharge edges that cross regions and those that are not in any region
             if (
                 graph.nodes[edge[0]][key] != graph.nodes[edge[1]][key]
-                and graph.nodes[edge[0]][key] is not None
+                or graph.nodes[edge[0]][key] is None
+                or graph.nodes[edge[1]][key] is None
             ):
                 weight += value
 
@@ -186,9 +188,32 @@ class PopulatedGraph:
         self.subsets[parent] |= self.subsets[node]
         self._degrees[parent] -= 1
 
-    def has_ideal_population(self, node) -> bool:
+    def has_ideal_population(self, node, one_sided_cut: bool = False) -> bool:
+        """
+        Checks if a node has an ideal population within the graph up to epsilon.
+
+        :param node: The node to check.
+        :type node: Any
+        :param one_sided_cut: Whether or not we are cutting off a single district. When
+            set to False, we check if the node we are cutting and the remaining graph
+            are both within epsilon of the ideal population. When set to True, we only
+            check if the node we are cutting is within epsilon of the ideal population.
+            Defaults to False.
+        :type one_sided_cut: bool, optional
+
+        :returns: True if the node has an ideal population within the graph up to epsilon.
+        :rtype: bool
+        """
+        if one_sided_cut:
+            return (
+                abs(self.population[node] - self.ideal_pop)
+                < self.epsilon * self.ideal_pop
+            )
+
         return (
-            abs(self.population[node] - self.ideal_pop) < self.epsilon * self.ideal_pop
+            abs(self.population[node] - self.ideal_pop) <= self.epsilon * self.ideal_pop
+            and abs((self.tot_pop - self.population[node]) - self.ideal_pop)
+            <= self.epsilon * self.ideal_pop
         )
 
     def __repr__(self) -> str:
@@ -210,17 +235,25 @@ Cut.__new__.__defaults__ = (None, None, None)
 Cut.__doc__ = "Represents a cut in a graph."
 Cut.edge.__doc__ = "The edge where the cut is made. Defaults to None."
 Cut.weight.__doc__ = "The weight assigned to the edge (if any). Defaults to None."
-Cut.subset.__doc__ = "The (frozen) subset of nodes on one side of the cut. Defaults to None."
+Cut.subset.__doc__ = (
+    "The (frozen) subset of nodes on one side of the cut. Defaults to None."
+)
 
 
 def find_balanced_edge_cuts_contraction(
-    h: PopulatedGraph, choice: Callable = random.choice
+    h: PopulatedGraph, one_sided_cut: bool = False, choice: Callable = random.choice
 ) -> List[Cut]:
     """
     Find balanced edge cuts using contraction.
 
     :param h: The populated graph.
     :type h: PopulatedGraph
+    :param one_sided_cut: Whether or not we are cutting off a single district. When
+        set to False, we check if the node we are cutting and the remaining graph
+        are both within epsilon of the ideal population. When set to True, we only
+        check if the node we are cutting is within epsilon of the ideal population.
+        Defaults to False.
+    :type one_sided_cut: bool, optional
     :param choice: The function used to make random choices.
     :type choice: Callable, optional
 
@@ -236,13 +269,13 @@ def find_balanced_edge_cuts_contraction(
     leaves = deque(x for x in h if h.degree(x) == 1)
     while len(leaves) > 0:
         leaf = leaves.popleft()
-        if h.has_ideal_population(leaf):
+        if h.has_ideal_population(leaf, one_sided_cut=one_sided_cut):
             e = (leaf, pred[leaf])
             cuts.append(
                 Cut(
                     edge=e,
                     weight=h.graph.edges[e].get("random_weight", random.random()),
-                    subset=frozenset(h.subsets[leaf].copy())
+                    subset=frozenset(h.subsets[leaf].copy()),
                 )
             )
         # Contract the leaf:
@@ -316,7 +349,7 @@ def _part_nodes(start, succ):
 
 
 def find_balanced_edge_cuts_memoization(
-    h: PopulatedGraph, choice: Callable = random.choice
+    h: PopulatedGraph, one_sided_cut: bool = False, choice: Callable = random.choice
 ) -> List[Cut]:
     """
     Find balanced edge cuts using memoization.
@@ -328,6 +361,12 @@ def find_balanced_edge_cuts_memoization(
 
     :param h: The PopulatedGraph object representing the graph.
     :type h: PopulatedGraph
+    :param one_sided_cut: Whether or not we are cutting off a single district. When
+        set to False, we check if the node we are cutting and the remaining graph
+        are both within epsilon of the ideal population. When set to True, we only
+        check if the node we are cutting is within epsilon of the ideal population.
+        Defaults to False.
+    :type one_sided_cut: bool, optional
     :param choice: The choice function used to select the root node.
     :type choice: Callable, optional
 
@@ -343,18 +382,36 @@ def find_balanced_edge_cuts_memoization(
     subtree_pops = _calc_pops(succ, root, h)
 
     cuts = []
-    for node, tree_pop in subtree_pops.items():
-        if abs(tree_pop - h.ideal_pop) <= h.ideal_pop * h.epsilon:
-            e = (node, pred[node])
-            wt = random.random()
-            cuts.append(
-                Cut(
-                    edge=e,
-                    weight=h.graph.edges[e].get("random_weight", wt),
-                    subset=frozenset(_part_nodes(node, succ))
+
+    if one_sided_cut:
+        for node, tree_pop in subtree_pops.items():
+            if abs(tree_pop - h.ideal_pop) <= h.ideal_pop * h.epsilon:
+                e = (node, pred[node])
+                wt = random.random()
+                cuts.append(
+                    Cut(
+                        edge=e,
+                        weight=h.graph.edges[e].get("random_weight", wt),
+                        subset=frozenset(_part_nodes(node, succ)),
+                    )
                 )
-            )
-        elif abs((total_pop - tree_pop) - h.ideal_pop) <= h.ideal_pop * h.epsilon:
+            elif abs((total_pop - tree_pop) - h.ideal_pop) <= h.ideal_pop * h.epsilon:
+                e = (node, pred[node])
+                wt = random.random()
+                cuts.append(
+                    Cut(
+                        edge=e,
+                        weight=h.graph.edges[e].get("random_weight", wt),
+                        subset=frozenset(set(h.graph.nodes) - _part_nodes(node, succ)),
+                    )
+                )
+
+        return cuts
+
+    for node, tree_pop in subtree_pops.items():
+        if (abs(tree_pop - h.ideal_pop) <= h.ideal_pop * h.epsilon) and (
+            abs((total_pop - tree_pop) - h.ideal_pop) <= h.ideal_pop * h.epsilon
+        ):
             e = (node, pred[node])
             wt = random.random()
             cuts.append(
@@ -386,9 +443,7 @@ class ReselectException(Exception):
     pass
 
 
-def _max_weight_choice(
-    cut_edge_list: List[Cut]
-) -> Cut:
+def _max_weight_choice(cut_edge_list: List[Cut]) -> Cut:
     """
     Each Cut object in the list is assigned a random weight.
     This random weight is either assigned during the call to
@@ -427,17 +482,13 @@ def _max_weight_choice(
 
 def _power_set_sorted_by_size_then_sum(d):
     power_set = [
-        s
-        for i in range(1, len(d) + 1)
-        for s in itertools.combinations(d.keys(), i)
+        s for i in range(1, len(d) + 1) for s in itertools.combinations(d.keys(), i)
     ]
 
     # Sort the subsets in descending order based on
     # the sum of their corresponding values in the dictionary
     sorted_power_set = sorted(
-        power_set,
-        key=lambda s: (len(s), sum(d[i] for i in s)),
-        reverse=True
+        power_set, key=lambda s: (len(s), sum(d[i] for i in s)), reverse=True
     )
 
     return sorted_power_set
@@ -448,9 +499,7 @@ def _power_set_sorted_by_size_then_sum(d):
 # are not modifying the object in the function, and the speed of
 # this randomized selection will not suffer for it.
 def _region_preferred_max_weight_choice(
-    populated_graph: PopulatedGraph,
-    region_surcharge: Dict,
-    cut_edge_list: List[Cut]
+    populated_graph: PopulatedGraph, region_surcharge: Dict, cut_edge_list: List[Cut]
 ) -> Cut:
     """
     This function is used in the case of a region-aware chain. It
@@ -502,8 +551,10 @@ def _region_preferred_max_weight_choice(
     # Prepare data for efficient access
     edge_region_info = {
         cut: {
-            key: (populated_graph.graph.nodes[cut.edge[0]].get(key),
-                  populated_graph.graph.nodes[cut.edge[1]].get(key))
+            key: (
+                populated_graph.graph.nodes[cut.edge[0]].get(key),
+                populated_graph.graph.nodes[cut.edge[1]].get(key),
+            )
             for key in region_surcharge
         }
         for cut in cut_edge_list
@@ -514,7 +565,8 @@ def _region_preferred_max_weight_choice(
     power_set = _power_set_sorted_by_size_then_sum(region_surcharge)
     for region_combination in power_set:
         suitable_cuts = [
-            cut for cut in cut_edge_list
+            cut
+            for cut in cut_edge_list
             if all(
                 edge_region_info[cut][key][0] != edge_region_info[cut][key][1]
                 for key in region_combination
@@ -536,11 +588,12 @@ def bipartition_tree(
     spanning_tree_fn: Callable = random_spanning_tree,
     region_surcharge: Optional[Dict] = None,
     balance_edge_fn: Callable = find_balanced_edge_cuts_memoization,
+    one_sided_cut: bool = False,
     choice: Callable = random.choice,
     max_attempts: Optional[int] = 100000,
     warn_attempts: int = 1000,
     allow_pair_reselection: bool = False,
-    cut_choice: Callable = _region_preferred_max_weight_choice
+    cut_choice: Callable = _region_preferred_max_weight_choice,
 ) -> Set:
     """
     This function finds a balanced 2 partition of a graph by drawing a
@@ -575,6 +628,13 @@ def bipartition_tree(
     :param balance_edge_fn: The function to find balanced edge cuts. Defaults to
         :func:`find_balanced_edge_cuts_memoization`.
     :type balance_edge_fn: Callable, optional
+    :param one_sided_cut: Passed to the ``balance_edge_fn``. Determines whether or not we are
+        cutting off a single district when partitioning the tree. When
+        set to False, we check if the node we are cutting and the remaining graph
+        are both within epsilon of the ideal population. When set to True, we only
+        check if the node we are cutting is within epsilon of the ideal population.
+        Defaults to False.
+    :type one_sided_cut: bool, optional
     :param choice: The function to make a random choice of root node for the population
         tree. Passed to ``balance_edge_fn``. Can be substituted for testing.
         Defaults to :func:`random.random()`.
@@ -603,6 +663,9 @@ def bipartition_tree(
     # Try to add the region-aware in if the spanning_tree_fn accepts a surcharge dictionary
     if "region_surcharge" in signature(spanning_tree_fn).parameters:
         spanning_tree_fn = partial(spanning_tree_fn, region_surcharge=region_surcharge)
+
+    if "one_sided_cut" in signature(balance_edge_fn).parameters:
+        balance_edge_fn = partial(balance_edge_fn, one_sided_cut=one_sided_cut)
 
     populations = {node: graph.nodes[node][pop_col] for node in graph.node_indices}
 
@@ -742,6 +805,7 @@ def bipartition_tree_random(
     spanning_tree: Optional[nx.Graph] = None,
     spanning_tree_fn: Callable = random_spanning_tree,
     balance_edge_fn: Callable = find_balanced_edge_cuts_memoization,
+    one_sided_cut: bool = False,
     choice: Callable = random.choice,
     max_attempts: Optional[int] = 100000,
 ) -> Union[Set[Any], None]:
@@ -757,14 +821,14 @@ def bipartition_tree_random(
     Builds up a connected subgraph with a connected complement whose population
     is ``epsilon * pop_target`` away from ``pop_target``.
 
-    :param graph: The graph to partition
+    :param graph: The graph to partition.
     :type graph: nx.Graph
-    :param pop_col: The node attribute holding the population of each node
+    :param pop_col: The node attribute holding the population of each node.
     :type pop_col: str
-    :param pop_target: The target population for the returned subset of nodes
+    :param pop_target: The target population for the returned subset of nodes.
     :type pop_target: Union[int, float]
     :param epsilon: The allowable deviation from  ``pop_target`` (as a percentage of
-        ``pop_target``) for the subgraph's population
+        ``pop_target``) for the subgraph's population.
     :type epsilon: float
     :param node_repeats: A parameter for the algorithm: how many different choices
         of root to use before drawing a new spanning tree. Defaults to 1.
@@ -783,6 +847,13 @@ def bipartition_tree_random(
     :param balance_edge_fn: The algorithm used to find balanced cut edges. Defaults to
         :func:`find_balanced_edge_cuts_memoization`.
     :type balance_edge_fn: Callable, optional
+    :param one_sided_cut: Passed to the ``balance_edge_fn``. Determines whether or not we are
+        cutting off a single district when partitioning the tree. When
+        set to False, we check if the node we are cutting and the remaining graph
+        are both within epsilon of the ideal population. When set to True, we only
+        check if the node we are cutting is within epsilon of the ideal population.
+        Defaults to False.
+    :type one_sided_cut: bool, optional
     :param choice: The random choice function. Can be substituted for testing. Defaults
         to :func:`random.choice`.
     :type choice: Callable, optional
@@ -794,6 +865,9 @@ def bipartition_tree_random(
         valid spanning tree is not found.
     :rtype: Union[Set[Any], None]
     """
+    if "one_sided_cut" in signature(balance_edge_fn).parameters:
+        balance_edge_fn = partial(balance_edge_fn, one_sided_cut=True)
+
     possible_cuts = _bipartition_tree_random_all(
         graph=graph,
         pop_col=pop_col,
@@ -811,6 +885,89 @@ def bipartition_tree_random(
         return choice(possible_cuts).subset
 
 
+def epsilon_tree_bipartition(
+    graph: nx.Graph,
+    parts: Sequence,
+    pop_target: Union[float, int],
+    pop_col: str,
+    epsilon: float,
+    node_repeats: int = 1,
+    method: Callable = partial(bipartition_tree, max_attempts=10000),
+) -> Dict:
+    """
+    Uses :func:`~gerrychain.tree.bipartition_tree` to partition a tree into
+    two parts of population ``pop_target`` (within ``epsilon``).
+
+    :param graph: The graph to partition into two :math:`\varepsilon`-balanced parts.
+    :type graph: nx.Graph
+    :param parts: Iterable of part (district) labels (like ``[0,1,2]`` or ``range(4)``).
+    :type parts: Sequence
+    :param pop_target: Target population for each part of the partition.
+    :type pop_target: Union[float, int]
+    :param pop_col: Node attribute key holding population data.
+    :type pop_col: str
+    :param epsilon: How far (as a percentage of ``pop_target``) from ``pop_target`` the parts
+        of the partition can be.
+    :type epsilon: float
+    :param node_repeats: Parameter for :func:`~gerrychain.tree_methods.bipartition_tree` to use.
+        Defaults to 1.
+    :type node_repeats: int, optional
+    :param method: The partition method to use. Defaults to
+        `partial(bipartition_tree, max_attempts=10000)`.
+    :type method: Callable, optional
+
+    :returns: New assignments for the nodes of ``graph``.
+    :rtype: dict
+    """
+    if len(parts) != 2:
+        raise ValueError(
+            "This function only supports bipartitioning. Please ensure that there"
+            + " are exactly 2 parts in the parts list."
+        )
+
+    flips = {}
+    remaining_nodes = graph.node_indices
+
+    lb_pop = pop_target * (1 - epsilon)
+    ub_pop = pop_target * (1 + epsilon)
+    check_pop = lambda x: lb_pop <= x <= ub_pop
+
+    nodes = method(
+        graph.subgraph(remaining_nodes),
+        pop_col=pop_col,
+        pop_target=pop_target,
+        epsilon=epsilon,
+        node_repeats=node_repeats,
+        one_sided_cut=False,
+    )
+
+    if nodes is None:
+        raise BalanceError()
+
+    part_pop = 0
+    for node in nodes:
+        flips[node] = parts[-2]
+        part_pop += graph.nodes[node][pop_col]
+
+    if not check_pop(part_pop):
+        raise PopulationBalanceError()
+
+    remaining_nodes -= nodes
+
+    # All of the remaining nodes go in the last part
+    part_pop = 0
+    for node in remaining_nodes:
+        flips[node] = parts[-1]
+        part_pop += graph.nodes[node][pop_col]
+
+    if not check_pop(part_pop):
+        raise PopulationBalanceError()
+
+    return flips
+
+
+# TODO: Move these recursive partition functions to their own module. They are not
+# central to the operation of the recom function despite being tree methods.
 def recursive_tree_part(
     graph: nx.Graph,
     parts: Sequence,
@@ -825,16 +982,16 @@ def recursive_tree_part(
     ``len(parts)`` parts of population ``pop_target`` (within ``epsilon``). Can be used to
     generate initial seed plans or to implement ReCom-like "merge walk" proposals.
 
-    :param graph: The graph
+    :param graph: The graph to partition into ``len(parts)`` :math:`\varepsilon`-balanced parts.
     :type graph: nx.Graph
-    :param parts: Iterable of part labels (like ``[0,1,2]`` or ``range(4)``)
+    :param parts: Iterable of part (district) labels (like ``[0,1,2]`` or ``range(4)``).
     :type parts: Sequence
-    :param pop_target: Target population for each part of the partition
+    :param pop_target: Target population for each part of the partition.
     :type pop_target: Union[float, int]
-    :param pop_col: Node attribute key holding population data
+    :param pop_col: Node attribute key holding population data.
     :type pop_col: str
     :param epsilon: How far (as a percentage of ``pop_target``) from ``pop_target`` the parts
-        of the partition can be
+        of the partition can be.
     :type epsilon: float
     :param node_repeats: Parameter for :func:`~gerrychain.tree_methods.bipartition_tree` to use.
         Defaluts to 1.
@@ -857,7 +1014,11 @@ def recursive_tree_part(
     # 98% of the target population and the target population.
     debt: Union[int, float] = 0
 
-    for part in parts[:-1]:
+    lb_pop = pop_target * (1 - epsilon)
+    ub_pop = pop_target * (1 + epsilon)
+    check_pop = lambda x: lb_pop <= x <= ub_pop
+
+    for part in parts[:-2]:
         min_pop = max(pop_target * (1 - epsilon), pop_target * (1 - epsilon) - debt)
         max_pop = min(pop_target * (1 + epsilon), pop_target * (1 + epsilon) - debt)
         new_pop_target = (min_pop + max_pop) / 2
@@ -869,6 +1030,7 @@ def recursive_tree_part(
                 pop_target=new_pop_target,
                 epsilon=(max_pop - min_pop) / (2 * new_pop_target),
                 node_repeats=node_repeats,
+                one_sided_cut=True,
             )
         except Exception:
             raise
@@ -881,12 +1043,44 @@ def recursive_tree_part(
             flips[node] = part
             part_pop += graph.nodes[node][pop_col]
 
+        if not check_pop(part_pop):
+            raise PopulationBalanceError()
+
         debt += part_pop - pop_target
         remaining_nodes -= nodes
 
+    # After making n-2 districts, we need to make sure that the last
+    # two districts are both balanced.
+    nodes = method(
+        graph.subgraph(remaining_nodes),
+        pop_col=pop_col,
+        pop_target=pop_target,
+        epsilon=epsilon,
+        node_repeats=node_repeats,
+        one_sided_cut=False,
+    )
+
+    if nodes is None:
+        raise BalanceError()
+
+    part_pop = 0
+    for node in nodes:
+        flips[node] = parts[-2]
+        part_pop += graph.nodes[node][pop_col]
+
+    if not check_pop(part_pop):
+        raise PopulationBalanceError()
+
+    remaining_nodes -= nodes
+
     # All of the remaining nodes go in the last part
+    part_pop = 0
     for node in remaining_nodes:
         flips[node] = parts[-1]
+        part_pop += graph.nodes[node][pop_col]
+
+    if not check_pop(part_pop):
+        raise PopulationBalanceError()
 
     return flips
 
@@ -1003,7 +1197,7 @@ def get_seed_chunks(
 def get_max_prime_factor_less_than(n: int, ceil: int) -> Optional[int]:
     """
     Helper function for recursive_seed_part_inner. Returns the largest prime factor of ``n``
-        less than ``ceil``, or None if all are greater than ceil.
+    less than ``ceil``, or None if all are greater than ceil.
 
     :param n: The number to find the largest prime factor for.
     :type n: int
@@ -1095,7 +1289,7 @@ def recursive_seed_part_inner(
     :type ceil: Optional[int], optional
 
     :returns: New assignments for the nodes of ``graph``.
-    :rtype: List of lists, each list is a district
+    :rtype: List of sets, each set is a district
     """
 
     # Chooses num_chunks
@@ -1115,6 +1309,18 @@ def recursive_seed_part_inner(
     if num_dists == 1:
         return [set(graph.nodes)]
 
+    if num_dists == 2:
+        nodes = method(
+            graph,
+            pop_col=pop_col,
+            pop_target=pop_target,
+            epsilon=epsilon,
+            node_repeats=node_repeats,
+            one_sided_cut=False,
+        )
+
+        return [set(nodes), set(graph.nodes) - set(nodes)]
+
     # bite off a district and recurse into the remaining subgraph
     elif num_chunks is None or num_dists % num_chunks != 0:
         remaining_nodes = set(graph.nodes)
@@ -1124,6 +1330,7 @@ def recursive_seed_part_inner(
             pop_target=pop_target,
             epsilon=epsilon,
             node_repeats=node_repeats,
+            one_sided_cut=True,
         )
         remaining_nodes -= nodes
         assignment = [nodes] + recursive_seed_part_inner(
@@ -1140,7 +1347,13 @@ def recursive_seed_part_inner(
     # split graph into num_chunks chunks, and recurse into each chunk
     elif num_dists % num_chunks == 0:
         chunks = get_seed_chunks(
-            graph, num_chunks, num_dists, pop_target, pop_col, epsilon, method=method
+            graph,
+            num_chunks,
+            num_dists,
+            pop_target,
+            pop_col,
+            epsilon,
+            method=partial(method, one_sided_cut=True),
         )
 
         assignment = []
@@ -1227,3 +1440,7 @@ def recursive_seed_part(
 
 class BalanceError(Exception):
     """Raised when a balanced cut cannot be found."""
+
+
+class PopulationBalanceError(Exception):
+    """Raised when the population of a district is outside the acceptable epsilon range."""
