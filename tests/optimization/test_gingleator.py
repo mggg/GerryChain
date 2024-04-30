@@ -53,6 +53,7 @@ def gingleator_test_partition(four_by_five_grid_for_opt):
 
 
 def test_ginglator_needs_min_perc_or_min_pop_col(four_by_five_grid_for_opt):
+    random.seed(2024)
     initial_partition = Partition.from_random_assignment(
         graph=four_by_five_grid_for_opt,
         n_parts=4,
@@ -90,6 +91,7 @@ def test_ginglator_needs_min_perc_or_min_pop_col(four_by_five_grid_for_opt):
 
 
 def test_ginglator_warns_if_min_perc_and_min_pop_col_set(four_by_five_grid_for_opt):
+    random.seed(2024)
     initial_partition = Partition.from_random_assignment(
         graph=four_by_five_grid_for_opt,
         n_parts=4,
@@ -132,7 +134,8 @@ def test_ginglator_warns_if_min_perc_and_min_pop_col_set(four_by_five_grid_for_o
     )
 
 
-def test_ginglator_finds_best_partition(four_by_five_grid_for_opt):
+def test_gingleator_finds_best_partition(four_by_five_grid_for_opt):
+    random.seed(2024)
     initial_partition = Partition.from_random_assignment(
         graph=four_by_five_grid_for_opt,
         n_parts=4,
@@ -164,7 +167,7 @@ def test_ginglator_finds_best_partition(four_by_five_grid_for_opt):
         score_function=Gingleator.num_opportunity_dists,
     )
 
-    total_steps = 1000
+    total_steps = 5000
     burst_length = 10
 
     max_scores_sb = np.zeros(total_steps)

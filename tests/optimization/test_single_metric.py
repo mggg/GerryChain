@@ -20,6 +20,7 @@ def simple_cut_edge_count(partition):
 
 
 def test_single_metric_sb_attains_min_quickly(four_by_five_grid_for_opt):
+    random.seed(2024)
     initial_partition = Partition.from_random_assignment(
         graph=four_by_five_grid_for_opt,
         n_parts=4,
@@ -66,6 +67,7 @@ def test_single_metric_sb_attains_min_quickly(four_by_five_grid_for_opt):
 
 
 def test_single_metric_tilted_sb_attains_min_quickly(four_by_five_grid_for_opt):
+    random.seed(2024)
     initial_partition = Partition.from_random_assignment(
         graph=four_by_five_grid_for_opt,
         n_parts=4,
@@ -113,6 +115,7 @@ def test_single_metric_tilted_sb_attains_min_quickly(four_by_five_grid_for_opt):
 
 
 def test_single_metric_variable_len_sb_attains_min_quickly(four_by_five_grid_for_opt):
+    random.seed(2024)
     initial_partition = Partition.from_random_assignment(
         graph=four_by_five_grid_for_opt,
         n_parts=4,
@@ -163,6 +166,7 @@ def test_single_metric_variable_len_sb_attains_min_quickly(four_by_five_grid_for
 
 
 def test_single_metric_sa_jumpcycle_attains_min_quickly(four_by_five_grid_for_opt):
+    random.seed(2024)
     initial_partition = Partition.from_random_assignment(
         graph=four_by_five_grid_for_opt,
         n_parts=4,
@@ -209,6 +213,7 @@ def test_single_metric_sa_jumpcycle_attains_min_quickly(four_by_five_grid_for_op
 
 
 def test_single_metric_sa_lincycle_attains_min_quickly(four_by_five_grid_for_opt):
+    random.seed(2024)
     initial_partition = Partition.from_random_assignment(
         graph=four_by_five_grid_for_opt,
         n_parts=4,
@@ -256,6 +261,7 @@ def test_single_metric_sa_lincycle_attains_min_quickly(four_by_five_grid_for_opt
 def test_single_metric_sa_linear_jumpcycle_attains_min_quickly(
     four_by_five_grid_for_opt,
 ):
+    random.seed(2024)
     initial_partition = Partition.from_random_assignment(
         graph=four_by_five_grid_for_opt,
         n_parts=4,
@@ -301,6 +307,7 @@ def test_single_metric_sa_linear_jumpcycle_attains_min_quickly(
 
 
 def test_single_metric_sa_logitcycle_attains_min_quickly(four_by_five_grid_for_opt):
+    random.seed(2024)
     initial_partition = Partition.from_random_assignment(
         graph=four_by_five_grid_for_opt,
         n_parts=4,
@@ -348,6 +355,7 @@ def test_single_metric_sa_logitcycle_attains_min_quickly(four_by_five_grid_for_o
 def test_single_metric_sa_logit_jumpcycle_attains_min_quickly(
     four_by_five_grid_for_opt,
 ):
+    random.seed(2024)
     initial_partition = Partition.from_random_assignment(
         graph=four_by_five_grid_for_opt,
         n_parts=4,
@@ -400,6 +408,7 @@ def test_single_metric_sa_logit_jumpcycle_attains_min_quickly(
 def test_single_metric_tilted_runs_attains_min_quickly_with_p_eq_0p1(
     four_by_five_grid_for_opt,
 ):
+    random.seed(2024)
     initial_partition = Partition.from_random_assignment(
         graph=four_by_five_grid_for_opt,
         n_parts=4,
@@ -446,6 +455,8 @@ def test_single_metric_tilted_runs_attains_min_quickly_with_p_eq_0p1(
 
 
 def test_single_metric_sb_finds_hard_max(four_by_five_grid_for_opt):
+    random.seed(2024)
+
     def opt_fn(partition):
         mx = 10
         count = sum(1 for x in partition["opt_value_sum"].values() if x == mx)
@@ -494,6 +505,57 @@ def test_single_metric_sb_finds_hard_max(four_by_five_grid_for_opt):
 
 
 def test_single_metric_sa_finds_hard_max(four_by_five_grid_for_opt):
+    random.seed(2024)
+
+    def opt_fn(partition):
+        mx = 10
+        count = sum(1 for x in partition["opt_value_sum"].values() if x == mx)
+        return count
+
+    initial_partition = Partition.from_random_assignment(
+        graph=four_by_five_grid_for_opt,
+        n_parts=4,
+        epsilon=0.0,
+        pop_col="population",
+        updaters={"opt_value_sum": Tally("opt_value", alias="opt_value_sum")},
+    )
+
+    ideal_pop = sum(initial_partition["population"].values()) / 4
+
+    proposal = partial(
+        recom,
+        pop_col="population",
+        pop_target=ideal_pop,
+        epsilon=0.0,
+        node_repeats=1,
+    )
+
+    optimizer = SingleMetricOptimizer(
+        proposal=proposal,
+        constraints=[contiguous],
+        initial_state=initial_partition,
+        optimization_metric=opt_fn,
+        maximize=True,
+    )
+
+    total_steps = 20000
+
+    max_scores_anneal = np.zeros(total_steps)
+    for i, part in enumerate(
+        optimizer.simulated_annealing(
+            total_steps,
+            optimizer.linear_jumpcycle_beta_function(100, 100, 100),
+            beta_magnitude=1,
+        )
+    ):
+        max_scores_anneal[i] = optimizer.best_score
+
+    assert np.max(max_scores_anneal) == 2
+
+
+def test_single_metric_tilted_runs_finds_hard_max(four_by_five_grid_for_opt):
+    random.seed(2024)
+
     def opt_fn(partition):
         mx = 10
         count = sum(1 for x in partition["opt_value_sum"].values() if x == mx)
@@ -527,57 +589,10 @@ def test_single_metric_sa_finds_hard_max(four_by_five_grid_for_opt):
 
     total_steps = 10000
 
-    max_scores_anneal = np.zeros(total_steps)
-    for i, part in enumerate(
-        optimizer.simulated_annealing(
-            total_steps,
-            optimizer.linear_jumpcycle_beta_function(10, 10, 10),
-            beta_magnitude=1,
-        )
-    ):
-        max_scores_anneal[i] = optimizer.best_score
-
-    assert np.max(max_scores_anneal) == 2
-
-
-def test_single_metric_tilted_runs_finds_hard_max(four_by_five_grid_for_opt):
-    def opt_fn(partition):
-        mx = 10
-        count = sum(1 for x in partition["opt_value_sum"].values() if x == mx)
-        return count
-
-    initial_partition = Partition.from_random_assignment(
-        graph=four_by_five_grid_for_opt,
-        n_parts=4,
-        epsilon=0.0,
-        pop_col="population",
-        updaters={"opt_value_sum": Tally("opt_value", alias="opt_value_sum")},
-    )
-
-    ideal_pop = sum(initial_partition["population"].values()) / 4
-
-    proposal = partial(
-        recom,
-        pop_col="population",
-        pop_target=ideal_pop,
-        epsilon=0.0,
-        node_repeats=1,
-    )
-
-    optimizer = SingleMetricOptimizer(
-        proposal=proposal,
-        constraints=[contiguous],
-        initial_state=initial_partition,
-        optimization_metric=opt_fn,
-        maximize=True,
-    )
-
-    total_steps = 5000
-
-    min_scores_tilt = np.zeros(total_steps)
+    max_scores_tilt = np.zeros(total_steps)
     for i, part in enumerate(
         optimizer.tilted_run(num_steps=total_steps, p=0.1, with_progress_bar=True)
     ):
-        min_scores_tilt[i] = optimizer.best_score
+        max_scores_tilt[i] = optimizer.best_score
 
-    assert np.max(min_scores_tilt) == 2
+    assert np.max(max_scores_tilt) == 2

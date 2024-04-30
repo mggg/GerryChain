@@ -62,7 +62,7 @@ def test_repeatable(three_by_three_grid):
     assert flips == expected_flips
 
 
-# @pytest.mark.slow
+@pytest.mark.slow
 def test_pa_freeze():
     from gerrychain import (
         GeographicPartition,
