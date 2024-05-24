@@ -121,14 +121,14 @@ Metrics
 Optimization
 ------------
 
-.. automodule:: gerrychain.optimization
+.. automodule:: gerrychain.optimization.optimization
     :members:
     :undoc-members:
     :show-inheritance:
     :noindex:
 
 
-.. automodule:: gerrychain.gingleator
+.. automodule:: gerrychain.optimization.gingleator
     :members:
     :undoc-members:
     :show-inheritance:

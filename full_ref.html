@@ -748,7 +748,7 @@ The intersections may be empty!</p>
 
 <dl class="function">
 <dt>
-<code class="sig-prename descclassname">gerrychain.graph.adjacency.</code><code class="sig-name descname">neighbors</code><span class="sig-paren">(</span><em class="sig-param">df: &lt;Mock name='mock.GeoDataFrame' id='140044216943424'&gt;</em>, <em class="sig-param">adjacency: str</em><span class="sig-paren">)</span> &#x2192; Dict<a class="reference internal" href="_modules/gerrychain/graph/adjacency.html#neighbors"><span class="viewcode-link">[source]</span></a></dt>
+<code class="sig-prename descclassname">gerrychain.graph.adjacency.</code><code class="sig-name descname">neighbors</code><span class="sig-paren">(</span><em class="sig-param">df: &lt;Mock name='mock.GeoDataFrame' id='140152910226288'&gt;</em>, <em class="sig-param">adjacency: str</em><span class="sig-paren">)</span> &#x2192; Dict<a class="reference internal" href="_modules/gerrychain/graph/adjacency.html#neighbors"><span class="viewcode-link">[source]</span></a></dt>
 <dd></dd></dl>
 
 <dl class="function">
@@ -854,7 +854,7 @@ Light wrapper around shapely’s explain_validity.</p>
 
 <dl class="function">
 <dt>
-<code class="sig-prename descclassname">gerrychain.graph.geo.</code><code class="sig-name descname">identify_utm_zone</code><span class="sig-paren">(</span><em class="sig-param">df: &lt;Mock name='mock.GeoDataFrame' id='140044216943424'&gt;</em><span class="sig-paren">)</span> &#x2192; int<a class="reference internal" href="_modules/gerrychain/graph/geo.html#identify_utm_zone"><span class="viewcode-link">[source]</span></a></dt>
+<code class="sig-prename descclassname">gerrychain.graph.geo.</code><code class="sig-name descname">identify_utm_zone</code><span class="sig-paren">(</span><em class="sig-param">df: &lt;Mock name='mock.GeoDataFrame' id='140152910226288'&gt;</em><span class="sig-paren">)</span> &#x2192; int<a class="reference internal" href="_modules/gerrychain/graph/geo.html#identify_utm_zone"><span class="viewcode-link">[source]</span></a></dt>
 <dd><p>Given a GeoDataFrame, identify the Universal Transverse Mercator zone
 number for the centroid of the geometries in the dataframe.</p>
 </dd></dl>
@@ -1014,7 +1014,7 @@ SciPy sparse matrix, or a PyGraphviz graph.</p>
 </div>
 <dl class="method">
 <dt>
-<code class="sig-name descname">add_data</code><span class="sig-paren">(</span><em class="sig-param">df: &lt;Mock name='mock.DataFrame' id='140044217018976'&gt;</em>, <em class="sig-param">columns: Optional[Iterable[str]] = None</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/gerrychain/graph/graph.html#Graph.add_data"><span class="viewcode-link">[source]</span></a></dt>
+<code class="sig-name descname">add_data</code><span class="sig-paren">(</span><em class="sig-param">df: &lt;Mock name='mock.DataFrame' id='140152910293552'&gt;</em>, <em class="sig-param">columns: Optional[Iterable[str]] = None</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/gerrychain/graph/graph.html#Graph.add_data"><span class="viewcode-link">[source]</span></a></dt>
 <dd><p>Add columns of a DataFrame to a graph as node attributes
 by matching the DataFrame’s index to node ids.</p>
 <dl class="field-list simple">
@@ -1075,7 +1075,7 @@ via the command:</p>
 
 <dl class="method">
 <dt>
-<em class="property">classmethod </em><code class="sig-name descname">from_geodataframe</code><span class="sig-paren">(</span><em class="sig-param">dataframe: &lt;Mock name='mock.DataFrame' id='140044217018976'&gt;</em>, <em class="sig-param">adjacency: str = 'rook'</em>, <em class="sig-param">cols_to_add: Optional[List[str]] = None</em>, <em class="sig-param">reproject: bool = False</em>, <em class="sig-param">ignore_errors: bool = False</em>, <em class="sig-param">crs_override: Union[str</em>, <em class="sig-param">int</em>, <em class="sig-param">None] = None</em><span class="sig-paren">)</span> &#x2192; gerrychain.graph.graph.Graph<a class="reference internal" href="_modules/gerrychain/graph/graph.html#Graph.from_geodataframe"><span class="viewcode-link">[source]</span></a></dt>
+<em class="property">classmethod </em><code class="sig-name descname">from_geodataframe</code><span class="sig-paren">(</span><em class="sig-param">dataframe: &lt;Mock name='mock.DataFrame' id='140152910293552'&gt;</em>, <em class="sig-param">adjacency: str = 'rook'</em>, <em class="sig-param">cols_to_add: Optional[List[str]] = None</em>, <em class="sig-param">reproject: bool = False</em>, <em class="sig-param">ignore_errors: bool = False</em>, <em class="sig-param">crs_override: Union[str</em>, <em class="sig-param">int</em>, <em class="sig-param">None] = None</em><span class="sig-paren">)</span> &#x2192; gerrychain.graph.graph.Graph<a class="reference internal" href="_modules/gerrychain/graph/graph.html#Graph.from_geodataframe"><span class="viewcode-link">[source]</span></a></dt>
 <dd><p>Creates the adjacency <a class="reference internal" href="api.html#gerrychain.graph.graph.Graph" title="gerrychain.graph.graph.Graph"><code class="xref py py-class docutils literal notranslate"><span class="pre">Graph</span></code></a> of geometries described by <cite>dataframe</cite>.
 The areas of the polygons are included as node attributes (with key <cite>area</cite>).
 The shared perimeter of neighboring polygons are included as edge attributes
@@ -1177,7 +1177,7 @@ Default is None.</p></li>
 
 <dl class="method">
 <dt>
-<code class="sig-name descname">join</code><span class="sig-paren">(</span><em class="sig-param">dataframe: &lt;Mock name='mock.DataFrame' id='140044217018976'&gt;</em>, <em class="sig-param">columns: Optional[List[str]] = None</em>, <em class="sig-param">left_index: Optional[str] = None</em>, <em class="sig-param">right_index: Optional[str] = None</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/gerrychain/graph/graph.html#Graph.join"><span class="viewcode-link">[source]</span></a></dt>
+<code class="sig-name descname">join</code><span class="sig-paren">(</span><em class="sig-param">dataframe: &lt;Mock name='mock.DataFrame' id='140152910293552'&gt;</em>, <em class="sig-param">columns: Optional[List[str]] = None</em>, <em class="sig-param">left_index: Optional[str] = None</em>, <em class="sig-param">right_index: Optional[str] = None</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/gerrychain/graph/graph.html#Graph.join"><span class="viewcode-link">[source]</span></a></dt>
 <dd><p>Add data from a dataframe to the graph, matching nodes to rows when
 the node’s <cite>left_index</cite> attribute equals the row’s <cite>right_index</cite> value.</p>
 <dl class="field-list simple">
@@ -1265,7 +1265,7 @@ GeoJSON will result in a much larger JSON file.</p></li>
 
 <dl class="function">
 <dt>
-<code class="sig-prename descclassname">gerrychain.graph.graph.</code><code class="sig-name descname">add_boundary_perimeters</code><span class="sig-paren">(</span><em class="sig-param">graph: gerrychain.graph.graph.Graph</em>, <em class="sig-param">geometries: &lt;Mock name='mock.Series' id='140044217019120'&gt;</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/gerrychain/graph/graph.html#add_boundary_perimeters"><span class="viewcode-link">[source]</span></a></dt>
+<code class="sig-prename descclassname">gerrychain.graph.graph.</code><code class="sig-name descname">add_boundary_perimeters</code><span class="sig-paren">(</span><em class="sig-param">graph: gerrychain.graph.graph.Graph</em>, <em class="sig-param">geometries: &lt;Mock name='mock.Series' id='140152910293744'&gt;</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/gerrychain/graph/graph.html#add_boundary_perimeters"><span class="viewcode-link">[source]</span></a></dt>
 <dd><p>Add shared perimeter between nodes and the total geometry boundary.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1285,7 +1285,7 @@ GeoJSON will result in a much larger JSON file.</p></li>
 
 <dl class="function">
 <dt>
-<code class="sig-prename descclassname">gerrychain.graph.graph.</code><code class="sig-name descname">check_dataframe</code><span class="sig-paren">(</span><em class="sig-param">df: &lt;Mock name='mock.DataFrame' id='140044217018976'&gt;</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/gerrychain/graph/graph.html#check_dataframe"><span class="viewcode-link">[source]</span></a></dt>
+<code class="sig-prename descclassname">gerrychain.graph.graph.</code><code class="sig-name descname">check_dataframe</code><span class="sig-paren">(</span><em class="sig-param">df: &lt;Mock name='mock.DataFrame' id='140152910293552'&gt;</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/gerrychain/graph/graph.html#check_dataframe"><span class="viewcode-link">[source]</span></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
 <dd class="field-odd"><p>None</p>
@@ -1945,6 +1945,495 @@ curve and its reflection about (.5, .5).</p>
 </div>
 <div class="section" id="optimization">
 <h2>Optimization<a class="headerlink" href="#optimization" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt>
+<em class="property">class </em><code class="sig-prename descclassname">gerrychain.optimization.optimization.</code><code class="sig-name descname">SingleMetricOptimizer</code><span class="sig-paren">(</span><em class="sig-param">proposal: Callable[[gerrychain.partition.partition.Partition], gerrychain.partition.partition.Partition], constraints: Union[Callable[[gerrychain.partition.partition.Partition], bool], List[Callable[[gerrychain.partition.partition.Partition], bool]]], initial_state: gerrychain.partition.partition.Partition, optimization_metric: Callable[[gerrychain.partition.partition.Partition], Any], maximize: bool = True, step_indexer: str = 'step'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gerrychain/optimization/optimization.html#SingleMetricOptimizer"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>SingleMetricOptimizer represents the class of algorithms / chains that optimize plans with
+respect to a single metric.  An instance of this class encapsulates the following state
+information:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>the dual graph and updaters via the initial partition,</p></li>
+<li><p>the constraints new proposals are subject to,</p></li>
+<li><p>the metric over which to optimize,</p></li>
+<li><p>and whether or not to seek maximal or minimal values of the metric.</p></li>
+</ul>
+</div></blockquote>
+<dl class="simple">
+<dt>The SingleMetricOptimizer class implements the following common methods of optimization:</dt><dd><ul class="simple">
+<li><p>Short Bursts</p></li>
+<li><p>Simulated Annealing</p></li>
+<li><p>Tilted Runs</p></li>
+</ul>
+</dd>
+</dl>
+<p>Both during and after a optimization run, the class properties <cite>best_part</cite> and <cite>best_score</cite>
+represent the optimal partition / corresponding score value observed.  Note that these
+properties do NOT persist across multiple optimization runs, as they are reset each time an
+optimization run is invoked.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>proposal</strong> (<em>Callable</em>) – Function proposing the next state from the current state.</p></li>
+<li><p><strong>constraints</strong> (<em>Union</em><em>[</em><em>Callable</em><em>[</em><em>[</em><a class="reference internal" href="api.html#gerrychain.partition.Partition" title="gerrychain.partition.Partition"><em>Partition</em></a><em>]</em><em>, </em><em>bool</em><em>]</em><em>, </em><em>List</em><em>[</em><em>Callable</em><em>[</em><em>[</em><a class="reference internal" href="api.html#gerrychain.partition.Partition" title="gerrychain.partition.Partition"><em>Partition</em></a><em>]</em><em>, </em><em>bool</em><em>]</em><em>]</em><em>]</em>) – A function, or lists of functions, determining whether the proposed next
+state is valid (passes all binary constraints). Usually this is a
+<a class="reference internal" href="api.html#gerrychain.constraints.Validator" title="gerrychain.constraints.Validator"><code class="xref py py-class docutils literal notranslate"><span class="pre">Validator</span></code></a> class instance.</p></li>
+<li><p><strong>initial_state</strong> (<a class="reference internal" href="api.html#gerrychain.partition.Partition" title="gerrychain.partition.Partition"><em>Partition</em></a>) – Initial state of the optimizer.</p></li>
+<li><p><strong>optimization_metric</strong> (<em>Callable</em><em>[</em><em>[</em><a class="reference internal" href="api.html#gerrychain.partition.Partition" title="gerrychain.partition.Partition"><em>Partition</em></a><em>]</em><em>, </em><em>Any</em><em>]</em>) – The score function with which to optimize over. This should have
+the signature: <code class="docutils literal notranslate"><span class="pre">Partition</span> <span class="pre">-&gt;</span> <span class="pre">'a</span></code> where ‘a is comparable.</p></li>
+<li><p><strong>maximize</strong> (<em>bool</em><em>, </em><em>optional</em>) – Boolean indicating whether to maximize or minimize the function.
+Defaults to True for maximize.</p></li>
+<li><p><strong>step_indexer</strong> (<em>str</em><em>, </em><em>optional</em>) – Name of the updater tracking the partitions step in the chain. If not
+implemented on the partition the constructor creates and adds it. Defaults to “step”.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A SingleMetricOptimizer object</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>SingleMetricOptimizer</p>
+</dd>
+</dl>
+<dl class="method">
+<dt>
+<em class="property">property </em><code class="sig-name descname">best_part</code></dt>
+<dd><p>Partition object corresponding to best scoring plan observed over the current (or most
+recent) optimization run.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Partition object with the best score.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference internal" href="api.html#gerrychain.partition.Partition" title="gerrychain.partition.Partition">Partition</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<em class="property">property </em><code class="sig-name descname">best_score</code></dt>
+<dd><p>Value of score metric corresponding to best scoring plan observed over the current (or most
+recent) optimization run.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Value of the best score.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>Any</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<em class="property">classmethod </em><code class="sig-name descname">jumpcycle_beta_function</code><span class="sig-paren">(</span><em class="sig-param">duration_hot: int</em>, <em class="sig-param">duration_cold: int</em><span class="sig-paren">)</span> &#x2192; Callable[[int], float]<a class="reference internal" href="_modules/gerrychain/optimization/optimization.html#SingleMetricOptimizer.jumpcycle_beta_function"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Class method that binds and return simple hot-cold cycle beta temperature function, where
+the chain runs hot for some given duration and then cold for some duration, and repeats that
+cycle.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>duration_hot</strong> (<em>int</em>) – Number of steps to run chain hot.</p></li>
+<li><p><strong>duration_cold</strong> (<em>int</em>) – Number of steps to run chain cold.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Beta function defining hot-cold cycle.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Callable[[int], float]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<em class="property">classmethod </em><code class="sig-name descname">linear_jumpcycle_beta_function</code><span class="sig-paren">(</span><em class="sig-param">duration_hot: int</em>, <em class="sig-param">duration_cooldown</em>, <em class="sig-param">duration_cold: int</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gerrychain/optimization/optimization.html#SingleMetricOptimizer.linear_jumpcycle_beta_function"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Class method that binds and returns a simple linear hot-cool cycle beta temperature
+function, where the chain runs hot for some given duration, cools down linearly for some
+duration, and then runs cold for some duration before jumping back to hot and repeating.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>duration_hot</strong> (<em>int</em>) – Number of steps to run chain hot.</p></li>
+<li><p><strong>duration_cooldown</strong> (<em>int</em>) – Number of steps needed to transition from hot to cold.</p></li>
+<li><p><strong>duration_cold</strong> (<em>int</em>) – Number of steps to run chain cold.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Beta function defining linear hot-cool cycle.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Callable[[int], float]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<em class="property">classmethod </em><code class="sig-name descname">linearcycle_beta_function</code><span class="sig-paren">(</span><em class="sig-param">duration_hot: int</em>, <em class="sig-param">duration_cooldown: int</em>, <em class="sig-param">duration_cold: int</em><span class="sig-paren">)</span> &#x2192; Callable[[int], float]<a class="reference internal" href="_modules/gerrychain/optimization/optimization.html#SingleMetricOptimizer.linearcycle_beta_function"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Class method that binds and returns a simple linear hot-cool cycle beta temperature
+function, where the chain runs hot for some given duration, cools down linearly for some
+duration, and then runs cold for some duration before warming up again and repeating.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>duration_hot</strong> (<em>int</em>) – Number of steps to run chain hot.</p></li>
+<li><p><strong>duration_cooldown</strong> (<em>int</em>) – Number of steps needed to transition from hot to cold or
+vice-versa.</p></li>
+<li><p><strong>duration_cold</strong> (<em>int</em>) – Number of steps to run chain cold.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Beta function defining linear hot-cool cycle.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Callable[[int], float]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<em class="property">classmethod </em><code class="sig-name descname">logit_jumpcycle_beta_function</code><span class="sig-paren">(</span><em class="sig-param">duration_hot: int</em>, <em class="sig-param">duration_cooldown: int</em>, <em class="sig-param">duration_cold: int</em><span class="sig-paren">)</span> &#x2192; Callable[[int], float]<a class="reference internal" href="_modules/gerrychain/optimization/optimization.html#SingleMetricOptimizer.logit_jumpcycle_beta_function"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Class method that binds and returns a logit hot-cool cycle beta temperature function, where
+the chain runs hot for some given duration, cools down according to the logit function</p>
+<p><span class="math notranslate nohighlight">\(f(x) = (log(x/(1-x)) + 5)/10\)</span></p>
+<p>for some duration, and then runs cold for some duration before jumping back to hot and
+repeating.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>duration_hot</strong> (<em>int</em>) – Number of steps to run chain hot.</p></li>
+<li><p><strong>duration_cooldown</strong> (<em>int</em>) – Number of steps needed to transition from hot to cold or
+vice-versa.</p></li>
+<li><p><strong>duration_cold</strong> (<em>int</em>) – Number of steps to run chain cold.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<em class="property">classmethod </em><code class="sig-name descname">logitcycle_beta_function</code><span class="sig-paren">(</span><em class="sig-param">duration_hot: int</em>, <em class="sig-param">duration_cooldown: int</em>, <em class="sig-param">duration_cold: int</em><span class="sig-paren">)</span> &#x2192; Callable[[int], float]<a class="reference internal" href="_modules/gerrychain/optimization/optimization.html#SingleMetricOptimizer.logitcycle_beta_function"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Class method that binds and returns a logit hot-cool cycle beta temperature function, where
+the chain runs hot for some given duration, cools down according to the logit function</p>
+<p><span class="math notranslate nohighlight">\(f(x) = (log(x/(1-x)) + 5)/10\)</span></p>
+<p>for some duration, and then runs cold for some duration before warming up again
+using the <span class="math notranslate nohighlight">\(1-f(x)\)</span> and repeating.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>duration_hot</strong> (<em>int</em>) – Number of steps to run chain hot.</p></li>
+<li><p><strong>duration_cooldown</strong> (<em>int</em>) – Number of steps needed to transition from hot to cold or
+vice-versa.</p></li>
+<li><p><strong>duration_cold</strong> (<em>int</em>) – Number of steps to run chain cold.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<em class="property">property </em><code class="sig-name descname">score</code></dt>
+<dd><p>The score function which is being optimized over.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The score function.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>Callable[[<a class="reference internal" href="api.html#gerrychain.partition.Partition" title="gerrychain.partition.Partition">Partition</a>], Any]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="sig-name descname">short_bursts</code><span class="sig-paren">(</span><em class="sig-param">burst_length: int, num_bursts: int, accept: Callable[[gerrychain.partition.partition.Partition], bool] = &lt;function always_accept&gt;, with_progress_bar: bool = False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gerrychain/optimization/optimization.html#SingleMetricOptimizer.short_bursts"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Performs a short burst run using the instance’s score function. Each burst starts at the
+best performing plan of the previous burst. If there’s a tie, the later observed one is
+selected.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>burst_length</strong> (<em>int</em>) – Number of steps to run within each burst.</p></li>
+<li><p><strong>num_bursts</strong> (<em>int</em>) – Number of bursts to perform.</p></li>
+<li><p><strong>accept</strong> (<em>Callable</em><em>[</em><em>[</em><a class="reference internal" href="api.html#gerrychain.partition.Partition" title="gerrychain.partition.Partition"><em>Partition</em></a><em>]</em><em>, </em><em>bool</em><em>]</em><em>, </em><em>optional</em>) – Function accepting or rejecting the proposed state. Defaults to
+<code class="xref py py-func docutils literal notranslate"><span class="pre">always_accept()</span></code>.</p></li>
+<li><p><strong>with_progress_bar</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether or not to draw tqdm progress bar. Defaults to False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Partition generator.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Generator[<a class="reference internal" href="api.html#gerrychain.partition.Partition" title="gerrychain.partition.Partition">Partition</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="sig-name descname">simulated_annealing</code><span class="sig-paren">(</span><em class="sig-param">num_steps: int, beta_function: Callable[[int], float], beta_magnitude: float = 1, with_progress_bar: bool = False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gerrychain/optimization/optimization.html#SingleMetricOptimizer.simulated_annealing"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Performs simulated annealing with respect to the class instance’s score function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>num_steps</strong> (<em>int</em>) – Number of steps to run for.</p></li>
+<li><p><strong>beta_function</strong> (<em>Callable</em><em>[</em><em>[</em><em>int</em><em>]</em><em>, </em><em>float</em><em>]</em>) – Function (f: t -&gt; beta, where beta is in [0,1]) defining temperature
+over time.  f(t) = 0 the chain is hot and every proposal is accepted. At f(t) = 1 the
+chain is cold and worse proposal have a low probability of being accepted relative to
+the magnitude of change in score.</p></li>
+<li><p><strong>beta_magnitude</strong> (<em>float</em><em>, </em><em>optional</em>) – Scaling parameter for how much to weight changes in score.
+Defaults to 1.</p></li>
+<li><p><strong>with_progress_bar</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether or not to draw tqdm progress bar. Defaults to False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Partition generator.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Generator[<a class="reference internal" href="api.html#gerrychain.partition.Partition" title="gerrychain.partition.Partition">Partition</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="sig-name descname">tilted_run</code><span class="sig-paren">(</span><em class="sig-param">num_steps: int</em>, <em class="sig-param">p: float</em>, <em class="sig-param">with_progress_bar: bool = False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gerrychain/optimization/optimization.html#SingleMetricOptimizer.tilted_run"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Performs a tilted run. A chain where the acceptance function always accepts better plans
+and accepts worse plans with some probability <cite>p</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>num_steps</strong> (<em>int</em>) – Number of steps to run for.</p></li>
+<li><p><strong>p</strong> (<em>float</em>) – The probability of accepting a plan with a worse score.</p></li>
+<li><p><strong>with_progress_bar</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether or not to draw tqdm progress bar. Defaults to False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Partition generator.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Generator[<a class="reference internal" href="api.html#gerrychain.partition.Partition" title="gerrychain.partition.Partition">Partition</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="sig-name descname">tilted_short_bursts</code><span class="sig-paren">(</span><em class="sig-param">burst_length: int</em>, <em class="sig-param">num_bursts: int</em>, <em class="sig-param">p: float</em>, <em class="sig-param">with_progress_bar: bool = False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gerrychain/optimization/optimization.html#SingleMetricOptimizer.tilted_short_bursts"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Performs a short burst run using the instance’s score function. Each burst starts at the
+best performing plan of the previous burst. If there’s a tie, the later observed one is
+selected. Within each burst a tilted acceptance function is used where better scoring plans
+are always accepted and worse scoring plans are accepted with probability <cite>p</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>burst_length</strong> (<em>int</em>) – Number of steps to run within each burst.</p></li>
+<li><p><strong>num_bursts</strong> (<em>int</em>) – Number of bursts to perform.</p></li>
+<li><p><strong>p</strong> (<em>float</em>) – The probability of accepting a plan with a worse score.</p></li>
+<li><p><strong>with_progress_bar</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether or not to draw tqdm progress bar. Defaults to False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Partition generator.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Generator[<a class="reference internal" href="api.html#gerrychain.partition.Partition" title="gerrychain.partition.Partition">Partition</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="sig-name descname">variable_length_short_bursts</code><span class="sig-paren">(</span><em class="sig-param">num_steps: int, stuck_buffer: int, accept: Callable[[gerrychain.partition.partition.Partition], bool] = &lt;function always_accept&gt;, with_progress_bar: bool = False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gerrychain/optimization/optimization.html#SingleMetricOptimizer.variable_length_short_bursts"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Performs a short burst where the burst length is allowed to increase as it gets harder to
+find high scoring plans. The initial burst length is set to 2, and it is doubled each time
+there is no improvement over the passed number (<cite>stuck_buffer</cite>) of runs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>num_steps</strong> (<em>int</em>) – Number of steps to run for.</p></li>
+<li><p><strong>stuck_buffer</strong> (<em>int</em>) – How many bursts of a given length with no improvement to allow before
+increasing the burst length.</p></li>
+<li><p><strong>accept</strong> (<em>Callable</em><em>[</em><em>[</em><a class="reference internal" href="api.html#gerrychain.partition.Partition" title="gerrychain.partition.Partition"><em>Partition</em></a><em>]</em><em>, </em><em>bool</em><em>]</em><em>, </em><em>optional</em>) – Function accepting or rejecting the proposed state. Defaults to
+<code class="xref py py-func docutils literal notranslate"><span class="pre">always_accept()</span></code>.</p></li>
+<li><p><strong>with_progress_bar</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether or not to draw tqdm progress bar. Defaults to False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Partition generator.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Generator[<a class="reference internal" href="api.html#gerrychain.partition.Partition" title="gerrychain.partition.Partition">Partition</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt>
+<em class="property">class </em><code class="sig-prename descclassname">gerrychain.optimization.gingleator.</code><code class="sig-name descname">Gingleator</code><span class="sig-paren">(</span><em class="sig-param">proposal: Callable, constraints: Union[Iterable[Callable], gerrychain.constraints.validity.Validator, Iterable[gerrychain.constraints.bounds.Bounds], Callable], initial_state: gerrychain.partition.partition.Partition, minority_perc_col: Optional[str] = None, threshold: float = 0.5, score_function: Optional[Callable] = None, minority_pop_col: Optional[str] = None, total_pop_col: str = 'TOTPOP', min_perc_column_name: str = '_gingleator_auxiliary_helper_updater_min_perc_col'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gerrychain/optimization/gingleator.html#Gingleator"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">gerrychain.optimization.optimization.SingleMetricOptimizer</span></code></p>
+<p><cite>Gingleator</cite> is a child class of <cite>SingleMetricOptimizer</cite> which can be used to search for plans
+with increased numbers of Gingles’ districts.</p>
+<p>A gingles district (named for the Supreme Court case Thornburg v. Gingles) is a district that is
+majority-minority.  aka 50% + 1 of some population subgroup.  Demonstrating additional Gingles
+districts is one of the litmus tests used in bringing forth a VRA case.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>proposal</strong> (<em>Callable</em>) – Function proposing the next state from the current state.</p></li>
+<li><p><strong>constraints</strong> (<em>Union</em><em>[</em><em>Iterable</em><em>[</em><em>Callable</em><em>]</em><em>, </em><a class="reference internal" href="api.html#gerrychain.constraints.Validator" title="gerrychain.constraints.Validator"><em>Validator</em></a><em>, </em><em>Iterable</em><em>[</em><a class="reference internal" href="api.html#gerrychain.constraints.Bounds" title="gerrychain.constraints.Bounds"><em>Bounds</em></a><em>]</em><em>, </em><em>Callable</em><em>]</em>) – A function with signature <code class="docutils literal notranslate"><span class="pre">Partition</span> <span class="pre">-&gt;</span> <span class="pre">bool</span></code> determining whether
+the proposed next state is valid (passes all binary constraints). Usually this is a
+<a class="reference internal" href="api.html#gerrychain.constraints.Validator" title="gerrychain.constraints.Validator"><code class="xref py py-class docutils literal notranslate"><span class="pre">Validator</span></code></a> class instance.</p></li>
+<li><p><strong>initial_state</strong> (<a class="reference internal" href="api.html#gerrychain.partition.Partition" title="gerrychain.partition.Partition"><em>Partition</em></a>) – Initial <a class="reference internal" href="api.html#gerrychain.partition.Partition" title="gerrychain.partition.Partition"><code class="xref py py-class docutils literal notranslate"><span class="pre">gerrychain.partition.Partition</span></code></a> class.</p></li>
+<li><p><strong>minority_perc_col</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The name of the updater mapping of district ids to the
+fraction of minority population within that district. If no updater is
+specified, one is made according to the <code class="docutils literal notranslate"><span class="pre">min_perc_column_name</span></code> parameter.
+Defaults to None.</p></li>
+<li><p><strong>threshold</strong> (<em>float</em><em>, </em><em>optional</em>) – Fraction beyond which to consider something a “Gingles”
+(or opportunity) district. Defaults to 0.5.</p></li>
+<li><p><strong>score_function</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>]</em>) – The function to use during optimization.  Should have the
+signature <code class="docutils literal notranslate"><span class="pre">Partition</span> <span class="pre">*</span> <span class="pre">str</span> <span class="pre">(minority_perc_col)</span> <span class="pre">*</span> <span class="pre">float</span> <span class="pre">(threshold)</span> <span class="pre">-&gt;</span>
+<span class="pre">'a</span> <span class="pre">where</span> <span class="pre">'a</span> <span class="pre">is</span> <span class="pre">Comparable</span></code>.  This class implements a few potential choices as class
+methods. Defaults to None.</p></li>
+<li><p><strong>minority_pop_col</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – If minority_perc_col is not defined, the minority population
+column with which to compute percentage. Defaults to None.</p></li>
+<li><p><strong>total_pop_col</strong> (<em>str</em><em>, </em><em>optional</em>) – If minority_perc_col is defined, the total population column with
+which to compute percentage. Defaults to “TOTPOP”.</p></li>
+<li><p><strong>min_perc_column_name</strong> (<em>str</em><em>, </em><em>optional</em>) – If minority_perc_col is not defined, the name to give the
+created percentage updater. Defaults to
+“_gingleator_auxiliary_helper_updater_min_perc_col”.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="method">
+<dt>
+<em class="property">classmethod </em><code class="sig-name descname">num_opportunity_dists</code><span class="sig-paren">(</span><em class="sig-param">part: gerrychain.partition.partition.Partition</em>, <em class="sig-param">minority_perc_col: str</em>, <em class="sig-param">threshold: float</em><span class="sig-paren">)</span> &#x2192; int<a class="reference internal" href="_modules/gerrychain/optimization/gingleator.html#Gingleator.num_opportunity_dists"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Given a partition, returns the number of opportunity districts.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>part</strong> (<a class="reference internal" href="api.html#gerrychain.partition.Partition" title="gerrychain.partition.Partition"><em>Partition</em></a>) – Partition to score.</p></li>
+<li><p><strong>minority_perc_col</strong> (<em>str</em>) – The name of the updater mapping of district ids to the
+fraction of minority population within that district.</p></li>
+<li><p><strong>threshold</strong> (<em>float</em>) – Fraction beyond which to consider something a “Gingles”
+(or opportunity) district.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Number of opportunity districts.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<em class="property">classmethod </em><code class="sig-name descname">penalize_avg_over</code><span class="sig-paren">(</span><em class="sig-param">part: gerrychain.partition.partition.Partition</em>, <em class="sig-param">minority_perc_col: str</em>, <em class="sig-param">threshold: float</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gerrychain/optimization/gingleator.html#Gingleator.penalize_avg_over"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Given a partition, returns the number of opportunity districts + (1 - the average excess)
+scaled to between 0 and 1.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>part</strong> (<a class="reference internal" href="api.html#gerrychain.partition.Partition" title="gerrychain.partition.Partition"><em>Partition</em></a>) – Partition to score.</p></li>
+<li><p><strong>minority_perc_col</strong> (<em>str</em>) – The name of the updater mapping of district ids to the
+fraction of minority population within that district.</p></li>
+<li><p><strong>threshold</strong> (<em>float</em>) – Fraction beyond which to consider something a “Gingles”
+(or opportunity) district.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Number of opportunity districts + (1 - the average excess)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<em class="property">classmethod </em><code class="sig-name descname">penalize_maximum_over</code><span class="sig-paren">(</span><em class="sig-param">part: gerrychain.partition.partition.Partition</em>, <em class="sig-param">minority_perc_col: str</em>, <em class="sig-param">threshold: float</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gerrychain/optimization/gingleator.html#Gingleator.penalize_maximum_over"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Given a partition, returns the number of opportunity districts + (1 - the maximum excess)
+scaled to between 0 and 1.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>part</strong> (<a class="reference internal" href="api.html#gerrychain.partition.Partition" title="gerrychain.partition.Partition"><em>Partition</em></a>) – Partition to score.</p></li>
+<li><p><strong>minority_perc_col</strong> (<em>str</em>) – The name of the updater mapping of district ids to the
+fraction of minority population within that district.</p></li>
+<li><p><strong>threshold</strong> (<em>float</em>) – Fraction beyond which to consider something a “Gingles”
+(or opportunity) district.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Number of opportunity districts + (1 - the maximum excess) / (1 - threshold)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<em class="property">classmethod </em><code class="sig-name descname">reward_next_highest_close</code><span class="sig-paren">(</span><em class="sig-param">part: gerrychain.partition.partition.Partition</em>, <em class="sig-param">minority_perc_col: str</em>, <em class="sig-param">threshold: float</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gerrychain/optimization/gingleator.html#Gingleator.reward_next_highest_close"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Given a partition, returns the number of opportunity districts, if no additional district
+is within 10% of reaching the threshold. If one is, the distance that district is from the
+threshold is scaled between 0 and 1 and added to the count of opportunity districts.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>part</strong> (<a class="reference internal" href="api.html#gerrychain.partition.Partition" title="gerrychain.partition.Partition"><em>Partition</em></a>) – Partition to score.</p></li>
+<li><p><strong>minority_perc_col</strong> (<em>str</em>) – The name of the updater mapping of district ids to the
+fraction of minority population within that district.</p></li>
+<li><p><strong>threshold</strong> (<em>float</em>) – Fraction beyond which to consider something a “Gingles”
+(or opportunity) district.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Number of opportunity districts +
+(next highest district - (threshold - 0.1)) * 10</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<em class="property">classmethod </em><code class="sig-name descname">reward_partial_dist</code><span class="sig-paren">(</span><em class="sig-param">part: gerrychain.partition.partition.Partition</em>, <em class="sig-param">minority_perc_col: str</em>, <em class="sig-param">threshold: float</em><span class="sig-paren">)</span> &#x2192; float<a class="reference internal" href="_modules/gerrychain/optimization/gingleator.html#Gingleator.reward_partial_dist"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Given a partition, returns the number of opportunity districts + the percentage of the next
+highest district.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>part</strong> (<a class="reference internal" href="api.html#gerrychain.partition.Partition" title="gerrychain.partition.Partition"><em>Partition</em></a>) – Partition to score.</p></li>
+<li><p><strong>minority_perc_col</strong> (<em>str</em>) – The name of the updater mapping of district ids to the
+fraction of minority population within that district.</p></li>
+<li><p><strong>threshold</strong> (<em>float</em>) – Fraction beyond which to consider something a “Gingles”
+(or opportunity) district.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Number of opportunity districts + the percentage of the next highest district.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </div>
 <div class="section" id="partition">
 <h2>Partition<a class="headerlink" href="#partition" title="Permalink to this headline">¶</a></h2>
@@ -2040,7 +2529,7 @@ passed-in dictionary.</p>
 
 <dl class="method">
 <dt>
-<code class="sig-name descname">to_series</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; &lt;Mock name='mock.Series' id='140044217019120'&gt;<a class="reference internal" href="_modules/gerrychain/partition/assignment.html#Assignment.to_series"><span class="viewcode-link">[source]</span></a></dt>
+<code class="sig-name descname">to_series</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; &lt;Mock name='mock.Series' id='140152910293744'&gt;<a class="reference internal" href="_modules/gerrychain/partition/assignment.html#Assignment.to_series"><span class="viewcode-link">[source]</span></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
 <dd class="field-odd"><p>The assignment as a <code class="xref py py-class docutils literal notranslate"><span class="pre">pandas.Series</span></code>.</p>
@@ -4677,7 +5166,7 @@ touching 2 or more districts.</p>
 
 <dl class="class">
 <dt>
-<em class="property">class </em><code class="sig-prename descclassname">gerrychain.updaters.tally.</code><code class="sig-name descname">DataTally</code><span class="sig-paren">(</span><em class="sig-param">data: Union[Dict, &lt;Mock name='mock.Series' id='140044217019120'&gt;, str], alias: str</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gerrychain/updaters/tally.html#DataTally"><span class="viewcode-link">[source]</span></a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">gerrychain.updaters.tally.</code><code class="sig-name descname">DataTally</code><span class="sig-paren">(</span><em class="sig-param">data: Union[Dict, &lt;Mock name='mock.Series' id='140152910293744'&gt;, str], alias: str</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gerrychain/updaters/tally.html#DataTally"><span class="viewcode-link">[source]</span></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>An updater for tallying numerical data that is not necessarily stored as
 node attributes</p>
