@@ -27,33 +27,6 @@ Chain
     :show-inheritance:
     :noindex:
 
-Grid
-----
-
-.. automodule:: gerrychain.grid
-    :members:
-    :undoc-members:
-    :show-inheritance:
-    :noindex:
-
-Metagraph
----------
-
-.. automodule:: gerrychain.metagraph
-    :members:
-    :undoc-members:
-    :show-inheritance:
-    :noindex:
-
-Tree
-----
-
-.. automodule:: gerrychain.tree
-    :members:
-    :undoc-members:
-    :show-inheritance:
-    :noindex:
-
 Constraints
 -----------
 
@@ -81,6 +54,7 @@ Constraints
     :show-inheritance:
     :noindex:
 
+
 Graph
 -----
 
@@ -102,10 +76,28 @@ Graph
     :show-inheritance:
     :noindex:
 
+Grid
+----
+
+.. automodule:: gerrychain.grid
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    :noindex:
+
 Meta
 ----
 
 .. automodule:: gerrychain.meta.diversity
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    :noindex:
+
+Metagraph
+---------
+
+.. automodule:: gerrychain.metagraph
     :members:
     :undoc-members:
     :show-inheritance:
@@ -121,6 +113,22 @@ Metrics
     :noindex:
 
 .. automodule:: gerrychain.metrics.partisan
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    :noindex:
+
+Optimization
+------------
+
+.. automodule:: gerrychain.optimization
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    :noindex:
+
+
+.. automodule:: gerrychain.gingleator
     :members:
     :undoc-members:
     :show-inheritance:
@@ -173,6 +181,16 @@ Proposals
     :undoc-members:
     :show-inheritance:
     :noindex:
+
+Tree
+----
+
+.. automodule:: gerrychain.tree
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    :noindex:
+
 
 Updaters
 --------
