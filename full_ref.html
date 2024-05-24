@@ -67,15 +67,16 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Full Package Reference</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#accept">Accept</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#chain">Chain</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#grid">Grid</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#metagraph">Metagraph</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#tree">Tree</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#constraints">Constraints</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#graph">Graph</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#grid">Grid</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#meta">Meta</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#metagraph">Metagraph</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#metrics">Metrics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#optimization">Optimization</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#partition">Partition</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#proposals">Proposals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tree">Tree</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#updaters">Updaters</a></li>
 </ul>
 </li>
@@ -228,1008 +229,6 @@ of the progress. Requires the <cite>tqdm</cite> package to be installed.</p>
 </dl>
 </dd></dl>
 
-</dd></dl>
-
-</div>
-<div class="section" id="grid">
-<h2>Grid<a class="headerlink" href="#grid" title="Permalink to this headline">¶</a></h2>
-<p>This module provides a Grid class used for creating and manipulating grid partitions.
-It’s part of the GerryChain suite, designed to facilitate experiments with redistricting
-plans without the need for extensive data processing. This module relies on NetworkX for
-graph operations and integrates with GerryChain’s Partition class.</p>
-<p>Dependencies:</p>
-<ul class="simple">
-<li><p>math: For math.floor() function.</p></li>
-<li><dl class="simple">
-<dt>networkx: For graph operations with using the graph structure in</dt><dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Graph</span></code>.</p>
-</dd>
-</dl>
-</li>
-<li><p>typing: Used for type hints.</p></li>
-</ul>
-<dl class="class">
-<dt>
-<em class="property">class </em><code class="sig-prename descclassname">gerrychain.grid.</code><code class="sig-name descname">Grid</code><span class="sig-paren">(</span><em class="sig-param">dimensions: Optional[Tuple[int, int]] = None, with_diagonals: bool = False, assignment: Optional[Dict] = None, updaters: Optional[Dict[str, Callable]] = None, parent: Optional[Grid] = None, flips: Optional[Dict[Tuple[int, int], int]] = None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gerrychain/grid.html#Grid"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">gerrychain.partition.partition.Partition</span></code></p>
-<p>The <a class="reference internal" href="api.html#gerrychain.grid.Grid" title="gerrychain.grid.Grid"><code class="xref py py-class docutils literal notranslate"><span class="pre">Grid</span></code></a> class represents a grid partitioned into districts.
-It is useful for running little experiments with GerryChain without needing to do
-any data processing or cleaning to get started.</p>
-<p>Example usage:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">grid</span> <span class="o">=</span> <span class="n">Grid</span><span class="p">((</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
-</pre></div>
-</div>
-<p>The nodes of <code class="docutils literal notranslate"><span class="pre">grid.graph</span></code> are labelled by tuples <code class="docutils literal notranslate"><span class="pre">(i,j)</span></code>, for <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">i</span> <span class="pre">&lt;=</span> <span class="pre">10</span></code>
-and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">j</span> <span class="pre">&lt;=</span> <span class="pre">10</span></code>. Each node has an <code class="docutils literal notranslate"><span class="pre">area</span></code> of 1 and each edge has <code class="docutils literal notranslate"><span class="pre">shared_perim</span></code> 1.</p>
-<p>If the updaters are not specified, the default updaters are used, which are as follows:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">default_updaters</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;cut_edges&quot;</span><span class="p">:</span> <span class="n">cut_edges</span><span class="p">,</span>
-    <span class="s2">&quot;population&quot;</span><span class="p">:</span> <span class="n">Tally</span><span class="p">(</span><span class="s2">&quot;population&quot;</span><span class="p">),</span>
-    <span class="s2">&quot;perimeter&quot;</span><span class="p">:</span> <span class="n">perimeter</span><span class="p">,</span>
-    <span class="s2">&quot;exterior_boundaries&quot;</span><span class="p">:</span> <span class="n">exterior_boundaries</span><span class="p">,</span>
-    <span class="s2">&quot;interior_boundaries&quot;</span><span class="p">:</span> <span class="n">interior_boundaries</span><span class="p">,</span>
-    <span class="s2">&quot;boundary_nodes&quot;</span><span class="p">:</span> <span class="n">boundary_nodes</span><span class="p">,</span>
-    <span class="s2">&quot;area&quot;</span><span class="p">:</span> <span class="n">Tally</span><span class="p">(</span><span class="s2">&quot;area&quot;</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s2">&quot;area&quot;</span><span class="p">),</span>
-    <span class="s2">&quot;polsby_popper&quot;</span><span class="p">:</span> <span class="n">polsby_popper</span><span class="p">,</span>
-    <span class="s2">&quot;cut_edges_by_part&quot;</span><span class="p">:</span> <span class="n">cut_edges_by_part</span><span class="p">,</span>
-<span class="p">}</span>
-</pre></div>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>dimensions</strong> (<em>Tuple</em><em>[</em><em>int</em><em>, </em><em>int</em><em>]</em><em>, </em><em>optional</em>) – The grid dimensions (rows, columns), defaults to None.</p></li>
-<li><p><strong>with_diagonals</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, includes diagonal connections, defaults to False.</p></li>
-<li><p><strong>assignment</strong> (<em>Dict</em><em>, </em><em>optional</em>) – Node-to-district assignments, defaults to None.</p></li>
-<li><p><strong>updaters</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Callable</em><em>]</em><em>, </em><em>optional</em>) – Custom updater functions, defaults to None.</p></li>
-<li><p><strong>parent</strong> (<a class="reference internal" href="api.html#gerrychain.grid.Grid" title="gerrychain.grid.Grid"><em>Grid</em></a><em>, </em><em>optional</em>) – Parent Grid object for inheritance, defaults to None.</p></li>
-<li><p><strong>flips</strong> (<em>Dict</em><em>[</em><em>Tuple</em><em>[</em><em>int</em><em>, </em><em>int</em><em>]</em><em>, </em><em>int</em><em>]</em><em>, </em><em>optional</em>) – Node flips for partition changes, defaults to None.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Raises</dt>
-<dd class="field-even"><p><strong>Exception</strong> – If neither dimensions nor parent is provided.</p>
-</dd>
-</dl>
-<dl class="method">
-<dt>
-<code class="sig-name descname">as_list_of_lists</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/gerrychain/grid.html#Grid.as_list_of_lists"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>Returns the grid as a list of lists (like a matrix), where the (i,j)th
-entry is the assigned district of the node in position (i,j) on the
-grid.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>List of lists representing the grid.</p>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>List[List[int]]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="attribute">
-<dt>
-<code class="sig-name descname">assignment</code></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt>
-<code class="sig-name descname">default_updaters</code><em class="property"> = {'area': &lt;gerrychain.updaters.tally.Tally object&gt;, 'boundary_nodes': &lt;function boundary_nodes&gt;, 'cut_edges': &lt;function cut_edges&gt;, 'cut_edges_by_part': &lt;function cut_edges_by_part&gt;, 'exterior_boundaries': &lt;function exterior_boundaries&gt;, 'interior_boundaries': &lt;function interior_boundaries&gt;, 'perimeter': &lt;function perimeter&gt;, 'polsby_popper': &lt;function polsby_popper&gt;, 'population': &lt;gerrychain.updaters.tally.Tally object&gt;}</em></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt>
-<code class="sig-name descname">edge_flows</code></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt>
-<code class="sig-name descname">flips</code></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt>
-<code class="sig-name descname">flows</code></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt>
-<code class="sig-name descname">graph</code></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt>
-<code class="sig-name descname">parent</code></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt>
-<code class="sig-name descname">subgraphs</code></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt>
-<code class="sig-name descname">updaters</code></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="function">
-<dt>
-<code class="sig-prename descclassname">gerrychain.grid.</code><code class="sig-name descname">color_half</code><span class="sig-paren">(</span><em class="sig-param">node: Tuple[int, int], threshold: int</em><span class="sig-paren">)</span> &#x2192; int<a class="reference internal" href="_modules/gerrychain/grid.html#color_half"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>Assigns a color (as an integer) to a node based on its x-coordinate.</p>
-<p>This function is used to partition the grid into two parts based on a given threshold.
-Nodes with an x-coordinate less than or equal to the threshold are assigned one color,
-and nodes with an x-coordinate greater than the threshold are assigned another.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>node</strong> (<em>Tuple</em><em>[</em><em>int</em><em>, </em><em>int</em><em>]</em>) – The node to color, represented as a tuple of coordinates (x, y).</p></li>
-<li><p><strong>threshold</strong> (<em>int</em>) – The x-coordinate value that determines the color assignment.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>An integer representing the color of the node. Returns 0 for nodes with
-x-coordinate less than or equal to the threshold, and 1 otherwise.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>int</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt>
-<code class="sig-prename descclassname">gerrychain.grid.</code><code class="sig-name descname">color_quadrants</code><span class="sig-paren">(</span><em class="sig-param">node: Tuple[int, int], thresholds: Tuple[int, int]</em><span class="sig-paren">)</span> &#x2192; int<a class="reference internal" href="_modules/gerrychain/grid.html#color_quadrants"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>Assigns a color (as an integer) to a node based on its position relative to
-specified threshold coordinates, effectively dividing the grid into four quadrants.</p>
-<p>The function uses two threshold values (one for each axis) to determine the color.
-Each combination of being higher or lower than the threshold on each axis results
-in a different color.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>node</strong> (<em>Tuple</em><em>[</em><em>int</em><em>, </em><em>int</em><em>]</em>) – The node to color, represented as a tuple of coordinates (x, y).</p></li>
-<li><p><strong>thresholds</strong> (<em>Tuple</em><em>[</em><em>int</em><em>, </em><em>int</em><em>]</em>) – A tuple of two integers representing the threshold coordinates
-(x_threshold, y_threshold).</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>An integer representing the color of the node, determined by its quadrant.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>int</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt>
-<code class="sig-prename descclassname">gerrychain.grid.</code><code class="sig-name descname">create_grid_graph</code><span class="sig-paren">(</span><em class="sig-param">dimensions: Tuple[int, int], with_diagonals: bool</em><span class="sig-paren">)</span> &#x2192; gerrychain.graph.graph.Graph<a class="reference internal" href="_modules/gerrychain/grid.html#create_grid_graph"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>Creates a grid graph with the specified dimensions.
-Optionally includes diagonal connections between nodes.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>dimensions</strong> (<em>Tuple</em><em>[</em><em>int</em><em>, </em><em>int</em><em>]</em>) – The grid dimensions (rows, columns).</p></li>
-<li><p><strong>with_diagonals</strong> (<em>bool</em>) – If True, includes diagonal connections.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>A grid graph.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference internal" href="api.html#gerrychain.graph.graph.Graph" title="gerrychain.graph.graph.Graph">Graph</a></p>
-</dd>
-<dt class="field-even">Raises</dt>
-<dd class="field-even"><p><strong>ValueError</strong> – If the dimensions are not a tuple of length 2.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt>
-<code class="sig-prename descclassname">gerrychain.grid.</code><code class="sig-name descname">get_boundary_perim</code><span class="sig-paren">(</span><em class="sig-param">node: Tuple[int, int], dimensions: Tuple[int, int]</em><span class="sig-paren">)</span> &#x2192; int<a class="reference internal" href="_modules/gerrychain/grid.html#get_boundary_perim"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>Determines the boundary perimeter of a node on the grid.
-The boundary perimeter is the number of sides of the node that
-are on the boundary of the grid.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>node</strong> (<em>Tuple</em><em>[</em><em>int</em><em>, </em><em>int</em><em>]</em>) – The node to check.</p></li>
-<li><p><strong>dimensions</strong> (<em>Tuple</em><em>[</em><em>int</em><em>, </em><em>int</em><em>]</em>) – The dimensions of the grid.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>The boundary perimeter of the node.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>int</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt>
-<code class="sig-prename descclassname">gerrychain.grid.</code><code class="sig-name descname">give_constant_attribute</code><span class="sig-paren">(</span><em class="sig-param">graph: gerrychain.graph.graph.Graph</em>, <em class="sig-param">attribute: Any</em>, <em class="sig-param">value: Any</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/gerrychain/grid.html#give_constant_attribute"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>Sets the specified attribute to the specified value for all nodes in the graph.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>graph</strong> (<a class="reference internal" href="api.html#gerrychain.graph.graph.Graph" title="gerrychain.graph.graph.Graph"><em>Graph</em></a>) – The graph to modify.</p></li>
-<li><p><strong>attribute</strong> (<em>Any</em>) – The attribute to set.</p></li>
-<li><p><strong>value</strong> (<em>Any</em>) – The value to set the attribute to.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt>
-<code class="sig-prename descclassname">gerrychain.grid.</code><code class="sig-name descname">tag_boundary_nodes</code><span class="sig-paren">(</span><em class="sig-param">graph: gerrychain.graph.graph.Graph, dimensions: Tuple[int, int]</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/gerrychain/grid.html#tag_boundary_nodes"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>Adds the boolean attribute <code class="docutils literal notranslate"><span class="pre">boundary_node</span></code> to each node in the graph.
-If the node is on the boundary of the grid, that node also gets the attribute
-<code class="docutils literal notranslate"><span class="pre">boundary_perim</span></code> which is determined by the function <code class="xref py py-func docutils literal notranslate"><span class="pre">get_boundary_perim()</span></code>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>graph</strong> (<a class="reference internal" href="api.html#gerrychain.graph.graph.Graph" title="gerrychain.graph.graph.Graph"><em>Graph</em></a>) – The graph to modify.</p></li>
-<li><p><strong>dimensions</strong> (<em>Tuple</em><em>[</em><em>int</em><em>, </em><em>int</em><em>]</em>) – The dimensions of the grid.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
-
-</div>
-<div class="section" id="metagraph">
-<h2>Metagraph<a class="headerlink" href="#metagraph" title="Permalink to this headline">¶</a></h2>
-<p>This module provides the main tools for interacting with the metagraph of partitions.
-The metagraph of partitions is the set of partitions that are reachable from the
-current partition by a single flip.</p>
-<p>Dependencies:</p>
-<ul class="simple">
-<li><p>itertools: Used for product() function.</p></li>
-<li><p>typing: Used for type hints.</p></li>
-</ul>
-<p>Last Updated: 11 Jan 2024</p>
-<dl class="function">
-<dt>
-<code class="sig-prename descclassname">gerrychain.metagraph.</code><code class="sig-name descname">all_cut_edge_flips</code><span class="sig-paren">(</span><em class="sig-param">partition: gerrychain.partition.partition.Partition</em><span class="sig-paren">)</span> &#x2192; Iterator[Dict]<a class="reference internal" href="_modules/gerrychain/metagraph.html#all_cut_edge_flips"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>Generate all possible flips of cut edges in a partition
-without any constraints.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>partition</strong> (<a class="reference internal" href="api.html#gerrychain.partition.Partition" title="gerrychain.partition.Partition"><em>Partition</em></a>) – The partition object.</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>An iterator that yields dictionaries representing the flipped edges.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>Iterator[Dict]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt>
-<code class="sig-prename descclassname">gerrychain.metagraph.</code><code class="sig-name descname">all_valid_flips</code><span class="sig-paren">(</span><em class="sig-param">partition: gerrychain.partition.partition.Partition, constraints: Union[Iterable[Callable], Callable]</em><span class="sig-paren">)</span> &#x2192; Iterator[Dict]<a class="reference internal" href="_modules/gerrychain/metagraph.html#all_valid_flips"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>Generate all valid flips for a given partition subject
-to the prescribed constraints.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>partition</strong> (<a class="reference internal" href="api.html#gerrychain.partition.Partition" title="gerrychain.partition.Partition"><em>Partition</em></a>) – The initial partition.</p></li>
-<li><p><strong>constraints</strong> (<em>Union</em><em>[</em><em>Iterable</em><em>[</em><em>Callable</em><em>]</em><em>, </em><em>Callable</em><em>]</em>) – The constraints to be satisfied. Can be a single
-constraint or an iterable of constraints.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>An iterator that yields dictionaries representing valid flips.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>Iterator[Dict]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt>
-<code class="sig-prename descclassname">gerrychain.metagraph.</code><code class="sig-name descname">all_valid_states_one_flip_away</code><span class="sig-paren">(</span><em class="sig-param">partition: gerrychain.partition.partition.Partition, constraints: Union[Iterable[Callable], Callable]</em><span class="sig-paren">)</span> &#x2192; Iterator[gerrychain.partition.partition.Partition]<a class="reference internal" href="_modules/gerrychain/metagraph.html#all_valid_states_one_flip_away"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>Generates all valid Partitions that differ from the given partition
-by one flip. These are the given partition’s neighbors in the metagraph
-of partitions. (The metagraph of partitions is the set of partitions
-that is reachable from the given partition by a single flip under the
-prescribed constraints.)</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>partition</strong> (<a class="reference internal" href="api.html#gerrychain.partition.Partition" title="gerrychain.partition.Partition"><em>Partition</em></a>) – The initial partition.</p></li>
-<li><p><strong>constraints</strong> (<em>Union</em><em>[</em><em>Iterable</em><em>[</em><em>Callable</em><em>]</em><em>, </em><em>Callable</em><em>]</em>) – Constraints to determine the validity of a partition.
-It can be a single callable or an iterable of callables.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>An iterator that yields all valid partitions that differ from the
-given partition by one flip.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>Iterator[<a class="reference internal" href="api.html#gerrychain.partition.Partition" title="gerrychain.partition.Partition">Partition</a>]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt>
-<code class="sig-prename descclassname">gerrychain.metagraph.</code><code class="sig-name descname">metagraph_degree</code><span class="sig-paren">(</span><em class="sig-param">partition: gerrychain.partition.partition.Partition, constraints: Union[Iterable[Callable], Callable]</em><span class="sig-paren">)</span> &#x2192; int<a class="reference internal" href="_modules/gerrychain/metagraph.html#metagraph_degree"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>Calculate the degree of the node in the metagraph of the given partition.
-That is to say, compute how many possible valid states are reachable from
-the state given by partition in a single flip subject to the prescribed
-constraints.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>partition</strong> (<a class="reference internal" href="api.html#gerrychain.partition.Partition" title="gerrychain.partition.Partition"><em>Partition</em></a>) – The partition object representing the current state.</p></li>
-<li><p><strong>constraints</strong> (<em>Union</em><em>[</em><em>Iterable</em><em>[</em><em>Callable</em><em>]</em><em>, </em><em>Callable</em><em>]</em>) – The constraints to be applied to the partition.
-It can be a single constraint or an iterable of constraints.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>The degree of the partition node in the metagraph.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>int</p>
-</dd>
-</dl>
-</dd></dl>
-
-</div>
-<div class="section" id="tree">
-<h2>Tree<a class="headerlink" href="#tree" title="Permalink to this headline">¶</a></h2>
-<p>This module provides tools and algorithms for manipulating and analyzing graphs,
-particularly focused on partitioning graphs based on population data. It leverages the
-NetworkX library to handle graph structures and implements various algorithms for graph
-partitioning and tree traversal.</p>
-<p>Key functionalities include:</p>
-<ul class="simple">
-<li><p>Predecessor and successor functions for graph traversal using breadth-first search.</p></li>
-<li><p>Implementation of random and uniform spanning trees for graph partitioning.</p></li>
-<li><p>The <cite>PopulatedGraph</cite> class, which represents a graph with additional population data,
-and methods for assessing and modifying this data.</p></li>
-<li><p>Functions for finding balanced edge cuts in a populated graph, either through
-contraction or memoization techniques.</p></li>
-<li><p>A suite of functions (<cite>bipartition_tree</cite>, <cite>recursive_tree_part</cite>, <cite>get_seed_chunks</cite>, etc.)
-for partitioning graphs into balanced subsets based on population targets and tolerances.</p></li>
-<li><p>Utility functions like <cite>get_max_prime_factor_less_than</cite> and <cite>recursive_seed_part_inner</cite>
-to assist in complex partitioning tasks.</p></li>
-</ul>
-<p>Dependencies:</p>
-<ul class="simple">
-<li><p>networkx: Used for graph data structure and algorithms.</p></li>
-<li><p>random: Provides random number generation for probabilistic approaches.</p></li>
-<li><p>typing: Used for type hints.</p></li>
-</ul>
-<p>Last Updated: 25 April 2024</p>
-<dl class="exception">
-<dt>
-<em class="property">exception </em><code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">BalanceError</code><a class="reference internal" href="_modules/gerrychain/tree.html#BalanceError"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
-<p>Raised when a balanced cut cannot be found.</p>
-</dd></dl>
-
-<dl class="exception">
-<dt>
-<em class="property">exception </em><code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">BipartitionWarning</code><a class="reference internal" href="_modules/gerrychain/tree.html#BipartitionWarning"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">UserWarning</span></code></p>
-<p>Generally raised when it is proving difficult to find a balanced cut.</p>
-</dd></dl>
-
-<dl class="class">
-<dt>
-<em class="property">class </em><code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">Cut</code></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></p>
-<p>Represents a cut in a graph.</p>
-<p>Create new instance of Cut(edge, weight, subset)</p>
-<dl class="attribute">
-<dt>
-<code class="sig-name descname">edge</code></dt>
-<dd><p>The edge where the cut is made. Defaults to None.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt>
-<code class="sig-name descname">subset</code></dt>
-<dd><p>The (frozen) subset of nodes on one side of the cut. Defaults to None.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt>
-<code class="sig-name descname">weight</code></dt>
-<dd><p>The weight assigned to the edge (if any). Defaults to None.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt>
-<em class="property">class </em><code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">PopulatedGraph</code><span class="sig-paren">(</span><em class="sig-param">graph: networkx.classes.graph.Graph, populations: Dict, ideal_pop: Union[float, int], epsilon: float</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gerrychain/tree.html#PopulatedGraph"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>A class representing a graph with population information.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Variables</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>graph</strong> – The underlying graph structure.</p></li>
-<li><p><strong>subsets</strong> – A dictionary mapping nodes to their subsets.</p></li>
-<li><p><strong>population</strong> – A dictionary mapping nodes to their populations.</p></li>
-<li><p><strong>tot_pop</strong> – The total population of the graph.</p></li>
-<li><p><strong>ideal_pop</strong> – The ideal population for each district.</p></li>
-<li><p><strong>epsilon</strong> – The tolerance for population deviation from the ideal population within each
-district.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Parameters</dt>
-<dd class="field-even"><ul class="simple">
-<li><p><strong>graph</strong> (<em>nx.Graph</em>) – The underlying graph structure.</p></li>
-<li><p><strong>populations</strong> (<em>Dict</em>) – A dictionary mapping nodes to their populations.</p></li>
-<li><p><strong>ideal_pop</strong> (<em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em>) – The ideal population for each district.</p></li>
-<li><p><strong>epsilon</strong> (<em>float</em>) – The tolerance for population deviation as a percentage of
-the ideal population within each district.</p></li>
-</ul>
-</dd>
-</dl>
-<dl class="method">
-<dt>
-<code class="sig-name descname">contract_node</code><span class="sig-paren">(</span><em class="sig-param">node</em>, <em class="sig-param">parent</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/gerrychain/tree.html#PopulatedGraph.contract_node"><span class="viewcode-link">[source]</span></a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt>
-<code class="sig-name descname">degree</code><span class="sig-paren">(</span><em class="sig-param">node</em><span class="sig-paren">)</span> &#x2192; int<a class="reference internal" href="_modules/gerrychain/tree.html#PopulatedGraph.degree"><span class="viewcode-link">[source]</span></a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt>
-<code class="sig-name descname">has_ideal_population</code><span class="sig-paren">(</span><em class="sig-param">node</em>, <em class="sig-param">one_sided_cut: bool = False</em><span class="sig-paren">)</span> &#x2192; bool<a class="reference internal" href="_modules/gerrychain/tree.html#PopulatedGraph.has_ideal_population"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>Checks if a node has an ideal population within the graph up to epsilon.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>node</strong> (<em>Any</em>) – The node to check.</p></li>
-<li><p><strong>one_sided_cut</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether or not we are cutting off a single district. When
-set to False, we check if the node we are cutting and the remaining graph
-are both within epsilon of the ideal population. When set to True, we only
-check if the node we are cutting is within epsilon of the ideal population.
-Defaults to False.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>True if the node has an ideal population within the graph up to epsilon.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>bool</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="exception">
-<dt>
-<em class="property">exception </em><code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">PopulationBalanceError</code><a class="reference internal" href="_modules/gerrychain/tree.html#PopulationBalanceError"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
-<p>Raised when the population of a district is outside the acceptable epsilon range.</p>
-</dd></dl>
-
-<dl class="exception">
-<dt>
-<em class="property">exception </em><code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">ReselectException</code><a class="reference internal" href="_modules/gerrychain/tree.html#ReselectException"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
-<p>Raised when the tree-splitting algorithm is unable to find a
-balanced cut after some maximum number of attempts, but the
-user has allowed the algorithm to reselect the pair of
-districts from parent graph to try and recombine.</p>
-</dd></dl>
-
-<dl class="function">
-<dt>
-<code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">bipartition_tree</code><span class="sig-paren">(</span><em class="sig-param">graph: networkx.classes.graph.Graph, pop_col: str, pop_target: Union[int, float], epsilon: float, node_repeats: int = 1, spanning_tree: Optional[networkx.classes.graph.Graph] = None, spanning_tree_fn: Callable = &lt;function random_spanning_tree&gt;, region_surcharge: Optional[Dict] = None, balance_edge_fn: Callable = &lt;function find_balanced_edge_cuts_memoization&gt;, one_sided_cut: bool = False, choice: Callable = &lt;bound method Random.choice of &lt;random.Random object&gt;&gt;, max_attempts: Optional[int] = 100000, warn_attempts: int = 1000, allow_pair_reselection: bool = False, cut_choice: Callable = &lt;function _region_preferred_max_weight_choice&gt;</em><span class="sig-paren">)</span> &#x2192; Set<a class="reference internal" href="_modules/gerrychain/tree.html#bipartition_tree"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>This function finds a balanced 2 partition of a graph by drawing a
-spanning tree and finding an edge to cut that leaves at most an epsilon
-imbalance between the populations of the parts. If a root fails, new roots
-are tried until node_repeats in which case a new tree is drawn.</p>
-<p>Builds up a connected subgraph with a connected complement whose population
-is <code class="docutils literal notranslate"><span class="pre">epsilon</span> <span class="pre">*</span> <span class="pre">pop_target</span></code> away from <code class="docutils literal notranslate"><span class="pre">pop_target</span></code>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>graph</strong> (<em>nx.Graph</em>) – The graph to partition.</p></li>
-<li><p><strong>pop_col</strong> (<em>str</em>) – The node attribute holding the population of each node.</p></li>
-<li><p><strong>pop_target</strong> (<em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em>) – The target population for the returned subset of nodes.</p></li>
-<li><p><strong>epsilon</strong> (<em>float</em>) – The allowable deviation from <code class="docutils literal notranslate"><span class="pre">pop_target</span></code> (as a percentage of
-<code class="docutils literal notranslate"><span class="pre">pop_target</span></code>) for the subgraph’s population.</p></li>
-<li><p><strong>node_repeats</strong> (<em>int</em><em>, </em><em>optional</em>) – A parameter for the algorithm: how many different choices
-of root to use before drawing a new spanning tree. Defaults to 1.</p></li>
-<li><p><strong>spanning_tree</strong> (<em>Optional</em><em>[</em><em>nx.Graph</em><em>]</em><em>, </em><em>optional</em>) – The spanning tree for the algorithm to use (used when the
-algorithm chooses a new root and for testing).</p></li>
-<li><p><strong>spanning_tree_fn</strong> (<em>Callable</em><em>, </em><em>optional</em>) – The random spanning tree algorithm to use if a spanning
-tree is not provided. Defaults to <a class="reference internal" href="api.html#gerrychain.tree.random_spanning_tree" title="gerrychain.tree.random_spanning_tree"><code class="xref py py-func docutils literal notranslate"><span class="pre">random_spanning_tree()</span></code></a>.</p></li>
-<li><p><strong>region_surcharge</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>]</em><em>, </em><em>optional</em>) – A dictionary of surcharges for the spanning tree algorithm.
-Defaults to None.</p></li>
-<li><p><strong>balance_edge_fn</strong> (<em>Callable</em><em>, </em><em>optional</em>) – The function to find balanced edge cuts. Defaults to
-<a class="reference internal" href="api.html#gerrychain.tree.find_balanced_edge_cuts_memoization" title="gerrychain.tree.find_balanced_edge_cuts_memoization"><code class="xref py py-func docutils literal notranslate"><span class="pre">find_balanced_edge_cuts_memoization()</span></code></a>.</p></li>
-<li><p><strong>one_sided_cut</strong> (<em>bool</em><em>, </em><em>optional</em>) – Passed to the <code class="docutils literal notranslate"><span class="pre">balance_edge_fn</span></code>. Determines whether or not we are
-cutting off a single district when partitioning the tree. When
-set to False, we check if the node we are cutting and the remaining graph
-are both within epsilon of the ideal population. When set to True, we only
-check if the node we are cutting is within epsilon of the ideal population.
-Defaults to False.</p></li>
-<li><p><strong>choice</strong> (<em>Callable</em><em>, </em><em>optional</em>) – The function to make a random choice of root node for the population
-tree. Passed to <code class="docutils literal notranslate"><span class="pre">balance_edge_fn</span></code>. Can be substituted for testing.
-Defaults to <code class="xref py py-func docutils literal notranslate"><span class="pre">random.random()</span></code>.</p></li>
-<li><p><strong>max_attempts</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em><em>, </em><em>optional</em>) – The maximum number of attempts that should be made to bipartition.
-Defaults to 10000.</p></li>
-<li><p><strong>warn_attempts</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of attempts after which a warning is issued if a balanced
-cut cannot be found. Defaults to 1000.</p></li>
-<li><p><strong>allow_pair_reselection</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether we would like to return an error to the calling
-function to ask it to reselect the pair of nodes to try and recombine. Defaults to False.</p></li>
-<li><p><strong>cut_choice</strong> (<em>Callable</em><em>, </em><em>optional</em>) – The function used to select the cut edge from the list of possible
-balanced cuts. Defaults to <code class="xref py py-meth docutils literal notranslate"><span class="pre">_region_preferred_max_weight_choice()</span></code> .</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>A subset of nodes of <code class="docutils literal notranslate"><span class="pre">graph</span></code> (whose induced subgraph is connected). The other
-part of the partition is the complement of this subset.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>Set</p>
-</dd>
-<dt class="field-even">Raises</dt>
-<dd class="field-even"><ul class="simple">
-<li><p><a class="reference internal" href="api.html#gerrychain.tree.BipartitionWarning" title="gerrychain.tree.BipartitionWarning"><strong>BipartitionWarning</strong></a> – If a possible cut cannot be found after 1000 attempts.</p></li>
-<li><p><strong>RuntimeError</strong> – If a possible cut cannot be found after the maximum number of attempts
-given by <code class="docutils literal notranslate"><span class="pre">max_attempts</span></code>.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt>
-<code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">bipartition_tree_random</code><span class="sig-paren">(</span><em class="sig-param">graph: networkx.classes.graph.Graph, pop_col: str, pop_target: Union[int, float], epsilon: float, node_repeats: int = 1, repeat_until_valid: bool = True, spanning_tree: Optional[networkx.classes.graph.Graph] = None, spanning_tree_fn: Callable = &lt;function random_spanning_tree&gt;, balance_edge_fn: Callable = &lt;function find_balanced_edge_cuts_memoization&gt;, one_sided_cut: bool = False, choice: Callable = &lt;bound method Random.choice of &lt;random.Random object&gt;&gt;, max_attempts: Optional[int] = 100000</em><span class="sig-paren">)</span> &#x2192; Optional[Set[Any]]<a class="reference internal" href="_modules/gerrychain/tree.html#bipartition_tree_random"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>This is like <a class="reference internal" href="api.html#gerrychain.tree.bipartition_tree" title="gerrychain.tree.bipartition_tree"><code class="xref py py-func docutils literal notranslate"><span class="pre">bipartition_tree()</span></code></a> except it chooses a random balanced
-cut, rather than the first cut it finds.</p>
-<p>This function finds a balanced 2 partition of a graph by drawing a
-spanning tree and finding an edge to cut that leaves at most an epsilon
-imbalance between the populations of the parts. If a root fails, new roots
-are tried until node_repeats in which case a new tree is drawn.</p>
-<p>Builds up a connected subgraph with a connected complement whose population
-is <code class="docutils literal notranslate"><span class="pre">epsilon</span> <span class="pre">*</span> <span class="pre">pop_target</span></code> away from <code class="docutils literal notranslate"><span class="pre">pop_target</span></code>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>graph</strong> (<em>nx.Graph</em>) – The graph to partition.</p></li>
-<li><p><strong>pop_col</strong> (<em>str</em>) – The node attribute holding the population of each node.</p></li>
-<li><p><strong>pop_target</strong> (<em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em>) – The target population for the returned subset of nodes.</p></li>
-<li><p><strong>epsilon</strong> (<em>float</em>) – The allowable deviation from  <code class="docutils literal notranslate"><span class="pre">pop_target</span></code> (as a percentage of
-<code class="docutils literal notranslate"><span class="pre">pop_target</span></code>) for the subgraph’s population.</p></li>
-<li><p><strong>node_repeats</strong> (<em>int</em>) – A parameter for the algorithm: how many different choices
-of root to use before drawing a new spanning tree. Defaults to 1.</p></li>
-<li><p><strong>repeat_until_valid</strong> (<em>bool</em><em>, </em><em>optional</em>) – Determines whether to keep drawing spanning trees
-until a tree with a balanced cut is found. If <cite>True</cite>, a set of nodes will
-always be returned; if <cite>False</cite>, <cite>None</cite> will be returned if a valid spanning
-tree is not found on the first try. Defaults to True.</p></li>
-<li><p><strong>spanning_tree</strong> (<em>Optional</em><em>[</em><em>nx.Graph</em><em>]</em><em>, </em><em>optional</em>) – The spanning tree for the algorithm to use (used when the
-algorithm chooses a new root and for testing). Defaults to None.</p></li>
-<li><p><strong>spanning_tree_fn</strong> (<em>Callable</em><em>, </em><em>optional</em>) – The random spanning tree algorithm to use if a spanning
-tree is not provided. Defaults to <a class="reference internal" href="api.html#gerrychain.tree.random_spanning_tree" title="gerrychain.tree.random_spanning_tree"><code class="xref py py-func docutils literal notranslate"><span class="pre">random_spanning_tree()</span></code></a>.</p></li>
-<li><p><strong>balance_edge_fn</strong> (<em>Callable</em><em>, </em><em>optional</em>) – The algorithm used to find balanced cut edges. Defaults to
-<a class="reference internal" href="api.html#gerrychain.tree.find_balanced_edge_cuts_memoization" title="gerrychain.tree.find_balanced_edge_cuts_memoization"><code class="xref py py-func docutils literal notranslate"><span class="pre">find_balanced_edge_cuts_memoization()</span></code></a>.</p></li>
-<li><p><strong>one_sided_cut</strong> (<em>bool</em><em>, </em><em>optional</em>) – Passed to the <code class="docutils literal notranslate"><span class="pre">balance_edge_fn</span></code>. Determines whether or not we are
-cutting off a single district when partitioning the tree. When
-set to False, we check if the node we are cutting and the remaining graph
-are both within epsilon of the ideal population. When set to True, we only
-check if the node we are cutting is within epsilon of the ideal population.
-Defaults to False.</p></li>
-<li><p><strong>choice</strong> (<em>Callable</em><em>, </em><em>optional</em>) – The random choice function. Can be substituted for testing. Defaults
-to <code class="xref py py-func docutils literal notranslate"><span class="pre">random.choice()</span></code>.</p></li>
-<li><p><strong>max_attempts</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em><em>, </em><em>optional</em>) – The max number of attempts that should be made to bipartition.
-Defaults to None.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>A subset of nodes of <code class="docutils literal notranslate"><span class="pre">graph</span></code> (whose induced subgraph is connected) or None if a
-valid spanning tree is not found.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>Union[Set[Any], None]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt>
-<code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">epsilon_tree_bipartition</code><span class="sig-paren">(</span><em class="sig-param">graph: networkx.classes.graph.Graph, parts: Sequence, pop_target: Union[float, int], pop_col: str, epsilon: float, node_repeats: int = 1, method: Callable = functools.partial(&lt;function bipartition_tree&gt;, max_attempts=10000)</em><span class="sig-paren">)</span> &#x2192; Dict<a class="reference internal" href="_modules/gerrychain/tree.html#epsilon_tree_bipartition"><span class="viewcode-link">[source]</span></a></dt>
-<dd><blockquote>
-<div><p>Uses <a class="reference internal" href="api.html#gerrychain.tree.bipartition_tree" title="gerrychain.tree.bipartition_tree"><code class="xref py py-func docutils literal notranslate"><span class="pre">bipartition_tree()</span></code></a> to partition a tree into
-two parts of population <code class="docutils literal notranslate"><span class="pre">pop_target</span></code> (within <code class="docutils literal notranslate"><span class="pre">epsilon</span></code>).</p>
-<dl class="field-list simple">
-<dt class="field-odd">param graph</dt>
-<dd class="field-odd"><p>The graph to partition into two :math:<a href="#id1"><span class="problematic" id="id2">`</span></a></p>
-</dd>
-</dl>
-</div></blockquote>
-<dl class="simple">
-<dt>arepsilon`-balanced parts.</dt><dd><dl class="field-list simple">
-<dt class="field-odd">type graph</dt>
-<dd class="field-odd"><p>nx.Graph</p>
-</dd>
-<dt class="field-even">param parts</dt>
-<dd class="field-even"><p>Iterable of part (district) labels (like <code class="docutils literal notranslate"><span class="pre">[0,1,2]</span></code> or <code class="docutils literal notranslate"><span class="pre">range(4)</span></code>).</p>
-</dd>
-<dt class="field-odd">type parts</dt>
-<dd class="field-odd"><p>Sequence</p>
-</dd>
-<dt class="field-even">param pop_target</dt>
-<dd class="field-even"><p>Target population for each part of the partition.</p>
-</dd>
-<dt class="field-odd">type pop_target</dt>
-<dd class="field-odd"><p>Union[float, int]</p>
-</dd>
-<dt class="field-even">param pop_col</dt>
-<dd class="field-even"><p>Node attribute key holding population data.</p>
-</dd>
-<dt class="field-odd">type pop_col</dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-<dt class="field-even">param epsilon</dt>
-<dd class="field-even"><p>How far (as a percentage of <code class="docutils literal notranslate"><span class="pre">pop_target</span></code>) from <code class="docutils literal notranslate"><span class="pre">pop_target</span></code> the parts
-of the partition can be.</p>
-</dd>
-<dt class="field-odd">type epsilon</dt>
-<dd class="field-odd"><p>float</p>
-</dd>
-<dt class="field-even">param node_repeats</dt>
-<dd class="field-even"><p>Parameter for <code class="xref py py-func docutils literal notranslate"><span class="pre">bipartition_tree()</span></code> to use.
-Defaults to 1.</p>
-</dd>
-<dt class="field-odd">type node_repeats</dt>
-<dd class="field-odd"><p>int, optional</p>
-</dd>
-<dt class="field-even">param method</dt>
-<dd class="field-even"><p>The partition method to use. Defaults to
-<cite>partial(bipartition_tree, max_attempts=10000)</cite>.</p>
-</dd>
-<dt class="field-odd">type method</dt>
-<dd class="field-odd"><p>Callable, optional</p>
-</dd>
-<dt class="field-even">returns</dt>
-<dd class="field-even"><p>New assignments for the nodes of <code class="docutils literal notranslate"><span class="pre">graph</span></code>.</p>
-</dd>
-<dt class="field-odd">rtype</dt>
-<dd class="field-odd"><p>dict</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt>
-<code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">find_balanced_edge_cuts_contraction</code><span class="sig-paren">(</span><em class="sig-param">h: gerrychain.tree.PopulatedGraph</em>, <em class="sig-param">one_sided_cut: bool = False</em>, <em class="sig-param">choice: Callable = &lt;bound method Random.choice of &lt;random.Random object&gt;&gt;</em><span class="sig-paren">)</span> &#x2192; List[gerrychain.tree.Cut]<a class="reference internal" href="_modules/gerrychain/tree.html#find_balanced_edge_cuts_contraction"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>Find balanced edge cuts using contraction.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>h</strong> (<a class="reference internal" href="api.html#gerrychain.tree.PopulatedGraph" title="gerrychain.tree.PopulatedGraph"><em>PopulatedGraph</em></a>) – The populated graph.</p></li>
-<li><p><strong>one_sided_cut</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether or not we are cutting off a single district. When
-set to False, we check if the node we are cutting and the remaining graph
-are both within epsilon of the ideal population. When set to True, we only
-check if the node we are cutting is within epsilon of the ideal population.
-Defaults to False.</p></li>
-<li><p><strong>choice</strong> (<em>Callable</em><em>, </em><em>optional</em>) – The function used to make random choices.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>A list of balanced edge cuts.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>List[<a class="reference internal" href="api.html#gerrychain.tree.Cut" title="gerrychain.tree.Cut">Cut</a>]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt>
-<code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">find_balanced_edge_cuts_memoization</code><span class="sig-paren">(</span><em class="sig-param">h: gerrychain.tree.PopulatedGraph</em>, <em class="sig-param">one_sided_cut: bool = False</em>, <em class="sig-param">choice: Callable = &lt;bound method Random.choice of &lt;random.Random object&gt;&gt;</em><span class="sig-paren">)</span> &#x2192; List[gerrychain.tree.Cut]<a class="reference internal" href="_modules/gerrychain/tree.html#find_balanced_edge_cuts_memoization"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>Find balanced edge cuts using memoization.</p>
-<p>This function takes a PopulatedGraph object and a choice function as input and returns a list
-of balanced edge cuts. A balanced edge cut is defined as a cut that divides the graph into
-two subsets, such that the population of each subset is close to the ideal population
-defined by the PopulatedGraph object.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>h</strong> (<a class="reference internal" href="api.html#gerrychain.tree.PopulatedGraph" title="gerrychain.tree.PopulatedGraph"><em>PopulatedGraph</em></a>) – The PopulatedGraph object representing the graph.</p></li>
-<li><p><strong>one_sided_cut</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether or not we are cutting off a single district. When
-set to False, we check if the node we are cutting and the remaining graph
-are both within epsilon of the ideal population. When set to True, we only
-check if the node we are cutting is within epsilon of the ideal population.
-Defaults to False.</p></li>
-<li><p><strong>choice</strong> (<em>Callable</em><em>, </em><em>optional</em>) – The choice function used to select the root node.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>A list of balanced edge cuts.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>List[<a class="reference internal" href="api.html#gerrychain.tree.Cut" title="gerrychain.tree.Cut">Cut</a>]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt>
-<code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">get_max_prime_factor_less_than</code><span class="sig-paren">(</span><em class="sig-param">n: int</em>, <em class="sig-param">ceil: int</em><span class="sig-paren">)</span> &#x2192; Optional[int]<a class="reference internal" href="_modules/gerrychain/tree.html#get_max_prime_factor_less_than"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>Helper function for recursive_seed_part_inner. Returns the largest prime factor of <code class="docutils literal notranslate"><span class="pre">n</span></code>
-less than <code class="docutils literal notranslate"><span class="pre">ceil</span></code>, or None if all are greater than ceil.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>n</strong> (<em>int</em>) – The number to find the largest prime factor for.</p></li>
-<li><p><strong>ceil</strong> (<em>int</em>) – The upper limit for the largest prime factor.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>The largest prime factor of <code class="docutils literal notranslate"><span class="pre">n</span></code> less than <code class="docutils literal notranslate"><span class="pre">ceil</span></code>, or None if all are greater
-than ceil.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>Optional[int]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt>
-<code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">get_seed_chunks</code><span class="sig-paren">(</span><em class="sig-param">graph: networkx.classes.graph.Graph, num_chunks: int, num_dists: int, pop_target: Union[int, float], pop_col: str, epsilon: float, node_repeats: int = 1, method: Callable = functools.partial(&lt;function bipartition_tree_random&gt;, max_attempts=10000)</em><span class="sig-paren">)</span> &#x2192; List[List[int]]<a class="reference internal" href="_modules/gerrychain/tree.html#get_seed_chunks"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>Helper function for recursive_seed_part. Partitions the graph into <code class="docutils literal notranslate"><span class="pre">num_chunks</span></code> chunks,
-balanced within new_epsilon &lt;= <code class="docutils literal notranslate"><span class="pre">epsilon</span></code> of a balanced target population.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>graph</strong> (<em>nx.Graph</em>) – The graph</p></li>
-<li><p><strong>num_chunks</strong> (<em>int</em>) – The number of chunks to partition the graph into</p></li>
-<li><p><strong>num_dists</strong> (<em>int</em>) – The number of districts</p></li>
-<li><p><strong>pop_target</strong> (<em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em>) – The target population of the districts (not of the chunks)</p></li>
-<li><p><strong>pop_col</strong> (<em>str</em>) – Node attribute key holding population data</p></li>
-<li><p><strong>epsilon</strong> (<em>float</em>) – How far (as a percentage of <code class="docutils literal notranslate"><span class="pre">pop_target</span></code>) from <code class="docutils literal notranslate"><span class="pre">pop_target</span></code> the parts
-of the partition can be</p></li>
-<li><p><strong>node_repeats</strong> (<em>int</em><em>, </em><em>optional</em>) – Parameter for <code class="xref py py-func docutils literal notranslate"><span class="pre">bipartition_tree_random()</span></code>
-to use. Defaults to 1.</p></li>
-<li><p><strong>method</strong> (<em>Callable</em><em>, </em><em>optional</em>) – The method to use for bipartitioning the graph.
-Defaults to <code class="xref py py-func docutils literal notranslate"><span class="pre">bipartition_tree_random()</span></code></p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>New assignments for the nodes of <code class="docutils literal notranslate"><span class="pre">graph</span></code>.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>List[List[int]]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt>
-<code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">predecessors</code><span class="sig-paren">(</span><em class="sig-param">h: networkx.classes.graph.Graph</em>, <em class="sig-param">root: Any</em><span class="sig-paren">)</span> &#x2192; Dict<a class="reference internal" href="_modules/gerrychain/tree.html#predecessors"><span class="viewcode-link">[source]</span></a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt>
-<code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">random_spanning_tree</code><span class="sig-paren">(</span><em class="sig-param">graph: networkx.classes.graph.Graph</em>, <em class="sig-param">region_surcharge: Optional[Dict] = None</em><span class="sig-paren">)</span> &#x2192; networkx.classes.graph.Graph<a class="reference internal" href="_modules/gerrychain/tree.html#random_spanning_tree"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>Builds a spanning tree chosen by Kruskal’s method using random weights.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>graph</strong> (<em>nx.Graph</em>) – The input graph to build the spanning tree from. Should be a Networkx Graph.</p></li>
-<li><p><strong>region_surcharge</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>]</em><em>, </em><em>optional</em>) – Dictionary of surcharges to add to the random
-weights used in region-aware variants.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>The maximal spanning tree represented as a Networkx Graph.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>nx.Graph</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt>
-<code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">recursive_seed_part</code><span class="sig-paren">(</span><em class="sig-param">graph: networkx.classes.graph.Graph, parts: Sequence, pop_target: Union[float, int], pop_col: str, epsilon: float, method: Callable = functools.partial(&lt;function bipartition_tree&gt;, max_attempts=10000), node_repeats: int = 1, n: Optional[int] = None, ceil: Optional[int] = None</em><span class="sig-paren">)</span> &#x2192; Dict<a class="reference internal" href="_modules/gerrychain/tree.html#recursive_seed_part"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>Returns a partition with <code class="docutils literal notranslate"><span class="pre">num_dists</span></code> districts balanced within <code class="docutils literal notranslate"><span class="pre">epsilon</span></code> of
-<code class="docutils literal notranslate"><span class="pre">pop_target</span></code> by recursively splitting graph using recursive_seed_part_inner.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>graph</strong> (<em>nx.Graph</em>) – The graph</p></li>
-<li><p><strong>parts</strong> (<em>Sequence</em>) – Iterable of part labels (like <code class="docutils literal notranslate"><span class="pre">[0,1,2]</span></code> or <code class="docutils literal notranslate"><span class="pre">range(4)</span></code></p></li>
-<li><p><strong>pop_target</strong> (<em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em>) – Target population for each part of the partition</p></li>
-<li><p><strong>pop_col</strong> (<em>str</em>) – Node attribute key holding population data</p></li>
-<li><p><strong>epsilon</strong> (<em>float</em>) – How far (as a percentage of <code class="docutils literal notranslate"><span class="pre">pop_target</span></code>) from <code class="docutils literal notranslate"><span class="pre">pop_target</span></code> the parts
-of the partition can be</p></li>
-<li><p><strong>method</strong> (<em>Callable</em><em>, </em><em>optional</em>) – Function used to find balanced partitions at the 2-district level
-Defaults to <code class="xref py py-func docutils literal notranslate"><span class="pre">bipartition_tree()</span></code></p></li>
-<li><p><strong>node_repeats</strong> (<em>int</em><em>, </em><em>optional</em>) – Parameter for <code class="xref py py-func docutils literal notranslate"><span class="pre">bipartition_tree()</span></code> to use.
-Defaults to 1.</p></li>
-<li><p><strong>n</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em><em>, </em><em>optional</em>) – Either a positive integer (greater than 1) or None. If n is a positive integer,
-this function will recursively create a seed plan by either biting off districts from graph
-or dividing graph into n chunks and recursing into each of these. If n is None, this
-function prime factors <a href="#id3"><span class="problematic" id="id4">``</span></a>num_dists``=n_1*n_2*…*n_k (n_1 &gt; n_2 &gt; … n_k) and recursively
-partitions graph into n_1 chunks. Defaults to None.</p></li>
-<li><p><strong>ceil</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em><em>, </em><em>optional</em>) – Either a positive integer (at least 2) or None. Relevant only if n is None. If
-<code class="docutils literal notranslate"><span class="pre">ceil</span></code> is a positive integer then finds the largest factor of <code class="docutils literal notranslate"><span class="pre">num_dists</span></code> less than or
-equal to <code class="docutils literal notranslate"><span class="pre">ceil</span></code>, and recursively splits graph into that number of chunks, or bites off a
-district if that number is 1. Defaults to None.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>New assignments for the nodes of <code class="docutils literal notranslate"><span class="pre">graph</span></code>.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>dict</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt>
-<code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">recursive_seed_part_inner</code><span class="sig-paren">(</span><em class="sig-param">graph: networkx.classes.graph.Graph, num_dists: int, pop_target: Union[float, int], pop_col: str, epsilon: float, method: Callable = functools.partial(&lt;function bipartition_tree&gt;, max_attempts=10000), node_repeats: int = 1, n: Optional[int] = None, ceil: Optional[int] = None</em><span class="sig-paren">)</span> &#x2192; List[Set]<a class="reference internal" href="_modules/gerrychain/tree.html#recursive_seed_part_inner"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>Inner function for recursive_seed_part.
-Returns a partition with <code class="docutils literal notranslate"><span class="pre">num_dists</span></code> districts balanced within <code class="docutils literal notranslate"><span class="pre">epsilon</span></code> of
-<code class="docutils literal notranslate"><span class="pre">pop_target</span></code>.
-Splits graph into num_chunks chunks, and then recursively splits each chunk into
-<code class="docutils literal notranslate"><span class="pre">num_dists</span></code>/num_chunks chunks.
-The number num_chunks of chunks is chosen based on <code class="docutils literal notranslate"><span class="pre">n</span></code> and <code class="docutils literal notranslate"><span class="pre">ceil</span></code> as follows:</p>
-<ul class="simple">
-<li><p>If <code class="docutils literal notranslate"><span class="pre">n</span></code> is None, and <code class="docutils literal notranslate"><span class="pre">ceil</span></code> is None, num_chunks is the largest prime factor
-of <code class="docutils literal notranslate"><span class="pre">num_dists</span></code>.</p></li>
-<li><p>If <code class="docutils literal notranslate"><span class="pre">n</span></code> is None and <code class="docutils literal notranslate"><span class="pre">ceil</span></code> is an integer at least 2, then num_chunks is the
-largest prime factor of <code class="docutils literal notranslate"><span class="pre">num_dists</span></code> that is less than <code class="docutils literal notranslate"><span class="pre">ceil</span></code></p></li>
-<li><p>If <code class="docutils literal notranslate"><span class="pre">n</span></code> is a positive integer, num_chunks equals n.</p></li>
-</ul>
-<p>Finally, if the number of chunks as chosen above does not divide <code class="docutils literal notranslate"><span class="pre">num_dists</span></code>, then
-this function bites off a single district from the graph and recursively partitions
-the remaining graph into <code class="docutils literal notranslate"><span class="pre">num_dists</span> <span class="pre">-</span> <span class="pre">1</span></code> districts.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>graph</strong> (<em>nx.Graph</em>) – The underlying graph structure.</p></li>
-<li><p><strong>num_dists</strong> (<em>int</em>) – number of districts to partition the graph into</p></li>
-<li><p><strong>pop_target</strong> (<em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em>) – Target population for each part of the partition</p></li>
-<li><p><strong>pop_col</strong> (<em>str</em>) – Node attribute key holding population data</p></li>
-<li><p><strong>epsilon</strong> (<em>float</em>) – How far (as a percentage of <code class="docutils literal notranslate"><span class="pre">pop_target</span></code>) from <code class="docutils literal notranslate"><span class="pre">pop_target</span></code> the parts
-of the partition can be</p></li>
-<li><p><strong>method</strong> (<em>Callable</em><em>, </em><em>optional</em>) – Function used to find balanced partitions at the 2-district level.
-Defaults to <code class="xref py py-func docutils literal notranslate"><span class="pre">bipartition_tree()</span></code></p></li>
-<li><p><strong>node_repeats</strong> (<em>int</em><em>, </em><em>optional</em>) – Parameter for <code class="xref py py-func docutils literal notranslate"><span class="pre">bipartition_tree()</span></code> to use.
-Defaults to 1.</p></li>
-<li><p><strong>n</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em><em>, </em><em>optional</em>) – Either a positive integer (greater than 1) or None. If n is a positive integer,
-this function will recursively create a seed plan by either biting off districts from
-graph or dividing graph into n chunks and recursing into each of these. If n is None,
-this function prime factors <a href="#id5"><span class="problematic" id="id6">``</span></a>num_dists``=n_1*n_2*…*n_k (n_1 &gt; n_2 &gt; … n_k) and
-recursively partitions graph into n_1 chunks. Defaults to None.</p></li>
-<li><p><strong>ceil</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em><em>, </em><em>optional</em>) – Either a positive integer (at least 2) or None. Relevant only if n is None.
-If <code class="docutils literal notranslate"><span class="pre">ceil</span></code> is a positive integer then finds the largest factor of <code class="docutils literal notranslate"><span class="pre">num_dists</span></code> less
-than or equal to <code class="docutils literal notranslate"><span class="pre">ceil</span></code>, and recursively splits graph into that number of chunks, or
-bites off a district if that number is 1. Defaults to None.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>New assignments for the nodes of <code class="docutils literal notranslate"><span class="pre">graph</span></code>.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>List of sets, each set is a district</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt>
-<code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">recursive_tree_part</code><span class="sig-paren">(</span><em class="sig-param">graph: networkx.classes.graph.Graph, parts: Sequence, pop_target: Union[float, int], pop_col: str, epsilon: float, node_repeats: int = 1, method: Callable = functools.partial(&lt;function bipartition_tree&gt;, max_attempts=10000)</em><span class="sig-paren">)</span> &#x2192; Dict<a class="reference internal" href="_modules/gerrychain/tree.html#recursive_tree_part"><span class="viewcode-link">[source]</span></a></dt>
-<dd><blockquote>
-<div><p>Uses <a class="reference internal" href="api.html#gerrychain.tree.bipartition_tree" title="gerrychain.tree.bipartition_tree"><code class="xref py py-func docutils literal notranslate"><span class="pre">bipartition_tree()</span></code></a> recursively to partition a tree into
-<code class="docutils literal notranslate"><span class="pre">len(parts)</span></code> parts of population <code class="docutils literal notranslate"><span class="pre">pop_target</span></code> (within <code class="docutils literal notranslate"><span class="pre">epsilon</span></code>). Can be used to
-generate initial seed plans or to implement ReCom-like “merge walk” proposals.</p>
-<dl class="field-list simple">
-<dt class="field-odd">param graph</dt>
-<dd class="field-odd"><p>The graph to partition into <code class="docutils literal notranslate"><span class="pre">len(parts)</span></code> :math:<a href="#id7"><span class="problematic" id="id8">`</span></a></p>
-</dd>
-</dl>
-</div></blockquote>
-<dl class="simple">
-<dt>arepsilon`-balanced parts.</dt><dd><dl class="field-list simple">
-<dt class="field-odd">type graph</dt>
-<dd class="field-odd"><p>nx.Graph</p>
-</dd>
-<dt class="field-even">param parts</dt>
-<dd class="field-even"><p>Iterable of part (district) labels (like <code class="docutils literal notranslate"><span class="pre">[0,1,2]</span></code> or <code class="docutils literal notranslate"><span class="pre">range(4)</span></code>).</p>
-</dd>
-<dt class="field-odd">type parts</dt>
-<dd class="field-odd"><p>Sequence</p>
-</dd>
-<dt class="field-even">param pop_target</dt>
-<dd class="field-even"><p>Target population for each part of the partition.</p>
-</dd>
-<dt class="field-odd">type pop_target</dt>
-<dd class="field-odd"><p>Union[float, int]</p>
-</dd>
-<dt class="field-even">param pop_col</dt>
-<dd class="field-even"><p>Node attribute key holding population data.</p>
-</dd>
-<dt class="field-odd">type pop_col</dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-<dt class="field-even">param epsilon</dt>
-<dd class="field-even"><p>How far (as a percentage of <code class="docutils literal notranslate"><span class="pre">pop_target</span></code>) from <code class="docutils literal notranslate"><span class="pre">pop_target</span></code> the parts
-of the partition can be.</p>
-</dd>
-<dt class="field-odd">type epsilon</dt>
-<dd class="field-odd"><p>float</p>
-</dd>
-<dt class="field-even">param node_repeats</dt>
-<dd class="field-even"><p>Parameter for <code class="xref py py-func docutils literal notranslate"><span class="pre">bipartition_tree()</span></code> to use.
-Defaluts to 1.</p>
-</dd>
-<dt class="field-odd">type node_repeats</dt>
-<dd class="field-odd"><p>int, optional</p>
-</dd>
-<dt class="field-even">param method</dt>
-<dd class="field-even"><p>The partition method to use. Defaults to
-<cite>partial(bipartition_tree, max_attempts=10000)</cite>.</p>
-</dd>
-<dt class="field-odd">type method</dt>
-<dd class="field-odd"><p>Callable, optional</p>
-</dd>
-<dt class="field-even">returns</dt>
-<dd class="field-even"><p>New assignments for the nodes of <code class="docutils literal notranslate"><span class="pre">graph</span></code>.</p>
-</dd>
-<dt class="field-odd">rtype</dt>
-<dd class="field-odd"><p>dict</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt>
-<code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">successors</code><span class="sig-paren">(</span><em class="sig-param">h: networkx.classes.graph.Graph</em>, <em class="sig-param">root: Any</em><span class="sig-paren">)</span> &#x2192; Dict<a class="reference internal" href="_modules/gerrychain/tree.html#successors"><span class="viewcode-link">[source]</span></a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt>
-<code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">uniform_spanning_tree</code><span class="sig-paren">(</span><em class="sig-param">graph: networkx.classes.graph.Graph</em>, <em class="sig-param">choice: Callable = &lt;bound method Random.choice of &lt;random.Random object&gt;&gt;</em><span class="sig-paren">)</span> &#x2192; networkx.classes.graph.Graph<a class="reference internal" href="_modules/gerrychain/tree.html#uniform_spanning_tree"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>Builds a spanning tree chosen uniformly from the space of all
-spanning trees of the graph. Uses Wilson’s algorithm.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>graph</strong> (<em>nx.Graph</em>) – Networkx Graph</p></li>
-<li><p><strong>choice</strong> (<em>Callable</em><em>, </em><em>optional</em>) – <code class="xref py py-func docutils literal notranslate"><span class="pre">random.choice()</span></code>. Defaults to <code class="xref py py-func docutils literal notranslate"><span class="pre">random.choice()</span></code>.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>A spanning tree of the graph chosen uniformly at random.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>nx.Graph</p>
-</dd>
-</dl>
 </dd></dl>
 
 </div>
@@ -1749,7 +748,7 @@ The intersections may be empty!</p>
 
 <dl class="function">
 <dt>
-<code class="sig-prename descclassname">gerrychain.graph.adjacency.</code><code class="sig-name descname">neighbors</code><span class="sig-paren">(</span><em class="sig-param">df: &lt;Mock name='mock.GeoDataFrame' id='139977221927792'&gt;</em>, <em class="sig-param">adjacency: str</em><span class="sig-paren">)</span> &#x2192; Dict<a class="reference internal" href="_modules/gerrychain/graph/adjacency.html#neighbors"><span class="viewcode-link">[source]</span></a></dt>
+<code class="sig-prename descclassname">gerrychain.graph.adjacency.</code><code class="sig-name descname">neighbors</code><span class="sig-paren">(</span><em class="sig-param">df: &lt;Mock name='mock.GeoDataFrame' id='140044216943424'&gt;</em>, <em class="sig-param">adjacency: str</em><span class="sig-paren">)</span> &#x2192; Dict<a class="reference internal" href="_modules/gerrychain/graph/adjacency.html#neighbors"><span class="viewcode-link">[source]</span></a></dt>
 <dd></dd></dl>
 
 <dl class="function">
@@ -1855,7 +854,7 @@ Light wrapper around shapely’s explain_validity.</p>
 
 <dl class="function">
 <dt>
-<code class="sig-prename descclassname">gerrychain.graph.geo.</code><code class="sig-name descname">identify_utm_zone</code><span class="sig-paren">(</span><em class="sig-param">df: &lt;Mock name='mock.GeoDataFrame' id='139977221927792'&gt;</em><span class="sig-paren">)</span> &#x2192; int<a class="reference internal" href="_modules/gerrychain/graph/geo.html#identify_utm_zone"><span class="viewcode-link">[source]</span></a></dt>
+<code class="sig-prename descclassname">gerrychain.graph.geo.</code><code class="sig-name descname">identify_utm_zone</code><span class="sig-paren">(</span><em class="sig-param">df: &lt;Mock name='mock.GeoDataFrame' id='140044216943424'&gt;</em><span class="sig-paren">)</span> &#x2192; int<a class="reference internal" href="_modules/gerrychain/graph/geo.html#identify_utm_zone"><span class="viewcode-link">[source]</span></a></dt>
 <dd><p>Given a GeoDataFrame, identify the Universal Transverse Mercator zone
 number for the centroid of the geometries in the dataframe.</p>
 </dd></dl>
@@ -2015,7 +1014,7 @@ SciPy sparse matrix, or a PyGraphviz graph.</p>
 </div>
 <dl class="method">
 <dt>
-<code class="sig-name descname">add_data</code><span class="sig-paren">(</span><em class="sig-param">df: &lt;Mock name='mock.DataFrame' id='139977221999200'&gt;</em>, <em class="sig-param">columns: Optional[Iterable[str]] = None</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/gerrychain/graph/graph.html#Graph.add_data"><span class="viewcode-link">[source]</span></a></dt>
+<code class="sig-name descname">add_data</code><span class="sig-paren">(</span><em class="sig-param">df: &lt;Mock name='mock.DataFrame' id='140044217018976'&gt;</em>, <em class="sig-param">columns: Optional[Iterable[str]] = None</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/gerrychain/graph/graph.html#Graph.add_data"><span class="viewcode-link">[source]</span></a></dt>
 <dd><p>Add columns of a DataFrame to a graph as node attributes
 by matching the DataFrame’s index to node ids.</p>
 <dl class="field-list simple">
@@ -2076,7 +1075,7 @@ via the command:</p>
 
 <dl class="method">
 <dt>
-<em class="property">classmethod </em><code class="sig-name descname">from_geodataframe</code><span class="sig-paren">(</span><em class="sig-param">dataframe: &lt;Mock name='mock.DataFrame' id='139977221999200'&gt;</em>, <em class="sig-param">adjacency: str = 'rook'</em>, <em class="sig-param">cols_to_add: Optional[List[str]] = None</em>, <em class="sig-param">reproject: bool = False</em>, <em class="sig-param">ignore_errors: bool = False</em>, <em class="sig-param">crs_override: Union[str</em>, <em class="sig-param">int</em>, <em class="sig-param">None] = None</em><span class="sig-paren">)</span> &#x2192; gerrychain.graph.graph.Graph<a class="reference internal" href="_modules/gerrychain/graph/graph.html#Graph.from_geodataframe"><span class="viewcode-link">[source]</span></a></dt>
+<em class="property">classmethod </em><code class="sig-name descname">from_geodataframe</code><span class="sig-paren">(</span><em class="sig-param">dataframe: &lt;Mock name='mock.DataFrame' id='140044217018976'&gt;</em>, <em class="sig-param">adjacency: str = 'rook'</em>, <em class="sig-param">cols_to_add: Optional[List[str]] = None</em>, <em class="sig-param">reproject: bool = False</em>, <em class="sig-param">ignore_errors: bool = False</em>, <em class="sig-param">crs_override: Union[str</em>, <em class="sig-param">int</em>, <em class="sig-param">None] = None</em><span class="sig-paren">)</span> &#x2192; gerrychain.graph.graph.Graph<a class="reference internal" href="_modules/gerrychain/graph/graph.html#Graph.from_geodataframe"><span class="viewcode-link">[source]</span></a></dt>
 <dd><p>Creates the adjacency <a class="reference internal" href="api.html#gerrychain.graph.graph.Graph" title="gerrychain.graph.graph.Graph"><code class="xref py py-class docutils literal notranslate"><span class="pre">Graph</span></code></a> of geometries described by <cite>dataframe</cite>.
 The areas of the polygons are included as node attributes (with key <cite>area</cite>).
 The shared perimeter of neighboring polygons are included as edge attributes
@@ -2178,7 +1177,7 @@ Default is None.</p></li>
 
 <dl class="method">
 <dt>
-<code class="sig-name descname">join</code><span class="sig-paren">(</span><em class="sig-param">dataframe: &lt;Mock name='mock.DataFrame' id='139977221999200'&gt;</em>, <em class="sig-param">columns: Optional[List[str]] = None</em>, <em class="sig-param">left_index: Optional[str] = None</em>, <em class="sig-param">right_index: Optional[str] = None</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/gerrychain/graph/graph.html#Graph.join"><span class="viewcode-link">[source]</span></a></dt>
+<code class="sig-name descname">join</code><span class="sig-paren">(</span><em class="sig-param">dataframe: &lt;Mock name='mock.DataFrame' id='140044217018976'&gt;</em>, <em class="sig-param">columns: Optional[List[str]] = None</em>, <em class="sig-param">left_index: Optional[str] = None</em>, <em class="sig-param">right_index: Optional[str] = None</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/gerrychain/graph/graph.html#Graph.join"><span class="viewcode-link">[source]</span></a></dt>
 <dd><p>Add data from a dataframe to the graph, matching nodes to rows when
 the node’s <cite>left_index</cite> attribute equals the row’s <cite>right_index</cite> value.</p>
 <dl class="field-list simple">
@@ -2266,7 +1265,7 @@ GeoJSON will result in a much larger JSON file.</p></li>
 
 <dl class="function">
 <dt>
-<code class="sig-prename descclassname">gerrychain.graph.graph.</code><code class="sig-name descname">add_boundary_perimeters</code><span class="sig-paren">(</span><em class="sig-param">graph: gerrychain.graph.graph.Graph</em>, <em class="sig-param">geometries: &lt;Mock name='mock.Series' id='139977221999392'&gt;</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/gerrychain/graph/graph.html#add_boundary_perimeters"><span class="viewcode-link">[source]</span></a></dt>
+<code class="sig-prename descclassname">gerrychain.graph.graph.</code><code class="sig-name descname">add_boundary_perimeters</code><span class="sig-paren">(</span><em class="sig-param">graph: gerrychain.graph.graph.Graph</em>, <em class="sig-param">geometries: &lt;Mock name='mock.Series' id='140044217019120'&gt;</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/gerrychain/graph/graph.html#add_boundary_perimeters"><span class="viewcode-link">[source]</span></a></dt>
 <dd><p>Add shared perimeter between nodes and the total geometry boundary.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -2286,7 +1285,7 @@ GeoJSON will result in a much larger JSON file.</p></li>
 
 <dl class="function">
 <dt>
-<code class="sig-prename descclassname">gerrychain.graph.graph.</code><code class="sig-name descname">check_dataframe</code><span class="sig-paren">(</span><em class="sig-param">df: &lt;Mock name='mock.DataFrame' id='139977221999200'&gt;</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/gerrychain/graph/graph.html#check_dataframe"><span class="viewcode-link">[source]</span></a></dt>
+<code class="sig-prename descclassname">gerrychain.graph.graph.</code><code class="sig-name descname">check_dataframe</code><span class="sig-paren">(</span><em class="sig-param">df: &lt;Mock name='mock.DataFrame' id='140044217018976'&gt;</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/gerrychain/graph/graph.html#check_dataframe"><span class="viewcode-link">[source]</span></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
 <dd class="field-odd"><p>None</p>
@@ -2347,6 +1346,260 @@ because they are not serializable. Mutates the <code class="docutils literal not
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>data</strong> (<em>networkx.Graph</em>) – an adjacency data object (returned by
 <code class="xref py py-func docutils literal notranslate"><span class="pre">networkx.readwrite.json_graph.adjacency_data()</span></code>)</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="grid">
+<h2>Grid<a class="headerlink" href="#grid" title="Permalink to this headline">¶</a></h2>
+<p>This module provides a Grid class used for creating and manipulating grid partitions.
+It’s part of the GerryChain suite, designed to facilitate experiments with redistricting
+plans without the need for extensive data processing. This module relies on NetworkX for
+graph operations and integrates with GerryChain’s Partition class.</p>
+<p>Dependencies:</p>
+<ul class="simple">
+<li><p>math: For math.floor() function.</p></li>
+<li><dl class="simple">
+<dt>networkx: For graph operations with using the graph structure in</dt><dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Graph</span></code>.</p>
+</dd>
+</dl>
+</li>
+<li><p>typing: Used for type hints.</p></li>
+</ul>
+<dl class="class">
+<dt>
+<em class="property">class </em><code class="sig-prename descclassname">gerrychain.grid.</code><code class="sig-name descname">Grid</code><span class="sig-paren">(</span><em class="sig-param">dimensions: Optional[Tuple[int, int]] = None, with_diagonals: bool = False, assignment: Optional[Dict] = None, updaters: Optional[Dict[str, Callable]] = None, parent: Optional[Grid] = None, flips: Optional[Dict[Tuple[int, int], int]] = None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gerrychain/grid.html#Grid"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">gerrychain.partition.partition.Partition</span></code></p>
+<p>The <a class="reference internal" href="api.html#gerrychain.grid.Grid" title="gerrychain.grid.Grid"><code class="xref py py-class docutils literal notranslate"><span class="pre">Grid</span></code></a> class represents a grid partitioned into districts.
+It is useful for running little experiments with GerryChain without needing to do
+any data processing or cleaning to get started.</p>
+<p>Example usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">grid</span> <span class="o">=</span> <span class="n">Grid</span><span class="p">((</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>The nodes of <code class="docutils literal notranslate"><span class="pre">grid.graph</span></code> are labelled by tuples <code class="docutils literal notranslate"><span class="pre">(i,j)</span></code>, for <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">i</span> <span class="pre">&lt;=</span> <span class="pre">10</span></code>
+and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">j</span> <span class="pre">&lt;=</span> <span class="pre">10</span></code>. Each node has an <code class="docutils literal notranslate"><span class="pre">area</span></code> of 1 and each edge has <code class="docutils literal notranslate"><span class="pre">shared_perim</span></code> 1.</p>
+<p>If the updaters are not specified, the default updaters are used, which are as follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">default_updaters</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;cut_edges&quot;</span><span class="p">:</span> <span class="n">cut_edges</span><span class="p">,</span>
+    <span class="s2">&quot;population&quot;</span><span class="p">:</span> <span class="n">Tally</span><span class="p">(</span><span class="s2">&quot;population&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;perimeter&quot;</span><span class="p">:</span> <span class="n">perimeter</span><span class="p">,</span>
+    <span class="s2">&quot;exterior_boundaries&quot;</span><span class="p">:</span> <span class="n">exterior_boundaries</span><span class="p">,</span>
+    <span class="s2">&quot;interior_boundaries&quot;</span><span class="p">:</span> <span class="n">interior_boundaries</span><span class="p">,</span>
+    <span class="s2">&quot;boundary_nodes&quot;</span><span class="p">:</span> <span class="n">boundary_nodes</span><span class="p">,</span>
+    <span class="s2">&quot;area&quot;</span><span class="p">:</span> <span class="n">Tally</span><span class="p">(</span><span class="s2">&quot;area&quot;</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s2">&quot;area&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;polsby_popper&quot;</span><span class="p">:</span> <span class="n">polsby_popper</span><span class="p">,</span>
+    <span class="s2">&quot;cut_edges_by_part&quot;</span><span class="p">:</span> <span class="n">cut_edges_by_part</span><span class="p">,</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dimensions</strong> (<em>Tuple</em><em>[</em><em>int</em><em>, </em><em>int</em><em>]</em><em>, </em><em>optional</em>) – The grid dimensions (rows, columns), defaults to None.</p></li>
+<li><p><strong>with_diagonals</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, includes diagonal connections, defaults to False.</p></li>
+<li><p><strong>assignment</strong> (<em>Dict</em><em>, </em><em>optional</em>) – Node-to-district assignments, defaults to None.</p></li>
+<li><p><strong>updaters</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Callable</em><em>]</em><em>, </em><em>optional</em>) – Custom updater functions, defaults to None.</p></li>
+<li><p><strong>parent</strong> (<a class="reference internal" href="api.html#gerrychain.grid.Grid" title="gerrychain.grid.Grid"><em>Grid</em></a><em>, </em><em>optional</em>) – Parent Grid object for inheritance, defaults to None.</p></li>
+<li><p><strong>flips</strong> (<em>Dict</em><em>[</em><em>Tuple</em><em>[</em><em>int</em><em>, </em><em>int</em><em>]</em><em>, </em><em>int</em><em>]</em><em>, </em><em>optional</em>) – Node flips for partition changes, defaults to None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>Exception</strong> – If neither dimensions nor parent is provided.</p>
+</dd>
+</dl>
+<dl class="method">
+<dt>
+<code class="sig-name descname">as_list_of_lists</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/gerrychain/grid.html#Grid.as_list_of_lists"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Returns the grid as a list of lists (like a matrix), where the (i,j)th
+entry is the assigned district of the node in position (i,j) on the
+grid.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>List of lists representing the grid.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>List[List[int]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">assignment</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">default_updaters</code><em class="property"> = {'area': &lt;gerrychain.updaters.tally.Tally object&gt;, 'boundary_nodes': &lt;function boundary_nodes&gt;, 'cut_edges': &lt;function cut_edges&gt;, 'cut_edges_by_part': &lt;function cut_edges_by_part&gt;, 'exterior_boundaries': &lt;function exterior_boundaries&gt;, 'interior_boundaries': &lt;function interior_boundaries&gt;, 'perimeter': &lt;function perimeter&gt;, 'polsby_popper': &lt;function polsby_popper&gt;, 'population': &lt;gerrychain.updaters.tally.Tally object&gt;}</em></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">edge_flows</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">flips</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">flows</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">graph</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">parent</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">subgraphs</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">updaters</code></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="sig-prename descclassname">gerrychain.grid.</code><code class="sig-name descname">color_half</code><span class="sig-paren">(</span><em class="sig-param">node: Tuple[int, int], threshold: int</em><span class="sig-paren">)</span> &#x2192; int<a class="reference internal" href="_modules/gerrychain/grid.html#color_half"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Assigns a color (as an integer) to a node based on its x-coordinate.</p>
+<p>This function is used to partition the grid into two parts based on a given threshold.
+Nodes with an x-coordinate less than or equal to the threshold are assigned one color,
+and nodes with an x-coordinate greater than the threshold are assigned another.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Tuple</em><em>[</em><em>int</em><em>, </em><em>int</em><em>]</em>) – The node to color, represented as a tuple of coordinates (x, y).</p></li>
+<li><p><strong>threshold</strong> (<em>int</em>) – The x-coordinate value that determines the color assignment.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>An integer representing the color of the node. Returns 0 for nodes with
+x-coordinate less than or equal to the threshold, and 1 otherwise.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="sig-prename descclassname">gerrychain.grid.</code><code class="sig-name descname">color_quadrants</code><span class="sig-paren">(</span><em class="sig-param">node: Tuple[int, int], thresholds: Tuple[int, int]</em><span class="sig-paren">)</span> &#x2192; int<a class="reference internal" href="_modules/gerrychain/grid.html#color_quadrants"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Assigns a color (as an integer) to a node based on its position relative to
+specified threshold coordinates, effectively dividing the grid into four quadrants.</p>
+<p>The function uses two threshold values (one for each axis) to determine the color.
+Each combination of being higher or lower than the threshold on each axis results
+in a different color.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Tuple</em><em>[</em><em>int</em><em>, </em><em>int</em><em>]</em>) – The node to color, represented as a tuple of coordinates (x, y).</p></li>
+<li><p><strong>thresholds</strong> (<em>Tuple</em><em>[</em><em>int</em><em>, </em><em>int</em><em>]</em>) – A tuple of two integers representing the threshold coordinates
+(x_threshold, y_threshold).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>An integer representing the color of the node, determined by its quadrant.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="sig-prename descclassname">gerrychain.grid.</code><code class="sig-name descname">create_grid_graph</code><span class="sig-paren">(</span><em class="sig-param">dimensions: Tuple[int, int], with_diagonals: bool</em><span class="sig-paren">)</span> &#x2192; gerrychain.graph.graph.Graph<a class="reference internal" href="_modules/gerrychain/grid.html#create_grid_graph"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Creates a grid graph with the specified dimensions.
+Optionally includes diagonal connections between nodes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dimensions</strong> (<em>Tuple</em><em>[</em><em>int</em><em>, </em><em>int</em><em>]</em>) – The grid dimensions (rows, columns).</p></li>
+<li><p><strong>with_diagonals</strong> (<em>bool</em>) – If True, includes diagonal connections.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A grid graph.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="api.html#gerrychain.graph.graph.Graph" title="gerrychain.graph.graph.Graph">Graph</a></p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If the dimensions are not a tuple of length 2.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="sig-prename descclassname">gerrychain.grid.</code><code class="sig-name descname">get_boundary_perim</code><span class="sig-paren">(</span><em class="sig-param">node: Tuple[int, int], dimensions: Tuple[int, int]</em><span class="sig-paren">)</span> &#x2192; int<a class="reference internal" href="_modules/gerrychain/grid.html#get_boundary_perim"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Determines the boundary perimeter of a node on the grid.
+The boundary perimeter is the number of sides of the node that
+are on the boundary of the grid.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Tuple</em><em>[</em><em>int</em><em>, </em><em>int</em><em>]</em>) – The node to check.</p></li>
+<li><p><strong>dimensions</strong> (<em>Tuple</em><em>[</em><em>int</em><em>, </em><em>int</em><em>]</em>) – The dimensions of the grid.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The boundary perimeter of the node.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="sig-prename descclassname">gerrychain.grid.</code><code class="sig-name descname">give_constant_attribute</code><span class="sig-paren">(</span><em class="sig-param">graph: gerrychain.graph.graph.Graph</em>, <em class="sig-param">attribute: Any</em>, <em class="sig-param">value: Any</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/gerrychain/grid.html#give_constant_attribute"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Sets the specified attribute to the specified value for all nodes in the graph.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>graph</strong> (<a class="reference internal" href="api.html#gerrychain.graph.graph.Graph" title="gerrychain.graph.graph.Graph"><em>Graph</em></a>) – The graph to modify.</p></li>
+<li><p><strong>attribute</strong> (<em>Any</em>) – The attribute to set.</p></li>
+<li><p><strong>value</strong> (<em>Any</em>) – The value to set the attribute to.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="sig-prename descclassname">gerrychain.grid.</code><code class="sig-name descname">tag_boundary_nodes</code><span class="sig-paren">(</span><em class="sig-param">graph: gerrychain.graph.graph.Graph, dimensions: Tuple[int, int]</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/gerrychain/grid.html#tag_boundary_nodes"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Adds the boolean attribute <code class="docutils literal notranslate"><span class="pre">boundary_node</span></code> to each node in the graph.
+If the node is on the boundary of the grid, that node also gets the attribute
+<code class="docutils literal notranslate"><span class="pre">boundary_perim</span></code> which is determined by the function <code class="xref py py-func docutils literal notranslate"><span class="pre">get_boundary_perim()</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>graph</strong> (<a class="reference internal" href="api.html#gerrychain.graph.graph.Graph" title="gerrychain.graph.graph.Graph"><em>Graph</em></a>) – The graph to modify.</p></li>
+<li><p><strong>dimensions</strong> (<em>Tuple</em><em>[</em><em>int</em><em>, </em><em>int</em><em>]</em>) – The dimensions of the grid.</p></li>
+</ul>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>None</p>
@@ -2420,6 +1673,108 @@ and districts are considered non-unique and counted as duplicate.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>Iterable[Tuple[<a class="reference internal" href="api.html#gerrychain.partition.Partition" title="gerrychain.partition.Partition">Partition</a>, <a class="reference internal" href="api.html#gerrychain.meta.diversity.DiversityStats" title="gerrychain.meta.diversity.DiversityStats">DiversityStats</a>]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="metagraph">
+<h2>Metagraph<a class="headerlink" href="#metagraph" title="Permalink to this headline">¶</a></h2>
+<p>This module provides the main tools for interacting with the metagraph of partitions.
+The metagraph of partitions is the set of partitions that are reachable from the
+current partition by a single flip.</p>
+<p>Dependencies:</p>
+<ul class="simple">
+<li><p>itertools: Used for product() function.</p></li>
+<li><p>typing: Used for type hints.</p></li>
+</ul>
+<p>Last Updated: 11 Jan 2024</p>
+<dl class="function">
+<dt>
+<code class="sig-prename descclassname">gerrychain.metagraph.</code><code class="sig-name descname">all_cut_edge_flips</code><span class="sig-paren">(</span><em class="sig-param">partition: gerrychain.partition.partition.Partition</em><span class="sig-paren">)</span> &#x2192; Iterator[Dict]<a class="reference internal" href="_modules/gerrychain/metagraph.html#all_cut_edge_flips"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Generate all possible flips of cut edges in a partition
+without any constraints.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>partition</strong> (<a class="reference internal" href="api.html#gerrychain.partition.Partition" title="gerrychain.partition.Partition"><em>Partition</em></a>) – The partition object.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>An iterator that yields dictionaries representing the flipped edges.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Iterator[Dict]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="sig-prename descclassname">gerrychain.metagraph.</code><code class="sig-name descname">all_valid_flips</code><span class="sig-paren">(</span><em class="sig-param">partition: gerrychain.partition.partition.Partition, constraints: Union[Iterable[Callable], Callable]</em><span class="sig-paren">)</span> &#x2192; Iterator[Dict]<a class="reference internal" href="_modules/gerrychain/metagraph.html#all_valid_flips"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Generate all valid flips for a given partition subject
+to the prescribed constraints.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>partition</strong> (<a class="reference internal" href="api.html#gerrychain.partition.Partition" title="gerrychain.partition.Partition"><em>Partition</em></a>) – The initial partition.</p></li>
+<li><p><strong>constraints</strong> (<em>Union</em><em>[</em><em>Iterable</em><em>[</em><em>Callable</em><em>]</em><em>, </em><em>Callable</em><em>]</em>) – The constraints to be satisfied. Can be a single
+constraint or an iterable of constraints.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>An iterator that yields dictionaries representing valid flips.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Iterator[Dict]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="sig-prename descclassname">gerrychain.metagraph.</code><code class="sig-name descname">all_valid_states_one_flip_away</code><span class="sig-paren">(</span><em class="sig-param">partition: gerrychain.partition.partition.Partition, constraints: Union[Iterable[Callable], Callable]</em><span class="sig-paren">)</span> &#x2192; Iterator[gerrychain.partition.partition.Partition]<a class="reference internal" href="_modules/gerrychain/metagraph.html#all_valid_states_one_flip_away"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Generates all valid Partitions that differ from the given partition
+by one flip. These are the given partition’s neighbors in the metagraph
+of partitions. (The metagraph of partitions is the set of partitions
+that is reachable from the given partition by a single flip under the
+prescribed constraints.)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>partition</strong> (<a class="reference internal" href="api.html#gerrychain.partition.Partition" title="gerrychain.partition.Partition"><em>Partition</em></a>) – The initial partition.</p></li>
+<li><p><strong>constraints</strong> (<em>Union</em><em>[</em><em>Iterable</em><em>[</em><em>Callable</em><em>]</em><em>, </em><em>Callable</em><em>]</em>) – Constraints to determine the validity of a partition.
+It can be a single callable or an iterable of callables.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>An iterator that yields all valid partitions that differ from the
+given partition by one flip.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Iterator[<a class="reference internal" href="api.html#gerrychain.partition.Partition" title="gerrychain.partition.Partition">Partition</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="sig-prename descclassname">gerrychain.metagraph.</code><code class="sig-name descname">metagraph_degree</code><span class="sig-paren">(</span><em class="sig-param">partition: gerrychain.partition.partition.Partition, constraints: Union[Iterable[Callable], Callable]</em><span class="sig-paren">)</span> &#x2192; int<a class="reference internal" href="_modules/gerrychain/metagraph.html#metagraph_degree"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Calculate the degree of the node in the metagraph of the given partition.
+That is to say, compute how many possible valid states are reachable from
+the state given by partition in a single flip subject to the prescribed
+constraints.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>partition</strong> (<a class="reference internal" href="api.html#gerrychain.partition.Partition" title="gerrychain.partition.Partition"><em>Partition</em></a>) – The partition object representing the current state.</p></li>
+<li><p><strong>constraints</strong> (<em>Union</em><em>[</em><em>Iterable</em><em>[</em><em>Callable</em><em>]</em><em>, </em><em>Callable</em><em>]</em>) – The constraints to be applied to the partition.
+It can be a single constraint or an iterable of constraints.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The degree of the partition node in the metagraph.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>int</p>
 </dd>
 </dl>
 </dd></dl>
@@ -2588,6 +1943,9 @@ curve and its reflection about (.5, .5).</p>
 </dd></dl>
 
 </div>
+<div class="section" id="optimization">
+<h2>Optimization<a class="headerlink" href="#optimization" title="Permalink to this headline">¶</a></h2>
+</div>
 <div class="section" id="partition">
 <h2>Partition<a class="headerlink" href="#partition" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
@@ -2682,7 +2040,7 @@ passed-in dictionary.</p>
 
 <dl class="method">
 <dt>
-<code class="sig-name descname">to_series</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; &lt;Mock name='mock.Series' id='139977221999392'&gt;<a class="reference internal" href="_modules/gerrychain/partition/assignment.html#Assignment.to_series"><span class="viewcode-link">[source]</span></a></dt>
+<code class="sig-name descname">to_series</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; &lt;Mock name='mock.Series' id='140044217019120'&gt;<a class="reference internal" href="_modules/gerrychain/partition/assignment.html#Assignment.to_series"><span class="viewcode-link">[source]</span></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
 <dd class="field-odd"><p>The assignment as a <code class="xref py py-class docutils literal notranslate"><span class="pre">pandas.Series</span></code>.</p>
@@ -3411,6 +2769,652 @@ found. Default is False.</p></li>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="api.html#gerrychain.partition.Partition" title="gerrychain.partition.Partition">Partition</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="tree">
+<h2>Tree<a class="headerlink" href="#tree" title="Permalink to this headline">¶</a></h2>
+<p>This module provides tools and algorithms for manipulating and analyzing graphs,
+particularly focused on partitioning graphs based on population data. It leverages the
+NetworkX library to handle graph structures and implements various algorithms for graph
+partitioning and tree traversal.</p>
+<p>Key functionalities include:</p>
+<ul class="simple">
+<li><p>Predecessor and successor functions for graph traversal using breadth-first search.</p></li>
+<li><p>Implementation of random and uniform spanning trees for graph partitioning.</p></li>
+<li><p>The <cite>PopulatedGraph</cite> class, which represents a graph with additional population data,
+and methods for assessing and modifying this data.</p></li>
+<li><p>Functions for finding balanced edge cuts in a populated graph, either through
+contraction or memoization techniques.</p></li>
+<li><p>A suite of functions (<cite>bipartition_tree</cite>, <cite>recursive_tree_part</cite>, <cite>get_seed_chunks</cite>, etc.)
+for partitioning graphs into balanced subsets based on population targets and tolerances.</p></li>
+<li><p>Utility functions like <cite>get_max_prime_factor_less_than</cite> and <cite>recursive_seed_part_inner</cite>
+to assist in complex partitioning tasks.</p></li>
+</ul>
+<p>Dependencies:</p>
+<ul class="simple">
+<li><p>networkx: Used for graph data structure and algorithms.</p></li>
+<li><p>random: Provides random number generation for probabilistic approaches.</p></li>
+<li><p>typing: Used for type hints.</p></li>
+</ul>
+<p>Last Updated: 25 April 2024</p>
+<dl class="exception">
+<dt>
+<em class="property">exception </em><code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">BalanceError</code><a class="reference internal" href="_modules/gerrychain/tree.html#BalanceError"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+<p>Raised when a balanced cut cannot be found.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt>
+<em class="property">exception </em><code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">BipartitionWarning</code><a class="reference internal" href="_modules/gerrychain/tree.html#BipartitionWarning"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">UserWarning</span></code></p>
+<p>Generally raised when it is proving difficult to find a balanced cut.</p>
+</dd></dl>
+
+<dl class="class">
+<dt>
+<em class="property">class </em><code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">Cut</code></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></p>
+<p>Represents a cut in a graph.</p>
+<p>Create new instance of Cut(edge, weight, subset)</p>
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">edge</code></dt>
+<dd><p>The edge where the cut is made. Defaults to None.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">subset</code></dt>
+<dd><p>The (frozen) subset of nodes on one side of the cut. Defaults to None.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">weight</code></dt>
+<dd><p>The weight assigned to the edge (if any). Defaults to None.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt>
+<em class="property">class </em><code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">PopulatedGraph</code><span class="sig-paren">(</span><em class="sig-param">graph: networkx.classes.graph.Graph, populations: Dict, ideal_pop: Union[float, int], epsilon: float</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gerrychain/tree.html#PopulatedGraph"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A class representing a graph with population information.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Variables</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>graph</strong> – The underlying graph structure.</p></li>
+<li><p><strong>subsets</strong> – A dictionary mapping nodes to their subsets.</p></li>
+<li><p><strong>population</strong> – A dictionary mapping nodes to their populations.</p></li>
+<li><p><strong>tot_pop</strong> – The total population of the graph.</p></li>
+<li><p><strong>ideal_pop</strong> – The ideal population for each district.</p></li>
+<li><p><strong>epsilon</strong> – The tolerance for population deviation from the ideal population within each
+district.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Parameters</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>graph</strong> (<em>nx.Graph</em>) – The underlying graph structure.</p></li>
+<li><p><strong>populations</strong> (<em>Dict</em>) – A dictionary mapping nodes to their populations.</p></li>
+<li><p><strong>ideal_pop</strong> (<em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em>) – The ideal population for each district.</p></li>
+<li><p><strong>epsilon</strong> (<em>float</em>) – The tolerance for population deviation as a percentage of
+the ideal population within each district.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="method">
+<dt>
+<code class="sig-name descname">contract_node</code><span class="sig-paren">(</span><em class="sig-param">node</em>, <em class="sig-param">parent</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/gerrychain/tree.html#PopulatedGraph.contract_node"><span class="viewcode-link">[source]</span></a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt>
+<code class="sig-name descname">degree</code><span class="sig-paren">(</span><em class="sig-param">node</em><span class="sig-paren">)</span> &#x2192; int<a class="reference internal" href="_modules/gerrychain/tree.html#PopulatedGraph.degree"><span class="viewcode-link">[source]</span></a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt>
+<code class="sig-name descname">has_ideal_population</code><span class="sig-paren">(</span><em class="sig-param">node</em>, <em class="sig-param">one_sided_cut: bool = False</em><span class="sig-paren">)</span> &#x2192; bool<a class="reference internal" href="_modules/gerrychain/tree.html#PopulatedGraph.has_ideal_population"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Checks if a node has an ideal population within the graph up to epsilon.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>Any</em>) – The node to check.</p></li>
+<li><p><strong>one_sided_cut</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether or not we are cutting off a single district. When
+set to False, we check if the node we are cutting and the remaining graph
+are both within epsilon of the ideal population. When set to True, we only
+check if the node we are cutting is within epsilon of the ideal population.
+Defaults to False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if the node has an ideal population within the graph up to epsilon.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="exception">
+<dt>
+<em class="property">exception </em><code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">PopulationBalanceError</code><a class="reference internal" href="_modules/gerrychain/tree.html#PopulationBalanceError"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+<p>Raised when the population of a district is outside the acceptable epsilon range.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt>
+<em class="property">exception </em><code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">ReselectException</code><a class="reference internal" href="_modules/gerrychain/tree.html#ReselectException"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+<p>Raised when the tree-splitting algorithm is unable to find a
+balanced cut after some maximum number of attempts, but the
+user has allowed the algorithm to reselect the pair of
+districts from parent graph to try and recombine.</p>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">bipartition_tree</code><span class="sig-paren">(</span><em class="sig-param">graph: networkx.classes.graph.Graph, pop_col: str, pop_target: Union[int, float], epsilon: float, node_repeats: int = 1, spanning_tree: Optional[networkx.classes.graph.Graph] = None, spanning_tree_fn: Callable = &lt;function random_spanning_tree&gt;, region_surcharge: Optional[Dict] = None, balance_edge_fn: Callable = &lt;function find_balanced_edge_cuts_memoization&gt;, one_sided_cut: bool = False, choice: Callable = &lt;bound method Random.choice of &lt;random.Random object&gt;&gt;, max_attempts: Optional[int] = 100000, warn_attempts: int = 1000, allow_pair_reselection: bool = False, cut_choice: Callable = &lt;function _region_preferred_max_weight_choice&gt;</em><span class="sig-paren">)</span> &#x2192; Set<a class="reference internal" href="_modules/gerrychain/tree.html#bipartition_tree"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>This function finds a balanced 2 partition of a graph by drawing a
+spanning tree and finding an edge to cut that leaves at most an epsilon
+imbalance between the populations of the parts. If a root fails, new roots
+are tried until node_repeats in which case a new tree is drawn.</p>
+<p>Builds up a connected subgraph with a connected complement whose population
+is <code class="docutils literal notranslate"><span class="pre">epsilon</span> <span class="pre">*</span> <span class="pre">pop_target</span></code> away from <code class="docutils literal notranslate"><span class="pre">pop_target</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>graph</strong> (<em>nx.Graph</em>) – The graph to partition.</p></li>
+<li><p><strong>pop_col</strong> (<em>str</em>) – The node attribute holding the population of each node.</p></li>
+<li><p><strong>pop_target</strong> (<em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em>) – The target population for the returned subset of nodes.</p></li>
+<li><p><strong>epsilon</strong> (<em>float</em>) – The allowable deviation from <code class="docutils literal notranslate"><span class="pre">pop_target</span></code> (as a percentage of
+<code class="docutils literal notranslate"><span class="pre">pop_target</span></code>) for the subgraph’s population.</p></li>
+<li><p><strong>node_repeats</strong> (<em>int</em><em>, </em><em>optional</em>) – A parameter for the algorithm: how many different choices
+of root to use before drawing a new spanning tree. Defaults to 1.</p></li>
+<li><p><strong>spanning_tree</strong> (<em>Optional</em><em>[</em><em>nx.Graph</em><em>]</em><em>, </em><em>optional</em>) – The spanning tree for the algorithm to use (used when the
+algorithm chooses a new root and for testing).</p></li>
+<li><p><strong>spanning_tree_fn</strong> (<em>Callable</em><em>, </em><em>optional</em>) – The random spanning tree algorithm to use if a spanning
+tree is not provided. Defaults to <a class="reference internal" href="api.html#gerrychain.tree.random_spanning_tree" title="gerrychain.tree.random_spanning_tree"><code class="xref py py-func docutils literal notranslate"><span class="pre">random_spanning_tree()</span></code></a>.</p></li>
+<li><p><strong>region_surcharge</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>]</em><em>, </em><em>optional</em>) – A dictionary of surcharges for the spanning tree algorithm.
+Defaults to None.</p></li>
+<li><p><strong>balance_edge_fn</strong> (<em>Callable</em><em>, </em><em>optional</em>) – The function to find balanced edge cuts. Defaults to
+<a class="reference internal" href="api.html#gerrychain.tree.find_balanced_edge_cuts_memoization" title="gerrychain.tree.find_balanced_edge_cuts_memoization"><code class="xref py py-func docutils literal notranslate"><span class="pre">find_balanced_edge_cuts_memoization()</span></code></a>.</p></li>
+<li><p><strong>one_sided_cut</strong> (<em>bool</em><em>, </em><em>optional</em>) – Passed to the <code class="docutils literal notranslate"><span class="pre">balance_edge_fn</span></code>. Determines whether or not we are
+cutting off a single district when partitioning the tree. When
+set to False, we check if the node we are cutting and the remaining graph
+are both within epsilon of the ideal population. When set to True, we only
+check if the node we are cutting is within epsilon of the ideal population.
+Defaults to False.</p></li>
+<li><p><strong>choice</strong> (<em>Callable</em><em>, </em><em>optional</em>) – The function to make a random choice of root node for the population
+tree. Passed to <code class="docutils literal notranslate"><span class="pre">balance_edge_fn</span></code>. Can be substituted for testing.
+Defaults to <code class="xref py py-func docutils literal notranslate"><span class="pre">random.random()</span></code>.</p></li>
+<li><p><strong>max_attempts</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em><em>, </em><em>optional</em>) – The maximum number of attempts that should be made to bipartition.
+Defaults to 10000.</p></li>
+<li><p><strong>warn_attempts</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of attempts after which a warning is issued if a balanced
+cut cannot be found. Defaults to 1000.</p></li>
+<li><p><strong>allow_pair_reselection</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether we would like to return an error to the calling
+function to ask it to reselect the pair of nodes to try and recombine. Defaults to False.</p></li>
+<li><p><strong>cut_choice</strong> (<em>Callable</em><em>, </em><em>optional</em>) – The function used to select the cut edge from the list of possible
+balanced cuts. Defaults to <code class="xref py py-meth docutils literal notranslate"><span class="pre">_region_preferred_max_weight_choice()</span></code> .</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A subset of nodes of <code class="docutils literal notranslate"><span class="pre">graph</span></code> (whose induced subgraph is connected). The other
+part of the partition is the complement of this subset.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Set</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference internal" href="api.html#gerrychain.tree.BipartitionWarning" title="gerrychain.tree.BipartitionWarning"><strong>BipartitionWarning</strong></a> – If a possible cut cannot be found after 1000 attempts.</p></li>
+<li><p><strong>RuntimeError</strong> – If a possible cut cannot be found after the maximum number of attempts
+given by <code class="docutils literal notranslate"><span class="pre">max_attempts</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">bipartition_tree_random</code><span class="sig-paren">(</span><em class="sig-param">graph: networkx.classes.graph.Graph, pop_col: str, pop_target: Union[int, float], epsilon: float, node_repeats: int = 1, repeat_until_valid: bool = True, spanning_tree: Optional[networkx.classes.graph.Graph] = None, spanning_tree_fn: Callable = &lt;function random_spanning_tree&gt;, balance_edge_fn: Callable = &lt;function find_balanced_edge_cuts_memoization&gt;, one_sided_cut: bool = False, choice: Callable = &lt;bound method Random.choice of &lt;random.Random object&gt;&gt;, max_attempts: Optional[int] = 100000</em><span class="sig-paren">)</span> &#x2192; Optional[Set[Any]]<a class="reference internal" href="_modules/gerrychain/tree.html#bipartition_tree_random"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>This is like <a class="reference internal" href="api.html#gerrychain.tree.bipartition_tree" title="gerrychain.tree.bipartition_tree"><code class="xref py py-func docutils literal notranslate"><span class="pre">bipartition_tree()</span></code></a> except it chooses a random balanced
+cut, rather than the first cut it finds.</p>
+<p>This function finds a balanced 2 partition of a graph by drawing a
+spanning tree and finding an edge to cut that leaves at most an epsilon
+imbalance between the populations of the parts. If a root fails, new roots
+are tried until node_repeats in which case a new tree is drawn.</p>
+<p>Builds up a connected subgraph with a connected complement whose population
+is <code class="docutils literal notranslate"><span class="pre">epsilon</span> <span class="pre">*</span> <span class="pre">pop_target</span></code> away from <code class="docutils literal notranslate"><span class="pre">pop_target</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>graph</strong> (<em>nx.Graph</em>) – The graph to partition.</p></li>
+<li><p><strong>pop_col</strong> (<em>str</em>) – The node attribute holding the population of each node.</p></li>
+<li><p><strong>pop_target</strong> (<em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em>) – The target population for the returned subset of nodes.</p></li>
+<li><p><strong>epsilon</strong> (<em>float</em>) – The allowable deviation from  <code class="docutils literal notranslate"><span class="pre">pop_target</span></code> (as a percentage of
+<code class="docutils literal notranslate"><span class="pre">pop_target</span></code>) for the subgraph’s population.</p></li>
+<li><p><strong>node_repeats</strong> (<em>int</em>) – A parameter for the algorithm: how many different choices
+of root to use before drawing a new spanning tree. Defaults to 1.</p></li>
+<li><p><strong>repeat_until_valid</strong> (<em>bool</em><em>, </em><em>optional</em>) – Determines whether to keep drawing spanning trees
+until a tree with a balanced cut is found. If <cite>True</cite>, a set of nodes will
+always be returned; if <cite>False</cite>, <cite>None</cite> will be returned if a valid spanning
+tree is not found on the first try. Defaults to True.</p></li>
+<li><p><strong>spanning_tree</strong> (<em>Optional</em><em>[</em><em>nx.Graph</em><em>]</em><em>, </em><em>optional</em>) – The spanning tree for the algorithm to use (used when the
+algorithm chooses a new root and for testing). Defaults to None.</p></li>
+<li><p><strong>spanning_tree_fn</strong> (<em>Callable</em><em>, </em><em>optional</em>) – The random spanning tree algorithm to use if a spanning
+tree is not provided. Defaults to <a class="reference internal" href="api.html#gerrychain.tree.random_spanning_tree" title="gerrychain.tree.random_spanning_tree"><code class="xref py py-func docutils literal notranslate"><span class="pre">random_spanning_tree()</span></code></a>.</p></li>
+<li><p><strong>balance_edge_fn</strong> (<em>Callable</em><em>, </em><em>optional</em>) – The algorithm used to find balanced cut edges. Defaults to
+<a class="reference internal" href="api.html#gerrychain.tree.find_balanced_edge_cuts_memoization" title="gerrychain.tree.find_balanced_edge_cuts_memoization"><code class="xref py py-func docutils literal notranslate"><span class="pre">find_balanced_edge_cuts_memoization()</span></code></a>.</p></li>
+<li><p><strong>one_sided_cut</strong> (<em>bool</em><em>, </em><em>optional</em>) – Passed to the <code class="docutils literal notranslate"><span class="pre">balance_edge_fn</span></code>. Determines whether or not we are
+cutting off a single district when partitioning the tree. When
+set to False, we check if the node we are cutting and the remaining graph
+are both within epsilon of the ideal population. When set to True, we only
+check if the node we are cutting is within epsilon of the ideal population.
+Defaults to False.</p></li>
+<li><p><strong>choice</strong> (<em>Callable</em><em>, </em><em>optional</em>) – The random choice function. Can be substituted for testing. Defaults
+to <code class="xref py py-func docutils literal notranslate"><span class="pre">random.choice()</span></code>.</p></li>
+<li><p><strong>max_attempts</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em><em>, </em><em>optional</em>) – The max number of attempts that should be made to bipartition.
+Defaults to None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A subset of nodes of <code class="docutils literal notranslate"><span class="pre">graph</span></code> (whose induced subgraph is connected) or None if a
+valid spanning tree is not found.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Union[Set[Any], None]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">epsilon_tree_bipartition</code><span class="sig-paren">(</span><em class="sig-param">graph: networkx.classes.graph.Graph, parts: Sequence, pop_target: Union[float, int], pop_col: str, epsilon: float, node_repeats: int = 1, method: Callable = functools.partial(&lt;function bipartition_tree&gt;, max_attempts=10000)</em><span class="sig-paren">)</span> &#x2192; Dict<a class="reference internal" href="_modules/gerrychain/tree.html#epsilon_tree_bipartition"><span class="viewcode-link">[source]</span></a></dt>
+<dd><blockquote>
+<div><p>Uses <a class="reference internal" href="api.html#gerrychain.tree.bipartition_tree" title="gerrychain.tree.bipartition_tree"><code class="xref py py-func docutils literal notranslate"><span class="pre">bipartition_tree()</span></code></a> to partition a tree into
+two parts of population <code class="docutils literal notranslate"><span class="pre">pop_target</span></code> (within <code class="docutils literal notranslate"><span class="pre">epsilon</span></code>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">param graph</dt>
+<dd class="field-odd"><p>The graph to partition into two :math:<a href="#id1"><span class="problematic" id="id2">`</span></a></p>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="simple">
+<dt>arepsilon`-balanced parts.</dt><dd><dl class="field-list simple">
+<dt class="field-odd">type graph</dt>
+<dd class="field-odd"><p>nx.Graph</p>
+</dd>
+<dt class="field-even">param parts</dt>
+<dd class="field-even"><p>Iterable of part (district) labels (like <code class="docutils literal notranslate"><span class="pre">[0,1,2]</span></code> or <code class="docutils literal notranslate"><span class="pre">range(4)</span></code>).</p>
+</dd>
+<dt class="field-odd">type parts</dt>
+<dd class="field-odd"><p>Sequence</p>
+</dd>
+<dt class="field-even">param pop_target</dt>
+<dd class="field-even"><p>Target population for each part of the partition.</p>
+</dd>
+<dt class="field-odd">type pop_target</dt>
+<dd class="field-odd"><p>Union[float, int]</p>
+</dd>
+<dt class="field-even">param pop_col</dt>
+<dd class="field-even"><p>Node attribute key holding population data.</p>
+</dd>
+<dt class="field-odd">type pop_col</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+<dt class="field-even">param epsilon</dt>
+<dd class="field-even"><p>How far (as a percentage of <code class="docutils literal notranslate"><span class="pre">pop_target</span></code>) from <code class="docutils literal notranslate"><span class="pre">pop_target</span></code> the parts
+of the partition can be.</p>
+</dd>
+<dt class="field-odd">type epsilon</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">param node_repeats</dt>
+<dd class="field-even"><p>Parameter for <code class="xref py py-func docutils literal notranslate"><span class="pre">bipartition_tree()</span></code> to use.
+Defaults to 1.</p>
+</dd>
+<dt class="field-odd">type node_repeats</dt>
+<dd class="field-odd"><p>int, optional</p>
+</dd>
+<dt class="field-even">param method</dt>
+<dd class="field-even"><p>The partition method to use. Defaults to
+<cite>partial(bipartition_tree, max_attempts=10000)</cite>.</p>
+</dd>
+<dt class="field-odd">type method</dt>
+<dd class="field-odd"><p>Callable, optional</p>
+</dd>
+<dt class="field-even">returns</dt>
+<dd class="field-even"><p>New assignments for the nodes of <code class="docutils literal notranslate"><span class="pre">graph</span></code>.</p>
+</dd>
+<dt class="field-odd">rtype</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">find_balanced_edge_cuts_contraction</code><span class="sig-paren">(</span><em class="sig-param">h: gerrychain.tree.PopulatedGraph</em>, <em class="sig-param">one_sided_cut: bool = False</em>, <em class="sig-param">choice: Callable = &lt;bound method Random.choice of &lt;random.Random object&gt;&gt;</em><span class="sig-paren">)</span> &#x2192; List[gerrychain.tree.Cut]<a class="reference internal" href="_modules/gerrychain/tree.html#find_balanced_edge_cuts_contraction"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Find balanced edge cuts using contraction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>h</strong> (<a class="reference internal" href="api.html#gerrychain.tree.PopulatedGraph" title="gerrychain.tree.PopulatedGraph"><em>PopulatedGraph</em></a>) – The populated graph.</p></li>
+<li><p><strong>one_sided_cut</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether or not we are cutting off a single district. When
+set to False, we check if the node we are cutting and the remaining graph
+are both within epsilon of the ideal population. When set to True, we only
+check if the node we are cutting is within epsilon of the ideal population.
+Defaults to False.</p></li>
+<li><p><strong>choice</strong> (<em>Callable</em><em>, </em><em>optional</em>) – The function used to make random choices.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A list of balanced edge cuts.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>List[<a class="reference internal" href="api.html#gerrychain.tree.Cut" title="gerrychain.tree.Cut">Cut</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">find_balanced_edge_cuts_memoization</code><span class="sig-paren">(</span><em class="sig-param">h: gerrychain.tree.PopulatedGraph</em>, <em class="sig-param">one_sided_cut: bool = False</em>, <em class="sig-param">choice: Callable = &lt;bound method Random.choice of &lt;random.Random object&gt;&gt;</em><span class="sig-paren">)</span> &#x2192; List[gerrychain.tree.Cut]<a class="reference internal" href="_modules/gerrychain/tree.html#find_balanced_edge_cuts_memoization"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Find balanced edge cuts using memoization.</p>
+<p>This function takes a PopulatedGraph object and a choice function as input and returns a list
+of balanced edge cuts. A balanced edge cut is defined as a cut that divides the graph into
+two subsets, such that the population of each subset is close to the ideal population
+defined by the PopulatedGraph object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>h</strong> (<a class="reference internal" href="api.html#gerrychain.tree.PopulatedGraph" title="gerrychain.tree.PopulatedGraph"><em>PopulatedGraph</em></a>) – The PopulatedGraph object representing the graph.</p></li>
+<li><p><strong>one_sided_cut</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether or not we are cutting off a single district. When
+set to False, we check if the node we are cutting and the remaining graph
+are both within epsilon of the ideal population. When set to True, we only
+check if the node we are cutting is within epsilon of the ideal population.
+Defaults to False.</p></li>
+<li><p><strong>choice</strong> (<em>Callable</em><em>, </em><em>optional</em>) – The choice function used to select the root node.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A list of balanced edge cuts.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>List[<a class="reference internal" href="api.html#gerrychain.tree.Cut" title="gerrychain.tree.Cut">Cut</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">get_max_prime_factor_less_than</code><span class="sig-paren">(</span><em class="sig-param">n: int</em>, <em class="sig-param">ceil: int</em><span class="sig-paren">)</span> &#x2192; Optional[int]<a class="reference internal" href="_modules/gerrychain/tree.html#get_max_prime_factor_less_than"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Helper function for recursive_seed_part_inner. Returns the largest prime factor of <code class="docutils literal notranslate"><span class="pre">n</span></code>
+less than <code class="docutils literal notranslate"><span class="pre">ceil</span></code>, or None if all are greater than ceil.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n</strong> (<em>int</em>) – The number to find the largest prime factor for.</p></li>
+<li><p><strong>ceil</strong> (<em>int</em>) – The upper limit for the largest prime factor.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The largest prime factor of <code class="docutils literal notranslate"><span class="pre">n</span></code> less than <code class="docutils literal notranslate"><span class="pre">ceil</span></code>, or None if all are greater
+than ceil.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Optional[int]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">get_seed_chunks</code><span class="sig-paren">(</span><em class="sig-param">graph: networkx.classes.graph.Graph, num_chunks: int, num_dists: int, pop_target: Union[int, float], pop_col: str, epsilon: float, node_repeats: int = 1, method: Callable = functools.partial(&lt;function bipartition_tree_random&gt;, max_attempts=10000)</em><span class="sig-paren">)</span> &#x2192; List[List[int]]<a class="reference internal" href="_modules/gerrychain/tree.html#get_seed_chunks"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Helper function for recursive_seed_part. Partitions the graph into <code class="docutils literal notranslate"><span class="pre">num_chunks</span></code> chunks,
+balanced within new_epsilon &lt;= <code class="docutils literal notranslate"><span class="pre">epsilon</span></code> of a balanced target population.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>graph</strong> (<em>nx.Graph</em>) – The graph</p></li>
+<li><p><strong>num_chunks</strong> (<em>int</em>) – The number of chunks to partition the graph into</p></li>
+<li><p><strong>num_dists</strong> (<em>int</em>) – The number of districts</p></li>
+<li><p><strong>pop_target</strong> (<em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em>) – The target population of the districts (not of the chunks)</p></li>
+<li><p><strong>pop_col</strong> (<em>str</em>) – Node attribute key holding population data</p></li>
+<li><p><strong>epsilon</strong> (<em>float</em>) – How far (as a percentage of <code class="docutils literal notranslate"><span class="pre">pop_target</span></code>) from <code class="docutils literal notranslate"><span class="pre">pop_target</span></code> the parts
+of the partition can be</p></li>
+<li><p><strong>node_repeats</strong> (<em>int</em><em>, </em><em>optional</em>) – Parameter for <code class="xref py py-func docutils literal notranslate"><span class="pre">bipartition_tree_random()</span></code>
+to use. Defaults to 1.</p></li>
+<li><p><strong>method</strong> (<em>Callable</em><em>, </em><em>optional</em>) – The method to use for bipartitioning the graph.
+Defaults to <code class="xref py py-func docutils literal notranslate"><span class="pre">bipartition_tree_random()</span></code></p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>New assignments for the nodes of <code class="docutils literal notranslate"><span class="pre">graph</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>List[List[int]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">predecessors</code><span class="sig-paren">(</span><em class="sig-param">h: networkx.classes.graph.Graph</em>, <em class="sig-param">root: Any</em><span class="sig-paren">)</span> &#x2192; Dict<a class="reference internal" href="_modules/gerrychain/tree.html#predecessors"><span class="viewcode-link">[source]</span></a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt>
+<code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">random_spanning_tree</code><span class="sig-paren">(</span><em class="sig-param">graph: networkx.classes.graph.Graph</em>, <em class="sig-param">region_surcharge: Optional[Dict] = None</em><span class="sig-paren">)</span> &#x2192; networkx.classes.graph.Graph<a class="reference internal" href="_modules/gerrychain/tree.html#random_spanning_tree"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Builds a spanning tree chosen by Kruskal’s method using random weights.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>graph</strong> (<em>nx.Graph</em>) – The input graph to build the spanning tree from. Should be a Networkx Graph.</p></li>
+<li><p><strong>region_surcharge</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>]</em><em>, </em><em>optional</em>) – Dictionary of surcharges to add to the random
+weights used in region-aware variants.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The maximal spanning tree represented as a Networkx Graph.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>nx.Graph</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">recursive_seed_part</code><span class="sig-paren">(</span><em class="sig-param">graph: networkx.classes.graph.Graph, parts: Sequence, pop_target: Union[float, int], pop_col: str, epsilon: float, method: Callable = functools.partial(&lt;function bipartition_tree&gt;, max_attempts=10000), node_repeats: int = 1, n: Optional[int] = None, ceil: Optional[int] = None</em><span class="sig-paren">)</span> &#x2192; Dict<a class="reference internal" href="_modules/gerrychain/tree.html#recursive_seed_part"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Returns a partition with <code class="docutils literal notranslate"><span class="pre">num_dists</span></code> districts balanced within <code class="docutils literal notranslate"><span class="pre">epsilon</span></code> of
+<code class="docutils literal notranslate"><span class="pre">pop_target</span></code> by recursively splitting graph using recursive_seed_part_inner.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>graph</strong> (<em>nx.Graph</em>) – The graph</p></li>
+<li><p><strong>parts</strong> (<em>Sequence</em>) – Iterable of part labels (like <code class="docutils literal notranslate"><span class="pre">[0,1,2]</span></code> or <code class="docutils literal notranslate"><span class="pre">range(4)</span></code></p></li>
+<li><p><strong>pop_target</strong> (<em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em>) – Target population for each part of the partition</p></li>
+<li><p><strong>pop_col</strong> (<em>str</em>) – Node attribute key holding population data</p></li>
+<li><p><strong>epsilon</strong> (<em>float</em>) – How far (as a percentage of <code class="docutils literal notranslate"><span class="pre">pop_target</span></code>) from <code class="docutils literal notranslate"><span class="pre">pop_target</span></code> the parts
+of the partition can be</p></li>
+<li><p><strong>method</strong> (<em>Callable</em><em>, </em><em>optional</em>) – Function used to find balanced partitions at the 2-district level
+Defaults to <code class="xref py py-func docutils literal notranslate"><span class="pre">bipartition_tree()</span></code></p></li>
+<li><p><strong>node_repeats</strong> (<em>int</em><em>, </em><em>optional</em>) – Parameter for <code class="xref py py-func docutils literal notranslate"><span class="pre">bipartition_tree()</span></code> to use.
+Defaults to 1.</p></li>
+<li><p><strong>n</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em><em>, </em><em>optional</em>) – Either a positive integer (greater than 1) or None. If n is a positive integer,
+this function will recursively create a seed plan by either biting off districts from graph
+or dividing graph into n chunks and recursing into each of these. If n is None, this
+function prime factors <a href="#id3"><span class="problematic" id="id4">``</span></a>num_dists``=n_1*n_2*…*n_k (n_1 &gt; n_2 &gt; … n_k) and recursively
+partitions graph into n_1 chunks. Defaults to None.</p></li>
+<li><p><strong>ceil</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em><em>, </em><em>optional</em>) – Either a positive integer (at least 2) or None. Relevant only if n is None. If
+<code class="docutils literal notranslate"><span class="pre">ceil</span></code> is a positive integer then finds the largest factor of <code class="docutils literal notranslate"><span class="pre">num_dists</span></code> less than or
+equal to <code class="docutils literal notranslate"><span class="pre">ceil</span></code>, and recursively splits graph into that number of chunks, or bites off a
+district if that number is 1. Defaults to None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>New assignments for the nodes of <code class="docutils literal notranslate"><span class="pre">graph</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">recursive_seed_part_inner</code><span class="sig-paren">(</span><em class="sig-param">graph: networkx.classes.graph.Graph, num_dists: int, pop_target: Union[float, int], pop_col: str, epsilon: float, method: Callable = functools.partial(&lt;function bipartition_tree&gt;, max_attempts=10000), node_repeats: int = 1, n: Optional[int] = None, ceil: Optional[int] = None</em><span class="sig-paren">)</span> &#x2192; List[Set]<a class="reference internal" href="_modules/gerrychain/tree.html#recursive_seed_part_inner"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Inner function for recursive_seed_part.
+Returns a partition with <code class="docutils literal notranslate"><span class="pre">num_dists</span></code> districts balanced within <code class="docutils literal notranslate"><span class="pre">epsilon</span></code> of
+<code class="docutils literal notranslate"><span class="pre">pop_target</span></code>.
+Splits graph into num_chunks chunks, and then recursively splits each chunk into
+<code class="docutils literal notranslate"><span class="pre">num_dists</span></code>/num_chunks chunks.
+The number num_chunks of chunks is chosen based on <code class="docutils literal notranslate"><span class="pre">n</span></code> and <code class="docutils literal notranslate"><span class="pre">ceil</span></code> as follows:</p>
+<ul class="simple">
+<li><p>If <code class="docutils literal notranslate"><span class="pre">n</span></code> is None, and <code class="docutils literal notranslate"><span class="pre">ceil</span></code> is None, num_chunks is the largest prime factor
+of <code class="docutils literal notranslate"><span class="pre">num_dists</span></code>.</p></li>
+<li><p>If <code class="docutils literal notranslate"><span class="pre">n</span></code> is None and <code class="docutils literal notranslate"><span class="pre">ceil</span></code> is an integer at least 2, then num_chunks is the
+largest prime factor of <code class="docutils literal notranslate"><span class="pre">num_dists</span></code> that is less than <code class="docutils literal notranslate"><span class="pre">ceil</span></code></p></li>
+<li><p>If <code class="docutils literal notranslate"><span class="pre">n</span></code> is a positive integer, num_chunks equals n.</p></li>
+</ul>
+<p>Finally, if the number of chunks as chosen above does not divide <code class="docutils literal notranslate"><span class="pre">num_dists</span></code>, then
+this function bites off a single district from the graph and recursively partitions
+the remaining graph into <code class="docutils literal notranslate"><span class="pre">num_dists</span> <span class="pre">-</span> <span class="pre">1</span></code> districts.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>graph</strong> (<em>nx.Graph</em>) – The underlying graph structure.</p></li>
+<li><p><strong>num_dists</strong> (<em>int</em>) – number of districts to partition the graph into</p></li>
+<li><p><strong>pop_target</strong> (<em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em>) – Target population for each part of the partition</p></li>
+<li><p><strong>pop_col</strong> (<em>str</em>) – Node attribute key holding population data</p></li>
+<li><p><strong>epsilon</strong> (<em>float</em>) – How far (as a percentage of <code class="docutils literal notranslate"><span class="pre">pop_target</span></code>) from <code class="docutils literal notranslate"><span class="pre">pop_target</span></code> the parts
+of the partition can be</p></li>
+<li><p><strong>method</strong> (<em>Callable</em><em>, </em><em>optional</em>) – Function used to find balanced partitions at the 2-district level.
+Defaults to <code class="xref py py-func docutils literal notranslate"><span class="pre">bipartition_tree()</span></code></p></li>
+<li><p><strong>node_repeats</strong> (<em>int</em><em>, </em><em>optional</em>) – Parameter for <code class="xref py py-func docutils literal notranslate"><span class="pre">bipartition_tree()</span></code> to use.
+Defaults to 1.</p></li>
+<li><p><strong>n</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em><em>, </em><em>optional</em>) – Either a positive integer (greater than 1) or None. If n is a positive integer,
+this function will recursively create a seed plan by either biting off districts from
+graph or dividing graph into n chunks and recursing into each of these. If n is None,
+this function prime factors <a href="#id5"><span class="problematic" id="id6">``</span></a>num_dists``=n_1*n_2*…*n_k (n_1 &gt; n_2 &gt; … n_k) and
+recursively partitions graph into n_1 chunks. Defaults to None.</p></li>
+<li><p><strong>ceil</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em><em>, </em><em>optional</em>) – Either a positive integer (at least 2) or None. Relevant only if n is None.
+If <code class="docutils literal notranslate"><span class="pre">ceil</span></code> is a positive integer then finds the largest factor of <code class="docutils literal notranslate"><span class="pre">num_dists</span></code> less
+than or equal to <code class="docutils literal notranslate"><span class="pre">ceil</span></code>, and recursively splits graph into that number of chunks, or
+bites off a district if that number is 1. Defaults to None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>New assignments for the nodes of <code class="docutils literal notranslate"><span class="pre">graph</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>List of sets, each set is a district</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">recursive_tree_part</code><span class="sig-paren">(</span><em class="sig-param">graph: networkx.classes.graph.Graph, parts: Sequence, pop_target: Union[float, int], pop_col: str, epsilon: float, node_repeats: int = 1, method: Callable = functools.partial(&lt;function bipartition_tree&gt;, max_attempts=10000)</em><span class="sig-paren">)</span> &#x2192; Dict<a class="reference internal" href="_modules/gerrychain/tree.html#recursive_tree_part"><span class="viewcode-link">[source]</span></a></dt>
+<dd><blockquote>
+<div><p>Uses <a class="reference internal" href="api.html#gerrychain.tree.bipartition_tree" title="gerrychain.tree.bipartition_tree"><code class="xref py py-func docutils literal notranslate"><span class="pre">bipartition_tree()</span></code></a> recursively to partition a tree into
+<code class="docutils literal notranslate"><span class="pre">len(parts)</span></code> parts of population <code class="docutils literal notranslate"><span class="pre">pop_target</span></code> (within <code class="docutils literal notranslate"><span class="pre">epsilon</span></code>). Can be used to
+generate initial seed plans or to implement ReCom-like “merge walk” proposals.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param graph</dt>
+<dd class="field-odd"><p>The graph to partition into <code class="docutils literal notranslate"><span class="pre">len(parts)</span></code> :math:<a href="#id7"><span class="problematic" id="id8">`</span></a></p>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="simple">
+<dt>arepsilon`-balanced parts.</dt><dd><dl class="field-list simple">
+<dt class="field-odd">type graph</dt>
+<dd class="field-odd"><p>nx.Graph</p>
+</dd>
+<dt class="field-even">param parts</dt>
+<dd class="field-even"><p>Iterable of part (district) labels (like <code class="docutils literal notranslate"><span class="pre">[0,1,2]</span></code> or <code class="docutils literal notranslate"><span class="pre">range(4)</span></code>).</p>
+</dd>
+<dt class="field-odd">type parts</dt>
+<dd class="field-odd"><p>Sequence</p>
+</dd>
+<dt class="field-even">param pop_target</dt>
+<dd class="field-even"><p>Target population for each part of the partition.</p>
+</dd>
+<dt class="field-odd">type pop_target</dt>
+<dd class="field-odd"><p>Union[float, int]</p>
+</dd>
+<dt class="field-even">param pop_col</dt>
+<dd class="field-even"><p>Node attribute key holding population data.</p>
+</dd>
+<dt class="field-odd">type pop_col</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+<dt class="field-even">param epsilon</dt>
+<dd class="field-even"><p>How far (as a percentage of <code class="docutils literal notranslate"><span class="pre">pop_target</span></code>) from <code class="docutils literal notranslate"><span class="pre">pop_target</span></code> the parts
+of the partition can be.</p>
+</dd>
+<dt class="field-odd">type epsilon</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">param node_repeats</dt>
+<dd class="field-even"><p>Parameter for <code class="xref py py-func docutils literal notranslate"><span class="pre">bipartition_tree()</span></code> to use.
+Defaluts to 1.</p>
+</dd>
+<dt class="field-odd">type node_repeats</dt>
+<dd class="field-odd"><p>int, optional</p>
+</dd>
+<dt class="field-even">param method</dt>
+<dd class="field-even"><p>The partition method to use. Defaults to
+<cite>partial(bipartition_tree, max_attempts=10000)</cite>.</p>
+</dd>
+<dt class="field-odd">type method</dt>
+<dd class="field-odd"><p>Callable, optional</p>
+</dd>
+<dt class="field-even">returns</dt>
+<dd class="field-even"><p>New assignments for the nodes of <code class="docutils literal notranslate"><span class="pre">graph</span></code>.</p>
+</dd>
+<dt class="field-odd">rtype</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">successors</code><span class="sig-paren">(</span><em class="sig-param">h: networkx.classes.graph.Graph</em>, <em class="sig-param">root: Any</em><span class="sig-paren">)</span> &#x2192; Dict<a class="reference internal" href="_modules/gerrychain/tree.html#successors"><span class="viewcode-link">[source]</span></a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt>
+<code class="sig-prename descclassname">gerrychain.tree.</code><code class="sig-name descname">uniform_spanning_tree</code><span class="sig-paren">(</span><em class="sig-param">graph: networkx.classes.graph.Graph</em>, <em class="sig-param">choice: Callable = &lt;bound method Random.choice of &lt;random.Random object&gt;&gt;</em><span class="sig-paren">)</span> &#x2192; networkx.classes.graph.Graph<a class="reference internal" href="_modules/gerrychain/tree.html#uniform_spanning_tree"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Builds a spanning tree chosen uniformly from the space of all
+spanning trees of the graph. Uses Wilson’s algorithm.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>graph</strong> (<em>nx.Graph</em>) – Networkx Graph</p></li>
+<li><p><strong>choice</strong> (<em>Callable</em><em>, </em><em>optional</em>) – <code class="xref py py-func docutils literal notranslate"><span class="pre">random.choice()</span></code>. Defaults to <code class="xref py py-func docutils literal notranslate"><span class="pre">random.choice()</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A spanning tree of the graph chosen uniformly at random.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>nx.Graph</p>
 </dd>
 </dl>
 </dd></dl>
@@ -4673,7 +4677,7 @@ touching 2 or more districts.</p>
 
 <dl class="class">
 <dt>
-<em class="property">class </em><code class="sig-prename descclassname">gerrychain.updaters.tally.</code><code class="sig-name descname">DataTally</code><span class="sig-paren">(</span><em class="sig-param">data: Union[Dict, &lt;Mock name='mock.Series' id='139977221999392'&gt;, str], alias: str</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gerrychain/updaters/tally.html#DataTally"><span class="viewcode-link">[source]</span></a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">gerrychain.updaters.tally.</code><code class="sig-name descname">DataTally</code><span class="sig-paren">(</span><em class="sig-param">data: Union[Dict, &lt;Mock name='mock.Series' id='140044217019120'&gt;, str], alias: str</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gerrychain/updaters/tally.html#DataTally"><span class="viewcode-link">[source]</span></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>An updater for tallying numerical data that is not necessarily stored as
 node attributes</p>
