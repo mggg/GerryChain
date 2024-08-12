@@ -182,7 +182,7 @@ the setup is the same:
         constraints, 
         initial_partition,
         minority_pop_col="BVAP",
-        total_pop_col="VAP",
+        total_pop_col="TOTPOP",
         score_function=Gingleator.reward_partial_dist
     )
 
