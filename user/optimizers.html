@@ -285,17 +285,9 @@ the number of districts with</p>
 columns aggregated from the 2020 Census data on block groups for the state of Arkansas:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">tot_pop_20</span></code>: Total Population for the block group according to the 2020 Census</p></li>
-<li><dl class="simple">
-<dt><code class="docutils literal notranslate"><span class="pre">tot_vap_20</span></code>: Total Voting Age Population (18+) for the block group according to the</dt><dd><p>2020 Census</p>
-</dd>
-</dl>
-</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tot_vap_20</span></code>: Total Voting Age Population (18+) for the block group according to the 2020 Census</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">bpop_20</span></code>: Total Black Population for the block group according to the 2020 Census</p></li>
-<li><dl class="simple">
-<dt><code class="docutils literal notranslate"><span class="pre">bvap_20</span></code>: Total Black Voting Age Population (18+) for the block group according to the</dt><dd><p>2020 Census</p>
-</dd>
-</dl>
-</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">bvap_20</span></code>: Total Black Voting Age Population (18+) for the block group according to the 2020 Census</p></li>
 </ul>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -357,26 +349,8 @@ However, depending on which are passed, either one or two of them will be unnece
 population for each partition. The second parameter is one of eihter <code class="docutils literal notranslate"><span class="pre">minority_pop_col</span></code> or
 <code class="docutils literal notranslate"><span class="pre">minority_perc_col</span></code>. There are significant differences between these two parameters.</p>
 <ul class="simple">
-<li><dl class="simple">
-<dt>(<code class="docutils literal notranslate"><span class="pre">minority_pop_col</span></code>, <code class="docutils literal notranslate"><span class="pre">total_pop_col</span></code>): This pair is passed when the user would</dt><dd><p>like for the <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> class to compute the percentage of the minority population
-from quotient of these two updaters. The <code class="docutils literal notranslate"><span class="pre">total_pop_col</span></code> is the name of the
-<strong>UPDATER</strong> that contains the total population for each partition, and the
-<code class="docutils literal notranslate"><span class="pre">minority_pop_col</span></code> is the name of the <strong>UPDATER</strong> that contains total population for
-the minority population of interest. In the that this pair of parameters is passed,
-initialization function will create an updater for <code class="docutils literal notranslate"><span class="pre">minority_perc_col</span></code> via the formula
-<code class="docutils literal notranslate"><span class="pre">total_pop_col</span> <span class="pre">/</span> <span class="pre">minority_pop_col</span></code> for each partition, and the optimization function
-will then be passed the computed value to compute the resulting partition’s score for
-each step in the Markov chain.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="simple">
-<dt>The <code class="docutils literal notranslate"><span class="pre">minority_perc_col</span></code> is the name of the <strong>UPDATER</strong> that contains the percentage of</dt><dd><p>the minority population of interest. The updater should already have the score for
-each part in the partition formatted as a percentage, so the optimization function
-will process these values as they are passed.</p>
-</dd>
-</dl>
-</li>
+<li><p>(<code class="docutils literal notranslate"><span class="pre">minority_pop_col</span></code>, <code class="docutils literal notranslate"><span class="pre">total_pop_col</span></code>): This pair is passed when the user would like for the <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> class to compute the percentage of the minority population from quotient of these two updaters. The <code class="docutils literal notranslate"><span class="pre">total_pop_col</span></code> is the name of the <strong>UPDATER</strong> that contains the total population for each partition, and the <code class="docutils literal notranslate"><span class="pre">minority_pop_col</span></code> is the name of the <strong>UPDATER</strong> that contains total population for the minority population of interest. In the that this pair of parameters is passed, initialization function will create an updater for <code class="docutils literal notranslate"><span class="pre">minority_perc_col</span></code> via the formula  <code class="docutils literal notranslate"><span class="pre">total_pop_col</span> <span class="pre">/</span> <span class="pre">minority_pop_col</span></code> for each partition, and the optimization function will then be passed the computed value to compute the resulting partition’s score for each step in the Markov chain.</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">minority_perc_col</span></code> is the name of the <strong>UPDATER</strong> that contains the percentage of the minority population of interest. The updater should already have the score for each part in the partition formatted as a percentage, so the optimization function will process these values as they are passed.</p></li>
 </ul>
 </div>
 <div class="admonition note">
@@ -393,23 +367,11 @@ threshold value <span class="math notranslate nohighlight">\(t\)</span>, so <spa
 <span class="math notranslate nohighlight">\(p_i\)</span> is the percentage of the minority population in district <span class="math notranslate nohighlight">\(i\)</span>.</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">num_opportunity_dists</span></code>: Given a <code class="docutils literal notranslate"><span class="pre">Partition</span></code>, this function will return <span class="math notranslate nohighlight">\(n\)</span>.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">reward_partial_dist</span></code>: Given a <code class="docutils literal notranslate"><span class="pre">Partition</span></code>, this function will return</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">reward_partial_dist</span></code>: Given a <code class="docutils literal notranslate"><span class="pre">Partition</span></code>, this function will return <span class="math notranslate nohighlight">\(n + \max(\{p_i : p_i &lt; t\})\)</span>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">reward_next_highest_close</span></code>: Given a <code class="docutils literal notranslate"><span class="pre">Partition</span></code>, let <span class="math notranslate nohighlight">\(p_k\)</span> be the percentage of the district with the next highest percentage of minority population that is not over the threshold value <span class="math notranslate nohighlight">\(t\)</span>. This function will return <span class="math notranslate nohighlight">\(n + 1\)</span> if <span class="math notranslate nohighlight">\(p_k &gt; t-0.1\)</span> and <span class="math notranslate nohighlight">\(n + 10(p_k - t + 0.1)\)</span> otherwise.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">penalize_maximum_over</span></code>: Given a <code class="docutils literal notranslate"><span class="pre">Partition</span></code>, this function will return 0 if <span class="math notranslate nohighlight">\(n = 0\)</span> and <span class="math notranslate nohighlight">\(n - \frac{1-\max(\{p_i\})}{1-t}\)</span> otherwise.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">penalize_avg_over</span></code>: Given a <code class="docutils literal notranslate"><span class="pre">Partition</span></code>, this function will return 0 if <span class="math notranslate nohighlight">\(n = 0\)</span> and <span class="math notranslate nohighlight">\(n - \frac{1-avg(\{p_i: p_i \geq t\})}{1-t}\)</span> otherwise.</p></li>
 </ul>
-<p><span class="math notranslate nohighlight">\(n + \max(\{p_i : p_i &lt; t\})\)</span>.</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">reward_next_highest_close</span></code>: Given a <code class="docutils literal notranslate"><span class="pre">Partition</span></code>, let <span class="math notranslate nohighlight">\(p_k\)</span> be the percentage</p></li>
-</ul>
-<p>of the district with the next highest percentage of minority population that is not
-over the threshold value <span class="math notranslate nohighlight">\(t\)</span>. This function will return <span class="math notranslate nohighlight">\(n + 1\)</span> if
-<span class="math notranslate nohighlight">\(p_k &gt; t-0.1\)</span> and <span class="math notranslate nohighlight">\(n + 10(p_k - t + 0.1)\)</span> otherwise.</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">penalize_maximum_over</span></code>: Given a <code class="docutils literal notranslate"><span class="pre">Partition</span></code>, this function will return 0 if</p></li>
-</ul>
-<p><span class="math notranslate nohighlight">\(n = 0\)</span> and <span class="math notranslate nohighlight">\(n - \frac{1-\max(\{p_i\})}{1-t}\)</span> otherwise.</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">penalize_avg_over</span></code>: Given a <code class="docutils literal notranslate"><span class="pre">Partition</span></code>, this function will return 0 if</p></li>
-</ul>
-<p><span class="math notranslate nohighlight">\(n = 0\)</span> and <span class="math notranslate nohighlight">\(n - \frac{1-avg(\{p_i: p_i \geq t\})}{1-t}\)</span> otherwise.</p>
 </div>
 <p>We are now prepared to instantiate the <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> class:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">gingles</span> <span class="o">=</span> <span class="n">Gingleator</span><span class="p">(</span>
