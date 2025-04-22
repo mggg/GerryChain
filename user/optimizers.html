@@ -126,7 +126,7 @@ minimize double bunking of incumbents or seek proportionality/competitiveness in
 contests. Heuristic optimization methods can be used to find example plans with these
 properties and to explore the trade-offs between them.</p>
 <div class="center-container">
-  <a href="https://github.com/mggg/GerryChain/tree/main/docs/_static/BG_05.json" class="download-badge" download>
+  <a href="https://github.com/mggg/GerryChain/blob/main/docs/_static/05_bg_census_consolidated.json" class="download-badge" download>
     Download Example File
   </a>
 </div>
@@ -152,7 +152,7 @@ with importing the necessary packages:</p>
 </pre></div>
 </div>
 <p>Since the <code class="docutils literal notranslate"><span class="pre">SingleMetricOptimizer</span></code> class uses ReCom under the hood, we will need to
-do a lot of the same setup that we did in the <a class="reference internal" href="recom.html"><span class="doc">Runnin a Chain with ReCom</span></a>
+do a lot of the same setup that we did in the <a class="reference internal" href="recom.html"><span class="doc">Running a Chain with ReCom</span></a>
 section:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">graph</span> <span class="o">=</span> <span class="n">Graph</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="s2">&quot;05_bg_census_consolidated.json&quot;</span><span class="p">)</span>
 
@@ -263,8 +263,9 @@ plot the full trace:</p>
 our simulated annealing method is using a jumpcycle beta function and we can see when
 the acceptance rate is high represented by spikes in the trace plot. Short bursts
 is generally pretty noisy, but since each burst starts from the best partition in the
-previous burst, we see that it has a general downward trend. And, of course, tilted
-runs are pretty uniformly variable here.</p>
+previous burst, we see that it has a general downward trend. Lastly, tilted runs,
+just accept worse partitions with a fixed probability, so the (relatively) uniform volatility
+of the cut edge score trace plot is expected.</p>
 </div>
 <div class="section" id="using-gingleator">
 <h2>Using <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code><a class="headerlink" href="#using-gingleator" title="Permalink to this headline">¶</a></h2>
@@ -276,16 +277,13 @@ in the <code class="docutils literal notranslate"><span class="pre">Gingleator</
 the <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> class provides some quality-of-life improvements to the user experience.</p>
 <p>For the purposes of this tutorial, we will be using the <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> class to try and optimize
 the number of districts with</p>
-<blockquote>
-<div><ol class="arabic simple">
+<ol class="arabic simple">
 <li><p>A majority-minority population for black population (mainly as a warm-up)</p></li>
 <li><p>A majority-minority Voting Age Population (VAP) for black voters</p></li>
 </ol>
-</div></blockquote>
 <p>In the provided JSON file (linked in the blue button above), we have included the following
 columns aggregated from the 2020 Census data on block groups for the state of Arkansas:</p>
-<blockquote>
-<div><ul class="simple">
+<ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">tot_pop_20</span></code>: Total Population for the block group according to the 2020 Census</p></li>
 <li><dl class="simple">
 <dt><code class="docutils literal notranslate"><span class="pre">tot_vap_20</span></code>: Total Voting Age Population (18+) for the block group according to the</dt><dd><p>2020 Census</p>
@@ -299,7 +297,6 @@ columns aggregated from the 2020 Census data on block groups for the state of Ar
 </dl>
 </li>
 </ul>
-</div></blockquote>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Both the <code class="docutils literal notranslate"><span class="pre">bpop_20</span></code> and <code class="docutils literal notranslate"><span class="pre">bvap_20</span></code> columns are are “any part black” aggregations acquired
@@ -359,8 +356,7 @@ However, depending on which are passed, either one or two of them will be unnece
 <p>The first is the <code class="docutils literal notranslate"><span class="pre">total_pop_col</span></code> which is the name of the <strong>UPDATER</strong> that contains the total
 population for each partition. The second parameter is one of eihter <code class="docutils literal notranslate"><span class="pre">minority_pop_col</span></code> or
 <code class="docutils literal notranslate"><span class="pre">minority_perc_col</span></code>. There are significant differences between these two parameters.</p>
-<blockquote>
-<div><ul class="simple">
+<ul class="simple">
 <li><dl class="simple">
 <dt>(<code class="docutils literal notranslate"><span class="pre">minority_pop_col</span></code>, <code class="docutils literal notranslate"><span class="pre">total_pop_col</span></code>): This pair is passed when the user would</dt><dd><p>like for the <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> class to compute the percentage of the minority population
 from quotient of these two updaters. The <code class="docutils literal notranslate"><span class="pre">total_pop_col</span></code> is the name of the
@@ -382,7 +378,6 @@ will process these values as they are passed.</p>
 </dl>
 </li>
 </ul>
-</div></blockquote>
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -395,32 +390,26 @@ to be used as good starting points for exploring the space of possible plans.</p
 <p>Let <span class="math notranslate nohighlight">\(t\)</span> be the threshold for the score as determined by the user, and let <span class="math notranslate nohighlight">\(n\)</span>
 be the number of districts in a partition <span class="math notranslate nohighlight">\(P\)</span> with a minority percentage over the
 threshold value <span class="math notranslate nohighlight">\(t\)</span>, so <span class="math notranslate nohighlight">\(n = \sum_{p_i \in P} \mathbb{1}_{p_i\geq t}\)</span> where
-<span class="math notranslate nohighlight">\(p_i\)</span> is the percentage of the minority population in district <span class="math notranslate nohighlight">\(i\)</span></p>
+<span class="math notranslate nohighlight">\(p_i\)</span> is the percentage of the minority population in district <span class="math notranslate nohighlight">\(i\)</span>.</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">num_opportunity_dists</span></code>: Given a <code class="docutils literal notranslate"><span class="pre">Partition</span></code>, this function will return <span class="math notranslate nohighlight">\(n\)</span>.</p></li>
-<li><dl class="simple">
-<dt><code class="docutils literal notranslate"><span class="pre">reward_partial_dist</span></code>: Given a <code class="docutils literal notranslate"><span class="pre">Partition</span></code>, this function will return</dt><dd><p><span class="math notranslate nohighlight">\(n + \max({p_i : p_i &lt; t})\)</span>.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="simple">
-<dt><code class="docutils literal notranslate"><span class="pre">reward_next_highest_close</span></code>: Given a <code class="docutils literal notranslate"><span class="pre">Partition</span></code>, let <span class="math notranslate nohighlight">\(p_k\)</span> be the percentage</dt><dd><p>of the district with the next highest percentage of minority population that is not
+<li><p><code class="docutils literal notranslate"><span class="pre">reward_partial_dist</span></code>: Given a <code class="docutils literal notranslate"><span class="pre">Partition</span></code>, this function will return</p></li>
+</ul>
+<p><span class="math notranslate nohighlight">\(n + \max(\{p_i : p_i &lt; t\})\)</span>.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">reward_next_highest_close</span></code>: Given a <code class="docutils literal notranslate"><span class="pre">Partition</span></code>, let <span class="math notranslate nohighlight">\(p_k\)</span> be the percentage</p></li>
+</ul>
+<p>of the district with the next highest percentage of minority population that is not
 over the threshold value <span class="math notranslate nohighlight">\(t\)</span>. This function will return <span class="math notranslate nohighlight">\(n + 1\)</span> if
 <span class="math notranslate nohighlight">\(p_k &gt; t-0.1\)</span> and <span class="math notranslate nohighlight">\(n + 10(p_k - t + 0.1)\)</span> otherwise.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="simple">
-<dt><code class="docutils literal notranslate"><span class="pre">penalize_maximum_over</span></code>: Given a <code class="docutils literal notranslate"><span class="pre">Partition</span></code>, this function will return 0 if</dt><dd><p><span class="math notranslate nohighlight">\(n = 0\)</span> and <span class="math notranslate nohighlight">\(n - \frac{1-\max({p_i})}{1-t}\)</span> otherwise.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="simple">
-<dt><code class="docutils literal notranslate"><span class="pre">penalize_avg_over</span></code>: Given a <code class="docutils literal notranslate"><span class="pre">Partition</span></code>, this function will return 0 if</dt><dd><p><span class="math notranslate nohighlight">\(n = 0\)</span> and <span class="math notranslate nohighlight">\(n - \frac{1-avg({p_i: p_i \geq t})}{1-t}\)</span> otherwise.</p>
-</dd>
-</dl>
-</li>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">penalize_maximum_over</span></code>: Given a <code class="docutils literal notranslate"><span class="pre">Partition</span></code>, this function will return 0 if</p></li>
 </ul>
+<p><span class="math notranslate nohighlight">\(n = 0\)</span> and <span class="math notranslate nohighlight">\(n - \frac{1-\max(\{p_i\})}{1-t}\)</span> otherwise.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">penalize_avg_over</span></code>: Given a <code class="docutils literal notranslate"><span class="pre">Partition</span></code>, this function will return 0 if</p></li>
+</ul>
+<p><span class="math notranslate nohighlight">\(n = 0\)</span> and <span class="math notranslate nohighlight">\(n - \frac{1-avg(\{p_i: p_i \geq t\})}{1-t}\)</span> otherwise.</p>
 </div>
 <p>We are now prepared to instantiate the <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> class:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">gingles</span> <span class="o">=</span> <span class="n">Gingleator</span><span class="p">(</span>
