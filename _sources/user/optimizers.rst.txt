@@ -308,10 +308,6 @@ understanding appropriate usage of the class:
 There are three main population parameters that we can to pass to the ``Gingleator`` class.
 However, depending on which are passed, either one or two of them will be unnecessary.
 
-The first is the ``total_pop_col`` which is the name of the **UPDATER** that contains the total
-population for each partition. The second parameter is one of either ``minority_pop_col`` or
-``minority_perc_col``. There are significant differences between these two parameters.
-
 - (``minority_pop_col``, ``total_pop_col``): This pair is passed when the user would like for the ``Gingleator`` class to compute the percentage of the minority population from quotient of these two updaters. The ``total_pop_col`` is the name of the **UPDATER** that contains the total population for each partition, and the ``minority_pop_col`` is the name of the **UPDATER** that contains total population for the minority population of interest. In the that this pair of parameters is passed, initialization function will create an updater for ``minority_perc_col`` via the formula  ``minority_pop_col / total_pop_col`` for each partition, and the optimization function will then be passed the computed value to compute the resulting partition's score for each step in the Markov chain.
 
 - The ``minority_perc_col`` is the name of the **UPDATER** that contains the percentage of the minority population of interest. The updater should already have the score for each part in the partition formatted as a percentage, so the optimization function will process these values as they are passed.
