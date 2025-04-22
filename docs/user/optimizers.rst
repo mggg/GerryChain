@@ -100,23 +100,24 @@ section:
         node_repeats=1
     )
 
-    constraints = constraints.within_percent_of_ideal_population(initial_partition, EPS)
+    chain_constraints = constraints.within_percent_of_ideal_population(initial_partition, EPS)
 
 
 Using ``SingleMetricOptimizer``
 -------------------------------
 
-Since ``SingleMetricOptimizer`` is set up as a wrapper around our basic ``MarkovChain``
-class, to set it up, we simply pass it a proposal function, some constraints, an initial 
+Since ``SingleMetricOptimizer`` is a wrapper around our basic ``MarkovChain``
+class; to set it up, we simply pass it a proposal function, some constraints, an initial 
 state, and the objective function of interest:
 
 .. code:: python
 
-    num_cut_edges = lambda p: len(p["cut_edges"])
+    def num_cut_edges(partition):
+        return len(partition["cut_edges"])
 
     optimizer = SingleMetricOptimizer(
         proposal=proposal,
-        constraints=constraints,
+        constraints=chain_constraints,
         initial_state=initial_partition,
         optimization_metric=num_cut_edges,
         maximize=False
@@ -193,6 +194,17 @@ moves along. If we want to see how the optimization function performs at each st
 plot the full trace:
 
 
+.. code:: python
+
+    fig, ax = plt.subplots(figsize=(12,6))
+    plt.plot(scores_sb, label="Short Bursts")
+    plt.plot(scores_anneal, label="Simulated Annealing")
+    plt.plot(scores_tilt, label="Tilted Run")
+    plt.xlabel("Steps", fontsize=20)
+    plt.ylabel("Cut Edges", fontsize=20)
+    plt.legend(fontsize=9)
+    plt.show()
+
 .. image:: ./images/single_metric_opt_comparison_all.png
     :align: center
     :alt: Single Metric Optimization Method Comparison Image All Scores
@@ -202,7 +214,7 @@ Here we can see some of the quirks of each of the optimization methods. For exam
 our simulated annealing method is using a jumpcycle beta function and we can see when 
 the acceptance rate is high represented by spikes in the trace plot. Short bursts
 is generally pretty noisy, but since each burst starts from the best partition in the
-previous burst, we see that it has a general downward trend. Lastly, tilted runs,
+previous burst, we see that it has a general downward trend. Lastly, tilted runs
 just accept worse partitions with a fixed probability, so the (relatively) uniform volatility
 of the cut edge score trace plot is expected.
 
@@ -214,9 +226,10 @@ Named for the Supreme Court case *Thornburg v. Gingles*, **Gingles' Districts** 
 districts that are 50% + 1 of a minority population subgroup (more colloquially called
 majority-minority districts). 
 
-``Gingleator`` is a subclass of the ``SingleMetricOptimizer``. Technically, means that everything 
-in the ``Gingleator`` class can also be done using the ``SingleMetricOptimizer`` class, but 
-the ``Gingleator`` class provides some quality-of-life improvements to the user experience.
+``Gingleator`` is a subclass of the ``SingleMetricOptimizer``. Technically this means that 
+everything in the ``Gingleator`` class can also be done using the ``SingleMetricOptimizer`` 
+class, but the ``Gingleator`` class provides some quality-of-life improvements to the user 
+experience.
 
 For the purposes of this tutorial, we will be using the ``Gingleator`` class to try and optimize 
 the number of districts with
@@ -234,7 +247,7 @@ columns aggregated from the 2020 Census data on block groups for the state of Ar
 
 .. note::
 
-    Both the ``bpop_20`` and ``bvap_20`` columns are are "any part black" aggregations acquired
+    Both the ``bpop_20`` and ``bvap_20`` columns are "any part black" aggregations acquired
     from the 2020 Census P1 and P3 tables. That is to say, ``bpop_20`` is the total number of people
     that included "black" as any part of their racial identity when reporting to the Census Bureau.
 
@@ -290,39 +303,41 @@ should be familiar at this point, but the following are the most important ones 
 understanding appropriate usage of the class:
 
 
-.. note:: Population Parameters of the ``Gingleator`` class 
-    There are three main population parameters that we can to pass to the ``Gingleator`` class.
-    However, depending on which are passed, either one or two of them will be unnecessary.
+**Population Parameters of the ``Gingleator`` class*
 
-    The first is the ``total_pop_col`` which is the name of the **UPDATER** that contains the total
-    population for each partition. The second parameter is one of eihter ``minority_pop_col`` or
-    ``minority_perc_col``. There are significant differences between these two parameters.
+There are three main population parameters that we can to pass to the ``Gingleator`` class.
+However, depending on which are passed, either one or two of them will be unnecessary.
 
-    - (``minority_pop_col``, ``total_pop_col``): This pair is passed when the user would like for the ``Gingleator`` class to compute the percentage of the minority population from quotient of these two updaters. The ``total_pop_col`` is the name of the **UPDATER** that contains the total population for each partition, and the ``minority_pop_col`` is the name of the **UPDATER** that contains total population for the minority population of interest. In the that this pair of parameters is passed, initialization function will create an updater for ``minority_perc_col`` via the formula  ``total_pop_col / minority_pop_col`` for each partition, and the optimization function will then be passed the computed value to compute the resulting partition's score for each step in the Markov chain.
+The first is the ``total_pop_col`` which is the name of the **UPDATER** that contains the total
+population for each partition. The second parameter is one of either ``minority_pop_col`` or
+``minority_perc_col``. There are significant differences between these two parameters.
 
-    - The ``minority_perc_col`` is the name of the **UPDATER** that contains the percentage of the minority population of interest. The updater should already have the score for each part in the partition formatted as a percentage, so the optimization function will process these values as they are passed.
+- (``minority_pop_col``, ``total_pop_col``): This pair is passed when the user would like for the ``Gingleator`` class to compute the percentage of the minority population from quotient of these two updaters. The ``total_pop_col`` is the name of the **UPDATER** that contains the total population for each partition, and the ``minority_pop_col`` is the name of the **UPDATER** that contains total population for the minority population of interest. In the that this pair of parameters is passed, initialization function will create an updater for ``minority_perc_col`` via the formula  ``minority_pop_col / total_pop_col`` for each partition, and the optimization function will then be passed the computed value to compute the resulting partition's score for each step in the Markov chain.
 
-.. note:: Score Function of the ``Gingleator`` class
-    The ``score_function`` parameter is a function :math:`f:P \to \mathbb{R}` that 
-    take in a gerrychain ``Partition`` object and returns a score for that partition. The 
-    ``SingleMetricOptimizer`` class also allows for the modification of score functions, but
-    the ``Gingleator`` class comes with some nice built-in score functions that are meant to
-    to be used as good starting points for exploring the space of possible plans.
+- The ``minority_perc_col`` is the name of the **UPDATER** that contains the percentage of the minority population of interest. The updater should already have the score for each part in the partition formatted as a percentage, so the optimization function will process these values as they are passed.
 
-    Let :math:`t` be the threshold for the score as determined by the user, and let :math:`n`
-    be the number of districts in a partition :math:`P` with a minority percentage over the
-    threshold value :math:`t`, so :math:`n = \sum_{p_i \in P} \mathbb{1}_{p_i\geq t}` where
-    :math:`p_i` is the percentage of the minority population in district :math:`i`.
-    
-    - ``num_opportunity_dists``: Given a ``Partition``, this function will return :math:`n`.
+**Score Function of the ``Gingleator`` class**
 
-    - ``reward_partial_dist``: Given a ``Partition``, this function will return :math:`n + \max(\{p_i : p_i < t\})`.
+The ``score_function`` parameter is a function :math:`f:P \to \mathbb{R}` that 
+take in a gerrychain ``Partition`` object and returns a score for that partition. The 
+``SingleMetricOptimizer`` class also allows for the modification of score functions, but
+the ``Gingleator`` class comes with some nice built-in score functions that are meant to
+to be used as good starting points for exploring the space of possible plans.
 
-    - ``reward_next_highest_close``: Given a ``Partition``, let :math:`p_k` be the percentage of the district with the next highest percentage of minority population that is not over the threshold value :math:`t`. This function will return :math:`n + 1` if :math:`p_k > t-0.1` and :math:`n + 10(p_k - t + 0.1)` otherwise.
+Let :math:`t` be the threshold for the score as determined by the user, and let :math:`n`
+be the number of districts in a partition :math:`P` with a minority percentage over the
+threshold value :math:`t`, so :math:`n = \sum_{p_i \in P} \mathbb{1}_{p_i\geq t}` where
+:math:`p_i` is the percentage of the minority population in district :math:`i`.
 
-    - ``penalize_maximum_over``: Given a ``Partition``, this function will return 0 if :math:`n = 0` and :math:`n - \frac{1-\max(\{p_i\})}{1-t}` otherwise.
+- ``num_opportunity_dists``: Given a ``Partition``, this function will return :math:`n`.
 
-    - ``penalize_avg_over``: Given a ``Partition``, this function will return 0 if :math:`n = 0` and :math:`n - \frac{1-avg(\{p_i: p_i \geq t\})}{1-t}` otherwise.
+- ``reward_partial_dist``: Given a ``Partition``, this function will return :math:`n + \max(\{p_i : p_i < t\})`.
+
+- ``reward_next_highest_close``: Given a ``Partition``, let :math:`p_k` be the percentage of the district with the next highest percentage of minority population that is not over the threshold value :math:`t`. This function will return :math:`n + 1` if :math:`p_k > t-0.1` and :math:`n + 10(p_k - t + 0.1)` otherwise.
+
+- ``penalize_maximum_over``: Given a ``Partition``, this function will return 0 if :math:`n = 0` and :math:`n - \frac{1-\max(\{p_i\})}{1-t}` otherwise.
+
+- ``penalize_avg_over``: Given a ``Partition``, this function will return 0 if :math:`n = 0` and :math:`n - \frac{1-avg(\{p_i: p_i \geq t\})}{1-t}` otherwise.
 
 
 We are now prepared to instantiate the ``Gingleator`` class:
