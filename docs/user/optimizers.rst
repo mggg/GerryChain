@@ -34,7 +34,7 @@ properties and to explore the trade-offs between them.
 .. raw:: html
 
     <div class="center-container">
-      <a href="https://github.com/mggg/GerryChain/tree/main/docs/_static/BG_05.json" class="download-badge" download>
+      <a href="https://github.com/mggg/GerryChain/blob/main/docs/_static/05_bg_census_consolidated.json" class="download-badge" download>
         Download Example File
       </a>
     </div>
@@ -68,7 +68,7 @@ with importing the necessary packages:
 
 
 Since the ``SingleMetricOptimizer`` class uses ReCom under the hood, we will need to 
-do a lot of the same setup that we did in the :doc:`Runnin a Chain with ReCom <./recom>`
+do a lot of the same setup that we did in the :doc:`Running a Chain with ReCom <./recom>`
 section:
 
 .. code:: python
@@ -202,8 +202,9 @@ Here we can see some of the quirks of each of the optimization methods. For exam
 our simulated annealing method is using a jumpcycle beta function and we can see when 
 the acceptance rate is high represented by spikes in the trace plot. Short bursts
 is generally pretty noisy, but since each burst starts from the best partition in the
-previous burst, we see that it has a general downward trend. And, of course, tilted
-runs are pretty uniformly variable here.  
+previous burst, we see that it has a general downward trend. Lastly, tilted runs,
+just accept worse partitions with a fixed probability, so the (relatively) uniform volatility
+of the cut edge score trace plot is expected.
 
 
 Using ``Gingleator``
@@ -219,18 +220,19 @@ the ``Gingleator`` class provides some quality-of-life improvements to the user 
 
 For the purposes of this tutorial, we will be using the ``Gingleator`` class to try and optimize 
 the number of districts with
-    1. A majority-minority population for black population (mainly as a warm-up)
-    2. A majority-minority Voting Age Population (VAP) for black voters
+
+1. A majority-minority population for black population (mainly as a warm-up)
+2. A majority-minority Voting Age Population (VAP) for black voters
 
 In the provided JSON file (linked in the blue button above), we have included the following 
 columns aggregated from the 2020 Census data on block groups for the state of Arkansas:
 
-    - ``tot_pop_20``: Total Population for the block group according to the 2020 Census
-    - ``tot_vap_20``: Total Voting Age Population (18+) for the block group according to the 
-        2020 Census
-    - ``bpop_20``: Total Black Population for the block group according to the 2020 Census
-    - ``bvap_20``: Total Black Voting Age Population (18+) for the block group according to the 
-        2020 Census
+- ``tot_pop_20``: Total Population for the block group according to the 2020 Census
+- ``tot_vap_20``: Total Voting Age Population (18+) for the block group according to the 
+    2020 Census
+- ``bpop_20``: Total Black Population for the block group according to the 2020 Census
+- ``bvap_20``: Total Black Voting Age Population (18+) for the block group according to the 
+    2020 Census
 
 .. note::
 
@@ -297,22 +299,22 @@ understanding appropriate usage of the class:
     The first is the ``total_pop_col`` which is the name of the **UPDATER** that contains the total
     population for each partition. The second parameter is one of eihter ``minority_pop_col`` or
     ``minority_perc_col``. There are significant differences between these two parameters.
-        
-        - (``minority_pop_col``, ``total_pop_col``): This pair is passed when the user would
-            like for the ``Gingleator`` class to compute the percentage of the minority population
-            from quotient of these two updaters. The ``total_pop_col`` is the name of the
-            **UPDATER** that contains the total population for each partition, and the 
-            ``minority_pop_col`` is the name of the **UPDATER** that contains total population for
-            the minority population of interest. In the that this pair of parameters is passed, 
-            initialization function will create an updater for ``minority_perc_col`` via the formula  
-            ``total_pop_col / minority_pop_col`` for each partition, and the optimization function
-            will then be passed the computed value to compute the resulting partition's score for
-            each step in the Markov chain.
-    
-        - The ``minority_perc_col`` is the name of the **UPDATER** that contains the percentage of 
-            the minority population of interest. The updater should already have the score for
-            each part in the partition formatted as a percentage, so the optimization function 
-            will process these values as they are passed.
+
+    - (``minority_pop_col``, ``total_pop_col``): This pair is passed when the user would
+        like for the ``Gingleator`` class to compute the percentage of the minority population
+        from quotient of these two updaters. The ``total_pop_col`` is the name of the
+        **UPDATER** that contains the total population for each partition, and the 
+        ``minority_pop_col`` is the name of the **UPDATER** that contains total population for
+        the minority population of interest. In the that this pair of parameters is passed, 
+        initialization function will create an updater for ``minority_perc_col`` via the formula  
+        ``total_pop_col / minority_pop_col`` for each partition, and the optimization function
+        will then be passed the computed value to compute the resulting partition's score for
+        each step in the Markov chain.
+
+    - The ``minority_perc_col`` is the name of the **UPDATER** that contains the percentage of 
+        the minority population of interest. The updater should already have the score for
+        each part in the partition formatted as a percentage, so the optimization function 
+        will process these values as they are passed.
 
 .. note:: Score Function of the ``Gingleator`` class
     The ``score_function`` parameter is a function :math:`f:P \to \mathbb{R}` that 
@@ -324,19 +326,23 @@ understanding appropriate usage of the class:
     Let :math:`t` be the threshold for the score as determined by the user, and let :math:`n`
     be the number of districts in a partition :math:`P` with a minority percentage over the
     threshold value :math:`t`, so :math:`n = \sum_{p_i \in P} \mathbb{1}_{p_i\geq t}` where
-    :math:`p_i` is the percentage of the minority population in district :math:`i`
+    :math:`p_i` is the percentage of the minority population in district :math:`i`.
     
     - ``num_opportunity_dists``: Given a ``Partition``, this function will return :math:`n`.
+
     - ``reward_partial_dist``: Given a ``Partition``, this function will return 
-        :math:`n + \max({p_i : p_i < t})`.
+    :math:`n + \max(\{p_i : p_i < t\})`.
+
     - ``reward_next_highest_close``: Given a ``Partition``, let :math:`p_k` be the percentage
-        of the district with the next highest percentage of minority population that is not 
-        over the threshold value :math:`t`. This function will return :math:`n + 1` if 
-        :math:`p_k > t-0.1` and :math:`n + 10(p_k - t + 0.1)` otherwise.
+    of the district with the next highest percentage of minority population that is not 
+    over the threshold value :math:`t`. This function will return :math:`n + 1` if 
+    :math:`p_k > t-0.1` and :math:`n + 10(p_k - t + 0.1)` otherwise.
+
     - ``penalize_maximum_over``: Given a ``Partition``, this function will return 0 if 
-        :math:`n = 0` and :math:`n - \frac{1-\max({p_i})}{1-t}` otherwise.
+    :math:`n = 0` and :math:`n - \frac{1-\max(\{p_i\})}{1-t}` otherwise.
+
     - ``penalize_avg_over``: Given a ``Partition``, this function will return 0 if
-        :math:`n = 0` and :math:`n - \frac{1-avg({p_i: p_i \geq t})}{1-t}` otherwise.
+    :math:`n = 0` and :math:`n - \frac{1-avg(\{p_i: p_i \geq t\})}{1-t}` otherwise.
 
 
 We are now prepared to instantiate the ``Gingleator`` class:
