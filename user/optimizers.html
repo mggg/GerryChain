@@ -52,7 +52,11 @@
 <li class="toctree-l1"><a class="reference internal" href="geometries.html">Working With Geometries</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Optimization Methods of GerryChain</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#using-singlemetricoptimizer">Using <code class="docutils literal notranslate"><span class="pre">SingleMetricOptimizer</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="#using-gingleator">Using <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#using-gingleator">Using <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#majority-minority-total-population">Majority-Minority Total Population</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#majority-minority-voting-age-population">Majority-Minority Voting Age Population</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="geometric_optimizers.html">Advanced Example: Optimizing Using Geographic Quantities</a></li>
@@ -126,7 +130,11 @@ properties and to explore the trade-offs between them.</p>
     Download Example File
   </a>
 </div>
-<br style="line-height: 5px;"><p>The first thing we should do is set up our import statements</p>
+<br style="line-height: 5px;"><p>For the first part of this documentation, we will be working with a simple example wherein
+we will try to minimize the number of cut edges in a partition. There are, of course
+more complex things that we can do here, but the point of this guide is to just get you
+used to the API for the <code class="docutils literal notranslate"><span class="pre">SingleMetricOptimizer</span></code> class. As per usual, we will begin
+with importing the necessary packages:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">gerrychain</span> <span class="kn">import</span> <span class="p">(</span><span class="n">GeographicPartition</span><span class="p">,</span> <span class="n">Partition</span><span class="p">,</span> <span class="n">Graph</span><span class="p">,</span> <span class="n">MarkovChain</span><span class="p">,</span>
                         <span class="n">proposals</span><span class="p">,</span> <span class="n">updaters</span><span class="p">,</span> <span class="n">constraints</span><span class="p">,</span> <span class="n">accept</span><span class="p">,</span> <span class="n">Election</span><span class="p">)</span>
 <span class="kn">from</span> <span class="nn">gerrychain.optimization</span> <span class="kn">import</span> <span class="n">SingleMetricOptimizer</span><span class="p">,</span> <span class="n">Gingleator</span>
@@ -143,18 +151,18 @@ properties and to explore the trade-offs between them.</p>
 <span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">2024</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>And now we load in our file and set up our initial chain.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">graph</span> <span class="o">=</span> <span class="n">Graph</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="s2">&quot;BG_05.json&quot;</span><span class="p">)</span>
+<p>Since the <code class="docutils literal notranslate"><span class="pre">SingleMetricOptimizer</span></code> class uses ReCom under the hood, we will need to
+do a lot of the same setup that we did in the <a class="reference internal" href="recom.html"><span class="doc">Runnin a Chain with ReCom</span></a>
+section:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">graph</span> <span class="o">=</span> <span class="n">Graph</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="s2">&quot;05_bg_census_consolidated.json&quot;</span><span class="p">)</span>
 
-<span class="n">POPCOL</span> <span class="o">=</span> <span class="s2">&quot;TOTPOP&quot;</span>
+<span class="n">POPCOL</span> <span class="o">=</span> <span class="s2">&quot;tot_pop_20&quot;</span>
 <span class="n">SEN_DISTS</span> <span class="o">=</span> <span class="mi">35</span>
 <span class="n">EPS</span> <span class="o">=</span> <span class="mf">0.02</span>
 <span class="n">TOTPOP</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">()[</span><span class="n">n</span><span class="p">][</span><span class="n">POPCOL</span><span class="p">]</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
 
 <span class="n">chain_updaters</span> <span class="o">=</span> <span class="p">{</span>
-<span class="s2">&quot;population&quot;</span><span class="p">:</span> <span class="n">updaters</span><span class="o">.</span><span class="n">Tally</span><span class="p">(</span><span class="n">POPCOL</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s2">&quot;population&quot;</span><span class="p">),</span>
-<span class="s2">&quot;VAP&quot;</span><span class="p">:</span> <span class="n">updaters</span><span class="o">.</span><span class="n">Tally</span><span class="p">(</span><span class="s2">&quot;VAP&quot;</span><span class="p">),</span>
-<span class="s2">&quot;BVAP&quot;</span><span class="p">:</span> <span class="n">updaters</span><span class="o">.</span><span class="n">Tally</span><span class="p">(</span><span class="s2">&quot;BVAP&quot;</span><span class="p">)</span>
+    <span class="s2">&quot;population&quot;</span><span class="p">:</span> <span class="n">updaters</span><span class="o">.</span><span class="n">Tally</span><span class="p">(</span><span class="n">POPCOL</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s2">&quot;population&quot;</span><span class="p">),</span>
 <span class="p">}</span>
 
 <span class="n">initial_partition</span> <span class="o">=</span> <span class="n">Partition</span><span class="o">.</span><span class="n">from_random_assignment</span><span class="p">(</span>
@@ -178,9 +186,9 @@ properties and to explore the trade-offs between them.</p>
 </div>
 <div class="section" id="using-singlemetricoptimizer">
 <h2>Using <code class="docutils literal notranslate"><span class="pre">SingleMetricOptimizer</span></code><a class="headerlink" href="#using-singlemetricoptimizer" title="Permalink to this headline">¶</a></h2>
-<p>Now the <code class="docutils literal notranslate"><span class="pre">SingleMetricOptimizer</span></code> is set up as a wrapper around our basic <code class="docutils literal notranslate"><span class="pre">MarkovChain</span></code>
-class, so interacting with it should be familiar. To set up our optimizer, we simply
-pass it a proposal function, some constraints, an initial state, and the objective function:</p>
+<p>Since <code class="docutils literal notranslate"><span class="pre">SingleMetricOptimizer</span></code> is set up as a wrapper around our basic <code class="docutils literal notranslate"><span class="pre">MarkovChain</span></code>
+class, to set it up, we simply pass it a proposal function, some constraints, an initial
+state, and the objective function of interest:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">num_cut_edges</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;cut_edges&quot;</span><span class="p">])</span>
 
 <span class="n">optimizer</span> <span class="o">=</span> <span class="n">SingleMetricOptimizer</span><span class="p">(</span>
@@ -192,16 +200,29 @@ pass it a proposal function, some constraints, an initial state, and the objecti
 <span class="p">)</span>
 </pre></div>
 </div>
-<p>And now we can run each of the optimization methods and collect some data!</p>
+<p>An important thing to note here is that the objective function that we are passing takes as
+input a <code class="docutils literal notranslate"><span class="pre">Partition</span></code> object and returns a float or integer value. In our case, one of the
+default updaters for the <code class="docutils literal notranslate"><span class="pre">Partition</span></code> class, <code class="docutils literal notranslate"><span class="pre">cut_edges</span></code>, returns the cut edge set for
+the whole partition. With this, we can run each of the optimization methods and collect some data!</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>We collect data using the syntax <code class="docutils literal notranslate"><span class="pre">optimizer.best_score</span></code>. The <code class="docutils literal notranslate"><span class="pre">.best_score</span></code> property
+of the <code class="docutils literal notranslate"><span class="pre">SingleMetricOptimizer</span></code> just returns the best score that has been observed
+throughout the duration of the optimization process. To evaluate the score of a
+particular partition, we can use the syntax <code class="docutils literal notranslate"><span class="pre">optimizer.score(partition)</span></code>.</p>
+</div>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">total_steps</span> <span class="o">=</span> <span class="mi">10000</span>
 
 <span class="c1"># Short Bursts</span>
 <span class="n">min_scores_sb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">total_steps</span><span class="p">)</span>
+<span class="n">scores_sb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">total_steps</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">part</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">optimizer</span><span class="o">.</span><span class="n">short_bursts</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">2000</span><span class="p">,</span> <span class="n">with_progress_bar</span><span class="o">=</span><span class="kc">True</span><span class="p">)):</span>
     <span class="n">min_scores_sb</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">optimizer</span><span class="o">.</span><span class="n">best_score</span>
+    <span class="n">scores_sb</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">optimizer</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">part</span><span class="p">)</span>
 
 <span class="c1"># Simulated Annealing</span>
 <span class="n">min_scores_anneal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">total_steps</span><span class="p">)</span>
+<span class="n">scores_anneal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">total_steps</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">part</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span>
     <span class="n">optimizer</span><span class="o">.</span><span class="n">simulated_annealing</span><span class="p">(</span>
         <span class="n">total_steps</span><span class="p">,</span>
@@ -211,11 +232,14 @@ pass it a proposal function, some constraints, an initial state, and the objecti
     <span class="p">)</span>
 <span class="p">):</span>
     <span class="n">min_scores_anneal</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">optimizer</span><span class="o">.</span><span class="n">best_score</span>
+    <span class="n">scores_anneal</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">optimizer</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">part</span><span class="p">)</span>
 
 <span class="c1"># Tilted Runs</span>
 <span class="n">min_scores_tilt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">total_steps</span><span class="p">)</span>
+<span class="n">scores_tilt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">total_steps</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">part</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">optimizer</span><span class="o">.</span><span class="n">tilted_run</span><span class="p">(</span><span class="n">total_steps</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mf">0.125</span><span class="p">,</span> <span class="n">with_progress_bar</span><span class="o">=</span><span class="kc">True</span><span class="p">)):</span>
     <span class="n">min_scores_tilt</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">optimizer</span><span class="o">.</span><span class="n">best_score</span>
+    <span class="n">scores_tilt</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">optimizer</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">part</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>We can then plot the results to see how each method performed:</p>
@@ -230,27 +254,187 @@ pass it a proposal function, some constraints, an initial state, and the objecti
 </pre></div>
 </div>
 <p>This should give you something like:</p>
-<img alt="Single Metric Optimization Method Comparison Image" class="align-center" src="../_images/single_metric_opt_comparison.png" />
+<img alt="Single Metric Optimization Method Comparison Image Best Scores" class="align-center" src="../_images/single_metric_opt_comparison.png" />
+<p>Of course, the above trace is just shows the progression of the best score as the chain
+moves along. If we want to see how the optimization function performs at each step, we can
+plot the full trace:</p>
+<img alt="Single Metric Optimization Method Comparison Image All Scores" class="align-center" src="../_images/single_metric_opt_comparison_all.png" />
+<p>Here we can see some of the quirks of each of the optimization methods. For example,
+our simulated annealing method is using a jumpcycle beta function and we can see when
+the acceptance rate is high represented by spikes in the trace plot. Short bursts
+is generally pretty noisy, but since each burst starts from the best partition in the
+previous burst, we see that it has a general downward trend. And, of course, tilted
+runs are pretty uniformly variable here.</p>
 </div>
 <div class="section" id="using-gingleator">
 <h2>Using <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code><a class="headerlink" href="#using-gingleator" title="Permalink to this headline">¶</a></h2>
 <p>Named for the Supreme Court case <em>Thornburg v. Gingles</em>, <strong>Gingles’ Districts</strong> are
 districts that are 50% + 1 of a minority population subgroup (more colloquially called
-majority-minority districts).  It is common to seek plans with greater/maximal numbers
-of Gingles’ districts to understand the landscape of the state space.</p>
-<p>The <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> class is a subclass of the <code class="docutils literal notranslate"><span class="pre">SingleMetricOptimizer</span></code> class, so much of
-the setup is the same:</p>
+majority-minority districts).</p>
+<p><code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> is a subclass of the <code class="docutils literal notranslate"><span class="pre">SingleMetricOptimizer</span></code>. Technically, means that everything
+in the <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> class can also be done using the <code class="docutils literal notranslate"><span class="pre">SingleMetricOptimizer</span></code> class, but
+the <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> class provides some quality-of-life improvements to the user experience.</p>
+<p>For the purposes of this tutorial, we will be using the <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> class to try and optimize
+the number of districts with</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><p>A majority-minority population for black population (mainly as a warm-up)</p></li>
+<li><p>A majority-minority Voting Age Population (VAP) for black voters</p></li>
+</ol>
+</div></blockquote>
+<p>In the provided JSON file (linked in the blue button above), we have included the following
+columns aggregated from the 2020 Census data on block groups for the state of Arkansas:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">tot_pop_20</span></code>: Total Population for the block group according to the 2020 Census</p></li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">tot_vap_20</span></code>: Total Voting Age Population (18+) for the block group according to the</dt><dd><p>2020 Census</p>
+</dd>
+</dl>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">bpop_20</span></code>: Total Black Population for the block group according to the 2020 Census</p></li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">bvap_20</span></code>: Total Black Voting Age Population (18+) for the block group according to the</dt><dd><p>2020 Census</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Both the <code class="docutils literal notranslate"><span class="pre">bpop_20</span></code> and <code class="docutils literal notranslate"><span class="pre">bvap_20</span></code> columns are are “any part black” aggregations acquired
+from the 2020 Census P1 and P3 tables. That is to say, <code class="docutils literal notranslate"><span class="pre">bpop_20</span></code> is the total number of people
+that included “black” as any part of their racial identity when reporting to the Census Bureau.</p>
+</div>
+<p>Since the <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> class is a subclass of <code class="docutils literal notranslate"><span class="pre">SingleMetricOptimizer</span></code>, a lot of the
+setup for the optimization process is the same. The main things that we need to be careful of
+are the parameters we pass to the <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> class. Specifically, we need to make updaters
+that keep track of the relevant statistics we are optimizing for. In example (1) this means
+that we need an updater for the total population (we will just call this <code class="docutils literal notranslate"><span class="pre">population</span></code>) and
+the total black population (we will call this <code class="docutils literal notranslate"><span class="pre">bpop</span></code>).</p>
+<div class="section" id="majority-minority-total-population">
+<h3>Majority-Minority Total Population<a class="headerlink" href="#majority-minority-total-population" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">graph</span> <span class="o">=</span> <span class="n">Graph</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="s2">&quot;05_bg_census_consolidated.json&quot;</span><span class="p">)</span>
+
+<span class="n">POPCOL</span> <span class="o">=</span> <span class="s2">&quot;tot_pop_20&quot;</span>
+<span class="n">SEN_DISTS</span> <span class="o">=</span> <span class="mi">35</span>
+<span class="n">EPS</span> <span class="o">=</span> <span class="mf">0.02</span>
+<span class="n">TOTPOP</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">()[</span><span class="n">n</span><span class="p">][</span><span class="n">POPCOL</span><span class="p">]</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
+
+<span class="c1"># ========================================================</span>
+<span class="c1"># WE HAVE UPDATED SOME THINGS IN HERE! MAKE SURE TO CHECK!</span>
+<span class="c1"># ========================================================</span>
+<span class="n">chain_updaters</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;population&quot;</span><span class="p">:</span> <span class="n">updaters</span><span class="o">.</span><span class="n">Tally</span><span class="p">(</span><span class="n">POPCOL</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s2">&quot;population&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;bpop&quot;</span><span class="p">:</span> <span class="n">updaters</span><span class="o">.</span><span class="n">Tally</span><span class="p">(</span><span class="s2">&quot;bpop_20&quot;</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s2">&quot;bpop&quot;</span><span class="p">),</span>
+<span class="p">}</span>
+
+<span class="n">initial_partition</span> <span class="o">=</span> <span class="n">Partition</span><span class="o">.</span><span class="n">from_random_assignment</span><span class="p">(</span>
+    <span class="n">graph</span><span class="o">=</span><span class="n">graph</span><span class="p">,</span>
+    <span class="n">n_parts</span><span class="o">=</span><span class="n">SEN_DISTS</span><span class="p">,</span>
+    <span class="n">epsilon</span><span class="o">=</span><span class="n">EPS</span><span class="p">,</span>
+    <span class="n">pop_col</span><span class="o">=</span><span class="n">POPCOL</span><span class="p">,</span>
+    <span class="n">updaters</span><span class="o">=</span><span class="n">chain_updaters</span>
+<span class="p">)</span>
+
+<span class="n">proposal</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span>
+    <span class="n">proposals</span><span class="o">.</span><span class="n">recom</span><span class="p">,</span>
+    <span class="n">pop_col</span><span class="o">=</span><span class="n">POPCOL</span><span class="p">,</span>
+    <span class="n">pop_target</span><span class="o">=</span><span class="n">TOTPOP</span><span class="o">/</span><span class="n">SEN_DISTS</span><span class="p">,</span>
+    <span class="n">epsilon</span><span class="o">=</span><span class="n">EPS</span><span class="p">,</span>
+    <span class="n">node_repeats</span><span class="o">=</span><span class="mi">1</span>
+<span class="p">)</span>
+
+<span class="n">chain_constraints</span> <span class="o">=</span> <span class="n">constraints</span><span class="o">.</span><span class="n">within_percent_of_ideal_population</span><span class="p">(</span><span class="n">initial_partition</span><span class="p">,</span> <span class="n">EPS</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>There are several parameters that we need to pass to the <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> class. Most of them
+should be familiar at this point, but the following are the most important ones for
+understanding appropriate usage of the class:</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Population Parameters of the <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> class
+There are three main population parameters that we can to pass to the <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> class.
+However, depending on which are passed, either one or two of them will be unnecessary.</p>
+<p>The first is the <code class="docutils literal notranslate"><span class="pre">total_pop_col</span></code> which is the name of the <strong>UPDATER</strong> that contains the total
+population for each partition. The second parameter is one of eihter <code class="docutils literal notranslate"><span class="pre">minority_pop_col</span></code> or
+<code class="docutils literal notranslate"><span class="pre">minority_perc_col</span></code>. There are significant differences between these two parameters.</p>
+<blockquote>
+<div><ul class="simple">
+<li><dl class="simple">
+<dt>(<code class="docutils literal notranslate"><span class="pre">minority_pop_col</span></code>, <code class="docutils literal notranslate"><span class="pre">total_pop_col</span></code>): This pair is passed when the user would</dt><dd><p>like for the <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> class to compute the percentage of the minority population
+from quotient of these two updaters. The <code class="docutils literal notranslate"><span class="pre">total_pop_col</span></code> is the name of the
+<strong>UPDATER</strong> that contains the total population for each partition, and the
+<code class="docutils literal notranslate"><span class="pre">minority_pop_col</span></code> is the name of the <strong>UPDATER</strong> that contains total population for
+the minority population of interest. In the that this pair of parameters is passed,
+initialization function will create an updater for <code class="docutils literal notranslate"><span class="pre">minority_perc_col</span></code> via the formula
+<code class="docutils literal notranslate"><span class="pre">total_pop_col</span> <span class="pre">/</span> <span class="pre">minority_pop_col</span></code> for each partition, and the optimization function
+will then be passed the computed value to compute the resulting partition’s score for
+each step in the Markov chain.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>The <code class="docutils literal notranslate"><span class="pre">minority_perc_col</span></code> is the name of the <strong>UPDATER</strong> that contains the percentage of</dt><dd><p>the minority population of interest. The updater should already have the score for
+each part in the partition formatted as a percentage, so the optimization function
+will process these values as they are passed.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Score Function of the <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> class
+The <code class="docutils literal notranslate"><span class="pre">score_function</span></code> parameter is a function <span class="math notranslate nohighlight">\(f:P \to \mathbb{R}\)</span> that
+take in a gerrychain <code class="docutils literal notranslate"><span class="pre">Partition</span></code> object and returns a score for that partition. The
+<code class="docutils literal notranslate"><span class="pre">SingleMetricOptimizer</span></code> class also allows for the modification of score functions, but
+the <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> class comes with some nice built-in score functions that are meant to
+to be used as good starting points for exploring the space of possible plans.</p>
+<p>Let <span class="math notranslate nohighlight">\(t\)</span> be the threshold for the score as determined by the user, and let <span class="math notranslate nohighlight">\(n\)</span>
+be the number of districts in a partition <span class="math notranslate nohighlight">\(P\)</span> with a minority percentage over the
+threshold value <span class="math notranslate nohighlight">\(t\)</span>, so <span class="math notranslate nohighlight">\(n = \sum_{p_i \in P} \mathbb{1}_{p_i\geq t}\)</span> where
+<span class="math notranslate nohighlight">\(p_i\)</span> is the percentage of the minority population in district <span class="math notranslate nohighlight">\(i\)</span></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">num_opportunity_dists</span></code>: Given a <code class="docutils literal notranslate"><span class="pre">Partition</span></code>, this function will return <span class="math notranslate nohighlight">\(n\)</span>.</p></li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">reward_partial_dist</span></code>: Given a <code class="docutils literal notranslate"><span class="pre">Partition</span></code>, this function will return</dt><dd><p><span class="math notranslate nohighlight">\(n + \max({p_i : p_i &lt; t})\)</span>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">reward_next_highest_close</span></code>: Given a <code class="docutils literal notranslate"><span class="pre">Partition</span></code>, let <span class="math notranslate nohighlight">\(p_k\)</span> be the percentage</dt><dd><p>of the district with the next highest percentage of minority population that is not
+over the threshold value <span class="math notranslate nohighlight">\(t\)</span>. This function will return <span class="math notranslate nohighlight">\(n + 1\)</span> if
+<span class="math notranslate nohighlight">\(p_k &gt; t-0.1\)</span> and <span class="math notranslate nohighlight">\(n + 10(p_k - t + 0.1)\)</span> otherwise.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">penalize_maximum_over</span></code>: Given a <code class="docutils literal notranslate"><span class="pre">Partition</span></code>, this function will return 0 if</dt><dd><p><span class="math notranslate nohighlight">\(n = 0\)</span> and <span class="math notranslate nohighlight">\(n - \frac{1-\max({p_i})}{1-t}\)</span> otherwise.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">penalize_avg_over</span></code>: Given a <code class="docutils literal notranslate"><span class="pre">Partition</span></code>, this function will return 0 if</dt><dd><p><span class="math notranslate nohighlight">\(n = 0\)</span> and <span class="math notranslate nohighlight">\(n - \frac{1-avg({p_i: p_i \geq t})}{1-t}\)</span> otherwise.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div>
+<p>We are now prepared to instantiate the <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> class:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">gingles</span> <span class="o">=</span> <span class="n">Gingleator</span><span class="p">(</span>
     <span class="n">proposal</span><span class="p">,</span>
-    <span class="n">constraints</span><span class="p">,</span>
+    <span class="n">chain_constraints</span><span class="p">,</span>
     <span class="n">initial_partition</span><span class="p">,</span>
-    <span class="n">minority_pop_col</span><span class="o">=</span><span class="s2">&quot;BVAP&quot;</span><span class="p">,</span>
-    <span class="n">total_pop_col</span><span class="o">=</span><span class="s2">&quot;TOTPOP&quot;</span><span class="p">,</span>
+    <span class="n">minority_pop_col</span><span class="o">=</span><span class="s1">&#39;bpop&#39;</span><span class="p">,</span>
+    <span class="n">total_pop_col</span><span class="o">=</span><span class="s1">&#39;population&#39;</span><span class="p">,</span>
     <span class="n">score_function</span><span class="o">=</span><span class="n">Gingleator</span><span class="o">.</span><span class="n">reward_partial_dist</span>
 <span class="p">)</span>
 </pre></div>
 </div>
-<p>Likewise, the methods are similar as well:</p>
+<p>Since the <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> class is a subclass of the <code class="docutils literal notranslate"><span class="pre">SingleMetricOptimizer</span></code> class, we can
+use the same optimization methods as before:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">total_steps</span> <span class="o">=</span> <span class="mi">10000</span>
 
 <span class="c1"># Short Bursts</span>
@@ -294,11 +478,137 @@ the setup is the same:</p>
 </pre></div>
 </div>
 <p>This should give you something like:</p>
-<img alt="Gingleator Optimization Method Comparison Image" class="align-center" src="../_images/gingleator_maxes.png" />
-<p>And we can see a little better how each method performs over the course of the run:</p>
-<img alt="Gingleator Optimization Method Comparison All Steps Image" class="align-center" src="../_images/gingleator_all.png" />
-<p>From this we can observe that, throughout the entire run, the score function can dip all
-the way back down to 0 even relatively shortly after being at the maximum of 4.5.</p>
+<img alt="Gingleator Optimization Method Comparison Image for Majority-Minority Population" class="align-center" src="../_images/gingleator_maxes_pops.png" />
+<p>Great! We have successfully used the <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> class to optimize the number of districts
+with a majority-minority population for black population. Now, we can do the same thing for
+for the majority-minority Voting Age Population (VAP) for black voters.</p>
+</div>
+<div class="section" id="majority-minority-voting-age-population">
+<h3>Majority-Minority Voting Age Population<a class="headerlink" href="#majority-minority-voting-age-population" title="Permalink to this headline">¶</a></h3>
+<p>The astute reader will probalby notice pretty quickly that there is a very easy way to modify
+the code from the previous section to optimize for Majority-Minority VAP. Indeed, all we need
+to do is change our updaters to be</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">chain_updaters</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;population&quot;</span><span class="p">:</span> <span class="n">updaters</span><span class="o">.</span><span class="n">Tally</span><span class="p">(</span><span class="n">POPCOL</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s2">&quot;population&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;vap&quot;</span><span class="p">:</span> <span class="n">updaters</span><span class="o">.</span><span class="n">Tally</span><span class="p">(</span><span class="s2">&quot;tot_vap_20&quot;</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s2">&quot;vap&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;bvap&quot;</span><span class="p">:</span> <span class="n">updaters</span><span class="o">.</span><span class="n">Tally</span><span class="p">(</span><span class="s2">&quot;bvap_20&quot;</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s2">&quot;bvap&quot;</span><span class="p">),</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>and then change our <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> class instantiation to be</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">gingles</span> <span class="o">=</span> <span class="n">Gingleator</span><span class="p">(</span>
+    <span class="n">proposal</span><span class="p">,</span>
+    <span class="n">chain_constraints</span><span class="p">,</span>
+    <span class="n">initial_partition</span><span class="p">,</span>
+    <span class="n">minority_pop_col</span><span class="o">=</span><span class="s1">&#39;bvap&#39;</span><span class="p">,</span>
+    <span class="n">total_pop_col</span><span class="o">=</span><span class="s1">&#39;vap&#39;</span><span class="p">,</span>
+    <span class="n">score_function</span><span class="o">=</span><span class="n">Gingleator</span><span class="o">.</span><span class="n">reward_partial_dist</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>And we will be off to the races. In the interest of being thorough, however, let us see how to
+modify this code to make use of the <code class="docutils literal notranslate"><span class="pre">minority_perc_col</span></code> parameter of the <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> class.
+For this, we will just need to tweek our updaters a little bit:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">graph</span> <span class="o">=</span> <span class="n">Graph</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="s2">&quot;05_bg_census_consolidated.json&quot;</span><span class="p">)</span>
+
+<span class="n">POPCOL</span> <span class="o">=</span> <span class="s2">&quot;tot_pop_20&quot;</span>
+<span class="n">SEN_DISTS</span> <span class="o">=</span> <span class="mi">35</span>
+<span class="n">EPS</span> <span class="o">=</span> <span class="mf">0.02</span>
+<span class="n">TOTPOP</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">()[</span><span class="n">n</span><span class="p">][</span><span class="n">POPCOL</span><span class="p">]</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
+
+
+<span class="c1"># Updaters take in partitions and then return some value. In this case, we</span>
+<span class="c1"># want to return a dictionary of mapping each part in the partition to the value BVAP/VAP</span>
+<span class="k">def</span> <span class="nf">compute_bvap_pct</span><span class="p">(</span><span class="n">partition</span><span class="p">):</span>
+    <span class="n">percent_by_part</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">partition</span><span class="o">.</span><span class="n">parts</span><span class="p">:</span>
+        <span class="c1"># bvap and vap are dictionaries mapping each partition part to</span>
+        <span class="c1"># it corresponding BVAP or VAP tally respectively</span>
+        <span class="n">percent_by_part</span><span class="p">[</span><span class="n">part</span><span class="p">]</span> <span class="o">=</span> <span class="n">partition</span><span class="p">[</span><span class="s2">&quot;bvap&quot;</span><span class="p">][</span><span class="n">part</span><span class="p">]</span> <span class="o">/</span> <span class="n">partition</span><span class="p">[</span><span class="s2">&quot;vap&quot;</span><span class="p">][</span><span class="n">part</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">percent_by_part</span>
+
+<span class="c1"># ========================================================</span>
+<span class="c1"># WE HAVE UPDATED SOME THINGS IN HERE! MAKE SURE TO CHECK!</span>
+<span class="c1"># ========================================================</span>
+<span class="n">chain_updaters</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;population&quot;</span><span class="p">:</span> <span class="n">updaters</span><span class="o">.</span><span class="n">Tally</span><span class="p">(</span><span class="n">POPCOL</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s2">&quot;population&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;vap&quot;</span><span class="p">:</span> <span class="n">updaters</span><span class="o">.</span><span class="n">Tally</span><span class="p">(</span><span class="s2">&quot;tot_vap_20&quot;</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s2">&quot;vap&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;bvap&quot;</span><span class="p">:</span> <span class="n">updaters</span><span class="o">.</span><span class="n">Tally</span><span class="p">(</span><span class="s2">&quot;bvap_20&quot;</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s2">&quot;bvap&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;bvap_pct&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="p">{</span><span class="n">i</span><span class="p">:</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;bvap&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">/</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;vap&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;bvap&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()},</span>
+<span class="p">}</span>
+
+<span class="n">initial_partition</span> <span class="o">=</span> <span class="n">Partition</span><span class="o">.</span><span class="n">from_random_assignment</span><span class="p">(</span>
+    <span class="n">graph</span><span class="o">=</span><span class="n">graph</span><span class="p">,</span>
+    <span class="n">n_parts</span><span class="o">=</span><span class="n">SEN_DISTS</span><span class="p">,</span>
+    <span class="n">epsilon</span><span class="o">=</span><span class="n">EPS</span><span class="p">,</span>
+    <span class="n">pop_col</span><span class="o">=</span><span class="n">POPCOL</span><span class="p">,</span>
+    <span class="n">updaters</span><span class="o">=</span><span class="n">chain_updaters</span>
+<span class="p">)</span>
+
+<span class="n">proposal</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span>
+    <span class="n">proposals</span><span class="o">.</span><span class="n">recom</span><span class="p">,</span>
+    <span class="n">pop_col</span><span class="o">=</span><span class="n">POPCOL</span><span class="p">,</span>
+    <span class="n">pop_target</span><span class="o">=</span><span class="n">TOTPOP</span><span class="o">/</span><span class="n">SEN_DISTS</span><span class="p">,</span>
+    <span class="n">epsilon</span><span class="o">=</span><span class="n">EPS</span><span class="p">,</span>
+    <span class="n">node_repeats</span><span class="o">=</span><span class="mi">1</span>
+<span class="p">)</span>
+
+<span class="n">chain_constraints</span> <span class="o">=</span> <span class="n">constraints</span><span class="o">.</span><span class="n">within_percent_of_ideal_population</span><span class="p">(</span><span class="n">initial_partition</span><span class="p">,</span> <span class="n">EPS</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">gingles</span> <span class="o">=</span> <span class="n">Gingleator</span><span class="p">(</span>
+    <span class="n">proposal</span><span class="p">,</span>
+    <span class="n">chain_constraints</span><span class="p">,</span>
+    <span class="n">initial_partition</span><span class="p">,</span>
+    <span class="n">minority_perc_col</span><span class="o">=</span><span class="s1">&#39;bvap_pct&#39;</span><span class="p">,</span>
+    <span class="n">score_function</span><span class="o">=</span><span class="n">Gingleator</span><span class="o">.</span><span class="n">reward_partial_dist</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">total_steps</span> <span class="o">=</span> <span class="mi">10000</span>
+
+<span class="c1"># Short Bursts</span>
+<span class="n">max_scores_sb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">total_steps</span><span class="p">)</span>
+<span class="n">scores_sb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">total_steps</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">part</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">gingles</span><span class="o">.</span><span class="n">short_bursts</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">with_progress_bar</span><span class="o">=</span><span class="kc">True</span><span class="p">)):</span>
+    <span class="n">max_scores_sb</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">gingles</span><span class="o">.</span><span class="n">best_score</span>
+    <span class="n">scores_sb</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">gingles</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">part</span><span class="p">)</span>
+
+<span class="c1"># Simulated Annealing</span>
+<span class="n">max_scores_anneal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">total_steps</span><span class="p">)</span>
+<span class="n">scores_anneal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">total_steps</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">part</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span>
+    <span class="n">gingles</span><span class="o">.</span><span class="n">simulated_annealing</span><span class="p">(</span>
+        <span class="n">total_steps</span><span class="p">,</span>
+        <span class="n">gingles</span><span class="o">.</span><span class="n">jumpcycle_beta_function</span><span class="p">(</span><span class="mi">1000</span><span class="p">,</span> <span class="mi">4000</span><span class="p">),</span>
+        <span class="n">beta_magnitude</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span>
+        <span class="n">with_progress_bar</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+<span class="p">):</span>
+    <span class="n">max_scores_anneal</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">gingles</span><span class="o">.</span><span class="n">best_score</span>
+    <span class="n">scores_anneal</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">gingles</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">part</span><span class="p">)</span>
+
+<span class="c1"># Tilted Runs</span>
+<span class="n">max_scores_tilt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">total_steps</span><span class="p">)</span>
+<span class="n">scores_tilt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">total_steps</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">part</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">gingles</span><span class="o">.</span><span class="n">tilted_run</span><span class="p">(</span><span class="n">total_steps</span><span class="p">,</span> <span class="mf">0.125</span><span class="p">,</span> <span class="n">with_progress_bar</span><span class="o">=</span><span class="kc">True</span><span class="p">)):</span>
+    <span class="n">max_scores_tilt</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">gingles</span><span class="o">.</span><span class="n">best_score</span>
+    <span class="n">scores_tilt</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">gingles</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">part</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>And now we plot the results again!</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span><span class="mi">6</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">max_scores_sb</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Short Bursts&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">max_scores_anneal</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Simulated Annealing&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">max_scores_tilt</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Tilted Run&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Steps&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Max Score Observered&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="Gingleator Optimization Method Comparison Image for Majority-Minority VAP" class="align-center" src="../_images/gingleator_maxes_vaps.png" />
+</div>
 </div>
 </div>
 
