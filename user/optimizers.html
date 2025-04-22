@@ -186,7 +186,7 @@ section:</p>
 </div>
 <div class="section" id="using-singlemetricoptimizer">
 <h2>Using <code class="docutils literal notranslate"><span class="pre">SingleMetricOptimizer</span></code><a class="headerlink" href="#using-singlemetricoptimizer" title="Permalink to this headline">¶</a></h2>
-<p>Since <code class="docutils literal notranslate"><span class="pre">SingleMetricOptimizer</span></code> is a wrapper around our basic <code class="docutils literal notranslate"><span class="pre">MarkovChain</span></code>
+<p><code class="docutils literal notranslate"><span class="pre">SingleMetricOptimizer</span></code> is a wrapper around our basic <code class="docutils literal notranslate"><span class="pre">MarkovChain</span></code>
 class; to set it up, we simply pass it a proposal function, some constraints, an initial
 state, and the objective function of interest:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">num_cut_edges</span><span class="p">(</span><span class="n">partition</span><span class="p">):</span>
@@ -352,14 +352,14 @@ the total black population (we will call this <code class="docutils literal notr
 <p>There are several parameters that we need to pass to the <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> class. Most of them
 should be familiar at this point, but the following are the most important ones for
 understanding appropriate usage of the class:</p>
-<p><strong>Population Parameters of the ``Gingleator`` class</strong></p>
+<p><strong>Population Parameters of the</strong> <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> <strong>class</strong></p>
 <p>There are three main population parameters that we can to pass to the <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> class.
 However, depending on which are passed, either one or two of them will be unnecessary.</p>
 <ul class="simple">
-<li><p>(<code class="docutils literal notranslate"><span class="pre">minority_pop_col</span></code>, <code class="docutils literal notranslate"><span class="pre">total_pop_col</span></code>): This pair is passed when the user would like for the <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> class to compute the percentage of the minority population from quotient of these two updaters. The <code class="docutils literal notranslate"><span class="pre">total_pop_col</span></code> is the name of the <strong>UPDATER</strong> that contains the total population for each partition, and the <code class="docutils literal notranslate"><span class="pre">minority_pop_col</span></code> is the name of the <strong>UPDATER</strong> that contains total population for the minority population of interest. In the that this pair of parameters is passed, initialization function will create an updater for <code class="docutils literal notranslate"><span class="pre">minority_perc_col</span></code> via the formula  <code class="docutils literal notranslate"><span class="pre">minority_pop_col</span> <span class="pre">/</span> <span class="pre">total_pop_col</span></code> for each partition, and the optimization function will then be passed the computed value to compute the resulting partition’s score for each step in the Markov chain.</p></li>
+<li><p>(<code class="docutils literal notranslate"><span class="pre">minority_pop_col</span></code>, <code class="docutils literal notranslate"><span class="pre">total_pop_col</span></code>): This pair is passed when the user would like for the <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> class to compute the percentage of the minority population from quotient of these two updaters. The <code class="docutils literal notranslate"><span class="pre">total_pop_col</span></code> is the name of the <strong>UPDATER</strong> that contains the total population for each partition, and the <code class="docutils literal notranslate"><span class="pre">minority_pop_col</span></code> is the name of the <strong>UPDATER</strong> that contains total population for the minority population of interest. In the case that this pair of parameters is passed, the initialization function will create an updater for <code class="docutils literal notranslate"><span class="pre">minority_perc_col</span></code> via the formula  <code class="docutils literal notranslate"><span class="pre">minority_pop_col</span> <span class="pre">/</span> <span class="pre">total_pop_col</span></code> for each partition, and the optimization function will then be passed the decimal values to compute the resulting partition’s score for each step in the Markov chain.</p></li>
 <li><p>The <code class="docutils literal notranslate"><span class="pre">minority_perc_col</span></code> is the name of the <strong>UPDATER</strong> that contains the percentage of the minority population of interest. The updater should already have the score for each part in the partition formatted as a percentage, so the optimization function will process these values as they are passed.</p></li>
 </ul>
-<p><strong>Score Function of the ``Gingleator`` class</strong></p>
+<p><strong>Score Function of the</strong> <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> <strong>class</strong></p>
 <p>The <code class="docutils literal notranslate"><span class="pre">score_function</span></code> parameter is a function <span class="math notranslate nohighlight">\(f:P \to \mathbb{R}\)</span> that
 take in a gerrychain <code class="docutils literal notranslate"><span class="pre">Partition</span></code> object and returns a score for that partition. The
 <code class="docutils literal notranslate"><span class="pre">SingleMetricOptimizer</span></code> class also allows for the modification of score functions, but
@@ -439,7 +439,7 @@ for the majority-minority Voting Age Population (VAP) for black voters.</p>
 </div>
 <div class="section" id="majority-minority-voting-age-population">
 <h3>Majority-Minority Voting Age Population<a class="headerlink" href="#majority-minority-voting-age-population" title="Permalink to this headline">¶</a></h3>
-<p>The astute reader will probalby notice pretty quickly that there is a very easy way to modify
+<p>The astute reader will probably notice pretty quickly that there is a very easy way to modify
 the code from the previous section to optimize for Majority-Minority VAP. Indeed, all we need
 to do is change our updaters to be</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">chain_updaters</span> <span class="o">=</span> <span class="p">{</span>
@@ -460,9 +460,9 @@ to do is change our updaters to be</p>
 <span class="p">)</span>
 </pre></div>
 </div>
-<p>And we will be off to the races. In the interest of being thorough, however, let us see how to
+<p>and we will be off to the races. In the interest of being thorough, however, let us see how to
 modify this code to make use of the <code class="docutils literal notranslate"><span class="pre">minority_perc_col</span></code> parameter of the <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> class.
-For this, we will just need to tweek our updaters a little bit:</p>
+For this, we will just need to tweak our updaters a little bit:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">graph</span> <span class="o">=</span> <span class="n">Graph</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="s2">&quot;05_bg_census_consolidated.json&quot;</span><span class="p">)</span>
 
 <span class="n">POPCOL</span> <span class="o">=</span> <span class="s2">&quot;tot_pop_20&quot;</span>
