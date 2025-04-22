@@ -106,7 +106,7 @@ section:
 Using ``SingleMetricOptimizer``
 -------------------------------
 
-Since ``SingleMetricOptimizer`` is a wrapper around our basic ``MarkovChain``
+``SingleMetricOptimizer`` is a wrapper around our basic ``MarkovChain``
 class; to set it up, we simply pass it a proposal function, some constraints, an initial 
 state, and the objective function of interest:
 
@@ -303,16 +303,16 @@ should be familiar at this point, but the following are the most important ones 
 understanding appropriate usage of the class:
 
 
-**Population Parameters of the ``Gingleator`` class**
+**Population Parameters of the** ``Gingleator`` **class**
 
 There are three main population parameters that we can to pass to the ``Gingleator`` class.
 However, depending on which are passed, either one or two of them will be unnecessary.
 
-- (``minority_pop_col``, ``total_pop_col``): This pair is passed when the user would like for the ``Gingleator`` class to compute the percentage of the minority population from quotient of these two updaters. The ``total_pop_col`` is the name of the **UPDATER** that contains the total population for each partition, and the ``minority_pop_col`` is the name of the **UPDATER** that contains total population for the minority population of interest. In the that this pair of parameters is passed, initialization function will create an updater for ``minority_perc_col`` via the formula  ``minority_pop_col / total_pop_col`` for each partition, and the optimization function will then be passed the computed value to compute the resulting partition's score for each step in the Markov chain.
+- (``minority_pop_col``, ``total_pop_col``): This pair is passed when the user would like for the ``Gingleator`` class to compute the percentage of the minority population from quotient of these two updaters. The ``total_pop_col`` is the name of the **UPDATER** that contains the total population for each partition, and the ``minority_pop_col`` is the name of the **UPDATER** that contains total population for the minority population of interest. In the case that this pair of parameters is passed, the initialization function will create an updater for ``minority_perc_col`` via the formula  ``minority_pop_col / total_pop_col`` for each partition, and the optimization function will then be passed the decimal values to compute the resulting partition's score for each step in the Markov chain.
 
 - The ``minority_perc_col`` is the name of the **UPDATER** that contains the percentage of the minority population of interest. The updater should already have the score for each part in the partition formatted as a percentage, so the optimization function will process these values as they are passed.
 
-**Score Function of the ``Gingleator`` class**
+**Score Function of the** ``Gingleator`` **class**
 
 The ``score_function`` parameter is a function :math:`f:P \to \mathbb{R}` that 
 take in a gerrychain ``Partition`` object and returns a score for that partition. The 
@@ -411,7 +411,7 @@ for the majority-minority Voting Age Population (VAP) for black voters.
 Majority-Minority Voting Age Population
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The astute reader will probalby notice pretty quickly that there is a very easy way to modify
+The astute reader will probably notice pretty quickly that there is a very easy way to modify
 the code from the previous section to optimize for Majority-Minority VAP. Indeed, all we need
 to do is change our updaters to be
 
@@ -436,9 +436,9 @@ and then change our ``Gingleator`` class instantiation to be
         score_function=Gingleator.reward_partial_dist
     )
 
-And we will be off to the races. In the interest of being thorough, however, let us see how to
+and we will be off to the races. In the interest of being thorough, however, let us see how to
 modify this code to make use of the ``minority_perc_col`` parameter of the ``Gingleator`` class.
-For this, we will just need to tweek our updaters a little bit:
+For this, we will just need to tweak our updaters a little bit:
 
 .. code:: python
 
