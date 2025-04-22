@@ -303,7 +303,7 @@ should be familiar at this point, but the following are the most important ones 
 understanding appropriate usage of the class:
 
 
-**Population Parameters of the ``Gingleator`` class*
+**Population Parameters of the ``Gingleator`` class**
 
 There are three main population parameters that we can to pass to the ``Gingleator`` class.
 However, depending on which are passed, either one or two of them will be unnecessary.
