@@ -456,7 +456,7 @@ For this, we will just need to tweek our updaters a little bit:
         "population": updaters.Tally(POPCOL, alias="population"),
         "vap": updaters.Tally("tot_vap_20", alias="vap"), 
         "bvap": updaters.Tally("bvap_20", alias="bvap"),
-        "bvap_pct": lambda p: {i: p["bvap"][i] / p["vap"][i] for i in p["bvap"].keys()},
+        "bvap_pct": compute_bvap_pct
     }
 
     initial_partition = Partition.from_random_assignment(
