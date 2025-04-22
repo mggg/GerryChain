@@ -181,19 +181,20 @@ section:</p>
     <span class="n">node_repeats</span><span class="o">=</span><span class="mi">1</span>
 <span class="p">)</span>
 
-<span class="n">constraints</span> <span class="o">=</span> <span class="n">constraints</span><span class="o">.</span><span class="n">within_percent_of_ideal_population</span><span class="p">(</span><span class="n">initial_partition</span><span class="p">,</span> <span class="n">EPS</span><span class="p">)</span>
+<span class="n">chain_constraints</span> <span class="o">=</span> <span class="n">constraints</span><span class="o">.</span><span class="n">within_percent_of_ideal_population</span><span class="p">(</span><span class="n">initial_partition</span><span class="p">,</span> <span class="n">EPS</span><span class="p">)</span>
 </pre></div>
 </div>
 <div class="section" id="using-singlemetricoptimizer">
 <h2>Using <code class="docutils literal notranslate"><span class="pre">SingleMetricOptimizer</span></code><a class="headerlink" href="#using-singlemetricoptimizer" title="Permalink to this headline">¶</a></h2>
-<p>Since <code class="docutils literal notranslate"><span class="pre">SingleMetricOptimizer</span></code> is set up as a wrapper around our basic <code class="docutils literal notranslate"><span class="pre">MarkovChain</span></code>
-class, to set it up, we simply pass it a proposal function, some constraints, an initial
+<p>Since <code class="docutils literal notranslate"><span class="pre">SingleMetricOptimizer</span></code> is a wrapper around our basic <code class="docutils literal notranslate"><span class="pre">MarkovChain</span></code>
+class; to set it up, we simply pass it a proposal function, some constraints, an initial
 state, and the objective function of interest:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">num_cut_edges</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;cut_edges&quot;</span><span class="p">])</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">num_cut_edges</span><span class="p">(</span><span class="n">partition</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">partition</span><span class="p">[</span><span class="s2">&quot;cut_edges&quot;</span><span class="p">])</span>
 
 <span class="n">optimizer</span> <span class="o">=</span> <span class="n">SingleMetricOptimizer</span><span class="p">(</span>
     <span class="n">proposal</span><span class="o">=</span><span class="n">proposal</span><span class="p">,</span>
-    <span class="n">constraints</span><span class="o">=</span><span class="n">constraints</span><span class="p">,</span>
+    <span class="n">constraints</span><span class="o">=</span><span class="n">chain_constraints</span><span class="p">,</span>
     <span class="n">initial_state</span><span class="o">=</span><span class="n">initial_partition</span><span class="p">,</span>
     <span class="n">optimization_metric</span><span class="o">=</span><span class="n">num_cut_edges</span><span class="p">,</span>
     <span class="n">maximize</span><span class="o">=</span><span class="kc">False</span>
@@ -258,12 +259,22 @@ particular partition, we can use the syntax <code class="docutils literal notran
 <p>Of course, the above trace is just shows the progression of the best score as the chain
 moves along. If we want to see how the optimization function performs at each step, we can
 plot the full trace:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span><span class="mi">6</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">scores_sb</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Short Bursts&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">scores_anneal</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Simulated Annealing&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">scores_tilt</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Tilted Run&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Steps&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Cut Edges&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
 <img alt="Single Metric Optimization Method Comparison Image All Scores" class="align-center" src="../_images/single_metric_opt_comparison_all.png" />
 <p>Here we can see some of the quirks of each of the optimization methods. For example,
 our simulated annealing method is using a jumpcycle beta function and we can see when
 the acceptance rate is high represented by spikes in the trace plot. Short bursts
 is generally pretty noisy, but since each burst starts from the best partition in the
-previous burst, we see that it has a general downward trend. Lastly, tilted runs,
+previous burst, we see that it has a general downward trend. Lastly, tilted runs
 just accept worse partitions with a fixed probability, so the (relatively) uniform volatility
 of the cut edge score trace plot is expected.</p>
 </div>
@@ -272,9 +283,10 @@ of the cut edge score trace plot is expected.</p>
 <p>Named for the Supreme Court case <em>Thornburg v. Gingles</em>, <strong>Gingles’ Districts</strong> are
 districts that are 50% + 1 of a minority population subgroup (more colloquially called
 majority-minority districts).</p>
-<p><code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> is a subclass of the <code class="docutils literal notranslate"><span class="pre">SingleMetricOptimizer</span></code>. Technically, means that everything
-in the <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> class can also be done using the <code class="docutils literal notranslate"><span class="pre">SingleMetricOptimizer</span></code> class, but
-the <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> class provides some quality-of-life improvements to the user experience.</p>
+<p><code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> is a subclass of the <code class="docutils literal notranslate"><span class="pre">SingleMetricOptimizer</span></code>. Technically this means that
+everything in the <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> class can also be done using the <code class="docutils literal notranslate"><span class="pre">SingleMetricOptimizer</span></code>
+class, but the <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> class provides some quality-of-life improvements to the user
+experience.</p>
 <p>For the purposes of this tutorial, we will be using the <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> class to try and optimize
 the number of districts with</p>
 <ol class="arabic simple">
@@ -291,7 +303,7 @@ columns aggregated from the 2020 Census data on block groups for the state of Ar
 </ul>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Both the <code class="docutils literal notranslate"><span class="pre">bpop_20</span></code> and <code class="docutils literal notranslate"><span class="pre">bvap_20</span></code> columns are are “any part black” aggregations acquired
+<p>Both the <code class="docutils literal notranslate"><span class="pre">bpop_20</span></code> and <code class="docutils literal notranslate"><span class="pre">bvap_20</span></code> columns are “any part black” aggregations acquired
 from the 2020 Census P1 and P3 tables. That is to say, <code class="docutils literal notranslate"><span class="pre">bpop_20</span></code> is the total number of people
 that included “black” as any part of their racial identity when reporting to the Census Bureau.</p>
 </div>
@@ -340,23 +352,18 @@ the total black population (we will call this <code class="docutils literal notr
 <p>There are several parameters that we need to pass to the <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> class. Most of them
 should be familiar at this point, but the following are the most important ones for
 understanding appropriate usage of the class:</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Population Parameters of the <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> class
-There are three main population parameters that we can to pass to the <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> class.
+<p><a href="#id1"><span class="problematic" id="id2">**</span></a>Population Parameters of the <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> class*</p>
+<p>There are three main population parameters that we can to pass to the <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> class.
 However, depending on which are passed, either one or two of them will be unnecessary.</p>
 <p>The first is the <code class="docutils literal notranslate"><span class="pre">total_pop_col</span></code> which is the name of the <strong>UPDATER</strong> that contains the total
-population for each partition. The second parameter is one of eihter <code class="docutils literal notranslate"><span class="pre">minority_pop_col</span></code> or
+population for each partition. The second parameter is one of either <code class="docutils literal notranslate"><span class="pre">minority_pop_col</span></code> or
 <code class="docutils literal notranslate"><span class="pre">minority_perc_col</span></code>. There are significant differences between these two parameters.</p>
 <ul class="simple">
-<li><p>(<code class="docutils literal notranslate"><span class="pre">minority_pop_col</span></code>, <code class="docutils literal notranslate"><span class="pre">total_pop_col</span></code>): This pair is passed when the user would like for the <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> class to compute the percentage of the minority population from quotient of these two updaters. The <code class="docutils literal notranslate"><span class="pre">total_pop_col</span></code> is the name of the <strong>UPDATER</strong> that contains the total population for each partition, and the <code class="docutils literal notranslate"><span class="pre">minority_pop_col</span></code> is the name of the <strong>UPDATER</strong> that contains total population for the minority population of interest. In the that this pair of parameters is passed, initialization function will create an updater for <code class="docutils literal notranslate"><span class="pre">minority_perc_col</span></code> via the formula  <code class="docutils literal notranslate"><span class="pre">total_pop_col</span> <span class="pre">/</span> <span class="pre">minority_pop_col</span></code> for each partition, and the optimization function will then be passed the computed value to compute the resulting partition’s score for each step in the Markov chain.</p></li>
+<li><p>(<code class="docutils literal notranslate"><span class="pre">minority_pop_col</span></code>, <code class="docutils literal notranslate"><span class="pre">total_pop_col</span></code>): This pair is passed when the user would like for the <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> class to compute the percentage of the minority population from quotient of these two updaters. The <code class="docutils literal notranslate"><span class="pre">total_pop_col</span></code> is the name of the <strong>UPDATER</strong> that contains the total population for each partition, and the <code class="docutils literal notranslate"><span class="pre">minority_pop_col</span></code> is the name of the <strong>UPDATER</strong> that contains total population for the minority population of interest. In the that this pair of parameters is passed, initialization function will create an updater for <code class="docutils literal notranslate"><span class="pre">minority_perc_col</span></code> via the formula  <code class="docutils literal notranslate"><span class="pre">minority_pop_col</span> <span class="pre">/</span> <span class="pre">total_pop_col</span></code> for each partition, and the optimization function will then be passed the computed value to compute the resulting partition’s score for each step in the Markov chain.</p></li>
 <li><p>The <code class="docutils literal notranslate"><span class="pre">minority_perc_col</span></code> is the name of the <strong>UPDATER</strong> that contains the percentage of the minority population of interest. The updater should already have the score for each part in the partition formatted as a percentage, so the optimization function will process these values as they are passed.</p></li>
 </ul>
-</div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Score Function of the <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> class
-The <code class="docutils literal notranslate"><span class="pre">score_function</span></code> parameter is a function <span class="math notranslate nohighlight">\(f:P \to \mathbb{R}\)</span> that
+<p><strong>Score Function of the ``Gingleator`` class</strong></p>
+<p>The <code class="docutils literal notranslate"><span class="pre">score_function</span></code> parameter is a function <span class="math notranslate nohighlight">\(f:P \to \mathbb{R}\)</span> that
 take in a gerrychain <code class="docutils literal notranslate"><span class="pre">Partition</span></code> object and returns a score for that partition. The
 <code class="docutils literal notranslate"><span class="pre">SingleMetricOptimizer</span></code> class also allows for the modification of score functions, but
 the <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> class comes with some nice built-in score functions that are meant to
@@ -372,7 +379,6 @@ threshold value <span class="math notranslate nohighlight">\(t\)</span>, so <spa
 <li><p><code class="docutils literal notranslate"><span class="pre">penalize_maximum_over</span></code>: Given a <code class="docutils literal notranslate"><span class="pre">Partition</span></code>, this function will return 0 if <span class="math notranslate nohighlight">\(n = 0\)</span> and <span class="math notranslate nohighlight">\(n - \frac{1-\max(\{p_i\})}{1-t}\)</span> otherwise.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">penalize_avg_over</span></code>: Given a <code class="docutils literal notranslate"><span class="pre">Partition</span></code>, this function will return 0 if <span class="math notranslate nohighlight">\(n = 0\)</span> and <span class="math notranslate nohighlight">\(n - \frac{1-avg(\{p_i: p_i \geq t\})}{1-t}\)</span> otherwise.</p></li>
 </ul>
-</div>
 <p>We are now prepared to instantiate the <code class="docutils literal notranslate"><span class="pre">Gingleator</span></code> class:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">gingles</span> <span class="o">=</span> <span class="n">Gingleator</span><span class="p">(</span>
     <span class="n">proposal</span><span class="p">,</span>
