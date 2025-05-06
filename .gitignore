@@ -79,3 +79,8 @@ Dockerfile
 
 # Extra Documentation Stuff
 release_notes.md
+TODO.md
+
+# Environment items
+.env
+.envrc
