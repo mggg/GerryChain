@@ -25,9 +25,36 @@ Dependencies:
 
 Last Updated: 25 April 2024
 """
+# frm:  This file, tree.py, needed to be modified to operate on new Graph
+#       objects instead of NetworkX Graph objects because the routines are
+#       used by the Graph objects inside a Partion, which will soon be based
+#       on RustworkX.  More specifically, these routines are used by Proposals,
+#       and we will soon switch to having the underlying Graph object used
+#       in Partitions and Proposals be based on RustworkX.
+#
+#       It may be the case that they are ONLY ever used by Proposals and 
+#       hence could just have been rewritten to operate on RustworkX Graph
+#       objects, but there seemed to be no harm in having them work either 
+#       way.  It was also a good proving ground for testing whether the new
+#       Graph object could behave like a NetworkX Graph object (in terms of
+#       attribute access and syntax).
 
 import networkx as nx
+# frm TODO:     Remove import of networkx once we have moved networkx
+#               dependencies out of this file - see comments below on 
+#               spanning trees.
+
 from networkx.algorithms import tree
+# frm TODO:     Remove import of "tree" from networkx.algorithms in this file
+#               It is only used to get a spanning tree function:
+#
+#                   spanning_tree = tree.minimum_spanning_tree(
+#
+#               There is an RX function that also computes a spanning tree - hopefully
+#               it works as we want it to work and hence can be used.
+#
+#               I think it probably makes sense to move this spanning tree function
+#               into graph.py and to encapsulate the NX vs RX code there.
 
 from functools import partial
 from inspect import signature
@@ -48,18 +75,16 @@ from typing import (
 )
 import warnings
 
+# frm:  import the new Graph object which encapsulates NX and RX Graph...
+from .graph import Graph
 
-def predecessors(h: nx.Graph, root: Any) -> Dict:
-    return {a: b for a, b in nx.bfs_predecessors(h, root)}
+# frm TODO: Update function param docmentation to get rid of nx.Graph and use just Graph
 
-
-def successors(h: nx.Graph, root: Any) -> Dict:
-    return {a: b for a, b in nx.bfs_successors(h, root)}
-
-
+# frm TODO:  RX version NYI...
 def random_spanning_tree(
-    graph: nx.Graph, region_surcharge: Optional[Dict] = None
-) -> nx.Graph:
+    graph: Graph,              # frm: Original code:    graph: x.Graph, 
+    region_surcharge: Optional[Dict] = None
+) -> Graph:                # frm: Original code:      ) -> nx.Graph:
     """
     Builds a spanning tree chosen by Kruskal's method using random weights.
 
@@ -75,28 +100,72 @@ def random_spanning_tree(
     if region_surcharge is None:
         region_surcharge = dict()
 
+    #frm ???: Does graph.edges() return two edges for every actual edge?
+    #           For example, if there is an edge from node 1 to node 2
+    #           then I think there are actually two edges in the graph,
+    #           (1,2) and (2,1) so the question is whether graph.edges()
+    #           returns both of these or if it just returns one of them,
+    #           and if only one - then which one?
     for edge in graph.edges():
         weight = random.random()
         for key, value in region_surcharge.items():
             # We surcharge edges that cross regions and those that are not in any region
             if (
-                graph.nodes[edge[0]][key] != graph.nodes[edge[1]][key]
-                or graph.nodes[edge[0]][key] is None
-                or graph.nodes[edge[1]][key] is None
+                # frm: original code:   graph.nodes[edge[0]][key] != graph.nodes[edge[1]][key]
+                # frm: original code:   or graph.nodes[edge[0]][key] is None
+                # frm: original code:   or graph.nodes[edge[1]][key] is None
+                graph.get_node_data_dict(edge[0])[key] != graph.get_node_data_dict(edge[1])[key]
+                or graph.get_node_data_dict(edge[0])[key] is None
+                or graph.get_node_data_dict(edge[1])[key] is None
             ):
                 weight += value
 
         graph.edges[edge]["random_weight"] = weight
 
+    # frm TODO:  RX version NYI...      def random_spanning_tree(
+    #
+    #   There is an RX version of a minimum spanning tree:
+    #
+    #       https://www.rustworkx.org/apiref/rustworkx.minimum_spanning_tree.html
+    #
+    #   The NX version is documemted here:
+    #
+    #       https://networkx.org/documentation/stable/reference/algorithms/generated/networkx.algorithms.tree.mst.minimum_spanning_tree.html
+    #
+    #   Need to see if the RX version actually does the same thing...
+    #
+    
+    # frm TODO: Remove this hack once I have a minimum spanning tree function that works
+    #           on both NX and RX Graphs and is nicely encapsulated...
+    #
+    #           The hack is that at present, I only have a spanning tree function that works
+    #           on NX Graphs, so I evilly reach into the new Graph object to get the NX Graph
+    #           and I then use an NX function to compute the spanning tree, and I then convert
+    #           that spanning tree back into a new Graph object.
+    #
+    #           This will NOT work once we automatically convert the internal graph inside the
+    #           new Graph object from NX to RX when we create a Partition.
+    #
+    #           Ticking time bomb...
+    #
+    nxgraph = graph.getNxGraph()
+
+    # frm TODO:  Implement a new minimum_spanning_tree routine that works for both NX and RX
     spanning_tree = tree.minimum_spanning_tree(
-        graph, algorithm="kruskal", weight="random_weight"
+        nxgraph, algorithm="kruskal", weight="random_weight"
     )
-    return spanning_tree
+    # frm: CROCK/HACK/KLUGE: TODO:  This routine needs to return a new Graph object.  This code
+    #                               converts the spanning tree from tree.minimum_spanning_tree() to a new Graph...
+    spanning_nxgraph = nx.Graph(spanning_tree)
+    spanningGraph = Graph.from_networkx(spanning_nxgraph)
+
+    return spanningGraph
 
 
+# frm TODO:  RX version NYI...
 def uniform_spanning_tree(
-    graph: nx.Graph, choice: Callable = random.choice
-) -> nx.Graph:
+    graph: Graph,          # frm: Original code:    graph: nx.Graph, choice: Callable = random.choice
+) -> Graph:
     """
     Builds a spanning tree chosen uniformly from the space of all
     spanning trees of the graph. Uses Wilson's algorithm.
@@ -124,14 +193,24 @@ def uniform_spanning_tree(
             tree_nodes.add(u)
             u = next_node[u]
 
-    G = nx.Graph()
+    # frm TODO:  RX version NYI...
+    #               This looks OK - just need add_edge() to work for both NX and RX
+
+    G = Graph()                 # frm: Original code:    G = nx.Graph()
     for node in tree_nodes:
         if next_node[node] is not None:
+            # frm: RustworkX requires a third param for the edge payload...
+            #       However, there is an rx.add_edges_from_no_data()
             G.add_edge(node, next_node[node])
 
     return G
 
 
+# frm TODO  RX version NYI...
+#
+#               I think that this is only ever used inside this module (except)
+#               for testing.
+#
 class PopulatedGraph:
     """
     A class representing a graph with population information.
@@ -153,7 +232,7 @@ class PopulatedGraph:
 
     def __init__(
         self,
-        graph: nx.Graph,
+        graph: Graph,         # frm: Original code:    graph: nx.Graph,
         populations: Dict,
         ideal_pop: Union[float, int],
         epsilon: float,
@@ -177,17 +256,22 @@ class PopulatedGraph:
         self.epsilon = epsilon
         self._degrees = {node: graph.degree(node) for node in graph.nodes}
 
+    # frm TODO:  Verify that this does the right thing for the new Graph object
     def __iter__(self):
         return iter(self.graph)
 
     def degree(self, node) -> int:
         return self._degrees[node]
 
+    # frm: only ever used inside this file
+    #       But maybe this is intended to be used externally...
     def contract_node(self, node, parent) -> None:
         self.population[parent] += self.population[node]
         self.subsets[parent] |= self.subsets[node]
         self._degrees[parent] -= 1
 
+    # frm: only ever used inside this file
+    #       But maybe this is intended to be used externally...
     def has_ideal_population(self, node, one_sided_cut: bool = False) -> bool:
         """
         Checks if a node has an ideal population within the graph up to epsilon.
@@ -263,7 +347,8 @@ def find_balanced_edge_cuts_contraction(
 
     root = choice([x for x in h if h.degree(x) > 1])
     # BFS predecessors for iteratively contracting leaves
-    pred = predecessors(h.graph, root)
+    # frm: Original code:      pred = predecessors(h.graph, root)
+    pred = h.graph.predecessors(root)
 
     cuts = []
     leaves = deque(x for x in h if h.degree(x) == 1)
@@ -301,6 +386,18 @@ def _calc_pops(succ, root, h):
     :returns: A dictionary mapping nodes to their subtree populations.
     :rtype: Dict
     """
+    # frm:  This took me a while to sort out what was going on.
+    # Conceptually it is easy - given a tree anchored in a root node,
+    # calculate the population in each subtree going bottom-up.
+    # The stack (deque) provides the mechanism for going bottom-up.
+    # On the way down, you just put nodes in the stack (append is like
+    # push() which seems odd to me, but whatever...) then on the way back
+    # up, you add the totals for each child to your own population and 
+    # presto you have the total population for each subtree...
+    #
+    # For this to work, you just need to have a list of nodes with
+    # their successors associated with them...
+    #
     subtree_pops: Dict[Any, Union[int, float]] = {}
     stack = deque(n for n in succ[root])
     while stack:
@@ -322,6 +419,7 @@ def _calc_pops(succ, root, h):
     return subtree_pops
 
 
+# frm: Only used in one function and only in this module...
 def _part_nodes(start, succ):
     """
     Partitions the nodes of a graph into two sets.
@@ -347,7 +445,7 @@ def _part_nodes(start, succ):
                         queue.append(c)
     return nodes
 
-
+#frm: used externally by tree_proposals.py
 def find_balanced_edge_cuts_memoization(
     h: PopulatedGraph, one_sided_cut: bool = False, choice: Callable = random.choice
 ) -> List[Cut]:
@@ -375,8 +473,10 @@ def find_balanced_edge_cuts_memoization(
     """
 
     root = choice([x for x in h if h.degree(x) > 1])
-    pred = predecessors(h.graph, root)
-    succ = successors(h.graph, root)
+    # frm: Original code:   pred = predecessors(h.graph, root)
+    # frm: Original code:   succ = successors(h.graph, root)
+    pred = h.graph.predecessors(root)
+    succ = h.graph.successors(root)
     total_pop = h.tot_pop
 
     subtree_pops = _calc_pops(succ, root, h)
@@ -423,7 +523,7 @@ def find_balanced_edge_cuts_memoization(
             )
     return cuts
 
-
+# frm: only used in this file and in a test
 class BipartitionWarning(UserWarning):
     """
     Generally raised when it is proving difficult to find a balanced cut.
@@ -431,7 +531,7 @@ class BipartitionWarning(UserWarning):
 
     pass
 
-
+# frm: only used in this file and in a test
 class ReselectException(Exception):
     """
     Raised when the tree-splitting algorithm is unable to find a
@@ -551,9 +651,26 @@ def _region_preferred_max_weight_choice(
     # Prepare data for efficient access
     edge_region_info = {
         cut: {
+            #frm: This code is a bit dense (at least for me).
+            #       Given a cut_edge_list (whose elements have an 
+            #       attribute, "edge",) construct a dict
+            #       that associates with each "cut" the 
+            #       values of the region_surcharge values
+            #       for both nodes in the edge.
+            #
+            #       So, if the region_surcharge dict was
+            #       {"muni": 0.2, "water": 0.8} then for 
+            #       each cut, cut_n, there would be a
+            #       dict value that looked like:
+            #       {"muni": ("siteA", "siteA", 
+            #        "water": ("water1", "water2")
+            #       }
+            #
             key: (
-                populated_graph.graph.nodes[cut.edge[0]].get(key),
-                populated_graph.graph.nodes[cut.edge[1]].get(key),
+                # frm: original code:   populated_graph.graph.nodes[cut.edge[0]].get(key),
+                # frm: original code:   populated_graph.graph.nodes[cut.edge[1]].get(key),
+                populated_graph.graph.get_node_data_dict(cut.edge[0]).get(key),
+                populated_graph.graph.get_node_data_dict(cut.edge[1]).get(key),
             )
             for key in region_surcharge
         }
@@ -577,14 +694,28 @@ def _region_preferred_max_weight_choice(
 
     return _max_weight_choice(cut_edge_list)
 
+# frm: used in this file and in tree_proposals.py
+#       But maybe this is intended to be used externally...
 
+# frm TODO:  RX version NYI...         def bipartition_tree(
+#
+#               This might get complicated depending on what kinds of functions
+#               are used as parameters.  That is, do the functions used as parameters
+#               assume they are working with an NX graph?
+#
+#               I think all of the functions used as parameters have been converted
+#               to work on the new Graph object, but perhaps end users have created
+#               their own?  Should probably add logic to verify that the 
+#               functions are not written to be operating on an NX Graph.  Not sure
+#               how to do that though...
+#
 def bipartition_tree(
-    graph: nx.Graph,
+    graph: Graph,        # frm: Original code:    graph: nx.Graph,
     pop_col: str,
     pop_target: Union[int, float],
     epsilon: float,
     node_repeats: int = 1,
-    spanning_tree: Optional[nx.Graph] = None,
+    spanning_tree: Optional[Graph] = None,     # frm: Original code:    spanning_tree: Optional[nx.Graph] = None,
     spanning_tree_fn: Callable = random_spanning_tree,
     region_surcharge: Optional[Dict] = None,
     balance_edge_fn: Callable = find_balanced_edge_cuts_memoization,
@@ -661,16 +792,22 @@ def bipartition_tree(
         given by ``max_attempts``.
     """
     # Try to add the region-aware in if the spanning_tree_fn accepts a surcharge dictionary
+    # frm ???:  REALLY???  You are going to change the semantics of your program based on the
+    #           a function argument's signature?  What if someone refactors the code to have 
+    #           different names???  *sigh*
+    #
     if "region_surcharge" in signature(spanning_tree_fn).parameters:
         spanning_tree_fn = partial(spanning_tree_fn, region_surcharge=region_surcharge)
 
     if "one_sided_cut" in signature(balance_edge_fn).parameters:
         balance_edge_fn = partial(balance_edge_fn, one_sided_cut=one_sided_cut)
 
-    populations = {node: graph.nodes[node][pop_col] for node in graph.node_indices}
+    # frm: original code:   populations = {node: graph.nodes[node][pop_col] for node in graph.node_indices}
+    populations = {node: graph.get_node_data_dict(node)[pop_col] for node in graph.node_indices}
 
     possible_cuts: List[Cut] = []
     if spanning_tree is None:
+        # frm TODO:  Make sure spanning_tree_fn operates on new Graph object
         spanning_tree = spanning_tree_fn(graph)
 
     restarts = 0
@@ -678,6 +815,7 @@ def bipartition_tree(
 
     while max_attempts is None or attempts < max_attempts:
         if restarts == node_repeats:
+            # frm TODO:  Make sure spanning_tree_fn operates on new Graph object
             spanning_tree = spanning_tree_fn(graph)
             restarts = 0
         h = PopulatedGraph(spanning_tree, populations, pop_target, epsilon)
@@ -718,14 +856,15 @@ def bipartition_tree(
     raise RuntimeError(f"Could not find a possible cut after {max_attempts} attempts.")
 
 
+# frm TODO:  RX version NYI...
 def _bipartition_tree_random_all(
-    graph: nx.Graph,
+    graph: Graph,                   # frm: Original code:    graph: nx.Graph,
     pop_col: str,
     pop_target: Union[int, float],
     epsilon: float,
     node_repeats: int = 1,
     repeat_until_valid: bool = True,
-    spanning_tree: Optional[nx.Graph] = None,
+    spanning_tree: Optional[Graph] = None,     # frm: Original code:    spanning_tree: Optional[nx.Graph] = None,
     spanning_tree_fn: Callable = random_spanning_tree,
     balance_edge_fn: Callable = find_balanced_edge_cuts_memoization,
     choice: Callable = random.choice,
@@ -770,10 +909,12 @@ def _bipartition_tree_random_all(
         attempts.
     """
 
-    populations = {node: graph.nodes[node][pop_col] for node in graph.node_indices}
+    # frm: original code:   populations = {node: graph.nodes[node][pop_col] for node in graph.node_indices}
+    populations = {node: graph.get_node_data_dict(node)[pop_col] for node in graph.node_indices}
 
     possible_cuts = []
     if spanning_tree is None:
+        # frm TODO:  Make sure spanning_tree_fn works on new Graph object
         spanning_tree = spanning_tree_fn(graph)
 
     restarts = 0
@@ -781,6 +922,7 @@ def _bipartition_tree_random_all(
 
     while max_attempts is None or attempts < max_attempts:
         if restarts == node_repeats:
+            # frm TODO:  Make sure spanning_tree_fn works on new Graph object
             spanning_tree = spanning_tree_fn(graph)
             restarts = 0
         h = PopulatedGraph(spanning_tree, populations, pop_target, epsilon)
@@ -794,15 +936,18 @@ def _bipartition_tree_random_all(
 
     raise RuntimeError(f"Could not find a possible cut after {max_attempts} attempts.")
 
+# frm: used in this file and in tree_proposals.py
+#       But maybe this is intended to be used externally...
 
+# frm TODO:  RX version NYI...
 def bipartition_tree_random(
-    graph: nx.Graph,
+    graph: Graph,              # frm: Original code:    graph: nx.Graph,
     pop_col: str,
     pop_target: Union[int, float],
     epsilon: float,
     node_repeats: int = 1,
     repeat_until_valid: bool = True,
-    spanning_tree: Optional[nx.Graph] = None,
+    spanning_tree: Optional[Graph] = None,     # frm: Original code:    spanning_tree: Optional[nx.Graph] = None,
     spanning_tree_fn: Callable = random_spanning_tree,
     balance_edge_fn: Callable = find_balanced_edge_cuts_memoization,
     one_sided_cut: bool = False,
@@ -884,9 +1029,12 @@ def bipartition_tree_random(
     if possible_cuts:
         return choice(possible_cuts).subset
 
+# frm: used in this file and in tree_proposals.py
+#       But maybe this is intended to be used externally...
+# frm TODO:  RX version NYI...
 
 def epsilon_tree_bipartition(
-    graph: nx.Graph,
+    graph: Graph,               # frm: Original code:    graph: nx.Graph,
     parts: Sequence,
     pop_target: Union[float, int],
     pop_col: str,
@@ -947,7 +1095,8 @@ def epsilon_tree_bipartition(
     part_pop = 0
     for node in nodes:
         flips[node] = parts[-2]
-        part_pop += graph.nodes[node][pop_col]
+        # frm: original code:   part_pop += graph.nodes[node][pop_col]
+        part_pop += graph.get_node_data_dict(node)[pop_col]
 
     if not check_pop(part_pop):
         raise PopulationBalanceError()
@@ -958,7 +1107,8 @@ def epsilon_tree_bipartition(
     part_pop = 0
     for node in remaining_nodes:
         flips[node] = parts[-1]
-        part_pop += graph.nodes[node][pop_col]
+        # frm: original code:   part_pop += graph.nodes[node][pop_col]
+        part_pop += graph.get_node_data_dict(node)[pop_col]
 
     if not check_pop(part_pop):
         raise PopulationBalanceError()
@@ -968,8 +1118,11 @@ def epsilon_tree_bipartition(
 
 # TODO: Move these recursive partition functions to their own module. They are not
 # central to the operation of the recom function despite being tree methods.
+# frm: defined here but only used in partition.py
+#       But maybe this is intended to be used externally...
+# frm TODO:  RX version NYI...
 def recursive_tree_part(
-    graph: nx.Graph,
+    graph: Graph,                 # frm: Original code:    graph: nx.Graph,
     parts: Sequence,
     pop_target: Union[float, int],
     pop_col: str,
@@ -1041,7 +1194,8 @@ def recursive_tree_part(
         part_pop = 0
         for node in nodes:
             flips[node] = part
-            part_pop += graph.nodes[node][pop_col]
+            # frm: original code:   part_pop += graph.nodes[node][pop_col]
+            part_pop += graph.get_node_data_dict(node)[pop_col]
 
         if not check_pop(part_pop):
             raise PopulationBalanceError()
@@ -1066,7 +1220,15 @@ def recursive_tree_part(
     part_pop = 0
     for node in nodes:
         flips[node] = parts[-2]
-        part_pop += graph.nodes[node][pop_col]
+        # frm: this code fragment: graph.nodes[node][pop_col] is used
+        #       many times and is a candidate for being wrapped with
+        #       a function that has a meaningful name, such as perhaps:
+        #       get_population_for_node(node, pop_col).  
+        #       This is an example of code-bloat from the perspective of
+        #       code gurus, but it really helps a new code reviewer understand
+        #       WTF is going on...
+        # frm: original code:   part_pop += graph.nodes[node][pop_col]
+        part_pop += graph.get_node_data_dict(node)[pop_col]
 
     if not check_pop(part_pop):
         raise PopulationBalanceError()
@@ -1077,16 +1239,19 @@ def recursive_tree_part(
     part_pop = 0
     for node in remaining_nodes:
         flips[node] = parts[-1]
-        part_pop += graph.nodes[node][pop_col]
+        # frm: original code:   part_pop += graph.nodes[node][pop_col]
+        part_pop += graph.get_node_data_dict(node)[pop_col]
 
     if not check_pop(part_pop):
         raise PopulationBalanceError()
 
     return flips
 
-
+# frm: only used in this file 
+#       But maybe this is intended to be used externally...
+# frm TODO:  RX version NYI...
 def get_seed_chunks(
-    graph: nx.Graph,
+    graph: Graph,             # frm: Original code:   graph: nx.Graph,
     num_chunks: int,
     num_dists: int,
     pop_target: Union[int, float],
@@ -1130,7 +1295,8 @@ def get_seed_chunks(
 
     chunk_pop = 0
     for node in graph.node_indices:
-        chunk_pop += graph.nodes[node][pop_col]
+        # frm: original code:   chunk_pop += graph.nodes[node][pop_col]
+        chunk_pop += graph.get_node_data_dict(node)[pop_col]
 
     while True:
         epsilon = abs(epsilon)
@@ -1170,7 +1336,8 @@ def get_seed_chunks(
 
         part_pop = 0
         for node in remaining_nodes:
-            part_pop += graph.nodes[node][pop_col]
+            # frm: original code:   part_pop += graph.nodes[node][pop_col]
+            part_pop += graph.get_node_data_dict(node)[pop_col]
         part_pop_as_dist = part_pop / num_chunks_left
         fake_epsilon = epsilon
         if num_chunks_left != 1:
@@ -1193,7 +1360,8 @@ def get_seed_chunks(
 
     return list(chunks.values())
 
-
+# frm: only used in this file
+#       But maybe this is intended to be used externally...
 def get_max_prime_factor_less_than(n: int, ceil: int) -> Optional[int]:
     """
     Helper function for recursive_seed_part_inner. Returns the largest prime factor of ``n``
@@ -1229,9 +1397,11 @@ def get_max_prime_factor_less_than(n: int, ceil: int) -> Optional[int]:
 
     return largest_factor
 
-
+# frm: only used in this file
+#       But maybe this is intended to be used externally...
+# frm TODO:  RX version NYI...
 def recursive_seed_part_inner(
-    graph: nx.Graph,
+    graph: Graph,           # frm: Original code:    graph: nx.Graph,
     num_dists: int,
     pop_target: Union[float, int],
     pop_col: str,
@@ -1309,6 +1479,7 @@ def recursive_seed_part_inner(
     if num_dists == 1:
         return [set(graph.nodes)]
 
+    # frm TODO:   Check that all the possible "method" functions take the new Graph arg as first param
     if num_dists == 2:
         nodes = method(
             graph,
@@ -1372,9 +1543,11 @@ def recursive_seed_part_inner(
 
     return assignment
 
-
+# frm ???:   This routine is never called - not in this file and not in any other GerryChain file.
+#               Is it intended to be used by end-users?  And if so, for what purpose?
+# frm TODO:  RX version NYI...
 def recursive_seed_part(
-    graph: nx.Graph,
+    graph: Graph,         # frm: Original code:    graph: nx.Graph,
     parts: Sequence,
     pop_target: Union[float, int],
     pop_col: str,

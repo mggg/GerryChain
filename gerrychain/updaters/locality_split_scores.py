@@ -1,5 +1,8 @@
 # Imports
 from collections import defaultdict, Counter
+# frm TODO: Remove dependence on NetworkX.  
+#           The only use is:
+#                pieces += nx.number_connected_components(subgraph)
 import networkx as nx
 import math
 from typing import List
@@ -155,7 +158,8 @@ class LocalitySplits:
 
             totpop = 0
             for node in partition.graph.nodes:
-                totpop += partition.graph.nodes[node][self.pop_col]
+                # frm: original code:   totpop += partition.graph.nodes[node][self.pop_col]
+                totpop += partition.graph.get_node_data_dict(node)[self.pop_col]
 
             num_districts = len(partition.assignment.parts.keys())
 
@@ -228,7 +232,8 @@ class LocalitySplits:
         locality_intersections = {}
 
         for n in partition.graph.nodes():
-            locality = partition.graph.nodes[n][self.col_id]
+            # frm: original code:   locality = partition.graph.nodes[n][self.col_id]
+            locality = partition.graph.get_node_data_dict(n)[self.col_id]
             if locality not in locality_intersections:
                 locality_intersections[locality] = set(
                     [partition.assignment.mapping[n]]
@@ -243,10 +248,12 @@ class LocalitySplits:
                     [
                         x
                         for x in partition.parts[d]
-                        if partition.graph.nodes[x][self.col_id] == locality
+                        # frm: original code:   if partition.graph.nodes[x][self.col_id] == locality
+                        if partition.graph.get_node_data_dict(x)[self.col_id] == locality
                     ]
                 )
 
+                # frm TODO:  Get rid of this dependence on NetworkX
                 pieces += nx.number_connected_components(subgraph)
         return pieces
 
@@ -380,7 +387,10 @@ class LocalitySplits:
             vtds = district_dict[district]
             locality_pop = {k: 0 for k in self.localities}
             for vtd in vtds:
-                locality_pop[self.localitydict[vtd]] += partition.graph.nodes[vtd][
+                # frm: original code:   locality_pop[self.localitydict[vtd]] += partition.graph.nodes[vtd][
+                # frm: original code:       self.pop_col
+                # frm: original code:   ]
+                locality_pop[self.localitydict[vtd]] += partition.graph.get_node_data_dict(vtd)[
                     self.pop_col
                 ]
             district_dict[district] = locality_pop

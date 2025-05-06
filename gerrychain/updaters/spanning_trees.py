@@ -4,6 +4,9 @@ Updaters that compute spanning tree statistics.
 
 import math
 import numpy
+# frm TODO: Remove dependency on NetworkX
+#           The only dependency is for the laplacian_matrix function:
+#               laplacian = networkx.laplacian_matrix(graph)
 import networkx
 from typing import Dict
 

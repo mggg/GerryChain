@@ -3,6 +3,8 @@ from typing import Dict, List, Set, Tuple
 from .flows import on_edge_flow, neighbor_flips
 
 
+# frm ???:  Is this intended to be externally visible / useful?
+
 def put_edges_into_parts(edges: List, assignment: Dict) -> Dict:
     """
     :param edges: A list of edges in a graph which are to be separated
@@ -25,6 +27,8 @@ def put_edges_into_parts(edges: List, assignment: Dict) -> Dict:
     return by_part
 
 
+# frm ???:  Is this intended to be externally visible / useful?
+
 def new_cuts(partition) -> Set[Tuple]:
     """
     :param partition: A partition of a Graph
@@ -39,6 +43,8 @@ def new_cuts(partition) -> Set[Tuple]:
         if partition.crosses_parts((node, neighbor))
     }
 
+
+# frm ???:  Is this intended to be externally visible / useful?
 
 def obsolete_cuts(partition) -> Set[Tuple]:
     """
@@ -56,6 +62,8 @@ def obsolete_cuts(partition) -> Set[Tuple]:
     }
 
 
+# frm ???:  Is this intended to be externally visible / useful?
+
 def initialize_cut_edges(partition):
     """
     :param partition: A partition of a Graph
@@ -65,6 +73,21 @@ def initialize_cut_edges(partition):
         in that part.
     :rtype: Dict
     """
+    # frm ???:  What does this do and why?
+    #
+    #           the if partition.crosses_parts(edge) is true if the edge
+    #           is one that starts in one district/part and ends in another
+    #           according to the given assignment.
+    #           
+    #           However, I am not sure what the tuple(sorted(edge)) does...
+    #
+    #           Note that I would lobby for the names "part" and "parts" to be
+    #           changed to be "district" and "districts" just to avoid confusion
+    #           with "partition" - parts of partitions warps my mind, and this 
+    #           is all about re-DISTRICTing isn't it???
+    #
+    #           I would also lobby to have "crosses_parts" changed to "crosses_districts"
+    #
     edges = {
         tuple(sorted(edge))
         for edge in partition.graph.edges
@@ -77,6 +100,10 @@ def initialize_cut_edges(partition):
 def cut_edges_by_part(
     partition, previous: Set[Tuple], new_edges: Set[Tuple], old_edges: Set[Tuple]
 ) -> Set[Tuple]:
+    #
+    # frm ???:  I think that this only operates on cut-edges and not on all of the 
+    #           edges in a partition.  A "cut-edge" is an edge that spans two districts.
+    #
     """
     Updater function that responds to the flow of edges between different partitions.
 
