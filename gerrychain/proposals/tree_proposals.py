@@ -14,7 +14,7 @@ from ..tree import (
 )
 from typing import Callable, Optional, Dict, Union
 
-
+# frm: only used in this file
 class MetagraphError(Exception):
     """
     Raised when the partition we are trying to split is a low degree
@@ -24,6 +24,7 @@ class MetagraphError(Exception):
     pass
 
 
+# frm: only used in this file
 class ValueWarning(UserWarning):
     """
     Raised whe a particular value is technically valid, but may
@@ -120,7 +121,7 @@ def recom(
             )
 
             flips = epsilon_tree_bipartition(
-                subgraph.graph,
+                subgraph.graph,     
                 parts_to_merge,
                 pop_col=pop_col,
                 pop_target=pop_target,
@@ -267,6 +268,13 @@ def reversible_recom(
     return partition  # self-loop
 
 
+# frm ???:  I do not think that ReCom() is ever called.  Note that it 
+#           only defines a constructor and a __call__() which would allow
+#           you to call the recom() function by creating a ReCom object and then 
+#           "calling" that object - why not just call the recom function?
+#
+#           ...confused...
+#
 class ReCom:
     """
     ReCom (short for ReCombination) is a class that represents a ReCom proposal

@@ -16,10 +16,78 @@ import json
 from typing import Any
 import warnings
 
+#########################################################
+# frm Overview of changes (May 2025):
+"""
+This comment is temporary - it describes the work done to encapsulate dependency on
+NetworkX so that this file is the only file that has any NetworkX dependencies.  
+That work is not completely done - there are bits and bobs of NetworkX 
+dependencies outside this file, but they are at least commented.  In short,
+this comment attempts to make clear what I am trying to do.
+
+The idea is to replace the old Graph object (that was a subclass of NetworkX.Graph) with
+a new Graph object that is not a subclass of anything.  This new Graph class would look
+and act like the old NetworkX based Graph object.  Under the covers it would have 
+either an NX Graph or an RX PyGraph.
+
+There is a legitimate question - why bother to retain the option to use a NetworkX Graph
+as the underlying Graph object, if the user cannot know what the underlying graph object 
+is?  There are two answers:
+    1) It seemed possible to me that users took advantage in their own code that the
+       Graph object was in fact a NetworkX Graph object.  If that is so, then we can
+       make life easier for them by providing them an easy way to gain access to the
+       internal NetworkX Graph object so they can continue to use that code.
+    2) It was a convenient way to evolve the code - I could make changes, but still
+       have some old NX code that I could use as short-term hacks.  It allowed me to
+       use a regression test to make sure that it all still ran - some of it running
+       with the new Graph object and some of it hacked to operate on the underlying 
+       NX Graph data member.
+
+In the future, if #1 is not an issue, we can just expunge NetworkX completely.
+
+I noticed that the FrozenGraph class had already implemented the behavior of the Graph
+class but without being a subclass of the NetworkX Graph object.  So, my new Graph class
+was based in large part on the FrozenGraph code.  It helped me grok property decorators 
+and __getattr__ and __getattribute__ - interesting Pythonic stuff!
+
+It is not the case that ALL of the behavior of the NX based Graph class is replicated
+in the new Graph class - I have not implemented NodeView and EdgeView functionality 
+and maybe I will not have to.
+
+The current state of affairs (early May 2025) is that the code in tree.py has mostly
+been converted to use the new Graph object instead of nx.Graph, and that the regression
+test works (which only tests some of the functionality, but it does run a chain...)
+
+I have left the original code for the old Graph object in the file so that I could test
+that the original and the new code behave the same way - see tests/frm_tests/test_frm_old_vs_new_graph.py
+These frm_tests are not yet configured to run as pytest tests, but they soon will be.
+I will add additional tests here over time.
+
+Most of the NetworkX dependencies that remain are on NX algorithms (like is_connected() and 
+laplacian_matrix()).  These need to be replaced with functions that work on RustworkX Graphs.
+I have not yet determined whether they all need to work on both NX and RX graphs - if they
+only ever need to work on graphs inside Paritions, then they only need to work for RX, but 
+it may be convenient to have them work both ways - needs some thought, and it might be easier 
+to just provide compatibility to cover any edge case that I can't think of...
+
+After getting rid of all NX dependencies outside this file, it will be time to switch to
+RX which will involve:
+
+    1) Creating RX versions of NX functionality - such as laplacian_matrix().  There are 
+       lots of comments in the code saying:  # frm TODO: RX version NYI...     
+
+    2) Adding code so that when we "freeze" a graph, we also convert it to RX.
+
+"""
+#########################################################
+
 import networkx
 from networkx.classes.function import frozen
 from networkx.readwrite import json_graph
 import pandas as pd
+
+# frm: added to support RustworkX graphs (in the future)
+import rustworkx
 
 from .adjacency import neighbors
 from .geo import GeometryError, invalid_geometries, reprojected
@@ -47,13 +115,386 @@ def json_serialize(input_object: Any) -> Optional[int]:
 
     return None
 
-
-class Graph(networkx.Graph):
+class Graph:
     """
-    Represents a graph to be partitioned, extending the :class:`networkx.Graph`.
+    frm TODO:  Clean up this documentation
 
-    This class includes additional class methods for constructing graphs from shapefiles,
-    and for saving and loading graphs in JSON format.
+    frm: this class encapsulates / hides the underlying graph which can either be a
+    NetworkX graph or a RustworkX graph.  The intent is that it provides the same
+    external interface as a NetworkX graph (for all of the uses that GerryChain cares
+    about, at least) so that legacy code that operated on NetworkX based Graph objects
+    can continue to work unchanged.
+
+    When a graph is added to a partition, however, the NX graph will be converted into
+    an RX graph and the NX graph will become unaccessible to the user.  The RX graph
+    may also be "frozen" the way the NX graph was "frozen" in the legacy code, but we
+    have not yet gotten that far in the implementation.
+
+    It is not clear whether the code that does the heavy lifting on partitions will 
+    need to use the old NX syntax or whether it will be useful to allow unfettered
+    access to the RX graph so that RX code can be used in these modules.  TBD...
+
+
+    """
+
+    # frm TODO: graph.nodes     This is inherited from NetworkX and is of type NodeView which
+    #                           raises some interesting issues, because NodeView supports several
+    #                           clever ways to access nodes (with one index and with two and maybe with three).  
+    #                           I need to think about what this means for RX compatibility.  If users take advantage
+    #                           of the different ways to access NodeView then I might need to implement something
+    #                           similar for this new Graph class.  *sigh*
+    #
+    #                           The same concerns exist for EdgeView...
+    #
+
+    # frm:      This class cannot have a constructor - because there is code that assumes
+    #           that it can use the default constructor to create instances of it.
+    #           That code is buried deep in non GerryChain code, so I don't really understand
+    #           what it is doing, but the assignment of nxgraph and rxgraph class attributes/members
+    #           needs to happen in the "from_xxx()" routines.
+    #
+    # def __init__(self, nxgraph: networkx.Graph, rxgraph: rustworkx.PyGraph)  -> None:
+    #     # frm TODO:  check that exactly one param is not None - need one and only one graph...
+    #     self.nxgraph = nxgraph
+    #     self.rxgraph = rxgraph
+
+    @classmethod
+    def from_networkx(cls, nxgraph: networkx.Graph) -> "Graph":
+        graph = cls()
+        graph.nxgraph = nxgraph
+        graph.rxgraph = None
+        return graph
+    
+    @classmethod
+    def from_rustworkx(cls, rxgraph: rustworkx.PyGraph) -> "Graph":
+        graph = cls()   
+        graph.rxgraph = rxgraph
+        return graph
+
+    @classmethod
+    def from_json(cls, json_file: str) -> "Graph":
+        # frm TODO:  Do we want to be able to go from JSON directly to RX?
+        with open(json_file) as f:
+            data = json.load(f)
+        # frm: A bit of Python magic - an adjacency graph is a dict of dict of dicts
+        #       which is structurally equivalent to a NetworkX graph, so you can just
+        #       pretend that is what it is and it all works.
+        nxgraph = json_graph.adjacency_graph(data)
+        graph = cls.from_networkx(nxgraph)
+        graph.issue_warnings()
+        return graph 
+
+    def to_json(self, json_file: str, include_geometries_as_geojson: bool = False) -> None:
+        # frm TODO:  Implement this for an RX based graph
+        if self.nxgraph is None:
+            raise Exception("At present, can only create JSON for NetworkX graph")
+
+        data = json_graph.adjacency_data(self.nxgraph)
+
+        if include_geometries_as_geojson:
+            convert_geometries_to_geojson(data)
+        else:
+            remove_geometries(data)
+
+        with open(json_file, "w") as f:
+            json.dump(data, f, default=json_serialize)
+
+    @classmethod
+    def from_file():
+        # frm TODO:  Copy the code for this 
+        raise Exception("Graph.from_file NYI")
+
+    @classmethod
+    def from_geodataframe():
+        # frm TODO:  Copy the code for this 
+        raise Exception("Graph.from_geodataframe NYI")
+    
+    def hasOneGraph(self):
+        # Checks that there is one and only one graph
+        if (
+            (self.nxgraph is not None and self.rxgraph is None)
+            or (self.nxgraph is None and self.rxgraph is not None)
+           ):
+            return True
+        else:
+            return False
+
+    def verifyGraphIsValid(self):
+        # Sanity check
+        if (not self.hasOneGraph()):
+            raise Exception("Graph.edges - graph not properly configured")
+
+    def isNxGraph(self):
+        self.verifyGraphIsValid()
+        return self.nxgraph is not None
+
+    # frm TODO: Remove this once NX dependencies have been removed from tree.py (and other places?)
+    #           Actually, this may be useful if end users have code that needs to operate on
+    #           an NX Graph object...
+    def getNxGraph(self):
+        if not self.isNxGraph():
+            raise Exception("getNxGraph - graph is not an NX version of Graph")
+        return self.nxgraph
+
+    def isRxGraph(self):
+        self.verifyGraphIsValid()
+        return self.rxgraph is not None
+
+    def lookup(self, node: Any, field: Any):
+        self.verifyGraphIsValid()
+
+        if (self.isNxGraph()):
+            return self.nxgraph.nodes[node][field]
+        elif (self.isRxGraph()):
+            # frm TODO:
+            raise Exception("Graph.lookup NYI")
+        else:
+            raise Exception("Graph.lookup - bad kind of graph object")
+        
+    @property
+    def node_indices(self):
+        self.verifyGraphIsValid()
+
+        if (self.isNxGraph()):
+            return set(self.nxgraph.nodes)
+        elif (self.isRxGraph()):
+            # frm TODO:
+            raise Exception("Graph.node_indices NYI")
+        else:
+            raise Exception("Graph.node_indices - bad kind of graph object")
+
+    @property
+    def edge_indices(self):
+        self.verifyGraphIsValid()
+
+        if (self.isNxGraph()):
+            return set(self.nxgraph.edges)
+        elif (self.isRxGraph()):
+            # frm TODO:
+            raise Exception("Graph.edge_indices NYI")
+        else:
+            raise Exception("Graph.edge_indices - bad kind of graph object")
+
+    @property
+    def edges(self):
+        self.verifyGraphIsValid()
+
+        if (self.isNxGraph()):
+            return self.nxgraph.edges
+        elif (self.isRxGraph()):
+            # frm TODO:
+            raise Exception("Graph.edges NYI")
+        else:
+            raise Exception("Graph.edges - bad kind of graph object")
+
+    def add_data():
+        # frm TODO:
+        raise Exception("Graph.add_data NYI")
+
+    def join():
+        # frm TODO:
+        raise Exception("Graph.join NYI")
+
+    @property
+    def islands(self):
+        self.verifyGraphIsValid()
+
+        if (self.isNxGraph()):
+            return set(node for node in self.nxgraph if self.nxgraph.degree[node] == 0)
+        elif (self.isRxGraph()):
+            # frm TODO:
+            raise Exception("Graph.islands NYI")
+        else:
+            raise Exception("Graph.islands - bad kind of graph object")
+
+    # frm TODO:   Get rid of this hack.  I added it because code in contiguity.py 
+    #               called nx.is_connected() which eventually called is_directed()
+    #               assuming the graph was an nxgraph.
+    def is_directed(self):
+        return False
+    
+    def warn_for_islands(self) -> None:
+        islands = self.islands
+        if len(self.islands) > 0:
+            warnings.warn(
+                "Found islands (degree-0 nodes). Indices of islands: {}".format(islands)
+        )
+    
+    def issue_warnings(self) -> None:
+        self.warn_for_islands()
+
+    # frm TODO: Implement a FrozenGraph that supports RX...
+    #               self.graph.join = frozen
+    #               self.graph.add_data = frozen
+    #               self.size = len(self.graph)
+
+    def __len__(self) -> int:
+        self.verifyGraphIsValid()
+
+        if (self.isNxGraph()):
+            return len(self.nxgraph.nodes)
+        elif (self.isRxGraph()):
+            # frm TODO:
+            return len(self.rxgraph.nodes)
+        else:
+            raise Exception("Graph.len - bad kind of graph object")
+
+    def __getattr__(self, __name: str) -> Any:
+        # If attribute doesn't exist on this object, try
+        # its underlying graph object...
+        if (self.isNxGraph()):
+            return object.__getattribute__(self.nxgraph, __name)
+        elif (self.isRxGraph()):
+            return object.__getattribute__(self.rxgraph, __name)
+        else:
+            raise Exception("Graph.__getattribute__ - bad kind of graph object")
+
+    def __getitem__(self, __name: str) -> Any:
+        self.verifyGraphIsValid()
+
+        if (self.isNxGraph()):
+            return self.nxgraph[__name]
+        elif (self.isRxGraph()):
+            # frm TODO:
+            raise Exception("Graph.__getitem__() NYI for RX")
+        else:
+            raise Exception("Graph.__getitem__() - bad kind of graph object")
+
+    def __iter__(self) -> Iterable[Any]:
+        yield from self.node_indices
+
+    def subgraph(self, nodes: Iterable[Any]) -> "Graph":
+        self.verifyGraphIsValid()
+
+        if (self.isNxGraph()):
+            nx_subgraph = self.nxgraph.subgraph(nodes)
+            return self.from_networkx(nx_subgraph)
+        elif (self.isRxGraph()):
+            # frm TODO:  Need to check logic below - not sure this works exactly correctly for RX...
+            rx_subgraph = self.rxgraph.subgraph(nodes)
+            return self.from_rustworkx(rx_subgraph)
+        else:
+            raise Exception("Graph.subgraph - bad kind of graph object")
+
+    def predecessors(self, root):
+
+        # frm TODO:  RX version NYI...
+
+        """
+        frm: It took me a while to grok what predecessors() and successors()
+        were all about.  In the end, it was simple - they are just the
+        parents and the children of a tree that "starts" at the given root
+        node.  
+
+        What took me a while to understand is that this effectively 
+        converts an undirected cyclic graph into a DAG.  What is clever is
+        that as soon as it detects a cycle it stops traversing the graph.
+        The other thing that is clever is that the DAG that is created 
+        either starts at the top or the bottom.  For successors(), the
+        DAG starts at the top, so that the argument to successors() is
+        the root of the tree.  However, in the case of predecessors()
+        the argument to predecessors() is a leaf node, and the "tree"
+        can have multiple "roots".
+
+        In both cases, you can ask what the associated parent or 
+        children are of any node in the graph.  If you ask for the 
+        successors() you will get a list of the children nodes.
+        If you ask for the predecessors() you will get the single 
+        parent node.
+
+        I think that the successors() graph is deterministic (except
+        for the order of the child nodes), meaning that for a given
+        graph no matter what order you created nodes and added edges,
+        you will get the same set of children for a given node.
+        However, for predecessors(), there are many different 
+        DAGs that might be created depending on which edge the
+        algorithm decides is the single parent.  
+
+        All of this is interesting, but I have not yet spent the
+        time to figure out why it matters in the code.
+
+        TODO: The code in NetworkX for bfs_successors() and bfs_predecessors()
+              works on undirected graphs (with cleverness to cut cycles), but
+              the same named routines in RX only operate on directed graphs,
+              so there is work to be done to make this functionality work 
+              for RX...
+        """
+
+        self.verifyGraphIsValid()
+
+        if (self.isNxGraph()):
+            return {a: b for a, b in networkx.bfs_predecessors(self.nxgraph, root)}
+        elif (self.isRxGraph()):
+            # frm TODO:  Implement this for RX - note the RX version won't work - it is for directed graphs only
+            raise Exception("Graph.predecessors() for RX is NYI")
+        else:
+            raise Exception("Graph.subgraph - bad kind of graph object")
+
+    def successors(self, root):
+        self.verifyGraphIsValid()
+
+        if (self.isNxGraph()):
+            return {a: b for a, b in networkx.bfs_successors(self.nxgraph, root)}
+        elif (self.isRxGraph()):
+            # frm TODO:  Implement this for RX - note the RX version won't work - it is for directed graphs only
+            raise Exception("Graph.successors() for RX is NYI")
+        else:
+            raise Exception("Graph.subgraph - bad kind of graph object")
+
+    def neighbors(self, node):
+        self.verifyGraphIsValid()
+
+        if (self.isNxGraph()):
+            return tuple(self.nxgraph.neighbors(node))
+        elif (self.isRxGraph()):
+            # frm TODO:  Implement this for RX 
+            raise Exception("Graph.neighbors() for RX is NYI")
+        else:
+            raise Exception("Graph.subgraph - bad kind of graph object")
+
+    def degree(self, node: Any) -> int:
+        self.verifyGraphIsValid()
+
+        if (self.isNxGraph()):
+            return self.nxgraph.degree(node)
+        elif (self.isRxGraph()):
+            # frm TODO:  Implement this for RX 
+            raise Exception("Graph.degree() for RX is NYI")
+        else:
+            raise Exception("Graph.subgraph - bad kind of graph object")
+
+    def get_node_data_dict(self, node_id):
+        # This routine returns the data dictionary for the given node's data
+
+        # frm TODO: 
+        # The idea is to add a RustworkX graph as an internal
+        # data member that gets populated when the user adds
+        # the NetworkX graph to a Parition.  When that happens
+        # this code should be changed so that it checks to see
+        # if there is a non-null rxgraph and if so to access
+        # that instead.  That code will look something like:
+        #
+        #   if self.rxgraph is None:
+        #       data_dict = self.nodes[node_id]
+        #   else:
+        #       data_dict = self.rxgraph.nodes()[node_id]
+
+        data_dict = self.nodes[node_id]
+
+        if not isinstance(data_dict, dict):
+            raise Exception("node data is not a dictionary");
+        
+        return data_dict
+######################################################
+
+class OriginalGraph(networkx.Graph):
+    """
+    frm: This is the original code for gerrychain.Graph before any RustworkX changes.
+
+    It continues to exist so that I can write tests to verify that from the outside
+    the new Graph object behaves the same as the original Graph object.
+
+    See the test in tests/frm_tests/test_frm_old_vs_new_graph.py
     """
 
     def __repr__(self):
@@ -252,7 +693,7 @@ class Graph(networkx.Graph):
 
         # Generate dict of dicts of dicts with shared perimeters according
         # to the requested adjacency rule
-        adjacencies = neighbors(df, adjacency)
+        adjacencies = neighbors(df, adjacency)      # Note - this is adjacency.neighbors()
         graph = cls(adjacencies)
 
         graph.geometry = df.geometry
@@ -299,10 +740,18 @@ class Graph(networkx.Graph):
         return self.nodes[node][field]
 
     @property
+    #frm: This is clever - perhaps too clever...  I am not 100% sure
+    #       that I grok it, but I think that NodeView objects someow
+    #       get represented as the keys so that asking for the list
+    #       of nodes gives you just the keys and not the whole deal.
+    #       For instance, you can do graph.nodes[node_id]['key'] = value
+    #       so a node is more than just the key, but if you create a 
+    #       set from graph,nodes, you just get the keys/ids of the nodes.
     def node_indices(self):
         return set(self.nodes)
 
     @property
+    # frm: Similar comment as above for node_indices...
     def edge_indices(self):
         return set(self.edges)
 
@@ -415,6 +864,39 @@ class Graph(networkx.Graph):
         """
         self.warn_for_islands()
 
+    def get_node_data_dict(self, node_id):
+        # This routine returns the data dictionary for the given node's data
+
+        # frm TODO:  Rethink whether this routine (get_node_data_dict) needs to exist.
+        #
+        #            This was an early attempt to deal with RustworkX.  It dealt
+        #            with the fact that the syntax for getting a node's data dict
+        #            was different for NX and RX, but I have since learned that
+        #            you can muck with @property and __getattr__ to deal with
+        #            those kinds of syntax issues.  So, maybe we can revert to the
+        #            old syntax with cleverness.
+        #
+        #            On the other hand, maybe this is good because it is 
+        #            very clear what is going on.  Perhaps being a little less
+        #            pythonic is a good thing.
+        #
+        #            In any event, this works, and after a conversation with Peter
+        #            in the future we can either leave it or be clever and go back
+        #            to the old syntax.
+        #
+        #            NX syntax: data_dict = self.nodes[node_id]
+        #
+        #            RX syntax: data_dict = self.rxgraph.nodes()[node_id]
+        #
+        #            Actually, I think that the cleverness may have already been
+        #            done...  
+
+        data_dict = self.nodes[node_id]
+
+        if not isinstance(data_dict, dict):
+            raise Exception("node data is not a dictionary");
+        
+        return data_dict
 
 def add_boundary_perimeters(graph: Graph, geometries: pd.Series) -> None:
     """
@@ -505,6 +987,11 @@ def convert_geometries_to_geojson(data: networkx.Graph) -> None:
                 node[key] = node[key].__geo_interface__
 
 
+# frm TODO: Probably need to implement an RX version of FrozenGraph.  It should
+#           not be too difficult since all that really needs to happen is to 
+#           raise exceptions if user attempts to change the graph and to do
+#           the LRU cacheing.  Should check to see if RustworkX has the concept
+#           of a frozen graph...
 class FrozenGraph:
     """
     Represents an immutable graph to be partitioned. It is based off :class:`Graph`.
@@ -535,11 +1022,21 @@ class FrozenGraph:
 
         :returns: None
         """
-        self.graph = networkx.classes.function.freeze(graph)
-        self.graph.join = frozen
-        self.graph.add_data = frozen
 
-        self.size = len(self.graph)
+        # frm: Original code follows:
+        #
+        #   self.graph = networkx.classes.function.freeze(graph)
+        #   
+        #   # frm: frozen is just a function that raises an exception if called...
+        #   self.graph.join = frozen
+        #   self.graph.add_data = frozen
+        #   
+        #   self.size = len(self.graph)
+
+        # frm TODO: Add logic to have this work for RX.
+
+        self.graph = graph
+        self.size = len(self.graph.nodes)
 
     def __len__(self) -> int:
         return self.size
@@ -548,7 +1045,8 @@ class FrozenGraph:
         try:
             return object.__getattribute__(self, __name)
         except AttributeError:
-            return object.__getattribute__(self.graph, __name)
+            # delegate getting the attribute to the graph data member
+            return self.graph.__getattribute__(__name)
 
     def __getitem__(self, __name: str) -> Any:
         return self.graph[__name]

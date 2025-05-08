@@ -180,7 +180,8 @@ def get_assignment(
                 "You must provide a graph when using a node attribute for the part_assignment"
             )
         return Assignment.from_dict(
-            {node: graph.nodes[node][part_assignment] for node in graph}
+            # frm: original code:   {node: graph.nodes[node][part_assignment] for node in graph}
+            {node: graph.get_node_data_dict(node)[part_assignment] for node in graph}
         )
     # Check if assignment is a dict or a mapping type
     elif callable(getattr(part_assignment, "items", None)):

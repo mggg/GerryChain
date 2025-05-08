@@ -1,3 +1,12 @@
+################################################################
+#
+# frm: This file was copied from test_make_graph.py (to make
+#      use of their fixtures.  It should eventually evolve into
+#      a reasonable test of additional functions added by me
+#      to gerrychain.graph
+#       
+################################################################
+
 import pathlib
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
@@ -10,9 +19,6 @@ from pyproj import CRS
 
 from gerrychain.graph import Graph
 from gerrychain.graph.geo import GeometryError
-
-# frm: added following import
-from gerrychain.graph import get_node_data_dict
 
 
 @pytest.fixture
@@ -79,9 +85,9 @@ def test_add_data_to_graph_can_handle_column_names_that_start_with_numbers():
     assert graph.nodes["03"]["16SenDVote"] == 50
 
     #frm: Added tests to make sure new code works for NX graphs
-    assert get_node_data_dict(graph, "01")["16SenDVote"] == 20
-    assert get_node_data_dict(graph, "02")["16SenDVote"] == 30
-    assert get_node_data_dict(graph, "03")["16SenDVote"] == 50
+    assert graph.get_node_data_dict("01")["16SenDVote"] == 20
+    assert graph.get_node_data_dict("02")["16SenDVote"] == 30
+    assert graph.get_node_data_dict("03")["16SenDVote"] == 50
 
 
 def test_join_can_handle_right_index():

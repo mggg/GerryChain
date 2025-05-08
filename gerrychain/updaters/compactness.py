@@ -21,7 +21,8 @@ def boundary_nodes(partition, alias: str = "boundary_nodes") -> Set:
     return {
         node
         for node in partition.graph.nodes
-        if partition.graph.nodes[node]["boundary_node"]
+        # frm: original code:   if partition.graph.nodes[node]["boundary_node"]
+        if partition.graph.get_node_data_dict(node)["boundary_node"]
     }
 
 
@@ -80,7 +81,8 @@ def initialize_exterior_boundaries(partition) -> Dict[int, float]:
     boundaries = collections.defaultdict(lambda: 0)
     for node in graph_boundary:
         part = partition.assignment.mapping[node]
-        boundaries[part] += partition.graph.nodes[node]["boundary_perim"]
+        # frm: original code:   boundaries[part] += partition.graph.nodes[node]["boundary_perim"]
+        boundaries[part] += partition.graph.get_node_data_dict(node)["boundary_perim"]
     return boundaries
 
 
@@ -107,11 +109,13 @@ def exterior_boundaries(partition, previous: Set, inflow: Set, outflow: Set) -> 
     """
     graph_boundary = partition["boundary_nodes"]
     added_perimeter = sum(
-        partition.graph.nodes[node]["boundary_perim"]
+        # frm: original code:   partition.graph.nodes[node]["boundary_perim"]
+        partition.graph.get_node_data_dict(node)["boundary_perim"]
         for node in inflow & graph_boundary
     )
     removed_perimeter = sum(
-        partition.graph.nodes[node]["boundary_perim"]
+        # frm: original code:   partition.graph.nodes[node]["boundary_perim"]
+        partition.graph.get_node_data_dict(node)["boundary_perim"]
         for node in outflow & graph_boundary
     )
     return previous + added_perimeter - removed_perimeter
