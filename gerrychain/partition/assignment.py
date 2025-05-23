@@ -77,6 +77,14 @@ class Assignment(Mapping):
         """
         Update the assignment for some nodes using the given flows.
         """
+        # frm: Update the assignment of nodes to partitions by adding 
+        #       all of the new nodes and removing all of the old nodes
+        #       as represented in the flows (dict keyed by district (part)
+        #       of nodes flowing "in" and "out" for that district).
+        #
+        #       Also, reset the mapping of node to partition (self.mapping)
+        #       to reassign each node to its new partition.
+        #
         for part, flow in flows.items():
             # Union between frozenset and set returns an object whose type
             # matches the object on the left, which here is a frozenset

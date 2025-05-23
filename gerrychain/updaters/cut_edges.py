@@ -81,6 +81,9 @@ def initialize_cut_edges(partition):
     #           
     #           However, I am not sure what the tuple(sorted(edge)) does...
     #
+    #               update: the tuple(sorted(edge)) just makes sure that
+    #               the edge always has the smaller node_id first.
+    #
     #           Note that I would lobby for the names "part" and "parts" to be
     #           changed to be "district" and "districts" just to avoid confusion
     #           with "partition" - parts of partitions warps my mind, and this 
@@ -90,6 +93,7 @@ def initialize_cut_edges(partition):
     #
     edges = {
         tuple(sorted(edge))
+        # frm: edges vs edge_ids:  edges are wanted here (tuples)
         for edge in partition.graph.edges
         if partition.crosses_parts(edge)
     }
@@ -136,6 +140,7 @@ def cut_edges(partition):
     if not parent:
         return {
             tuple(sorted(edge))
+            # frm: edges vs edge_ids:  edges are wanted here (tuples)
             for edge in partition.graph.edges
             if partition.crosses_parts(edge)
         }

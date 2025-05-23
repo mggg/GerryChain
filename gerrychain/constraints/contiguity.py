@@ -264,6 +264,8 @@ def contiguous_components(partition: Partition) -> Dict[int, list]:
         subgraphs of that part of the partition
     :rtype: dict
     """
+
+    # frm: TODO:    Remove dependence on nx.connected_components() to support RX
     return {
         part: [subgraph.subgraph(nodes) for nodes in nx.connected_components(subgraph)]
         for part, subgraph in partition.subgraphs.items()

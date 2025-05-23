@@ -33,8 +33,10 @@ def spectral_cut(
     n = len(nlist)
 
     if weight_type == "random":
-        for edge in graph.edge_indices:
-            graph.edges[edge]["weight"] = random.random()
+        for edge_id in graph.edge_indices:
+            # frm: Original Code:    graph.edges[edge]["weight"] = random.random()
+            # frm: TODO: edges vs. edge_ids:  edge_ids are wanted here (integers)
+            graph.get_edge_data_dict(edge_id)["weight"] = random.random()
 
     # frm: The laplacian matrix is actually not all that complicated.  It
     #       is just the Degree matrix (diagonal matrix with degree of node
@@ -101,6 +103,9 @@ def spectral_cut(
 
     clusters = {nlist[x]: part_labels[node_color[x]] for x in range(n)}
 
+    # frm: ???: TODO:   Why are these called "clusters" when the calling function
+    #                   assigns them to "flips".  If they are flips, then shouldn't
+    #                   they be named "flips"?
     return clusters
 
 

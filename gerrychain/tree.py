@@ -12,7 +12,7 @@ Key functionalities include:
   and methods for assessing and modifying this data.
 - Functions for finding balanced edge cuts in a populated graph, either through
   contraction or memoization techniques.
-- A suite of functions (`bipartition_tree`, `recursive_tree_part`, `get_seed_chunks`, etc.)
+- A suite of functions (`bipartition_tree`, `recursive_tree_part`, `_get_seed_chunks`, etc.)
   for partitioning graphs into balanced subsets based on population targets and tolerances.
 - Utility functions like `get_max_prime_factor_less_than` and `recursive_seed_part_inner`
   to assist in complex partitioning tasks.
@@ -39,16 +39,35 @@ Last Updated: 25 April 2024
 #       Graph object could behave like a NetworkX Graph object (in terms of
 #       attribute access and syntax).
 
+"""
+frm: RX Documentation
+
+Many of the functions in this file operate on subgraphs which are different from
+NX subgraphs because the node_ids change in the subgraph.  To deal with this, 
+we have introduced a parent_node_id_map for all graphs that maps a subgraph's 
+node_id to the node_id of the parent graph.  In the case of a top-level graph, 
+this parent_node_id_map still exists - it just maps each node_id to itself.
+So, any and all routines that return results involving node_ids should use
+this parent_node_id_map to translate those node_ids into the parent's node_ids
+so that they will make sense in the caller's context.
+
+A note of caution: any variable that has a subgraph as its value should be 
+reset to None ASAP, to avoid using its node_ids in the parent's context.  Use
+of a subgraph's node_ids in the parent's context is almost guaranteed to be a bug.
+
+"""
+
 import networkx as nx
-# frm TODO:     Remove import of networkx once we have moved networkx
+import rustworkx as rx
+# frm TODO:     Remove import of networkx and rustworkx once we have moved networkx
 #               dependencies out of this file - see comments below on 
 #               spanning trees.
 
-from networkx.algorithms import tree
+import networkx.algorithms.tree as nxtree
 # frm TODO:     Remove import of "tree" from networkx.algorithms in this file
 #               It is only used to get a spanning tree function:
 #
-#                   spanning_tree = tree.minimum_spanning_tree(
+#                   spanning_tree = nxtree.minimum_spanning_tree(
 #
 #               There is an RX function that also computes a spanning tree - hopefully
 #               it works as we want it to work and hence can be used.
@@ -80,7 +99,6 @@ from .graph import Graph
 
 # frm TODO: Update function param docmentation to get rid of nx.Graph and use just Graph
 
-# frm TODO:  RX version NYI...
 def random_spanning_tree(
     graph: Graph,              # frm: Original code:    graph: x.Graph, 
     region_surcharge: Optional[Dict] = None
@@ -97,16 +115,45 @@ def random_spanning_tree(
     :returns: The maximal spanning tree represented as a Networkx Graph.
     :rtype: nx.Graph
     """
+    # frm: ???:
+    #           This seems to me to be an expensive way to build a random spanning
+    #           tree.  It calls a routine to compute a "minimal" spanning tree that
+    #           computes the total "weight" of the spanning tree and selects the 
+    #           minmal total weight.  By making the weights random, this will select
+    #           a different spanning tree each time.  This works, but it does not
+    #           in any way depend on the optimization.  
+    #
+    #           Why isn't the uniform_spanning_tree() below adequate?  It takes
+    #           a random walk at each point to create the spanning tree.  This 
+    #           would seem to be a much cheaper way to calculate a spanning tree.
+    #
+    #           What am I missing???
+
+    """
+    frm: RX Documentation:
+    
+    As far as I can tell a spanning tree is only ever used to populate a PopulatedGraph
+    and so, there is no need to worry about translating the spanning tree's nodes into
+    the context of the parent.  Stated differently, a spanning tree is not used to
+    compute something about a subgraph but rather to compute something about whatever
+    graph is currently being dealt with.
+
+    In short, I am assuming that we can ignore the fact that RX subgraphs have different 
+    node_ids for this function and all will be well...
+    """
+
     if region_surcharge is None:
         region_surcharge = dict()
 
-    #frm ???: Does graph.edges() return two edges for every actual edge?
-    #           For example, if there is an edge from node 1 to node 2
-    #           then I think there are actually two edges in the graph,
-    #           (1,2) and (2,1) so the question is whether graph.edges()
-    #           returns both of these or if it just returns one of them,
-    #           and if only one - then which one?
-    for edge in graph.edges():
+    # frm: Original Code:   for edge in graph.edges():
+    # frm: TODO: edges vs. edge_ids:  This code wants edges (tuples)
+    # frm: Original Code:    for edge in graph.edges:
+    #       Changed because in RX edge_ids are integers while edges are tuples
+
+    # print("random_spanning_tree: type of graph is: ", type(graph))
+    # print("random_spanning_tree: graph.isRxGraph(): ", graph.isRxGraph())
+    for edge_id in graph.edge_indices:
+        edge = graph.get_edge_from_edge_id(edge_id)
         weight = random.random()
         for key, value in region_surcharge.items():
             # We surcharge edges that cross regions and those that are not in any region
@@ -120,51 +167,42 @@ def random_spanning_tree(
             ):
                 weight += value
 
-        graph.edges[edge]["random_weight"] = weight
+        # frm: Original Code:    graph.edges[edge]["random_weight"] = weight
+        # frm: TODO: edges vs. edge_ids:  This code wants edge_ids (integers)
+        graph.get_edge_data_dict(edge_id)["random_weight"] = weight
 
-    # frm TODO:  RX version NYI...      def random_spanning_tree(
-    #
-    #   There is an RX version of a minimum spanning tree:
-    #
-    #       https://www.rustworkx.org/apiref/rustworkx.minimum_spanning_tree.html
-    #
-    #   The NX version is documemted here:
-    #
-    #       https://networkx.org/documentation/stable/reference/algorithms/generated/networkx.algorithms.tree.mst.minimum_spanning_tree.html
-    #
-    #   Need to see if the RX version actually does the same thing...
-    #
-    
-    # frm TODO: Remove this hack once I have a minimum spanning tree function that works
-    #           on both NX and RX Graphs and is nicely encapsulated...
-    #
-    #           The hack is that at present, I only have a spanning tree function that works
-    #           on NX Graphs, so I evilly reach into the new Graph object to get the NX Graph
-    #           and I then use an NX function to compute the spanning tree, and I then convert
-    #           that spanning tree back into a new Graph object.
-    #
-    #           This will NOT work once we automatically convert the internal graph inside the
-    #           new Graph object from NX to RX when we create a Partition.
-    #
-    #           Ticking time bomb...
-    #
-    nxgraph = graph.getNxGraph()
+    # frm: CROCK: (for the moment)
+    #               We need to create a minimum spanning tree but the way to do so
+    #               is different for NX and RX.  I am sure that there is a more elegant
+    #               way to do this, and in any event, this dependence on NX vs RX 
+    #               should not be in this file, tree.py, but for now, I am just trying
+    #               to get this to work, so I am using CROCKS...
 
-    # frm TODO:  Implement a new minimum_spanning_tree routine that works for both NX and RX
-    spanning_tree = tree.minimum_spanning_tree(
-        nxgraph, algorithm="kruskal", weight="random_weight"
-    )
-    # frm: CROCK/HACK/KLUGE: TODO:  This routine needs to return a new Graph object.  This code
-    #                               converts the spanning tree from tree.minimum_spanning_tree() to a new Graph...
-    spanning_nxgraph = nx.Graph(spanning_tree)
-    spanningGraph = Graph.from_networkx(spanning_nxgraph)
+    graph.verifyGraphIsValid()
+
+    if (graph.isNxGraph()):
+        nxgraph = graph.getNxGraph()
+        spanning_tree = nxtree.minimum_spanning_tree(
+            nxgraph, algorithm="kruskal", weight="random_weight"
+        )
+        spanningGraph = Graph.from_networkx(spanning_tree)
+    elif (graph.isRxGraph()):
+        rxgraph = graph.getRxGraph()
+        def get_weight(edge_data):
+            # function to get the weight of an edge from its data
+            # This function is passed a dict with the data for the edge.
+            return edge_data["random_weight"]
+        spanning_tree = rx.minimum_spanning_tree(rxgraph, get_weight)
+        spanningGraph = Graph.from_rustworkx(spanning_tree)
+    else:
+        raise Exception("random_spanning_tree - bad kind of graph object")
 
     return spanningGraph
 
-
-# frm TODO:  RX version NYI...
 def uniform_spanning_tree(
-    graph: Graph,          # frm: Original code:    graph: nx.Graph, choice: Callable = random.choice
+    # frm: Original code:    graph: nx.Graph, choice: Callable = random.choice
+    graph: Graph,          
+    choice: Callable = random.choice
 ) -> Graph:
     """
     Builds a spanning tree chosen uniformly from the space of all
@@ -178,10 +216,34 @@ def uniform_spanning_tree(
     :returns: A spanning tree of the graph chosen uniformly at random.
     :rtype: nx.Graph
     """
-    root = choice(list(graph.node_indices))
-    tree_nodes = set([root])
-    next_node = {root: None}
+    
+    """
+    frm: RX Docmentation:
+    
+    As with random_spanning_tree, I am assuming that the issue of RX subgraphs having 
+    different node_ids is not an issue for this routine...
+    """
+    # Pick a starting point at random
+    # frm: TODO:  Change "root" to "root_id" when it is time to pretty up the code.
+    root_id = choice(list(graph.node_indices))
+    tree_nodes = set([root_id])
+    next_node = {root_id: None}
 
+    # frm: I think that this builds a tree bottom up.  It takes
+    #       every node in the graph (in sequence).  If the node
+    #       is already in the list of nodes that have been seen
+    #       which means it has a neighbor registered as a next_node,
+    #       then it is skipped.  If this node does not yet have
+    #       a neighbor registered, then it is given one, and 
+    #       that neighbor becomes the next node looked at.
+    #       
+    #       This essentially takes a node and travels "up" until
+    #       it finds a node that is already in the tree.  Multiple
+    #       nodes can end up with the same "next_node" - which
+    #       in tree-speak means that next_node is the parent of
+    #       all of the nodes that end on it.
+           
+    # frm: TODO:  Change "node" to "node_id" when it is time to pretty up the code.
     for node in graph.node_indices:
         u = node
         while u not in tree_nodes:
@@ -193,20 +255,17 @@ def uniform_spanning_tree(
             tree_nodes.add(u)
             u = next_node[u]
 
-    # frm TODO:  RX version NYI...
-    #               This looks OK - just need add_edge() to work for both NX and RX
+    # frm DONE:  To support RX, I added an add_edge() method to Graph. 
 
     G = Graph()                 # frm: Original code:    G = nx.Graph()
     for node in tree_nodes:
         if next_node[node] is not None:
-            # frm: RustworkX requires a third param for the edge payload...
-            #       However, there is an rx.add_edges_from_no_data()
             G.add_edge(node, next_node[node])
 
     return G
 
 
-# frm TODO  RX version NYI...
+# frm TODO  
 #
 #               I think that this is only ever used inside this module (except)
 #               for testing.
@@ -265,7 +324,16 @@ class PopulatedGraph:
 
     # frm: only ever used inside this file
     #       But maybe this is intended to be used externally...
+    # frm: ???: What the fat does this do?  Start with what a population is.  It 
+    #           appears to be indexed by node.  Also, what is a subset?  GRRRR...
     def contract_node(self, node, parent) -> None:
+        # frm: ???: TODO:  This routine is only used once, so why have a separate
+        #                   routine - why not just include this code inline where
+        #                   the function is now called?  It would be simpler to read
+        #                   inline than having to go find this definition.
+        #
+        #                   Perhaps it is of use externally, but that seems doubtful...
+
         self.population[parent] += self.population[node]
         self.subsets[parent] |= self.subsets[node]
         self._degrees[parent] -= 1
@@ -288,6 +356,21 @@ class PopulatedGraph:
         :returns: True if the node has an ideal population within the graph up to epsilon.
         :rtype: bool
         """
+        
+        # frm: ???: TODO:  this logic is repeated several times in this file.  Consider
+        #                   refactoring the code so that the logic lives in exactly
+        #                   one place.
+        #
+        #                   When thinking about refactoring, consider whether it makes
+        #                   sense to toggle what this routine does by the "one_sided_cut"
+        #                   parameter.  Why not have two separate routines with 
+        #                   similar but distinguishing names.  I need to be absolutely
+        #                   clear about what the two cases are all about, but my current
+        #                   hypothesis is that when one_sided_cut == False, we are looking
+        #                   for the edge which when cut produces two districts of 
+        #                   approximately equal size - so a bisect rather than a find all
+        #                   meaning...
+
         if one_sided_cut:
             return (
                 abs(self.population[node] - self.ideal_pop)
@@ -313,6 +396,8 @@ class PopulatedGraph:
         )
 
 
+# frm: ???: Is a Cut used anywhere outside this file?
+
 # Tuple that is used in the find_balanced_edge_cuts function
 Cut = namedtuple("Cut", "edge weight subset")
 Cut.__new__.__defaults__ = (None, None, None)
@@ -323,7 +408,9 @@ Cut.subset.__doc__ = (
     "The (frozen) subset of nodes on one side of the cut. Defaults to None."
 )
 
-
+# frm: RX-TODO:  Not sure how this is used, and so I do not know whether it needs
+#               to translate node_ids to the parent_node_id context.  I am assuming not...
+#
 def find_balanced_edge_cuts_contraction(
     h: PopulatedGraph, one_sided_cut: bool = False, choice: Callable = random.choice
 ) -> List[Cut]:
@@ -351,22 +438,51 @@ def find_balanced_edge_cuts_contraction(
     pred = h.graph.predecessors(root)
 
     cuts = []
+
+    # frm:  Work up from leaf nodes to find subtrees with the "correct"
+    #       population.  The algorighm starts with real leaf nodes, but 
+    #       if a node does not have the "correct" population, then that
+    #       node is merged (contracted) into its parent, effectively
+    #       creating another leaf node which is then added to the end
+    #       of the queue.
+    #
+    #       In this way, we calculate the total population of subtrees
+    #       by going bottom up, until we find a subtree that has the
+    #       "correct" population for a cut.
+    
+    # frm: ??? Note that there is at least one other routine in this file
+    #           that does something similar (perhaps exactly the same).
+    #           Need to figure out why there are more than one way to do this...
+
     leaves = deque(x for x in h if h.degree(x) == 1)
     while len(leaves) > 0:
         leaf = leaves.popleft()
         if h.has_ideal_population(leaf, one_sided_cut=one_sided_cut):
+            # frm: If the population of the subtree rooted in this node is the correct
+            #       size, then add it to the cut list.  Note that if one_sided_cut == False,
+            #       then the cut means the cut bisects the partition (frm: ??? need to verify this).
             e = (leaf, pred[leaf])
             cuts.append(
                 Cut(
                     edge=e,
-                    weight=h.graph.edges[e].get("random_weight", random.random()),
+                    # frm: Original Code:  weight=h.graph.edges[e].get("random_weight", random.random()),
+                    # frm: TODO: edges vs. edge_ids:  edge_ids are wanted here (integers)
+                    weight=h.graph.get_edge_data_dict(
+                        h.graph.get_edge_id_from_edge(e)
+                    ).get("random_weight", random.random()),
                     subset=frozenset(h.subsets[leaf].copy()),
                 )
             )
-        # Contract the leaf:
+        # Contract the leaf:  frm: merge the leaf's population into the parent and add the parent to "leaves"
         parent = pred[leaf]
+        # frm: Add child population and subsets to parent, reduce parent's degree by 1
+        #       This effectively removes the leaf from the tree, adding all of its data
+        #       to the parent.
         h.contract_node(leaf, parent)
         if h.degree(parent) == 1 and parent != root:
+            # frm: Only add the parent to the end of the queue when we are merging
+            #       the last leaf - this makes sure we only add the parent node to 
+            #       the queue one time...
             leaves.append(parent)
     return cuts
 
@@ -416,6 +532,7 @@ def _calc_pops(succ, root, h):
             else:
                 subtree_pops[next_node] = h.population[next_node]
 
+    # print(f"_calc_pops: returning subtree_pops: {subtree_pops}")
     return subtree_pops
 
 
@@ -432,6 +549,39 @@ def _part_nodes(start, succ):
 
     :returns: A set of nodes for a particular district (only one side of the cut).
     :rtype: Set
+    """
+
+    """
+    frm: Compute the nodes in a subtree defined by a Cut.
+    
+    This routine computes the set of nodes in a subtree rooted in the
+    node identified by "start" in the tree defined by "succ".
+
+    As such it is highly dependent on context and is not generally 
+    useful.  That is, it is essentially juust a way to refactor some
+    code used in a couple of places so that the logic in the code is
+    in one place instead of several.
+
+    To be specific, Cuts are always relative to a specific tree for
+    a partition.  This tree is a "spanning tree" that converts the
+    graph into a DAG.  Cuts are then computed by finding subtrees
+    of that DAG that have the appropriate population (this could 
+    presumably be modified to include other factors).
+
+    When a Cut is created, we want to collect all of the nodes that
+    are in the subtree, and this is what this routine does.  It 
+    merely starts at the root of the subtree (start) and goes down
+    the subtree, adding each node to a set.
+
+    frm: ???: TODO:  Rename this to be more descriptive - perhaps ]
+                     something like: _nodes_in_subtree() or
+                     _nodes_for_cut()
+    
+    frm: TODO:  Add the above explanation for what a Cut is and how
+                we find them by converting the graph to a DAG and
+                then looking for subtrees to a block header at the
+                top of this file.  It will give the reader some
+                idea wtf is going on...  ;-)
     """
     nodes = set()
     queue = deque([start])
@@ -471,6 +621,31 @@ def find_balanced_edge_cuts_memoization(
     :returns: A list of balanced edge cuts.
     :rtype: List[Cut]
     """
+    
+    """
+    frm: ???: confused...
+
+    This function seems to be used for two very different purposes, depending on the
+    value of the parameter, one_sided_cut.  When true, the code looks for lots of cuts
+    that would create a district with the right population - both above and below the 
+    node being considered.  Given that it is operating on a tree, one would assume that
+    there is only one (or perhaps two if one node's population was tiny) cut for the top 
+    of the tree, but there should be many for the bottom of the tree.
+
+    However, if the paramter is set to false (the default), then the code checks to see
+    whether a cut would produce two districts - on above and one below the tree that
+    have the right populations.  In this case, the code is presumatly looking for the 
+    single node (again there might be two if one node's population was way below epsilon)
+    that would bisect the graph into two districts with a tolerable population.
+
+    If I am correct, then there is an opportunity to clarify these two uses - perhaps
+    with wrapper functions.  I am also a bit surprised that snippets of code are repeated.
+    Again - this causes mental load for the reader, and it is an opportunity for bugs to 
+    creep in later (you fix it in one place but not the other).  Not sure this "clarification"
+    is desired, but it is worth considering...
+    """
+
+    # frm: ???:  Why does a root have to have degree > 1?  I would think that any node would do...
 
     root = choice([x for x in h if h.degree(x) > 1])
     # frm: Original code:   pred = predecessors(h.graph, root)
@@ -479,6 +654,20 @@ def find_balanced_edge_cuts_memoization(
     succ = h.graph.successors(root)
     total_pop = h.tot_pop
 
+    # frm: DBG:  TODO:  Remove this debugging code
+    # print("find_balanced_edge_cuts_memoization: root node_id: ", root)
+    # print("")
+    # print("find_balanced_edge_cuts_memoization: graph nodes: ", h.graph.nodes)
+    # print("")
+    # print("find_balanced_edge_cuts_memoization: graph edges: ", h.graph.edges)
+    # print("")
+    # print("find_balanced_edge_cuts_memoization: succ list: ", succ)
+    # print("")
+    # print("find_balanced_edge_cuts_memoization: pred list: ", pred)
+    # print("")
+
+
+    # Calculate the population of each subtree in the "succ" tree 
     subtree_pops = _calc_pops(succ, root, h)
 
     cuts = []
@@ -486,41 +675,85 @@ def find_balanced_edge_cuts_memoization(
     if one_sided_cut:
         for node, tree_pop in subtree_pops.items():
             if abs(tree_pop - h.ideal_pop) <= h.ideal_pop * h.epsilon:
-                e = (node, pred[node])
+                # frm: If the subtree for this node has a population within epsilon
+                #       of the ideal, then add it to the cuts list.
+                e = (node, pred[node])  # get the edge from the parent to this node
                 wt = random.random()
+                # frm: Add the cut - set its weight if it does not already have one
+                #       and remember all of the nodes in the subtree in the frozenset
                 cuts.append(
                     Cut(
                         edge=e,
-                        weight=h.graph.edges[e].get("random_weight", wt),
+                        # frm: Original Code:   weight=h.graph.edges[e].get("random_weight", wt),
+                        # frm: TODO: edges vs. edge_ids:  edge_ids are wanted here (integers)
+                        weight=h.graph.get_edge_data_dict(
+                            h.graph.get_edge_id_from_edge(e)
+                        ).get("random_weight", wt),
                         subset=frozenset(_part_nodes(node, succ)),
                     )
                 )
             elif abs((total_pop - tree_pop) - h.ideal_pop) <= h.ideal_pop * h.epsilon:
+                # frm: If the population of everything ABOVE this node in the tree is
+                #       within epsilon of the ideal, then add it to the cut list too.
                 e = (node, pred[node])
                 wt = random.random()
                 cuts.append(
                     Cut(
                         edge=e,
-                        weight=h.graph.edges[e].get("random_weight", wt),
+                        # frm: Original Code:   weight=h.graph.edges[e].get("random_weight", wt),
+                        # frm: TODO: edges vs. edge_ids:  edge_ids are wanted here (integers)
+                        weight=h.graph.get_edge_data_dict(
+                            h.graph.get_edge_id_from_edge(e)
+                        ).get("random_weight", wt),
                         subset=frozenset(set(h.graph.nodes) - _part_nodes(node, succ)),
                     )
                 )
 
         return cuts
 
+    # print(f"find_balanced_edge_cuts_memoization: one_sided_cut: {one_sided_cut } ")
+    # print(f"find_balanced_edge_cuts_memoization: subtree_pops: {subtree_pops} ")
+
     for node, tree_pop in subtree_pops.items():
+        # frm: ???:  This code appears to be looking for a node where the subtree
+        #               below and the tree above (or rather the tree minus the subtree)
+        #               are both withing epsilon of having the ideal population.
+        #               This only makes sense if the code wants to bisect the 
+        #               graph.  Am I correct or am I confused?
+        # print("find_balanced_edge_cuts_memoization: if-stmt expression: ",
+        #     (abs(tree_pop - h.ideal_pop) <= h.ideal_pop * h.epsilon) and 
+        #     (abs((total_pop - tree_pop) - h.ideal_pop) <= h.ideal_pop * h.epsilon)
+        # )
+        # print(f"find_balanced_edge_cuts_memoization: tree_pop: {tree_pop}")
+        # print(f"find_balanced_edge_cuts_memoization: h.ideal_pop: {h.ideal_pop}")
+        # print(f"find_balanced_edge_cuts_memoization: h.epsilon: {h.epsilon}")
+        # if (tree_pop == 8):
+            # print(f"OK - tree_pop == 8: h.ideal_pop: {h.ideal_pop}, total_pop: {total_pop}, h.ideal_pop: {h.ideal_pop}")
+            # print(f"OK - first condition of if_stmt: {abs(tree_pop - h.ideal_pop) <= h.ideal_pop * h.epsilon}")
+            # print(f"OK - second condition of if_stmt: {abs((total_pop - tree_pop) - h.ideal_pop) <= h.ideal_pop * h.epsilon}")
+            # print(f"OK - 2nd cond LHS: {abs((total_pop - tree_pop) - h.ideal_pop)}")
+            # print(f"OK - 2nd cond RHS: {h.ideal_pop * h.epsilon}")
+            # print(f"OK - h.epsilon: {h.epsilon}")
         if (abs(tree_pop - h.ideal_pop) <= h.ideal_pop * h.epsilon) and (
             abs((total_pop - tree_pop) - h.ideal_pop) <= h.ideal_pop * h.epsilon
         ):
+            # print(f"OK: adding a cut")
             e = (node, pred[node])
             wt = random.random()
             cuts.append(
                 Cut(
                     edge=e,
-                    weight=h.graph.edges[e].get("random_weight", wt),
+                    # frm: Original Code:  weight=h.graph.edges[e].get("random_weight", wt),
+                    # frm: TODO: edges vs. edge_ids:  edge_ids are wanted here (integers)
+                    weight=h.graph.get_edge_data_dict(
+                        h.graph.get_edge_id_from_edge(e)
+                    ).get("random_weight", wt),
                     subset=frozenset(set(h.graph.nodes) - _part_nodes(node, succ)),
                 )
             )
+            # print("OK - after adding a cut, cuts: ", cuts)
+        # print("find_balanced_edge_cuts_memoization: after 1 iteration, cuts: ", cuts)
+    # print("find_balanced_edge_cuts_memoization: returning cuts: ", cuts)
     return cuts
 
 # frm: only used in this file and in a test
@@ -577,9 +810,20 @@ def _max_weight_choice(cut_edge_list: List[Cut]) -> Cut:
     if not isinstance(cut_edge_list[0], Cut) or cut_edge_list[0].weight is None:
         return random.choice(cut_edge_list)
 
+    # frm: ???:  this strikes me as possibly expensive.  Computing the
+    #               max in a list is O(N) so not terrible, but this 
+    #               might be called lots of times (need to know more about
+    #               how it is used).  Would it make sense to have the 
+    #               cut_edge_list sorted before it is frozen?  I think it
+    #               is now a set, so it would need to be a list...  Not
+    #               urgent, but worth looking into at some point...
+    #
     return max(cut_edge_list, key=lambda cut: cut.weight)
 
 
+# frm: ???:  Only ever used once...
+# frm: ???: TODO:  Figure out what this does.  There is no NX/RX issue here, I just
+#                   don't yet know what it does or why...
 def _power_set_sorted_by_size_then_sum(d):
     power_set = [
         s for i in range(1, len(d) + 1) for s in itertools.combinations(d.keys(), i)
@@ -601,6 +845,8 @@ def _power_set_sorted_by_size_then_sum(d):
 def _region_preferred_max_weight_choice(
     populated_graph: PopulatedGraph, region_surcharge: Dict, cut_edge_list: List[Cut]
 ) -> Cut:
+    # frm: ???:  There is no NX/RX dependency in this routine, but I do 
+    #               not yet understand what it does or why...
     """
     This function is used in the case of a region-aware chain. It
     is similar to the as :meth:`_max_weight_choice` function except
@@ -694,8 +940,27 @@ def _region_preferred_max_weight_choice(
 
     return _max_weight_choice(cut_edge_list)
 
-# frm: used in this file and in tree_proposals.py
-#       But maybe this is intended to be used externally...
+# frm: TODO: Come up with a better name for this function.
+#               It returns the translated nodes in the Cut.subset
+def convert_cut_subset_node_ids_to_parent_node_ids(graph, cut):
+    """
+    frm: Utility routine to convert the node_ids in the Cut.subset to
+    be appropriate node_ids in the context of the caller - that is,
+    to convert the node_ids to be parent_node_ids.
+
+    There are a couple of routines that find a single Cut that 
+    will create a an acceptable district from a graph.  These
+    functions operate on subgraphs, and so the Cut that they 
+    return needs to be translated into the node_ids that make
+    sense in the caller's graph (from which the subgraph was
+    created).  This routine does that translation.
+    """
+    # print("translate_nodes: parent_node_id_map: ", graph.parent_node_id_map)
+    new_subset = set()
+    for node_id in cut:
+        new_subset.add(graph.parent_node_id_map[node_id])
+    return new_subset
+
 
 # frm TODO:  RX version NYI...         def bipartition_tree(
 #
@@ -709,8 +974,11 @@ def _region_preferred_max_weight_choice(
 #               functions are not written to be operating on an NX Graph.  Not sure
 #               how to do that though...
 #
+# frm: used in this file and in tree_proposals.py
+#       But maybe this is intended to be used externally...
+#
 def bipartition_tree(
-    graph: Graph,        # frm: Original code:    graph: nx.Graph,
+    subgraph_to_split: Graph,        # frm: Original code:    graph: nx.Graph,
     pop_col: str,
     pop_target: Union[int, float],
     epsilon: float,
@@ -803,36 +1071,58 @@ def bipartition_tree(
         balance_edge_fn = partial(balance_edge_fn, one_sided_cut=one_sided_cut)
 
     # frm: original code:   populations = {node: graph.nodes[node][pop_col] for node in graph.node_indices}
-    populations = {node: graph.get_node_data_dict(node)[pop_col] for node in graph.node_indices}
+    populations = {node_id: subgraph_to_split.get_node_data_dict(node_id)[pop_col] for node_id in subgraph_to_split.node_indices}
 
     possible_cuts: List[Cut] = []
     if spanning_tree is None:
         # frm TODO:  Make sure spanning_tree_fn operates on new Graph object
-        spanning_tree = spanning_tree_fn(graph)
+        spanning_tree = spanning_tree_fn(subgraph_to_split)
+
+    # print("bipartition_tree: spanning_tree_nodes: ", spanning_tree.node_indices)
+    # print("bipartition_tree: spanning_tree_edges: ", spanning_tree.edges)
 
     restarts = 0
     attempts = 0
 
     while max_attempts is None or attempts < max_attempts:
+        # print("bipartition_tree: top of loop - number of attempts: ", attempts)
         if restarts == node_repeats:
             # frm TODO:  Make sure spanning_tree_fn operates on new Graph object
-            spanning_tree = spanning_tree_fn(graph)
+            # frm: ???:  Not sure what this if-stmt is for...
+            spanning_tree = spanning_tree_fn(subgraph_to_split)
             restarts = 0
         h = PopulatedGraph(spanning_tree, populations, pop_target, epsilon)
 
+        # frm: ???: TODO:  Again - we should NOT be changing semantics based
+        #                   on the names in signatures...
         is_region_cut = (
             "region_surcharge" in signature(cut_choice).parameters
             and "populated_graph" in signature(cut_choice).parameters
         )
 
+        # frm:  Find one or more edges in the spanning tree, that if cut would
+        #       result in a subtree with the appropriate population.
+
         # This returns a list of Cut objects with attributes edge and subset
+        # print("bipartition_tree: about to call balance_edge_fn: ", balance_edge_fn)
         possible_cuts = balance_edge_fn(h, choice=choice)
+        # print("bipartition_tree: done calling balance_edge_fn: ", balance_edge_fn)
+        # print("bipaertition_tree: possible_cuts: ", possible_cuts)
 
+        # frm: RX Subgraph 
         if len(possible_cuts) != 0:
+            # print("bipaertition_tree: about to return a Cut...") 
+            cut_subset = None
             if is_region_cut:
-                return cut_choice(h, region_surcharge, possible_cuts).subset
+                cut_subset = cut_choice(h, region_surcharge, possible_cuts).subset
+            else: 
+                cut_subset = cut_choice(possible_cuts).subset
+            translated_nodes = convert_cut_subset_node_ids_to_parent_node_ids(subgraph_to_split, cut_subset)
 
-            return cut_choice(possible_cuts).subset
+            # print("bipartition_tree: subgraph nodes: ", cut_subset)
+            # print("bipartition_tree: subgraph_to_split.parent_node_id_map: ", subgraph_to_split.parent_node_id_map)
+            # print("bipartition_tree: translated nodes: ", translated_nodes)
+            return translated_nodes
 
         restarts += 1
         attempts += 1
@@ -846,7 +1136,7 @@ def bipartition_tree(
                 "a different pair of districts for recombination.",
                 BipartitionWarning,
             )
-
+        
     if allow_pair_reselection:
         raise ReselectException(
             f"Failed to find a balanced cut after {max_attempts} attempts.\n"
@@ -857,8 +1147,27 @@ def bipartition_tree(
 
 
 # frm TODO:  RX version NYI...
+
+# frm: WTF: TODO:  This function has a leading underscore indicating that it is a private
+#                   function, but in fact it is used in tree_proposals.py...  It also returns
+#                   Cuts which I had hoped would be an internal data structure, but...
+# frm: RX-TODO  This is called in tree_proposals.py with a subgraph, so it needs to 
+#               return translated Cut objects.  However, it is also called internally in 
+#               this code.  I need to make sure that I do not translate the node_ids to the
+#               parent_node_ids twice.  At present, they are converted in this file by the 
+#               caller, but that won't work in tree_proposals.py, because there it is called
+#               with a subgraph, so it would be too late to try to do it in the caller.
+#
+#               Two options:  1) Have this routine do the translation and then comment the
+#               crap out of the call in this file to make sure we do NOT translate them again, or
+#               2) figure out a way to get this OUT of tree_proposals.py where it seems it should
+#               not be in the first place...
+#
 def _bipartition_tree_random_all(
-    graph: Graph,                   # frm: Original code:    graph: nx.Graph,
+    # frm: Note:  Changed the name from "graph" to "subgraph_to_split" to remind any future readers
+    #               of the code that the graph passed in is not the partition's graph, and
+    #               that any node_ids passed back should be translated into parent_node_ids.
+    subgraph_to_split: Graph,                   # frm: Original code:    graph: nx.Graph,
     pop_col: str,
     pop_target: Union[int, float],
     epsilon: float,
@@ -869,7 +1178,7 @@ def _bipartition_tree_random_all(
     balance_edge_fn: Callable = find_balanced_edge_cuts_memoization,
     choice: Callable = random.choice,
     max_attempts: Optional[int] = 100000,
-) -> List[Tuple[Hashable, Hashable]]:
+) -> List[Tuple[Hashable, Hashable]]:    # frm: TODO: Change this to be a set of node_ids (ints)
     """
     Randomly bipartitions a tree into two subgraphs until a valid bipartition is found.
 
@@ -910,12 +1219,15 @@ def _bipartition_tree_random_all(
     """
 
     # frm: original code:   populations = {node: graph.nodes[node][pop_col] for node in graph.node_indices}
-    populations = {node: graph.get_node_data_dict(node)[pop_col] for node in graph.node_indices}
+    populations = {
+        node_id: subgraph_to_split.get_node_data_dict(node_id)[pop_col] 
+        for node_id in subgraph_to_split.node_indices
+    }
 
     possible_cuts = []
     if spanning_tree is None:
         # frm TODO:  Make sure spanning_tree_fn works on new Graph object
-        spanning_tree = spanning_tree_fn(graph)
+        spanning_tree = spanning_tree_fn(subgraph_to_split)
 
     restarts = 0
     attempts = 0
@@ -923,11 +1235,12 @@ def _bipartition_tree_random_all(
     while max_attempts is None or attempts < max_attempts:
         if restarts == node_repeats:
             # frm TODO:  Make sure spanning_tree_fn works on new Graph object
-            spanning_tree = spanning_tree_fn(graph)
+            spanning_tree = spanning_tree_fn(subgraph_to_split)
             restarts = 0
         h = PopulatedGraph(spanning_tree, populations, pop_target, epsilon)
         possible_cuts = balance_edge_fn(h, choice=choice)
 
+        # frm: RX-TODO:  Translate cuts into node_id context of the parent.
         if not (repeat_until_valid and len(possible_cuts) == 0):
             return possible_cuts
 
@@ -939,8 +1252,20 @@ def _bipartition_tree_random_all(
 # frm: used in this file and in tree_proposals.py
 #       But maybe this is intended to be used externally...
 
-# frm TODO:  RX version NYI...
-def bipartition_tree_random(
+#######################
+# frm: Note:  This routine is EXACTLY the same as bipartition_tree_random() except
+#               that it returns in addition to the nodes for a new district, the 
+#               number of possible new districts.  This additional information 
+#               is needed by reversible_recom(), but I did not want to change the
+#               function signature of bipartition_tree_random() in case it is used
+#               as part of the public API by someone.
+#
+#               It is bad form to have two functions that are the same excpet for 
+#               a tweak - an invitation for future bugs when you fix something in 
+#               one place and not the other, so maybe this is something we should
+#               revisit when we decide a general code cleanup is in order...
+#
+def bipartition_tree_random_with_num_cuts(
     graph: Graph,              # frm: Original code:    graph: nx.Graph,
     pop_col: str,
     pop_target: Union[int, float],
@@ -1010,6 +1335,8 @@ def bipartition_tree_random(
         valid spanning tree is not found.
     :rtype: Union[Set[Any], None]
     """
+    
+    # frm: ???: TODO:  Again - semantics should not depend on signatures...
     if "one_sided_cut" in signature(balance_edge_fn).parameters:
         balance_edge_fn = partial(balance_edge_fn, one_sided_cut=True)
 
@@ -1027,14 +1354,112 @@ def bipartition_tree_random(
         max_attempts=max_attempts,
     )
     if possible_cuts:
-        return choice(possible_cuts).subset
+        chosen_cut = choice(possible_cuts)
+        num_cuts = len(possible_cuts)
+        parent_nodes = convert_cut_subset_node_ids_to_parent_node_ids(graph, chosen_cut)
+        return num_cuts, parent_nodes
+
+#######################
+# frm TODO:  RX version NYI...
+def bipartition_tree_random(
+    subgraph_to_split: Graph,              # frm: Original code:    graph: nx.Graph,
+    pop_col: str,
+    pop_target: Union[int, float],
+    epsilon: float,
+    node_repeats: int = 1,
+    repeat_until_valid: bool = True,
+    spanning_tree: Optional[Graph] = None,     # frm: Original code:    spanning_tree: Optional[nx.Graph] = None,
+    spanning_tree_fn: Callable = random_spanning_tree,
+    balance_edge_fn: Callable = find_balanced_edge_cuts_memoization,
+    one_sided_cut: bool = False,
+    choice: Callable = random.choice,
+    max_attempts: Optional[int] = 100000,
+) -> Union[Set[Any], None]:
+    """
+    This is like :func:`bipartition_tree` except it chooses a random balanced
+    cut, rather than the first cut it finds.
+
+    This function finds a balanced 2 partition of a graph by drawing a
+    spanning tree and finding an edge to cut that leaves at most an epsilon
+    imbalance between the populations of the parts. If a root fails, new roots
+    are tried until node_repeats in which case a new tree is drawn.
+
+    Builds up a connected subgraph with a connected complement whose population
+    is ``epsilon * pop_target`` away from ``pop_target``.
+
+    :param graph: The graph to partition.
+    :type graph: nx.Graph
+    :param pop_col: The node attribute holding the population of each node.
+    :type pop_col: str
+    :param pop_target: The target population for the returned subset of nodes.
+    :type pop_target: Union[int, float]
+    :param epsilon: The allowable deviation from  ``pop_target`` (as a percentage of
+        ``pop_target``) for the subgraph's population.
+    :type epsilon: float
+    :param node_repeats: A parameter for the algorithm: how many different choices
+        of root to use before drawing a new spanning tree. Defaults to 1.
+    :type node_repeats: int
+    :param repeat_until_valid: Determines whether to keep drawing spanning trees
+        until a tree with a balanced cut is found. If `True`, a set of nodes will
+        always be returned; if `False`, `None` will be returned if a valid spanning
+        tree is not found on the first try. Defaults to True.
+    :type repeat_until_valid: bool, optional
+    :param spanning_tree: The spanning tree for the algorithm to use (used when the
+        algorithm chooses a new root and for testing). Defaults to None.
+    :type spanning_tree: Optional[nx.Graph], optional
+    :param spanning_tree_fn: The random spanning tree algorithm to use if a spanning
+        tree is not provided. Defaults to :func:`random_spanning_tree`.
+    :type spanning_tree_fn: Callable, optional
+    :param balance_edge_fn: The algorithm used to find balanced cut edges. Defaults to
+        :func:`find_balanced_edge_cuts_memoization`.
+    :type balance_edge_fn: Callable, optional
+    :param one_sided_cut: Passed to the ``balance_edge_fn``. Determines whether or not we are
+        cutting off a single district when partitioning the tree. When
+        set to False, we check if the node we are cutting and the remaining graph
+        are both within epsilon of the ideal population. When set to True, we only
+        check if the node we are cutting is within epsilon of the ideal population.
+        Defaults to False.
+    :type one_sided_cut: bool, optional
+    :param choice: The random choice function. Can be substituted for testing. Defaults
+        to :func:`random.choice`.
+    :type choice: Callable, optional
+    :param max_attempts: The max number of attempts that should be made to bipartition.
+        Defaults to None.
+    :type max_attempts: Optional[int], optional
+
+    :returns: A subset of nodes of ``graph`` (whose induced subgraph is connected) or None if a
+        valid spanning tree is not found.
+    :rtype: Union[Set[Any], None]
+    """
+    
+    # frm: ???: TODO:  Again - semantics should not depend on signatures...
+    if "one_sided_cut" in signature(balance_edge_fn).parameters:
+        balance_edge_fn = partial(balance_edge_fn, one_sided_cut=True)
+
+    possible_cuts = _bipartition_tree_random_all(
+        graph=subgraph_to_split,
+        pop_col=pop_col,
+        pop_target=pop_target,
+        epsilon=epsilon,
+        node_repeats=node_repeats,
+        repeat_until_valid=repeat_until_valid,
+        spanning_tree=spanning_tree,
+        spanning_tree_fn=spanning_tree_fn,
+        balance_edge_fn=balance_edge_fn,
+        choice=choice,
+        max_attempts=max_attempts,
+    )
+    if possible_cuts:
+        chosen_cut = choice(possible_cuts)
+        return convert_cut_subset_node_ids_to_parent_node_ids(subgraph_to_split, chosen_cut)
 
 # frm: used in this file and in tree_proposals.py
 #       But maybe this is intended to be used externally...
 # frm TODO:  RX version NYI...
 
+# frm: Note that this routine is only used in recom()
 def epsilon_tree_bipartition(
-    graph: Graph,               # frm: Original code:    graph: nx.Graph,
+    subgraph_to_split: Graph,               # frm: Original code:    graph: nx.Graph,
     parts: Sequence,
     pop_target: Union[float, int],
     pop_col: str,
@@ -1074,29 +1499,37 @@ def epsilon_tree_bipartition(
         )
 
     flips = {}
-    remaining_nodes = graph.node_indices
+    remaining_nodes = subgraph_to_split.node_indices
 
     lb_pop = pop_target * (1 - epsilon)
     ub_pop = pop_target * (1 + epsilon)
     check_pop = lambda x: lb_pop <= x <= ub_pop
 
+    # print("epsilon_tree_bipartition() about to call method function: ", method)
     nodes = method(
-        graph.subgraph(remaining_nodes),
+        subgraph_to_split.subgraph(remaining_nodes),
         pop_col=pop_col,
         pop_target=pop_target,
         epsilon=epsilon,
         node_repeats=node_repeats,
         one_sided_cut=False,
     )
+    # print("epsilon_tree_bipartition() Done calling method function: ", method)
+    # print("epsilon_tree_bipartition() returned nodes: ", nodes)
 
     if nodes is None:
         raise BalanceError()
 
+    # Calculate the total population for the two districts based on the
+    # results of the "method()" partitioning.
     part_pop = 0
     for node in nodes:
+        # frm: ???:  The code above has already confirmed that len(parts) is 2
+        #               so why use negative index values - why not just use
+        #               parts[0] and parts[1]?
         flips[node] = parts[-2]
         # frm: original code:   part_pop += graph.nodes[node][pop_col]
-        part_pop += graph.get_node_data_dict(node)[pop_col]
+        part_pop += subgraph_to_split.get_node_data_dict(node)[pop_col]
 
     if not check_pop(part_pop):
         raise PopulationBalanceError()
@@ -1108,12 +1541,19 @@ def epsilon_tree_bipartition(
     for node in remaining_nodes:
         flips[node] = parts[-1]
         # frm: original code:   part_pop += graph.nodes[node][pop_col]
-        part_pop += graph.get_node_data_dict(node)[pop_col]
+        part_pop += subgraph_to_split.get_node_data_dict(node)[pop_col]
 
     if not check_pop(part_pop):
         raise PopulationBalanceError()
 
-    return flips
+    translated_flips = {}
+    for node_id, part in flips.items():
+        translated_node_id = subgraph_to_split.parent_node_id_map[node_id]
+        translated_flips[translated_node_id] = part
+
+    return translated_flips
+
+    # frm: TODO:  I think I need to translate flips elsewhere - need to check...
 
 
 # TODO: Move these recursive partition functions to their own module. They are not
@@ -1171,6 +1611,16 @@ def recursive_tree_part(
     ub_pop = pop_target * (1 + epsilon)
     check_pop = lambda x: lb_pop <= x <= ub_pop
 
+    # frm: Notes to self:  The code in the for-loop creates n-2 districts (where n is
+    #                       the number of partitions desired) by calling the "method"
+    #                       function, whose job it is to produce a connected set of
+    #                       nodes that has the desired population target.
+    #           
+    #                       Note that it sets one_sided_cut=True which tells the
+    #                       "method" function that it is NOT bisecting the graph
+    #                       but is rather supposed to just find one connected 
+    #                       set of nodes of the correct population size.
+
     for part in parts[:-2]:
         min_pop = max(pop_target * (1 - epsilon), pop_target * (1 - epsilon) - debt)
         max_pop = min(pop_target * (1 + epsilon), pop_target * (1 + epsilon) - debt)
@@ -1205,6 +1655,10 @@ def recursive_tree_part(
 
     # After making n-2 districts, we need to make sure that the last
     # two districts are both balanced.
+
+    # frm: For the last call to "method", set one_sided_cut=False to
+    #       request that "method" create two equal sized districts
+    #       with the given population goal by bisecting the graph.
     nodes = method(
         graph.subgraph(remaining_nodes),
         pop_col=pop_col,
@@ -1247,10 +1701,9 @@ def recursive_tree_part(
 
     return flips
 
-# frm: only used in this file 
-#       But maybe this is intended to be used externally...
+# frm: only used in this file, so I changed the name to have a leading underscore
 # frm TODO:  RX version NYI...
-def get_seed_chunks(
+def _get_seed_chunks(
     graph: Graph,             # frm: Original code:   graph: nx.Graph,
     num_chunks: int,
     num_dists: int,
@@ -1287,8 +1740,23 @@ def get_seed_chunks(
     :returns: New assignments for the nodes of ``graph``.
     :rtype: List[List[int]]
     """
+    
+    # frm: ??? TODO:  Change the name of num_chunks_left to instead be num_districts_per_chunk.
+    # frm: ???: It is not clear to me when num_chunks will not evenly divide num_dists.  In 
+    #           the only place where _get_seed_chunks() is called, it is inside an if-stmt
+    #           branch that validates that num_chunks evenly divides num_dists...
+    #
     num_chunks_left = num_dists // num_chunks
+
+    # frm: ???: TODO:  Change the name of parts below to be something / anything else.  Normally
+    #                   parts refers to districts, but here is is just a way to keep track of 
+    #                   sets of nodes for chunks.  Yes - they eventually become districts when
+    #                   this code gets to the base cases, but I found it confusing at this 
+    #                   level...
+    #
     parts = range(num_chunks)
+    # frm: ???: I think that new_epsilon is the epsilon to use for each district, in which
+    #           case the epsilon passed in would be for the  HERE...
     new_epsilon = epsilon / (num_chunks_left * num_chunks)
     if num_chunks_left == 1:
         new_epsilon = epsilon
@@ -1298,12 +1766,23 @@ def get_seed_chunks(
         # frm: original code:   chunk_pop += graph.nodes[node][pop_col]
         chunk_pop += graph.get_node_data_dict(node)[pop_col]
 
+    # frm: TODO:  See if there is a better way to structure this instead of a while True loop...
     while True:
         epsilon = abs(epsilon)
 
         flips = {}
         remaining_nodes = set(graph.nodes)
 
+        # frm: ??? What is the distinction between num_chunks and num_districts?
+        #           I think that a chunk is typically a multiple of districts, so
+        #           if we want 15 districts we might only ask for 5 chunks.  Stated
+        #           differently a chunk will always have at least enough nodes
+        #           for a given number of districts.  As the chunk size gets
+        #           smaller, the number of nodes more closely matches what 
+        #           is needed for a set number of districts.
+
+        # frm: Note:  This just scales epsilon by the number of districts for each chunk
+        #               so we can get chunks with the appropriate population sizes...
         min_pop = pop_target * (1 - new_epsilon) * num_chunks_left
         max_pop = pop_target * (1 + new_epsilon) * num_chunks_left
 
@@ -1312,6 +1791,26 @@ def get_seed_chunks(
         diff = min(max_pop - chunk_pop_target, chunk_pop_target - min_pop)
         new_new_epsilon = diff / chunk_pop_target
 
+        # frm: Note:  This code is clever...  It loops through all of the
+        #               parts (districts) except the last, and on each
+        #               iteration, it finds nodes for the given part.
+        #               Each time through the loop it assigns the 
+        #               unassigned nodes to the last part, but
+        #               most of this gets overwritten by the next
+        #               iteration, so that at the end the only nodes
+        #               still assigned to the last part are the ones
+        #               that had not been previously assigned.
+        #
+        #               It works, but is a little too clever for me.
+        #
+        #               I would just have assigned all nodes to
+        #               the last part before entering the loop
+        #               with a comment saying that by end of loop
+        #               the nodes not assigned in the loop will
+        #               default to the last part.
+        #
+        
+        # Assign all nodes to one of the parts
         for i in range(len(parts[:-1])):
             part = parts[i]
 
@@ -1334,14 +1833,22 @@ def get_seed_chunks(
             for node in remaining_nodes:
                 flips[node] = parts[-1]
 
+        # frm: ???: Look at remaining_nodes to see if we are done
         part_pop = 0
+        # frm: ???: Compute population total for remaining nodes.
         for node in remaining_nodes:
             # frm: original code:   part_pop += graph.nodes[node][pop_col]
             part_pop += graph.get_node_data_dict(node)[pop_col]
+        # frm: ???: Compute what the population total would be for each district in chunk
         part_pop_as_dist = part_pop / num_chunks_left
         fake_epsilon = epsilon
+        # frm: ???: If the chunk is for more than one district, divide epsilon by two
         if num_chunks_left != 1:
             fake_epsilon = epsilon / 2
+        # frm: ???:  Calculate max and min populations on a district level
+        #               This will just be based on epsilon if we only want one district from chunk, but
+        #               it will be based on half of epsilon if we want more than one district from chunk.
+        #               This is odd - why wouldn't we use an epsilon 
         min_pop_as_dist = pop_target * (1 - fake_epsilon)
         max_pop_as_dist = pop_target * (1 + fake_epsilon)
 
@@ -1415,6 +1922,16 @@ def recursive_seed_part_inner(
     Inner function for recursive_seed_part.
     Returns a partition with ``num_dists`` districts balanced within ``epsilon`` of
     ``pop_target``.
+
+    frm: ???: TODO:     Correct the above statement that this function returns a partition.
+                        In fact, it returns a list of sets of nodes, which is conceptually 
+                        equivalent to a partition, but is not a Partition object.  Each
+                        set of nodes constitutes a district, but the district does not 
+                        have an ID, and there is nothing that associates these nodes
+                        with a specific graph - that is implicit, depending on the graph
+                        object passed in, so the caller is responsible for knowing that
+                        the returned list of sets belongs to the graph passed in...
+
     Splits graph into num_chunks chunks, and then recursively splits each chunk into
     ``num_dists``/num_chunks chunks.
     The number num_chunks of chunks is chosen based on ``n`` and ``ceil`` as follows:
@@ -1428,6 +1945,13 @@ def recursive_seed_part_inner(
     Finally, if the number of chunks as chosen above does not divide ``num_dists``, then
     this function bites off a single district from the graph and recursively partitions
     the remaining graph into ``num_dists - 1`` districts.
+
+    frm: ???:   OK, but why is the logic above for num_chunks the correct number?  Is there
+                a mathematical reason for it?  I assume so, but that explanation is missing...
+
+                I presume that the reason is that something in the code that finds a 
+                district scales exponentially, so it makes sense to divide and conquer.
+                Even so, why this particular strategy for divide and conquer?
 
     :param graph: The underlying graph structure.
     :type graph: nx.Graph
@@ -1462,6 +1986,18 @@ def recursive_seed_part_inner(
     :rtype: List of sets, each set is a district
     """
 
+    """
+    frm: This code is quite nice once you grok it.
+
+    The goal is to find the given number of districts - but to do it in an
+    efficient way - meaning with smaller graphs.  So conceptually, you want 
+    to 
+    HERE
+
+    There are two base cases when the number of districts still to be found are
+    either 1 or 
+    
+    """
     # Chooses num_chunks
     if n is None:
         if ceil is None:
@@ -1471,18 +2007,27 @@ def recursive_seed_part_inner(
         else:
             raise ValueError("ceil must be None or at least 2")
     elif n > 1:
+        # frm: Note: This is not guaranteed to evenly divide num_dists
         num_chunks = n
     else:
         raise ValueError("n must be None or a positive integer")
 
     # base case
     if num_dists == 1:
-        return [set(graph.nodes)]
+        # Just return an assignment with all of the nodes in the graph
+        # frm: Translate the node_ids into parent_node_ids
+        translated_set_of_nodes = set()
+        for node_id in graph.node_indices:
+            translated_set_of_nodes.add(graph.parent_node_id_map[node_id])
+        translated_assignment = []
+        translated_assignment.append(translated_set_of_nodes)
+        return translated_assignment
 
-    # frm TODO:   Check that all the possible "method" functions take the new Graph arg as first param
+    # frm: In the case when there are exactly 2 districts, split the graph by setting
+    #       one_sided_cut to be False.
     if num_dists == 2:
         nodes = method(
-            graph,
+            graph.subgraph(graph.node_indices),        # needs to be a subgraph
             pop_col=pop_col,
             pop_target=pop_target,
             epsilon=epsilon,
@@ -1490,9 +2035,31 @@ def recursive_seed_part_inner(
             one_sided_cut=False,
         )
 
-        return [set(nodes), set(graph.nodes) - set(nodes)]
+        # frm: Note to Self:  the name "one_sided_cut" seems unnecessarily opaque.  What it really
+        #                       means is whether to split the graph into two equal districts or 
+        #                       whether to just find one district from a larger graph.  When we
+        #                       clean up this code, consider changing the name of this parameter
+        #                       to something like: find_two_equal_sized_districts...
+
+        # frm: Need to convert nodes in the assignment into parent_node_ids
+        nodes_for_one_district = set(nodes)
+        nodes_for_the_other_district = set(graph.node_indices) - nodes_for_one_district
+        translated_set_1 = set()
+        translated_set_2 = set()
+        for node_id in nodes_for_one_district:
+            translated_set_1.add(graph.parent_node_id_map[node_id])
+        for node_id in nodes_for_the_other_district:
+            translated_set_2.add(graph.parent_node_id_map[node_id])
+        return [translated_set_1, translated_set_2]
 
     # bite off a district and recurse into the remaining subgraph
+    # frm: Note:  In the case when num_chunks does not evenly divide num_dists,
+    #               just find one district, remove those nodes from 
+    #               the unassigned nodes and try again with num_dists
+    #               set to be one less.  Stated differently, reduce
+    #               number of desired districts until you get to 
+    #               one that is evenly divided by num_chunks and then
+    #               do chunk stuff...
     elif num_chunks is None or num_dists % num_chunks != 0:
         remaining_nodes = set(graph.nodes)
         nodes = method(
@@ -1504,6 +2071,8 @@ def recursive_seed_part_inner(
             one_sided_cut=True,
         )
         remaining_nodes -= nodes
+        # frm: Create a list with the set of nodes returned by method() and then recurse
+        #       to get the rest of the sets of nodes for remaining districts.
         assignment = [nodes] + recursive_seed_part_inner(
             graph.subgraph(remaining_nodes),
             num_dists - 1,
@@ -1516,9 +2085,10 @@ def recursive_seed_part_inner(
         )
 
     # split graph into num_chunks chunks, and recurse into each chunk
+    # frm: TODO: Add documentation for why a subgraph in call below
     elif num_dists % num_chunks == 0:
-        chunks = get_seed_chunks(
-            graph,
+        chunks = _get_seed_chunks(
+            graph.subgraph(graph.node_indices),     # needs to be a subgraph
             num_chunks,
             num_dists,
             pop_target,
@@ -1531,7 +2101,7 @@ def recursive_seed_part_inner(
         for chunk in chunks:
             chunk_assignment = recursive_seed_part_inner(
                 graph.subgraph(chunk),
-                num_dists // num_chunks,
+                num_dists // num_chunks,    # new target number of districts
                 pop_target,
                 pop_col,
                 epsilon,
@@ -1540,12 +2110,27 @@ def recursive_seed_part_inner(
                 ceil=ceil,
             )
             assignment += chunk_assignment
+    else:
+        # frm: From the logic above, this should never happen, but if it did
+        #       because of a future edit (bug), at least this will catch it
+        #       early before really bizarre things happen...
+        raise Exception("recursive_seed_part_inner(): Should never happen...")
 
-    return assignment
+    # frm: The assignment object that has been created needs to have its
+    #       node_ids translated into parent_node_ids
+    translated_assignment = []
+    for set_of_nodes in assignment:
+        translated_set_of_nodes = set()
+        for node_id in set_of_nodes:
+            translated_set_of_nodes.add(graph.parent_node_id_map[node_id])
+        translated_assignment.append(translated_set_of_nodes)
+
+    return translated_assignment
+
+
 
 # frm ???:   This routine is never called - not in this file and not in any other GerryChain file.
 #               Is it intended to be used by end-users?  And if so, for what purpose?
-# frm TODO:  RX version NYI...
 def recursive_seed_part(
     graph: Graph,         # frm: Original code:    graph: nx.Graph,
     parts: Sequence,
@@ -1593,9 +2178,24 @@ def recursive_seed_part(
     :returns: New assignments for the nodes of ``graph``.
     :rtype: dict
     """
+    
+    # frm: Note: It is not strictly necessary to use a subgraph in the call below on
+    #               recursive_seed_part_inner(), because the top-level graph has
+    #               a parent_node_id_map that just maps node_ids to themselves.  However,
+    #               it seemed a good practice to ALWAYS call routines that are intended
+    #               to deal with subgraphs, to use a subgraph even when not strictly 
+    #               necessary.  Just one more cognitive load to not have to worry about.
+    #
+    #               This probably means that the identity parent_node_id_map for top-level
+    #               graphs will never be used, I still think that it makes sense to retain
+    #               it - again, for consistency: Every graph knows how to translate to
+    #               parent_node_ids even if it is a top-level graph.
+    #
+    #               In short - an agrument based on invariants being a good thing...
+    #
     flips = {}
     assignment = recursive_seed_part_inner(
-        graph,
+        graph.subgraph(graph.node_indices),
         len(parts),
         pop_target,
         pop_col,

@@ -130,18 +130,40 @@ def compute_edge_flows(partition) -> Dict:
         new_source = assignment.mapping[node]
         new_target = assignment.mapping[neighbor]
 
-        cut = new_source != new_target
-        was_cut = old_source != old_target
+        # frm:  Clarification to myself...
+        #       A "cut edge" is one where the nodes in the edge are assigned to different
+        #       districts.  So, how does a flip change whether an edge is a cut edge?  There
+        #       are three possibilities: 1) the edge goes from not being a cut edge to being
+        #       a cut edge, 2) the edge goes from being a cut edge to not being a cut edge,
+        #       and 3) the edge was a cut edge before and is still a cut edge after the flip,
+        #       but the partition assignments to one or the other nodes in the edge changes.
+        #
+        #       That is what the if-stmt below is doing - determining which of the three 
+        #       cases each flip falls into.  It updates the flows accordingly...
+        #
+        cut = new_source != new_target          # after flip, the edge is a cut edge
+        was_cut = old_source != old_target      # before flip, the edge was a cut edge
 
         if not cut and was_cut:
+            # was a cut edge before, but now is not, so flows out of both
             edge_flows[old_target]["out"].add(edge)
             edge_flows[old_source]["out"].add(edge)
         elif cut and not was_cut:
+            # was not a cut edge before, but now is, so flows into both
             edge_flows[new_target]["in"].add(edge)
             edge_flows[new_source]["in"].add(edge)
         elif cut and was_cut:
             # If an edge was cut and still is cut, we need to make sure the
             # edge is listed under the correct parts.
+            # frm: Clarification to myself...  Python set subtraction will delete
+            #       from the set on the left any members of the set on the right,
+            #       so no_longer_incident_parts will determine if either old_target,
+            #       or old_source has changed - that is, whether the assignment of 
+            #       the one of the old mappings has changed - if so, the edge has
+            #       gone "out" of that partition.  If you do the subtraction the
+            #       other way, you find whether the new mappings have changed
+            #       and you can then update the "in" flows  
+            #       
             no_longer_incident_parts = {old_target, old_source} - {
                 new_target,
                 new_source,

@@ -76,12 +76,23 @@ class Partition:
             which the functions compute.
         :param use_default_updaters: If `False`, do not include default updaters.
         """
+        
         if parent is None:
+            if graph is None:
+                raise Exception("Parition.__init__(): graph object is None")
+                
             self._first_time(graph, assignment, updaters, use_default_updaters)
         else:
             self._from_parent(parent, flips)
 
         self._cache = dict()
+        
+        #frm:   SubgraphView provides cached access to subgraphs for each of the 
+        #       partition's districts.  It is important that we asign subgraphs AFTER
+        #       we have established what nodes belong to which parts (districts).  In
+        #       the case when the parent is None, the assignments are explicitly provided,
+        #       and in the case when there is a parent, the _from_parent() logic processes
+        #       the flips to update the assignments.
         self.subgraphs = SubgraphView(self.graph, self.parts)
 
     @classmethod
@@ -121,6 +132,8 @@ class Partition:
         :returns: The partition created with a random assignment
         :rtype: Partition
         """
+        # frm: ???: BUG:  TODO:  The param, flips, is never used in this routine...
+
         # frm: original code:   total_pop = sum(graph.nodes[n][pop_col] for n in graph)
         total_pop = sum(graph.get_node_data_dict(n)[pop_col] for n in graph)
         ideal_pop = total_pop / n_parts
@@ -141,12 +154,21 @@ class Partition:
         )
 
     def _first_time(self, graph, assignment, updaters, use_default_updaters):
-        if isinstance(graph, Graph):
-            self.graph = FrozenGraph(graph)
-        elif isinstance(graph, networkx.Graph):
+        # Make sure that the embedded graph for the Partition is based on
+        # a RustworkX graph, and make sure it is also a FrozenGraph.  Both
+        # of these are important for performance.
+
+        # If a NX.Graph, create a Graph object based on NX
+        if isinstance(graph, networkx.Graph):
             graph = Graph.from_networkx(graph)
+
+        # if a Graph object, make sure it is based on an embedded RustworkX.PyGraph
+        if isinstance(graph, Graph):
+            if (graph.isNxGraph()):
+                graph = graph.convert_from_nx_to_rx()
             self.graph = FrozenGraph(graph)
         elif isinstance(graph, FrozenGraph):
+            # frm: TODO: Verify that the embedded graph is RX.n
             self.graph = graph
         else:
             raise TypeError(f"Unsupported Graph object with type {type(graph)}")

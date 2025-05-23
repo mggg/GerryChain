@@ -131,8 +131,11 @@ def initialize_interior_boundaries(partition):
     :rtype: Dict[int, float]
     """
     return {
+        # frm: TODO - need to find out whether partition["cut_edges_by_part"] stores edges or edge_ids...
         part: sum(
-            partition.graph.edges[edge]["shared_perim"]
+            # frm: Original Code:   partition.graph.edges[edge]["shared_perim"]
+            # frm: edges vs edge_ids:  edge_ids are wanted here (integers)
+            partition.graph.get_edge_data_dict(edge)["shared_perim"]
             for edge in partition["cut_edges_by_part"][part]
         )
         for part in partition.parts
@@ -164,10 +167,14 @@ def interior_boundaries(
     :rtype: Dict
     """
     added_perimeter = sum(
-        partition.graph.edges[edge]["shared_perim"] for edge in new_edges
+        # frm: Original Code:   partition.graph.edges[edge]["shared_perim"] for edge in new_edges
+        # frm: edges vs edge_ids:  edge_ids are wanted here (integers)
+        partition.graph.get_edge_data_dict(edge)["shared_perim"] for edge in new_edges
     )
     removed_perimeter = sum(
-        partition.graph.edges[edge]["shared_perim"] for edge in old_edges
+        # frm: Original Code:  partition.graph.edges[edge]["shared_perim"] for edge in old_edges
+        # frm: edges vs edge_ids:  edge_ids are wanted here (integers)
+        partition.graph.get_edge_data_dict(edge)["shared_perim"] for edge in old_edges
     )
     return previous + added_perimeter - removed_perimeter
 
@@ -181,6 +188,7 @@ def flips(partition) -> Dict:
         given partition.
     :rtype: Dict
     """
+    # frm: ???:  Does anyone ever use this?  It seems kind of useless...
     return partition.flips
 
 

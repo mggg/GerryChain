@@ -73,6 +73,20 @@ class Grid(Partition):
         assignment: Optional[Dict] = None,
         updaters: Optional[Dict[str, Callable]] = None,
         parent: Optional["Grid"] = None,
+        # frm: ???: TODO:  This code indicates that flips are a dict of tuple: int which would be
+        #                   correct for edge flips, but not for node flips.  Need to check again
+        #                   to see if this is correct.  Note that flips is used in the constructor
+        #                   so it should fall through to Partition._from_parent()...
+        #
+        #                   OK - I think that this is a bug.  Parition._from_parent() assumes 
+        #                   that flips are a mapping from node to partition not tuple/edge to partition.
+        #                   I checked ALL of the code and the constructor for Grid is never passed in
+        #                   a flips parameter, so there is no example to check / verify, but it sure
+        #                   looks and smells like a bug.  
+        #
+        #                   The fix would be to just change Dict[Tuple[int, int], int] to be
+        #                   Dict[int, int]
+        #
         flips: Optional[Dict[Tuple[int, int], int]] = None,
     ) -> None:
         """
@@ -183,6 +197,14 @@ def create_grid_graph(dimensions: Tuple[int, int], with_diagonals: bool) -> Grap
         diagonal_edges = nw_to_se + sw_to_ne
         graph.add_edges_from(diagonal_edges)
         for edge in diagonal_edges:
+            # frm: TODO:  When/if grid.py is converted to operate on GerryChain Graph
+            #               objects instead of NX.Graph objects, this use of NX
+            #               EdgeView to get/set edge data will need to change to use
+            #               gerrychain_graph.get_edge_data_dict()
+            #               
+            #               We will also need to think about edge vs edge_id.  In this
+            #               case we want an edge_id, so that means we need to look at
+            #               how diagonal_edges are created - but that is for the future...
             graph.edges[edge]["shared_perim"] = 0
 
     # frm: These just set all nodes/edges in the graph to have the given attributes with a value of 1
@@ -237,6 +259,11 @@ def tag_boundary_nodes(graph: Graph, dimensions: Tuple[int, int]) -> None:
     #       boundary node and it gets its boundary_perim value set - still not
     #       sure what that does/means...
     # 
+
+    # frm: TODO:  When/if grid.py converts to operating on new GerryChain Graph
+    #               objects, all of the graph.nodes[node]... calls should 
+    #               be changed to use graph.get_node_data_dict(node)...
+
     m, n = dimensions
     for node in graph.nodes:
         if node[0] in [0, m - 1] or node[1] in [0, n - 1]:

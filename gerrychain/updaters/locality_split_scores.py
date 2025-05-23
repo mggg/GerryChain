@@ -164,14 +164,19 @@ class LocalitySplits:
             num_districts = len(partition.assignment.parts.keys())
 
             for loc in self.localities:
+                # frm: TODO:    The code below just calculates the total population for a set of nodes.
+                #               This sounds like a good candidate for a utility function.  See if this
+                #               logic is repeated elsewhere...
                 sg = partition.graph.subgraph(
                     n
+                    # frm: TODO:  I think that graph.nodes(data=true) is NX dependent and needs to  change for RX
                     for n, v in partition.graph.nodes(data=True)
                     if v[self.col_id] == loc
                 )
 
                 pop = 0
                 for n in sg.nodes():
+                    # frm: TODO:  I think this needs to change to work for RX...
                     pop += sg.nodes[n][self.pop_col]
 
                 allowed_pieces[loc] = math.ceil(pop / (totpop / num_districts))

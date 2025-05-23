@@ -7,7 +7,7 @@ from ..tree import (
     epsilon_tree_bipartition,
     bipartition_tree,
     bipartition_tree_random,
-    _bipartition_tree_random_all,
+    bipartition_tree_random_with_num_cuts,
     uniform_spanning_tree,
     find_balanced_edge_cuts_memoization,
     ReselectException,
@@ -90,6 +90,7 @@ def recom(
     :type method: Callable, optional
 
     :returns: The new partition resulting from the ReCom algorithm.
+        print("bipartition_tree: updating restarts and attempts")
     :rtype: Partition
     """
 
@@ -97,12 +98,21 @@ def recom(
     n_parts = len(partition)
     tot_pairs = n_parts * (n_parts - 1) / 2  # n choose 2
 
+    # frm: DBG: TODO: Remove this code
+    # print(f"recom: all pairs of disctricts is: {tot_pairs}")
+    # print(f"recom: method to do merge/split is: {method}")
+
     # Try to add the region aware in if the method accepts the surcharge dictionary
     if "region_surcharge" in signature(method).parameters:
         method = partial(method, region_surcharge=region_surcharge)
-
+ 
     while len(bad_district_pairs) < tot_pairs:
+        # frm: In no particular order, try to merge and then split pairs of districts
+        #       that have a cut_edge - meaning that they are adjacent, until you either
+        #       find one that can be split, or you have tried all possible pairs
+        #       of adjacent districts...
         try:
+            # frm: TODO:  see if there is some way to avoid a while True loop...
             while True:
                 edge = random.choice(tuple(partition["cut_edges"]))
                 # Need to sort the tuple so that the order is consistent
@@ -113,15 +123,20 @@ def recom(
                 ]
                 parts_to_merge.sort()
 
+                # frm: DBG: TODO: Remove this code
+                # print(f"recom: districts to merge and split: {parts_to_merge}")
+                # print(f"recom: first district nodes: {partition.parts[parts_to_merge[0]]}") 
+                # print(f"recom: second district nodes: {partition.parts[parts_to_merge[1]]}") 
+
                 if tuple(parts_to_merge) not in bad_district_pairs:
                     break
 
-            subgraph = partition.graph.subgraph(
-                partition.parts[parts_to_merge[0]] | partition.parts[parts_to_merge[1]]
-            )
+            # frm: Note that the vertical bar operator merges the two sets into one set.
+            subgraph_nodes = partition.parts[parts_to_merge[0]] | partition.parts[parts_to_merge[1]]
 
+            # print(f"recom: About to call epsilon_tree_bipartition()")
             flips = epsilon_tree_bipartition(
-                subgraph.graph,     
+                partition.graph.subgraph(subgraph_nodes),
                 parts_to_merge,
                 pop_col=pop_col,
                 pop_target=pop_target,
@@ -129,10 +144,16 @@ def recom(
                 node_repeats=node_repeats,
                 method=method,
             )
+            # print(f"recom: Finished calling epsilon_tree_bipartition()")
+            # frm: DBG: TODO: Remove this code
+            # print(f"recom: after epsilon_tree_bipartion: districts to merge and split: {parts_to_merge}")
+            # print(f"recom: after epsilon_tree_bipartion: first district nodes: {partition.parts[parts_to_merge[0]]}") 
+            # print(f"recom: after epsilon_tree_bipartion: second district nodes: {partition.parts[parts_to_merge[1]]}") 
             break
 
         except Exception as e:
             if isinstance(e, ReselectException):
+                # frm: Add this pair to list of pairs that did not work...
                 bad_district_pairs.add(tuple(parts_to_merge))
                 continue
             else:
@@ -144,6 +165,7 @@ def recom(
             f"Consider rerunning the chain with a different random seed."
         )
 
+    # print("recom: returning after successfully splitting two districts")
     return partition.flip(flips)
 
 
@@ -177,6 +199,7 @@ def reversible_recom(
     :param balance_edge_fn: The balance edge function. Default is
         find_balanced_edge_cuts_memoization.
     :type balance_edge_fn: Callable, optional
+        frm: it returns a list of Cuts - a named tuple defined in tree.py
     :param M: The maximum number of balance edges. Default is 1.
     :type M: int, optional
     :param repeat_until_valid: Flag indicating whether to repeat until a valid partition is
@@ -190,8 +213,11 @@ def reversible_recom(
     """
 
     def dist_pair_edges(part, a, b):
+        # frm: Find all edges that cross from district a into district b
         return set(
             e
+            # frm: TODO: edges vs. edge_ids:  edges are wanted here (tuples)
+            # frm: Original Code:    for e in part.graph.edges
             for e in part.graph.edges
             if (
                 (
@@ -213,8 +239,29 @@ def reversible_recom(
             )
         return cuts
 
+    """
+    frm: Original Code:
+
     bipartition_tree_random_reversible = partial(
         _bipartition_tree_random_all,
+        repeat_until_valid=repeat_until_valid,
+        spanning_tree_fn=uniform_spanning_tree,
+        balance_edge_fn=bounded_balance_edge_fn,
+    )
+    
+    I deemed this code to be evil, if only because it used an internal tree.py routine
+    _bipartition_tree_random_all().  This internal routine returns a set of Cut objects
+    which otherwise never appear outside tree.py, so this just adds complexity.
+
+    The only reason the original code used _bipartition_tree_random_all() instead of just
+    using bipartition_tree_random() is that it needs to know how many possible new
+    districts there are.  So, I created a new function in tree.py that does EXACTLY
+    what bipartition_tree_random() does but which also returns the number of possible
+    new districts.
+
+    """
+    bipartition_tree_random_reversible = partial(
+        bipartition_tree_random_with_num_cuts,
         repeat_until_valid=repeat_until_valid,
         spanning_tree_fn=uniform_spanning_tree,
         balance_edge_fn=bounded_balance_edge_fn,
@@ -236,18 +283,30 @@ def reversible_recom(
         partition.assignment.mapping[edge[0]],
         partition.assignment.mapping[edge[1]],
     )
-    subgraph = partition.graph.subgraph(
-        partition.parts[parts_to_merge[0]] | partition.parts[parts_to_merge[1]]
-    )
+    # Remember node_ids from which subgraph was created - we will need them below
+    subgraph_nodes = partition.parts[parts_to_merge[0]] | partition.parts[parts_to_merge[1]]
 
-    all_cuts = bipartition_tree_random_reversible(
-        subgraph, pop_col=pop_col, pop_target=pop_target, epsilon=epsilon
+    # frm: Note: This code has changed to make sure we don't access subgraph node_ids.
+    #               The former code saved the subgraph and used its nodes to compute
+    #               the remaining_nodes, but this doesn't work with RX, because the 
+    #               node_ids for the subgraph are different from those in the parent graph.
+    #               The solution is to just remember the parent node_ids that were used
+    #               to create the subgraph, and to move the subgraph call in as an actual
+    #               parameter, so that after the call there is no way to reference it.
+    #
+    #               Going forward, this should be a coding style - only invoke Graph.subgraph()
+    #               as an actual parameter so that there is no way to inadvertently access
+    #               the subgraph's node_ids afterwards.
+    #
+    num_possible_districts, nodes = bipartition_tree_random_reversible(
+        partition.graph.subgraph(subgraph_nodes),
+        pop_col=pop_col, pop_target=pop_target, epsilon=epsilon
     )
-    if not all_cuts:
+    if not nodes:
         return partition  # self-loop: no balance edge
 
-    nodes = choice(all_cuts).subset
-    remaining_nodes = set(subgraph.nodes()) - set(nodes)
+    remaining_nodes = subgraph_nodes - set(nodes)
+    # frm: Notes to Self:  the ** operator below merges the two dicts into a single dict.
     flips = {
         **{node: parts_to_merge[0] for node in nodes},
         **{node: parts_to_merge[1] for node in remaining_nodes},
@@ -256,7 +315,7 @@ def reversible_recom(
     new_part = partition.flip(flips)
     seam_length = len(dist_pair_edges(new_part, *random_pair))
 
-    prob = len(all_cuts) / (M * seam_length)
+    prob = num_possible_districts / (M * seam_length)
     if prob > 1:
         raise ReversibilityError(
             f"Found {len(all_cuts)} balance edges, but "
