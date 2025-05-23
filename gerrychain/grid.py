@@ -12,8 +12,19 @@ Dependencies:
 - typing: Used for type hints.
 """
 
+
 import math
 import networkx
+# frm TODO:     Decide whether to leave grid.py as-is, at least for now.
+#               While it imports NetworkX, it eventually creates a new
+#               Graph object which is added to a Partition which will
+#               eventually "freeze" and convert the new Graph object to
+#               be based on RX (under the covers).
+#
+#               So, this can be thought of as legacy code that works just
+#               fine.  In the future if we want to go full RX everywhere
+#               we can decide what to do.
+#
 from gerrychain.partition import Partition
 from gerrychain.graph import Graph
 from gerrychain.updaters import (
@@ -62,6 +73,20 @@ class Grid(Partition):
         assignment: Optional[Dict] = None,
         updaters: Optional[Dict[str, Callable]] = None,
         parent: Optional["Grid"] = None,
+        # frm: ???: TODO:  This code indicates that flips are a dict of tuple: int which would be
+        #                   correct for edge flips, but not for node flips.  Need to check again
+        #                   to see if this is correct.  Note that flips is used in the constructor
+        #                   so it should fall through to Partition._from_parent()...
+        #
+        #                   OK - I think that this is a bug.  Parition._from_parent() assumes 
+        #                   that flips are a mapping from node to partition not tuple/edge to partition.
+        #                   I checked ALL of the code and the constructor for Grid is never passed in
+        #                   a flips parameter, so there is no example to check / verify, but it sure
+        #                   looks and smells like a bug.  
+        #
+        #                   The fix would be to just change Dict[Tuple[int, int], int] to be
+        #                   Dict[int, int]
+        #
         flips: Optional[Dict[Tuple[int, int], int]] = None,
     ) -> None:
         """
@@ -139,6 +164,7 @@ class Grid(Partition):
         return [[self.assignment.mapping[(i, j)] for i in range(m)] for j in range(n)]
 
 
+# frm ???:  Is this intended to be callable / useful for external users?
 def create_grid_graph(dimensions: Tuple[int, int], with_diagonals: bool) -> Graph:
     """
     Creates a grid graph with the specified dimensions.
@@ -171,8 +197,17 @@ def create_grid_graph(dimensions: Tuple[int, int], with_diagonals: bool) -> Grap
         diagonal_edges = nw_to_se + sw_to_ne
         graph.add_edges_from(diagonal_edges)
         for edge in diagonal_edges:
+            # frm: TODO:  When/if grid.py is converted to operate on GerryChain Graph
+            #               objects instead of NX.Graph objects, this use of NX
+            #               EdgeView to get/set edge data will need to change to use
+            #               gerrychain_graph.get_edge_data_dict()
+            #               
+            #               We will also need to think about edge vs edge_id.  In this
+            #               case we want an edge_id, so that means we need to look at
+            #               how diagonal_edges are created - but that is for the future...
             graph.edges[edge]["shared_perim"] = 0
 
+    # frm: These just set all nodes/edges in the graph to have the given attributes with a value of 1
     networkx.set_node_attributes(graph, 1, "population")
     networkx.set_node_attributes(graph, 1, "area")
 
@@ -181,6 +216,7 @@ def create_grid_graph(dimensions: Tuple[int, int], with_diagonals: bool) -> Grap
     return graph
 
 
+# frm ???:  Why is this here instead of in graph.py?  Who is it intended for?  Internal vs. External?
 def give_constant_attribute(graph: Graph, attribute: Any, value: Any) -> None:
     """
     Sets the specified attribute to the specified value for all nodes in the graph.
@@ -195,7 +231,8 @@ def give_constant_attribute(graph: Graph, attribute: Any, value: Any) -> None:
     :returns: None
     """
     for node in graph.nodes:
-        graph.nodes[node][attribute] = value
+        # frm original code: graph.nodes[node][attribute] = value
+        graph.get_node_data_dict(node)[attribute] = value
 
 
 def tag_boundary_nodes(graph: Graph, dimensions: Tuple[int, int]) -> None:
@@ -211,6 +248,22 @@ def tag_boundary_nodes(graph: Graph, dimensions: Tuple[int, int]) -> None:
 
     :returns: None
     """
+    #
+    # frm: Another case of code that is not clear (at least to me).  It took me
+    #       a while to figure out that the name/label for a node in a grid graph
+    #       is a tuple and not just a number or string.  The tuple indicates its
+    #       position in the grid (x,y) cartesian coordinates, so node[0] below
+    #       means its x-position and node[1] means its y-position.  So the if-stmt
+    #       below tests whether a node is all the way on the left or the right or 
+    #       all the way on the top or the bottom.  If so, it is tagged as a
+    #       boundary node and it gets its boundary_perim value set - still not
+    #       sure what that does/means...
+    # 
+
+    # frm: TODO:  When/if grid.py converts to operating on new GerryChain Graph
+    #               objects, all of the graph.nodes[node]... calls should 
+    #               be changed to use graph.get_node_data_dict(node)...
+
     m, n = dimensions
     for node in graph.nodes:
         if node[0] in [0, m - 1] or node[1] in [0, n - 1]:

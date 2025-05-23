@@ -77,6 +77,14 @@ class Assignment(Mapping):
         """
         Update the assignment for some nodes using the given flows.
         """
+        # frm: Update the assignment of nodes to partitions by adding 
+        #       all of the new nodes and removing all of the old nodes
+        #       as represented in the flows (dict keyed by district (part)
+        #       of nodes flowing "in" and "out" for that district).
+        #
+        #       Also, reset the mapping of node to partition (self.mapping)
+        #       to reassign each node to its new partition.
+        #
         for part, flow in flows.items():
             # Union between frozenset and set returns an object whose type
             # matches the object on the left, which here is a frozenset
@@ -180,7 +188,8 @@ def get_assignment(
                 "You must provide a graph when using a node attribute for the part_assignment"
             )
         return Assignment.from_dict(
-            {node: graph.nodes[node][part_assignment] for node in graph}
+            # frm: original code:   {node: graph.nodes[node][part_assignment] for node in graph}
+            {node: graph.get_node_data_dict(node)[part_assignment] for node in graph}
         )
     # Check if assignment is a dict or a mapping type
     elif callable(getattr(part_assignment, "items", None)):

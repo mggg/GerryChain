@@ -1,5 +1,8 @@
 # Imports
 from collections import defaultdict, Counter
+# frm TODO: Remove dependence on NetworkX.  
+#           The only use is:
+#                pieces += nx.number_connected_components(subgraph)
 import networkx as nx
 import math
 from typing import List
@@ -155,19 +158,25 @@ class LocalitySplits:
 
             totpop = 0
             for node in partition.graph.nodes:
-                totpop += partition.graph.nodes[node][self.pop_col]
+                # frm: original code:   totpop += partition.graph.nodes[node][self.pop_col]
+                totpop += partition.graph.get_node_data_dict(node)[self.pop_col]
 
             num_districts = len(partition.assignment.parts.keys())
 
             for loc in self.localities:
+                # frm: TODO:    The code below just calculates the total population for a set of nodes.
+                #               This sounds like a good candidate for a utility function.  See if this
+                #               logic is repeated elsewhere...
                 sg = partition.graph.subgraph(
                     n
+                    # frm: TODO:  I think that graph.nodes(data=true) is NX dependent and needs to  change for RX
                     for n, v in partition.graph.nodes(data=True)
                     if v[self.col_id] == loc
                 )
 
                 pop = 0
                 for n in sg.nodes():
+                    # frm: TODO:  I think this needs to change to work for RX...
                     pop += sg.nodes[n][self.pop_col]
 
                 allowed_pieces[loc] = math.ceil(pop / (totpop / num_districts))
@@ -228,7 +237,8 @@ class LocalitySplits:
         locality_intersections = {}
 
         for n in partition.graph.nodes():
-            locality = partition.graph.nodes[n][self.col_id]
+            # frm: original code:   locality = partition.graph.nodes[n][self.col_id]
+            locality = partition.graph.get_node_data_dict(n)[self.col_id]
             if locality not in locality_intersections:
                 locality_intersections[locality] = set(
                     [partition.assignment.mapping[n]]
@@ -243,10 +253,12 @@ class LocalitySplits:
                     [
                         x
                         for x in partition.parts[d]
-                        if partition.graph.nodes[x][self.col_id] == locality
+                        # frm: original code:   if partition.graph.nodes[x][self.col_id] == locality
+                        if partition.graph.get_node_data_dict(x)[self.col_id] == locality
                     ]
                 )
 
+                # frm TODO:  Get rid of this dependence on NetworkX
                 pieces += nx.number_connected_components(subgraph)
         return pieces
 
@@ -380,7 +392,10 @@ class LocalitySplits:
             vtds = district_dict[district]
             locality_pop = {k: 0 for k in self.localities}
             for vtd in vtds:
-                locality_pop[self.localitydict[vtd]] += partition.graph.nodes[vtd][
+                # frm: original code:   locality_pop[self.localitydict[vtd]] += partition.graph.nodes[vtd][
+                # frm: original code:       self.pop_col
+                # frm: original code:   ]
+                locality_pop[self.localitydict[vtd]] += partition.graph.get_node_data_dict(vtd)[
                     self.pop_col
                 ]
             district_dict[district] = locality_pop

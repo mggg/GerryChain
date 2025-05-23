@@ -1,0 +1,12 @@
+I created a regression test based on the User Guide code so that
+I could make changes and quickly test whether they affected
+user code.
+
+The 3 files that I added are:
+
+    * frm_regression_test.py
+        * Code copied from the User Guide
+    * gerrymandria.json
+        * JSON for the graph used in the regression test
+    * frm_regression_test.README.txt
+        * This file

@@ -1,5 +1,13 @@
 import json
-import networkx
+
+
+# frm:  Only used in _first_time() inside __init__() to allow for creating
+#       a Partition from a NetworkX Graph object:
+#
+#           elif isinstance(graph, networkx.Graph):
+#               graph = Graph.from_networkx(graph)
+#               self.graph = FrozenGraph(graph)
+import networkx     
 
 from gerrychain.graph.graph import FrozenGraph, Graph
 from ..updaters import compute_edge_flows, flows_from_changes, cut_edges
@@ -8,6 +16,18 @@ from .subgraphs import SubgraphView
 from ..tree import recursive_tree_part
 from typing import Any, Callable, Dict, Optional, Tuple
 
+# frm TODO:     Add documentation about how this all works.  For instance,
+#               what is computationally expensive and how does a FrozenGraph
+#               help?  Why do we need both assignments and parts?  
+#
+#               Since a Partition is intimately tied up with how the Markov Chain
+#               does its magic, it would make sense to talk about that a bit...
+#
+#               For instance, is there any reason to use a Partition object 
+#               except in a Markov Chain?  I suppose they are useful for post
+#               Markov Chain analysis - but if so, then it would be nice to 
+#               know what functionality is tuned for the Markov Chain and what
+#               functionality / data is tuned for post Markov Chain analysis.
 
 class Partition:
     """
@@ -56,12 +76,23 @@ class Partition:
             which the functions compute.
         :param use_default_updaters: If `False`, do not include default updaters.
         """
+        
         if parent is None:
+            if graph is None:
+                raise Exception("Parition.__init__(): graph object is None")
+                
             self._first_time(graph, assignment, updaters, use_default_updaters)
         else:
             self._from_parent(parent, flips)
 
         self._cache = dict()
+        
+        #frm:   SubgraphView provides cached access to subgraphs for each of the 
+        #       partition's districts.  It is important that we asign subgraphs AFTER
+        #       we have established what nodes belong to which parts (districts).  In
+        #       the case when the parent is None, the assignments are explicitly provided,
+        #       and in the case when there is a parent, the _from_parent() logic processes
+        #       the flips to update the assignments.
         self.subgraphs = SubgraphView(self.graph, self.parts)
 
     @classmethod
@@ -101,7 +132,10 @@ class Partition:
         :returns: The partition created with a random assignment
         :rtype: Partition
         """
-        total_pop = sum(graph.nodes[n][pop_col] for n in graph)
+        # frm: ???: BUG:  TODO:  The param, flips, is never used in this routine...
+
+        # frm: original code:   total_pop = sum(graph.nodes[n][pop_col] for n in graph)
+        total_pop = sum(graph.get_node_data_dict(n)[pop_col] for n in graph)
         ideal_pop = total_pop / n_parts
 
         assignment = method(
@@ -120,16 +154,26 @@ class Partition:
         )
 
     def _first_time(self, graph, assignment, updaters, use_default_updaters):
-        if isinstance(graph, Graph):
-            self.graph = FrozenGraph(graph)
-        elif isinstance(graph, networkx.Graph):
+        # Make sure that the embedded graph for the Partition is based on
+        # a RustworkX graph, and make sure it is also a FrozenGraph.  Both
+        # of these are important for performance.
+
+        # If a NX.Graph, create a Graph object based on NX
+        if isinstance(graph, networkx.Graph):
             graph = Graph.from_networkx(graph)
+
+        # if a Graph object, make sure it is based on an embedded RustworkX.PyGraph
+        if isinstance(graph, Graph):
+            if (graph.isNxGraph()):
+                graph = graph.convert_from_nx_to_rx()
             self.graph = FrozenGraph(graph)
         elif isinstance(graph, FrozenGraph):
+            # frm: TODO: Verify that the embedded graph is RX.n
             self.graph = graph
         else:
             raise TypeError(f"Unsupported Graph object with type {type(graph)}")
 
+        # frm ???:  Why is the parameter below not the FrozenGraph?  
         self.assignment = get_assignment(assignment, graph)
 
         if set(self.assignment) != set(graph):
@@ -150,6 +194,14 @@ class Partition:
         self.flows = None
         self.edge_flows = None
 
+    # frm ???:      This is only called once and it is tagged as an internal
+    #               function (leading underscore).  Is there a good reason
+    #               why this is not internal to the __init__() routine 
+    #               where it is used?
+    #
+    #               That is, is there any reason why anyone might ever 
+    #               call this except __init__()?
+
     def _from_parent(self, parent: "Partition", flips: Dict) -> None:
         self.parent = parent
         self.flips = flips
@@ -157,6 +209,21 @@ class Partition:
         self.graph = parent.graph
         self.updaters = parent.updaters
 
+        # frm ???:  What are flows?
+        #
+        #           Flows are just a dictionary showing what nodes flowed into a
+        #           partition and what nodes flowed out of that partition.
+        #           This is an example of tight logical coupling between a Partition
+        #           and Markov Chain logic.
+        #
+        #           I assume that the flows_from_changes() takes advantage of the
+        #           flips setting above.  This is all quite opaque - what one would 
+        #           want for comments is a description of what happens when a new
+        #           partition is created from an old one.  I assume that the FrozenGraph
+        #           stays frozen and is the same in all Partitions in a chain, but that 
+        #           the other stuff (flows, assignment, parts) changes with each successive
+        #           partition in the chain.  Is this true?  If so, why not make that clear?
+        #
         self.flows = flows_from_changes(parent, self)  # careful
 
         self.assignment = parent.assignment.copy()
@@ -194,6 +261,16 @@ class Partition:
         """
         return self.assignment.mapping[edge[0]] != self.assignment.mapping[edge[1]]
 
+    # frm ???:  Not quite sure what is going on with __getitem__(), __getattr__(), and
+    #           keys().  This looks like it is defining dictionary style syntax for
+    #           a Partition object (the Pythonic way...), but I am not sure what the 
+    #           logic is and I am not sure exactly what is being returned.
+    #
+    #           It looks like __getattr__ just allows accessing what __getitem__() 
+    #           returns but with the syntax for an attribute instead of a dict.
+    #               partition[key] and partition.key would return the same thing.
+    #
+
     def __getitem__(self, key: str) -> Any:
         """
         Allows accessing the values of updaters computed for this
@@ -220,6 +297,15 @@ class Partition:
         return self.assignment.parts
 
     def plot(self, geometries=None, **kwargs):
+        # 
+        # frm ???:  I think that this plots districts on a map that is defined
+        #           by the geometries parameter (presumably polygons or something similar).
+        #           It converts the partition data into data that the plot routine
+        #           knows how to deal with, but essentially it just assigns each node
+        #           to a district.  the **kwargs are then passed to the plotting 
+        #           engine - presumably to define colors and other graph stuff.
+        #
+
         """
         Plot the partition, using the provided geometries.
 
@@ -285,7 +371,8 @@ class Partition:
         id_column_key = districtr_plan["idColumn"]["key"]
         districtr_assignment = districtr_plan["assignment"]
         try:
-            node_to_id = {node: str(graph.nodes[node][id_column_key]) for node in graph}
+            # frm: original code:   node_to_id = {node: str(graph.nodes[node][id_column_key]) for node in graph}
+            node_to_id = {node: str(graph.get_node_data_dict(node)[id_column_key]) for node in graph}
         except KeyError:
             raise TypeError(
                 "The provided graph is missing the {} column, which is "
