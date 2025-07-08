@@ -1,0 +1,85 @@
+0a1,9
+> ################################################################
+> #
+> # frm: This file was copied from test_make_graph.py (to make
+> #      use of their fixtures.  It should eventually evolve into
+> #      a reasonable test of additional functions added by me
+> #      to gerrychain.graph
+> #       
+> ################################################################
+> 
+11,12d19
+< import networkx
+< 
+16,17c23
+< # frm: added following import
+< # from gerrychain.graph import get_node_data_dict
+---
+> import networkx
+73,77d78
+<     
+<     # frm: Test has been modified to work with new Graph object that has an NetworkX.Graph
+<     #           object embedded inside it.  I am not sure if this test actually tests
+<     #           anything useful anymore...
+< 
+82,83d82
+<     # frm: Note that the new Graph does not support add_data() 
+< 
+85d83
+< 
+88d85
+<     # Test that the embedded nxgraph object has the added data
+93d89
+<     # Test that the graph object has the added data
+110a107
+> 
+212c209,214
+<     nxgraph = graph.nxgraph
+---
+>     # frm: Original Code:
+>     #           Get all of the data dictionaries for each node and verify that each
+>     #           of them contains data with the key "data" and "data2"
+>     #
+>     #    assert all("data" in node_data for node_data in graph.nodes.values())
+>     #    assert all("data2" in node_data for node_data in graph.nodes.values())
+214,215c216,217
+<     assert all("data" in node_data for node_data in nxgraph.nodes.values())
+<     assert all("data2" in node_data for node_data in nxgraph.nodes.values())
+---
+>     # data dictionaries for all of the nodes
+>     all_node_data = [graph.get_node_data_dict(node_id) for node_id in graph.node_indices]
+216a219,220
+>     assert all("data" in node_data for node_data in all_node_data)
+>     assert all("data2" in node_data for node_data in all_node_data)
+217a222
+> 
+221,222d225
+<     nxgraph = graph.nxgraph
+< 
+224d226
+<     assert all("geometry" in node_data for node_data in nxgraph.nodes.values())
+225a228,232
+>     # data dictionaries for all of the nodes
+>     all_node_data = [graph.get_node_data_dict(node_id) for node_id in graph.node_indices]
+> 
+>     assert all("geometry" in node_data for node_data in all_node_data)
+> 
+231,232d237
+<     
+<     nxgraph = graph.nxgraph
+233a239,241
+>     # data dictionaries for all of the nodes
+>     all_node_data = [graph.get_node_data_dict(node_id) for node_id in graph.node_indices]
+> 
+235c243
+<     assert all("geometry" in node_data for node_data in nxgraph.nodes.values())
+---
+>     assert all("geometry" in node_data for node_data in all_node_data)
+236a245
+>     # frm: ???  Does anything check that the file is actually written? 
+243d251
+< 
+287a296,298
+> 
+> 
+> 

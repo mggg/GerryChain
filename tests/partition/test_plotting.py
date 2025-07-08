@@ -3,13 +3,15 @@ from unittest.mock import MagicMock
 import geopandas as gp
 import pytest
 from shapely.geometry import Polygon
+import networkx
 
 from gerrychain import Graph, Partition
 
 
 @pytest.fixture
 def partition():
-    graph = Graph([(0, 1), (1, 3), (2, 3), (0, 2)])
+    nxgraph = networkx.Graph([(0, 1), (1, 3), (2, 3), (0, 2)])
+    graph = Graph.from_networkx(nxgraph)
     return Partition(graph, {0: 1, 1: 1, 2: 2, 3: 2})
 
 
@@ -66,5 +68,11 @@ class TestPartitionPlotting:
 
         graph = Graph.from_geodataframe(geodataframe)
         partition = Partition(graph=graph, assignment={node: 0 for node in graph})
+        # frm: TODO: the following statement blows up because we do not copy
+        #               geometry data from NX to RX when we convert to RX.
+        #               Need to grok what the right way to deal with geometry 
+        #               data is (is it only an issue for from_geodataframe() or
+        #               are there other ways a geometry value might be set?)
+        #
         partition.plot()
         assert mock_plot.call_count == 1

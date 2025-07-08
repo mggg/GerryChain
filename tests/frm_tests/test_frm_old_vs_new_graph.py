@@ -37,7 +37,9 @@ print("Created old and new Graph objects from JSON")
 # frm: DEBUGGING:
 # print("created new_graph")
 # print("type of new_graph.nodes is: ", type(new_graph.nodes))
-print("new_graph nodes: ", list(new_graph.nodes))
+new_graph_nodes = new_graph.nodes
+old_graph_nodes = list(old_graph.nodes)
+# print("new_graph nodes: ", list(new_graph.nodes))
 # print("new_graph edges: ", list(new_graph.edges))
 # print("")  # newline
 # print("created old_graph")
@@ -45,17 +47,13 @@ print("new_graph nodes: ", list(new_graph.nodes))
 # print("old_graph nodes: ", list(old_graph.nodes))
 # print("old_graph edges: ", list(old_graph.edges))
 
-print("testing types agree for graph.nodes")
-assert (type(new_graph.nodes) == type(old_graph.nodes)) , "type of graph.nodes not the same"
-
 print("testing that graph.nodes have same length")
 assert(len(new_graph.nodes) == len(old_graph.nodes)), "lengths disagree"
 
-print("testing types agree for graph.edges")
-assert (type(new_graph.edges) == type(old_graph.edges)) , "type of graph.edges not the same"
-
+new_graph_edges = new_graph.edges
+old_graph_edges = set(old_graph.edges)
 print("testing that graph.edges have same length")
-assert(len(new_graph.edges) == len(old_graph.edges)), "lengths disagree"
+assert(len(new_graph_edges) == len(old_graph_edges)), "lengths disagree"
 
 node_subset = set([1,2,3,4,5])
 new_graph_subset = new_graph.subgraph(node_subset)
@@ -72,6 +70,8 @@ print(old_graph_subset.edges)
 print("About to test Graph.predecessors(root)")
 pred = new_graph.predecessors(1)
 print(list(pred))
+
+# frm: TODO:  Flesh out this test...
 
 
 #

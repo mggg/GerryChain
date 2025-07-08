@@ -16,6 +16,26 @@ import json
 from typing import Any
 import warnings
 
+import networkx
+from networkx.classes.function import frozen
+from networkx.readwrite import json_graph
+import pandas as pd
+
+# frm: added to support RustworkX graphs (in the future)
+import rustworkx
+
+from .adjacency import neighbors
+from .geo import GeometryError, invalid_geometries, reprojected
+from typing import List, Iterable, Optional, Set, Tuple, Union
+
+import geopandas as gp
+from shapely.ops import unary_union
+from shapely.prepared import prep
+
+import numpy as np
+from scipy.sparse import csr_array
+
+
 #########################################################
 # frm Overview of changes (May 2025):
 """
@@ -54,6 +74,28 @@ It is not the case that ALL of the behavior of the NX based Graph class is repli
 in the new Graph class - I have not implemented NodeView and EdgeView functionality 
 and maybe I will not have to.
 
+Note that one of the biggest differences between NetworkX and RustworkX is in how nodes
+and edges are identified.  In NetworkX there is not really a difference between the "index"
+of a node or an edge and its "name" or "ID" or "value".  In NetworkX the way you index into nodes 
+and edges is by using the node's name/Id or the edge's tuple - in effect the index and the 
+name/ID/value are the same.  However, in RustworkX, the index is always an integer, and furthermore
+the set of indexes for both nodes and edges stats at zero with consecutive integer values.  This
+is one of the things that allows RustworkX to be faster than NetworkX.  Converting to using 
+RustworkX, therefore, required that the code distinguish between a node/edge's index and its value/ID/name.
+This is most visible in the use of get_node_data_dict() and get_edge_data_dict() functions and 
+in the changes made to the use of subgraphs (which unfortunately have different index values for nodes than
+the parent graph in RX).
+
+A note on subgraphs:  Creating subgraphs is a fundamental operation for GerryChain.  When using NX,
+a subgraph's node (and also edge) indexes were unchanged from the parent's, so it was safe to do 
+calculations on a subgraph and pass back node information (like flips).  However, when using RX, the
+node and edge indexes change, so in order to pass back information in the parent's index systems, 
+the subgraph's nodes and edges need to be translated back into those of the parent's index system.
+In order to do this, every graph contains two new bits of information 1) whether it is a subgraph and
+2) a mapping from the subgraph index values to those of its parent.  For top-level (non subgraphs), this
+mapping is just an identity mapping - this is just a convenience so that routines can always use the
+map without having to worry about whether it is a subgraph or not.
+
 The current state of affairs (early May 2025) is that the code in tree.py has mostly
 been converted to use the new Graph object instead of nx.Graph, and that the regression
 test works (which only tests some of the functionality, but it does run a chain...)
@@ -80,19 +122,6 @@ RX which will involve:
 
 """
 #########################################################
-
-import networkx
-from networkx.classes.function import frozen
-from networkx.readwrite import json_graph
-import pandas as pd
-
-# frm: added to support RustworkX graphs (in the future)
-import rustworkx
-
-from .adjacency import neighbors
-from .geo import GeometryError, invalid_geometries, reprojected
-from typing import List, Iterable, Optional, Set, Tuple, Union
-
 
 def json_serialize(input_object: Any) -> Optional[int]:
     """
@@ -192,9 +221,9 @@ class Graph:
             return False
 
     def verifyGraphIsValid(self):
-        # Sanity check
+        # Sanity check - this is where to add additional sanity checks in the future.
         if (not self.hasOneGraph()):
-            raise Exception("Graph.edges - graph not properly configured")
+            raise Exception("Graph.verifyGraphIsValid - graph not properly configured")
 
     def isNxGraph(self):
         self.verifyGraphIsValid()
@@ -252,7 +281,7 @@ class Graph:
 
     def to_json(self, json_file: str, include_geometries_as_geojson: bool = False) -> None:
         # frm TODO:  Implement this for an RX based graph
-        if self.nxgraph is None:
+        if not self.isNxGraph():
             raise Exception("At present, can only create JSON for NetworkX graph")
 
         data = json_graph.adjacency_data(self.nxgraph)
@@ -266,15 +295,207 @@ class Graph:
             json.dump(data, f, default=json_serialize)
 
     @classmethod
-    def from_file():
-        # frm TODO:  Copy the code for this 
-        raise Exception("Graph.from_file NYI")
+    def from_file(
+        cls,
+        filename: str,
+        adjacency: str = "rook",
+        cols_to_add: Optional[List[str]] = None,
+        reproject: bool = False,
+        ignore_errors: bool = False,
+    ) -> "Graph":
+        """
+        Create a :class:`Graph` from a shapefile (or GeoPackage, or GeoJSON, or
+        any other library that :mod:`geopandas` can read. See :meth:`from_geodataframe`
+        for more details.
+
+        :param filename: Path to the shapefile / GeoPackage / GeoJSON / etc.
+        :type filename: str
+        :param adjacency: The adjacency type to use ("rook" or "queen"). Default is "rook"
+        :type adjacency: str, optional
+        :param cols_to_add: The names of the columns that you want to
+            add to the graph as node attributes. Default is None.
+        :type cols_to_add: Optional[List[str]], optional
+        :param reproject: Whether to reproject to a UTM projection before
+            creating the graph. Default is False.
+        :type reproject: bool, optional
+        :param ignore_errors: Whether to ignore all invalid geometries and try to continue
+            creating the graph. Default is False.
+        :type ignore_errors: bool, optional
+
+        :returns: The Graph object of the geometries from `filename`.
+        :rtype: Graph
+
+        .. Warning::
+
+            This method requires the optional ``geopandas`` dependency.
+            So please install ``gerrychain`` with the ``geo`` extra
+            via the command:
+
+            .. code-block:: console
+
+                pip install gerrychain[geo]
+
+            or install ``geopandas`` separately.
+        """
+
+        df = gp.read_file(filename)
+        graph = cls.from_geodataframe(
+            df,
+            adjacency=adjacency,
+            cols_to_add=cols_to_add,
+            reproject=reproject,
+            ignore_errors=ignore_errors,
+        )
+        # frm: TODO:  Need to make sure this works for RX also
+        #               To do so, need to find out how CRS data is used
+        #               and whether it is used externally or only internally...
+        #
+        #               Note that the NetworkX.Graph.graph["crs"] is only
+        #               ever accessed in this file (graph.py), so I am not
+        #               clear what it is used for.  It seems to just be set
+        #               and never used except to be written back out to JSON.
+        #
+        #               The issue (I think) is that we do not preserve graph
+        #               attributes when we convert to RX from NX, so if the
+        #               user wants to write an RX based Graph back out to JSON
+        #               this data (and another other graph level data) would be
+        #               lost.
+        #
+        #               So - need to figure out what CRS is used for...
+
+        # Store CRS data as an attribute of the NX graph
+        graph.nxgraph.graph["crs"] = df.crs.to_json()
+        return graph
 
     @classmethod
-    def from_geodataframe():
-        # frm TODO:  Copy the code for this 
-        raise Exception("Graph.from_geodataframe NYI")
-    
+    def from_geodataframe(
+        cls,
+        dataframe: pd.DataFrame,
+        adjacency: str = "rook",
+        cols_to_add: Optional[List[str]] = None,
+        reproject: bool = False,
+        ignore_errors: bool = False,
+        crs_override: Optional[Union[str, int]] = None,
+    ) -> "Graph":
+        
+        # frm: Changed to operate on a NetworkX.Graph object and then convert to a
+        #       Graph object at the end of the function.
+
+        """
+        Creates the adjacency :class:`Graph` of geometries described by `dataframe`.
+        The areas of the polygons are included as node attributes (with key `area`).
+        The shared perimeter of neighboring polygons are included as edge attributes
+        (with key `shared_perim`).
+        Nodes corresponding to polygons on the boundary of the union of all the geometries
+        (e.g., the state, if your dataframe describes VTDs) have a `boundary_node` attribute
+        (set to `True`) and a `boundary_perim` attribute with the length of this "exterior"
+        boundary.
+
+        By default, areas and lengths are computed in a UTM projection suitable for the
+        geometries. This prevents the bizarro area and perimeter values that show up when
+        you accidentally do computations in Longitude-Latitude coordinates. If the user
+        specifies `reproject=False`, then the areas and lengths will be computed in the
+        GeoDataFrame's current coordinate reference system. This option is for users who
+        have a preferred CRS they would like to use.
+
+        :param dataframe: The GeoDateFrame to convert
+        :type dataframe: :class:`geopandas.GeoDataFrame`
+        :param adjacency: The adjacency type to use ("rook" or "queen").
+            Default is "rook".
+        :type adjacency: str, optional
+        :param cols_to_add: The names of the columns that you want to
+            add to the graph as node attributes. Default is None.
+        :type cols_to_add: Optional[List[str]], optional
+        :param reproject: Whether to reproject to a UTM projection before
+            creating the graph. Default is ``False``.
+        :type reproject: bool, optional
+        :param ignore_errors: Whether to ignore all invalid geometries and
+            attept to create the graph anyway. Default is ``False``.
+        :type ignore_errors: bool, optional
+        :param crs_override: Value to override the CRS of the GeoDataFrame.
+            Default is None.
+        :type crs_override: Optional[Union[str,int]], optional
+
+        :returns: The adjacency graph of the geometries from `dataframe`.
+        :rtype: Graph
+        """
+        # Validate geometries before reprojection
+        if not ignore_errors:
+            invalid = invalid_geometries(dataframe)
+            if len(invalid) > 0:
+                raise GeometryError(
+                    "Invalid geometries at rows {} before "
+                    "reprojection. Consider repairing the affected geometries with "
+                    "`.buffer(0)`, or pass `ignore_errors=True` to attempt to create "
+                    "the graph anyways.".format(invalid)
+                )
+
+        # Project the dataframe to an appropriate UTM projection unless
+        # explicitly told not to.
+        if reproject:
+            df = reprojected(dataframe)
+            if ignore_errors:
+                invalid_reproj = invalid_geometries(df)
+                print(invalid_reproj)
+                if len(invalid_reproj) > 0:
+                    raise GeometryError(
+                        "Invalid geometries at rows {} after "
+                        "reprojection. Consider reloading the GeoDataFrame with "
+                        "`reproject=False` or repairing the affected geometries "
+                        "with `.buffer(0)`.".format(invalid_reproj)
+                    )
+        else:
+            df = dataframe
+
+        # Generate dict of dicts of dicts with shared perimeters according
+        # to the requested adjacency rule
+        adjacencies = neighbors(df, adjacency)      # Note - this is adjacency.neighbors()
+
+        # frm: Original Code:  graph = cls(adjacencies)
+        nxgraph = networkx.Graph(adjacencies)
+
+        # frm: TODO:  Need to grok what geometry is used for - it is used in partition.py.plot()
+        #               and maybe that is the only place it is used, but it is also used below
+        #               to set other data, such as add_boundary_perimeters() and areas.  The
+        #               reason this is an issue is because I need to know what to carry over to
+        #               the RX version of a Graph when I convert to RX when making a Partition.
+        #               Partition.plot() uses this information, so it needs to be available in
+        #               the RX version of a Graph - which essentially means that I need to grok
+        #               how plot() works and where it gets its information and how existing 
+        #               users use it...
+        nxgraph.geometry = df.geometry
+
+        # Add "exterior" perimeters to the boundary nodes
+        add_boundary_perimeters(nxgraph, df.geometry)
+
+        # Add area data to the nodes
+        areas = df.geometry.area.to_dict()
+        networkx.set_node_attributes(nxgraph, name="area", values=areas)
+
+        if crs_override is not None:
+            df.set_crs(crs_override, inplace=True)
+
+        if df.crs is None:
+            warnings.warn(
+                "GeoDataFrame has no CRS. Did you forget to set it? "
+                "If you're sure this is correct, you can ignore this warning. "
+                "Otherwise, please set the CRS using the `crs_override` parameter. "
+                "Attempting to proceed without a CRS."
+            )
+            nxgraph.graph["crs"] = None
+        else:
+            nxgraph.graph["crs"] = df.crs.to_json()
+
+        graph = cls.from_networkx(nxgraph)
+
+        # frm: Moved from earlier in the function so that we would have a Graph
+        #       object (vs. NetworkX.Graph object)
+
+        graph.add_data(df, columns=cols_to_add)
+        graph.issue_warnings()
+
+        return graph
+
     def lookup(self, node: Any, field: Any):
         # Not quite sure why this routine existed in the original graph.py
         # code, since most of the other code does not use it, and instead
@@ -459,13 +680,95 @@ class Graph:
         else:
             raise Exception("Graph.get_edge_tuple - bad kind of graph object")
 
-    def add_data():
-        # frm TODO:
-        raise Exception("Graph.add_data NYI")
+    def add_data(
+        self, df: pd.DataFrame, columns: Optional[Iterable[str]] = None
+    ) -> None:
+        """
+        Add columns of a DataFrame to a graph as node attributes
+        by matching the DataFrame's index to node ids.
 
-    def join():
-        # frm TODO:
-        raise Exception("Graph.join NYI")
+        :param df: Dataframe containing given columns.
+        :type df: :class:`pandas.DataFrame`
+        :param columns: List of dataframe column names to add. Default is None.
+        :type columns: Optional[Iterable[str]], optional
+
+        :returns: None
+        """
+
+        if not (self.isNxGraph()):
+            raise Exception("Graph.add_data only valid for NetworkX based graphs")
+
+        if columns is None:
+            columns = list(df.columns)
+
+        check_dataframe(df[columns])
+
+        column_dictionaries = df.to_dict("index")
+        nxgraph = self.nxgraph
+        networkx.set_node_attributes(nxgraph, column_dictionaries)
+
+        if hasattr(nxgraph, "data"):
+            nxgraph.data[columns] = df[columns]  # type: ignore
+        else:
+            nxgraph.data = df[columns]
+
+
+    def join(
+        self,
+        dataframe: pd.DataFrame,
+        columns: Optional[List[str]] = None,
+        left_index: Optional[str] = None,
+        right_index: Optional[str] = None,
+    ) -> None:
+        """
+        Add data from a dataframe to the graph, matching nodes to rows when
+        the node's `left_index` attribute equals the row's `right_index` value.
+
+        :param dataframe: DataFrame.
+        :type dataframe: :class:`pandas.DataFrame`
+        :columns: The columns whose data you wish to add to the graph.
+            If not provided, all columns are added. Default is None.
+        :type columns: Optional[List[str]], optional
+        :left_index: The node attribute used to match nodes to rows.
+            If not provided, node IDs are used. Default is None.
+        :type left_index: Optional[str], optional
+        :right_index: The DataFrame column name to use to match rows
+            to nodes. If not provided, the DataFrame's index is used. Default is None.
+        :type right_index: Optional[str], optional
+
+        :returns: None
+        """
+        if right_index is not None:
+            df = dataframe.set_index(right_index)
+        else:
+            df = dataframe
+
+        if columns is not None:
+            df = df[columns]
+
+        check_dataframe(df)
+
+        column_dictionaries = df.to_dict()
+
+        if not self.isNxGraph():
+            raise Exception("Graph.join only valid for NetworkX based Graph objects")
+        nxgraph = self.nxgraph
+
+        if left_index is not None:
+            ids_to_index = networkx.get_node_attributes(nxgraph, left_index)
+        else:
+            # When the left_index is node ID, the matching is just
+            # a redundant {node: node} dictionary
+            ids_to_index = dict(zip(self.nodes, self.nodes))
+
+        node_attributes = {
+            node_id: {
+                column: values[index] for column, values in column_dictionaries.items()
+            }
+            for node_id, index in ids_to_index.items()
+        }
+
+        networkx.set_node_attributes(nxgraph, node_attributes)
 
     @property
     def islands(self):
@@ -499,6 +802,25 @@ class Graph:
 
     def __getattr__(self, __name: str) -> Any:
         # frm: TODO:  Get rid of this eventually - it is very dangerous...
+
+        # frm: Interesting bug lurking if __name is "nxgraph".  This occurs when legacy code
+        #       uses the default constructor, Graph(), and then references a built-in NX
+        #       Graph method, such as my_graph.add_edges().  In this case the built-in NX 
+        #       Graph method is not defined, so __getattr__() is called to try to figure out
+        #       what it could be.  This triggers the call below to self.isNxGraph(), which 
+        #       references self.nxgraph (which is undefined/None) which triggers another 
+        #       call to __getattr__() which is BAD...
+        #
+        #       I think the solution is to not rely on testing whether nxgraph and rxgraph
+        #       are None - but rather to have explicit is_nx_or_rx_graph data member which
+        #       is set to one of "NX", "RX", "not_set".
+        #
+        #       For now, I am just going to return None if __name is "nxgraph" or "rxgraph".
+        # 
+
+        # frm: TODO: Fix this hack - see comment above...
+        if (__name == "nxgraph") or (__name == "rxgraph"):
+            return None
 
         # If attribute doesn't exist on this object, try
         # its underlying graph object...
@@ -875,6 +1197,56 @@ class Graph:
             raise Exception("node data is not a dictionary");
         
         return data_dict
+
+
+    # frm: Note:  I added the laplacian_matrix routines as methods of the Graph
+    #               class because they are only ever used on Graph objects.  It
+    #               bloats the Graph class, but it still seems like the best
+    #               option.
+
+    def laplacian_matrix(self):
+        # A local "gc" (as in GerryChain) version of the laplacian matrix
+
+        # frm: TODO:  The NX version returns a matrix of integer values while the
+        #               RX version returns a matrix of floating point values.  I 
+        #               think the reason is that the RX.adjacency_matrix() call
+        #               returns an array of floats.
+        #
+        #               Since the laplacian matrix is used for further numeric
+        #               processing, I don't think this matters, but I should 
+        #               check to be 100% certain.
+
+        if self.isNxGraph():
+            nxgraph = self.nxgraph
+            laplacian_matrix = networkx.laplacian_matrix(nxgraph)
+        elif self.isRxGraph():
+            rxgraph = self.rxgraph
+            # 1. Get the adjacency matrix
+            adj_matrix = rustworkx.adjacency_matrix(rxgraph)
+            # 2. Calculate the degree matrix (simplified for this example)
+            degree_matrix = np.diag([rxgraph.degree(node) for node in rxgraph.node_indices()])
+            # 3. Calculate the Laplacian matrix
+            np_laplacian_matrix = degree_matrix - adj_matrix
+            # 4.  Convert the NumPy array to a csr_array
+            laplacian_matrix = csr_array(np_laplacian_matrix)
+        else:
+            raise Exception("laplacian_matrix: badly configured graph parameter")
+
+        return laplacian_matrix
+
+    def normalized_laplacian_matrix(self):
+        if self.isNxGraph():
+            nxgraph = self.nxgraph
+            laplacian_matrix = networkx.normalized_laplacian_matrix(nxgraph)
+        elif self.isRxGraph():
+            # frm: TODO:  Implement normalized_laplacian_matrix() for RX
+            rxgraph = self.rxgraph
+            raise Exception("normalized_laplacian_matrix NYI for RustworkX based Graph objects")
+        else:
+            raise Exception("normalized_laplacian_matrix: badly configured graph parameter")
+
+        return laplacian_matrix
+
 ######################################################
 
 class OriginalGraph(networkx.Graph):
@@ -997,7 +1369,6 @@ class OriginalGraph(networkx.Graph):
 
             or install ``geopandas`` separately.
         """
-        import geopandas as gp
 
         df = gp.read_file(filename)
         graph = cls.from_geodataframe(
@@ -1007,16 +1378,7 @@ class OriginalGraph(networkx.Graph):
             reproject=reproject,
             ignore_errors=ignore_errors,
         )
-        # frm: TODO:  Need to make sure this works for RX also
-        #               To do so, need to find out how CRS data is used
-        #               and whether it is used externally or only internally...
-        #
-        #               Note that the NetworkX.Graph.graph["crs"] is only
-        #               ever accessed in this file (graph.py), so I am not
-        #               clear what it is used for.  It seems to just be set
-        #               and never used except to be written back out to JSON.
 
-        # Store CRS data as an attribute of the NX graph
         graph.graph["crs"] = df.crs.to_json()
         return graph
 
@@ -1237,6 +1599,9 @@ class OriginalGraph(networkx.Graph):
             for node_id, index in ids_to_index.items()
         }
 
+        # frm: TODO:  Figure out how to make this work for RX...
+        if (not self.isNxGraph()):
+            raise Exception("join(): Not supported for RX based Graph objects")
         networkx.set_node_attributes(self, node_attributes)
 
     # frm: Original Graph code...
@@ -1270,7 +1635,7 @@ class OriginalGraph(networkx.Graph):
         """
         self.warn_for_islands()
 
-def add_boundary_perimeters(graph: Graph, geometries: pd.Series) -> None:
+def add_boundary_perimeters(nxgraph: networkx.Graph, geometries: pd.Series) -> None:
     """
     Add shared perimeter between nodes and the total geometry boundary.
 
@@ -1282,23 +1647,28 @@ def add_boundary_perimeters(graph: Graph, geometries: pd.Series) -> None:
     :returns: The updated graph.
     :rtype: Graph
     """
-    from shapely.ops import unary_union
-    from shapely.prepared import prep
+
+    # frm: The original code operated on the Graph object which was a subclass of
+    #       NetworkX.Graph.  I have changed it to operate on a NetworkX.Graph object
+    #       with the understanding that callers will reach down into a Graph object
+    #       and pass in the inner nxgraph data member.
+
+    if not(isinstance(nxgraph, networkx.Graph)):
+        raise Exception("add_boundary_permiters: Graph is not a NetworkX.Graph object")
 
     prepared_boundary = prep(unary_union(geometries).boundary)
 
     boundary_nodes = geometries.boundary.apply(prepared_boundary.intersects)
 
-    for node in graph:
-        graph.nodes[node]["boundary_node"] = bool(boundary_nodes[node])
+    for node in nxgraph:
+        nxgraph.nodes[node]["boundary_node"] = bool(boundary_nodes[node])
         if boundary_nodes[node]:
             total_perimeter = geometries[node].boundary.length
             shared_perimeter = sum(
-                neighbor_data["shared_perim"] for neighbor_data in graph[node].values()
+                neighbor_data["shared_perim"] for neighbor_data in nxgraph[node].values()
             )
             boundary_perimeter = total_perimeter - shared_perimeter
-            graph.nodes[node]["boundary_perim"] = boundary_perimeter
-
+            nxgraph.nodes[node]["boundary_perim"] = boundary_perimeter
 
 def check_dataframe(df: pd.DataFrame) -> None:
     """

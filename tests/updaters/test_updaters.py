@@ -34,8 +34,8 @@ def partition_with_election(graph_with_d_and_r_cols):
     graph = graph_with_d_and_r_cols
     assignment = random_assignment(graph, 3)
     parties_to_columns = {
-        "D": {node: graph.nodes[node]["D"] for node in graph.nodes},
-        "R": {node: graph.nodes[node]["R"] for node in graph.nodes},
+        "D": {node: graph.get_node_data_dict(node)["D"] for node in graph.nodes},
+        "R": {node: graph.get_node_data_dict(node)["R"] for node in graph.nodes},
     }
     election = Election("Mock Election", parties_to_columns)
     updaters = {"Mock Election": election, "cut_edges": cut_edges}
@@ -57,9 +57,9 @@ def test_Partition_can_update_stats():
     graph = networkx.complete_graph(3)
     assignment = {0: 1, 1: 1, 2: 2}
 
-    graph.nodes[0]["stat"] = 1
-    graph.nodes[1]["stat"] = 2
-    graph.nodes[2]["stat"] = 3
+    graph.get_node_data_dict(0)["stat"] = 1
+    graph.get_node_data_dict(1)["stat"] = 2
+    graph.get_node_data_dict(2)["stat"] = 3
 
     updaters = {"total_stat": Tally("stat", alias="total_stat")}
 
@@ -79,7 +79,7 @@ def test_tally_multiple_columns(graph_with_d_and_r_cols):
 
     partition = Partition(graph, assignment, updaters)
     expected_total_in_district_one = sum(
-        graph.nodes[i]["D"] + graph.nodes[i]["R"] for i in range(4)
+        graph.get_node_data_dict(i)["D"] + graph.get_node_data_dict(i)["R"] for i in range(4)
     )
     assert partition["total"][1] == expected_total_in_district_one
 
@@ -108,7 +108,7 @@ def test_vote_proportion_returns_nan_if_total_votes_is_zero(three_by_three_grid)
 
     for node in graph.nodes:
         for col in election.columns:
-            graph.nodes[node][col] = 0
+            graph.get_node_data_dict(node)[col] = 0
 
     updaters = {"election": election}
     assignment = random_assignment(graph, 3)
@@ -183,8 +183,8 @@ def test_exterior_boundaries_as_a_set(three_by_three_grid):
     graph = three_by_three_grid
 
     for i in [0, 1, 2, 3, 5, 6, 7, 8]:
-        graph.nodes[i]["boundary_node"] = True
-    graph.nodes[4]["boundary_node"] = False
+        graph.get_node_data_dict(i)["boundary_node"] = True
+    graph.get_node_data_dict(4)["boundary_node"] = False
 
     assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
     updaters = {
@@ -212,9 +212,9 @@ def test_exterior_boundaries(three_by_three_grid):
     graph = three_by_three_grid
 
     for i in [0, 1, 2, 3, 5, 6, 7, 8]:
-        graph.nodes[i]["boundary_node"] = True
-        graph.nodes[i]["boundary_perim"] = 2
-    graph.nodes[4]["boundary_node"] = False
+        graph.get_node_data_dict(i)["boundary_node"] = True
+        graph.get_node_data_dict(i)["boundary_perim"] = 2
+    graph.get_node_data_dict(4)["boundary_node"] = False
 
     assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
     updaters = {
@@ -241,9 +241,9 @@ def test_exterior_boundaries(three_by_three_grid):
 def test_perimeter(three_by_three_grid):
     graph = three_by_three_grid
     for i in [0, 1, 2, 3, 5, 6, 7, 8]:
-        graph.nodes[i]["boundary_node"] = True
-        graph.nodes[i]["boundary_perim"] = 1
-    graph.nodes[4]["boundary_node"] = False
+        graph.get_node_data_dict(i)["boundary_node"] = True
+        graph.get_node_data_dict(i)["boundary_perim"] = 1
+    graph.get_node_data_dict(4)["boundary_node"] = False
 
     for edge in graph.edges:
         graph.edges[edge]["shared_perim"] = 1
@@ -294,6 +294,6 @@ def test_elections_match_the_naive_computation(partition_with_election):
 
 def expected_tally(partition, column):
     return {
-        part: sum(partition.graph.nodes[node][column] for node in nodes)
+        part: sum(partition.graph.get_node_data_dict(node)[column] for node in nodes)
         for part, nodes in partition.parts.items()
     }

@@ -323,6 +323,8 @@ class Partition:
 
         if geometries is None:
             geometries = self.graph.geometry
+            # frm: TODO: Test that self.graph.geometry is not None - but first need to grok
+            #               where this is set (other than Graph.from_geodataframe())
 
         if set(geometries.index) != set(self.graph.nodes):
             raise TypeError(

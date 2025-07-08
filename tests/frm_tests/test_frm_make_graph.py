@@ -20,6 +20,8 @@ from pyproj import CRS
 from gerrychain.graph import Graph
 from gerrychain.graph.geo import GeometryError
 
+import networkx
+
 
 @pytest.fixture
 def geodataframe():
@@ -74,31 +76,33 @@ def target_file():
 
 
 def test_add_data_to_graph_can_handle_column_names_that_start_with_numbers():
-    graph = Graph([("01", "02"), ("02", "03"), ("03", "01")])
+    nxgraph = networkx.Graph([("01", "02"), ("02", "03"), ("03", "01")])
     df = pandas.DataFrame({"16SenDVote": [20, 30, 50], "node": ["01", "02", "03"]})
     df = df.set_index("node")
 
+    graph = Graph.from_networkx(nxgraph)
     graph.add_data(df, ["16SenDVote"])
 
-    assert graph.nodes["01"]["16SenDVote"] == 20
-    assert graph.nodes["02"]["16SenDVote"] == 30
-    assert graph.nodes["03"]["16SenDVote"] == 50
+    assert nxgraph.nodes["01"]["16SenDVote"] == 20
+    assert nxgraph.nodes["02"]["16SenDVote"] == 30
+    assert nxgraph.nodes["03"]["16SenDVote"] == 50
 
-    #frm: Added tests to make sure new code works for NX graphs
     assert graph.get_node_data_dict("01")["16SenDVote"] == 20
     assert graph.get_node_data_dict("02")["16SenDVote"] == 30
     assert graph.get_node_data_dict("03")["16SenDVote"] == 50
 
 
 def test_join_can_handle_right_index():
-    graph = Graph([("01", "02"), ("02", "03"), ("03", "01")])
+    nxgraph = networkx.Graph([("01", "02"), ("02", "03"), ("03", "01")])
     df = pandas.DataFrame({"16SenDVote": [20, 30, 50], "node": ["01", "02", "03"]})
+
+    graph = Graph.from_networkx(nxgraph)
 
     graph.join(df, ["16SenDVote"], right_index="node")
 
-    assert graph.nodes["01"]["16SenDVote"] == 20
-    assert graph.nodes["02"]["16SenDVote"] == 30
-    assert graph.nodes["03"]["16SenDVote"] == 50
+    assert graph.get_node_data_dict("01")["16SenDVote"] == 20
+    assert graph.get_node_data_dict("02")["16SenDVote"] == 30
+    assert graph.get_node_data_dict("03")["16SenDVote"] == 50
 
 
 def test_make_graph_from_dataframe_creates_graph(geodataframe):
@@ -146,10 +150,10 @@ def test_can_insist_on_not_reprojecting(geodataframe):
     graph = Graph.from_geodataframe(df, reproject=False)
 
     for node in ("a", "b", "c", "d"):
-        assert graph.nodes[node]["area"] == 1
+        assert graph.get_node_data_dict(node)["area"] == 1
 
     for edge in graph.edges:
-        assert graph.edges[edge]["shared_perim"] == 1
+        assert graph.get_edge_data_dict(edge)["shared_perim"] == 1
 
 
 def test_does_not_reproject_by_default(geodataframe):
@@ -157,10 +161,10 @@ def test_does_not_reproject_by_default(geodataframe):
     graph = Graph.from_geodataframe(df)
 
     for node in ("a", "b", "c", "d"):
-        assert graph.nodes[node]["area"] == 1.0
+        assert graph.get_node_data_dict(node)["area"] == 1.0
 
     for edge in graph.edges:
-        assert graph.edges[edge]["shared_perim"] == 1.0
+        assert graph.get_edge_data_dict(edge)["shared_perim"] == 1.0
 
 
 def test_reproject(geodataframe):
@@ -170,10 +174,10 @@ def test_reproject(geodataframe):
     graph = Graph.from_geodataframe(df, reproject=True)
 
     for node in ("a", "b", "c", "d"):
-        assert graph.nodes[node]["area"] != 1
+        assert graph.get_node_data_dict(node)["area"] != 1
 
     for edge in graph.edges:
-        assert graph.edges[edge]["shared_perim"] != 1
+        assert graph.get_edge_data_dict(edge)["shared_perim"] != 1
 
 
 def test_identifies_boundary_nodes(geodataframe_with_boundary):
@@ -181,8 +185,8 @@ def test_identifies_boundary_nodes(geodataframe_with_boundary):
     graph = Graph.from_geodataframe(df)
 
     for node in ("a", "b", "c", "e"):
-        assert graph.nodes[node]["boundary_node"]
-    assert not graph.nodes["d"]["boundary_node"]
+        assert graph.get_node_data_dict(node)["boundary_node"]
+    assert not graph.get_node_data_dict("d")["boundary_node"]
 
 
 def test_computes_boundary_perims(geodataframe_with_boundary):
@@ -192,7 +196,7 @@ def test_computes_boundary_perims(geodataframe_with_boundary):
     expected = {"a": 5, "e": 5, "b": 1, "c": 1}
 
     for node, value in expected.items():
-        assert graph.nodes[node]["boundary_perim"] == value
+        assert graph.get_node_data_dict(node)["boundary_perim"] == value
 
 
 def edge_set_equal(set1, set2):
@@ -202,15 +206,29 @@ def edge_set_equal(set1, set2):
 def test_from_file_adds_all_data_by_default(shapefile):
     graph = Graph.from_file(shapefile)
 
-    assert all("data" in node_data for node_data in graph.nodes.values())
-    assert all("data2" in node_data for node_data in graph.nodes.values())
+    # frm: Original Code:
+    #           Get all of the data dictionaries for each node and verify that each
+    #           of them contains data with the key "data" and "data2"
+    #
+    #    assert all("data" in node_data for node_data in graph.nodes.values())
+    #    assert all("data2" in node_data for node_data in graph.nodes.values())
+
+    # data dictionaries for all of the nodes
+    all_node_data = [graph.get_node_data_dict(node_id) for node_id in graph.node_indices]
+
+    assert all("data" in node_data for node_data in all_node_data)
+    assert all("data2" in node_data for node_data in all_node_data)
 
 
 def test_from_file_and_then_to_json_does_not_error(shapefile, target_file):
     graph = Graph.from_file(shapefile)
 
     # Even the geometry column is copied to the graph
-    assert all("geometry" in node_data for node_data in graph.nodes.values())
+
+    # data dictionaries for all of the nodes
+    all_node_data = [graph.get_node_data_dict(node_id) for node_id in graph.node_indices]
+
+    assert all("geometry" in node_data for node_data in all_node_data)
 
     graph.to_json(target_file)
 
@@ -218,15 +236,20 @@ def test_from_file_and_then_to_json_does_not_error(shapefile, target_file):
 def test_from_file_and_then_to_json_with_geometries(shapefile, target_file):
     graph = Graph.from_file(shapefile)
 
-    # Even the geometry column is copied to the graph
-    assert all("geometry" in node_data for node_data in graph.nodes.values())
+    # data dictionaries for all of the nodes
+    all_node_data = [graph.get_node_data_dict(node_id) for node_id in graph.node_indices]
 
+    # Even the geometry column is copied to the graph
+    assert all("geometry" in node_data for node_data in all_node_data)
+
+    # frm: ???  Does anything check that the file is actually written? 
     graph.to_json(target_file, include_geometries_as_geojson=True)
 
 
 def test_graph_warns_for_islands():
-    graph = Graph()
-    graph.add_node(0)
+    nxgraph = networkx.Graph()
+    nxgraph.add_node(0)
+    graph = Graph.from_networkx(nxgraph)
 
     with pytest.warns(Warning):
         graph.warn_for_islands()
@@ -270,3 +293,6 @@ def test_make_graph_from_shapefile_has_crs(shapefile):
     graph = Graph.from_file(shapefile)
     df = gp.read_file(shapefile)
     assert CRS.from_json(graph.graph["crs"]).equals(df.crs)
+
+
+

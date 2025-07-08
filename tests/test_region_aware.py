@@ -237,6 +237,10 @@ def test_region_aware_muni_warning():
     with pytest.warns(UserWarning) as record:
         # Random seed 2 should succeed, but drawing the
         # tree is hard, so we should get a warning
+        # frm: TODO:  stmt below fails - saying too many attempts:
+        #
+        #        raise RuntimeError(f"Could not find a possible cut after {max_attempts} attempts.")
+        #            RuntimeError: Could not find a possible cut after 10000 attempts.
         run_chain_dual(
             seed=2,
             steps=1000,

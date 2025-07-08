@@ -30,8 +30,8 @@ random.seed(2018)
 @pytest.fixture
 def graph_with_pop(three_by_three_grid):
     for node in three_by_three_grid:
-        three_by_three_grid.nodes[node]["pop"] = 1
-    return Graph.from_networkx(three_by_three_grid)
+        three_by_three_grid.get_node_data_dict(node)["pop"] = 1
+    return three_by_three_grid
 
 
 @pytest.fixture
@@ -54,18 +54,18 @@ def twelve_by_twelve_with_pop():
 
 
 def test_bipartition_tree_returns_a_subset_of_nodes(graph_with_pop):
-    ideal_pop = sum(graph_with_pop.nodes[node]["pop"] for node in graph_with_pop) / 2
+    ideal_pop = sum(graph_with_pop.get_node_data_dict(node)["pop"] for node in graph_with_pop) / 2
     result = bipartition_tree(graph_with_pop, "pop", ideal_pop, 0.25, 10)
     assert isinstance(result, frozenset)
     assert all(node in graph_with_pop.nodes for node in result)
 
 
 def test_bipartition_tree_returns_within_epsilon_of_target_pop(graph_with_pop):
-    ideal_pop = sum(graph_with_pop.nodes[node]["pop"] for node in graph_with_pop) / 2
+    ideal_pop = sum(graph_with_pop.get_node_data_dict(node)["pop"] for node in graph_with_pop) / 2
     epsilon = 0.25
     result = bipartition_tree(graph_with_pop, "pop", ideal_pop, epsilon, 10)
 
-    part_pop = sum(graph_with_pop.nodes[node]["pop"] for node in result)
+    part_pop = sum(graph_with_pop.get_node_data_dict(node)["pop"] for node in result)
     assert abs(part_pop - ideal_pop) / ideal_pop < epsilon
 
 
@@ -75,7 +75,7 @@ def test_recursive_tree_part_returns_within_epsilon_of_target_pop(
     n_districts = 7  # 144/7 ≈ 20.5 nodes/subgraph (1 person/node)
     ideal_pop = (
         sum(
-            twelve_by_twelve_with_pop.nodes[node]["pop"]
+            twelve_by_twelve_with_pop.get_node_data_dict(node)["pop"]
             for node in twelve_by_twelve_with_pop
         )
     ) / n_districts
@@ -102,7 +102,7 @@ def test_recursive_tree_part_returns_within_epsilon_of_target_pop_using_contract
     n_districts = 7  # 144/7 ≈ 20.5 nodes/subgraph (1 person/node)
     ideal_pop = (
         sum(
-            twelve_by_twelve_with_pop.nodes[node]["pop"]
+            twelve_by_twelve_with_pop.get_node_data_dict(node)["pop"]
             for node in twelve_by_twelve_with_pop
         )
     ) / n_districts
@@ -134,7 +134,7 @@ def test_recursive_seed_part_returns_within_epsilon_of_target_pop(
     n_districts = 7  # 144/7 ≈ 20.5 nodes/subgraph (1 person/node)
     ideal_pop = (
         sum(
-            twelve_by_twelve_with_pop.nodes[node]["pop"]
+            twelve_by_twelve_with_pop.get_node_data_dict(node)["pop"]
             for node in twelve_by_twelve_with_pop
         )
     ) / n_districts
@@ -163,7 +163,7 @@ def test_recursive_seed_part_returns_within_epsilon_of_target_pop_using_contract
     n_districts = 7  # 144/7 ≈ 20.5 nodes/subgraph (1 person/node)
     ideal_pop = (
         sum(
-            twelve_by_twelve_with_pop.nodes[node]["pop"]
+            twelve_by_twelve_with_pop.get_node_data_dict(node)["pop"]
             for node in twelve_by_twelve_with_pop
         )
     ) / n_districts
@@ -210,7 +210,7 @@ def test_recursive_seed_part_uses_method(twelve_by_twelve_with_pop):
     n_districts = 7  # 144/7 ≈ 20.5 nodes/subgraph (1 person/node)
     ideal_pop = (
         sum(
-            twelve_by_twelve_with_pop.nodes[node]["pop"]
+            twelve_by_twelve_with_pop.get_node_data_dict(node)["pop"]
             for node in twelve_by_twelve_with_pop
         )
     ) / n_districts
@@ -238,7 +238,7 @@ def test_recursive_seed_part_with_n_unspecified_within_epsilon(
     n_districts = 6  # This should set n=3
     ideal_pop = (
         sum(
-            twelve_by_twelve_with_pop.nodes[node]["pop"]
+            twelve_by_twelve_with_pop.get_node_data_dict(node)["pop"]
             for node in twelve_by_twelve_with_pop
         )
     ) / n_districts
@@ -271,12 +271,12 @@ def test_uniform_spanning_tree_returns_tree_with_pop_attribute(graph_with_pop):
 
 
 def test_bipartition_tree_returns_a_tree(graph_with_pop):
-    ideal_pop = sum(graph_with_pop.nodes[node]["pop"] for node in graph_with_pop) / 2
+    ideal_pop = sum(graph_with_pop.get_node_data_dict(node)["pop"] for node in graph_with_pop) / 2
     tree = Graph.from_networkx(
         networkx.Graph([(0, 1), (1, 2), (1, 4), (3, 4), (4, 5), (3, 6), (6, 7), (6, 8)])
     )
     for node in tree:
-        tree.nodes[node]["pop"] = graph_with_pop.nodes[node]["pop"]
+        tree.get_node_data_dict(node)["pop"] = graph_with_pop.get_node_data_dict(node)["pop"]
 
     result = bipartition_tree(
         graph_with_pop, "pop", ideal_pop, 0.25, 10, tree, lambda x: 4
@@ -290,7 +290,7 @@ def test_bipartition_tree_returns_a_tree(graph_with_pop):
 
 def test_recom_works_as_a_proposal(partition_with_pop):
     graph = partition_with_pop.graph
-    ideal_pop = sum(graph.nodes[node]["pop"] for node in graph) / 2
+    ideal_pop = sum(graph.get_node_data_dict(node)["pop"] for node in graph) / 2
     proposal = functools.partial(
         recom, pop_col="pop", pop_target=ideal_pop, epsilon=0.25, node_repeats=5
     )
@@ -305,7 +305,7 @@ def test_recom_works_as_a_proposal(partition_with_pop):
 def test_reversible_recom_works_as_a_proposal(partition_with_pop):
     random.seed(2018)
     graph = partition_with_pop.graph
-    ideal_pop = sum(graph.nodes[node]["pop"] for node in graph) / 2
+    ideal_pop = sum(graph.get_node_data_dict(node)["pop"] for node in graph) / 2
     proposal = functools.partial(
         reversible_recom, pop_col="pop", pop_target=ideal_pop, epsilon=0.10, M=1
     )
@@ -395,16 +395,16 @@ def test_prime_bound():
 
 
 def test_bipartition_tree_random_returns_a_subset_of_nodes(graph_with_pop):
-    ideal_pop = sum(graph_with_pop.nodes[node]["pop"] for node in graph_with_pop) / 2
+    ideal_pop = sum(graph_with_pop.get_node_data_dict(node)["pop"] for node in graph_with_pop) / 2
     result = bipartition_tree_random(graph_with_pop, "pop", ideal_pop, 0.25, 10)
     assert isinstance(result, frozenset)
     assert all(node in graph_with_pop.nodes for node in result)
 
 
 def test_bipartition_tree_random_returns_within_epsilon_of_target_pop(graph_with_pop):
-    ideal_pop = sum(graph_with_pop.nodes[node]["pop"] for node in graph_with_pop) / 2
+    ideal_pop = sum(graph_with_pop.get_node_data_dict(node)["pop"] for node in graph_with_pop) / 2
     epsilon = 0.25
     result = bipartition_tree_random(graph_with_pop, "pop", ideal_pop, epsilon, 10)
 
-    part_pop = sum(graph_with_pop.nodes[node]["pop"] for node in result)
+    part_pop = sum(graph_with_pop.get_node_data_dict(node)["pop"] for node in result)
     assert abs(part_pop - ideal_pop) / ideal_pop < epsilon

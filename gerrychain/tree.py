@@ -59,6 +59,8 @@ of a subgraph's node_ids in the parent's context is almost guaranteed to be a bu
 
 import networkx as nx
 import rustworkx as rx
+import numpy as np
+from scipy.sparse import csr_array
 # frm TODO:     Remove import of networkx and rustworkx once we have moved networkx
 #               dependencies out of this file - see comments below on 
 #               spanning trees.
@@ -2217,3 +2219,6 @@ class BalanceError(Exception):
 
 class PopulationBalanceError(Exception):
     """Raised when the population of a district is outside the acceptable epsilon range."""
+
+
+    

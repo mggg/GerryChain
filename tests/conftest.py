@@ -15,8 +15,8 @@ def three_by_three_grid():
     3 4 5
     6 7 8
     """
-    graph = Graph()
-    graph.add_edges_from(
+    nxgraph = nx.Graph()
+    nxgraph.add_edges_from(
         [
             (0, 1),
             (0, 3),
@@ -32,8 +32,7 @@ def three_by_three_grid():
             (7, 8),
         ]
     )
-    return graph
-
+    return Graph.from_networkx(nxgraph)
 
 @pytest.fixture
 def four_by_five_grid_for_opt():
@@ -47,8 +46,8 @@ def four_by_five_grid_for_opt():
     #  5  6  7  8  9
     #  0  1  2  3  4
 
-    graph = Graph()
-    graph.add_nodes_from(
+    nxgraph = nx.Graph()
+    nxgraph.add_nodes_from(
         [
             (0, {"population": 10, "opt_value": 1, "MVAP": 2}),
             (1, {"population": 10, "opt_value": 1, "MVAP": 2}),
@@ -73,7 +72,7 @@ def four_by_five_grid_for_opt():
         ]
     )
 
-    graph.add_edges_from(
+    nxgraph.add_edges_from(
         [
             (0, 1),
             (0, 5),
@@ -109,7 +108,7 @@ def four_by_five_grid_for_opt():
         ]
     )
 
-    return graph
+    return Graph.from_networkx(nxgraph)
 
 
 @pytest.fixture
@@ -125,7 +124,8 @@ def graph_with_random_data_factory(three_by_three_grid):
 def attach_random_data(graph, columns):
     for node in graph.nodes:
         for col in columns:
-            graph.nodes[node][col] = random.randint(1, 1000)
+            # frm: Original code:  graph.nodes[node][col] = random.randint(1, 1000)
+            graph.get_node_data_dict(node)[col] = random.randint(1, 1000)
 
 
 @pytest.fixture

@@ -29,7 +29,18 @@ def spectral_cut(
     """
 
     # frm:  Bad variable names - nlist is node_list and n is num_nodes   
-    nlist = list(graph.nodes())
+    # frm: Original Code:   nlist = list(graph.nodes())
+    # frm: TODO:  Subtle issue here - in NX there is no difference between a node ID
+    #               and a node index (what you use to get a node from a list), but 
+    #               in RX there is a difference - which manifests most in subgraphs
+    #               where RX goes ahead and renumbers the nodes in the graph.  To
+    #               make subgraphs work, we remember (in a map) what the node "IDs"
+    #               of the parent graph were.
+    #
+    #               The issue here is what the code wants here.  We are in an RX 
+    #               world at this point - so maybe it doesn't matter, but worth 
+    #               thinking about...
+    nlist = list(graph.nodes)
     n = len(nlist)
 
     if weight_type == "random":
@@ -38,51 +49,19 @@ def spectral_cut(
             # frm: TODO: edges vs. edge_ids:  edge_ids are wanted here (integers)
             graph.get_edge_data_dict(edge_id)["weight"] = random.random()
 
-    # frm: The laplacian matrix is actually not all that complicated.  It
-    #       is just the Degree matrix (diagonal matrix with degree of node
-    #       as the diagonal value) minus the Adjacency matrix which 
-    #       records for each (i,j) whether there is an edge between the
-    #       two nodes i and j.  
-    #
-    #       However, I have no idea why the laplacian matrix is useful
-    #       for GerryChain...
-    #
-    #       However, the normalized laplacian matrix IS complicated.
-    #       It occurs to me that since we have access to the NetworkX
-    #       code, we could just copy it - my guess is that it does not
-    #       depend on specifics of the NetworkX implementation much...
-    #
-    #       Another option in the short term is to convert the rxgraph
-    #       back into a nxgraph for the purposes of doing the laplacian
-    #       and then converting it back.  I am not sure that we would 
-    #       need to convert it back - does anyone else ever care about
-    #       the weights that were assigned?  In any event, this would
-    #       allow us to proceed (for now) without having to reimplement
-    #       the laplacian functions to work on an rxgraph.
-    #
-    #       Note that since my frm_regresion.py test relies on recom
-    #       not spectral_recom, I could just punt on this altogether for
-    #       now, and just have this raise an exception saying "Not Yet Implemented"
-    
-
-    
-    # frm TODO: Find a replacement for laplacian functions for a RustworkX graph...
-    #
-    #           Also - need to document what todense() does.  It is a SciPy function
-    #           that converts a sparse matrix into its dense representation as a NumPy matrix.
-    #           So, this is just a way to get a NumPy matrix for the laplacian (or normalized_laplacian).
-    #
+    # frm TODO: NYI: normalized_laplacian_matrix() for RX
     #
     #           Note that while the standard laplacian is straight forward mathematically
     #           the normalized laplacian is a good bit more complicated.  However, since 
     #           NetworkX is open source - perhaps we can get permission to just use their
     #           code to create RX versions...
 
+    # Compute the desired laplacian matrix (convert from sparse to dense)
     if lap_type == "normalized":
-        LAP = (nx.normalized_laplacian_matrix(graph)).todense()
+        LAP = (graph.normalized_laplacian_matrix()).todense()
 
     else:
-        LAP = (nx.laplacian_matrix(graph)).todense()
+        LAP = (graph.laplacian_matrix()).todense()
 
     # frm TODO: Add comments and better names here.  
     #

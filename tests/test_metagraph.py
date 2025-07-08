@@ -17,6 +17,7 @@ def test_all_cut_edge_flips(partition):
         for flip in all_cut_edge_flips(partition)
         for node, part in flip.items()
     )
+    # frm: TODO:  stmt below fails - the "result" has (2,2) instead of (3,2)
     assert result == {(6, 1), (7, 1), (8, 1), (4, 2), (5, 2), (3, 2)}
 
 
@@ -48,4 +49,5 @@ def test_all_valid_flips(partition):
         for flip in all_valid_flips(partition, constraints)
         for node, part in flip.items()
     )
+    # frm: TODO:  stmt below fails - the "result" has (2,2) instead of (3,2)
     assert result == {(7, 1), (8, 1), (4, 2), (5, 2), (3, 2)}

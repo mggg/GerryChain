@@ -1,0 +1,1231 @@
+diff --git a/gerrychain/graph/graph.py b/gerrychain/graph/graph.py
+index f3b846f..6e234cc 100644
+--- a/gerrychain/graph/graph.py
++++ b/gerrychain/graph/graph.py
+@@ -54,6 +54,28 @@ It is not the case that ALL of the behavior of the NX based Graph class is repli
+ in the new Graph class - I have not implemented NodeView and EdgeView functionality 
+ and maybe I will not have to.
+ 
++Note that one of the biggest differences between NetworkX and RustworkX is in how nodes
++and edges are identified.  In NetworkX there is not really a difference between the "index"
++of a node or an edge and its "name" or "ID" or "value".  In NetworkX the way you index into nodes 
++and edges is by using the node's name/Id or the edge's tuple - in effect the index and the 
++name/ID/value are the same.  However, in RustworkX, the index is always an integer, and furthermore
++the set of indexes for both nodes and edges stats at zero with consecutive integer values.  This
++is one of the things that allows RustworkX to be faster than NetworkX.  Converting to using 
++RustworkX, therefore, required that the code distinguish between a node/edge's index and its value/ID/name.
++This is most visible in the use of get_node_data_dict() and get_edge_data_dict() functions and 
++in the changes made to the use of subgraphs (which unfortunately have different index values for nodes than
++the parent graph in RX).
++
++A note on subgraphs:  Creating subgraphs is a fundamental operation for GerryChain.  When using NX,
++a subgraph's node (and also edge) indexes were unchanged from the parent's, so it was safe to do 
++calculations on a subgraph and pass back node information (like flips).  However, when using RX, the
++node and edge indexes change, so in order to pass back information in the parent's index systems, 
++the subgraph's nodes and edges need to be translated back into those of the parent's index system.
++In order to do this, every graph contains two new bits of information 1) whether it is a subgraph and
++2) a mapping from the subgraph index values to those of its parent.  For top-level (non subgraphs), this
++mapping is just an identity mapping - this is just a convenience so that routines can always use the
++map without having to worry about whether it is a subgraph or not.
++
+ The current state of affairs (early May 2025) is that the code in tree.py has mostly
+ been converted to use the new Graph object instead of nx.Graph, and that the regression
+ test works (which only tests some of the functionality, but it does run a chain...)
+@@ -192,9 +214,9 @@ class Graph:
+             return False
+ 
+     def verifyGraphIsValid(self):
+-        # Sanity check
++        # Sanity check - this is where to add additional sanity checks in the future.
+         if (not self.hasOneGraph()):
+-            raise Exception("Graph.edges - graph not properly configured")
++            raise Exception("Graph.verifyGraphIsValid - graph not properly configured")
+ 
+     def isNxGraph(self):
+         self.verifyGraphIsValid()
+@@ -252,7 +274,7 @@ class Graph:
+ 
+     def to_json(self, json_file: str, include_geometries_as_geojson: bool = False) -> None:
+         # frm TODO:  Implement this for an RX based graph
+-        if self.nxgraph is None:
++        if not self.isNxGraph():
+             raise Exception("At present, can only create JSON for NetworkX graph")
+ 
+         data = json_graph.adjacency_data(self.nxgraph)
+@@ -266,15 +288,208 @@ class Graph:
+             json.dump(data, f, default=json_serialize)
+ 
+     @classmethod
+-    def from_file():
+-        # frm TODO:  Copy the code for this 
+-        raise Exception("Graph.from_file NYI")
++    def from_file(
++        cls,
++        filename: str,
++        adjacency: str = "rook",
++        cols_to_add: Optional[List[str]] = None,
++        reproject: bool = False,
++        ignore_errors: bool = False,
++    ) -> "Graph":
++        """
++        Create a :class:`Graph` from a shapefile (or GeoPackage, or GeoJSON, or
++        any other library that :mod:`geopandas` can read. See :meth:`from_geodataframe`
++        for more details.
++
++        :param filename: Path to the shapefile / GeoPackage / GeoJSON / etc.
++        :type filename: str
++        :param adjacency: The adjacency type to use ("rook" or "queen"). Default is "rook"
++        :type adjacency: str, optional
++        :param cols_to_add: The names of the columns that you want to
++            add to the graph as node attributes. Default is None.
++        :type cols_to_add: Optional[List[str]], optional
++        :param reproject: Whether to reproject to a UTM projection before
++            creating the graph. Default is False.
++        :type reproject: bool, optional
++        :param ignore_errors: Whether to ignore all invalid geometries and try to continue
++            creating the graph. Default is False.
++        :type ignore_errors: bool, optional
++
++        :returns: The Graph object of the geometries from `filename`.
++        :rtype: Graph
++
++        .. Warning::
++
++            This method requires the optional ``geopandas`` dependency.
++            So please install ``gerrychain`` with the ``geo`` extra
++            via the command:
++
++            .. code-block:: console
++
++                pip install gerrychain[geo]
++
++            or install ``geopandas`` separately.
++        """
++        import geopandas as gp
++
++        df = gp.read_file(filename)
++        graph = cls.from_geodataframe(
++            df,
++            adjacency=adjacency,
++            cols_to_add=cols_to_add,
++            reproject=reproject,
++            ignore_errors=ignore_errors,
++        )
++        # frm: TODO:  Need to make sure this works for RX also
++        #               To do so, need to find out how CRS data is used
++        #               and whether it is used externally or only internally...
++        #
++        #               Note that the NetworkX.Graph.graph["crs"] is only
++        #               ever accessed in this file (graph.py), so I am not
++        #               clear what it is used for.  It seems to just be set
++        #               and never used except to be written back out to JSON.
++        #
++        #               The issue (I think) is that we do not preserve graph
++        #               attributes when we convert to RX from NX, so if the
++        #               user wants to write an RX based Graph back out to JSON
++        #               this data (and another other graph level data) would be
++        #               lost.
++        #
++        #               So - need to figure out what CRS is used for...
++
++        # Store CRS data as an attribute of the NX graph
++        graph.nxgraph.graph["crs"] = df.crs.to_json()
++        return graph
+ 
+     @classmethod
+-    def from_geodataframe():
+-        # frm TODO:  Copy the code for this 
+-        raise Exception("Graph.from_geodataframe NYI")
+-    
++    def from_geodataframe(
++        cls,
++        dataframe: pd.DataFrame,
++        adjacency: str = "rook",
++        cols_to_add: Optional[List[str]] = None,
++        reproject: bool = False,
++        ignore_errors: bool = False,
++        crs_override: Optional[Union[str, int]] = None,
++    ) -> "Graph":
++        
++        # frm: Changed to operate on a NetworkX.Graph object and then convert to a
++        #       Graph object at the end of the function.
++
++        """
++        Creates the adjacency :class:`Graph` of geometries described by `dataframe`.
++        The areas of the polygons are included as node attributes (with key `area`).
++        The shared perimeter of neighboring polygons are included as edge attributes
++        (with key `shared_perim`).
++        Nodes corresponding to polygons on the boundary of the union of all the geometries
++        (e.g., the state, if your dataframe describes VTDs) have a `boundary_node` attribute
++        (set to `True`) and a `boundary_perim` attribute with the length of this "exterior"
++        boundary.
++
++        By default, areas and lengths are computed in a UTM projection suitable for the
++        geometries. This prevents the bizarro area and perimeter values that show up when
++        you accidentally do computations in Longitude-Latitude coordinates. If the user
++        specifies `reproject=False`, then the areas and lengths will be computed in the
++        GeoDataFrame's current coordinate reference system. This option is for users who
++        have a preferred CRS they would like to use.
++
++        :param dataframe: The GeoDateFrame to convert
++        :type dataframe: :class:`geopandas.GeoDataFrame`
++        :param adjacency: The adjacency type to use ("rook" or "queen").
++            Default is "rook".
++        :type adjacency: str, optional
++        :param cols_to_add: The names of the columns that you want to
++            add to the graph as node attributes. Default is None.
++        :type cols_to_add: Optional[List[str]], optional
++        :param reproject: Whether to reproject to a UTM projection before
++            creating the graph. Default is ``False``.
++        :type reproject: bool, optional
++        :param ignore_errors: Whether to ignore all invalid geometries and
++            attept to create the graph anyway. Default is ``False``.
++        :type ignore_errors: bool, optional
++        :param crs_override: Value to override the CRS of the GeoDataFrame.
++            Default is None.
++        :type crs_override: Optional[Union[str,int]], optional
++
++        :returns: The adjacency graph of the geometries from `dataframe`.
++        :rtype: Graph
++        """
++        # Validate geometries before reprojection
++        if not ignore_errors:
++            invalid = invalid_geometries(dataframe)
++            if len(invalid) > 0:
++                raise GeometryError(
++                    "Invalid geometries at rows {} before "
++                    "reprojection. Consider repairing the affected geometries with "
++                    "`.buffer(0)`, or pass `ignore_errors=True` to attempt to create "
++                    "the graph anyways.".format(invalid)
++                )
++
++        # Project the dataframe to an appropriate UTM projection unless
++        # explicitly told not to.
++        if reproject:
++            df = reprojected(dataframe)
++            if ignore_errors:
++                invalid_reproj = invalid_geometries(df)
++                print(invalid_reproj)
++                if len(invalid_reproj) > 0:
++                    raise GeometryError(
++                        "Invalid geometries at rows {} after "
++                        "reprojection. Consider reloading the GeoDataFrame with "
++                        "`reproject=False` or repairing the affected geometries "
++                        "with `.buffer(0)`.".format(invalid_reproj)
++                    )
++        else:
++            df = dataframe
++
++        # Generate dict of dicts of dicts with shared perimeters according
++        # to the requested adjacency rule
++        adjacencies = neighbors(df, adjacency)      # Note - this is adjacency.neighbors()
++
++        # frm: Original Code:  graph = cls(adjacencies)
++        nxgraph = networkx.Graph(adjacencies)
++
++        # frm: TODO:  Need to grok what geometry is used for - it is used in partition.py.plot()
++        #               and maybe that is the only place it is used, but it is also used below
++        #               to set other data, such as add_boundary_perimeters() and areas.  The
++        #               reason this is an issue is because I need to know what to carry over to
++        #               the RX version of a Graph when I convert to RX when making a Partition.
++        #               Partition.plot() uses this information, so it needs to be available in
++        #               the RX version of a Graph - which essentially means that I need to grok
++        #               how plot() works and where it gets its information and how existing 
++        #               users use it...
++        nxgraph.geometry = df.geometry
++
++        # Add "exterior" perimeters to the boundary nodes
++        add_boundary_perimeters(nxgraph, df.geometry)
++
++        # Add area data to the nodes
++        areas = df.geometry.area.to_dict()
++        networkx.set_node_attributes(nxgraph, name="area", values=areas)
++
++        if crs_override is not None:
++            df.set_crs(crs_override, inplace=True)
++
++        if df.crs is None:
++            warnings.warn(
++                "GeoDataFrame has no CRS. Did you forget to set it? "
++                "If you're sure this is correct, you can ignore this warning. "
++                "Otherwise, please set the CRS using the `crs_override` parameter. "
++                "Attempting to proceed without a CRS."
++            )
++            nxgraph.graph["crs"] = None
++        else:
++            nxgraph.graph["crs"] = df.crs.to_json()
++
++        graph = cls.from_networkx(nxgraph)
++
++        # frm: Moved from earlier in the function so that we would have a Graph
++        #       object (vs. NetworkX.Graph object)
++
++        graph.add_data(df, columns=cols_to_add)
++        graph.issue_warnings()
++
++        return graph
++
+     def lookup(self, node: Any, field: Any):
+         # Not quite sure why this routine existed in the original graph.py
+         # code, since most of the other code does not use it, and instead
+@@ -459,13 +674,95 @@ class Graph:
+         else:
+             raise Exception("Graph.get_edge_tuple - bad kind of graph object")
+ 
+-    def add_data():
+-        # frm TODO:
+-        raise Exception("Graph.add_data NYI")
++    def add_data(
++        self, df: pd.DataFrame, columns: Optional[Iterable[str]] = None
++    ) -> None:
++        """
++        Add columns of a DataFrame to a graph as node attributes
++        by matching the DataFrame's index to node ids.
++
++        :param df: Dataframe containing given columns.
++        :type df: :class:`pandas.DataFrame`
++        :param columns: List of dataframe column names to add. Default is None.
++        :type columns: Optional[Iterable[str]], optional
++
++        :returns: None
++        """
++
++        if not (self.isNxGraph()):
++            raise Exception("Graph.add_data only valid for NetworkX based graphs")
++
++        if columns is None:
++            columns = list(df.columns)
++
++        check_dataframe(df[columns])
++
++        column_dictionaries = df.to_dict("index")
++        nxgraph = self.nxgraph
++        networkx.set_node_attributes(nxgraph, column_dictionaries)
++
++        if hasattr(nxgraph, "data"):
++            nxgraph.data[columns] = df[columns]  # type: ignore
++        else:
++            nxgraph.data = df[columns]
++
++
++    def join(
++        self,
++        dataframe: pd.DataFrame,
++        columns: Optional[List[str]] = None,
++        left_index: Optional[str] = None,
++        right_index: Optional[str] = None,
++    ) -> None:
++        """
++        Add data from a dataframe to the graph, matching nodes to rows when
++        the node's `left_index` attribute equals the row's `right_index` value.
++
++        :param dataframe: DataFrame.
++        :type dataframe: :class:`pandas.DataFrame`
++        :columns: The columns whose data you wish to add to the graph.
++            If not provided, all columns are added. Default is None.
++        :type columns: Optional[List[str]], optional
++        :left_index: The node attribute used to match nodes to rows.
++            If not provided, node IDs are used. Default is None.
++        :type left_index: Optional[str], optional
++        :right_index: The DataFrame column name to use to match rows
++            to nodes. If not provided, the DataFrame's index is used. Default is None.
++        :type right_index: Optional[str], optional
+ 
+-    def join():
+-        # frm TODO:
+-        raise Exception("Graph.join NYI")
++        :returns: None
++        """
++        if right_index is not None:
++            df = dataframe.set_index(right_index)
++        else:
++            df = dataframe
++
++        if columns is not None:
++            df = df[columns]
++
++        check_dataframe(df)
++
++        column_dictionaries = df.to_dict()
++
++        if not self.isNxGraph():
++            raise Exception("Graph.join only valid for NetworkX based Graph objects")
++        nxgraph = self.nxgraph
++
++        if left_index is not None:
++            ids_to_index = networkx.get_node_attributes(nxgraph, left_index)
++        else:
++            # When the left_index is node ID, the matching is just
++            # a redundant {node: node} dictionary
++            ids_to_index = dict(zip(self.nodes, self.nodes))
++
++        node_attributes = {
++            node_id: {
++                column: values[index] for column, values in column_dictionaries.items()
++            }
++            for node_id, index in ids_to_index.items()
++        }
++
++        networkx.set_node_attributes(nxgraph, node_attributes)
+ 
+     @property
+     def islands(self):
+@@ -500,6 +797,25 @@ class Graph:
+     def __getattr__(self, __name: str) -> Any:
+         # frm: TODO:  Get rid of this eventually - it is very dangerous...
+ 
++        # frm: Interesting bug lurking if __name is "nxgraph".  This occurs when legacy code
++        #       uses the default constructor, Graph(), and then references a built-in NX
++        #       Graph method, such as my_graph.add_edges().  In this case the built-in NX 
++        #       Graph method is not defined, so __getattr__() is called to try to figure out
++        #       what it could be.  This triggers the call below to self.isNxGraph(), which 
++        #       references self.nxgraph (which is undefined/None) which triggers another 
++        #       call to __getattr__() which is BAD...
++        #
++        #       I think the solution is to not rely on testing whether nxgraph and rxgraph
++        #       are None - but rather to have explicit is_nx_or_rx_graph data member which
++        #       is set to one of "NX", "RX", "not_set".
++        #
++        #       For now, I am just going to return None if __name is "nxgraph" or "rxgraph".
++        # 
++
++        # frm: TODO: Fix this hack - see comment above...
++        if (__name == "nxgraph") or (__name == "rxgraph"):
++            return None
++
+         # If attribute doesn't exist on this object, try
+         # its underlying graph object...
+         if (self.isNxGraph()):
+@@ -1007,16 +1323,7 @@ class OriginalGraph(networkx.Graph):
+             reproject=reproject,
+             ignore_errors=ignore_errors,
+         )
+-        # frm: TODO:  Need to make sure this works for RX also
+-        #               To do so, need to find out how CRS data is used
+-        #               and whether it is used externally or only internally...
+-        #
+-        #               Note that the NetworkX.Graph.graph["crs"] is only
+-        #               ever accessed in this file (graph.py), so I am not
+-        #               clear what it is used for.  It seems to just be set
+-        #               and never used except to be written back out to JSON.
+ 
+-        # Store CRS data as an attribute of the NX graph
+         graph.graph["crs"] = df.crs.to_json()
+         return graph
+ 
+@@ -1237,6 +1544,9 @@ class OriginalGraph(networkx.Graph):
+             for node_id, index in ids_to_index.items()
+         }
+ 
++        # frm: TODO:  Figure out how to make this work for RX...
++        if (not self.isNxGraph()):
++            raise Exception("join(): Not supported for RX based Graph objects")
+         networkx.set_node_attributes(self, node_attributes)
+ 
+     # frm: Original Graph code...
+@@ -1270,7 +1580,7 @@ class OriginalGraph(networkx.Graph):
+         """
+         self.warn_for_islands()
+ 
+-def add_boundary_perimeters(graph: Graph, geometries: pd.Series) -> None:
++def add_boundary_perimeters(nxgraph: networkx.Graph, geometries: pd.Series) -> None:
+     """
+     Add shared perimeter between nodes and the total geometry boundary.
+ 
+@@ -1285,20 +1595,27 @@ def add_boundary_perimeters(graph: Graph, geometries: pd.Series) -> None:
+     from shapely.ops import unary_union
+     from shapely.prepared import prep
+ 
++    # frm: The original code operated on the Graph object which was a subclass of
++    #       NetworkX.Graph.  I have changed it to operate on a NetworkX.Graph object
++    #       with the understanding that callers will reach down into a Graph object
++    #       and pass in the inner nxgraph data member.
++
++    if not(isinstance(nxgraph, networkx.Graph)):
++        raise Exception("add_boundary_permiters: Graph is not a NetworkX.Graph object")
++
+     prepared_boundary = prep(unary_union(geometries).boundary)
+ 
+     boundary_nodes = geometries.boundary.apply(prepared_boundary.intersects)
+ 
+-    for node in graph:
+-        graph.nodes[node]["boundary_node"] = bool(boundary_nodes[node])
++    for node in nxgraph:
++        nxgraph.nodes[node]["boundary_node"] = bool(boundary_nodes[node])
+         if boundary_nodes[node]:
+             total_perimeter = geometries[node].boundary.length
+             shared_perimeter = sum(
+-                neighbor_data["shared_perim"] for neighbor_data in graph[node].values()
++                neighbor_data["shared_perim"] for neighbor_data in nxgraph[node].values()
+             )
+             boundary_perimeter = total_perimeter - shared_perimeter
+-            graph.nodes[node]["boundary_perim"] = boundary_perimeter
+-
++            nxgraph.nodes[node]["boundary_perim"] = boundary_perimeter
+ 
+ def check_dataframe(df: pd.DataFrame) -> None:
+     """
+diff --git a/gerrychain/grid.py b/gerrychain/grid.py
+index fcecd32..0b54a7f 100644
+--- a/gerrychain/grid.py
++++ b/gerrychain/grid.py
+@@ -195,6 +195,8 @@ def create_grid_graph(dimensions: Tuple[int, int], with_diagonals: bool) -> Grap
+             ((i, j + 1), (i + 1, j)) for i in range(m - 1) for j in range(n - 1)
+         ]
+         diagonal_edges = nw_to_se + sw_to_ne
++        #frm: TODO: Check that graph is an NX graph before calling graph.add_edges_from().  Eventually
++        #           make this work for RX too...
+         graph.add_edges_from(diagonal_edges)
+         for edge in diagonal_edges:
+             # frm: TODO:  When/if grid.py is converted to operate on GerryChain Graph
+@@ -208,6 +210,7 @@ def create_grid_graph(dimensions: Tuple[int, int], with_diagonals: bool) -> Grap
+             graph.edges[edge]["shared_perim"] = 0
+ 
+     # frm: These just set all nodes/edges in the graph to have the given attributes with a value of 1
++    # frm: TODO: These won't work for the new graph, and they won't work for RX
+     networkx.set_node_attributes(graph, 1, "population")
+     networkx.set_node_attributes(graph, 1, "area")
+ 
+diff --git a/gerrychain/partition/partition.py b/gerrychain/partition/partition.py
+index 542871d..9f476c0 100644
+--- a/gerrychain/partition/partition.py
++++ b/gerrychain/partition/partition.py
+@@ -323,6 +323,8 @@ class Partition:
+ 
+         if geometries is None:
+             geometries = self.graph.geometry
++            # frm: TODO: Test that self.graph.geometry is not None - but first need to grok
++            #               where this is set (other than Graph.from_geo_dataframe())
+ 
+         if set(geometries.index) != set(self.graph.nodes):
+             raise TypeError(
+diff --git a/gerrychain/proposals/spectral_proposals.py b/gerrychain/proposals/spectral_proposals.py
+index 0cea82f..4fb3d04 100644
+--- a/gerrychain/proposals/spectral_proposals.py
++++ b/gerrychain/proposals/spectral_proposals.py
+@@ -29,7 +29,18 @@ def spectral_cut(
+     """
+ 
+     # frm:  Bad variable names - nlist is node_list and n is num_nodes   
+-    nlist = list(graph.nodes())
++    # frm: Original Code:   nlist = list(graph.nodes())
++    # frm: TODO:  Subtle issue here - in NX there is no difference between a node ID
++    #               and a node index (what you use to get a node from a list), but 
++    #               in RX there is a difference - which manifests most in subgraphs
++    #               where RX goes ahead and renumbers the nodes in the graph.  To
++    #               make subgraphs work, we remember (in a map) what the node "IDs"
++    #               of the parent graph were.
++    #
++    #               The issue here is what the code wants here.  We are in an RX 
++    #               world at this point - so maybe it doesn't matter, but worth 
++    #               thinking about...
++    nlist = list(graph.nodes)
+     n = len(nlist)
+ 
+     if weight_type == "random":
+diff --git a/tests/conftest.py b/tests/conftest.py
+index 501906a..6e7ef65 100644
+--- a/tests/conftest.py
++++ b/tests/conftest.py
+@@ -15,8 +15,8 @@ def three_by_three_grid():
+     3 4 5
+     6 7 8
+     """
+-    graph = Graph()
+-    graph.add_edges_from(
++    nxgraph = nx.Graph()
++    nxgraph.add_edges_from(
+         [
+             (0, 1),
+             (0, 3),
+@@ -32,8 +32,7 @@ def three_by_three_grid():
+             (7, 8),
+         ]
+     )
+-    return graph
+-
++    return Graph.from_networkx(nxgraph)
+ 
+ @pytest.fixture
+ def four_by_five_grid_for_opt():
+@@ -47,8 +46,8 @@ def four_by_five_grid_for_opt():
+     #  5  6  7  8  9
+     #  0  1  2  3  4
+ 
+-    graph = Graph()
+-    graph.add_nodes_from(
++    nxgraph = nx.Graph()
++    nxgraph.add_nodes_from(
+         [
+             (0, {"population": 10, "opt_value": 1, "MVAP": 2}),
+             (1, {"population": 10, "opt_value": 1, "MVAP": 2}),
+@@ -73,7 +72,7 @@ def four_by_five_grid_for_opt():
+         ]
+     )
+ 
+-    graph.add_edges_from(
++    nxgraph.add_edges_from(
+         [
+             (0, 1),
+             (0, 5),
+@@ -109,7 +108,7 @@ def four_by_five_grid_for_opt():
+         ]
+     )
+ 
+-    return graph
++    return Graph.from_networkx(nxgraph)
+ 
+ 
+ @pytest.fixture
+@@ -125,7 +124,8 @@ def graph_with_random_data_factory(three_by_three_grid):
+ def attach_random_data(graph, columns):
+     for node in graph.nodes:
+         for col in columns:
+-            graph.nodes[node][col] = random.randint(1, 1000)
++            # frm: Original code:  graph.nodes[node][col] = random.randint(1, 1000)
++            graph.get_node_data_dict(node)[col] = random.randint(1, 1000)
+ 
+ 
+ @pytest.fixture
+diff --git a/tests/frm_tests/test_frm_old_vs_new_graph.py b/tests/frm_tests/test_frm_old_vs_new_graph.py
+index af2e335..2e4780c 100644
+--- a/tests/frm_tests/test_frm_old_vs_new_graph.py
++++ b/tests/frm_tests/test_frm_old_vs_new_graph.py
+@@ -37,7 +37,9 @@ print("Created old and new Graph objects from JSON")
+ # frm: DEBUGGING:
+ # print("created new_graph")
+ # print("type of new_graph.nodes is: ", type(new_graph.nodes))
+-print("new_graph nodes: ", list(new_graph.nodes))
++new_graph_nodes = new_graph.nodes
++old_graph_nodes = list(old_graph.nodes)
++# print("new_graph nodes: ", list(new_graph.nodes))
+ # print("new_graph edges: ", list(new_graph.edges))
+ # print("")  # newline
+ # print("created old_graph")
+@@ -45,17 +47,13 @@ print("new_graph nodes: ", list(new_graph.nodes))
+ # print("old_graph nodes: ", list(old_graph.nodes))
+ # print("old_graph edges: ", list(old_graph.edges))
+ 
+-print("testing types agree for graph.nodes")
+-assert (type(new_graph.nodes) == type(old_graph.nodes)) , "type of graph.nodes not the same"
+-
+ print("testing that graph.nodes have same length")
+ assert(len(new_graph.nodes) == len(old_graph.nodes)), "lengths disagree"
+ 
+-print("testing types agree for graph.edges")
+-assert (type(new_graph.edges) == type(old_graph.edges)) , "type of graph.edges not the same"
+-
++new_graph_edges = new_graph.edges
++old_graph_edges = set(old_graph.edges)
+ print("testing that graph.edges have same length")
+-assert(len(new_graph.edges) == len(old_graph.edges)), "lengths disagree"
++assert(len(new_graph_edges) == len(old_graph_edges)), "lengths disagree"
+ 
+ node_subset = set([1,2,3,4,5])
+ new_graph_subset = new_graph.subgraph(node_subset)
+@@ -73,6 +71,8 @@ print("About to test Graph.predecessors(root)")
+ pred = new_graph.predecessors(1)
+ print(list(pred))
+ 
++# frm: TODO:  Flesh out this test...
++
+ 
+ #
+ # The code below is from the regression test - maybe 
+diff --git a/tests/optimization/test_single_metric.py b/tests/optimization/test_single_metric.py
+index e986849..a439182 100644
+--- a/tests/optimization/test_single_metric.py
++++ b/tests/optimization/test_single_metric.py
+@@ -501,6 +501,7 @@ def test_single_metric_sb_finds_hard_max(four_by_five_grid_for_opt):
+     ):
+         max_scores_sb[i] = optimizer.best_score
+ 
++    # frm: TODO:  stmt below fails with 1.0 != 2
+     assert np.max(max_scores_sb) == 2
+ 
+ 
+diff --git a/tests/partition/test_partition.py b/tests/partition/test_partition.py
+index d9e42db..1c2a311 100644
+--- a/tests/partition/test_partition.py
++++ b/tests/partition/test_partition.py
+@@ -54,10 +54,10 @@ def example_geographic_partition():
+     graph = Graph.from_networkx(networkx.complete_graph(3))
+     assignment = {0: 1, 1: 1, 2: 2}
+     for node in graph.nodes:
+-        graph.nodes[node]["boundary_node"] = False
+-        graph.nodes[node]["area"] = 1
++        graph.get_node_data_dict(node)["boundary_node"] = False
++        graph.get_node_data_dict(node)["area"] = 1
+     for edge in graph.edges:
+-        graph.edges[edge]["shared_perim"] = 1
++        graph.get_edge_data_dict(edge)["shared_perim"] = 1
+     return GeographicPartition(graph, assignment, None, None, None)
+ 
+ 
+@@ -77,6 +77,10 @@ def test_Partition_parts_is_a_dictionary_of_parts_to_nodes(example_partition):
+ def test_Partition_has_subgraphs(example_partition):
+     partition = example_partition
+     assert set(partition.subgraphs[1].nodes) == {0, 1}
++    # frm: TODO:  The following statement fails because nodes are given new
++    #                   node IDs in RX, so instead of having an ID of 2
++    #                   the ID is 0.  Not sure right now what the right 
++    #                   fix is - need to grok what this test is actually testing...
+     assert set(partition.subgraphs[2].nodes) == {2}
+     assert len(list(partition.subgraphs)) == 2
+ 
+@@ -92,7 +96,7 @@ def test_partition_implements_getattr_for_updater_access(example_partition):
+ 
+ def test_can_be_created_from_a_districtr_file(graph, districtr_plan_file):
+     for node in graph:
+-        graph.nodes[node]["area_num_1"] = node
++        graph.get_node_data_dict(node)["area_num_1"] = node
+ 
+     partition = Partition.from_districtr_file(graph, districtr_plan_file)
+     assert partition.assignment.to_dict() == {
+diff --git a/tests/partition/test_plotting.py b/tests/partition/test_plotting.py
+index b991631..2f9507f 100644
+--- a/tests/partition/test_plotting.py
++++ b/tests/partition/test_plotting.py
+@@ -3,13 +3,15 @@ from unittest.mock import MagicMock
+ import geopandas as gp
+ import pytest
+ from shapely.geometry import Polygon
++import networkx
+ 
+ from gerrychain import Graph, Partition
+ 
+ 
+ @pytest.fixture
+ def partition():
+-    graph = Graph([(0, 1), (1, 3), (2, 3), (0, 2)])
++    nxgraph = networkx.Graph([(0, 1), (1, 3), (2, 3), (0, 2)])
++    graph = Graph.from_networkx(nxgraph)
+     return Partition(graph, {0: 1, 1: 1, 2: 2, 3: 2})
+ 
+ 
+diff --git a/tests/test_make_graph.py b/tests/test_make_graph.py
+index 7f90ce7..b1e17b7 100644
+--- a/tests/test_make_graph.py
++++ b/tests/test_make_graph.py
+@@ -8,11 +8,13 @@ import pytest
+ from shapely.geometry import Polygon
+ from pyproj import CRS
+ 
++import networkx
++
+ from gerrychain.graph import Graph
+ from gerrychain.graph.geo import GeometryError
+ 
+ # frm: added following import
+-from gerrychain.graph import get_node_data_dict
++# from gerrychain.graph import get_node_data_dict
+ 
+ 
+ @pytest.fixture
+@@ -68,32 +70,43 @@ def target_file():
+ 
+ 
+ def test_add_data_to_graph_can_handle_column_names_that_start_with_numbers():
+-    graph = Graph([("01", "02"), ("02", "03"), ("03", "01")])
++    
++    # frm: Test has been modified to work with new Graph object that has an NetworkX.Graph
++    #           object embedded inside it.  I am not sure if this test actually tests
++    #           anything useful anymore...
++
++    nxgraph = networkx.Graph([("01", "02"), ("02", "03"), ("03", "01")])
+     df = pandas.DataFrame({"16SenDVote": [20, 30, 50], "node": ["01", "02", "03"]})
+     df = df.set_index("node")
+ 
++    # frm: Note that the new Graph does not support add_data() 
++
++    graph = Graph.from_networkx(nxgraph)
++
+     graph.add_data(df, ["16SenDVote"])
+ 
+-    assert graph.nodes["01"]["16SenDVote"] == 20
+-    assert graph.nodes["02"]["16SenDVote"] == 30
+-    assert graph.nodes["03"]["16SenDVote"] == 50
++    # Test that the embedded nxgraph object has the added data
++    assert nxgraph.nodes["01"]["16SenDVote"] == 20
++    assert nxgraph.nodes["02"]["16SenDVote"] == 30
++    assert nxgraph.nodes["03"]["16SenDVote"] == 50
+ 
+-    #frm: Added tests to make sure new code works for NX graphs
+-    assert get_node_data_dict(graph, "01")["16SenDVote"] == 20
+-    assert get_node_data_dict(graph, "02")["16SenDVote"] == 30
+-    assert get_node_data_dict(graph, "03")["16SenDVote"] == 50
++    # Test that the graph object has the added data
++    assert graph.get_node_data_dict("01")["16SenDVote"] == 20
++    assert graph.get_node_data_dict("02")["16SenDVote"] == 30
++    assert graph.get_node_data_dict("03")["16SenDVote"] == 50
+ 
+ 
+ def test_join_can_handle_right_index():
+-    graph = Graph([("01", "02"), ("02", "03"), ("03", "01")])
++    nxgraph = networkx.Graph([("01", "02"), ("02", "03"), ("03", "01")])
+     df = pandas.DataFrame({"16SenDVote": [20, 30, 50], "node": ["01", "02", "03"]})
+ 
+-    graph.join(df, ["16SenDVote"], right_index="node")
++    graph = Graph.from_networkx(nxgraph)
+ 
+-    assert graph.nodes["01"]["16SenDVote"] == 20
+-    assert graph.nodes["02"]["16SenDVote"] == 30
+-    assert graph.nodes["03"]["16SenDVote"] == 50
++    graph.join(df, ["16SenDVote"], right_index="node")
+ 
++    assert graph.get_node_data_dict("01")["16SenDVote"] == 20
++    assert graph.get_node_data_dict("02")["16SenDVote"] == 30
++    assert graph.get_node_data_dict("03")["16SenDVote"] == 50
+ 
+ def test_make_graph_from_dataframe_creates_graph(geodataframe):
+     graph = Graph.from_geodataframe(geodataframe)
+@@ -140,10 +153,10 @@ def test_can_insist_on_not_reprojecting(geodataframe):
+     graph = Graph.from_geodataframe(df, reproject=False)
+ 
+     for node in ("a", "b", "c", "d"):
+-        assert graph.nodes[node]["area"] == 1
++        assert graph.get_node_data_dict(node)["area"] == 1
+ 
+     for edge in graph.edges:
+-        assert graph.edges[edge]["shared_perim"] == 1
++        assert graph.get_edge_data_dict(edge)["shared_perim"] == 1
+ 
+ 
+ def test_does_not_reproject_by_default(geodataframe):
+@@ -151,10 +164,10 @@ def test_does_not_reproject_by_default(geodataframe):
+     graph = Graph.from_geodataframe(df)
+ 
+     for node in ("a", "b", "c", "d"):
+-        assert graph.nodes[node]["area"] == 1.0
++        assert graph.get_node_data_dict(node)["area"] == 1.0
+ 
+     for edge in graph.edges:
+-        assert graph.edges[edge]["shared_perim"] == 1.0
++        assert graph.get_edge_data_dict(edge)["shared_perim"] == 1.0
+ 
+ 
+ def test_reproject(geodataframe):
+@@ -164,10 +177,10 @@ def test_reproject(geodataframe):
+     graph = Graph.from_geodataframe(df, reproject=True)
+ 
+     for node in ("a", "b", "c", "d"):
+-        assert graph.nodes[node]["area"] != 1
++        assert graph.get_node_data_dict(node)["area"] != 1
+ 
+     for edge in graph.edges:
+-        assert graph.edges[edge]["shared_perim"] != 1
++        assert graph.get_edge_data_dict(edge)["shared_perim"] != 1
+ 
+ 
+ def test_identifies_boundary_nodes(geodataframe_with_boundary):
+@@ -175,8 +188,8 @@ def test_identifies_boundary_nodes(geodataframe_with_boundary):
+     graph = Graph.from_geodataframe(df)
+ 
+     for node in ("a", "b", "c", "e"):
+-        assert graph.nodes[node]["boundary_node"]
+-    assert not graph.nodes["d"]["boundary_node"]
++        assert graph.get_node_data_dict(node)["boundary_node"]
++    assert not graph.get_node_data_dict("d")["boundary_node"]
+ 
+ 
+ def test_computes_boundary_perims(geodataframe_with_boundary):
+@@ -186,7 +199,7 @@ def test_computes_boundary_perims(geodataframe_with_boundary):
+     expected = {"a": 5, "e": 5, "b": 1, "c": 1}
+ 
+     for node, value in expected.items():
+-        assert graph.nodes[node]["boundary_perim"] == value
++        assert graph.get_node_data_dict(node)["boundary_perim"] == value
+ 
+ 
+ def edge_set_equal(set1, set2):
+@@ -196,31 +209,39 @@ def edge_set_equal(set1, set2):
+ def test_from_file_adds_all_data_by_default(shapefile):
+     graph = Graph.from_file(shapefile)
+ 
+-    assert all("data" in node_data for node_data in graph.nodes.values())
+-    assert all("data2" in node_data for node_data in graph.nodes.values())
++    nxgraph = graph.nxgraph
++
++    assert all("data" in node_data for node_data in nxgraph.nodes.values())
++    assert all("data2" in node_data for node_data in nxgraph.nodes.values())
+ 
+ 
+ def test_from_file_and_then_to_json_does_not_error(shapefile, target_file):
+     graph = Graph.from_file(shapefile)
+ 
++    nxgraph = graph.nxgraph
++
+     # Even the geometry column is copied to the graph
+-    assert all("geometry" in node_data for node_data in graph.nodes.values())
++    assert all("geometry" in node_data for node_data in nxgraph.nodes.values())
+ 
+     graph.to_json(target_file)
+ 
+ 
+ def test_from_file_and_then_to_json_with_geometries(shapefile, target_file):
+     graph = Graph.from_file(shapefile)
++    
++    nxgraph = graph.nxgraph
+ 
+     # Even the geometry column is copied to the graph
+-    assert all("geometry" in node_data for node_data in graph.nodes.values())
++    assert all("geometry" in node_data for node_data in nxgraph.nodes.values())
+ 
+     graph.to_json(target_file, include_geometries_as_geojson=True)
+ 
+ 
+ def test_graph_warns_for_islands():
+-    graph = Graph()
+-    graph.add_node(0)
++    nxgraph = networkx.Graph()
++    nxgraph.add_node(0)
++
++    graph = Graph.from_networkx(nxgraph)
+ 
+     with pytest.warns(Warning):
+         graph.warn_for_islands()
+@@ -263,4 +284,4 @@ def test_make_graph_from_dataframe_has_crs(gdf_with_data):
+ def test_make_graph_from_shapefile_has_crs(shapefile):
+     graph = Graph.from_file(shapefile)
+     df = gp.read_file(shapefile)
+-    assert CRS.from_json(graph.graph["crs"]).equals(df.crs)
+\ No newline at end of file
++    assert CRS.from_json(graph.graph["crs"]).equals(df.crs)
+diff --git a/tests/test_metagraph.py b/tests/test_metagraph.py
+index 03aa2d5..e10c01e 100644
+--- a/tests/test_metagraph.py
++++ b/tests/test_metagraph.py
+@@ -17,6 +17,7 @@ def test_all_cut_edge_flips(partition):
+         for flip in all_cut_edge_flips(partition)
+         for node, part in flip.items()
+     )
++    # frm: TODO:  stmt below fails - the "result" has (2,2) instead of (3,2)
+     assert result == {(6, 1), (7, 1), (8, 1), (4, 2), (5, 2), (3, 2)}
+ 
+ 
+@@ -48,4 +49,5 @@ def test_all_valid_flips(partition):
+         for flip in all_valid_flips(partition, constraints)
+         for node, part in flip.items()
+     )
++    # frm: TODO:  stmt below fails - the "result" has (2,2) instead of (3,2)
+     assert result == {(7, 1), (8, 1), (4, 2), (5, 2), (3, 2)}
+diff --git a/tests/test_region_aware.py b/tests/test_region_aware.py
+index bcbe1e0..9793493 100644
+--- a/tests/test_region_aware.py
++++ b/tests/test_region_aware.py
+@@ -237,6 +237,10 @@ def test_region_aware_muni_warning():
+     with pytest.warns(UserWarning) as record:
+         # Random seed 2 should succeed, but drawing the
+         # tree is hard, so we should get a warning
++        # frm: TODO:  stmt below fails - saying too many attempts:
++        #
++        #        raise RuntimeError(f"Could not find a possible cut after {max_attempts} attempts.")
++        #            RuntimeError: Could not find a possible cut after 10000 attempts.
+         run_chain_dual(
+             seed=2,
+             steps=1000,
+diff --git a/tests/test_tree.py b/tests/test_tree.py
+index 1805b8c..15aaade 100644
+--- a/tests/test_tree.py
++++ b/tests/test_tree.py
+@@ -30,8 +30,8 @@ random.seed(2018)
+ @pytest.fixture
+ def graph_with_pop(three_by_three_grid):
+     for node in three_by_three_grid:
+-        three_by_three_grid.nodes[node]["pop"] = 1
+-    return Graph.from_networkx(three_by_three_grid)
++        three_by_three_grid.get_node_data_dict(node)["pop"] = 1
++    return three_by_three_grid
+ 
+ 
+ @pytest.fixture
+@@ -54,18 +54,18 @@ def twelve_by_twelve_with_pop():
+ 
+ 
+ def test_bipartition_tree_returns_a_subset_of_nodes(graph_with_pop):
+-    ideal_pop = sum(graph_with_pop.nodes[node]["pop"] for node in graph_with_pop) / 2
++    ideal_pop = sum(graph_with_pop.get_node_data_dict(node)["pop"] for node in graph_with_pop) / 2
+     result = bipartition_tree(graph_with_pop, "pop", ideal_pop, 0.25, 10)
+     assert isinstance(result, frozenset)
+     assert all(node in graph_with_pop.nodes for node in result)
+ 
+ 
+ def test_bipartition_tree_returns_within_epsilon_of_target_pop(graph_with_pop):
+-    ideal_pop = sum(graph_with_pop.nodes[node]["pop"] for node in graph_with_pop) / 2
++    ideal_pop = sum(graph_with_pop.get_node_data_dict(node)["pop"] for node in graph_with_pop) / 2
+     epsilon = 0.25
+     result = bipartition_tree(graph_with_pop, "pop", ideal_pop, epsilon, 10)
+ 
+-    part_pop = sum(graph_with_pop.nodes[node]["pop"] for node in result)
++    part_pop = sum(graph_with_pop.get_node_data_dict(node)["pop"] for node in result)
+     assert abs(part_pop - ideal_pop) / ideal_pop < epsilon
+ 
+ 
+@@ -75,7 +75,7 @@ def test_recursive_tree_part_returns_within_epsilon_of_target_pop(
+     n_districts = 7  # 144/7 ≈ 20.5 nodes/subgraph (1 person/node)
+     ideal_pop = (
+         sum(
+-            twelve_by_twelve_with_pop.nodes[node]["pop"]
++            twelve_by_twelve_with_pop.get_node_data_dict(node)["pop"]
+             for node in twelve_by_twelve_with_pop
+         )
+     ) / n_districts
+@@ -102,7 +102,7 @@ def test_recursive_tree_part_returns_within_epsilon_of_target_pop_using_contract
+     n_districts = 7  # 144/7 ≈ 20.5 nodes/subgraph (1 person/node)
+     ideal_pop = (
+         sum(
+-            twelve_by_twelve_with_pop.nodes[node]["pop"]
++            twelve_by_twelve_with_pop.get_node_data_dict(node)["pop"]
+             for node in twelve_by_twelve_with_pop
+         )
+     ) / n_districts
+@@ -134,7 +134,7 @@ def test_recursive_seed_part_returns_within_epsilon_of_target_pop(
+     n_districts = 7  # 144/7 ≈ 20.5 nodes/subgraph (1 person/node)
+     ideal_pop = (
+         sum(
+-            twelve_by_twelve_with_pop.nodes[node]["pop"]
++            twelve_by_twelve_with_pop.get_node_data_dict(node)["pop"]
+             for node in twelve_by_twelve_with_pop
+         )
+     ) / n_districts
+@@ -163,7 +163,7 @@ def test_recursive_seed_part_returns_within_epsilon_of_target_pop_using_contract
+     n_districts = 7  # 144/7 ≈ 20.5 nodes/subgraph (1 person/node)
+     ideal_pop = (
+         sum(
+-            twelve_by_twelve_with_pop.nodes[node]["pop"]
++            twelve_by_twelve_with_pop.get_node_data_dict(node)["pop"]
+             for node in twelve_by_twelve_with_pop
+         )
+     ) / n_districts
+@@ -210,7 +210,7 @@ def test_recursive_seed_part_uses_method(twelve_by_twelve_with_pop):
+     n_districts = 7  # 144/7 ≈ 20.5 nodes/subgraph (1 person/node)
+     ideal_pop = (
+         sum(
+-            twelve_by_twelve_with_pop.nodes[node]["pop"]
++            twelve_by_twelve_with_pop.get_node_data_dict(node)["pop"]
+             for node in twelve_by_twelve_with_pop
+         )
+     ) / n_districts
+@@ -238,7 +238,7 @@ def test_recursive_seed_part_with_n_unspecified_within_epsilon(
+     n_districts = 6  # This should set n=3
+     ideal_pop = (
+         sum(
+-            twelve_by_twelve_with_pop.nodes[node]["pop"]
++            twelve_by_twelve_with_pop.get_node_data_dict(node)["pop"]
+             for node in twelve_by_twelve_with_pop
+         )
+     ) / n_districts
+@@ -271,12 +271,12 @@ def test_uniform_spanning_tree_returns_tree_with_pop_attribute(graph_with_pop):
+ 
+ 
+ def test_bipartition_tree_returns_a_tree(graph_with_pop):
+-    ideal_pop = sum(graph_with_pop.nodes[node]["pop"] for node in graph_with_pop) / 2
++    ideal_pop = sum(graph_with_pop.get_node_data_dict(node)["pop"] for node in graph_with_pop) / 2
+     tree = Graph.from_networkx(
+         networkx.Graph([(0, 1), (1, 2), (1, 4), (3, 4), (4, 5), (3, 6), (6, 7), (6, 8)])
+     )
+     for node in tree:
+-        tree.nodes[node]["pop"] = graph_with_pop.nodes[node]["pop"]
++        tree.get_node_data_dict(node)["pop"] = graph_with_pop.get_node_data_dict(node)["pop"]
+ 
+     result = bipartition_tree(
+         graph_with_pop, "pop", ideal_pop, 0.25, 10, tree, lambda x: 4
+@@ -290,7 +290,7 @@ def test_bipartition_tree_returns_a_tree(graph_with_pop):
+ 
+ def test_recom_works_as_a_proposal(partition_with_pop):
+     graph = partition_with_pop.graph
+-    ideal_pop = sum(graph.nodes[node]["pop"] for node in graph) / 2
++    ideal_pop = sum(graph.get_node_data_dict(node)["pop"] for node in graph) / 2
+     proposal = functools.partial(
+         recom, pop_col="pop", pop_target=ideal_pop, epsilon=0.25, node_repeats=5
+     )
+@@ -305,7 +305,7 @@ def test_recom_works_as_a_proposal(partition_with_pop):
+ def test_reversible_recom_works_as_a_proposal(partition_with_pop):
+     random.seed(2018)
+     graph = partition_with_pop.graph
+-    ideal_pop = sum(graph.nodes[node]["pop"] for node in graph) / 2
++    ideal_pop = sum(graph.get_node_data_dict(node)["pop"] for node in graph) / 2
+     proposal = functools.partial(
+         reversible_recom, pop_col="pop", pop_target=ideal_pop, epsilon=0.10, M=1
+     )
+@@ -395,16 +395,16 @@ def test_prime_bound():
+ 
+ 
+ def test_bipartition_tree_random_returns_a_subset_of_nodes(graph_with_pop):
+-    ideal_pop = sum(graph_with_pop.nodes[node]["pop"] for node in graph_with_pop) / 2
++    ideal_pop = sum(graph_with_pop.get_node_data_dict(node)["pop"] for node in graph_with_pop) / 2
+     result = bipartition_tree_random(graph_with_pop, "pop", ideal_pop, 0.25, 10)
+     assert isinstance(result, frozenset)
+     assert all(node in graph_with_pop.nodes for node in result)
+ 
+ 
+ def test_bipartition_tree_random_returns_within_epsilon_of_target_pop(graph_with_pop):
+-    ideal_pop = sum(graph_with_pop.nodes[node]["pop"] for node in graph_with_pop) / 2
++    ideal_pop = sum(graph_with_pop.get_node_data_dict(node)["pop"] for node in graph_with_pop) / 2
+     epsilon = 0.25
+     result = bipartition_tree_random(graph_with_pop, "pop", ideal_pop, epsilon, 10)
+ 
+-    part_pop = sum(graph_with_pop.nodes[node]["pop"] for node in result)
++    part_pop = sum(graph_with_pop.get_node_data_dict(node)["pop"] for node in result)
+     assert abs(part_pop - ideal_pop) / ideal_pop < epsilon
+diff --git a/tests/updaters/test_split_scores.py b/tests/updaters/test_split_scores.py
+index c26a32d..08d4c23 100644
+--- a/tests/updaters/test_split_scores.py
++++ b/tests/updaters/test_split_scores.py
+@@ -4,6 +4,7 @@ from gerrychain import Partition
+ from gerrychain.updaters.locality_split_scores import LocalitySplits
+ from gerrychain.updaters.cut_edges import cut_edges
+ from gerrychain import Graph
++import networkx
+ 
+ @pytest.fixture
+ def three_by_three_grid():
+@@ -12,8 +13,8 @@ def three_by_three_grid():
+     3 4 5
+     6 7 8
+     """
+-    graph = Graph()
+-    graph.add_edges_from(
++    nxgraph = networkx.Graph()
++    nxgraph.add_edges_from(
+         [
+             (0, 1),
+             (0, 3),
+@@ -29,20 +30,21 @@ def three_by_three_grid():
+             (7, 8),
+         ]
+     )
++    graph = Graph.from_networkx(nxgraph)
+     return graph
+ 
+ 
+ @pytest.fixture
+ def graph_with_counties(three_by_three_grid):
+     for node in [0, 1, 2]:
+-        three_by_three_grid.nodes[node]["county"] = "a"
+-        three_by_three_grid.nodes[node]["pop"] = 1
++        three_by_three_grid.get_node_data_dict(node)["county"] = "a"
++        three_by_three_grid.get_node_data_dict(node)["pop"] = 1
+     for node in [3, 4, 5]:
+-        three_by_three_grid.nodes[node]["county"] = "b"
+-        three_by_three_grid.nodes[node]["pop"] = 1
++        three_by_three_grid.get_node_data_dict(node)["county"] = "b"
++        three_by_three_grid.get_node_data_dict(node)["pop"] = 1
+     for node in [6, 7, 8]:
+-        three_by_three_grid.nodes[node]["county"] = "c"
+-        three_by_three_grid.nodes[node]["pop"] = 1
++        three_by_three_grid.get_node_data_dict(node)["county"] = "c"
++        three_by_three_grid.get_node_data_dict(node)["pop"] = 1
+     return three_by_three_grid
+ 
+ 
+diff --git a/tests/updaters/test_splits.py b/tests/updaters/test_splits.py
+index 1b6c26f..7abd791 100644
+--- a/tests/updaters/test_splits.py
++++ b/tests/updaters/test_splits.py
+@@ -9,11 +9,11 @@ from gerrychain.updaters.county_splits import (CountySplit,
+ @pytest.fixture
+ def graph_with_counties(three_by_three_grid):
+     for node in [0, 1, 2]:
+-        three_by_three_grid.nodes[node]["county"] = "a"
++        three_by_three_grid.get_node_data_dict(node)["county"] = "a"
+     for node in [3, 4, 5]:
+-        three_by_three_grid.nodes[node]["county"] = "b"
++        three_by_three_grid.get_node_data_dict(node)["county"] = "b"
+     for node in [6, 7, 8]:
+-        three_by_three_grid.nodes[node]["county"] = "c"
++        three_by_three_grid.get_node_data_dict(node)["county"] = "c"
+     return three_by_three_grid
+ 
+ 
+diff --git a/tests/updaters/test_updaters.py b/tests/updaters/test_updaters.py
+index 37a4b97..c25e0ca 100644
+--- a/tests/updaters/test_updaters.py
++++ b/tests/updaters/test_updaters.py
+@@ -34,8 +34,8 @@ def partition_with_election(graph_with_d_and_r_cols):
+     graph = graph_with_d_and_r_cols
+     assignment = random_assignment(graph, 3)
+     parties_to_columns = {
+-        "D": {node: graph.nodes[node]["D"] for node in graph.nodes},
+-        "R": {node: graph.nodes[node]["R"] for node in graph.nodes},
++        "D": {node: graph.get_node_data_dict(node)["D"] for node in graph.nodes},
++        "R": {node: graph.get_node_data_dict(node)["R"] for node in graph.nodes},
+     }
+     election = Election("Mock Election", parties_to_columns)
+     updaters = {"Mock Election": election, "cut_edges": cut_edges}
+@@ -57,9 +57,9 @@ def test_Partition_can_update_stats():
+     graph = networkx.complete_graph(3)
+     assignment = {0: 1, 1: 1, 2: 2}
+ 
+-    graph.nodes[0]["stat"] = 1
+-    graph.nodes[1]["stat"] = 2
+-    graph.nodes[2]["stat"] = 3
++    graph.get_node_data_dict(0)["stat"] = 1
++    graph.get_node_data_dict(1)["stat"] = 2
++    graph.get_node_data_dict(2)["stat"] = 3
+ 
+     updaters = {"total_stat": Tally("stat", alias="total_stat")}
+ 
+@@ -79,7 +79,7 @@ def test_tally_multiple_columns(graph_with_d_and_r_cols):
+ 
+     partition = Partition(graph, assignment, updaters)
+     expected_total_in_district_one = sum(
+-        graph.nodes[i]["D"] + graph.nodes[i]["R"] for i in range(4)
++        graph.get_node_data_dict(i)["D"] + graph.get_node_data_dict(i)["R"] for i in range(4)
+     )
+     assert partition["total"][1] == expected_total_in_district_one
+ 
+@@ -108,7 +108,7 @@ def test_vote_proportion_returns_nan_if_total_votes_is_zero(three_by_three_grid)
+ 
+     for node in graph.nodes:
+         for col in election.columns:
+-            graph.nodes[node][col] = 0
++            graph.get_node_data_dict(node)[col] = 0
+ 
+     updaters = {"election": election}
+     assignment = random_assignment(graph, 3)
+@@ -183,8 +183,8 @@ def test_exterior_boundaries_as_a_set(three_by_three_grid):
+     graph = three_by_three_grid
+ 
+     for i in [0, 1, 2, 3, 5, 6, 7, 8]:
+-        graph.nodes[i]["boundary_node"] = True
+-    graph.nodes[4]["boundary_node"] = False
++        graph.get_node_data_dict(i)["boundary_node"] = True
++    graph.get_node_data_dict(4)["boundary_node"] = False
+ 
+     assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
+     updaters = {
+@@ -212,9 +212,9 @@ def test_exterior_boundaries(three_by_three_grid):
+     graph = three_by_three_grid
+ 
+     for i in [0, 1, 2, 3, 5, 6, 7, 8]:
+-        graph.nodes[i]["boundary_node"] = True
+-        graph.nodes[i]["boundary_perim"] = 2
+-    graph.nodes[4]["boundary_node"] = False
++        graph.get_node_data_dict(i)["boundary_node"] = True
++        graph.get_node_data_dict(i)["boundary_perim"] = 2
++    graph.get_node_data_dict(4)["boundary_node"] = False
+ 
+     assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
+     updaters = {
+@@ -241,9 +241,9 @@ def test_exterior_boundaries(three_by_three_grid):
+ def test_perimeter(three_by_three_grid):
+     graph = three_by_three_grid
+     for i in [0, 1, 2, 3, 5, 6, 7, 8]:
+-        graph.nodes[i]["boundary_node"] = True
+-        graph.nodes[i]["boundary_perim"] = 1
+-    graph.nodes[4]["boundary_node"] = False
++        graph.get_node_data_dict(i)["boundary_node"] = True
++        graph.get_node_data_dict(i)["boundary_perim"] = 1
++    graph.get_node_data_dict(4)["boundary_node"] = False
+ 
+     for edge in graph.edges:
+         graph.edges[edge]["shared_perim"] = 1
+@@ -294,6 +294,6 @@ def test_elections_match_the_naive_computation(partition_with_election):
+ 
+ def expected_tally(partition, column):
+     return {
+-        part: sum(partition.graph.nodes[node][column] for node in nodes)
++        part: sum(partition.graph.get_node_data_dict(node)[column] for node in nodes)
+         for part, nodes in partition.parts.items()
+     }

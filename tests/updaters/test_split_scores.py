@@ -4,6 +4,7 @@ from gerrychain import Partition
 from gerrychain.updaters.locality_split_scores import LocalitySplits
 from gerrychain.updaters.cut_edges import cut_edges
 from gerrychain import Graph
+import networkx
 
 @pytest.fixture
 def three_by_three_grid():
@@ -12,8 +13,8 @@ def three_by_three_grid():
     3 4 5
     6 7 8
     """
-    graph = Graph()
-    graph.add_edges_from(
+    nxgraph = networkx.Graph()
+    nxgraph.add_edges_from(
         [
             (0, 1),
             (0, 3),
@@ -29,20 +30,21 @@ def three_by_three_grid():
             (7, 8),
         ]
     )
+    graph = Graph.from_networkx(nxgraph)
     return graph
 
 
 @pytest.fixture
 def graph_with_counties(three_by_three_grid):
     for node in [0, 1, 2]:
-        three_by_three_grid.nodes[node]["county"] = "a"
-        three_by_three_grid.nodes[node]["pop"] = 1
+        three_by_three_grid.get_node_data_dict(node)["county"] = "a"
+        three_by_three_grid.get_node_data_dict(node)["pop"] = 1
     for node in [3, 4, 5]:
-        three_by_three_grid.nodes[node]["county"] = "b"
-        three_by_three_grid.nodes[node]["pop"] = 1
+        three_by_three_grid.get_node_data_dict(node)["county"] = "b"
+        three_by_three_grid.get_node_data_dict(node)["pop"] = 1
     for node in [6, 7, 8]:
-        three_by_three_grid.nodes[node]["county"] = "c"
-        three_by_three_grid.nodes[node]["pop"] = 1
+        three_by_three_grid.get_node_data_dict(node)["county"] = "c"
+        three_by_three_grid.get_node_data_dict(node)["pop"] = 1
     return three_by_three_grid
 
 

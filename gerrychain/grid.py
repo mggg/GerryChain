@@ -165,6 +165,12 @@ class Grid(Partition):
 
 
 # frm ???:  Is this intended to be callable / useful for external users?
+#           For now, I am going to leave this as operating on NetworkX graphs, since 
+#           it appears to only be used internally in this Class.  However, I may discover
+#           that it has been used externally with the intention of returning a Graph object.
+#           If so, then I will need to return a Graph object (from_networkx(nxgraphg)) and change
+#           the call inside this class to expect a Graph object instead of a NetworkX.Graph object.
+# frm: TODO: Decide if I should change this to return a Graph object or not...
 def create_grid_graph(dimensions: Tuple[int, int], with_diagonals: bool) -> Graph:
     """
     Creates a grid graph with the specified dimensions.
@@ -183,9 +189,9 @@ def create_grid_graph(dimensions: Tuple[int, int], with_diagonals: bool) -> Grap
     if len(dimensions) != 2:
         raise ValueError("Expected two dimensions.")
     m, n = dimensions
-    graph = networkx.generators.lattice.grid_2d_graph(m, n)
+    nxgraph = networkx.generators.lattice.grid_2d_graph(m, n)
 
-    networkx.set_edge_attributes(graph, 1, "shared_perim")
+    networkx.set_edge_attributes(nxgraph, 1, "shared_perim")
 
     if with_diagonals:
         nw_to_se = [
@@ -195,7 +201,9 @@ def create_grid_graph(dimensions: Tuple[int, int], with_diagonals: bool) -> Grap
             ((i, j + 1), (i + 1, j)) for i in range(m - 1) for j in range(n - 1)
         ]
         diagonal_edges = nw_to_se + sw_to_ne
-        graph.add_edges_from(diagonal_edges)
+        #frm: TODO: Check that graph is an NX graph before calling graph.add_edges_from().  Eventually
+        #           make this work for RX too...
+        nxgraph.add_edges_from(diagonal_edges)
         for edge in diagonal_edges:
             # frm: TODO:  When/if grid.py is converted to operate on GerryChain Graph
             #               objects instead of NX.Graph objects, this use of NX
@@ -205,15 +213,16 @@ def create_grid_graph(dimensions: Tuple[int, int], with_diagonals: bool) -> Grap
             #               We will also need to think about edge vs edge_id.  In this
             #               case we want an edge_id, so that means we need to look at
             #               how diagonal_edges are created - but that is for the future...
-            graph.edges[edge]["shared_perim"] = 0
+            nxgraph.edges[edge]["shared_perim"] = 0
 
     # frm: These just set all nodes/edges in the graph to have the given attributes with a value of 1
-    networkx.set_node_attributes(graph, 1, "population")
-    networkx.set_node_attributes(graph, 1, "area")
+    # frm: TODO: These won't work for the new graph, and they won't work for RX
+    networkx.set_node_attributes(nxgraph, 1, "population")
+    networkx.set_node_attributes(nxgraph, 1, "area")
 
-    tag_boundary_nodes(graph, dimensions)
+    tag_boundary_nodes(nxgraph, dimensions)
 
-    return graph
+    return nxgraph
 
 
 # frm ???:  Why is this here instead of in graph.py?  Who is it intended for?  Internal vs. External?

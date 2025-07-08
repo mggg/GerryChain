@@ -54,10 +54,10 @@ def example_geographic_partition():
     graph = Graph.from_networkx(networkx.complete_graph(3))
     assignment = {0: 1, 1: 1, 2: 2}
     for node in graph.nodes:
-        graph.nodes[node]["boundary_node"] = False
-        graph.nodes[node]["area"] = 1
+        graph.get_node_data_dict(node)["boundary_node"] = False
+        graph.get_node_data_dict(node)["area"] = 1
     for edge in graph.edges:
-        graph.edges[edge]["shared_perim"] = 1
+        graph.get_edge_data_dict(edge)["shared_perim"] = 1
     return GeographicPartition(graph, assignment, None, None, None)
 
 
@@ -77,6 +77,17 @@ def test_Partition_parts_is_a_dictionary_of_parts_to_nodes(example_partition):
 def test_Partition_has_subgraphs(example_partition):
     partition = example_partition
     assert set(partition.subgraphs[1].nodes) == {0, 1}
+    # frm: TODO:  The following statement fails because nodes are given new
+    #                   node IDs in RX, so instead of having an ID of 2
+    #                   the ID is 0.  Not sure right now what the right 
+    #                   fix is - need to grok what this test is actually testing...
+    #
+    # I am going to assume that this test is just verifying that 
+    # we correctly create the appropriate subgraphs (which we do).
+    # Rewrite the test so that it first verifies the nodes in the parent graph
+    # and their assignments, then reach into the subgraphs to verify that the 
+    # parent node mapping for the subgraphs is correct.
+    #
     assert set(partition.subgraphs[2].nodes) == {2}
     assert len(list(partition.subgraphs)) == 2
 
@@ -92,7 +103,7 @@ def test_partition_implements_getattr_for_updater_access(example_partition):
 
 def test_can_be_created_from_a_districtr_file(graph, districtr_plan_file):
     for node in graph:
-        graph.nodes[node]["area_num_1"] = node
+        graph.get_node_data_dict(node)["area_num_1"] = node
 
     partition = Partition.from_districtr_file(graph, districtr_plan_file)
     assert partition.assignment.to_dict() == {
