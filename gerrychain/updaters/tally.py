@@ -35,15 +35,34 @@ class DataTally:
         self.alias = alias
 
         def initialize_tally(partition):
+
+            # If the "data" passed in was a string, then interpret that string
+            # as the name of a node attribute in the graph, and construct
+            # a dict of the form: {node_id: node_attribution_value}
+            #
+            # If not, then assume that the "data" passed in is already of the
+            # form: {node_id: data_value}
+
+            # frm: TODO: Verify that if the "data" passed in is not a string that it
+            #               is of the form: {node_id, data_value}
+
             if isinstance(self.data, str):
+
+                # frm: Original Code:
+                #    nodes = partition.graph.nodes
+                #    attribute = self.data
+                #    self.data = {node: nodes[node][attribute] for node in nodes}
+                graph = partition.graph
                 nodes = partition.graph.nodes
                 attribute = self.data
-                self.data = {node: nodes[node][attribute] for node in nodes}
+                self.data = {node: graph.node_data(node)[attribute] for node in nodes}
 
             tally = collections.defaultdict(int)
             for node, part in partition.assignment.items():
                 add = self.data[node]
 
+                # frm: TODO:  Should I also test that the "add" variable is a number or something
+                #               that can be added?
                 if math.isnan(add):
                     warnings.warn(
                         "ignoring nan encountered at node '{}' for attribute '{}'".format(

@@ -146,7 +146,7 @@ def total_reg_splits(partition, reg_attr):
     """Returns the total number of times that reg_attr is split in the partition."""
     all_region_names = set(
         # frm: original code:   partition.graph.nodes[node][reg_attr] for node in partition.graph.nodes
-        partition.graph.get_node_data_dict(node)[reg_attr] for node in partition.graph.nodes
+        partition.graph.node_data(node)[reg_attr] for node in partition.graph.nodes
     )
     split = {name: 0 for name in all_region_names}
     # Require that the cut_edges updater is attached to the partition
@@ -155,12 +155,12 @@ def total_reg_splits(partition, reg_attr):
             partition.assignment[node1] != partition.assignment[node2]
             # frm: original code:   and partition.graph.nodes[node1][reg_attr]
             # frm: original code:   == partition.graph.nodes[node2][reg_attr]
-            and partition.graph.get_node_data_dict(node1)[reg_attr]
-            == partition.graph.get_node_data_dict(node2)[reg_attr]
+            and partition.graph.node_data(node1)[reg_attr]
+            == partition.graph.node_data(node2)[reg_attr]
         ):
             # frm: original code:   split[partition.graph.nodes[node1][reg_attr]] += 1
             # frm: original code:   split[partition.graph.nodes[node2][reg_attr]] += 1
-            split[partition.graph.get_node_data_dict(node1)[reg_attr]] += 1
-            split[partition.graph.get_node_data_dict(node2)[reg_attr]] += 1
+            split[partition.graph.node_data(node1)[reg_attr]] += 1
+            split[partition.graph.node_data(node2)[reg_attr]] += 1
 
     return sum(1 for value in split.values() if value > 0)

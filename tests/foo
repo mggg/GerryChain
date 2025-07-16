@@ -13,7 +13,7 @@
 < 
 16,17c23
 < # frm: added following import
-< # from gerrychain.graph import get_node_data_dict
+< # from gerrychain.graph import node_data
 ---
 > import networkx
 73,77d78
@@ -47,7 +47,7 @@
 <     assert all("data2" in node_data for node_data in nxgraph.nodes.values())
 ---
 >     # data dictionaries for all of the nodes
->     all_node_data = [graph.get_node_data_dict(node_id) for node_id in graph.node_indices]
+>     all_node_data = [graph.node_data(node_id) for node_id in graph.node_indices]
 216a219,220
 >     assert all("data" in node_data for node_data in all_node_data)
 >     assert all("data2" in node_data for node_data in all_node_data)
@@ -60,7 +60,7 @@
 <     assert all("geometry" in node_data for node_data in nxgraph.nodes.values())
 225a228,232
 >     # data dictionaries for all of the nodes
->     all_node_data = [graph.get_node_data_dict(node_id) for node_id in graph.node_indices]
+>     all_node_data = [graph.node_data(node_id) for node_id in graph.node_indices]
 > 
 >     assert all("geometry" in node_data for node_data in all_node_data)
 > 
@@ -69,7 +69,7 @@
 <     nxgraph = graph.nxgraph
 233a239,241
 >     # data dictionaries for all of the nodes
->     all_node_data = [graph.get_node_data_dict(node_id) for node_id in graph.node_indices]
+>     all_node_data = [graph.node_data(node_id) for node_id in graph.node_indices]
 > 
 235c243
 <     assert all("geometry" in node_data for node_data in nxgraph.nodes.values())

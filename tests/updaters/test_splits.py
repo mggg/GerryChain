@@ -9,11 +9,11 @@ from gerrychain.updaters.county_splits import (CountySplit,
 @pytest.fixture
 def graph_with_counties(three_by_three_grid):
     for node in [0, 1, 2]:
-        three_by_three_grid.get_node_data_dict(node)["county"] = "a"
+        three_by_three_grid.node_data(node)["county"] = "a"
     for node in [3, 4, 5]:
-        three_by_three_grid.get_node_data_dict(node)["county"] = "b"
+        three_by_three_grid.node_data(node)["county"] = "b"
     for node in [6, 7, 8]:
-        three_by_three_grid.get_node_data_dict(node)["county"] = "c"
+        three_by_three_grid.node_data(node)["county"] = "c"
     return three_by_three_grid
 
 

@@ -47,7 +47,7 @@ def spectral_cut(
         for edge_id in graph.edge_indices:
             # frm: Original Code:    graph.edges[edge]["weight"] = random.random()
             # frm: TODO: edges vs. edge_ids:  edge_ids are wanted here (integers)
-            graph.get_edge_data_dict(edge_id)["weight"] = random.random()
+            graph.edge_data(edge_id)["weight"] = random.random()
 
     # frm TODO: NYI: normalized_laplacian_matrix() for RX
     #
@@ -59,7 +59,6 @@ def spectral_cut(
     # Compute the desired laplacian matrix (convert from sparse to dense)
     if lap_type == "normalized":
         LAP = (graph.normalized_laplacian_matrix()).todense()
-
     else:
         LAP = (graph.laplacian_matrix()).todense()
 
@@ -133,6 +132,7 @@ def spectral_recom(
         partition.assignment.mapping[edge[1]],
     )
 
+    # frm: TODO:  Does this code do the right thing for RX - where node_ids in subgraph change?
     subgraph = partition.graph.subgraph(
         partition.parts[parts_to_merge[0]] | partition.parts[parts_to_merge[1]]
     )

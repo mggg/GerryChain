@@ -34,8 +34,8 @@ def partition_with_election(graph_with_d_and_r_cols):
     graph = graph_with_d_and_r_cols
     assignment = random_assignment(graph, 3)
     parties_to_columns = {
-        "D": {node: graph.get_node_data_dict(node)["D"] for node in graph.nodes},
-        "R": {node: graph.get_node_data_dict(node)["R"] for node in graph.nodes},
+        "D": {node: graph.node_data(node)["D"] for node in graph.nodes},
+        "R": {node: graph.node_data(node)["R"] for node in graph.nodes},
     }
     election = Election("Mock Election", parties_to_columns)
     updaters = {"Mock Election": election, "cut_edges": cut_edges}
@@ -57,9 +57,9 @@ def test_Partition_can_update_stats():
     graph = networkx.complete_graph(3)
     assignment = {0: 1, 1: 1, 2: 2}
 
-    graph.get_node_data_dict(0)["stat"] = 1
-    graph.get_node_data_dict(1)["stat"] = 2
-    graph.get_node_data_dict(2)["stat"] = 3
+    graph.nodes[0]["stat"] = 1
+    graph.nodes[1]["stat"] = 2
+    graph.nodes[2]["stat"] = 3
 
     updaters = {"total_stat": Tally("stat", alias="total_stat")}
 
@@ -79,7 +79,7 @@ def test_tally_multiple_columns(graph_with_d_and_r_cols):
 
     partition = Partition(graph, assignment, updaters)
     expected_total_in_district_one = sum(
-        graph.get_node_data_dict(i)["D"] + graph.get_node_data_dict(i)["R"] for i in range(4)
+        graph.node_data(i)["D"] + graph.node_data(i)["R"] for i in range(4)
     )
     assert partition["total"][1] == expected_total_in_district_one
 
@@ -108,7 +108,7 @@ def test_vote_proportion_returns_nan_if_total_votes_is_zero(three_by_three_grid)
 
     for node in graph.nodes:
         for col in election.columns:
-            graph.get_node_data_dict(node)[col] = 0
+            graph.node_data(node)[col] = 0
 
     updaters = {"election": election}
     assignment = random_assignment(graph, 3)
@@ -179,12 +179,41 @@ def test_election_result_has_a_cute_str_method():
     assert str(results) == expected
 
 
+def _convert_dict_of_set_of_rx_node_ids_to_set_of_nx_node_ids(dict_of_set_of_rx_nodes, nx_to_rx_node_id_map):
+
+    # frm: TODO:  This way to convert node_ids is clumsy and inconvenient.  Think of something better...
+
+    # When we create a partition from an NX based Graph we convert it to be an 
+    # RX based Graph which changes the node_ids of the graph.  If one wants
+    # to convert sets of RX based graph node_ids back to the node_ids in the
+    # original NX Graph, then we can do so by taking advantage of the 
+    # nx_to_rx_node_id_map that is generated and saved when we converted the
+    # NX based graph to be based on RX
+    #
+    # This routine converts the data that some updaters create - namely a mapping from
+    # partitions to a set of node_ids.
+
+    converted_set = {}
+    if nx_to_rx_node_id_map is not None:    # means graph was converted from NX
+        # reverse the map
+        rx_to_nx_node_id_map = {value: key for key, value in nx_to_rx_node_id_map.items()}
+        converted_set = {}
+        for part, set_of_rx_nodes in dict_of_set_of_rx_nodes.items():
+            converted_set_of_rx_nodes = {rx_to_nx_node_id_map[rx_node_id] for rx_node_id in set_of_rx_nodes}
+            converted_set[part] = converted_set_of_rx_nodes
+        # converted_set = {
+        #   part: {rx_to_nx_node_id_map[rx_node_id]}
+        #   for part, set_of_rx_node_ids in dict_of_set_of_rx_nodes.items()
+        #   for rx_node_id in set_of_rx_node_ids
+        # }
+    return converted_set
+
 def test_exterior_boundaries_as_a_set(three_by_three_grid):
     graph = three_by_three_grid
 
     for i in [0, 1, 2, 3, 5, 6, 7, 8]:
-        graph.get_node_data_dict(i)["boundary_node"] = True
-    graph.get_node_data_dict(4)["boundary_node"] = False
+        graph.node_data(i)["boundary_node"] = True
+    graph.node_data(4)["boundary_node"] = False
 
     assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
     updaters = {
@@ -194,27 +223,63 @@ def test_exterior_boundaries_as_a_set(three_by_three_grid):
     partition = Partition(graph, assignment, updaters)
 
     result = partition["exterior_boundaries_as_a_set"]
+
+    # frm: TOdO: Come up with a nice way to convert the result which uses
+    #               RX based node_ids back to the original NX based node_ids...
+
+    # If the original graph that the partition was based on was an NX graph
+    # then we need to convert the RX node_ids in the partition's graph
+    # back to what they were in the NX graph.
+    nx_to_rx_node_id_map = partition.graph.get_nx_to_rx_node_id_map()
+    if nx_to_rx_node_id_map is not None:
+        converted_result = _convert_dict_of_set_of_rx_node_ids_to_set_of_nx_node_ids(result, nx_to_rx_node_id_map)
+        result = converted_result
+
     assert result[1] == {0, 1, 3} and result[2] == {2, 5, 6, 7, 8}
 
-    # 112    111
-    # 112 -> 121
-    # 222    222
-    flips = {4: 2, 2: 1, 5: 1}
+    # Flip nodes and then recompute partition
+    # boundaries to make sure the updater works properly.  
+    # The new partition map will look like this:
+    #
+    #   112    111
+    #   112 -> 121
+    #   222    222
+    #
+    # In terms of the original NX graph's node_ids, we would 
+    # do the following flips: 4->2, 2->1, and 5->1
+    #
+    # However, the node_ids in the partition's graph have changed due to 
+    # conversion to RX, so we need to translate the flips into RX node_ids
+    
+    nx_flips = {4: 2, 2: 1, 5: 1}
+    rx_to_nx_node_id_map = {v: k for k,v in nx_to_rx_node_id_map.items()}
+    rx_flips = {rx_to_nx_node_id_map[nx_node_id]: part for nx_node_id, part in nx_flips.items()}
 
-    new_partition = Partition(parent=partition, flips=flips)
+    new_partition = Partition(parent=partition, flips=rx_flips)
 
     result = new_partition["exterior_boundaries_as_a_set"]
+
+    # If the original graph that the partition was based on was an NX graph
+    # then we need to convert the RX node_ids in the partition's graph
+    # back to what they were in the NX graph.
+    nx_to_rx_node_id_map = new_partition.graph.get_nx_to_rx_node_id_map()
+    if nx_to_rx_node_id_map is not None:
+        converted_result = _convert_dict_of_set_of_rx_node_ids_to_set_of_nx_node_ids(result, nx_to_rx_node_id_map)
+        result = converted_result
 
     assert result[1] == {0, 1, 2, 3, 5} and result[2] == {6, 7, 8}
 
 
 def test_exterior_boundaries(three_by_three_grid):
+
+    # frm: TODO:  Need to deal with NX vs. RX node_ids here - look at the other test_exterior_boundaries test
+
     graph = three_by_three_grid
 
     for i in [0, 1, 2, 3, 5, 6, 7, 8]:
-        graph.get_node_data_dict(i)["boundary_node"] = True
-        graph.get_node_data_dict(i)["boundary_perim"] = 2
-    graph.get_node_data_dict(4)["boundary_node"] = False
+        graph.node_data(i)["boundary_node"] = True
+        graph.node_data(i)["boundary_perim"] = 2
+    graph.node_data(4)["boundary_node"] = False
 
     assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
     updaters = {
@@ -241,13 +306,28 @@ def test_exterior_boundaries(three_by_three_grid):
 def test_perimeter(three_by_three_grid):
     graph = three_by_three_grid
     for i in [0, 1, 2, 3, 5, 6, 7, 8]:
-        graph.get_node_data_dict(i)["boundary_node"] = True
-        graph.get_node_data_dict(i)["boundary_perim"] = 1
-    graph.get_node_data_dict(4)["boundary_node"] = False
+        graph.node_data(i)["boundary_node"] = True
+        # frm: TODO:  Update test - boundary_perim should be 2 for corner nodes...
+        graph.node_data(i)["boundary_perim"] = 1
+    graph.node_data(4)["boundary_node"] = False
 
     for edge in graph.edges:
-        graph.edges[edge]["shared_perim"] = 1
+        graph.edge_data(edge)["shared_perim"] = 1
 
+    """
+    frm: TODO:  BIG bug/issue here - assignments break when converting to RX
+
+    The problem is that RX renumbers nodes when it converts an NX graph to RX.  It
+    does this so that it can be sure that there are no gaps - and also because sometimes
+    node_ids in NX are not integers.  In any event, that means that any assignment 
+    for a Partition needs to have its node_ids (from NX) converted to be whatever RX
+    decided to use for the new node_ids.
+
+    I am not sure how to do this, because it does not appear that RX saves the NX
+    node_ids.  Need to check that, though...
+
+    HMMMMM....
+    """
     assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
     updaters = {
         "exterior_boundaries": exterior_boundaries,
@@ -275,6 +355,22 @@ def reject_half_of_all_flips(partition):
 
 
 def test_elections_match_the_naive_computation(partition_with_election):
+    
+    # frm: TODO:  This test fails - find out why.
+
+    """
+    The pytest output follows:
+
+  File "/Users/fred/Documents/_play/_python/_redistricting/_gerrychain/_rustworkx_work/GerryChain/tests/updaters/test_updaters.py", line 391, in test_elections_match_the_naive_computation
+    assert expected_party_totals == election_view.totals_for_party
+AssertionError: assert {'D': {0: 119...2268, 2: 162}} == {'D': {0: 119...: 2430, 2: 0}}
+                             
+  Differing items:
+  {'D': {0: 1191, 1: 2946, 2: 152}} != {'D': {0: 1191, 1: 3098, 2: 0}}
+  {'R': {0: 1171, 1: 2268, 2: 162}} != {'R': {0: 1171, 1: 2430, 2: 0}}
+
+    """
+
     chain = MarkovChain(
         propose_random_flip,
         Validator([no_vanishing_districts, reject_half_of_all_flips]),
@@ -294,6 +390,6 @@ def test_elections_match_the_naive_computation(partition_with_election):
 
 def expected_tally(partition, column):
     return {
-        part: sum(partition.graph.get_node_data_dict(node)[column] for node in nodes)
+        part: sum(partition.graph.node_data(node)[column] for node in nodes)
         for part, nodes in partition.parts.items()
     }

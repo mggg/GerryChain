@@ -6,6 +6,14 @@ from gerrychain.updaters.cut_edges import cut_edges
 from gerrychain import Graph
 import networkx
 
+# frm: TODO:  This test fails due to NX dependencies in locality_split_scores.py
+#
+# There are lots of comments in that file about what needs to be fixed, but 
+# it is a low priority becauxe the code in locality_split_scores.py is not used
+# in the gerrychain codebase - it is presumeably used by other users of GC, so
+# this needs to be fixed sometime - but later...
+# 
+
 @pytest.fixture
 def three_by_three_grid():
     """Returns a graph that looks like this:
@@ -37,14 +45,14 @@ def three_by_three_grid():
 @pytest.fixture
 def graph_with_counties(three_by_three_grid):
     for node in [0, 1, 2]:
-        three_by_three_grid.get_node_data_dict(node)["county"] = "a"
-        three_by_three_grid.get_node_data_dict(node)["pop"] = 1
+        three_by_three_grid.node_data(node)["county"] = "a"
+        three_by_three_grid.node_data(node)["pop"] = 1
     for node in [3, 4, 5]:
-        three_by_three_grid.get_node_data_dict(node)["county"] = "b"
-        three_by_three_grid.get_node_data_dict(node)["pop"] = 1
+        three_by_three_grid.node_data(node)["county"] = "b"
+        three_by_three_grid.node_data(node)["pop"] = 1
     for node in [6, 7, 8]:
-        three_by_three_grid.get_node_data_dict(node)["county"] = "c"
-        three_by_three_grid.get_node_data_dict(node)["pop"] = 1
+        three_by_three_grid.node_data(node)["county"] = "c"
+        three_by_three_grid.node_data(node)["pop"] = 1
     return three_by_three_grid
 
 
@@ -71,10 +79,7 @@ def split_partition(graph_with_counties):
     )
     return partition
 
-
-
-
-
+# frm: TODO:  NX vs. RX node_id issues here.
 
 class TestSplittingScores:
 	

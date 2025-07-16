@@ -10,6 +10,8 @@ def test_contiguous_components(graph):
     assert len(components[1]) == 2
     assert len(components[2]) == 1
 
+    # frm: TODO: NX vs. RX node_id issues here
+
     assert set(frozenset(g.nodes) for g in components[1]) == {
         frozenset([0, 1, 2]),
         frozenset([6, 7, 8]),

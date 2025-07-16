@@ -91,6 +91,5 @@ def test_nx_rx_laplacian_matrix_equality(nxgraph, rxgraph):
 
     # test equality
     matrices_are_equal = are_sparse_matrices_equal(float_gc_nx_laplacian_matrix, gc_rx_laplacian_matrix)
-    print("matrices_are_equal = ", matrices_are_equal)
     assert(matrices_are_equal)
 

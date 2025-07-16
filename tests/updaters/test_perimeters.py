@@ -8,6 +8,13 @@ from gerrychain.proposals import propose_random_flip
 
 
 def setup():
+
+    # frm: TODO:  I think that this is flawed - it creates a partition (grid) and
+    #               then flips a node, but it is using NX node_ids for the flip (I think).
+    #               So, after thinking if I am correct, I need to do the flip in RX
+    #               node_ids and then all tests that use setup() will need to translate
+    #               back into NX node_ids to do their tests...
+
     grid = Grid((4, 4), with_diagonals=False)
     flipped_grid = grid.flip({(2, 1): 3})
     return grid, flipped_grid

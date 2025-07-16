@@ -431,7 +431,7 @@ class Graph(networkx.Graph):
     #################################################################
 
     # RX compatibility routine - works with either NX or RX graph
-    def get_node_data_dict(self, node_id):
+    def node_data(self, node_id):
         # This routine returns the data dictionary for the given node's data
 
         # frm TODO: 

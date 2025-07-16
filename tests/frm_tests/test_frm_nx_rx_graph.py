@@ -80,8 +80,8 @@ def test_nx_rx_sets_of_nodes_agree(nxgraph, rxgraph):
     assert nx_set_of_nodes == rx_set_of_nodes
 
 def test_nx_rx_node_data_agree(gerrychain_nxgraph, gerrychain_rxgraph):
-    nx_data_dict = gerrychain_nxgraph.get_node_data_dict(1)
-    rx_data_dict = gerrychain_rxgraph.get_node_data_dict(1)
+    nx_data_dict = gerrychain_nxgraph.node_data(1)
+    rx_data_dict = gerrychain_rxgraph.node_data(1)
     assert nx_data_dict == rx_data_dict
 
 def test_nx_rx_node_indices_agree(gerrychain_nxgraph, gerrychain_rxgraph):
@@ -110,8 +110,8 @@ def test_nx_rx_subgraphs_agree(gerrychain_nxgraph, gerrychain_rxgraph):
     nx_subgraph = gerrychain_nxgraph.subgraph(subgraph_nodes)
     rx_subgraph = gerrychain_rxgraph.subgraph(subgraph_nodes)
     for node_id in nx_subgraph:
-        nx_node_data = nx_subgraph.get_node_data_dict(node_id)
-        rx_node_data = rx_subgraph.get_node_data_dict(node_id)
+        nx_node_data = nx_subgraph.node_data(node_id)
+        rx_node_data = rx_subgraph.node_data(node_id)
         assert nx_node_data == rx_node_data
     # frm: TODO:  This does not test that the rx_subgraph has the exact same number of
     #                   nodes as the nx_subgraph, and it does not test edge data...

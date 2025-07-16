@@ -59,8 +59,8 @@ gerrychain_rxgraph = Graph.from_rustworkx(rxgraph)
 # print("RX nodes: ", rx_set_of_nodes)
 
 print("Testing node data dict")
-print("NX data dict for node 1: ", gerrychain_nxgraph.get_node_data_dict(1))
-print("RX data dict for node 1: ", gerrychain_rxgraph.get_node_data_dict(1))
+print("NX data dict for node 1: ", gerrychain_nxgraph.node_data(1))
+print("RX data dict for node 1: ", gerrychain_rxgraph.node_data(1))
 
 """
 Stuff to figure out / test:
@@ -93,7 +93,7 @@ Stuff to figure out / test:
 
               * Comments:
                     The code had graph.nodes[node_id][value_id] = new_value all over.  I changed
-                    the code to instead do graph.get_node_data_dict(node_id) but I think that 
+                    the code to instead do graph.node_data(node_id) but I think that 
                     users are used to doing it the old way => need to create a NodeView for RX...
             * graph.edges()
               * NX

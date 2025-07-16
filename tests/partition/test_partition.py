@@ -54,10 +54,10 @@ def example_geographic_partition():
     graph = Graph.from_networkx(networkx.complete_graph(3))
     assignment = {0: 1, 1: 1, 2: 2}
     for node in graph.nodes:
-        graph.get_node_data_dict(node)["boundary_node"] = False
-        graph.get_node_data_dict(node)["area"] = 1
+        graph.node_data(node)["boundary_node"] = False
+        graph.node_data(node)["area"] = 1
     for edge in graph.edges:
-        graph.get_edge_data_dict(edge)["shared_perim"] = 1
+        graph.edge_data(edge)["shared_perim"] = 1
     return GeographicPartition(graph, assignment, None, None, None)
 
 
@@ -77,7 +77,8 @@ def test_Partition_parts_is_a_dictionary_of_parts_to_nodes(example_partition):
 def test_Partition_has_subgraphs(example_partition):
     partition = example_partition
     assert set(partition.subgraphs[1].nodes) == {0, 1}
-    # frm: TODO:  The following statement fails because nodes are given new
+    # frm: TODO:  NX vs. RX node_id issues here...
+    #                   The following statement fails because nodes are given new
     #                   node IDs in RX, so instead of having an ID of 2
     #                   the ID is 0.  Not sure right now what the right 
     #                   fix is - need to grok what this test is actually testing...
@@ -103,7 +104,9 @@ def test_partition_implements_getattr_for_updater_access(example_partition):
 
 def test_can_be_created_from_a_districtr_file(graph, districtr_plan_file):
     for node in graph:
-        graph.get_node_data_dict(node)["area_num_1"] = node
+        graph.node_data(node)["area_num_1"] = node
+
+    # frm: TODO:  NX vs. RX node_id issues here...
 
     partition = Partition.from_districtr_file(graph, districtr_plan_file)
     assert partition.assignment.to_dict() == {

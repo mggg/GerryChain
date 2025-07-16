@@ -12,6 +12,12 @@ def partition(graph):
 
 
 def test_all_cut_edge_flips(partition):
+    
+    # frm: TODO:  NX vs RX node_id issues
+    #
+    # The node_ids in the partition need to be translated back...
+    # 
+
     result = set(
         (node, part)
         for flip in all_cut_edge_flips(partition)
@@ -36,6 +42,7 @@ class TestAllValidStatesOneFlipAway:
 
 
 def test_all_valid_flips(partition):
+    # frm: TODO:  NX vs. RX node_id issues...
     def disallow_six_to_one(partition):
         for node, part in partition.flips.items():
             if node == 6 and part == 1:

@@ -157,6 +157,37 @@ class Assignment(Mapping):
         parts = {part: frozenset(keys) for part, keys in level_sets(assignment).items()}
 
         return cls(parts)
+    
+    def new_assignment_convert_old_node_ids_to_new_node_ids(self, node_id_mapping: Dict) -> "Assignment":
+        """
+        Create a new Assignment object from the one passed in, where the node_ids are changed
+        according to the node_id_mapping from old node_ids to new node_ids.
+
+        This routine was motivated by the fact that node_ids are changed when converting from an
+        NetworkX based graph to a RustworkX based graph.  An Assignment based on the node_ids in 
+        the NetworkX based graph would need to be changed to use the new node_ids - the new
+        Asignment would be semantically equivalent - just converted to use the new node_ids in 
+        the RX based graph.
+
+        The node_id_mapping is of the form {old_node_id: new_node_id}
+        """
+
+        # Dict of the form: {node_id: part_id}
+        old_assignment_mapping = self.mapping
+
+        # convert old_node_ids to new_node_ids, keeping part IDs the same
+        new_assignment_mapping = {
+            node_id_mapping[old_node_id]: part
+            for old_node_id, part in old_assignment_mapping.items()
+        }
+           #  pandas.Series(data=part, index=nodes) for part, nodes in self.parts.items()
+
+        new_assignment = Assignment(
+            self.parts,
+            new_assignment_mapping
+        )
+
+        return new_assignment
 
 
 def get_assignment(
@@ -189,7 +220,7 @@ def get_assignment(
             )
         return Assignment.from_dict(
             # frm: original code:   {node: graph.nodes[node][part_assignment] for node in graph}
-            {node: graph.get_node_data_dict(node)[part_assignment] for node in graph}
+            {node: graph.node_data(node)[part_assignment] for node in graph}
         )
     # Check if assignment is a dict or a mapping type
     elif callable(getattr(part_assignment, "items", None)):

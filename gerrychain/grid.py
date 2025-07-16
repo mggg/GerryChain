@@ -208,7 +208,7 @@ def create_grid_graph(dimensions: Tuple[int, int], with_diagonals: bool) -> Grap
             # frm: TODO:  When/if grid.py is converted to operate on GerryChain Graph
             #               objects instead of NX.Graph objects, this use of NX
             #               EdgeView to get/set edge data will need to change to use
-            #               gerrychain_graph.get_edge_data_dict()
+            #               gerrychain_graph.edge_data()
             #               
             #               We will also need to think about edge vs edge_id.  In this
             #               case we want an edge_id, so that means we need to look at
@@ -241,7 +241,7 @@ def give_constant_attribute(graph: Graph, attribute: Any, value: Any) -> None:
     """
     for node in graph.nodes:
         # frm original code: graph.nodes[node][attribute] = value
-        graph.get_node_data_dict(node)[attribute] = value
+        graph.node_data(node)[attribute] = value
 
 
 def tag_boundary_nodes(graph: Graph, dimensions: Tuple[int, int]) -> None:
@@ -271,7 +271,7 @@ def tag_boundary_nodes(graph: Graph, dimensions: Tuple[int, int]) -> None:
 
     # frm: TODO:  When/if grid.py converts to operating on new GerryChain Graph
     #               objects, all of the graph.nodes[node]... calls should 
-    #               be changed to use graph.get_node_data_dict(node)...
+    #               be changed to use graph.node_data(node)...
 
     m, n = dimensions
     for node in graph.nodes:

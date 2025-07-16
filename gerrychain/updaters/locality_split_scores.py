@@ -137,7 +137,23 @@ class LocalitySplits:
 
     def __call__(self, partition):
 
+        # frm: TODO: LocalitySplits: Figure out how this is intended to be used...
+        # 
+        # Not quite sure why it is better to have a "__call()__" method instead of a 
+        # get_scores(self) method, but whatever...
+        #
+        # This routine indeed just computes the requested scores (specified in the constructor).
+        # It stashed those scores as a data member in the class and returns them to the caller as well.
+        #
+        # This all seems kind of misguided to me - and there is no instance of this being used in 
+        # the gerrychain code except in a test, so I am not sure how it is intended to be used.
+        #
+        # Probably need to look at some user code that Peter sent me to see if anyone actually uses
+        # this and if so, how...
+        #
+
         if self.localities == []:
+            # frm: TODO:  NX vs. RX issues here.  graph.nodes(data=<xxx>) is NX specific...
             self.localitydict = dict(partition.graph.nodes(data=self.col_id))
             self.localities = set(list(self.localitydict.values()))
 
@@ -158,18 +174,29 @@ class LocalitySplits:
 
             totpop = 0
             for node in partition.graph.nodes:
-                # frm: original code:   totpop += partition.graph.nodes[node][self.pop_col]
-                totpop += partition.graph.get_node_data_dict(node)[self.pop_col]
+                # frm: TODO:  Once you have a partition, you cannot change the total population
+                #               in the Partition, so why don't we cache the total population as
+                #               a data member in Partition?
 
+                # frm: original code:   totpop += partition.graph.nodes[node][self.pop_col]
+                totpop += partition.graph.node_data(node)[self.pop_col]
+
+            # frm: TODO:  Ditto with num_districts - isn't this a constant once you create a Partition?
             num_districts = len(partition.assignment.parts.keys())
 
             for loc in self.localities:
                 # frm: TODO:    The code below just calculates the total population for a set of nodes.
                 #               This sounds like a good candidate for a utility function.  See if this
                 #               logic is repeated elsewhere...
+                
+                # frm: TODO:  This looks like perhaps the nost expensive way there is to compute
+                #               the population of a set of nodes - creating a subgraph?!?!?
                 sg = partition.graph.subgraph(
                     n
                     # frm: TODO:  I think that graph.nodes(data=true) is NX dependent and needs to  change for RX
+                    # frm: NX Note:  The original code used the NX node(data= True) idiom which returns a 
+                    #                   dict of dict - node_id: {<node data dictionary>}
+                    # 
                     for n, v in partition.graph.nodes(data=True)
                     if v[self.col_id] == loc
                 )
@@ -180,6 +207,27 @@ class LocalitySplits:
                     pop += sg.nodes[n][self.pop_col]
 
                 allowed_pieces[loc] = math.ceil(pop / (totpop / num_districts))
+
+                """
+                frm: new version of this code that is less clever...
+
+                # Compute the population associated with each location
+                the_graph = partition.graph
+                for node_id in the_graph.node_indices():
+                    locality_name = the_graph.node_data(node_id)[self.col_id]
+                    locality_pop = the_graph.node_data(node_id)[self.pop_col]
+                    if locality_name not in locality_population:
+                        locality_population[locality_name] = locality_pop
+                    else:
+                        locality_population[locality_name] += locality_pop
+
+                ideal_population_per_district = totpop / num_districts
+
+                for locality_name in locality_population.keys():
+                    pop_for_locality = locality_population[locality_name]
+                    allowed_pieces[locality_name] = ceil(pop_for_locality / ideal_population_per_district)
+                """
+
             self.allowed_pieces = allowed_pieces
 
         for s in self.scores:
@@ -238,7 +286,7 @@ class LocalitySplits:
 
         for n in partition.graph.nodes():
             # frm: original code:   locality = partition.graph.nodes[n][self.col_id]
-            locality = partition.graph.get_node_data_dict(n)[self.col_id]
+            locality = partition.graph.node_data(n)[self.col_id]
             if locality not in locality_intersections:
                 locality_intersections[locality] = set(
                     [partition.assignment.mapping[n]]
@@ -254,7 +302,7 @@ class LocalitySplits:
                         x
                         for x in partition.parts[d]
                         # frm: original code:   if partition.graph.nodes[x][self.col_id] == locality
-                        if partition.graph.get_node_data_dict(x)[self.col_id] == locality
+                        if partition.graph.node_data(x)[self.col_id] == locality
                     ]
                 )
 
@@ -395,7 +443,7 @@ class LocalitySplits:
                 # frm: original code:   locality_pop[self.localitydict[vtd]] += partition.graph.nodes[vtd][
                 # frm: original code:       self.pop_col
                 # frm: original code:   ]
-                locality_pop[self.localitydict[vtd]] += partition.graph.get_node_data_dict(vtd)[
+                locality_pop[self.localitydict[vtd]] += partition.graph.node_data(vtd)[
                     self.pop_col
                 ]
             district_dict[district] = locality_pop

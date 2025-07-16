@@ -69,6 +69,10 @@ def initialize_cut_edges(partition):
     :param partition: A partition of a Graph
     :type partition: :class:`~gerrychain.partition.Partition`
 
+    frm: TODO:  This description should be updated.  It does return a mapping of
+                edges to parts, but it only has "cut edges".  Simple change but
+                I want to be 100% sure before doing it...
+
     :returns: A dictionary mapping each part of a partition to the set of edges
         in that part.
     :rtype: Dict

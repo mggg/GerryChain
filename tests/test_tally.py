@@ -27,17 +27,22 @@ def test_data_tally_works_as_an_updater(three_by_three_grid):
 
 
 def test_data_tally_gives_expected_value(three_by_three_grid):
+    # Put all but one of the nodes in part #1, and put the one "first_node"
+    # into part #2.
     first_node = next(iter(three_by_three_grid.nodes))
     assignment = {node: 1 for node in three_by_three_grid.nodes}
     assignment[first_node] = 2
 
+    # All nodes get a value of 1 for the data to be tallied
     data = {node: 1 for node in three_by_three_grid}
     updaters = {"tally": DataTally(data, alias="tally")}
     partition = Partition(three_by_three_grid, assignment, updaters)
 
+    # Create a new partition, adding the "first_node" to part #1
     flip = {first_node: 1}
     new_partition = partition.flip(flip)
 
+    # The "tally" should increase by one because of the flipped node's data
     assert new_partition["tally"][1] == partition["tally"][1] + 1
 
 

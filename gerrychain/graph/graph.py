@@ -82,7 +82,7 @@ name/ID/value are the same.  However, in RustworkX, the index is always an integ
 the set of indexes for both nodes and edges stats at zero with consecutive integer values.  This
 is one of the things that allows RustworkX to be faster than NetworkX.  Converting to using 
 RustworkX, therefore, required that the code distinguish between a node/edge's index and its value/ID/name.
-This is most visible in the use of get_node_data_dict() and get_edge_data_dict() functions and 
+This is most visible in the use of node_data() and edge_data() functions and 
 in the changes made to the use of subgraphs (which unfortunately have different index values for nodes than
 the parent graph in RX).
 
@@ -166,16 +166,6 @@ class Graph:
 
     """
 
-    # frm TODO: graph.nodes     This is inherited from NetworkX and is of type NodeView which
-    #                           raises some interesting issues, because NodeView supports several
-    #                           clever ways to access nodes (with one index and with two and maybe with three).  
-    #                           I need to think about what this means for RX compatibility.  If users take advantage
-    #                           of the different ways to access NodeView then I might need to implement something
-    #                           similar for this new Graph class.  *sigh*
-    #
-    #                           The same concerns exist for EdgeView...
-    #
-
     # frm:      This class cannot have a constructor - because there is code that assumes
     #           that it can use the default constructor to create instances of it.
     #           That code is buried deep in non GerryChain code, so I don't really understand
@@ -184,37 +174,37 @@ class Graph:
     #
     # def __init__(self, nxgraph: networkx.Graph, rxgraph: rustworkx.PyGraph)  -> None:
     #     # frm TODO:  check that exactly one param is not None - need one and only one graph...
-    #     self.nxgraph = nxgraph
-    #     self.rxgraph = rxgraph
-
-    # frm: TODO:  Change nxgraph and rxgraph to be _nxgraph and _rxgraph
+    #     self._nxgraph = nxgraph
+    #     self._rxgraph = rxgraph
 
     # frm: TODO:    Add documentation for new data members I am adding:
-    #               nxgraph, rxgraph, parent_node_id_map, is_a_subgraph
+    #               _nxgraph, _rxgraph, parent_node_id_map, _is_a_subgraph
 
     @classmethod
     def from_networkx(cls, nxgraph: networkx.Graph) -> "Graph":
         graph = cls()
-        graph.nxgraph = nxgraph
-        graph.rxgraph = None
-        graph.is_a_subgraph = False         # See comments on RX subgraph issues.
+        graph._nxgraph = nxgraph
+        graph._rxgraph = None
+        graph._is_a_subgraph = False        # See comments on RX subgraph issues.
         graph.parent_node_id_map = {node: node for node in graph.node_indices}   # Identity map for top-level graph
+        graph.nx_to_rx_node_id_map = None   # only set when an NX based graph is converted to be an RX based graph
         return graph
     
     @classmethod
     def from_rustworkx(cls, rxgraph: rustworkx.PyGraph) -> "Graph":
         graph = cls()   
-        graph.rxgraph = rxgraph
-        graph.nxgraph = None
-        graph.is_a_subgraph = False         # See comments on RX subgraph issues.
+        graph._rxgraph = rxgraph
+        graph._nxgraph = None
+        graph._is_a_subgraph = False        # See comments on RX subgraph issues.
         graph.parent_node_id_map = {node: node for node in graph.node_indices}   # Identity map for top-level graph
+        graph.nx_to_rx_node_id_map = None   # only set when an NX based graph is converted to be an RX based graph
         return graph
 
     def hasOneGraph(self):
         # Checks that there is one and only one graph
         if (
-            (self.nxgraph is not None and self.rxgraph is None)
-            or (self.nxgraph is None and self.rxgraph is not None)
+            (self._nxgraph is not None and self._rxgraph is None)
+            or (self._nxgraph is None and self._rxgraph is not None)
            ):
             return True
         else:
@@ -227,24 +217,21 @@ class Graph:
 
     def isNxGraph(self):
         self.verifyGraphIsValid()
-        return self.nxgraph is not None
+        return self._nxgraph is not None
 
-    # frm TODO: Remove these once NX dependencies have been removed from tree.py (and other places?)
-    #           Actually, this may be useful if end users have code that needs to operate on
-    #           an NX Graph object...
     def getNxGraph(self):
         if not self.isNxGraph():
             raise Exception("getNxGraph - graph is not an NX version of Graph")
-        return self.nxgraph
+        return self._nxgraph
 
     def getRxGraph(self):
         if not self.isRxGraph():
             raise Exception("getRxGraph - graph is not an RX version of Graph")
-        return self.rxgraph
+        return self._rxgraph
 
     def isRxGraph(self):
         self.verifyGraphIsValid()
-        return self.rxgraph is not None
+        return self._rxgraph is not None
 
     def convert_from_nx_to_rx(self) -> "Graph":
         # Return a Graph object which has a RustworkX Graph object as its
@@ -259,12 +246,34 @@ class Graph:
         #
         self.verifyGraphIsValid()
         if self.isNxGraph():
-            rxgraph = rustworkx.networkx_converter(self.nxgraph, keep_attributes=True)
-            return Graph.from_rustworkx(rxgraph)
+            rxgraph = rustworkx.networkx_converter(self._nxgraph, keep_attributes=True)
+
+            nx_edges = set(self._nxgraph.edges)
+            rx_edges = set(rxgraph.edge_list())
+            set(self._nxgraph.edges)
+
+            converted_graph = Graph.from_rustworkx(rxgraph)
+
+            # Create a mapping from the old NX node_ids to the new RX node_ids (created by
+            # RX when it converts from NX)
+            nx_to_rx_node_id_map = {
+              converted_graph.node_data(node_id)["__networkx_node__"]: node_id
+              for node_id in converted_graph._rxgraph.node_indices()
+            }
+            converted_graph._nx_to_rx_node_id_map = nx_to_rx_node_id_map
+
+            return converted_graph
         elif self.isRxGraph():
             return self
         else: 
             raise Exception("convert_from_nx_to_rx: Bad kind of Graph object")
+
+    def get_nx_to_rx_node_id_map(self):
+        # Simple getter method
+        if not self.isRxGraph():
+            raise Exception("get_nx_to_rx_node_id_map: Graph is not an RX based Graph")
+
+        return self._nx_to_rx_node_id_map
 
     @classmethod
     def from_json(cls, json_file: str) -> "Graph":
@@ -284,7 +293,7 @@ class Graph:
         if not self.isNxGraph():
             raise Exception("At present, can only create JSON for NetworkX graph")
 
-        data = json_graph.adjacency_data(self.nxgraph)
+        data = json_graph.adjacency_data(self._nxgraph)
 
         if include_geometries_as_geojson:
             convert_geometries_to_geojson(data)
@@ -364,7 +373,7 @@ class Graph:
         #               So - need to figure out what CRS is used for...
 
         # Store CRS data as an attribute of the NX graph
-        graph.nxgraph.graph["crs"] = df.crs.to_json()
+        graph._nxgraph.graph["crs"] = df.crs.to_json()
         return graph
 
     @classmethod
@@ -465,6 +474,13 @@ class Graph:
         #               users use it...
         nxgraph.geometry = df.geometry
 
+        # frm: TODO:  Rethink the name of add_boundary_perimeters - it acts on an nxgraph
+        #               which seems wrong with the given name.  Maybe it should be:
+        #               add_boundary_perimeters_to_nxgraph()
+        #
+        #               It raises the question of whether there should be an nx_utilities 
+        #               module for stuff designed to only work on nxgraph objects.
+
         # Add "exterior" perimeters to the boundary nodes
         add_boundary_perimeters(nxgraph, df.geometry)
 
@@ -505,7 +521,7 @@ class Graph:
         # It is left because a couple of other files use it (versioneer.py, 
         # county_splits.py, and tally.py) and because perhaps an end user also
         # uses it.  Leaving it does not significant harm - it is just code bloat...
-        return self.get_node_data_dict(node, field)
+        return self.node_data(node, field)
 
     @property
     def node_indices(self):
@@ -515,9 +531,9 @@ class Graph:
         #               Do we really want to support two ways of doing the same thing?
 
         if (self.isNxGraph()):
-            return set(self.nxgraph.nodes)
+            return set(self._nxgraph.nodes)
         elif (self.isRxGraph()):
-            return set(self.rxgraph.node_indices())
+            return set(self._rxgraph.node_indices())
         else:
             raise Exception("Graph.node_indices - bad kind of graph object")
 
@@ -527,15 +543,22 @@ class Graph:
 
         if (self.isNxGraph()):
             # A set of edge_ids (tuples) extracted from the graph's EdgeView
-            return set(self.nxgraph.edges)
+            return set(self._nxgraph.edges)
         elif (self.isRxGraph()):
             # A set of edge_ids for the edges
-            return set(self.rxgraph.edge_indices())
+            return set(self._rxgraph.edge_indices())
         else:
             raise Exception("Graph.edges - bad kind of graph object")
 
-    # frm: TODO: Come up with a better name than this...
     def get_edge_from_edge_id(self, edge_id):
+        """
+        In NX, an edge_id is a tuple of node_ids, but in RX an edge_id
+        is an integer.  To get the tuple of node_ids in RX, you need to
+        make a call using the edge_id.
+
+        Stated differently, in NX an edge and an edge ID are the same, but
+        not in RX...
+        """
         self.verifyGraphIsValid()
 
         if (self.isNxGraph()):
@@ -543,12 +566,16 @@ class Graph:
             return edge_id
         elif (self.isRxGraph()):
             # In RX, we need to go get the edge tuple
-            return self.rxgraph.edge_list()[edge_id]
+            return self._rxgraph.edge_list()[edge_id]
         else:
             raise Exception("Graph.get_edge_from_edge_id - bad kind of graph object")
 
-    # frm: TODO: Come up with a better name than this...
     def get_edge_id_from_edge(self, edge):
+        """
+        Another case where we need to deal with the fact that in 
+        NX an edge ID is a tuple of node_ids, where in RX an edge ID
+        is an integer assocaited with an edge.
+        """
         self.verifyGraphIsValid()
 
         if (self.isNxGraph()):
@@ -564,18 +591,11 @@ class Graph:
             #       the edges so the smaller node_id is first.  This allows us to not 
             #       worry about whether the edge was (3,5) or (5,3)
 
-            # frm: DBG: TODO: Remove debugging code
-            # print("Graph.get_edge_id_from_edge: RX edge_list: ", list(self.rxgraph.edge_list()))
-            # print(" ")
-            sorted_edge_list = sorted(list(self.rxgraph.edge_list()))
-            # print("Graph.get_edge_id_from_edge: sorted RX edge_list: ", sorted_edge_list)
-            # print(" ")
+            sorted_edge_list = sorted(list(self._rxgraph.edge_list()))
             # frm: TODO:  There has to be a more elegant way to do this...  *sheesh*
             sorted_edge = edge
             if edge[0] > edge[1]:
                 sorted_edge = (edge[1], edge[0])
-            # print("Graph.get_edge_id_from_edge: edge and sorted_edge: ", edge, ", ", sorted_edge)
-            # print(" ")
             return sorted_edge_list.index(sorted_edge)
         else:
             raise Exception("Graph.get_edge_id_from_edge - bad kind of graph object")
@@ -586,10 +606,10 @@ class Graph:
 
         if (self.isNxGraph()):
             # A list of node_ids -  
-            return list(self.nxgraph.nodes)
+            return list(self._nxgraph.nodes)
         elif (self.isRxGraph()):
             # A list of integer node_ids
-            return list(self.rxgraph.node_indices())
+            return list(self._rxgraph.node_indices())
         else:
             raise Exception("Graph.sdges - bad kind of graph object")
 
@@ -643,7 +663,7 @@ class Graph:
         
         RX does not support the EdgeView object, so we will use the same approach as for nodes.
         To get access to an edge's data dictionary, one will need to use the new function,
-        get_edge_data_dict(edge_id) - where edge_id will be either a tuple or an integer depending
+        edge_data(edge_id) - where edge_id will be either a tuple or an integer depending
         on what flavor of Graph is being operated on.
         """
 
@@ -651,10 +671,10 @@ class Graph:
 
         if (self.isNxGraph()):
             # A set of tuples extracted from the graph's EdgeView
-            return set(self.nxgraph.edges)
+            return set(self._nxgraph.edges)
         elif (self.isRxGraph()):
             # A set of tuples for the edges
-            return set(self.rxgraph.edge_list())
+            return set(self._rxgraph.edge_list())
         else:
             raise Exception("Graph.edges - bad kind of graph object")
 
@@ -662,10 +682,10 @@ class Graph:
         self.verifyGraphIsValid()
 
         if (self.isNxGraph()):
-            self.nxgraph.add_edge
+            self._nxgraph.add_edge
         elif (self.isRxGraph()):
             # empty dict tells RX the edge data will be a dict 
-            self.rxgraph.add_edge(node_id1, node_id2, {})
+            self._rxgraph.add_edge(node_id1, node_id2, {})
         else:
             raise Exception("Graph.add_edge - bad kind of graph object")
 
@@ -676,7 +696,7 @@ class Graph:
             # In NX, the edge_id is already a tuple with the two node_ids
             return edge_id
         elif (self.isRxGraph()):
-            return self.rxgraph.edge_list()[edge_id]
+            return self._rxgraph.edge_list()[edge_id]
         else:
             raise Exception("Graph.get_edge_tuple - bad kind of graph object")
 
@@ -703,8 +723,9 @@ class Graph:
 
         check_dataframe(df[columns])
 
+        # Create dict: {node_id: {attr_name: attr_value}}
         column_dictionaries = df.to_dict("index")
-        nxgraph = self.nxgraph
+        nxgraph = self._nxgraph
         networkx.set_node_attributes(nxgraph, column_dictionaries)
 
         if hasattr(nxgraph, "data"):
@@ -752,13 +773,14 @@ class Graph:
 
         if not self.isNxGraph():
             raise Exception("Graph.join only valid for NetworkX based Graph objects")
-        nxgraph = self.nxgraph
+        nxgraph = self._nxgraph
 
         if left_index is not None:
             ids_to_index = networkx.get_node_attributes(nxgraph, left_index)
         else:
             # When the left_index is node ID, the matching is just
             # a redundant {node: node} dictionary
+            # frm: TODO:  don't think self.nodes works for RX...
             ids_to_index = dict(zip(self.nodes, self.nodes))
 
         node_attributes = {
@@ -808,7 +830,7 @@ class Graph:
         #       Graph method, such as my_graph.add_edges().  In this case the built-in NX 
         #       Graph method is not defined, so __getattr__() is called to try to figure out
         #       what it could be.  This triggers the call below to self.isNxGraph(), which 
-        #       references self.nxgraph (which is undefined/None) which triggers another 
+        #       references self._nxgraph (which is undefined/None) which triggers another 
         #       call to __getattr__() which is BAD...
         #
         #       I think the solution is to not rely on testing whether nxgraph and rxgraph
@@ -825,9 +847,9 @@ class Graph:
         # If attribute doesn't exist on this object, try
         # its underlying graph object...
         if (self.isNxGraph()):
-            return object.__getattribute__(self.nxgraph, __name)
+            return object.__getattribute__(self._nxgraph, __name)
         elif (self.isRxGraph()):
-            return object.__getattribute__(self.rxgraph, __name)
+            return object.__getattribute__(self._rxgraph, __name)
         else:
             raise Exception("Graph.__getattribute__ - bad kind of graph object")
 
@@ -850,7 +872,7 @@ class Graph:
         self.verifyGraphIsValid()
 
         if (self.isNxGraph()):
-            return self.nxgraph[__name]
+            return self._nxgraph[__name]
         elif (self.isRxGraph()):
             # frm TODO:
             raise Exception("Graph.__getitem__() NYI for RX")
@@ -896,7 +918,7 @@ class Graph:
         subgraphs as a parameter.  This allows the function to just always do the node translation.
         In the case of a top-level graph the translation will be a no-op, but it will be correct.
 
-        Also, we set the is_a_subgraph = True, so that we can detect whether a parameter passed into
+        Also, we set the _is_a_subgraph = True, so that we can detect whether a parameter passed into
         a function is a top-level graph or not.  This will allow us to debug the code to determine 
         if assumptions about a parameter always being a subgraph is accurate.  It also helps to 
         educate future readers of the code that subgraphs are "interesting"...
@@ -908,36 +930,32 @@ class Graph:
         new_subgraph = None
 
         if (self.isNxGraph()):
-            nx_subgraph = self.nxgraph.subgraph(nodes)
+            nx_subgraph = self._nxgraph.subgraph(nodes)
             new_subgraph = self.from_networkx(nx_subgraph)
             # for NX, the node_ids in subgraph are the same as in the parent graph
             parent_node_id_map = {node: node for node in nodes}
         elif (self.isRxGraph()):
             # frm TODO:  Need to check logic below - not sure this works exactly correctly for RX...
-            # print("Graph.subgraph(): type of nodes before cast to list is: ", type(nodes))
             if isinstance(nodes, frozenset) or isinstance(nodes, set):
                 nodes = list(nodes)
-                # print("Graph.subgraph(): type of nodes after cast to list is: ", type(nodes))
             # For RX, the node_ids in the subgraph change, so we need a way to map subgraph node_ids 
             # into parent graph node_ids.  To do so, we add the parent node_id into the node data
             # so that in the subgraph we can find it and then create the map.
             for node_id in nodes:
-                self.get_node_data_dict(node_id)["parent_node_id"] = node_id
+                self.node_data(node_id)["parent_node_id"] = node_id
 
-            rx_subgraph = self.rxgraph.subgraph(nodes)
-            # print("Graph.subgraph(): created rx_subgraph: ", rx_subgraph.node_indices())
+            rx_subgraph = self._rxgraph.subgraph(nodes)
             new_subgraph = self.from_rustworkx(rx_subgraph)
 
             # frm: Create the map from subgraph node_id to parent graph node_id
             parent_node_id_map = {}
             for subgraph_node_id in new_subgraph.node_indices:
-                parent_node_id_map[subgraph_node_id] = new_subgraph.get_node_data_dict(subgraph_node_id)["parent_node_id"]
+                parent_node_id_map[subgraph_node_id] = new_subgraph.node_data(subgraph_node_id)["parent_node_id"]
 
-            # print("Graph.subgraph(): new RX subgraph type is: ", type(new_subgraph))
         else:
             raise Exception("Graph.subgraph - bad kind of graph object")
 
-        new_subgraph.is_a_subgraph = True
+        new_subgraph._is_a_subgraph = True
         new_subgraph.parent_node_id_map = parent_node_id_map
 
         return new_subgraph
@@ -1061,6 +1079,8 @@ class Graph:
         return dict(self.generic_bfs_successors_generator(root_node_id))
 
     def generic_bfs_predecessors(self, root_node_id):
+        # frm Note:  We had do implement our own, because the built-in RX version only worked 
+        #               for directed graphs.
         predecessors = []
         for s, t in self.nx_generic_bfs_edges(root_node_id):
             predecessors.append((t,s))
@@ -1068,8 +1088,6 @@ class Graph:
 
 
     def predecessors(self, root_node_id):
-
-        # frm TODO:  RX version NYI...
 
         """
         frm: It took me a while to grok what predecessors() and successors()
@@ -1114,11 +1132,9 @@ class Graph:
         self.verifyGraphIsValid()
 
         if (self.isNxGraph()):
-            return {a: b for a, b in networkx.bfs_predecessors(self.nxgraph, root_node_id)}
+            return {a: b for a, b in networkx.bfs_predecessors(self._nxgraph, root_node_id)}
         elif (self.isRxGraph()):
-            # frm TODO:  Implement this for RX - note the RX version won't work - it is for directed graphs only
             return self.generic_bfs_predecessors(root_node_id)
-            raise Exception("Graph.predecessors() for RX is NYI")
         else:
             raise Exception("Graph.predecessors - bad kind of graph object")
 
@@ -1126,7 +1142,7 @@ class Graph:
         self.verifyGraphIsValid()
 
         if (self.isNxGraph()):
-            return {a: b for a, b in networkx.bfs_successors(self.nxgraph, root_node_id)}
+            return {a: b for a, b in networkx.bfs_successors(self._nxgraph, root_node_id)}
         elif (self.isRxGraph()):
             return self.generic_bfs_successors(root_node_id)
         else:
@@ -1139,9 +1155,9 @@ class Graph:
         # RX  neighbors() returns a NodeIndices object with the list of node_ids of neighbor nodes
         # However, the code outside graph.py only ever iterates over all neighbors so returning a list works...
         if (self.isNxGraph()):
-            return list(self.nxgraph.neighbors(node))
+            return list(self._nxgraph.neighbors(node))
         elif (self.isRxGraph()):
-            return list(self.rxgraph.neighbors(node))
+            return list(self._rxgraph.neighbors(node))
         else:
             raise Exception("Graph.neighbors - bad kind of graph object")
 
@@ -1149,30 +1165,30 @@ class Graph:
         self.verifyGraphIsValid()
 
         if (self.isNxGraph()):
-            return self.nxgraph.degree(node)
+            return self._nxgraph.degree(node)
         elif (self.isRxGraph()):
-            return self.rxgraph.degree(node)
+            return self._rxgraph.degree(node)
         else:
             raise Exception("Graph.degree - bad kind of graph object")
 
-    def get_node_data_dict(self, node_id):
+    def node_data(self, node_id):
         # This routine returns the data dictionary for the given node's data
 
         self.verifyGraphIsValid()
 
         if (self.isNxGraph()):
-            data_dict = self.nxgraph.nodes[node_id]
+            data_dict = self._nxgraph.nodes[node_id]
         elif (self.isRxGraph()):
-            data_dict = self.rxgraph[node_id]
+            data_dict = self._rxgraph[node_id]
         else:
-            raise Exception("Graph.get_node_data_dict - bad kind of graph object")
+            raise Exception("Graph.node_data - bad kind of graph object")
 
         if not isinstance(data_dict, dict):
             raise Exception("node data is not a dictionary");
         
         return data_dict
 
-    def get_edge_data_dict(self, edge_id):
+    def edge_data(self, edge_id):
         # This routine returns the data dictionary for the given edge's data
 
         """
@@ -1187,11 +1203,11 @@ class Graph:
         self.verifyGraphIsValid()
 
         if (self.isNxGraph()):
-            data_dict = self.nxgraph.edges[edge_id]
+            data_dict = self._nxgraph.edges[edge_id]
         elif (self.isRxGraph()):
-            data_dict = self.rxgraph.edges()[edge_id]
+            data_dict = self._rxgraph.edges()[edge_id]
         else:
-            raise Exception("Graph.get_node_data_dict - bad kind of graph object")
+            raise Exception("Graph.node_data - bad kind of graph object")
 
         if not isinstance(data_dict, dict):
             raise Exception("node data is not a dictionary");
@@ -1217,10 +1233,10 @@ class Graph:
         #               check to be 100% certain.
 
         if self.isNxGraph():
-            nxgraph = self.nxgraph
+            nxgraph = self._nxgraph
             laplacian_matrix = networkx.laplacian_matrix(nxgraph)
         elif self.isRxGraph():
-            rxgraph = self.rxgraph
+            rxgraph = self._rxgraph
             # 1. Get the adjacency matrix
             adj_matrix = rustworkx.adjacency_matrix(rxgraph)
             # 2. Calculate the degree matrix (simplified for this example)
@@ -1236,11 +1252,11 @@ class Graph:
 
     def normalized_laplacian_matrix(self):
         if self.isNxGraph():
-            nxgraph = self.nxgraph
+            nxgraph = self._nxgraph
             laplacian_matrix = networkx.normalized_laplacian_matrix(nxgraph)
         elif self.isRxGraph():
             # frm: TODO:  Implement normalized_laplacian_matrix() for RX
-            rxgraph = self.rxgraph
+            rxgraph = self._rxgraph
             raise Exception("normalized_laplacian_matrix NYI for RustworkX based Graph objects")
         else:
             raise Exception("normalized_laplacian_matrix: badly configured graph parameter")
@@ -1559,6 +1575,11 @@ class OriginalGraph(networkx.Graph):
         Add data from a dataframe to the graph, matching nodes to rows when
         the node's `left_index` attribute equals the row's `right_index` value.
 
+        This is the same as a "join" in SQL:
+          insert into <graph> 
+            select <> from <dataframe>
+            where <graph>.
+
         :param dataframe: DataFrame.
         :type dataframe: :class:`pandas.DataFrame`
         :columns: The columns whose data you wish to add to the graph.
@@ -1573,6 +1594,14 @@ class OriginalGraph(networkx.Graph):
 
         :returns: None
         """
+        # frm: TODO:  Implement this for RX.  Note, however, that this is probably
+        #               low priority since this routine is for building a graph
+        #               which for now (summer 2025) will continue to be done using
+        #               NetworkX.  That is, this code will not be used after 
+        #               freezing the graph when we create a Parition...
+        if (not self.isNxGraph()):
+            raise Exception("join(): Not supported for RX based Graph objects")
+
         if right_index is not None:
             df = dataframe.set_index(right_index)
         else:
@@ -1583,15 +1612,27 @@ class OriginalGraph(networkx.Graph):
 
         check_dataframe(df)
 
+        # Transform the dataframe into a dict of dicts, where
+        # each column in the df is associated with a dict of
+        # <row_id>: <column_value> values.
         column_dictionaries = df.to_dict()
 
+        # Determine what data in the graph to sync up with the
+        # data in the dataframe.  ids_to_index maps node_ids to
+        # values that select which row in dataframe should be
+        # associated with that node_id.
         if left_index is not None:
+            # frm: TODO:  Figure out how to make this work for RX...
             ids_to_index = networkx.get_node_attributes(self, left_index)
         else:
             # When the left_index is node ID, the matching is just
             # a redundant {node: node} dictionary
             ids_to_index = dict(zip(self.nodes, self.nodes))
 
+        # For each column in the dataframe, extract the appropriate entry for 
+        # the given node_id (using index) and wrap it all up in a dict.  The 
+        # result is a dict of (name, value) pairs of data from the dataframe
+        # for each node_id.
         node_attributes = {
             node_id: {
                 column: values[index] for column, values in column_dictionaries.items()
@@ -1600,8 +1641,6 @@ class OriginalGraph(networkx.Graph):
         }
 
         # frm: TODO:  Figure out how to make this work for RX...
-        if (not self.isNxGraph()):
-            raise Exception("join(): Not supported for RX based Graph objects")
         networkx.set_node_attributes(self, node_attributes)
 
     # frm: Original Graph code...
@@ -1782,6 +1821,7 @@ class FrozenGraph:
         # frm TODO: Add logic to have this work for RX.
 
         self.graph = graph
+        # frm: TODO:  Not sure this works for RX
         self.size = len(self.graph.nodes)
 
     def __len__(self) -> int:
@@ -1819,7 +1859,7 @@ class FrozenGraph:
     @functools.lru_cache(65536)
     def lookup(self, node: Any, field: str) -> Any:
         # frm: Original Code:   return self.graph.nodes[node][field]
-        return self.get_node_data_dict(node)[field]
+        return self.node_data(node)[field]
 
     def subgraph(self, nodes: Iterable[Any]) -> "FrozenGraph":
         return FrozenGraph(self.graph.subgraph(nodes))

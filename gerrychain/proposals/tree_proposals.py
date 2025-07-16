@@ -98,10 +98,6 @@ def recom(
     n_parts = len(partition)
     tot_pairs = n_parts * (n_parts - 1) / 2  # n choose 2
 
-    # frm: DBG: TODO: Remove this code
-    # print(f"recom: all pairs of disctricts is: {tot_pairs}")
-    # print(f"recom: method to do merge/split is: {method}")
-
     # Try to add the region aware in if the method accepts the surcharge dictionary
     if "region_surcharge" in signature(method).parameters:
         method = partial(method, region_surcharge=region_surcharge)
@@ -123,18 +119,12 @@ def recom(
                 ]
                 parts_to_merge.sort()
 
-                # frm: DBG: TODO: Remove this code
-                # print(f"recom: districts to merge and split: {parts_to_merge}")
-                # print(f"recom: first district nodes: {partition.parts[parts_to_merge[0]]}") 
-                # print(f"recom: second district nodes: {partition.parts[parts_to_merge[1]]}") 
-
                 if tuple(parts_to_merge) not in bad_district_pairs:
                     break
 
             # frm: Note that the vertical bar operator merges the two sets into one set.
             subgraph_nodes = partition.parts[parts_to_merge[0]] | partition.parts[parts_to_merge[1]]
 
-            # print(f"recom: About to call epsilon_tree_bipartition()")
             flips = epsilon_tree_bipartition(
                 partition.graph.subgraph(subgraph_nodes),
                 parts_to_merge,
@@ -144,11 +134,6 @@ def recom(
                 node_repeats=node_repeats,
                 method=method,
             )
-            # print(f"recom: Finished calling epsilon_tree_bipartition()")
-            # frm: DBG: TODO: Remove this code
-            # print(f"recom: after epsilon_tree_bipartion: districts to merge and split: {parts_to_merge}")
-            # print(f"recom: after epsilon_tree_bipartion: first district nodes: {partition.parts[parts_to_merge[0]]}") 
-            # print(f"recom: after epsilon_tree_bipartion: second district nodes: {partition.parts[parts_to_merge[1]]}") 
             break
 
         except Exception as e:
@@ -165,7 +150,6 @@ def recom(
             f"Consider rerunning the chain with a different random seed."
         )
 
-    # print("recom: returning after successfully splitting two districts")
     return partition.flip(flips)
 
 

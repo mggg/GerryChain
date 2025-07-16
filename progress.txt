@@ -44,7 +44,7 @@ so was different in NetworkX and RustworkX, but I now realize
 that it would be easy to support the same syntax in both
 with Pythonic cleverness ;-)
 
-The new routine is called get_node_data_dict(graph, node)
+The new routine is called node_data(graph, node)
 which in the NetworkX world is just graph.nodes[node]
 
 Other things that might help before doing a code review:
