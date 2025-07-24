@@ -6,13 +6,12 @@ from gerrychain.partition import Partition
 from ..tree import (
     epsilon_tree_bipartition,
     bipartition_tree,
-    bipartition_tree_random,
     _bipartition_tree_random_all,
     uniform_spanning_tree,
     find_balanced_edge_cuts_memoization,
     ReselectException,
 )
-from typing import Callable, Optional, Dict, Union
+from typing import Callable, Optional, Dict, Union, Any
 
 
 class MetagraphError(Exception):
@@ -41,6 +40,7 @@ def recom(
     node_repeats: int = 1,
     region_surcharge: Optional[Dict] = None,
     method: Callable = bipartition_tree,
+    partition_pop_multiplier_by_part: Optional[Dict[Any, float]] = None,
 ) -> Partition:
     """
     ReCom (short for ReCombination) is a Markov Chain Monte Carlo (MCMC) algorithm
@@ -87,6 +87,10 @@ def recom(
     :param method: The method used for bipartitioning the tree. Default is
         :func:`~gerrychain.tree.bipartition_tree`.
     :type method: Callable, optional
+    :param partition_pop_multiplier_by_part: A dictionary mapping each part to a multiplier
+        for the population. This is used to adjust the population target for each part.
+        Default is None, which means no adjustment.
+    :type partition_pop_multiplier_by_part: Optional[Dict[Any, float]], optional
 
     :returns: The new partition resulting from the ReCom algorithm.
     :rtype: Partition
@@ -95,6 +99,8 @@ def recom(
     bad_district_pairs = set()
     n_parts = len(partition)
     tot_pairs = n_parts * (n_parts - 1) / 2  # n choose 2
+    if partition_pop_multiplier_by_part is None:
+        partition_pop_multiplier_by_part = {part: 1 for part in partition.parts}
 
     # Try to add the region aware in if the method accepts the surcharge dictionary
     if "region_surcharge" in signature(method).parameters:
@@ -127,6 +133,7 @@ def recom(
                 epsilon=epsilon,
                 node_repeats=node_repeats,
                 method=method,
+                partition_pop_multiplier_by_part=partition_pop_multiplier_by_part,
             )
             break
 
@@ -275,12 +282,19 @@ class ReCom:
 
     """
 
+    __slots__ = (
+        "pop_col",
+        "ideal_pop",
+        "epsilon",
+        "method",
+    )
+
     def __init__(
         self,
         pop_col: str,
         ideal_pop: Union[int, float],
         epsilon: float,
-        method: Callable = bipartition_tree_random,
+        method: Callable = bipartition_tree,
     ):
         """
         :param pop_col: The name of the column in the partition that contains the population data.
@@ -302,6 +316,59 @@ class ReCom:
     def __call__(self, partition: Partition):
         return recom(
             partition, self.pop_col, self.ideal_pop, self.epsilon, method=self.method
+        )
+
+
+class MultiMemberReCom:
+    """
+    ReCom (short for ReCombination) is a class that represents a ReCom proposal
+    for redistricting. It is used to create new partitions by recombining existing
+    districts while maintaining population balance.
+    """
+
+    __slots__ = (
+        "pop_col",
+        "ideal_pop_per_member",
+        "epsilon",
+        "candidates_per_part_dict",
+        "recom_kwargs",
+    )
+
+    def __init__(
+        self,
+        pop_col: str,
+        ideal_pop_per_member: Union[int, float],
+        epsilon: float,
+        candidates_per_part_dict: dict[Any, int],
+        recom_kwargs: Optional[Dict[str, Any]] = None,
+    ):
+        """
+        :param pop_col: The name of the column in the partition that contains the population data.
+        :type pop_col: str
+        :param ideal_pop: The ideal population for each district.
+        :type ideal_pop: Union[int,float]
+        :param epsilon: The epsilon value for population deviation as a percentage of the
+            target population.
+        :type epsilon: float
+        :param method: The method used for bipartitioning the tree.
+            Defaults to `bipartition_tree_random`.
+        :type method: function, optional
+        """
+        self.pop_col = pop_col
+        self.ideal_pop_per_member = ideal_pop_per_member
+        self.epsilon = epsilon
+        self.candidates_per_part_dict = candidates_per_part_dict
+        self.recom_kwargs = recom_kwargs if recom_kwargs is not None else {}
+
+    def __call__(self, partition: Partition):
+        return recom(
+            partition=partition,
+            pop_col=self.pop_col,
+            pop_target=self.ideal_pop_per_member,
+            epsilon=self.epsilon,
+            method=bipartition_tree,
+            partition_pop_multiplier_by_part=self.candidates_per_part_dict,
+            **self.recom_kwargs,
         )
 
 

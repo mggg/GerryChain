@@ -59,6 +59,8 @@ class Partition:
         if parent is None:
             self._first_time(graph, assignment, updaters, use_default_updaters)
         else:
+            if flips is None:
+                flips = {}
             self._from_parent(parent, flips)
 
         self._cache = dict()
@@ -71,10 +73,11 @@ class Partition:
         n_parts: int,
         epsilon: float,
         pop_col: str,
+        ideal_pop: Optional[float] = None,
         updaters: Optional[Dict[str, Callable]] = None,
         use_default_updaters: bool = True,
-        flips: Optional[Dict] = None,
         method: Callable = recursive_tree_part,
+        method_kwargs: Optional[Dict] = None,
     ) -> "Partition":
         """
         Create a Partition with a random assignment of nodes to districts.
@@ -88,6 +91,9 @@ class Partition:
             population. Should be in [0,1].
         :param pop_col: The column of the graph's node data that holds the population data.
         :type pop_col: str
+        :param ideal_pop: The ideal population for each district. If `None`, it will be
+            calculated as the total population divided by the number of districts.
+        :type ideal_pop: Optional[float], optional
         :param updaters: Dictionary of updaters
         :type updaters: Optional[Dict[str, Callable]], optional
         :param use_default_updaters: If `False`, do not include default updaters.
@@ -97,12 +103,19 @@ class Partition:
         :param method: The function to use to partition the graph into ``n_parts``. Defaults to
             :func:`~gerrychain.tree.recursive_tree_part`.
         :type method: Callable, optional
+        :param method_kwargs: Keyword arguments to pass to the partition method.
+        :type method_kwargs: Optional[Dict], optional
 
         :returns: The partition created with a random assignment
         :rtype: Partition
         """
         total_pop = sum(graph.nodes[n][pop_col] for n in graph)
-        ideal_pop = total_pop / n_parts
+
+        if ideal_pop is None:
+            ideal_pop = total_pop / n_parts
+
+        if method_kwargs is None:
+            method_kwargs = {}
 
         assignment = method(
             graph=graph,
@@ -110,6 +123,7 @@ class Partition:
             pop_target=ideal_pop,
             pop_col=pop_col,
             epsilon=epsilon,
+            **method_kwargs,
         )
 
         return cls(
@@ -173,7 +187,7 @@ class Partition:
     def __len__(self):
         return len(self.parts)
 
-    def flip(self, flips: Dict) -> "Partition":
+    def flip(self, flips: Dict, **kwargs) -> "Partition":
         """
         Returns the new partition obtained by performing the given `flips`
         on this partition.

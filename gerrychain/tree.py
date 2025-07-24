@@ -155,7 +155,7 @@ class PopulatedGraph:
         self,
         graph: nx.Graph,
         populations: Dict,
-        ideal_pop: Union[float, int],
+        ideal_pops: Tuple[Union[float, int], Union[float, int]],
         epsilon: float,
     ) -> None:
         """
@@ -163,8 +163,8 @@ class PopulatedGraph:
         :type graph: nx.Graph
         :param populations: A dictionary mapping nodes to their populations.
         :type populations: Dict
-        :param ideal_pop: The ideal population for each district.
-        :type ideal_pop: Union[float, int]
+        :param ideal_pops: The ideal population for each district.
+        :type ideal_pops: Tuple[Union[float, int], Union[float, int]]
         :param epsilon: The tolerance for population deviation as a percentage of
             the ideal population within each district.
         :type epsilon: float
@@ -173,12 +173,42 @@ class PopulatedGraph:
         self.subsets = {node: {node} for node in graph.nodes}
         self.population = populations.copy()
         self.tot_pop = sum(self.population.values())
-        self.ideal_pop = ideal_pop
+        self.ideal_pops = ideal_pops
         self.epsilon = epsilon
         self._degrees = {node: graph.degree(node) for node in graph.nodes}
+        self.root = None
+        self._subtree_pops = None
 
     def __iter__(self):
         return iter(self.graph)
+
+    def _compute_subtree_pops(self, root):
+        succ = successors(self.graph, root)
+        subtree_pops: Dict[Any, Union[int, float]] = {}
+        stack = deque(n for n in succ[root])
+        while stack:
+            next_node = stack.pop()
+            if next_node not in subtree_pops:
+                if next_node in succ:
+                    children = succ[next_node]
+                    if all(c in subtree_pops for c in children):
+                        subtree_pops[next_node] = sum(subtree_pops[c] for c in children)
+                        subtree_pops[next_node] += self.population[next_node]
+                    else:
+                        stack.append(next_node)
+                        for c in children:
+                            if c not in subtree_pops:
+                                stack.append(c)
+                else:
+                    subtree_pops[next_node] = self.population[next_node]
+
+        return subtree_pops
+
+    def subtree_pops_at_root(self, root):
+        if self.root != root:
+            self._subtree_pops = self._compute_subtree_pops(root)
+            self.root = root
+        return self._subtree_pops
 
     def degree(self, node) -> int:
         return self._degrees[node]
@@ -204,16 +234,50 @@ class PopulatedGraph:
         :returns: True if the node has an ideal population within the graph up to epsilon.
         :rtype: bool
         """
+        node_pop = self.population[node]
+
+        check_graph_balance_at_node = (
+            lambda pop: abs(node_pop - pop) <= self.epsilon * pop
+        )
+        check_cograph_balance_at_node = (
+            lambda pop: abs(node_pop - pop) <= self.epsilon * pop
+        )
+
+        pop_1 = self.ideal_pops[0]
+        pop_2 = self.ideal_pops[1]
+
         if one_sided_cut:
-            return (
-                abs(self.population[node] - self.ideal_pop)
-                < self.epsilon * self.ideal_pop
+            return check_graph_balance_at_node(pop_1) or check_graph_balance_at_node(
+                pop_2
             )
 
         return (
-            abs(self.population[node] - self.ideal_pop) <= self.epsilon * self.ideal_pop
-            and abs((self.tot_pop - self.population[node]) - self.ideal_pop)
-            <= self.epsilon * self.ideal_pop
+            check_graph_balance_at_node(pop_1) and check_cograph_balance_at_node(pop_2)
+        ) or (
+            check_graph_balance_at_node(pop_2) and check_cograph_balance_at_node(pop_1)
+        )
+
+    def has_ideal_subtree_population_at_node(
+        self, node, root, one_sided_cut: bool = False
+    ) -> bool:
+
+        self._subtree_pops = self.subtree_pops_at_root(root)
+
+        tree_pop = self._subtree_pops[node]
+        total_pop = self.tot_pop
+        pop_1 = self.ideal_pops[0]
+        pop_2 = self.ideal_pops[1]
+
+        check_tree_balance = lambda pop: abs(tree_pop - pop) <= pop * self.epsilon
+        check_cotree_balance = (
+            lambda pop: abs((total_pop - tree_pop) - pop) <= pop * self.epsilon
+        )
+
+        if one_sided_cut:
+            return check_tree_balance(pop_1) or check_tree_balance(pop_2)
+
+        return (check_tree_balance(pop_1) and check_cotree_balance(pop_2)) or (
+            check_tree_balance(pop_2) and check_cotree_balance(pop_1)
         )
 
     def __repr__(self) -> str:
@@ -286,42 +350,6 @@ def find_balanced_edge_cuts_contraction(
     return cuts
 
 
-def _calc_pops(succ, root, h):
-    """
-    Calculates the population of each subtree in the graph
-    by traversing the graph using a depth-first search.
-
-    :param succ: The successors of the graph.
-    :type succ: Dict
-    :param root: The root node of the graph.
-    :type root: Any
-    :param h: The populated graph.
-    :type h: PopulatedGraph
-
-    :returns: A dictionary mapping nodes to their subtree populations.
-    :rtype: Dict
-    """
-    subtree_pops: Dict[Any, Union[int, float]] = {}
-    stack = deque(n for n in succ[root])
-    while stack:
-        next_node = stack.pop()
-        if next_node not in subtree_pops:
-            if next_node in succ:
-                children = succ[next_node]
-                if all(c in subtree_pops for c in children):
-                    subtree_pops[next_node] = sum(subtree_pops[c] for c in children)
-                    subtree_pops[next_node] += h.population[next_node]
-                else:
-                    stack.append(next_node)
-                    for c in children:
-                        if c not in subtree_pops:
-                            stack.append(c)
-            else:
-                subtree_pops[next_node] = h.population[next_node]
-
-    return subtree_pops
-
-
 def _part_nodes(start, succ):
     """
     Partitions the nodes of a graph into two sets.
@@ -377,40 +405,11 @@ def find_balanced_edge_cuts_memoization(
     root = choice([x for x in h if h.degree(x) > 1])
     pred = predecessors(h.graph, root)
     succ = successors(h.graph, root)
-    total_pop = h.tot_pop
-
-    subtree_pops = _calc_pops(succ, root, h)
 
     cuts = []
-
-    if one_sided_cut:
-        for node, tree_pop in subtree_pops.items():
-            if abs(tree_pop - h.ideal_pop) <= h.ideal_pop * h.epsilon:
-                e = (node, pred[node])
-                wt = random.random()
-                cuts.append(
-                    Cut(
-                        edge=e,
-                        weight=h.graph.edges[e].get("random_weight", wt),
-                        subset=frozenset(_part_nodes(node, succ)),
-                    )
-                )
-            elif abs((total_pop - tree_pop) - h.ideal_pop) <= h.ideal_pop * h.epsilon:
-                e = (node, pred[node])
-                wt = random.random()
-                cuts.append(
-                    Cut(
-                        edge=e,
-                        weight=h.graph.edges[e].get("random_weight", wt),
-                        subset=frozenset(set(h.graph.nodes) - _part_nodes(node, succ)),
-                    )
-                )
-
-        return cuts
-
-    for node, tree_pop in subtree_pops.items():
-        if (abs(tree_pop - h.ideal_pop) <= h.ideal_pop * h.epsilon) and (
-            abs((total_pop - tree_pop) - h.ideal_pop) <= h.ideal_pop * h.epsilon
+    for node in h.subtree_pops_at_root(root):
+        if h.has_ideal_subtree_population_at_node(
+            node, root, one_sided_cut=one_sided_cut
         ):
             e = (node, pred[node])
             wt = random.random()
@@ -421,6 +420,7 @@ def find_balanced_edge_cuts_memoization(
                     subset=frozenset(set(h.graph.nodes) - _part_nodes(node, succ)),
                 )
             )
+
     return cuts
 
 
@@ -581,7 +581,7 @@ def _region_preferred_max_weight_choice(
 def bipartition_tree(
     graph: nx.Graph,
     pop_col: str,
-    pop_target: Union[int, float],
+    pop_targets: Tuple[Union[int, float], Union[int, float]],
     epsilon: float,
     node_repeats: int = 1,
     spanning_tree: Optional[nx.Graph] = None,
@@ -608,8 +608,9 @@ def bipartition_tree(
     :type graph: nx.Graph
     :param pop_col: The node attribute holding the population of each node.
     :type pop_col: str
-    :param pop_target: The target population for the returned subset of nodes.
-    :type pop_target: Union[int, float]
+    :param pop_targets: The target populations for the two parts of the partition.
+        This should be a tuple of two values, e.g. (1000, 2000).
+    :type pop_targets: Tuple[Union[int, float], Union[int, float]]
     :param epsilon: The allowable deviation from ``pop_target`` (as a percentage of
         ``pop_target``) for the subgraph's population.
     :type epsilon: float
@@ -680,7 +681,9 @@ def bipartition_tree(
         if restarts == node_repeats:
             spanning_tree = spanning_tree_fn(graph)
             restarts = 0
-        h = PopulatedGraph(spanning_tree, populations, pop_target, epsilon)
+        h = PopulatedGraph(
+            spanning_tree, populations, (pop_targets[0], pop_targets[1]), epsilon
+        )
 
         is_region_cut = (
             "region_surcharge" in signature(cut_choice).parameters
@@ -783,7 +786,9 @@ def _bipartition_tree_random_all(
         if restarts == node_repeats:
             spanning_tree = spanning_tree_fn(graph)
             restarts = 0
-        h = PopulatedGraph(spanning_tree, populations, pop_target, epsilon)
+        h = PopulatedGraph(
+            spanning_tree, populations, (pop_target, pop_target), epsilon
+        )
         possible_cuts = balance_edge_fn(h, choice=choice)
 
         if not (repeat_until_valid and len(possible_cuts) == 0):
@@ -887,10 +892,11 @@ def bipartition_tree_random(
 
 def epsilon_tree_bipartition(
     graph: nx.Graph,
-    parts: Sequence,
+    parts: list,
     pop_target: Union[float, int],
     pop_col: str,
     epsilon: float,
+    partition_pop_multiplier_by_part: Optional[dict[Any, int]] = None,
     node_repeats: int = 1,
     method: Callable = partial(bipartition_tree, max_attempts=10000),
 ) -> Dict:
@@ -901,7 +907,7 @@ def epsilon_tree_bipartition(
     :param graph: The graph to partition into two :math:`\varepsilon`-balanced parts.
     :type graph: nx.Graph
     :param parts: Iterable of part (district) labels (like ``[0,1,2]`` or ``range(4)``).
-    :type parts: Sequence
+    :type parts: list
     :param pop_target: Target population for each part of the partition.
     :type pop_target: Union[float, int]
     :param pop_col: Node attribute key holding population data.
@@ -909,6 +915,10 @@ def epsilon_tree_bipartition(
     :param epsilon: How far (as a percentage of ``pop_target``) from ``pop_target`` the parts
         of the partition can be.
     :type epsilon: float
+    :param partition_pop_multiplier_by_part: A dictionary mapping each part to a multiplier
+        for the population. This is used to adjust the population target for each part.
+        Default is None, which means no adjustment.
+    :type partition_pop_multiplier_by_part: Optional[Dict[Any, int]], optional
     :param node_repeats: Parameter for :func:`~gerrychain.tree_methods.bipartition_tree` to use.
         Defaults to 1.
     :type node_repeats: int, optional
@@ -925,17 +935,19 @@ def epsilon_tree_bipartition(
             + " are exactly 2 parts in the parts list."
         )
 
+    if partition_pop_multiplier_by_part is None:
+        partition_pop_multiplier_by_part = {part: 1 for part in parts}
+
     flips = {}
     remaining_nodes = graph.node_indices
-
-    lb_pop = pop_target * (1 - epsilon)
-    ub_pop = pop_target * (1 + epsilon)
-    check_pop = lambda x: lb_pop <= x <= ub_pop
 
     nodes = method(
         graph.subgraph(remaining_nodes),
         pop_col=pop_col,
-        pop_target=pop_target,
+        pop_targets=(
+            pop_target * partition_pop_multiplier_by_part[parts[0]],
+            pop_target * partition_pop_multiplier_by_part[parts[1]],
+        ),
         epsilon=epsilon,
         node_repeats=node_repeats,
         one_sided_cut=False,
@@ -946,10 +958,19 @@ def epsilon_tree_bipartition(
 
     part_pop = 0
     for node in nodes:
-        flips[node] = parts[-2]
         part_pop += graph.nodes[node][pop_col]
 
-    if not check_pop(part_pop):
+    check_pop = lambda x, target: target * (1 - epsilon) <= x <= target * (1 + epsilon)
+
+    next_part_idx = 0
+    if check_pop(part_pop, pop_target * partition_pop_multiplier_by_part[parts[0]]):
+        for node in nodes:
+            flips[node] = parts[0]
+        next_part_idx = 1
+    elif check_pop(part_pop, pop_target * partition_pop_multiplier_by_part[parts[1]]):
+        for node in nodes:
+            flips[node] = parts[1]
+    else:
         raise PopulationBalanceError()
 
     remaining_nodes -= nodes
@@ -957,10 +978,12 @@ def epsilon_tree_bipartition(
     # All of the remaining nodes go in the last part
     part_pop = 0
     for node in remaining_nodes:
-        flips[node] = parts[-1]
+        flips[node] = parts[next_part_idx]
         part_pop += graph.nodes[node][pop_col]
 
-    if not check_pop(part_pop):
+    if not check_pop(
+        part_pop, pop_target * partition_pop_multiplier_by_part[parts[next_part_idx]]
+    ):
         raise PopulationBalanceError()
 
     return flips
@@ -976,6 +999,7 @@ def recursive_tree_part(
     epsilon: float,
     node_repeats: int = 1,
     method: Callable = partial(bipartition_tree, max_attempts=10000),
+    partition_pop_multiplier_by_part: Optional[Dict] = None,
 ) -> Dict:
     """
     Uses :func:`~gerrychain.tree.bipartition_tree` recursively to partition a tree into
@@ -999,10 +1023,26 @@ def recursive_tree_part(
     :param method: The partition method to use. Defaults to
         `partial(bipartition_tree, max_attempts=10000)`.
     :type method: Callable, optional
+    :param partition_pop_multiplier_by_part: A dictionary mapping each part to a multiplier
+        for the population. This is used to adjust the population target for each part.
+        Default is None, which means no adjustment.
+    :type partition_pop_multiplier_by_part: Optional[Dict[Any, int]], optional
 
     :returns: New assignments for the nodes of ``graph``.
     :rtype: dict
     """
+    if partition_pop_multiplier_by_part is None:
+        partition_pop_multiplier_by_part = {part: 1 for part in parts}
+
+    assert set(partition_pop_multiplier_by_part.keys()) == set(parts)
+
+    if sum(
+        pop_target * value for value in partition_pop_multiplier_by_part.values()
+    ) != sum(graph.nodes[node][pop_col] for node in graph.node_indices):
+        raise ValueError(
+            "The sum of the population targets must equal the sum of the population of the nodes."
+        )
+
     flips = {}
     remaining_nodes = graph.node_indices
     # We keep a running tally of deviation from ``epsilon`` at each partition
@@ -1014,23 +1054,29 @@ def recursive_tree_part(
     # 98% of the target population and the target population.
     debt: Union[int, float] = 0
 
-    lb_pop = pop_target * (1 - epsilon)
-    ub_pop = pop_target * (1 + epsilon)
-    check_pop = lambda x: lb_pop <= x <= ub_pop
+    check_pop = lambda x, target: (
+        target * (1 - epsilon) <= x <= target * (1 + epsilon)
+    )
+
+    remaining_pop = sum(graph.nodes[node][pop_col] for node in remaining_nodes)
 
     for part in parts[:-2]:
-        min_pop = max(pop_target * (1 - epsilon), pop_target * (1 - epsilon) - debt)
-        max_pop = min(pop_target * (1 + epsilon), pop_target * (1 + epsilon) - debt)
+        part_pop_target = pop_target * partition_pop_multiplier_by_part[part]
+        min_pop = max(
+            part_pop_target * (1 - epsilon), part_pop_target * (1 - epsilon) - debt
+        )
+        max_pop = min(
+            part_pop_target * (1 + epsilon), part_pop_target * (1 + epsilon) - debt
+        )
         new_pop_target = (min_pop + max_pop) / 2
 
         try:
             nodes = method(
                 graph.subgraph(remaining_nodes),
                 pop_col=pop_col,
-                pop_target=new_pop_target,
+                pop_targets=(new_pop_target, remaining_pop - new_pop_target),
                 epsilon=(max_pop - min_pop) / (2 * new_pop_target),
                 node_repeats=node_repeats,
-                one_sided_cut=True,
             )
         except Exception:
             raise
@@ -1040,21 +1086,34 @@ def recursive_tree_part(
 
         part_pop = 0
         for node in nodes:
-            flips[node] = part
             part_pop += graph.nodes[node][pop_col]
 
-        if not check_pop(part_pop):
+        if check_pop(part_pop, part_pop_target):
+            for node in nodes:
+                flips[node] = part
+
+        elif check_pop(remaining_pop - part_pop, part_pop_target):
+            nodes = remaining_nodes - nodes
+            part_pop = remaining_pop - part_pop
+            for node in nodes:
+                flips[node] = part
+        else:
             raise PopulationBalanceError()
 
-        debt += part_pop - pop_target
+        remaining_pop -= part_pop
+
+        debt += part_pop - part_pop_target
         remaining_nodes -= nodes
+
+    part = parts[-2]
+    part_pop_target = pop_target * partition_pop_multiplier_by_part[part]
 
     # After making n-2 districts, we need to make sure that the last
     # two districts are both balanced.
     nodes = method(
         graph.subgraph(remaining_nodes),
         pop_col=pop_col,
-        pop_target=pop_target,
+        pop_targets=(part_pop_target, remaining_pop - part_pop_target),
         epsilon=epsilon,
         node_repeats=node_repeats,
         one_sided_cut=False,
@@ -1065,21 +1124,31 @@ def recursive_tree_part(
 
     part_pop = 0
     for node in nodes:
-        flips[node] = parts[-2]
         part_pop += graph.nodes[node][pop_col]
 
-    if not check_pop(part_pop):
+    if check_pop(part_pop, part_pop_target):
+        for node in nodes:
+            flips[node] = part
+
+    elif check_pop(remaining_pop - part_pop, part_pop_target):
+        nodes = remaining_nodes - nodes
+        part_pop = remaining_pop - part_pop
+        for node in nodes:
+            flips[node] = part
+    else:
         raise PopulationBalanceError()
 
     remaining_nodes -= nodes
 
+    part = parts[-1]
+    part_pop_target = pop_target * partition_pop_multiplier_by_part[part]
     # All of the remaining nodes go in the last part
     part_pop = 0
     for node in remaining_nodes:
-        flips[node] = parts[-1]
+        flips[node] = part
         part_pop += graph.nodes[node][pop_col]
 
-    if not check_pop(part_pop):
+    if not check_pop(part_pop, part_pop_target):
         raise PopulationBalanceError()
 
     return flips
