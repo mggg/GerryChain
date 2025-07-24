@@ -15,6 +15,7 @@ import functools
 import json
 from typing import Any
 import warnings
+from urllib.request import urlopen
 
 import networkx
 from networkx.classes.function import frozen
@@ -84,8 +85,16 @@ class Graph(networkx.Graph):
         :returns: The loaded graph as an instance of this class.
         :rtype: Graph
         """
-        with open(json_file) as f:
-            data = json.load(f)
+        try:
+            with open(json_file) as f:
+                data = json.load(f)
+        except FileNotFoundError:
+            try:
+                with urlopen(json_file) as f:
+                    data = json.load(f)
+            except:
+                raise FileNotFoundError(f"File {json_file} not found.")
+
         g = json_graph.adjacency_graph(data)
         graph = cls.from_networkx(g)
         graph.issue_warnings()
