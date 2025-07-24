@@ -1,0 +1,32 @@
+[project]
+name = "gerrychain"
+version = "0.3.3"
+description = "Add your description here"
+readme = "README.rst"
+authors = [
+    { name = "MGGG", email = "dev@mggg.org" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "geopandas>=1.1.1",
+    "matplotlib>=3.10.3",
+    "networkx>=3.5",
+    "pandas>=2.3.1",
+    "urllib3>=2.5.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["gerrychain/"] 
+
+[dependency-groups]
+dev = [
+    "black>=25.1.0",
+    "ipykernel>=6.30.0",
+    "ipywidgets>=8.1.7",
+    "pytest>=8.4.1",
+    "ruff>=0.12.4",
+]
