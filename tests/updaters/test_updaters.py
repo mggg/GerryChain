@@ -54,21 +54,30 @@ def chain_with_election(partition_with_election):
 
 
 def test_Partition_can_update_stats():
-    graph = networkx.complete_graph(3)
+    nxgraph = networkx.complete_graph(3)
     assignment = {0: 1, 1: 1, 2: 2}
 
-    graph.nodes[0]["stat"] = 1
-    graph.nodes[1]["stat"] = 2
-    graph.nodes[2]["stat"] = 3
+    nxgraph.nodes[0]["stat"] = 1
+    nxgraph.nodes[1]["stat"] = 2
+    nxgraph.nodes[2]["stat"] = 7
 
     updaters = {"total_stat": Tally("stat", alias="total_stat")}
 
-    partition = Partition(Graph.from_networkx(graph), assignment, updaters)
-    assert partition["total_stat"][2] == 3
+    # This test is complicated by the fact that "original" node_ids are typically based
+    # on the node_ids for NX-based graphs, so in this test's case, those would be: 0, 1, 2 .
+    # However, when we create a Partition, we convert to an RX-based graph object and 
+    # as a result the internal node_ids for the RX-based graph change.  So, when we ask
+    # for graph data from a partition we need to be careful to use its internal node_ids.
+
+    # Verify that the "total_stat" for the part (district) 2 is 7
+    partition = Partition(Graph.from_networkx(nxgraph), assignment, updaters)
+    assert partition["total_stat"][2] == 7
+
+    # Flip node with original node_id of 1 to be in part (district) 2
     flip = {1: 2}
 
-    new_partition = partition.flip(flip)
-    assert new_partition["total_stat"][2] == 5
+    new_partition = partition.flip(flip, use_original_node_ids=True)
+    assert new_partition["total_stat"][2] == 9
 
 
 def test_tally_multiple_columns(graph_with_d_and_r_cols):

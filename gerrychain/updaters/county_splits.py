@@ -79,21 +79,27 @@ def compute_county_splits(
 
     # Create the initial county data containers.
     if not partition.parent:
+
         county_dict = dict()
 
         for node in partition.graph.node_indices:
+            
+            # First figure get current status of the county's information
             county = partition.graph.lookup(node, county_field)
             if county in county_dict:
                 split, nodes, seen = county_dict[county]
             else:
                 split, nodes, seen = CountySplit.NOT_SPLIT, [], set()
 
+            # Now update "nodes" and "seen" with this node and the part (district) from partition's assignment.
             nodes.append(node)
             seen.update(set([partition.assignment.mapping[node]]))
 
+            # lastly, if we have "seen" more than one part (district), then the county is split across parts.
             if len(seen) > 1:
                 split = CountySplit.OLD_SPLIT
 
+            # update the county_dict with new information
             county_dict[county] = CountyInfo(split, nodes, seen)
 
         return county_dict

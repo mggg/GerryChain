@@ -93,6 +93,7 @@ class Partition:
         #       the case when the parent is None, the assignments are explicitly provided,
         #       and in the case when there is a parent, the _from_parent() logic processes
         #       the flips to update the assignments.
+        
         self.subgraphs = SubgraphView(self.graph, self.parts)
 
     @classmethod
@@ -168,30 +169,42 @@ class Partition:
         # if a Graph object, make sure it is based on an embedded RustworkX.PyGraph
         if isinstance(graph, Graph):
             if (graph.isNxGraph()):
-                # If the graph parameter is based on a NetworkX (NX) Graph then we need to convert it to
-                # be based on RustworkX (RX).  This changes the node_ids, so we also need to 
-                # convert the passed in assignment node_ids to match the new RX node_ids.
+
+                # Get the assignment that would be appropriate for the NX-based graph
                 old_nx_assignment = get_assignment(assignment, graph)
+
+                # Convert the NX graph to be an RX graph
                 graph = graph.convert_from_nx_to_rx()
+
                 # After converting from NX to RX, we need to update the Partition's assignment
-                # because it used the old NX node_ids.
+                # because it used the old NX node_ids (converting to RX changes node_ids)
                 nx_to_rx_node_id_map = graph.get_nx_to_rx_node_id_map()
-                old_nx_assignment = get_assignment(assignment, graph)
                 new_rx_assignment = old_nx_assignment.new_assignment_convert_old_node_ids_to_new_node_ids(
                   nx_to_rx_node_id_map
                 )
                 self.assignment = new_rx_assignment
+
+                # We also have to update the _node_id_to_original_node_id_map to refer to the node_ids
+                # in the NX Graph object.
+                _node_id_to_original_node_id_map = {}
+                for node_id in graph.nodes:
+                    original_node_id = graph.node_data(node_id)["__networkx_node__"]
+                    _node_id_to_original_node_id_map[node_id] = original_node_id
+                graph._node_id_to_original_node_id_map = _node_id_to_original_node_id_map
+
             else:
                 self.assignment = get_assignment(assignment, graph)
+
             self.graph = FrozenGraph(graph)
+
         elif isinstance(graph, FrozenGraph):
             # frm: TODO: Verify that the embedded graph is RX
             self.graph = graph
             # frm ???:  Why is the parameter below not the FrozenGraph?  
             self.assignment = get_assignment(assignment, graph)
+
         else:
             raise TypeError(f"Unsupported Graph object with type {type(graph)}")
-
 
         if set(self.assignment) != set(graph):
             raise KeyError("The graph's node labels do not match the Assignment's keys")
@@ -263,7 +276,7 @@ class Partition:
     def __len__(self):
         return len(self.parts)
 
-    def flip(self, flips: Dict) -> "Partition":
+    def flip(self, flips: Dict, use_original_node_ids=False) -> "Partition":
         """
         Returns the new partition obtained by performing the given `flips`
         on this partition.
@@ -273,7 +286,26 @@ class Partition:
         :rtype: Partition
         """
 
-        # frm: TODO:  Ugh - Partition.flip() - the flips are probably in NX node_ids...  What to do???
+        # frm: TODO: Change comments above to document new optional parameter, use_original_node_ids.
+        #
+        # This is a new issue that arises from the fact that node_ids in RX are different from those
+        # in the original NX graph.  In the pre-RX code, we did not need to distinguish between
+        # calls to flip() that were internal code used when doing a MarkovChain versus user code
+        # for instance in tests.  However, in the new RX world, the internal code uses RX node_ids
+        # and the tests want to use "original" NX node_ids.  Hence the new parameter.
+
+        # If the caller identified flips in terms of "original" node_ids (typically node_ids associated with 
+        # an NX-based graph before creating a Partition object), then translate those original node_ids 
+        # into the appropriate internal RX-based node_ids.
+        # 
+        # Note that original node_ids in flips are typically used in tests
+        #
+        if use_original_node_ids:
+            new_flips = {}
+            for original_node_id, part in flips.items():
+                internal_node_id = self.graph.internal_node_id_for_original_node_id(original_node_id)
+                new_flips[internal_node_id] = part
+            flips = new_flips
 
         return self.__class__(parent=self, flips=flips)
 
@@ -420,6 +452,7 @@ class Partition:
                 "needed to match the Districtr assignment to the nodes of the graph."
             )
 
+        # frm: TODO:  NX vs. RX issues:  does "node in graph" work for both NX and RX?
         assignment = {node: districtr_assignment[node_to_id[node]] for node in graph}
 
         return cls(graph, assignment, updaters)

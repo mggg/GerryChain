@@ -1,80 +1,122 @@
 from heapq import heappop, heappush
 from itertools import count
 
-import networkx as nx
 from typing import Callable, Any, Dict, Set
 from ..partition import Partition
 import random
 from .bounds import SelfConfiguringLowerBound
 
-# frm TODO: Does this code need to be converted to work on RustworkX?
-#           Need to look at where it is called, but my assumption is
-#           that YES - it does need to be converted.  If so, then
-#           instead of nx.Graph, it should operate on the new Graph
-#           objects, and any NetworkX functions should be encapsulated
-#           in new routines that operate on the new Graph object with
-#           code that works for both NX and RX...
+from ..graph import Graph
+
+# frm TODO: Remove this comment about NX dependencies (once we are all set with the work)
 #
 #           NX dependencies:
-#               def are_reachable(G: nx.Graph, ...)
-#               nx.is_connected(partition.subgraphs[part]) for part in affected_parts(partition)
+#               def _are_reachable(G: nx.Graph, ...)
+#               nx.is_connected(partition.subgraphs[part]) for part in _affected_parts(partition)
 #               adj = nx.to_dict_of_lists(partition.subgraphs[part])
 #
 
-def are_reachable(G: nx.Graph, source: Any, avoid: Callable, targets: Any) -> bool:
+# frm: TODO:  Think about the efficiency of the routines in this module.  Almost all
+#               of these involve traversing the entire graph, and I fear that callers
+#               might make multiple calls.
+#
+#               Possible solutions are to 1) speed up these routines somehow and 2) cache
+#               results so that at least we don't do the traversals over and over.
+
+def _are_reachable(graph: Graph, start_node: Any, avoid: Callable, targets: Any) -> bool:
     """
     A modified version of NetworkX's function
     `networkx.algorithms.shortest_paths.weighted._dijkstra_multisource()`
 
-    This function checks if the targets are reachable from the source node
+    This function checks if the targets are reachable from the start_node node
     while avoiding edges based on the avoid condition function.
 
-    :param G: The networkx graph
-    :type G: nx.Graph
-    :param source: The starting node
-    :type source: int
+    :param graph: Graph
+    :type graph: Graph
+    :param start_node: The starting node
+    :type start_node: int
     :param avoid: The function that determines if an edge should be avoided.
         It should take in three parameters: the start node, the end node, and
         the edges to avoid. It should return True if the edge should be avoided,
         False otherwise.
+        # frm: TODO:  Fix the comment above about the "avoid" function parameter.
+        #               It may have once been accurate, but the original code below
+        #               passed parameters to it of (node_id, neighbor_node_id, edge_data_dict)
+        #               from NetworkX.Graph._succ  So, "the edges to avoid" above is wrong.
+        #               This whole issue is moot, however, since the only routine
+        #               that is used as an avoid function ignores the third parameter.
+        #               Or rather it used to avoid the third parameter, but it has
+        #               been updated to only take two parameters, and the code below
+        #               has been modified to use Graph.neighbors() instead of _succ
+        #               because 1) we can't use NX and 2) because we don't need the
+        #               edge data dictionary anyways...
+        #
     :type avoid: Callable
     :param targets: The target nodes that we would like to reach
     :type targets: Any
 
-    :returns: True if all of the targets are reachable from the source node
+    :returns: True if all of the targets are reachable from the start_node node
         under the avoid condition, False otherwise.
     :rtype: bool
     """
-    G_succ = G._succ if G.is_directed() else G._adj
-
     push = heappush
     pop = heappop
-    dist = {}  # dictionary of final distances
+    node_distances = {}  # dictionary of final distances
     seen = {}
     # fringe is heapq with 3-tuples (distance,c,node)
     # use the count c to avoid comparing nodes (may not be able to)
     c = count()
     fringe = []
 
-    seen[source] = 0
-    push(fringe, (0, next(c), source))
+    seen[start_node] = 0
+    push(fringe, (0, next(c), start_node))
 
-    while not all(t in seen for t in targets) and fringe:
-        (d, _, v) = pop(fringe)
-        if v in dist:
+    
+    # frm: Original Code:
+    #
+    # while not all(t in seen for t in targets) and fringe:
+    #     (d, _, v) = pop(fringe)
+    #     if v in dist:
+    #         continue  # already searched this node.
+    #     dist[v] = d
+    #     for u, e in G_succ[v].items():
+    #         if avoid(v, u, e):
+    #             continue
+    # 
+    #         vu_dist = dist[v] + 1
+    #         if u not in seen or vu_dist < seen[u]:
+    #             seen[u] = vu_dist
+    #             push(fringe, (vu_dist, next(c), u))
+    # 
+    # return all(t in seen for t in targets)
+    #
+
+
+
+    # While we have not yet seen all of our targets and while there is 
+    # still some fringe...
+    while not all(tgt in seen for tgt in targets) and fringe:
+        (distance, _, node_id) = pop(fringe)
+        if node_id in node_distances:
             continue  # already searched this node.
-        dist[v] = d
-        for u, e in G_succ[v].items():
-            if avoid(v, u, e):
+        node_distances[node_id] = distance
+
+        dbg_neighbors = graph.neighbors(node_id)
+
+        for neighbor in graph.neighbors(node_id):
+            if avoid(node_id, neighbor):
                 continue
 
-            vu_dist = dist[v] + 1
-            if u not in seen or vu_dist < seen[u]:
-                seen[u] = vu_dist
-                push(fringe, (vu_dist, next(c), u))
+            neighbor_distance = node_distances[node_id] + 1
+            if neighbor not in seen or neighbor_distance < seen[neighbor]:
+                seen[neighbor] = neighbor_distance
+                push(fringe, (neighbor_distance, next(c), neighbor))
 
-    return all(t in seen for t in targets)
+    # frm: TODO:  Simplify this code.  It computes distances and counts but
+    #               never uses them.  These must be relics of code copied 
+    #               from somewhere else where it had more uses...
 
+    return all(tgt in seen for tgt in targets)
 
 def single_flip_contiguous(partition: Partition) -> bool:
     """
@@ -100,7 +142,7 @@ def single_flip_contiguous(partition: Partition) -> bool:
     graph = partition.graph
     assignment = partition.assignment
 
-    def partition_edge_avoid(start_node: Any, end_node: Any, edge_attrs: Dict):
+    def _partition_edge_avoid(start_node: Any, end_node: Any):
         """
         Helper function used in the graph traversal to avoid edges that cross between different
         assignments. It's crucial for ensuring that the traversal only considers paths within
@@ -111,7 +153,7 @@ def single_flip_contiguous(partition: Partition) -> bool:
         :param end_node: The end node of the edge.
         :type end_node: Any
         :param edge_attrs: The attributes of the edge (not used in this function). Needed
-            because this function is passed to :func:`are_reachable`, which expects the
+            because this function is passed to :func:`_are_reachable`, which expects the
             avoid function to have this signature.
         :type edge_attrs: Dict
 
@@ -139,8 +181,10 @@ def single_flip_contiguous(partition: Partition) -> bool:
         start_neighbor = random.choice(old_neighbors)
 
         # Check if all old neighbors in the same assignment are still reachable.
-        connected = are_reachable(
-            graph, start_neighbor, partition_edge_avoid, old_neighbors
+        # The "_partition_edge_avoid" function will prevent searching across 
+        # a part (district) boundary
+        connected = _are_reachable(
+            graph, start_neighbor, _partition_edge_avoid, old_neighbors
         )
 
         if not connected:
@@ -151,7 +195,7 @@ def single_flip_contiguous(partition: Partition) -> bool:
     return True
 
 
-def affected_parts(partition: Partition) -> Set[int]:
+def _affected_parts(partition: Partition) -> Set[int]:
     """
     Checks which partitions were affected by the change of nodes.
 
@@ -181,7 +225,7 @@ def affected_parts(partition: Partition) -> Set[int]:
 
 def contiguous(partition: Partition) -> bool:
     """
-    Check if the parts of a partition are connected using :func:`networkx.is_connected`.
+    Check if the parts of a partition are connected 
 
     :param partition: The proposed next :class:`~gerrychain.partition.Partition`
     :type partition: Partition
@@ -189,22 +233,15 @@ def contiguous(partition: Partition) -> bool:
     :returns: Whether the partition is contiguous
     :rtype: bool
     """
-
-    # frm HACK TODO:    def contiguous(...)
-    #                   The code below calls a NetworkX routine that way down deep refers to the
-    #                   internal data member _adj which won't work for a new GerryChain Graph.
-    #
-    # so for now, just return True to get stuff to work...
-    #
-    # Eventujally I need to implement a new is_connected() routine that works for the new
-    # GerryChain Graph object and for both NX and RX...
-    return True
-    # Original code:
+    # frm: Original code:
     #
     # return all(
-    #     nx.is_connected(partition.subgraphs[part]) for part in affected_parts(partition)
+    #     nx.is_connected(partition.subgraphs[part]) for part in _affected_parts(partition)
     # )
 
+    return all(
+        is_connected_bfs(partition.subgraphs[part]) for part in _affected_parts(partition)
+    )
 
 def contiguous_bfs(partition: Partition) -> bool:
     """
@@ -217,21 +254,31 @@ def contiguous_bfs(partition: Partition) -> bool:
     :returns: Whether the parts of this partition are connected
     :rtype: bool
     """
-    parts_to_check = affected_parts(partition)
+    
+    # frm: TODO:   Try to figure out why this routine exists.  It seems to be
+    #               exactly the same conceptually as contiguous().  It looks 
+    #               at the "affected" parts - those that have changed node
+    #               assignments from parent, and sees if those parts are 
+    #               contiguous.
+    #
+    #               For now, I have just replaced the existing code which depended
+    #               on NX with a call on contiguous(partition).
+    #
 
-    # Generates a subgraph for each district and perform a BFS on it
-    # to check connectedness.
-    # frm TODO:     def contiguous_bfs(...)
-    #               Reimplement to remove dependence on NetworkX. to_dict_of_lists()
-    #               I assume the regression test works (May 2025) because this 
-    #               routine is not called by the code in the regression test...
-    for part in parts_to_check:
-        adj = nx.to_dict_of_lists(partition.subgraphs[part])
-        if _bfs(adj) is False:
-            return False
+    # frm: Original Code: 
+    #
+    #    parts_to_check = _affected_parts(partition)
+    #    
+    #    # Generates a subgraph for each district and perform a BFS on it
+    #    # to check connectedness.
+    #    for part in parts_to_check:
+    #        adj = nx.to_dict_of_lists(partition.subgraphs[part])
+    #        if _bfs(adj) is False:
+    #            return False
+    #    
+    #    return True
 
-    return True
-
+    return contiguous(partition)
 
 def number_of_contiguous_parts(partition: Partition) -> int:
     """
@@ -241,8 +288,12 @@ def number_of_contiguous_parts(partition: Partition) -> int:
     :returns: Number of contiguous parts in the partition.
     :rtype: int
     """
+    # frm: Original Code:
+    # parts = partition.assignment.parts
+    # return sum(1 for part in parts if nx.is_connected(partition.subgraphs[part]))
+    #
     parts = partition.assignment.parts
-    return sum(1 for part in parts if nx.is_connected(partition.subgraphs[part]))
+    return sum(1 for part in parts if is_connected_bfs(partition.subgraphs[part]))
 
 
 # Create an instance of SelfConfiguringLowerBound using the number_of_contiguous_parts function.
@@ -265,12 +316,36 @@ def contiguous_components(partition: Partition) -> Dict[int, list]:
     :rtype: dict
     """
 
-    # frm: TODO:    Remove dependence on nx.connected_components() to support RX
-    return {
-        part: [subgraph.subgraph(nodes) for nodes in nx.connected_components(subgraph)]
-        for part, subgraph in partition.subgraphs.items()
-    }
+    # frm: TODO:  NX vs RX Issues here:
+    #
+    # The call on subgraph() below is perhaps problematic because it will renumber
+    # node_ids...
+    #
+    # The issue is not that the code is incorrect (with RX there is really no other
+    # option), but rather that any legacy code will be unprepared to deal with the fact
+    # that the subgraphs returned are (I think) three node translations away from the
+    # original NX-Graph object's node_ids. 
+    #
+    # Translations:
+    #
+    #    1) From NX to RX when partition was created
+    #    2) From top-level RX graph to the partition's subgraphs for each part (district)
+    #    3) From each part's subgraph to the subgraphs of contiguous_components...
+    #
 
+    # frm: Original Code:
+    #    return {
+    #        part: [subgraph.subgraph(nodes) for nodes in nx.connected_components(subgraph)]
+    #        for part, subgraph in partition.subgraphs.items()
+    #    }
+    #
+    connected_components_in_each_partition = {}
+    for part, subgraph in partition.subgraphs.items():
+        # create a subgraph for each set of connected nodes in the part's nodes
+        list_of_connected_subgraphs = subgraph.subgraphs_for_connected_components()
+        connected_components_in_each_partition[part] = list_of_connected_subgraphs
+
+    return connected_components_in_each_partition
 
 def _bfs(graph: Dict[int, list]) -> bool:
     """
@@ -304,3 +379,26 @@ def _bfs(graph: Dict[int, list]) -> bool:
                 q += [neighbor]
 
     return total_vertices == len(visited)
+
+# frm: TODO:  Verify that is_connected_bfs() works - add a test or two...
+
+# frm: Code obtained from the web - probably could be optimized...
+#       This code replaced calls on nx.is_connected()
+def is_connected_bfs(graph: Graph):
+    if not graph:
+        return True
+
+    nodes = list(graph.node_indices)
+
+    start_node = random.choice(nodes)
+    visited = {start_node}
+    queue = [start_node]
+
+    while queue:
+        current_node = queue.pop(0)
+        for neighbor in graph.neighbors(current_node):
+            if neighbor not in visited:
+                visited.add(neighbor)
+                queue.append(neighbor)
+
+    return len(visited) == len(nodes)

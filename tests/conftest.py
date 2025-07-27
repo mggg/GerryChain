@@ -134,6 +134,10 @@ def attach_random_data(graph, columns):
 
 
 @pytest.fixture
+# frm: ???:  Why not just always use three_by_three_grid?  At least that gives
+#               the reader an idea of how many nodes there are?  What is the
+#               value of just having a generic "graph" test fixture???
+#
 def graph(three_by_three_grid):
     return three_by_three_grid
 

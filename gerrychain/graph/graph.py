@@ -178,7 +178,7 @@ class Graph:
     #     self._rxgraph = rxgraph
 
     # frm: TODO:    Add documentation for new data members I am adding:
-    #               _nxgraph, _rxgraph, parent_node_id_map, _is_a_subgraph
+    #               _nxgraph, _rxgraph, _node_id_to_parent_node_id_map, _is_a_subgraph
 
     @classmethod
     def from_networkx(cls, nxgraph: networkx.Graph) -> "Graph":
@@ -186,7 +186,12 @@ class Graph:
         graph._nxgraph = nxgraph
         graph._rxgraph = None
         graph._is_a_subgraph = False        # See comments on RX subgraph issues.
-        graph.parent_node_id_map = {node: node for node in graph.node_indices}   # Identity map for top-level graph
+        # Maps node_ids in the graph to the "parent" node_ids in the parent graph.
+        # For top-level graphs, this is just an identity map 
+        graph._node_id_to_parent_node_id_map = {node: node for node in graph.node_indices}   
+        # Maps node_ids in the graph to the "original" node_ids in parent graph.
+        # For top-level graphs, this is just an identity map 
+        graph._node_id_to_original_node_id_map = {node: node for node in graph.node_indices}   
         graph.nx_to_rx_node_id_map = None   # only set when an NX based graph is converted to be an RX based graph
         return graph
     
@@ -196,23 +201,46 @@ class Graph:
         graph._rxgraph = rxgraph
         graph._nxgraph = None
         graph._is_a_subgraph = False        # See comments on RX subgraph issues.
-        graph.parent_node_id_map = {node: node for node in graph.node_indices}   # Identity map for top-level graph
+        # Maps node_ids in the graph to the "parent" node_ids in the parent graph.
+        # For top-level graphs, this is just an identity map 
+        graph._node_id_to_parent_node_id_map = {node: node for node in graph.node_indices}   
+        # Maps node_ids in the graph to the "original" node_ids in parent graph.
+        # For top-level graphs, this is just an identity map 
+        graph._node_id_to_original_node_id_map = {node: node for node in graph.node_indices}   
         graph.nx_to_rx_node_id_map = None   # only set when an NX based graph is converted to be an RX based graph
         return graph
 
-    def hasOneGraph(self):
+    # frm: TODO: Create a test for this routine
+    def original_node_ids_for_set(self, set_of_nodes):
+        # Utility routine to quickly translate a set of node_ids to their original node_ids
+        _node_id_to_original_node_id_map = self._node_id_to_original_node_id_map 
+        new_set = {_node_id_to_original_node_id_map[node_id] for node_id in set_of_nodes}
+        return new_set
+
+    # frm: TODO: Create a test for this routine
+    def original_node_ids_for_list(self, list_of_nodes):
+        # Utility routine to quickly translate a set of node_ids to their original node_ids
+        _node_id_to_original_node_id_map = self._node_id_to_original_node_id_map 
+        new_list = [_node_id_to_original_node_id_map[node_id] for node_id in set_of_nodes]
+        return new_list
+
+    # frm: TODO: Create a test for this routine
+    def internal_node_id_for_original_node_id(self, original_node_id):
+        # reverse the map so we can go from original node_id to internal node_id
+        orignal_node_id_to_internal_node_id_map = {
+          v: k for k,v in self._node_id_to_original_node_id_map.items()
+        }
+        return orignal_node_id_to_internal_node_id_map[original_node_id]
+
+    def verifyGraphIsValid(self):
+
+        # Sanity check - this is where to add additional sanity checks in the future.
+
         # Checks that there is one and only one graph
-        if (
+        if not (
             (self._nxgraph is not None and self._rxgraph is None)
             or (self._nxgraph is None and self._rxgraph is not None)
            ):
-            return True
-        else:
-            return False
-
-    def verifyGraphIsValid(self):
-        # Sanity check - this is where to add additional sanity checks in the future.
-        if (not self.hasOneGraph()):
             raise Exception("Graph.verifyGraphIsValid - graph not properly configured")
 
     def isNxGraph(self):
@@ -682,7 +710,7 @@ class Graph:
         self.verifyGraphIsValid()
 
         if (self.isNxGraph()):
-            self._nxgraph.add_edge
+            self._nxgraph.add_edge(node_id1, node_id2)
         elif (self.isRxGraph()):
             # empty dict tells RX the edge data will be a dict 
             self._rxgraph.add_edge(node_id1, node_id2, {})
@@ -837,11 +865,11 @@ class Graph:
         #       are None - but rather to have explicit is_nx_or_rx_graph data member which
         #       is set to one of "NX", "RX", "not_set".
         #
-        #       For now, I am just going to return None if __name is "nxgraph" or "rxgraph".
+        #       For now, I am just going to return None if __name is "_nxgraph" or "_rxgraph".
         # 
 
         # frm: TODO: Fix this hack - see comment above...
-        if (__name == "nxgraph") or (__name == "rxgraph"):
+        if (__name == "_nxgraph") or (__name == "_rxgraph"):
             return None
 
         # If attribute doesn't exist on this object, try
@@ -897,15 +925,15 @@ class Graph:
         a list of nodes: [45, 46, 47] the nodes in the subgraph will be [0, 1, 2].
 
         This creates problems for functions that operate on subgraphs and want to return results
-        involving node_ids to the caller.  To solve this, we define a parent_node_id_map whenever
+        involving node_ids to the caller.  To solve this, we define a _node_id_to_parent_node_id_map whenever
         we create a subgraph that will provide the node_id in the parent for each node in the subgraph.
-        For NX this is a no-op, and the parent_node_id_map is just an identity map - each node_id is 
+        For NX this is a no-op, and the _node_id_to_parent_node_id_map is just an identity map - each node_id is 
         mapped to itself.  For RX, however, we store the parent_node_id in the node's data before
         creating the subgraph, and then in the subgraph, we use the parent's node_id to construct 
         a map from the subgraph node_id to the parent_node_id.
 
         This means that any function that wants to return results involving node_ids can safely
-        just translate node_ids using the parent_node_id_map, so that the results make sense in
+        just translate node_ids using the _node_id_to_parent_node_id_map, so that the results make sense in
         the caller's context.
 
         A note of caution: if the caller retains the subgraph after using it in a function call, 
@@ -913,7 +941,7 @@ class Graph:
         It would be safest to reset the value of the subgraph to None after using it as an
         argument to a function call.
 
-        Also, for both RX and NX, we set the parent_node_id_map to be the identity map for top-level
+        Also, for both RX and NX, we set the _node_id_to_parent_node_id_map to be the identity map for top-level
         graphs on the off chance that there is a function that takes both top-level graphs and 
         subgraphs as a parameter.  This allows the function to just always do the node translation.
         In the case of a top-level graph the translation will be a no-op, but it will be correct.
@@ -933,7 +961,8 @@ class Graph:
             nx_subgraph = self._nxgraph.subgraph(nodes)
             new_subgraph = self.from_networkx(nx_subgraph)
             # for NX, the node_ids in subgraph are the same as in the parent graph
-            parent_node_id_map = {node: node for node in nodes}
+            _node_id_to_parent_node_id_map = {node: node for node in nodes}
+            _node_id_to_original_node_id_map = {node: node for node in nodes}   
         elif (self.isRxGraph()):
             # frm TODO:  Need to check logic below - not sure this works exactly correctly for RX...
             if isinstance(nodes, frozenset) or isinstance(nodes, set):
@@ -941,24 +970,53 @@ class Graph:
             # For RX, the node_ids in the subgraph change, so we need a way to map subgraph node_ids 
             # into parent graph node_ids.  To do so, we add the parent node_id into the node data
             # so that in the subgraph we can find it and then create the map.
+            # frm: TODO:  Be careful - node data is shared by subgraphs, so a subgraph of this
+            #               subgraph will still have this field set - meaning that the field's
+            #               value is not dependable over time - perhaps I should null it out
+            #               after using it here...
             for node_id in nodes:
                 self.node_data(node_id)["parent_node_id"] = node_id
+            
+            # frm: TODO:  Since data is shared by nodes in subgraphs, perhaps we could just set
+            #               the "original_node_id" in the beginning and rely on it forever...
+            for node_id in nodes:
+                self.node_data(node_id)["original_node_id"] = self._node_id_to_original_node_id_map[node_id]
 
             rx_subgraph = self._rxgraph.subgraph(nodes)
             new_subgraph = self.from_rustworkx(rx_subgraph)
 
             # frm: Create the map from subgraph node_id to parent graph node_id
-            parent_node_id_map = {}
+            _node_id_to_parent_node_id_map = {}
             for subgraph_node_id in new_subgraph.node_indices:
-                parent_node_id_map[subgraph_node_id] = new_subgraph.node_data(subgraph_node_id)["parent_node_id"]
+                _node_id_to_parent_node_id_map[subgraph_node_id] = new_subgraph.node_data(subgraph_node_id)["parent_node_id"]
+            # frm: Create the map from subgraph node_id to the original graph's node_id
+            _node_id_to_original_node_id_map = {}
+            for subgraph_node_id in new_subgraph.node_indices:
+                _node_id_to_original_node_id_map[subgraph_node_id] = new_subgraph.node_data(subgraph_node_id)["original_node_id"]
 
         else:
             raise Exception("Graph.subgraph - bad kind of graph object")
 
         new_subgraph._is_a_subgraph = True
-        new_subgraph.parent_node_id_map = parent_node_id_map
+        new_subgraph._node_id_to_parent_node_id_map = _node_id_to_parent_node_id_map
+        new_subgraph._node_id_to_original_node_id_map = _node_id_to_original_node_id_map
 
         return new_subgraph
+
+    def translate_subgraph_node_ids_for_flips(self, flips):
+        # flips is a dictionary mapping node_ids to parts (districts).
+        translated_flips = {}
+        for subgraph_node_id, part in flips.items():
+            parent_node_id = self._node_id_to_parent_node_id_map[subgraph_node_id]
+            translated_flips[parent_node_id] = part
+
+        return translated_flips
+
+    def translate_subgraph_node_ids_for_set_of_nodes(self, set_of_nodes):
+        translated_set_of_nodes = set()
+        for node_id in set_of_nodes:
+            translated_set_of_nodes.add(self._node_id_to_parent_node_id_map[node_id])
+        return translated_set_of_nodes
 
     def nx_generic_bfs_edges(self, source, neighbors=None, depth_limit=None):
         # frm: Code copied from GitHub:
@@ -1057,6 +1115,8 @@ class Graph:
                     return
             depth += 1
 
+    # frm: TODO:  Add tests for all of the new routines I have added...
+
     def generic_bfs_successors_generator(self, root_node_id):
         # frm: Generate in sequence a tuple for the parent (node_id) and
         #       the children of that node (list of node_ids).
@@ -1070,7 +1130,9 @@ class Graph:
                 children.append(c)
                 continue
             yield (parent, children)
-            # new parent, so add the current child to list of children before looping
+            # new parent, so reset parent and children variables to
+            # be the new parent (p) and a new children list containing
+            # this first child (c), and continue looping
             children = [c]
             parent = p
         yield (parent, children)
@@ -1263,6 +1325,38 @@ class Graph:
 
         return laplacian_matrix
 
+    def subgraphs_for_connected_components(self):
+        # Create a list of subgraphs - one for each subset of connected nodes in the graph
+        #
+        # This mirrors the nx.connected_components() routine in NetworkX
+
+        if self.isNxGraph():
+            nxgraph = self.getNxGraph()
+            subgraphs = [
+              self.subgraph(nodes) for nodes in networkx.connected_components(nxgraph)
+            ]
+        elif self.isRxGraph():
+            rxgraph = self.getRxGraph()
+            subgraphs = [
+                self.subgraph(nodes) for nodes in rustworkx.connected_components(rxgraph)
+            ]
+        else:
+            raise Exception("subgraphs_for_connected_components: Bad kind of Graph")
+        
+        return subgraphs
+
+    def num_connected_components(self):
+        if self.isNxGraph():
+            nxgraph = self.getNxGraph()
+            connected_components = list(networkx.connected_components(nxgraph))
+        elif self.isRxGraph():
+            rxgraph = self.getRxGraph()
+            connected_components = rustworkx.connected_components(rxgraph)
+        else:
+            raise Exception("num_connected_components: Bad kind of Graph")
+
+        num_cc = len(connected_components)
+        return num_cc
 ######################################################
 
 class OriginalGraph(networkx.Graph):
@@ -1842,7 +1936,9 @@ class FrozenGraph:
 
     @functools.lru_cache(16384)
     def neighbors(self, n: Any) -> Tuple[Any, ...]:
-        return tuple(self.graph.neighbors(n))
+        # frm: Original Code:
+        #    return tuple(self.graph.neighbors(n))
+        return self.graph.neighbors(n)
 
     @functools.cached_property
     def node_indices(self) -> Iterable[Any]:

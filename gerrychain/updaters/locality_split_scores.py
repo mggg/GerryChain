@@ -154,7 +154,14 @@ class LocalitySplits:
 
         if self.localities == []:
             # frm: TODO:  NX vs. RX issues here.  graph.nodes(data=<xxx>) is NX specific...
-            self.localitydict = dict(partition.graph.nodes(data=self.col_id))
+
+            # frm: Original code:
+            #    self.localitydict = dict(partition.graph.nodes(data=self.col_id))
+            #
+            self.localitydict = {}
+            for node_id in partition.graph.node_indices:
+                self.localitydict[node_id] = partition.graph.node_data(node_id)[self.col_id]
+
             self.localities = set(list(self.localitydict.values()))
 
         locality_splits = {
@@ -173,7 +180,7 @@ class LocalitySplits:
             allowed_pieces = {}
 
             totpop = 0
-            for node in partition.graph.nodes:
+            for node in partition.graph.node_indices:
                 # frm: TODO:  Once you have a partition, you cannot change the total population
                 #               in the Partition, so why don't we cache the total population as
                 #               a data member in Partition?
@@ -184,36 +191,40 @@ class LocalitySplits:
             # frm: TODO:  Ditto with num_districts - isn't this a constant once you create a Partition?
             num_districts = len(partition.assignment.parts.keys())
 
+            # Compute the total population for each locality and then the number of "allowed pieces"
             for loc in self.localities:
                 # frm: TODO:    The code below just calculates the total population for a set of nodes.
                 #               This sounds like a good candidate for a utility function.  See if this
                 #               logic is repeated elsewhere...
                 
-                # frm: TODO:  This looks like perhaps the nost expensive way there is to compute
-                #               the population of a set of nodes - creating a subgraph?!?!?
-                sg = partition.graph.subgraph(
-                    n
-                    # frm: TODO:  I think that graph.nodes(data=true) is NX dependent and needs to  change for RX
-                    # frm: NX Note:  The original code used the NX node(data= True) idiom which returns a 
-                    #                   dict of dict - node_id: {<node data dictionary>}
-                    # 
-                    for n, v in partition.graph.nodes(data=True)
-                    if v[self.col_id] == loc
-                )
+                # frm: I changed the original code for a couple of reasons:
+                #
+                #        * There were NX depedencies in the original code.
+                #              partition.graph.nodes(data=True)
+                #        * Creating a subgraph just to get a subset of nodes seemed unnecessary
+                #          and probably expensive.
+                #        * I found the code dense and it took me too long to figure out what it did.
 
-                pop = 0
-                for n in sg.nodes():
-                    # frm: TODO:  I think this needs to change to work for RX...
-                    pop += sg.nodes[n][self.pop_col]
+                # frm: Original Code:
+                #
+                #    sg = partition.graph.subgraph(
+                #        for n, v in partition.graph.nodes(data=True)
+                #        if v[self.col_id] == loc
+                #    )
+                #
+                #    pop = 0
+                #    for n in sg.nodes():
+                #        # frm: TODO:  I think this needs to change to work for RX...
+                #        pop += sg.nodes[n][self.pop_col]
+                #
+                #    allowed_pieces[loc] = math.ceil(pop / (totpop / num_districts))
 
-                allowed_pieces[loc] = math.ceil(pop / (totpop / num_districts))
-
-                """
-                frm: new version of this code that is less clever...
+                # frm: new version of this code that is less clever...
 
                 # Compute the population associated with each location
                 the_graph = partition.graph
-                for node_id in the_graph.node_indices():
+                locality_population = {}  # dict mapping locality name to population in that locality
+                for node_id in the_graph.node_indices:
                     locality_name = the_graph.node_data(node_id)[self.col_id]
                     locality_pop = the_graph.node_data(node_id)[self.pop_col]
                     if locality_name not in locality_population:
@@ -223,10 +234,11 @@ class LocalitySplits:
 
                 ideal_population_per_district = totpop / num_districts
 
+                # Compute the number of "allowed pieces" for each locality
+                allowed_pieces = {}
                 for locality_name in locality_population.keys():
                     pop_for_locality = locality_population[locality_name]
-                    allowed_pieces[locality_name] = ceil(pop_for_locality / ideal_population_per_district)
-                """
+                    allowed_pieces[locality_name] = math.ceil(pop_for_locality / ideal_population_per_district)
 
             self.allowed_pieces = allowed_pieces
 
@@ -284,7 +296,7 @@ class LocalitySplits:
         """
         locality_intersections = {}
 
-        for n in partition.graph.nodes():
+        for n in partition.graph.node_indices:
             # frm: original code:   locality = partition.graph.nodes[n][self.col_id]
             locality = partition.graph.node_data(n)[self.col_id]
             if locality not in locality_intersections:
@@ -306,8 +318,10 @@ class LocalitySplits:
                     ]
                 )
 
-                # frm TODO:  Get rid of this dependence on NetworkX
-                pieces += nx.number_connected_components(subgraph)
+                # frm: Original Code:
+                #
+                #    pieces += nx.number_connected_components(subgraph)
+                pieces += subgraph.num_connected_components()
         return pieces
 
     def naked_boundary(self, partition) -> int:

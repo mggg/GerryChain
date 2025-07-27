@@ -7,29 +7,32 @@ from typing import Dict, Optional
 
 # frm: only ever used in this file - but maybe it is used externally?
 def spectral_cut(
-    graph: Graph, part_labels: Dict, weight_type: str, lap_type: str
+    subgraph: Graph, part_labels: Dict, weight_type: str, lap_type: str
 ) -> Dict:
     """
     Spectral cut function.
 
-    Uses the signs of the elements in the Fiedler vector of a graph to
+    Uses the signs of the elements in the Fiedler vector of a subgraph to
     partition into two components.
 
-    :param graph: The graph to be partitioned.
-    :type graph: Graph
-    :param part_labels: The current partition of the graph.
+    :param subgraph: The subgraph to be partitioned.
+    :type subgraph: Graph
+    :param part_labels: The current partition of the subgraph.
     :type part_labels: Dict
     :param weight_type: The type of weight to be used in the Laplacian.
     :type weight_type: str
     :param lap_type: The type of Laplacian to be used.
     :type lap_type: str
 
-    :returns: A dictionary assigning nodes of the graph to their new districts.
+    :returns: A dictionary assigning nodes of the subgraph to their new districts.
     :rtype: Dict
     """
 
-    # frm:  Bad variable names - nlist is node_list and n is num_nodes   
-    # frm: Original Code:   nlist = list(graph.nodes())
+    # This routine operates on subgraphs, which is important because the node_ids
+    # in a subgraph are different from the node_ids of the parent graph, so 
+    # the return value's node_ids need to be translated back into the appropriate
+    # parent node_ids.
+
     # frm: TODO:  Subtle issue here - in NX there is no difference between a node ID
     #               and a node index (what you use to get a node from a list), but 
     #               in RX there is a difference - which manifests most in subgraphs
@@ -40,16 +43,15 @@ def spectral_cut(
     #               The issue here is what the code wants here.  We are in an RX 
     #               world at this point - so maybe it doesn't matter, but worth 
     #               thinking about...
-    nlist = list(graph.nodes)
-    n = len(nlist)
+    node_list = list(subgraph.nodes)
+    num_nodes = len(node_list)
 
     if weight_type == "random":
-        for edge_id in graph.edge_indices:
-            # frm: Original Code:    graph.edges[edge]["weight"] = random.random()
-            # frm: TODO: edges vs. edge_ids:  edge_ids are wanted here (integers)
-            graph.edge_data(edge_id)["weight"] = random.random()
+        # assign a random weight to each edge in the subgraph
+        for edge_id in subgraph.edge_indices:
+            subgraph.edge_data(edge_id)["weight"] = random.random()
 
-    # frm TODO: NYI: normalized_laplacian_matrix() for RX
+    # frm TODO: NX vs. RX Issue:   NYI: normalized_laplacian_matrix() for RX
     #
     #           Note that while the standard laplacian is straight forward mathematically
     #           the normalized laplacian is a good bit more complicated.  However, since 
@@ -58,33 +60,50 @@ def spectral_cut(
 
     # Compute the desired laplacian matrix (convert from sparse to dense)
     if lap_type == "normalized":
-        LAP = (graph.normalized_laplacian_matrix()).todense()
+        laplacian_matrix = (subgraph.normalized_laplacian_matrix()).todense()
     else:
-        LAP = (graph.laplacian_matrix()).todense()
+        laplacian_matrix = (subgraph.laplacian_matrix()).todense()
 
-    # frm TODO: Add comments and better names here.  
+    # frm TODO: Add a better explanation for why eigenvectors are useful
+    #           for determining flips.  Perhaps just a URL to an article 
+    #           somewhere...
     #
-    #           the LA.eigh(LAP) call below invokes the eigh() function from 
-    #           the Numpy LinAlg module which "returns the eigenvalues and eigenvectors
-    #           of a complex Hermitian ... or a real symmetrix matrix."  In our case
-    #           we have a symmetric matrix.  It returns two objects - a 1-D array containing
-    #           the eigenvalues and a 2-D square matrix of the eigenvectors.
+    # I have added comments to describe the nuts and bolts of what is happening,
+    # but the overall rationale for this code is missing - and it should be here...
+
+
+    # LA.eigh(laplacian_matrix) call invokes the eigh() function from 
+    # the Numpy LinAlg module which:
     #
-    #           So, again, better names and some comments please - such as a link to
-    #           a URL that explains WTF this really does...
+    #     "returns the eigenvalues and eigenvectors of a complex Hermitian 
+    #      ... or a real symmetrix matrix."  
+    #
+    # In our case we have a symmetric matrix, so it returns two 
+    # objects - a 1-D numpy array containing the eigenvalues (which we don't
+    # care about) and a 2-D numpy square matrix of the eigenvectors.
+    numpy_eigen_values, numpy_eigen_vectors = LA.eigh(laplacian_matrix)
 
-    NLMva, NLMve = LA.eigh(LAP)
-    NFv = NLMve[:, 1]
-    xNFv = [NFv.item(x) for x in range(n)]
+    # Extract an eigenvector as a numpy array
+    # frm: ???:  Not sure why we want just one of them...
+    numpy_eigen_vector = numpy_eigen_vectors[:, 1]    # frm: ??? I think that this is an eigenvector...
 
-    node_color = [xNFv[x] > 0 for x in range(n)]
+    # Convert to an array of normal Python numbers (not numpy based)
+    eigen_vector_array = [numpy_eigen_vector.item(x) for x in range(num_nodes)]
 
-    clusters = {nlist[x]: part_labels[node_color[x]] for x in range(n)}
+    # node_color will be True or False depending on whether the value in the
+    # eigen_vector_array is positive or negative.  In the code below, this 
+    # is equivalent to node_color being 1 or 0 (since Python treats True as 1 
+    # and False as 0)
+    node_color = [eigen_vector_array[x] > 0 for x in range(num_nodes)]
 
-    # frm: ???: TODO:   Why are these called "clusters" when the calling function
-    #                   assigns them to "flips".  If they are flips, then shouldn't
-    #                   they be named "flips"?
-    return clusters
+    # Create flips using the node_color to select which part (district) to assign
+    # to the node.
+    flips = {node_list[x]: part_labels[node_color[x]] for x in range(num_nodes)}
+
+    # translate subgraph node_ids in flips to parent_graph node_ids
+    translated_flips = subgraph.translate_subgraph_node_ids_for_flips(flips)
+
+    return translated_flips
 
 
 # frm: only ever used in this file - but maybe it is used externally?
@@ -124,19 +143,23 @@ def spectral_recom(
     :rtype: Partition
     """
 
-    # frm ???:  I do not yet grok what this does at the code level...
-
-    edge = random.choice(tuple(partition["cut_edges"]))
+    # Select two adjacent parts (districts) at random by first selecting 
+    # a cut_edge at random and then figuring out the parts (districts) 
+    # associated with the edge.
+    cut_edge = random.choice(tuple(partition["cut_edges"]))
     parts_to_merge = (
-        partition.assignment.mapping[edge[0]],
-        partition.assignment.mapping[edge[1]],
+        partition.assignment.mapping[cut_edge[0]],  
+        partition.assignment.mapping[cut_edge[1]],
     )
 
-    # frm: TODO:  Does this code do the right thing for RX - where node_ids in subgraph change?
-    subgraph = partition.graph.subgraph(
-        partition.parts[parts_to_merge[0]] | partition.parts[parts_to_merge[1]]
-    )
+    subgraph_nodes = partition.parts[parts_to_merge[0]] | partition.parts[parts_to_merge[1]]
 
-    flips = spectral_cut(subgraph, parts_to_merge, weight_type, lap_type)
+    # Cut the set of all nodes from parts_to_merge into two hopefully new parts (districts)
+    flips = spectral_cut(
+      partition.graph.subgraph(subgraph_nodes),
+      parts_to_merge, 
+      weight_type, 
+      lap_type
+    )
 
     return partition.flip(flips)

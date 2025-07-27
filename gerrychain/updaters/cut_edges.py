@@ -3,24 +3,23 @@ from typing import Dict, List, Set, Tuple
 from .flows import on_edge_flow, neighbor_flips
 
 
-# frm ???:  Is this intended to be externally visible / useful?
 
-def put_edges_into_parts(edges: List, assignment: Dict) -> Dict:
+def _put_edges_into_parts(cut_edges: List, assignment: Dict) -> Dict:
     """
-    :param edges: A list of edges in a graph which are to be separated
+    :param cut_edges: A list of cut_edges in a graph which are to be separated
         into their respective parts within the partition according to
         the given assignment.
-    :type edges: List
+    :type cut_edges: List
     :param assignment: A dictionary mapping nodes to their respective
         parts within the partition.
     :type assignment: Dict
 
-    :returns: A dictionary mapping each part of a partition to the set of edges
+    :returns: A dictionary mapping each part of a partition to the set of cut_edges
         in that part.
     :rtype: Dict
     """
     by_part = collections.defaultdict(set)
-    for edge in edges:
+    for edge in cut_edges:
         # add edge to the sets corresponding to the parts it touches
         by_part[assignment.mapping[edge[0]]].add(edge)
         by_part[assignment.mapping[edge[1]]].add(edge)
@@ -61,47 +60,31 @@ def obsolete_cuts(partition) -> Set[Tuple]:
         and not partition.crosses_parts((node, neighbor))
     }
 
-
-# frm ???:  Is this intended to be externally visible / useful?
-
 def initialize_cut_edges(partition):
     """
     :param partition: A partition of a Graph
     :type partition: :class:`~gerrychain.partition.Partition`
 
-    frm: TODO:  This description should be updated.  It does return a mapping of
-                edges to parts, but it only has "cut edges".  Simple change but
-                I want to be 100% sure before doing it...
+    frm: TODO:  This description should be updated.  Cut_edges are edges that touch
+                two different parts (districts).  They are the internal boundaries
+                between parts (districts).  This routine finds all of the cut_edges
+                in the graph and then creates a dict that stores all of the cut_edges
+                for each part (district).  This dict becomes the value of 
+                partition["cut_edges"].
 
     :returns: A dictionary mapping each part of a partition to the set of edges
         in that part.
     :rtype: Dict
     """
-    # frm ???:  What does this do and why?
-    #
-    #           the if partition.crosses_parts(edge) is true if the edge
-    #           is one that starts in one district/part and ends in another
-    #           according to the given assignment.
-    #           
-    #           However, I am not sure what the tuple(sorted(edge)) does...
-    #
-    #               update: the tuple(sorted(edge)) just makes sure that
-    #               the edge always has the smaller node_id first.
-    #
-    #           Note that I would lobby for the names "part" and "parts" to be
-    #           changed to be "district" and "districts" just to avoid confusion
-    #           with "partition" - parts of partitions warps my mind, and this 
-    #           is all about re-DISTRICTing isn't it???
-    #
-    #           I would also lobby to have "crosses_parts" changed to "crosses_districts"
-    #
-    edges = {
+    # Compute the set of edges that are "cut_edges" - that is, edges that go from
+    # one part (district) to another. 
+    cut_edges = {
         tuple(sorted(edge))
         # frm: edges vs edge_ids:  edges are wanted here (tuples)
         for edge in partition.graph.edges
         if partition.crosses_parts(edge)
     }
-    return put_edges_into_parts(edges, partition.assignment)
+    return _put_edges_into_parts(cut_edges, partition.assignment)
 
 
 @on_edge_flow(initialize_cut_edges, alias="cut_edges_by_part")
@@ -144,7 +127,6 @@ def cut_edges(partition):
     if not parent:
         return {
             tuple(sorted(edge))
-            # frm: edges vs edge_ids:  edges are wanted here (tuples)
             for edge in partition.graph.edges
             if partition.crosses_parts(edge)
         }

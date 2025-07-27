@@ -8,6 +8,7 @@ from gerrychain.proposals import propose_random_flip
 import random
 from gerrychain.updaters.tally import DataTally, Tally
 random.seed(2018)
+import networkx
 
 def random_assignment(graph, num_districts):
     return {node: random.choice(range(num_districts)) for node in graph.nodes}
@@ -54,7 +55,7 @@ def test_data_tally_mimics_old_tally_usage(graph_with_random_data_factory):
     assignment = {i: 1 if i in range(4) else 2 for i in range(9)}
 
     partition = Partition(graph, assignment, updaters)
-    expected_total_in_district_one = sum(graph.nodes[i]["total"] for i in range(4))
+    expected_total_in_district_one = sum(graph.node_data(i)["total"] for i in range(4))
     assert partition["total"][1] == expected_total_in_district_one
 
 
@@ -73,7 +74,7 @@ def test_tally_matches_naive_tally_at_every_step():
         expected = defaultdict(int)
         for node in partition.graph.nodes:
             part = partition.assignment[node]
-            expected[part] += partition.graph.nodes[node]["population"]
+            expected[part] += partition.graph.node_data(node)["population"]
         return expected
 
     for state in chain:
@@ -82,9 +83,10 @@ def test_tally_matches_naive_tally_at_every_step():
 
 
 def test_works_when_no_flips_occur():
-    graph = Graph([(0, 1), (1, 2), (2, 3), (3, 0)])
+    nxgraph = networkx.Graph([(0, 1), (1, 2), (2, 3), (3, 0)])
+    graph = Graph.from_networkx(nxgraph)
     for node in graph:
-        graph.nodes[node]["pop"] = node + 1
+        graph.node_data(node)["pop"] = node + 1
     partition = Partition(graph, {0: 0, 1: 0, 2: 1, 3: 1}, {"pop": Tally("pop")})
 
     chain = MarkovChain(lambda p: p.flip({}), [], always_accept, partition, 10)

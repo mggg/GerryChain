@@ -91,7 +91,13 @@ def test_recursive_tree_part_returns_within_epsilon_of_target_pop(
     partition = Partition(
         twelve_by_twelve_with_pop, result, updaters={"pop": Tally("pop")}
     )
-    return all(
+    # frm: Original Code:
+    #
+    #    return all(
+    #        abs(part_pop - ideal_pop) / ideal_pop < epsilon
+    #        for part_pop in partition["pop"].values()
+    #    )
+    assert all(
         abs(part_pop - ideal_pop) / ideal_pop < epsilon
         for part_pop in partition["pop"].values()
     )
@@ -123,7 +129,14 @@ def test_recursive_tree_part_returns_within_epsilon_of_target_pop_using_contract
     partition = Partition(
         twelve_by_twelve_with_pop, result, updaters={"pop": Tally("pop")}
     )
-    return all(
+    # frm: Original Code:
+    #
+    #    return all(
+    #        abs(part_pop - ideal_pop) / ideal_pop < epsilon
+    #        for part_pop in partition["pop"].values()
+    #    )
+    #
+    assert all(
         abs(part_pop - ideal_pop) / ideal_pop < epsilon
         for part_pop in partition["pop"].values()
     )
@@ -152,7 +165,13 @@ def test_recursive_seed_part_returns_within_epsilon_of_target_pop(
     partition = Partition(
         twelve_by_twelve_with_pop, result, updaters={"pop": Tally("pop")}
     )
-    return all(
+    # frm: Original Code:
+    #
+    #    return all(
+    #        abs(part_pop - ideal_pop) / ideal_pop < epsilon
+    #        for part_pop in partition["pop"].values()
+    #    )
+    assert all(
         abs(part_pop - ideal_pop) / ideal_pop < epsilon
         for part_pop in partition["pop"].values()
     )
@@ -186,7 +205,13 @@ def test_recursive_seed_part_returns_within_epsilon_of_target_pop_using_contract
     partition = Partition(
         twelve_by_twelve_with_pop, result, updaters={"pop": Tally("pop")}
     )
-    return all(
+    # frm: Original Code:
+    #
+    #    return all(
+    #        abs(part_pop - ideal_pop) / ideal_pop < epsilon
+    #        for part_pop in partition["pop"].values()
+    #    )
+    assert all(
         abs(part_pop - ideal_pop) / ideal_pop < epsilon
         for part_pop in partition["pop"].values()
     )
@@ -255,7 +280,13 @@ def test_recursive_seed_part_with_n_unspecified_within_epsilon(
     partition = Partition(
         twelve_by_twelve_with_pop, result, updaters={"pop": Tally("pop")}
     )
-    return all(
+    # frm: Original Code:
+    #
+    #    return all(
+    #        abs(part_pop - ideal_pop) / ideal_pop < epsilon
+    #        for part_pop in partition["pop"].values()
+    #    )
+    assert all(
         abs(part_pop - ideal_pop) / ideal_pop < epsilon
         for part_pop in partition["pop"].values()
     )
@@ -267,8 +298,8 @@ def test_random_spanning_tree_returns_tree_with_pop_attribute(graph_with_pop):
 
 
 def test_uniform_spanning_tree_returns_tree_with_pop_attribute(graph_with_pop):
-    # frm: TODO:  This fails...
     tree = uniform_spanning_tree(graph_with_pop)
+    # frm: TODO:  Get rid of networkx dependency
     assert networkx.is_tree(tree)
 
 
@@ -312,6 +343,52 @@ def test_reversible_recom_works_as_a_proposal(partition_with_pop):
         reversible_recom, pop_col="pop", pop_target=ideal_pop, epsilon=0.10, M=1
     )
     constraints = [within_percent_of_ideal_population(partition_with_pop, 0.25, "pop")]
+
+    # frm: ???:  I am not sure how epsilon of 0.10 interacts with the constraint.
+    #
+    # The issue is that there are 9 nodes each with a population of 1, so the ideal population
+    # is 4.5.  But no matter how you split the graph, you end up with an integer population, say, 
+    # 4 or 5 - so you will never get within 0.10 of 4.5.  
+    #
+    # I am not quite sure what is being tested here...
+    #
+    # within_percent_of_ideal_population() returns a Bounds object which contains the lower and 
+    # upper bounds for a given value - in this case 0.25 percent of the ideal population.
+    #
+    # The more I did into this the more I shake my head.  The value of "epsilon" passed into the 
+    # reversible_recom() seems to only ever be used when creating a PopulatedGraph which in turn
+    # only ever uses it when doing a specific balanced edge cut algorithm.  That is, the value of
+    # epsilon is very rarely used, and yet it is passed in as one of the important paramters to
+    # reversible_recom().  It looks like the original coders thought that it would be a great thing
+    # to have in the PopulatedGraph object, but then they didn't actually use it.  *sigh*
+    #
+    # Then this test defines a constraint for population defining it to be OK if the population
+    # is within 25% of ideal - which is at odds with the value of epsilon above of 10%, but since
+    # the value of epsilon (of 10%) is never used, whatever...
+    #
+
+    # frm: TODO:  Grok this test - what is it trying to accomplish?
+    #
+    # The proposal uses reversible_recom() with the default value for the "repeat_until_valid" 
+    # parameter which is False.  This means that the call to try to combine and then split two
+    # parts (districts) only gets one shot at it before it fails.  In this case, that means that
+    # it fails EVERY time - because the initial spanning tree that is returned is not balanced
+    # enough to satisfy the population constraint.  If you let it run, then it succeeds after 
+    # a couple of attempts (I think 10), but it never succeeds on the first try, and there is no
+    # randomness possible since we only have two parts (districts) that we can merge.
+    #
+    # So this test runs through 100 chain iterations doing NOTHING - returning the same partition
+    # each iteration, and in fact returning the same partition at the end that it started with.
+    #
+    # This raises all sorts of issues:
+    #
+    #   * Makes no sense for this test
+    #   * Questions the logic in reversible_recom() to not detect an infinite loop
+    #   * Questions the logic that does not inform the user somehow that the chain is ineffective
+    #   * Raises the issue of documentation of the code - it took me quite a long time to
+    #     figure out WTF was going on...
+    #
+
 
     chain = MarkovChain(proposal, constraints, lambda x: True, partition_with_pop, 100)
 

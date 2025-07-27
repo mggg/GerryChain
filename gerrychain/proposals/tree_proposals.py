@@ -256,11 +256,33 @@ def reversible_recom(
     for out_part in parts:
         for in_part in parts:
             dist_pairs.append((out_part, in_part))
+            # frm: TODO:  Grok why this code considers pairs that are the same part...
+            #
+            # For instance, if there are only two parts (districts), then this code will 
+            # produce four pairs: (0,0), (0,1), (1,0), (1,1).  The code below tests
+            # to see if there is any adjacency, but there will never be adjacency between
+            # the same part (district).  Why not just prune out all pairs that have the
+            # same two values and save an interation of the entire chain?
+            #
+            # Stated differently, is there any value in doing an entire chain iteration
+            # when we randomly select the same part (district) to merge with itself???
+            # 
+            # A similar issue comes up if there are no pair_edges (below).  We waste
+            # an entire iteration in that case too - which seems kind of dumb...
+            # 
 
     random_pair = random.choice(dist_pairs)
     pair_edges = dist_pair_edges(partition, *random_pair)
     if random_pair[0] == random_pair[1] or not pair_edges:
         return partition  # self-loop: no adjacency
+
+    # frm: TODO:  Grok why it is OK to return the partition unchanged as the next step.
+    #
+    # This runs the risk of running an entire chain without ever changing the partition.
+    # I assume that the logic is that there is deliberate randomness introduced each time,
+    # so eventually, if it is possible, the chain will get started, but it seems like there
+    # should be some kind of check to see if it doesn't ever get started, so that the 
+    # user can have a clue about what is going on...
 
     edge = random.choice(list(pair_edges))
     parts_to_merge = (
@@ -282,12 +304,22 @@ def reversible_recom(
     #               as an actual parameter so that there is no way to inadvertently access
     #               the subgraph's node_ids afterwards.
     #
-    num_possible_districts, nodes = bipartition_tree_random_reversible(
+    
+    # frm: TODO:  Clean up the code below - I munged it for debugging ...
+    
+    # frm: Original Code:
+    #    num_possible_districts, nodes = bipartition_tree_random_reversible(
+    #        partition.graph.subgraph(subgraph_nodes),
+    #        pop_col=pop_col, pop_target=pop_target, epsilon=epsilon
+    #    )
+    result = bipartition_tree_random_reversible(
         partition.graph.subgraph(subgraph_nodes),
         pop_col=pop_col, pop_target=pop_target, epsilon=epsilon
     )
-    if not nodes:
+    if not result:
         return partition  # self-loop: no balance edge
+
+    num_possible_districts, nodes = result
 
     remaining_nodes = subgraph_nodes - set(nodes)
     # frm: Notes to Self:  the ** operator below merges the two dicts into a single dict.
@@ -317,6 +349,12 @@ def reversible_recom(
 #           "calling" that object - why not just call the recom function?
 #
 #           ...confused...
+#
+#           My guess is that someone started writing this code thinking that 
+#           a class would make sense but then realized that the only use 
+#           was to call the recom() function but never went back to remove
+#           the class.  In short, I think that we should probably remove the
+#           class and just keep the function...
 #
 class ReCom:
     """
