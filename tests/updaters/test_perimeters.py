@@ -9,8 +9,12 @@ from gerrychain.proposals import propose_random_flip
 
 def setup():
 
+    # Note that the node_ids for the NX graph for a grid are tuples with the (x,y) position of the node
+
     grid = Grid((4, 4), with_diagonals=False)
+
     flipped_grid = grid.flip({(2, 1): 3}, use_original_node_ids=True)
+
     return grid, flipped_grid
 
 
@@ -35,25 +39,37 @@ def test_cut_edges_by_part_handles_flips_with_a_simple_grid():
 
     result = flipped_grid["cut_edges_by_part"]
 
-    assert result[0] == {
+    # Translate internal edges so that they can be compared to the literals below
+    new_result = {}
+    for part, set_of_edges in result.items():
+        new_set_of_edges = set()
+        for edge in set_of_edges:
+            new_edge = (
+              flipped_grid.graph.original_node_id_for_internal_node_id(edge[0]),
+              flipped_grid.graph.original_node_id_for_internal_node_id(edge[1]),
+            )
+            new_set_of_edges.add(new_edge)
+        new_result[part] = new_set_of_edges
+
+    assert new_result[0] == {
         ((1, 0), (2, 0)),
         ((1, 1), (2, 1)),
         ((0, 1), (0, 2)),
         ((1, 1), (1, 2)),
     }
-    assert result[1] == {
+    assert new_result[1] == {
         ((1, 0), (2, 0)),
         ((2, 0), (2, 1)),
         ((2, 1), (3, 1)),
         ((3, 1), (3, 2)),
     }
-    assert result[2] == {
+    assert new_result[2] == {
         ((0, 1), (0, 2)),
         ((1, 1), (1, 2)),
         ((1, 2), (2, 2)),
         ((1, 3), (2, 3)),
     }
-    assert result[3] == {
+    assert new_result[3] == {
         ((1, 1), (2, 1)),
         ((2, 0), (2, 1)),
         ((2, 1), (3, 1)),
@@ -100,9 +116,9 @@ def test_perimeter_match_naive_perimeter_at_every_step():
     def get_exterior_boundaries(partition):
         graph_boundary = partition["boundary_nodes"]
         exterior = defaultdict(lambda: 0)
-        for node in graph_boundary:
-            part = partition.assignment[node]
-            exterior[part] += partition.graph.nodes[node]["boundary_perim"]
+        for node_id in graph_boundary:
+            part = partition.assignment[node_id]
+            exterior[part] += partition.graph.node_data(node_id)["boundary_perim"]
         return exterior
 
     def get_interior_boundaries(partition):
@@ -112,9 +128,9 @@ def test_perimeter_match_naive_perimeter_at_every_step():
         interior = defaultdict(int)
         for edge in cut_edges:
             for node in edge:
-                interior[partition.assignment[node]] += partition.graph.edges[edge][
-                    "shared_perim"
-                ]
+                interior[partition.assignment[node]] += partition.graph.edge_data(
+                  partition.graph.get_edge_id_from_edge(edge)
+                )["shared_perim"]
         return interior
 
     def expected_perimeter(partition):

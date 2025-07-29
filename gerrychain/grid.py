@@ -120,9 +120,12 @@ class Grid(Partition):
 
         :raises Exception: If neither dimensions nor parent is provided.
         """
+
+        # Note that Grid graphs have node_ids that are tuples not integers.
+
         if dimensions:
             self.dimensions = dimensions
-            graph = Graph.from_networkx(create_grid_graph(dimensions, with_diagonals))
+            graph = Graph.from_networkx(_create_grid_nxgraph(dimensions, with_diagonals))
 
             if not assignment:
                 thresholds = tuple(math.floor(n / 2) for n in self.dimensions)
@@ -164,14 +167,20 @@ class Grid(Partition):
         return [[self.assignment.mapping[(i, j)] for i in range(m)] for j in range(n)]
 
 
-# frm ???:  Is this intended to be callable / useful for external users?
+# frm TODO: Is this intended to be callable / useful for external users?
 #           For now, I am going to leave this as operating on NetworkX graphs, since 
 #           it appears to only be used internally in this Class.  However, I may discover
 #           that it has been used externally with the intention of returning a Graph object.
 #           If so, then I will need to return a Graph object (from_networkx(nxgraphg)) and change
 #           the call inside this class to expect a Graph object instead of a NetworkX.Graph object.
+
 # frm: TODO: Decide if I should change this to return a Graph object or not...
-def create_grid_graph(dimensions: Tuple[int, int], with_diagonals: bool) -> Graph:
+
+# frm: Original Code - function signature:
+# def create_grid_graph(dimensions: Tuple[int, int], with_diagonals: bool) -> Graph:
+#
+
+def _create_grid_nxgraph(dimensions: Tuple[int, int], with_diagonals: bool) -> Graph:
     """
     Creates a grid graph with the specified dimensions.
     Optionally includes diagonal connections between nodes.
@@ -269,17 +278,13 @@ def tag_boundary_nodes(graph: Graph, dimensions: Tuple[int, int]) -> None:
     #       sure what that does/means...
     # 
 
-    # frm: TODO:  When/if grid.py converts to operating on new GerryChain Graph
-    #               objects, all of the graph.nodes[node]... calls should 
-    #               be changed to use graph.node_data(node)...
-
     m, n = dimensions
     for node in graph.nodes:
         if node[0] in [0, m - 1] or node[1] in [0, n - 1]:
-            graph.nodes[node]["boundary_node"] = True
-            graph.nodes[node]["boundary_perim"] = get_boundary_perim(node, dimensions)
+            graph.node_data(node)["boundary_node"] = True
+            graph.node_data(node)["boundary_perim"] = get_boundary_perim(node, dimensions)
         else:
-            graph.nodes[node]["boundary_node"] = False
+            graph.node_data(node)["boundary_node"] = False
 
 
 def get_boundary_perim(node: Tuple[int, int], dimensions: Tuple[int, int]) -> int:

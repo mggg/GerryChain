@@ -174,6 +174,14 @@ def compute_edge_flows(partition) -> Dict:
             newly_incident_parts = {new_target, new_source} - {old_target, old_source}
             for part in newly_incident_parts:
                 edge_flows[part]["in"].add(edge)
+    
+    # frm: TODO: Remove debugging code
+    print(f"compute_edge_flows(): returning edge_flows: ")
+    for part, in_out in edge_flows.items():
+        for flow_kind, set_of_edges in in_out.items():
+            print(f"    part: {part}, kind_of_flow: {flow_kind}, edges: {set_of_edges}") 
+
+
     return edge_flows
 
 

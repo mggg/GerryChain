@@ -300,6 +300,7 @@ class Partition:
         # 
         # Note that original node_ids in flips are typically used in tests
         #
+
         if use_original_node_ids:
             new_flips = {}
             for original_node_id, part in flips.items():

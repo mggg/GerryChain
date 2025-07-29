@@ -4,7 +4,7 @@ from gerrychain.chain import MarkovChain
 
 
 class MockState:
-    def flip(self, changes):
+    def flip(self, changes, use_original_node_ids):
         return MockState()
 
 

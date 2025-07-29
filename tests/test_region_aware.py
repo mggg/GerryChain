@@ -161,9 +161,16 @@ def straddled_regions(partition, reg_attr, all_reg_names):
     """Returns the total number of district that straddle two regions in the partition."""
     split = {name: 0 for name in all_reg_names}
 
+    # frm: TODO: Grok what this tests - not clear to me at this time...
+
+    # frm: Original Code:
+    #    for node1, node2 in set(partition.graph.edges() - partition["cut_edges"]):
+    #        split[partition.graph.nodes[node1][reg_attr]] += 1
+    #        split[partition.graph.nodes[node2][reg_attr]] += 1
+    #
     for node1, node2 in set(partition.graph.edges() - partition["cut_edges"]):
-        split[partition.graph.nodes[node1][reg_attr]] += 1
-        split[partition.graph.nodes[node2][reg_attr]] += 1
+        split[partition.graph.node_data(node1)[reg_attr]] += 1
+        split[partition.graph.node_data(node2)[reg_attr]] += 1
 
     return sum(1 for value in split.values() if value > 0)
 

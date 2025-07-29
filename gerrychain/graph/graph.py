@@ -223,9 +223,20 @@ class Graph:
         _node_id_to_original_node_id_map = self._node_id_to_original_node_id_map 
         new_list = [_node_id_to_original_node_id_map[node_id] for node_id in set_of_nodes]
         return new_list
+    
+    def original_node_id_for_internal_node_id(self, internal_node_id):
+        return self._node_id_to_original_node_id_map[internal_node_id]
 
     # frm: TODO: Create a test for this routine
     def internal_node_id_for_original_node_id(self, original_node_id):
+        # frm: TODO:  Think about a better way to map original_node_ids to internal node_ids
+        #
+        # The problem is that when this routine is called, it may often be called repeatedly 
+        # for a list of nodes, and we create the reverse dict every time this is called which
+        # is needlessly expensive.  We could just cache this reverse map, but that is often
+        # dangerous because we have two sources of truth and if someone needs to update one
+        # they may forget to update the other...
+        
         # reverse the map so we can go from original node_id to internal node_id
         orignal_node_id_to_internal_node_id_map = {
           v: k for k,v in self._node_id_to_original_node_id_map.items()
@@ -1780,6 +1791,9 @@ def add_boundary_perimeters(nxgraph: networkx.Graph, geometries: pd.Series) -> N
     :returns: The updated graph.
     :rtype: Graph
     """
+
+    # frm: TODO:  Think about whether it is reasonable to require this to work
+    #               on an NetworkX.Graph object.
 
     # frm: The original code operated on the Graph object which was a subclass of
     #       NetworkX.Graph.  I have changed it to operate on a NetworkX.Graph object

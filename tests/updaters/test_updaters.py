@@ -61,6 +61,8 @@ def test_Partition_can_update_stats():
     nxgraph.nodes[1]["stat"] = 2
     nxgraph.nodes[2]["stat"] = 7
 
+    graph = Graph.from_networkx(nxgraph)
+
     updaters = {"total_stat": Tally("stat", alias="total_stat")}
 
     # This test is complicated by the fact that "original" node_ids are typically based
@@ -70,13 +72,14 @@ def test_Partition_can_update_stats():
     # for graph data from a partition we need to be careful to use its internal node_ids.
 
     # Verify that the "total_stat" for the part (district) 2 is 7
-    partition = Partition(Graph.from_networkx(nxgraph), assignment, updaters)
+    partition = Partition(graph, assignment, updaters)
     assert partition["total_stat"][2] == 7
 
     # Flip node with original node_id of 1 to be in part (district) 2
     flip = {1: 2}
 
     new_partition = partition.flip(flip, use_original_node_ids=True)
+
     assert new_partition["total_stat"][2] == 9
 
 
@@ -303,9 +306,15 @@ def test_exterior_boundaries(three_by_three_grid):
     # 112    111
     # 112 -> 121
     # 222    222
-    flips = {4: 2, 2: 1, 5: 1}
+    flips = {4: 2, 2: 1, 5: 1} 
 
-    new_partition = Partition(parent=partition, flips=flips)
+    # Convert the flips into internal node_ids
+    internal_flips = {}
+    for node_id, part in flips.items():
+        internal_node_id = partition.graph.internal_node_id_for_original_node_id(node_id)
+        internal_flips[internal_node_id] = part
+
+    new_partition = Partition(parent=partition, flips=internal_flips)
 
     result = new_partition["exterior_boundaries"]
 

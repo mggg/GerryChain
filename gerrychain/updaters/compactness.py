@@ -215,15 +215,23 @@ def interior_boundaries(
         boundary of that part.
     :rtype: Dict
     """
+
+    # frm: TODO:  NX vs. RX Issue - need to use edge_ids below to access edge information...
+    #               I think I have done this already below...
+
     added_perimeter = sum(
         # frm: Original Code:   partition.graph.edges[edge]["shared_perim"] for edge in new_edges
         # frm: edges vs edge_ids:  edge_ids are wanted here (integers)
-        partition.graph.edge_data(edge)["shared_perim"] for edge in new_edges
+        partition.graph.edge_data(
+          partition.graph.get_edge_id_from_edge(edge)
+        )["shared_perim"] for edge in new_edges
     )
     removed_perimeter = sum(
         # frm: Original Code:  partition.graph.edges[edge]["shared_perim"] for edge in old_edges
         # frm: edges vs edge_ids:  edge_ids are wanted here (integers)
-        partition.graph.edge_data(edge)["shared_perim"] for edge in old_edges
+        partition.graph.edge_data(
+          partition.graph.get_edge_id_from_edge(edge)
+        )["shared_perim"] for edge in old_edges
     )
     return previous + added_perimeter - removed_perimeter
 
