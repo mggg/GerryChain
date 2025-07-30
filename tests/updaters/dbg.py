@@ -23,8 +23,8 @@ def create_three_by_three_grid():
     3 4 5
     6 7 8
     """
-    nxgraph = networkx.Graph()
-    nxgraph.add_edges_from(
+    nx_graph = networkx.Graph()
+    nx_graph.add_edges_from(
         [
             (0, 1),
             (0, 3),
@@ -40,7 +40,7 @@ def create_three_by_three_grid():
             (7, 8),
         ]
     )
-    return Graph.from_networkx(nxgraph)
+    return Graph.from_networkx(nx_graph)
 
 
 

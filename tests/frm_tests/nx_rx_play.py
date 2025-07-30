@@ -39,28 +39,28 @@ path_for_json_file = os.path.join(cur_directory, "gerrymandria.json")
 # print("json file is: ", json_file_path)
 
 # Create an NX based Graph object from the JSON
-gerrychain_nxgraph = Graph.from_json(path_for_json_file)
+gerrychain_nx_graph = Graph.from_json(path_for_json_file)
 
 # Fetch the NX graph object from inside the Graph object
-nxgraph = gerrychain_nxgraph.getNxGraph()
+nx_graph = gerrychain_nx_graph.get_nx_graph()
 
 # Create an RX graph object from NX and set node type to be a dictionary to preserve data attributes
-rxgraph = rx.networkx_converter(nxgraph, keep_attributes=True)
+rx_graph = rx.networkx_converter(nx_graph, keep_attributes=True)
 
 # Create a Graph object with an RX graph inside
-gerrychain_rxgraph = Graph.from_rustworkx(rxgraph)
+gerrychain_rx_graph = Graph.from_rustworkx(rx_graph)
 
-# frm: ???: TODO:  The set(rxgraph.nodes()) fails because it returns dictionaries which Python does not like...
-# nx_set_of_nodes = set(nxgraph.nodes())
+# frm: ???: TODO:  The set(rx_graph.nodes()) fails because it returns dictionaries which Python does not like...
+# nx_set_of_nodes = set(nx_graph.nodes())
 # print("len nx_set_of_nodes is: ", len(nx_set_of_nodes))
-# rx_set_of_nodes = set(rxgraph.nodes())
+# rx_set_of_nodes = set(rx_graph.nodes())
 # print("len rx_set_of_nodes is: ", len(rx_set_of_nodes))
 # print("NX nodes: ", nx_set_of_nodes)
 # print("RX nodes: ", rx_set_of_nodes)
 
 print("Testing node data dict")
-print("NX data dict for node 1: ", gerrychain_nxgraph.node_data(1))
-print("RX data dict for node 1: ", gerrychain_rxgraph.node_data(1))
+print("NX data dict for node 1: ", gerrychain_nx_graph.node_data(1))
+print("RX data dict for node 1: ", gerrychain_rx_graph.node_data(1))
 
 """
 Stuff to figure out / test:

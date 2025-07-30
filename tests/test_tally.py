@@ -83,8 +83,8 @@ def test_tally_matches_naive_tally_at_every_step():
 
 
 def test_works_when_no_flips_occur():
-    nxgraph = networkx.Graph([(0, 1), (1, 2), (2, 3), (3, 0)])
-    graph = Graph.from_networkx(nxgraph)
+    nx_graph = networkx.Graph([(0, 1), (1, 2), (2, 3), (3, 0)])
+    graph = Graph.from_networkx(nx_graph)
     for node in graph:
         graph.node_data(node)["pop"] = node + 1
     partition = Partition(graph, {0: 0, 1: 0, 2: 1, 3: 1}, {"pop": Tally("pop")})

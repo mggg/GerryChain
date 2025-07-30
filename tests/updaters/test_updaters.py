@@ -54,14 +54,14 @@ def chain_with_election(partition_with_election):
 
 
 def test_Partition_can_update_stats():
-    nxgraph = networkx.complete_graph(3)
+    nx_graph = networkx.complete_graph(3)
     assignment = {0: 1, 1: 1, 2: 2}
 
-    nxgraph.nodes[0]["stat"] = 1
-    nxgraph.nodes[1]["stat"] = 2
-    nxgraph.nodes[2]["stat"] = 7
+    nx_graph.nodes[0]["stat"] = 1
+    nx_graph.nodes[1]["stat"] = 2
+    nx_graph.nodes[2]["stat"] = 7
 
-    graph = Graph.from_networkx(nxgraph)
+    graph = Graph.from_networkx(nx_graph)
 
     updaters = {"total_stat": Tally("stat", alias="total_stat")}
 

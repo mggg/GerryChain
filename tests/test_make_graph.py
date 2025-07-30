@@ -75,20 +75,20 @@ def test_add_data_to_graph_can_handle_column_names_that_start_with_numbers():
     #           object embedded inside it.  I am not sure if this test actually tests
     #           anything useful anymore...
 
-    nxgraph = networkx.Graph([("01", "02"), ("02", "03"), ("03", "01")])
+    nx_graph = networkx.Graph([("01", "02"), ("02", "03"), ("03", "01")])
     df = pandas.DataFrame({"16SenDVote": [20, 30, 50], "node": ["01", "02", "03"]})
     df = df.set_index("node")
 
     # frm: Note that the new Graph does not support add_data() 
 
-    graph = Graph.from_networkx(nxgraph)
+    graph = Graph.from_networkx(nx_graph)
 
     graph.add_data(df, ["16SenDVote"])
 
-    # Test that the embedded nxgraph object has the added data
-    assert nxgraph.nodes["01"]["16SenDVote"] == 20
-    assert nxgraph.nodes["02"]["16SenDVote"] == 30
-    assert nxgraph.nodes["03"]["16SenDVote"] == 50
+    # Test that the embedded nx_graph object has the added data
+    assert nx_graph.nodes["01"]["16SenDVote"] == 20
+    assert nx_graph.nodes["02"]["16SenDVote"] == 30
+    assert nx_graph.nodes["03"]["16SenDVote"] == 50
 
     # Test that the graph object has the added data
     assert graph.node_data("01")["16SenDVote"] == 20
@@ -97,10 +97,10 @@ def test_add_data_to_graph_can_handle_column_names_that_start_with_numbers():
 
 
 def test_join_can_handle_right_index():
-    nxgraph = networkx.Graph([("01", "02"), ("02", "03"), ("03", "01")])
+    nx_graph = networkx.Graph([("01", "02"), ("02", "03"), ("03", "01")])
     df = pandas.DataFrame({"16SenDVote": [20, 30, 50], "node": ["01", "02", "03"]})
 
-    graph = Graph.from_networkx(nxgraph)
+    graph = Graph.from_networkx(nx_graph)
 
     graph.join(df, ["16SenDVote"], right_index="node")
 
@@ -209,19 +209,19 @@ def edge_set_equal(set1, set2):
 def test_from_file_adds_all_data_by_default(shapefile):
     graph = Graph.from_file(shapefile)
 
-    nxgraph = graph.getNxGraph()
+    nx_graph = graph.get_nx_graph()
 
-    assert all("data" in node_data for node_data in nxgraph.nodes.values())
-    assert all("data2" in node_data for node_data in nxgraph.nodes.values())
+    assert all("data" in node_data for node_data in nx_graph.nodes.values())
+    assert all("data2" in node_data for node_data in nx_graph.nodes.values())
 
 
 def test_from_file_and_then_to_json_does_not_error(shapefile, target_file):
     graph = Graph.from_file(shapefile)
 
-    nxgraph = graph.getNxGraph()
+    nx_graph = graph.get_nx_graph()
 
     # Even the geometry column is copied to the graph
-    assert all("geometry" in node_data for node_data in nxgraph.nodes.values())
+    assert all("geometry" in node_data for node_data in nx_graph.nodes.values())
 
     graph.to_json(target_file)
 
@@ -229,19 +229,19 @@ def test_from_file_and_then_to_json_does_not_error(shapefile, target_file):
 def test_from_file_and_then_to_json_with_geometries(shapefile, target_file):
     graph = Graph.from_file(shapefile)
     
-    nxgraph = graph.getNxGraph()
+    nx_graph = graph.get_nx_graph()
 
     # Even the geometry column is copied to the graph
-    assert all("geometry" in node_data for node_data in nxgraph.nodes.values())
+    assert all("geometry" in node_data for node_data in nx_graph.nodes.values())
 
     graph.to_json(target_file, include_geometries_as_geojson=True)
 
 
 def test_graph_warns_for_islands():
-    nxgraph = networkx.Graph()
-    nxgraph.add_node(0)
+    nx_graph = networkx.Graph()
+    nx_graph.add_node(0)
 
-    graph = Graph.from_networkx(nxgraph)
+    graph = Graph.from_networkx(nx_graph)
 
     with pytest.warns(Warning):
         graph.warn_for_islands()

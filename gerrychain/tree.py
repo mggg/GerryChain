@@ -188,23 +188,23 @@ def random_spanning_tree(
     #               should not be in this file, tree.py, but for now, I am just trying
     #               to get this to work, so I am using CROCKS...
 
-    graph.verifyGraphIsValid()
+    graph.verify_graph_is_valid()
 
     # frm: TODO:  Remove NX / RX dependency - maybe move to graph.py
 
-    if (graph.isNxGraph()):
-        nxgraph = graph.getNxGraph()
+    if (graph.is_nx_graph()):
+        nx_graph = graph.get_nx_graph()
         spanning_tree = nxtree.minimum_spanning_tree(
-            nxgraph, algorithm="kruskal", weight="random_weight"
+            nx_graph, algorithm="kruskal", weight="random_weight"
         )
         spanningGraph = Graph.from_networkx(spanning_tree)
-    elif (graph.isRxGraph()):
-        rxgraph = graph.getRxGraph()
+    elif (graph.is_rx_graph()):
+        rx_graph = graph.get_rx_graph()
         def get_weight(edge_data):
             # function to get the weight of an edge from its data
             # This function is passed a dict with the data for the edge.
             return edge_data["random_weight"]
-        spanning_tree = rx.minimum_spanning_tree(rxgraph, get_weight)
+        spanning_tree = rx.minimum_spanning_tree(rx_graph, get_weight)
         spanningGraph = Graph.from_rustworkx(spanning_tree)
     else:
         raise Exception("random_spanning_tree - bad kind of graph object")
@@ -270,8 +270,8 @@ def uniform_spanning_tree(
     # frm: TODO:  Remove dependency on NX below
 
     # frm: Original code:    G = nx.Graph()  
-    nxgraph = nx.Graph()
-    G = Graph.from_networkx(nxgraph)
+    nx_graph = nx.Graph()
+    G = Graph.from_networkx(nx_graph)
 
     for node_id in tree_nodes:
         if next_node_id[node_id] is not None:

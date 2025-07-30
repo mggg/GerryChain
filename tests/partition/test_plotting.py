@@ -10,8 +10,8 @@ from gerrychain import Graph, Partition
 
 @pytest.fixture
 def partition():
-    nxgraph = networkx.Graph([(0, 1), (1, 3), (2, 3), (0, 2)])
-    graph = Graph.from_networkx(nxgraph)
+    nx_graph = networkx.Graph([(0, 1), (1, 3), (2, 3), (0, 2)])
+    graph = Graph.from_networkx(nx_graph)
     return Partition(graph, {0: 1, 1: 1, 2: 2, 3: 2})
 
 

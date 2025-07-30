@@ -125,7 +125,7 @@ class Grid(Partition):
 
         if dimensions:
             self.dimensions = dimensions
-            graph = Graph.from_networkx(_create_grid_nxgraph(dimensions, with_diagonals))
+            graph = Graph.from_networkx(_create_grid_nx_graph(dimensions, with_diagonals))
 
             if not assignment:
                 thresholds = tuple(math.floor(n / 2) for n in self.dimensions)
@@ -171,7 +171,7 @@ class Grid(Partition):
 #           For now, I am going to leave this as operating on NetworkX graphs, since 
 #           it appears to only be used internally in this Class.  However, I may discover
 #           that it has been used externally with the intention of returning a Graph object.
-#           If so, then I will need to return a Graph object (from_networkx(nxgraphg)) and change
+#           If so, then I will need to return a Graph object (from_networkx(nx_graphg)) and change
 #           the call inside this class to expect a Graph object instead of a NetworkX.Graph object.
 
 # frm: TODO: Decide if I should change this to return a Graph object or not...
@@ -180,7 +180,7 @@ class Grid(Partition):
 # def create_grid_graph(dimensions: Tuple[int, int], with_diagonals: bool) -> Graph:
 #
 
-def _create_grid_nxgraph(dimensions: Tuple[int, int], with_diagonals: bool) -> Graph:
+def _create_grid_nx_graph(dimensions: Tuple[int, int], with_diagonals: bool) -> Graph:
     """
     Creates a grid graph with the specified dimensions.
     Optionally includes diagonal connections between nodes.
@@ -198,9 +198,9 @@ def _create_grid_nxgraph(dimensions: Tuple[int, int], with_diagonals: bool) -> G
     if len(dimensions) != 2:
         raise ValueError("Expected two dimensions.")
     m, n = dimensions
-    nxgraph = networkx.generators.lattice.grid_2d_graph(m, n)
+    nx_graph = networkx.generators.lattice.grid_2d_graph(m, n)
 
-    networkx.set_edge_attributes(nxgraph, 1, "shared_perim")
+    networkx.set_edge_attributes(nx_graph, 1, "shared_perim")
 
     if with_diagonals:
         nw_to_se = [
@@ -212,7 +212,7 @@ def _create_grid_nxgraph(dimensions: Tuple[int, int], with_diagonals: bool) -> G
         diagonal_edges = nw_to_se + sw_to_ne
         #frm: TODO: Check that graph is an NX graph before calling graph.add_edges_from().  Eventually
         #           make this work for RX too...
-        nxgraph.add_edges_from(diagonal_edges)
+        nx_graph.add_edges_from(diagonal_edges)
         for edge in diagonal_edges:
             # frm: TODO:  When/if grid.py is converted to operate on GerryChain Graph
             #               objects instead of NX.Graph objects, this use of NX
@@ -222,16 +222,16 @@ def _create_grid_nxgraph(dimensions: Tuple[int, int], with_diagonals: bool) -> G
             #               We will also need to think about edge vs edge_id.  In this
             #               case we want an edge_id, so that means we need to look at
             #               how diagonal_edges are created - but that is for the future...
-            nxgraph.edges[edge]["shared_perim"] = 0
+            nx_graph.edges[edge]["shared_perim"] = 0
 
     # frm: These just set all nodes/edges in the graph to have the given attributes with a value of 1
     # frm: TODO: These won't work for the new graph, and they won't work for RX
-    networkx.set_node_attributes(nxgraph, 1, "population")
-    networkx.set_node_attributes(nxgraph, 1, "area")
+    networkx.set_node_attributes(nx_graph, 1, "population")
+    networkx.set_node_attributes(nx_graph, 1, "area")
 
-    tag_boundary_nodes(nxgraph, dimensions)
+    _tag_boundary_nodes(nx_graph, dimensions)
 
-    return nxgraph
+    return nx_graph
 
 
 # frm ???:  Why is this here instead of in graph.py?  Who is it intended for?  Internal vs. External?
@@ -253,7 +253,7 @@ def give_constant_attribute(graph: Graph, attribute: Any, value: Any) -> None:
         graph.node_data(node)[attribute] = value
 
 
-def tag_boundary_nodes(graph: Graph, dimensions: Tuple[int, int]) -> None:
+def _tag_boundary_nodes(nx_graph: networkx.Graph, dimensions: Tuple[int, int]) -> None:
     """
     Adds the boolean attribute ``boundary_node`` to each node in the graph.
     If the node is on the boundary of the grid, that node also gets the attribute
@@ -279,12 +279,12 @@ def tag_boundary_nodes(graph: Graph, dimensions: Tuple[int, int]) -> None:
     # 
 
     m, n = dimensions
-    for node in graph.nodes:
+    for node in nx_graph.nodes:
         if node[0] in [0, m - 1] or node[1] in [0, n - 1]:
-            graph.node_data(node)["boundary_node"] = True
-            graph.node_data(node)["boundary_perim"] = get_boundary_perim(node, dimensions)
+            nx_graph.nodes[node]["boundary_node"] = True
+            nx_graph.nodes[node]["boundary_perim"] = get_boundary_perim(node, dimensions)
         else:
-            graph.node_data(node)["boundary_node"] = False
+            nx_graph.nodes[node]["boundary_node"] = False
 
 
 def get_boundary_perim(node: Tuple[int, int], dimensions: Tuple[int, int]) -> int:

@@ -64,27 +64,27 @@ def are_sparse_matrices_equal(sparse_matrix1, sparse_matrix2, rtol=1e-05, atol=1
 # Create equivalent NX and RX graphs from scratch
 
 @pytest.fixture
-def nxgraph():
-    this_nxgraph = nx.Graph([(0, 1), (0, 2), (1, 2), (2, 3)])
-    return this_nxgraph
+def nx_graph():
+    this_nx_graph = nx.Graph([(0, 1), (0, 2), (1, 2), (2, 3)])
+    return this_nx_graph
 
 @pytest.fixture
-def rxgraph():
-    this_rxgraph = rx.PyGraph()
-    this_rxgraph.add_nodes_from([0, 1, 2, 3])
-    this_rxgraph.add_edges_from([(0, 1, "data"), (0, 2, "data"), (1, 2, "data"), (2, 3, "data")])
-    return this_rxgraph
+def rx_graph():
+    this_rx_graph = rx.PyGraph()
+    this_rx_graph.add_nodes_from([0, 1, 2, 3])
+    this_rx_graph.add_edges_from([(0, 1, "data"), (0, 2, "data"), (1, 2, "data"), (2, 3, "data")])
+    return this_rx_graph
 
 
-def test_nx_rx_laplacian_matrix_equality(nxgraph, rxgraph):
+def test_nx_rx_laplacian_matrix_equality(nx_graph, rx_graph):
 
     # Create Graph objects from the NX and RX graphs
-    gc_nxgraph = Graph.from_networkx(nxgraph)
-    gc_rxgraph = Graph.from_rustworkx(rxgraph)
+    gc_nx_graph = Graph.from_networkx(nx_graph)
+    gc_rx_graph = Graph.from_rustworkx(rx_graph)
 
     # Compute the laplacian_matrix for both the NX and RX based Graph objects
-    gc_nx_laplacian_matrix = gc_nxgraph.laplacian_matrix()
-    gc_rx_laplacian_matrix = gc_rxgraph.laplacian_matrix()
+    gc_nx_laplacian_matrix = gc_nx_graph.laplacian_matrix()
+    gc_rx_laplacian_matrix = gc_rx_graph.laplacian_matrix()
 
     # Convert values in the NX version to be floating point
     float_gc_nx_laplacian_matrix = gc_nx_laplacian_matrix.astype(float)

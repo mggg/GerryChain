@@ -1,7 +1,7 @@
 #
 # This tests compatibility between the old/original version of
 # the Graph object and the new version that encapsulates the
-# graph as a data member - either nxgraph or rxgraph.
+# graph as a data member - either nx_graph or rx_graph.
 #       
 
 import matplotlib.pyplot as plt

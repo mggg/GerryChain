@@ -15,8 +15,8 @@ def three_by_three_grid():
     3 4 5
     6 7 8
     """
-    nxgraph = nx.Graph()
-    nxgraph.add_edges_from(
+    nx_graph = nx.Graph()
+    nx_graph.add_edges_from(
         [
             (0, 1),
             (0, 3),
@@ -32,7 +32,7 @@ def three_by_three_grid():
             (7, 8),
         ]
     )
-    return Graph.from_networkx(nxgraph)
+    return Graph.from_networkx(nx_graph)
 
 @pytest.fixture
 def four_by_five_grid_for_opt():
@@ -46,8 +46,8 @@ def four_by_five_grid_for_opt():
     #  5  6  7  8  9
     #  0  1  2  3  4
 
-    nxgraph = nx.Graph()
-    nxgraph.add_nodes_from(
+    nx_graph = nx.Graph()
+    nx_graph.add_nodes_from(
         [
             (0, {"population": 10, "opt_value": 1, "MVAP": 2}),
             (1, {"population": 10, "opt_value": 1, "MVAP": 2}),
@@ -72,7 +72,7 @@ def four_by_five_grid_for_opt():
         ]
     )
 
-    nxgraph.add_edges_from(
+    nx_graph.add_edges_from(
         [
             (0, 1),
             (0, 5),
@@ -108,7 +108,7 @@ def four_by_five_grid_for_opt():
         ]
     )
 
-    return Graph.from_networkx(nxgraph)
+    return Graph.from_networkx(nx_graph)
 
 
 @pytest.fixture

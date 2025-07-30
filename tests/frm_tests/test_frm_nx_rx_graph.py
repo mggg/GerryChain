@@ -44,26 +44,26 @@ def json_file_path():
     return path_for_json_file
 
 @pytest.fixture(scope="module")
-def gerrychain_nxgraph(json_file_path):
+def gerrychain_nx_graph(json_file_path):
     # Create an NX based Graph object from the JSON
     graph = Graph.from_json(json_file_path)
-    print("gerrychain_nxgraph: len(graph): ", len(graph))
+    print("gerrychain_nx_graph: len(graph): ", len(graph))
     return(graph)
 
 @pytest.fixture(scope="module")
-def nxgraph(gerrychain_nxgraph):
+def nx_graph(gerrychain_nx_graph):
     # Fetch the NX graph object from inside the Graph object
-    return gerrychain_nxgraph.getNxGraph()
+    return gerrychain_nx_graph.get_nx_graph()
 
 @pytest.fixture(scope="module")
-def rxgraph(nxgraph):
+def rx_graph(nx_graph):
     # Create an RX graph object from NX, preserving node data
-    return rx.networkx_converter(nxgraph, keep_attributes=True)
+    return rx.networkx_converter(nx_graph, keep_attributes=True)
 
 @pytest.fixture(scope="module")
-def gerrychain_rxgraph(rxgraph):
+def gerrychain_rx_graph(rx_graph):
     # Create a Graph object with an RX graph inside
-    return Graph.from_rustworkx(rxgraph)
+    return Graph.from_rustworkx(rx_graph)
 
 ##################
 # Start of Tests
@@ -74,41 +74,41 @@ def test_sanity():
     print("test_sanity(): called")
     assert True
 
-def test_nx_rx_sets_of_nodes_agree(nxgraph, rxgraph):
-    nx_set_of_nodes = set(nxgraph.nodes())
-    rx_set_of_nodes = set(rxgraph.node_indices())
+def test_nx_rx_sets_of_nodes_agree(nx_graph, rx_graph):
+    nx_set_of_nodes = set(nx_graph.nodes())
+    rx_set_of_nodes = set(rx_graph.node_indices())
     assert nx_set_of_nodes == rx_set_of_nodes
 
-def test_nx_rx_node_data_agree(gerrychain_nxgraph, gerrychain_rxgraph):
-    nx_data_dict = gerrychain_nxgraph.node_data(1)
-    rx_data_dict = gerrychain_rxgraph.node_data(1)
+def test_nx_rx_node_data_agree(gerrychain_nx_graph, gerrychain_rx_graph):
+    nx_data_dict = gerrychain_nx_graph.node_data(1)
+    rx_data_dict = gerrychain_rx_graph.node_data(1)
     assert nx_data_dict == rx_data_dict
 
-def test_nx_rx_node_indices_agree(gerrychain_nxgraph, gerrychain_rxgraph):
-    nx_node_indices = gerrychain_nxgraph.node_indices
-    rx_node_indices = gerrychain_rxgraph.node_indices
+def test_nx_rx_node_indices_agree(gerrychain_nx_graph, gerrychain_rx_graph):
+    nx_node_indices = gerrychain_nx_graph.node_indices
+    rx_node_indices = gerrychain_rx_graph.node_indices
     assert nx_node_indices == rx_node_indices
 
-def test_nx_rx_edges_agree(gerrychain_nxgraph, gerrychain_rxgraph):
+def test_nx_rx_edges_agree(gerrychain_nx_graph, gerrychain_rx_graph):
     # TODO:  Rethink this test.  At the moment it relies on the edge_list()
     #           call which does not exist on a GerryChain Graph object
     #           being handled by RX through clever __getattr__ stuff.
     #           I think we should add an edge_list() method to GerryChain Graph
-    nx_edges = set(gerrychain_nxgraph.edges)
-    rx_edges = set(gerrychain_rxgraph.edge_list())
+    nx_edges = set(gerrychain_nx_graph.edges)
+    rx_edges = set(gerrychain_rx_graph.edge_list())
     assert nx_edges == rx_edges
 
-def test_nx_rx_node_neighbors_agree(gerrychain_nxgraph, gerrychain_rxgraph):
-    for i in gerrychain_nxgraph:
+def test_nx_rx_node_neighbors_agree(gerrychain_nx_graph, gerrychain_rx_graph):
+    for i in gerrychain_nx_graph:
         # Need to convert to set, because ordering of neighbor nodes differs in the lists
-        nx_neighbors = set(gerrychain_nxgraph.neighbors(i))
-        rx_neighbors = set(gerrychain_rxgraph.neighbors(i))
+        nx_neighbors = set(gerrychain_nx_graph.neighbors(i))
+        rx_neighbors = set(gerrychain_rx_graph.neighbors(i))
         assert nx_neighbors == rx_neighbors
 
-def test_nx_rx_subgraphs_agree(gerrychain_nxgraph, gerrychain_rxgraph):
+def test_nx_rx_subgraphs_agree(gerrychain_nx_graph, gerrychain_rx_graph):
     subgraph_nodes = [0,1,2,3,4,5]      # TODO: make this a fixture dependent on JSON graph
-    nx_subgraph = gerrychain_nxgraph.subgraph(subgraph_nodes)
-    rx_subgraph = gerrychain_rxgraph.subgraph(subgraph_nodes)
+    nx_subgraph = gerrychain_nx_graph.subgraph(subgraph_nodes)
+    rx_subgraph = gerrychain_rx_graph.subgraph(subgraph_nodes)
     for node_id in nx_subgraph:
         nx_node_data = nx_subgraph.node_data(node_id)
         rx_node_data = rx_subgraph.node_data(node_id)
@@ -116,15 +116,15 @@ def test_nx_rx_subgraphs_agree(gerrychain_nxgraph, gerrychain_rxgraph):
     # frm: TODO:  This does not test that the rx_subgraph has the exact same number of
     #                   nodes as the nx_subgraph, and it does not test edge data...
 
-def test_nx_rx_degrees_agree(gerrychain_nxgraph, gerrychain_rxgraph):
+def test_nx_rx_degrees_agree(gerrychain_nx_graph, gerrychain_rx_graph):
     # Verify that the degree of each node agrees between NX and RX versions
     nx_degrees = {
-      node_id: gerrychain_nxgraph.degree(node_id) for node_id in gerrychain_nxgraph.node_indices
+      node_id: gerrychain_nx_graph.degree(node_id) for node_id in gerrychain_nx_graph.node_indices
     }
     rx_degrees = {
-      node_id: gerrychain_rxgraph.degree(node_id) for node_id in gerrychain_rxgraph.node_indices
+      node_id: gerrychain_rx_graph.degree(node_id) for node_id in gerrychain_rx_graph.node_indices
     }
-    for node_id in gerrychain_nxgraph.node_indices:
+    for node_id in gerrychain_nx_graph.node_indices:
         assert nx_degrees[node_id] == rx_degrees[node_id]
 
 
@@ -190,7 +190,7 @@ frm: TODO:
 ###    }
 ###    
 ###    initial_partition = Partition(
-###        nxgraph,
+###        nx_graph,
 ###        assignment="district",
 ###        updaters=my_updaters
 ###    )

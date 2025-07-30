@@ -76,16 +76,16 @@ def target_file():
 
 
 def test_add_data_to_graph_can_handle_column_names_that_start_with_numbers():
-    nxgraph = networkx.Graph([("01", "02"), ("02", "03"), ("03", "01")])
+    nx_graph = networkx.Graph([("01", "02"), ("02", "03"), ("03", "01")])
     df = pandas.DataFrame({"16SenDVote": [20, 30, 50], "node": ["01", "02", "03"]})
     df = df.set_index("node")
 
-    graph = Graph.from_networkx(nxgraph)
+    graph = Graph.from_networkx(nx_graph)
     graph.add_data(df, ["16SenDVote"])
 
-    assert nxgraph.nodes["01"]["16SenDVote"] == 20
-    assert nxgraph.nodes["02"]["16SenDVote"] == 30
-    assert nxgraph.nodes["03"]["16SenDVote"] == 50
+    assert nx_graph.nodes["01"]["16SenDVote"] == 20
+    assert nx_graph.nodes["02"]["16SenDVote"] == 30
+    assert nx_graph.nodes["03"]["16SenDVote"] == 50
 
     assert graph.node_data("01")["16SenDVote"] == 20
     assert graph.node_data("02")["16SenDVote"] == 30
@@ -93,10 +93,10 @@ def test_add_data_to_graph_can_handle_column_names_that_start_with_numbers():
 
 
 def test_join_can_handle_right_index():
-    nxgraph = networkx.Graph([("01", "02"), ("02", "03"), ("03", "01")])
+    nx_graph = networkx.Graph([("01", "02"), ("02", "03"), ("03", "01")])
     df = pandas.DataFrame({"16SenDVote": [20, 30, 50], "node": ["01", "02", "03"]})
 
-    graph = Graph.from_networkx(nxgraph)
+    graph = Graph.from_networkx(nx_graph)
 
     graph.join(df, ["16SenDVote"], right_index="node")
 
@@ -247,9 +247,9 @@ def test_from_file_and_then_to_json_with_geometries(shapefile, target_file):
 
 
 def test_graph_warns_for_islands():
-    nxgraph = networkx.Graph()
-    nxgraph.add_node(0)
-    graph = Graph.from_networkx(nxgraph)
+    nx_graph = networkx.Graph()
+    nx_graph.add_node(0)
+    graph = Graph.from_networkx(nx_graph)
 
     with pytest.warns(Warning):
         graph.warn_for_islands()
