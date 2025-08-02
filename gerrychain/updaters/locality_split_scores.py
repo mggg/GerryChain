@@ -7,6 +7,13 @@ import networkx as nx
 import math
 from typing import List
 
+# frm: TODO:  Do performance testing and improve performance of these routines.
+#
+# Peter made the comment in a PR that we should make this code more efficient:
+#
+# A note on this file: A ton of the code in here is inefficient. This was 
+# made 6 years ago and hasn't really been touched since then other than 
+# when I was doing an overhaul on many of the doc strings
 
 class LocalitySplits:
     """
@@ -184,11 +191,16 @@ class LocalitySplits:
                 # frm: TODO:  Once you have a partition, you cannot change the total population
                 #               in the Partition, so why don't we cache the total population as
                 #               a data member in Partition?
+                #
+                # Peter agreed that this would be a good thing to do
 
                 # frm: original code:   totpop += partition.graph.nodes[node][self.pop_col]
                 totpop += partition.graph.node_data(node)[self.pop_col]
 
             # frm: TODO:  Ditto with num_districts - isn't this a constant once you create a Partition?
+            #
+            # Peter agreed that this would be a good thing to do.
+
             num_districts = len(partition.assignment.parts.keys())
 
             # Compute the total population for each locality and then the number of "allowed pieces"
@@ -232,6 +244,8 @@ class LocalitySplits:
                     else:
                         locality_population[locality_name] += locality_pop
 
+                # frm: TODO:  Peter commented (in PR) that this is another thing that
+                #               could be cached so we didn't recompute it over and over...
                 ideal_population_per_district = totpop / num_districts
 
                 # Compute the number of "allowed pieces" for each locality

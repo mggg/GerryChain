@@ -2,7 +2,9 @@ import collections
 import functools
 from typing import Dict, Set, Tuple, Callable
 
-# frm:  This file needs documentation / comments!!!
+# frm: TODO: This file needs documentation / comments!!!
+#
+# Peter agrees...
 
 @functools.lru_cache(maxsize=2)
 def neighbor_flips(partition) -> Set[Tuple]:

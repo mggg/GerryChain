@@ -68,11 +68,31 @@ class TestPartitionPlotting:
 
         graph = Graph.from_geodataframe(geodataframe)
         partition = Partition(graph=graph, assignment={node: 0 for node in graph})
+
         # frm: TODO: the following statement blows up because we do not copy
         #               geometry data from NX to RX when we convert to RX.
         #               Need to grok what the right way to deal with geometry 
         #               data is (is it only an issue for from_geodataframe() or
         #               are there other ways a geometry value might be set?)
         #
+        # Peter comments (from PR):
+        #
+        # The geometry data should only exist on the attached geodataframe. 
+        # In fact, if there is no "geometry" column in the dataframe, this call 
+        # should fail.
+        # 
+        # Fixing the plotting functions is a low-priority. I need to set up 
+        # snapshot tests for these anyway, so if you find working with 
+        # matplotlib a PITA (because it is), then don't worry about the 
+        # plotting functions for now.
+        # 
+        # Worst-case scenario, I can just add some temporary verbage to 
+        # readthedocs telling people to use
+        # 
+        # my_partition.df.plot()
+
+        # Which will just use all of the plotting stuff that Pandas has set up internally.
+
         partition.plot()
         assert mock_plot.call_count == 1
+        

@@ -106,7 +106,56 @@ class Election:
             for party in self.parties
         }
 
+        # frm: TODO: Remove debugging code
+        print(f"Election.__init__(): parties_to_columns: {self.parties_to_columns}")
+        print(f"Election.__init__(): tallies to follow:")
+        for k,v in self.tallies.items():
+            print(f"    Election.__init__(): tallies: key: {k} has value: {v}")
+        print(f"Election.__init__(): about to create ElectionUpdater()")
+
         self.updater = ElectionUpdater(self)
+
+    def _initialize_self(self, partition):
+        """
+        Because node_ids are changed when converting from NX to RX based graphs when
+        we create a partition, we need to delay initialization of internal data members
+        that depend on node_ids until AFTER the partition has been created.  That is 
+        because we don't know how to map original node_ids to internal node_ids until
+        the partition is created.
+
+        Note that the fact that node_ids have changed is hidden by the fact that 
+        """
+
+        # frm: TODO:  Remove debugging code:
+        #
+        # This is a mess - I am going to reset to the original code and make
+        # 100% sure I grok what is happening...
+
+        """
+        Convert _original_parties_to_columns to use internal_ids
+
+        internal_parties_to_columns = ??? translate original node_ids...
+           ??? handle the case when instead of a dict it is a list
+
+        Then just use the code from before, but with new node_ids 
+        """
+
+        print(f"Election._initialize_self()): Entering...")
+        print(f"Election._initialize_self()): parties_to_columns follows: ")
+        for k,v in self.parties_to_columns.items():
+            print(f"  parties_to_columns: key: {k}, has value: {v}")
+        print(f"Election._initialize_self()): self.parties = {self.parties}")
+        print(f"Election._initialize_self()): self.columns = {self.columns}")
+
+        # Compute totals for each "party" => dict of form: {part: sum} 
+        # where "part" is a district in partition 
+        self.tallies = {
+            party: DataTally(self.parties_to_columns[party], party)
+            for party in self.parties
+        }
+        print(f"Election._initialize_self()): tallies follow:")
+        for k,v in self.tallies.items():
+            print(f"  party: {k}, has tally: {v}")
 
     def __str__(self):
         return "Election '{}' with vote totals for parties {} from columns {}.".format(
@@ -167,6 +216,10 @@ class ElectionUpdater:
         return previous_totals_for_party
 
 
+# frm: TODO:  This routine, get_percents(), is only ever used inside ElectionResults.
+#
+#               Why is it not defined as an internal function inside ElectionResults?
+#
 def get_percents(counts: Dict, totals: Dict) -> Dict:
     """
     :param counts: A dictionary mapping each part in a partition to the

@@ -30,6 +30,7 @@ def test_data_tally_works_as_an_updater(three_by_three_grid):
 def test_data_tally_gives_expected_value(three_by_three_grid):
     # Put all but one of the nodes in part #1, and put the one "first_node"
     # into part #2.
+
     first_node = next(iter(three_by_three_grid.nodes))
     assignment = {node: 1 for node in three_by_three_grid.nodes}
     assignment[first_node] = 2
@@ -38,6 +39,13 @@ def test_data_tally_gives_expected_value(three_by_three_grid):
     data = {node: 1 for node in three_by_three_grid}
     updaters = {"tally": DataTally(data, alias="tally")}
     partition = Partition(three_by_three_grid, assignment, updaters)
+
+    # Note that in general a flip using node_ids generated before creating
+    # a partition should be translated into "internal" RX-Graph based 
+    # node_ids.  In this case it is not needed, because it doesn't matter
+    # whether we are using the "original" or the "internal" node_id for 
+    # first_node because it still refers to the same node and nothing else
+    # is going on.
 
     # Create a new partition, adding the "first_node" to part #1
     flip = {first_node: 1}

@@ -277,6 +277,11 @@ def _tag_boundary_nodes(nx_graph: networkx.Graph, dimensions: Tuple[int, int]) -
     #       boundary node and it gets its boundary_perim value set - still not
     #       sure what that does/means...
     # 
+    # Peter's comment from PR:
+    #
+    # I think that being able to identify a boundary edge was needed in some early 
+    # experiments, so it was important to tag them, but I haven't really something 
+    # that cares about this in a while
 
     m, n = dimensions
     for node in nx_graph.nodes:

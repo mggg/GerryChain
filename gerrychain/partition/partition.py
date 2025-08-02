@@ -161,6 +161,17 @@ class Partition:
 
         # frm: TODO:  Do we want to continue to allow users to create a Partition
         #               directly from an NX graph?  I suppose there is no harm...
+        #
+        # The answer is YES - creating and manipulating NX Graphs is easy and users
+        # are familiar with doing so.  It makes sense to preserve the use case of 
+        # creating an NX-Graph and then allowing the code to under-the-covers
+        # convert to RX - both for legacy compatibility, but also because NX provides
+        # a really nice and easy way to create graphs.
+        #
+        # So this TODO should be interpreted as a todo-item to update the documentation
+        # to describe the use case of creating a graph using NX.  That documentation
+        # should also describe how to post-process results of a MarkovChain run
+        # but I haven't figured that out yet...
 
         # If a NX.Graph, create a Graph object based on NX
         if isinstance(graph, networkx.Graph):
@@ -200,7 +211,6 @@ class Partition:
         elif isinstance(graph, FrozenGraph):
             # frm: TODO: Verify that the embedded graph is RX
             self.graph = graph
-            # frm ???:  Why is the parameter below not the FrozenGraph?  
             self.assignment = get_assignment(assignment, graph)
 
         else:
@@ -245,21 +255,6 @@ class Partition:
         self.graph = parent.graph
         self.updaters = parent.updaters
 
-        # frm ???:  What are flows?
-        #
-        #           Flows are just a dictionary showing what nodes flowed into a
-        #           partition and what nodes flowed out of that partition.
-        #           This is an example of tight logical coupling between a Partition
-        #           and Markov Chain logic.
-        #
-        #           I assume that the flows_from_changes() takes advantage of the
-        #           flips setting above.  This is all quite opaque - what one would 
-        #           want for comments is a description of what happens when a new
-        #           partition is created from an old one.  I assume that the FrozenGraph
-        #           stays frozen and is the same in all Partitions in a chain, but that 
-        #           the other stuff (flows, assignment, parts) changes with each successive
-        #           partition in the chain.  Is this true?  If so, why not make that clear?
-        #
         self.flows = flows_from_changes(parent, self)  # careful
 
         self.assignment = parent.assignment.copy()
@@ -348,7 +343,7 @@ class Partition:
         return self._cache[key]
 
     def __getattr__(self, key):
-        # frm ???:  Not sure it makes sense to allow two ways to accomplish the same thing...
+        # frm TODO:  Not sure it makes sense to allow two ways to accomplish the same thing...
         #
         # The code below allows Partition users to get the results of updaters by just 
         # doing:  partition.<updater_name>  which is the same as doing: partition["<updater_name>"]
@@ -358,6 +353,16 @@ class Partition:
         # Partition are the same as the names of the updaters and return the results of running
         # the updater functions.  I guess this makes sense, but there is no documentation (that I
         # am aware of) that makes this clear.
+        #
+        # Peter's comment in PR:
+        #
+        # This is actually on my list of things that I would prefer removed. When I first 
+        # started working with this codebase, I found the fact that you could just do 
+        # partition.name_of_my_updater really confusing, and, from a Python perspective, 
+        # I think that the more intuitive interface is keyword access like in a dictionary. 
+        # I haven't scoured the codebase for instances of ".attr" yet, but this is one of 
+        # the things that I am 100% okay with getting rid of. Almost all of the people 
+        # that I have seen work with this package use the partition["attr"] paradigm anyway.
         #
         return self[key]
 

@@ -343,7 +343,7 @@ def reversible_recom(
     return partition  # self-loop
 
 
-# frm ???:  I do not think that ReCom() is ever called.  Note that it 
+# frm TODO:  I do not think that ReCom() is ever called.  Note that it 
 #           only defines a constructor and a __call__() which would allow
 #           you to call the recom() function by creating a ReCom object and then 
 #           "calling" that object - why not just call the recom function?
@@ -355,6 +355,11 @@ def reversible_recom(
 #           was to call the recom() function but never went back to remove
 #           the class.  In short, I think that we should probably remove the
 #           class and just keep the function...
+#
+# What Peter said in a PR:
+#
+# Another bit of legacy code. I am also not sure why this exists. Seems like 
+# there were plans for this and then it got dropped when someone graduated
 #
 class ReCom:
     """

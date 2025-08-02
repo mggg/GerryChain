@@ -79,6 +79,8 @@ import networkx.algorithms.tree as nxtree
 #
 #               I think it probably makes sense to move this spanning tree function
 #               into graph.py and to encapsulate the NX vs RX code there.
+#
+# Note Peter agrees with this...
 
 from functools import partial
 from inspect import signature
@@ -157,6 +159,41 @@ def random_spanning_tree(
     #                        for key, value in region_surcharge.items():
     #                            ...
     # 
+    # Peter's comments from PR:
+    #
+    # peterrrock2 last week
+    # This is one of mine. I added the region surcharge stuff in an afternoon, 
+    # so I probably did this to prevent the more than 3 levels of indentation 
+    # and to make the reasoning easier to track as I was adding the feature.
+    # 
+    # Collaborator
+    # Author
+    # @peterrrock2 peterrrock2 last week
+    # Also, I imagine that I originally wanted the function modification to look like
+    # 
+    #     def random_spanning_tree(
+    #         graph: Graph,  
+    #         region_surcharge: dict = dict()
+    #     ) -> Graph:  
+    # 
+    # but doing this sort of thing is generally a bad idea in python since the 
+    # dict() is instantiated at import time and then all future calls to the 
+    # function reference the same dict when the surcharge is unset. Not a problem 
+    # for this function, but the accepted best-practice is to change the above to
+    # 
+    #     def random_spanning_tree(
+    #         graph: Graph, 
+    #         region_surcharge: Optional[Dict] = None
+    #     ) -> Graph:  
+    #         if region_surcharge is None:
+    #             region_surcharge = dict()
+    #
+    # since this doesn't reuse the reference.
+
+
+
+
+
     if region_surcharge is None:
         region_surcharge = dict()
 
@@ -339,6 +376,12 @@ class PopulatedGraph:
 
     # frm: only ever used inside this file
     #       But maybe this is intended to be used externally...
+    #
+    # In PR: Peter said:
+    #
+    # We do use this external to the class when calling find_balance_edge_cuts_contraction
+
+
     # frm: ???: What the fat does this do?  Start with what a population is.  It 
     #           appears to be indexed by node.  Also, what is a subset?  GRRRR...
     def contract_node(self, node, parent) -> None:
@@ -957,9 +1000,24 @@ def _region_preferred_max_weight_choice(
 #               functions are not written to be operating on an NX Graph.  Not sure
 #               how to do that though...
 #
+# Peter's comments from PR:
+#
+# Users do sometimes write custom spanning tree and cut edge functions. My 
+# recommendation would be to make this simple for now. Have a list of "RX_compatible" 
+# functions and then have the MarkovChain class do some coersion to store an 
+# appropriate graph and partition object at initialization. We always expect 
+# the workflow to be something like
+#
+#     Graph -> Partition -> MarkovChain
+#
+# But we do copy operations in each step, so I wouldn't expect any weird 
+# side-effects from pushing the determination of what graph type to use 
+# off onto the MarkovChain class
+
 # frm: used in this file and in tree_proposals.py
 #       But maybe this is intended to be used externally...
 #
+
 def bipartition_tree(
     subgraph_to_split: Graph,        # frm: Original code:    graph: nx.Graph,
     pop_col: str,
@@ -1898,7 +1956,7 @@ def get_max_prime_factor_less_than(n: int, ceil: int) -> Optional[int]:
 
 # frm: only used in this file
 #       But maybe this is intended to be used externally...
-# frm TODO:  RX version NYI...
+# frm TODO:  Peter says this is only ever used internally, so we can add underscore to the name
 def recursive_seed_part_inner(
     graph: Graph,           # frm: Original code:    graph: nx.Graph,
     num_dists: int,

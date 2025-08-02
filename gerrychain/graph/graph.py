@@ -287,10 +287,6 @@ class Graph:
         if self.is_nx_graph():
             rx_graph = rustworkx.networkx_converter(self._nx_graph, keep_attributes=True)
 
-            nx_edges = set(self._nx_graph.edges)
-            rx_edges = set(rx_graph.edge_list())
-            set(self._nx_graph.edges)
-
             converted_graph = Graph.from_rustworkx(rx_graph)
 
             # Create a mapping from the old NX node_ids to the new RX node_ids (created by
@@ -317,6 +313,12 @@ class Graph:
     @classmethod
     def from_json(cls, json_file: str) -> "Graph":
         # frm TODO:  Do we want to be able to go from JSON directly to RX?
+        #
+        # Peter said that this is not a priority - that we only need RX after
+        # creating a partition, but maybe in the future if we decide to 
+        # encourage an all RX world...
+        #
+
         with open(json_file) as f:
             data = json.load(f)
         # frm: A bit of Python magic - an adjacency graph is a dict of dict of dicts
@@ -410,6 +412,21 @@ class Graph:
         #               lost.
         #
         #               So - need to figure out what CRS is used for...
+        #
+        # Peter commented on this in a PR comment:
+        # 
+        # CRS stands for "Coordinate Reference System" which can be thought of 
+        # as the projection system used for the polygons contained in the 
+        # geodataframe. While it is not used in any of the graph operations of 
+        # GerryChain, it may be used in things like validators and updaters. Since 
+        # the CRS determines the projection system used by the underlying 
+        # geodataframe, any area or perimeter computations encoded on the graph 
+        # are stored with the understanding that those values may inherit 
+        # distortions from projection used. We keep this around as metadata so 
+        # that, in the event that the original geodataframe source is lost, 
+        # the graph metadata still carries enough information for us to sanity 
+        # check the area and perimeter computations if we get weird numbers.
+
 
         # Store CRS data as an attribute of the NX graph
         graph._nx_graph.graph["crs"] = df.crs.to_json()
@@ -511,6 +528,23 @@ class Graph:
         #               the RX version of a Graph - which essentially means that I need to grok
         #               how plot() works and where it gets its information and how existing 
         #               users use it...
+        #
+        # There is a test failure due to geometry not being available after conversion to RX.
+        #
+        # Here is what Peter said in the PR:
+        #
+        # The geometry attribute on df is a special attribute that only appears on 
+        # geodataframes. This is just a list of polygons representing some real-life 
+        # geometries underneath a certain projection system (CRS). These polygons can 
+        # then be fed to matplotilb to make nice plots of things, or they can be used 
+        # to compute things like area and perimeter for use in updaters and validators 
+        # that employ some sort of Reock score (uncommon, but unfortunately necessary in 
+        # some jurisdictions). We probably don't need to store this as an attribute on 
+        # the Graph._nxgraph object (or the Graph._rxgraph) object, however. In fact, it 
+        # might be best to just make a Graph.dataframe attribute to store all of the 
+        # graph data on, and add attributes to _nxgraph and _rxgraph nodes as needed
+        # 
+
         nx_graph.geometry = df.geometry
 
         # frm: TODO:  Rethink the name of add_boundary_perimeters - it acts on an nx_graph
@@ -519,6 +553,9 @@ class Graph:
         #
         #               It raises the question of whether there should be an nx_utilities 
         #               module for stuff designed to only work on nx_graph objects.
+        #
+        # Note that Peter said: "I like this idea" 
+        #
 
         # Add "exterior" perimeters to the boundary nodes
         add_boundary_perimeters(nx_graph, df.geometry)
@@ -560,6 +597,18 @@ class Graph:
         # It is left because a couple of other files use it (versioneer.py, 
         # county_splits.py, and tally.py) and because perhaps an end user also
         # uses it.  Leaving it does not significant harm - it is just code bloat...
+
+        # frm: TODO: Remove this routine: def lookup()  => in FrozenGraph too
+        #
+        # As per Peter's PR comment:
+        #
+        # Yeah, I will get rid of this in the future. This is very old code 
+        # that someone probably wrote to make their life easier in the early 
+        # stages of the package, but it's not really useful. I am going to be 
+        # changing all of the old setup and versioning systems over to use UV 
+        # anyway, and county_splits.py and tally.py are easy changes
+        #
+
         return self.node_data(node, field)
 
     @property
@@ -878,6 +927,11 @@ class Graph:
         #
         #       For now, I am just going to return None if __name is "_nx_graph" or "_rx_graph".
         # 
+        # Peter's comments from PR:
+        #
+        # Oh interesting; good catch! The flag approach seems like a good solution to me. 
+        # It's very, very rare to use the default constructor, so I don't imagine that 
+        # people will really run into this.
 
         # frm: TODO: Fix this hack - see comment above...
         if (__name == "_nx_graph") or (__name == "_rx_graph"):

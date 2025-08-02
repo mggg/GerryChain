@@ -33,10 +33,65 @@ def random_assignment(graph, num_districts):
 def partition_with_election(graph_with_d_and_r_cols):
     graph = graph_with_d_and_r_cols
     assignment = random_assignment(graph, 3)
+    """
+    # frm: TODO:  NX vs RX Issue here - node_ids in parties_to_columns are in NX context...
+    
+    This is an "interesting" issue - mostly meaning it is a PITA.
+
+    The Election class allows you to specify what you want to tally as either a node
+    attribute or with an explicit external mapping of node_ids to values to be added.
+
+    The problem is that if you pass in an explicit external mapping, you are almost
+    certainly using node_ids that are the "original" NX node_ids which will NOT be
+    the same as the new RX node_ids assigned when a partition is created.
+
+    Note that if you just pass in an attribute name to get the data off the node
+    then there is no problem - the Tally code just uses the partition's part (district)
+    and nodes in the part (district) information.  No translation to/from original
+    node_ids necessary.
+
+    One approach to fixing this would be to just assume that any explicit mapping
+    should have the node_ids remapped after the partition is created.  This could
+    be done by having the Election class defer doing the tally until AFTER the 
+    partition has been created - the code would check to see if the tally exists,
+    and if it does not, then it would use the partition's information to 
+    translate the parties_to_columns data to use internal node_ids and compute
+    the initial tally.  After that, subsequent tallies for the next partition in
+    the chain should just work...
+
+    I am just not sure it is worth the extra complexity to continue to support
+    an explicit external mapping of node_ids to vote totals...
+
+    Need to ask Peter what he thinks we should do.  Do external / legacy users
+    use this???
+    
+    """
+    #
+    # This is a royal pain, because we do not yet have a partition that tells us how 
+    # to map these "original" node_ids into "internal" node_ids.  
+    #
+    # Even worse, this is a conceptual problem, since this use case - setting up an
+    # Election before creating a partition is perhaps a common use case, so we don't
+    # want to make it complicated for users.
+    #
+    # Need to think about what the proper solution is.  Should the Election updater
+    # translate from "original" node_ids to "internal" node_ids - perhaps keeping a 
+    # cache of the mapping to make it more efficient?
+    #
+    # What would the migration path be for 1) legacy NX users and 2) future RX users?
+    #
+
     parties_to_columns = {
         "D": {node: graph.node_data(node)["D"] for node in graph.nodes},
         "R": {node: graph.node_data(node)["R"] for node in graph.nodes},
     }
+
+    # frm: TODO: Remove debugging code:
+
+    print(f"partition_with_election(): parties_to_columns dict follows:")
+    for k,v in parties_to_columns.items():
+        print(f"  parties_to_columns: key: {k}, has values: {v}") 
+
     election = Election("Mock Election", parties_to_columns)
     updaters = {"Mock Election": election, "cut_edges": cut_edges}
     return Partition(graph, assignment, updaters)
@@ -115,6 +170,10 @@ def test_vote_proportion_updater_returns_percentage_or_nan(partition_with_electi
 
 
 def test_vote_proportion_returns_nan_if_total_votes_is_zero(three_by_three_grid):
+
+    # frm: TODO: Remove debugging code:
+    print(f"test_vote_proportion_returns_nan_if_total_votes_is_zero: Entering")
+
     election = Election("Mock Election", ["D", "R"], alias="election")
     graph = three_by_three_grid
 
@@ -388,6 +447,18 @@ AssertionError: assert {'D': {0: 119...2268, 2: 162}} == {'D': {0: 119...: 2430,
   {'R': {0: 1171, 1: 2268, 2: 162}} != {'R': {0: 1171, 1: 2430, 2: 0}}
 
     """
+
+    # frm: TODO: Remove debugging code:
+
+    print(f"test_elections_match... partition_with_election: Entering...")
+
+    this_graph = partition_with_election.graph
+    print(f"test_elections_match... partition_with_election: {partition_with_election}")
+    print(f"test_elections_match... partition_with_election: Should be 3x3 grid with nodes R and D")
+    print(f"\ntest_elections_match... data for nodes:")
+    for this_node_id in this_graph.node_indices:
+        print(f"    node_id: {this_node_id} R: is: {this_graph.node_data(this_node_id)['R']}")
+        print(f"    node_id: {this_node_id} D: is: {this_graph.node_data(this_node_id)['D']}")
 
     chain = MarkovChain(
         propose_random_flip,
