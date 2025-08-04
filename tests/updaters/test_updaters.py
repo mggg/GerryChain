@@ -86,12 +86,6 @@ def partition_with_election(graph_with_d_and_r_cols):
         "R": {node: graph.node_data(node)["R"] for node in graph.nodes},
     }
 
-    # frm: TODO: Remove debugging code:
-
-    print(f"partition_with_election(): parties_to_columns dict follows:")
-    for k,v in parties_to_columns.items():
-        print(f"  parties_to_columns: key: {k}, has values: {v}") 
-
     election = Election("Mock Election", parties_to_columns)
     updaters = {"Mock Election": election, "cut_edges": cut_edges}
     return Partition(graph, assignment, updaters)
@@ -170,9 +164,6 @@ def test_vote_proportion_updater_returns_percentage_or_nan(partition_with_electi
 
 
 def test_vote_proportion_returns_nan_if_total_votes_is_zero(three_by_three_grid):
-
-    # frm: TODO: Remove debugging code:
-    print(f"test_vote_proportion_returns_nan_if_total_votes_is_zero: Entering")
 
     election = Election("Mock Election", ["D", "R"], alias="election")
     graph = three_by_three_grid
@@ -447,18 +438,6 @@ AssertionError: assert {'D': {0: 119...2268, 2: 162}} == {'D': {0: 119...: 2430,
   {'R': {0: 1171, 1: 2268, 2: 162}} != {'R': {0: 1171, 1: 2430, 2: 0}}
 
     """
-
-    # frm: TODO: Remove debugging code:
-
-    print(f"test_elections_match... partition_with_election: Entering...")
-
-    this_graph = partition_with_election.graph
-    print(f"test_elections_match... partition_with_election: {partition_with_election}")
-    print(f"test_elections_match... partition_with_election: Should be 3x3 grid with nodes R and D")
-    print(f"\ntest_elections_match... data for nodes:")
-    for this_node_id in this_graph.node_indices:
-        print(f"    node_id: {this_node_id} R: is: {this_graph.node_data(this_node_id)['R']}")
-        print(f"    node_id: {this_node_id} D: is: {this_graph.node_data(this_node_id)['D']}")
 
     chain = MarkovChain(
         propose_random_flip,

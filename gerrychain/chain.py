@@ -178,9 +178,6 @@ class MarkovChain:
 
         :raises StopIteration: If the total number of steps has been reached.
         """
-        # frm: TODO: Remove debugging code:
-        print(f"MarkovChain: __next__(): doing another chain iteration...")
-
         if self.counter == 0:
             self.counter += 1
             return self.state

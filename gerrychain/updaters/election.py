@@ -106,13 +106,6 @@ class Election:
             for party in self.parties
         }
 
-        # frm: TODO: Remove debugging code
-        print(f"Election.__init__(): parties_to_columns: {self.parties_to_columns}")
-        print(f"Election.__init__(): tallies to follow:")
-        for k,v in self.tallies.items():
-            print(f"    Election.__init__(): tallies: key: {k} has value: {v}")
-        print(f"Election.__init__(): about to create ElectionUpdater()")
-
         self.updater = ElectionUpdater(self)
 
     def _initialize_self(self, partition):
@@ -126,7 +119,7 @@ class Election:
         Note that the fact that node_ids have changed is hidden by the fact that 
         """
 
-        # frm: TODO:  Remove debugging code:
+        # frm: TODO:  Clean this up...
         #
         # This is a mess - I am going to reset to the original code and make
         # 100% sure I grok what is happening...
@@ -140,22 +133,12 @@ class Election:
         Then just use the code from before, but with new node_ids 
         """
 
-        print(f"Election._initialize_self()): Entering...")
-        print(f"Election._initialize_self()): parties_to_columns follows: ")
-        for k,v in self.parties_to_columns.items():
-            print(f"  parties_to_columns: key: {k}, has value: {v}")
-        print(f"Election._initialize_self()): self.parties = {self.parties}")
-        print(f"Election._initialize_self()): self.columns = {self.columns}")
-
         # Compute totals for each "party" => dict of form: {part: sum} 
         # where "part" is a district in partition 
         self.tallies = {
             party: DataTally(self.parties_to_columns[party], party)
             for party in self.parties
         }
-        print(f"Election._initialize_self()): tallies follow:")
-        for k,v in self.tallies.items():
-            print(f"  party: {k}, has tally: {v}")
 
     def __str__(self):
         return "Election '{}' with vote totals for parties {} from columns {}.".format(

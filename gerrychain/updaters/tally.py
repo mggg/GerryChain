@@ -65,10 +65,6 @@ class DataTally:
             #
             #   => What other code uses Tally?
 
-            # frm: TODO:  Remove debugging code:
-            
-            print(f"DataTally: initialize_tally(): entering")
-
             if isinstance(self.data, str):
 
                 # frm: Original Code:
@@ -80,9 +76,6 @@ class DataTally:
                 attribute = self.data
                 self.data = {node_id: graph.node_data(node_id)[attribute] for node_id in node_ids}
             
-            for k,v in self.data.items():
-                print(f"DataTally: initialize_tally(): data key: {k} has value: {v}")
-
             tally = collections.defaultdict(int)
             for node_id, part in partition.assignment.items():
                 add = self.data[node_id]
@@ -97,11 +90,6 @@ class DataTally:
                     )
                 else:
                     tally[part] += add
-
-            print(f"DataTally: initialize_tally(): After computing tally, results:")
-            for k,v in tally.items():
-                print(f"  tally key: {k} has value: {v}")
-            print(f"DataTally: initialize_tally(): Returning tally")
 
             return dict(tally)
 
@@ -214,10 +202,6 @@ class Tally:
             out_flow = compute_out_flow(graph, self.fields, flow)
             in_flow = compute_in_flow(graph, self.fields, flow)
             new_tally[part] = old_tally[part] - out_flow + in_flow
-
-        print("_update_tally(): new_tally follows...")
-        for k,v in new_tally.items():
-            print("  _update_tally(): key: {k} has value: {v}")
 
         return new_tally
 
