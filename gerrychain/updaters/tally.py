@@ -35,23 +35,62 @@ class DataTally:
         self.alias = alias
 
         def initialize_tally(partition):
+
+            # If the "data" passed in was a string, then interpret that string
+            # as the name of a node attribute in the graph, and construct
+            # a dict of the form: {node_id: node_attribution_value}
+            #
+            # If not, then assume that the "data" passed in is already of the
+            # form: {node_id: data_value}
+
+            # frm: TODO: Verify that if the "data" passed in is not a string that it
+            #               is of the form: {node_id, data_value}
+
+            # frm: TODO: If self.data is a dict: {node: votes} then check if original node_ids
+            #
+            # This came up with Election udpaters - if you specify the data in an explicit
+            # dict of {node: votes}, then things get screwed up because at the time you create
+            # the Election object, the partition has not yet been created, so the node_ids are
+            # original node_ids which are not appropriate after the partition has been created
+            # and the new RX graph has new node_ids.
+            #
+            # In the Election updater case, the fix would be to delay the initial tally to 
+            # happen AFTER the partition is created and to at some point before doing the
+            # initial tally, translate the original node_ids to be internal RX node_ids.
+            #
+            # However, I am wondering if this problem is a general problem with tallies
+            # made by other updaters.  Stated differently, is it safe to assume that an
+            # explicit dict of {node_id: votes} is ALWAYS done with original node_ids in all
+            # cases of the use of tallies?
+            #
+            #   => What other code uses Tally?
+
             if isinstance(self.data, str):
-                nodes = partition.graph.nodes
+
+                # frm: Original Code:
+                #    nodes = partition.graph.nodes
+                #    attribute = self.data
+                #    self.data = {node: nodes[node][attribute] for node in nodes}
+                graph = partition.graph
+                node_ids = partition.graph.node_indices
                 attribute = self.data
-                self.data = {node: nodes[node][attribute] for node in nodes}
-
+                self.data = {node_id: graph.node_data(node_id)[attribute] for node_id in node_ids}
+            
             tally = collections.defaultdict(int)
-            for node, part in partition.assignment.items():
-                add = self.data[node]
+            for node_id, part in partition.assignment.items():
+                add = self.data[node_id]
 
+                # frm: TODO:  Should I also test that the "add" variable is a number or something
+                #               that can be added?
                 if math.isnan(add):
                     warnings.warn(
-                        "ignoring nan encountered at node '{}' for attribute '{}'".format(
-                            node, self.alias
+                        "ignoring nan encountered at node_id '{}' for attribute '{}'".format(
+                            node_id, self.alias
                         )
                     )
                 else:
                     tally[part] += add
+
             return dict(tally)
 
         @on_flow(initialize_tally, alias=alias)

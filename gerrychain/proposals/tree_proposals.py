@@ -7,14 +7,14 @@ from ..tree import (
     epsilon_tree_bipartition,
     bipartition_tree,
     bipartition_tree_random,
-    _bipartition_tree_random_all,
+    bipartition_tree_random_with_num_cuts,
     uniform_spanning_tree,
     find_balanced_edge_cuts_memoization,
     ReselectException,
 )
 from typing import Callable, Optional, Dict, Union
 
-
+# frm: only used in this file
 class MetagraphError(Exception):
     """
     Raised when the partition we are trying to split is a low degree
@@ -24,6 +24,7 @@ class MetagraphError(Exception):
     pass
 
 
+# frm: only used in this file
 class ValueWarning(UserWarning):
     """
     Raised whe a particular value is technically valid, but may
@@ -89,6 +90,7 @@ def recom(
     :type method: Callable, optional
 
     :returns: The new partition resulting from the ReCom algorithm.
+        print("bipartition_tree: updating restarts and attempts")
     :rtype: Partition
     """
 
@@ -99,9 +101,14 @@ def recom(
     # Try to add the region aware in if the method accepts the surcharge dictionary
     if "region_surcharge" in signature(method).parameters:
         method = partial(method, region_surcharge=region_surcharge)
-
+ 
     while len(bad_district_pairs) < tot_pairs:
+        # frm: In no particular order, try to merge and then split pairs of districts
+        #       that have a cut_edge - meaning that they are adjacent, until you either
+        #       find one that can be split, or you have tried all possible pairs
+        #       of adjacent districts...
         try:
+            # frm: TODO:  see if there is some way to avoid a while True loop...
             while True:
                 edge = random.choice(tuple(partition["cut_edges"]))
                 # Need to sort the tuple so that the order is consistent
@@ -115,12 +122,11 @@ def recom(
                 if tuple(parts_to_merge) not in bad_district_pairs:
                     break
 
-            subgraph = partition.graph.subgraph(
-                partition.parts[parts_to_merge[0]] | partition.parts[parts_to_merge[1]]
-            )
+            # frm: Note that the vertical bar operator merges the two sets into one set.
+            subgraph_nodes = partition.parts[parts_to_merge[0]] | partition.parts[parts_to_merge[1]]
 
             flips = epsilon_tree_bipartition(
-                subgraph.graph,
+                partition.graph.subgraph(subgraph_nodes),
                 parts_to_merge,
                 pop_col=pop_col,
                 pop_target=pop_target,
@@ -132,6 +138,7 @@ def recom(
 
         except Exception as e:
             if isinstance(e, ReselectException):
+                # frm: Add this pair to list of pairs that did not work...
                 bad_district_pairs.add(tuple(parts_to_merge))
                 continue
             else:
@@ -176,6 +183,7 @@ def reversible_recom(
     :param balance_edge_fn: The balance edge function. Default is
         find_balanced_edge_cuts_memoization.
     :type balance_edge_fn: Callable, optional
+        frm: it returns a list of Cuts - a named tuple defined in tree.py
     :param M: The maximum number of balance edges. Default is 1.
     :type M: int, optional
     :param repeat_until_valid: Flag indicating whether to repeat until a valid partition is
@@ -189,8 +197,11 @@ def reversible_recom(
     """
 
     def dist_pair_edges(part, a, b):
+        # frm: Find all edges that cross from district a into district b
         return set(
             e
+            # frm: TODO: edges vs. edge_ids:  edges are wanted here (tuples)
+            # frm: Original Code:    for e in part.graph.edges
             for e in part.graph.edges
             if (
                 (
@@ -212,8 +223,29 @@ def reversible_recom(
             )
         return cuts
 
+    """
+    frm: Original Code:
+
     bipartition_tree_random_reversible = partial(
         _bipartition_tree_random_all,
+        repeat_until_valid=repeat_until_valid,
+        spanning_tree_fn=uniform_spanning_tree,
+        balance_edge_fn=bounded_balance_edge_fn,
+    )
+    
+    I deemed this code to be evil, if only because it used an internal tree.py routine
+    _bipartition_tree_random_all().  This internal routine returns a set of Cut objects
+    which otherwise never appear outside tree.py, so this just adds complexity.
+
+    The only reason the original code used _bipartition_tree_random_all() instead of just
+    using bipartition_tree_random() is that it needs to know how many possible new
+    districts there are.  So, I created a new function in tree.py that does EXACTLY
+    what bipartition_tree_random() does but which also returns the number of possible
+    new districts.
+
+    """
+    bipartition_tree_random_reversible = partial(
+        bipartition_tree_random_with_num_cuts,
         repeat_until_valid=repeat_until_valid,
         spanning_tree_fn=uniform_spanning_tree,
         balance_edge_fn=bounded_balance_edge_fn,
@@ -224,29 +256,73 @@ def reversible_recom(
     for out_part in parts:
         for in_part in parts:
             dist_pairs.append((out_part, in_part))
+            # frm: TODO:  Grok why this code considers pairs that are the same part...
+            #
+            # For instance, if there are only two parts (districts), then this code will 
+            # produce four pairs: (0,0), (0,1), (1,0), (1,1).  The code below tests
+            # to see if there is any adjacency, but there will never be adjacency between
+            # the same part (district).  Why not just prune out all pairs that have the
+            # same two values and save an interation of the entire chain?
+            #
+            # Stated differently, is there any value in doing an entire chain iteration
+            # when we randomly select the same part (district) to merge with itself???
+            # 
+            # A similar issue comes up if there are no pair_edges (below).  We waste
+            # an entire iteration in that case too - which seems kind of dumb...
+            # 
 
     random_pair = random.choice(dist_pairs)
     pair_edges = dist_pair_edges(partition, *random_pair)
     if random_pair[0] == random_pair[1] or not pair_edges:
         return partition  # self-loop: no adjacency
 
+    # frm: TODO:  Grok why it is OK to return the partition unchanged as the next step.
+    #
+    # This runs the risk of running an entire chain without ever changing the partition.
+    # I assume that the logic is that there is deliberate randomness introduced each time,
+    # so eventually, if it is possible, the chain will get started, but it seems like there
+    # should be some kind of check to see if it doesn't ever get started, so that the 
+    # user can have a clue about what is going on...
+
     edge = random.choice(list(pair_edges))
     parts_to_merge = (
         partition.assignment.mapping[edge[0]],
         partition.assignment.mapping[edge[1]],
     )
-    subgraph = partition.graph.subgraph(
-        partition.parts[parts_to_merge[0]] | partition.parts[parts_to_merge[1]]
-    )
+    # Remember node_ids from which subgraph was created - we will need them below
+    subgraph_nodes = partition.parts[parts_to_merge[0]] | partition.parts[parts_to_merge[1]]
 
-    all_cuts = bipartition_tree_random_reversible(
-        subgraph, pop_col=pop_col, pop_target=pop_target, epsilon=epsilon
+    # frm: Note: This code has changed to make sure we don't access subgraph node_ids.
+    #               The former code saved the subgraph and used its nodes to compute
+    #               the remaining_nodes, but this doesn't work with RX, because the 
+    #               node_ids for the subgraph are different from those in the parent graph.
+    #               The solution is to just remember the parent node_ids that were used
+    #               to create the subgraph, and to move the subgraph call in as an actual
+    #               parameter, so that after the call there is no way to reference it.
+    #
+    #               Going forward, this should be a coding style - only invoke Graph.subgraph()
+    #               as an actual parameter so that there is no way to inadvertently access
+    #               the subgraph's node_ids afterwards.
+    #
+    
+    # frm: TODO:  Clean up the code below - I munged it for debugging ...
+    
+    # frm: Original Code:
+    #    num_possible_districts, nodes = bipartition_tree_random_reversible(
+    #        partition.graph.subgraph(subgraph_nodes),
+    #        pop_col=pop_col, pop_target=pop_target, epsilon=epsilon
+    #    )
+    result = bipartition_tree_random_reversible(
+        partition.graph.subgraph(subgraph_nodes),
+        pop_col=pop_col, pop_target=pop_target, epsilon=epsilon
     )
-    if not all_cuts:
+    if not result:
         return partition  # self-loop: no balance edge
 
-    nodes = choice(all_cuts).subset
-    remaining_nodes = set(subgraph.nodes()) - set(nodes)
+    num_possible_districts, nodes = result
+
+    remaining_nodes = subgraph_nodes - set(nodes)
+    # frm: Notes to Self:  the ** operator below merges the two dicts into a single dict.
     flips = {
         **{node: parts_to_merge[0] for node in nodes},
         **{node: parts_to_merge[1] for node in remaining_nodes},
@@ -255,7 +331,7 @@ def reversible_recom(
     new_part = partition.flip(flips)
     seam_length = len(dist_pair_edges(new_part, *random_pair))
 
-    prob = len(all_cuts) / (M * seam_length)
+    prob = num_possible_districts / (M * seam_length)
     if prob > 1:
         raise ReversibilityError(
             f"Found {len(all_cuts)} balance edges, but "
@@ -267,6 +343,24 @@ def reversible_recom(
     return partition  # self-loop
 
 
+# frm TODO:  I do not think that ReCom() is ever called.  Note that it 
+#           only defines a constructor and a __call__() which would allow
+#           you to call the recom() function by creating a ReCom object and then 
+#           "calling" that object - why not just call the recom function?
+#
+#           ...confused...
+#
+#           My guess is that someone started writing this code thinking that 
+#           a class would make sense but then realized that the only use 
+#           was to call the recom() function but never went back to remove
+#           the class.  In short, I think that we should probably remove the
+#           class and just keep the function...
+#
+# What Peter said in a PR:
+#
+# Another bit of legacy code. I am also not sure why this exists. Seems like 
+# there were plans for this and then it got dropped when someone graduated
+#
 class ReCom:
     """
     ReCom (short for ReCombination) is a class that represents a ReCom proposal

@@ -501,6 +501,7 @@ def test_single_metric_sb_finds_hard_max(four_by_five_grid_for_opt):
     ):
         max_scores_sb[i] = optimizer.best_score
 
+    # frm: TODO:  stmt below fails with 1.0 != 2
     assert np.max(max_scores_sb) == 2
 
 
@@ -550,6 +551,7 @@ def test_single_metric_sa_finds_hard_max(four_by_five_grid_for_opt):
     ):
         max_scores_anneal[i] = optimizer.best_score
 
+    # frm: TODO: stmt below fails.
     assert np.max(max_scores_anneal) == 2
 
 

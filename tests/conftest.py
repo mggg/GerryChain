@@ -15,8 +15,8 @@ def three_by_three_grid():
     3 4 5
     6 7 8
     """
-    graph = Graph()
-    graph.add_edges_from(
+    nx_graph = nx.Graph()
+    nx_graph.add_edges_from(
         [
             (0, 1),
             (0, 3),
@@ -32,8 +32,7 @@ def three_by_three_grid():
             (7, 8),
         ]
     )
-    return graph
-
+    return Graph.from_networkx(nx_graph)
 
 @pytest.fixture
 def four_by_five_grid_for_opt():
@@ -47,8 +46,8 @@ def four_by_five_grid_for_opt():
     #  5  6  7  8  9
     #  0  1  2  3  4
 
-    graph = Graph()
-    graph.add_nodes_from(
+    nx_graph = nx.Graph()
+    nx_graph.add_nodes_from(
         [
             (0, {"population": 10, "opt_value": 1, "MVAP": 2}),
             (1, {"population": 10, "opt_value": 1, "MVAP": 2}),
@@ -73,7 +72,7 @@ def four_by_five_grid_for_opt():
         ]
     )
 
-    graph.add_edges_from(
+    nx_graph.add_edges_from(
         [
             (0, 1),
             (0, 5),
@@ -109,26 +108,36 @@ def four_by_five_grid_for_opt():
         ]
     )
 
-    return graph
+    return Graph.from_networkx(nx_graph)
 
 
 @pytest.fixture
 def graph_with_random_data_factory(three_by_three_grid):
+
     def factory(columns):
         graph = three_by_three_grid
         attach_random_data(graph, columns)
         return graph
 
+    # A closure - will add random data (int) to all nodes for each named "column"
     return factory
 
 
+# frm: TODO:  This routine is only ever used immediately above in def factory(columns).
+#               Is it part of the external API?  If not, then it should be moved inside
+#               the graph_with_random_data_factory() routine
 def attach_random_data(graph, columns):
     for node in graph.nodes:
         for col in columns:
-            graph.nodes[node][col] = random.randint(1, 1000)
+            # frm: Original code:  graph.nodes[node][col] = random.randint(1, 1000)
+            graph.node_data(node)[col] = random.randint(1, 1000)
 
 
 @pytest.fixture
+# frm: ???:  Why not just always use three_by_three_grid?  At least that gives
+#               the reader an idea of how many nodes there are?  What is the
+#               value of just having a generic "graph" test fixture???
+#
 def graph(three_by_three_grid):
     return three_by_three_grid
 

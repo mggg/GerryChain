@@ -1,3 +1,12 @@
+################################################################
+#
+# frm: This file was copied from test_make_graph.py (to make
+#      use of their fixtures.  It should eventually evolve into
+#      a reasonable test of additional functions added by me
+#      to gerrychain.graph
+#       
+################################################################
+
 import pathlib
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
@@ -8,13 +17,10 @@ import pytest
 from shapely.geometry import Polygon
 from pyproj import CRS
 
-import networkx
-
 from gerrychain.graph import Graph
 from gerrychain.graph.geo import GeometryError
 
-# frm: added following import
-# from gerrychain.graph import node_data
+import networkx
 
 
 @pytest.fixture
@@ -70,27 +76,17 @@ def target_file():
 
 
 def test_add_data_to_graph_can_handle_column_names_that_start_with_numbers():
-    
-    # frm: Test has been modified to work with new Graph object that has an NetworkX.Graph
-    #           object embedded inside it.  I am not sure if this test actually tests
-    #           anything useful anymore...
-
     nx_graph = networkx.Graph([("01", "02"), ("02", "03"), ("03", "01")])
     df = pandas.DataFrame({"16SenDVote": [20, 30, 50], "node": ["01", "02", "03"]})
     df = df.set_index("node")
 
-    # frm: Note that the new Graph does not support add_data() 
-
     graph = Graph.from_networkx(nx_graph)
-
     graph.add_data(df, ["16SenDVote"])
 
-    # Test that the embedded nx_graph object has the added data
     assert nx_graph.nodes["01"]["16SenDVote"] == 20
     assert nx_graph.nodes["02"]["16SenDVote"] == 30
     assert nx_graph.nodes["03"]["16SenDVote"] == 50
 
-    # Test that the graph object has the added data
     assert graph.node_data("01")["16SenDVote"] == 20
     assert graph.node_data("02")["16SenDVote"] == 30
     assert graph.node_data("03")["16SenDVote"] == 50
@@ -107,6 +103,7 @@ def test_join_can_handle_right_index():
     assert graph.node_data("01")["16SenDVote"] == 20
     assert graph.node_data("02")["16SenDVote"] == 30
     assert graph.node_data("03")["16SenDVote"] == 50
+
 
 def test_make_graph_from_dataframe_creates_graph(geodataframe):
     graph = Graph.from_geodataframe(geodataframe)
@@ -209,38 +206,49 @@ def edge_set_equal(set1, set2):
 def test_from_file_adds_all_data_by_default(shapefile):
     graph = Graph.from_file(shapefile)
 
-    nx_graph = graph.get_nx_graph()
+    # frm: Original Code:
+    #           Get all of the data dictionaries for each node and verify that each
+    #           of them contains data with the key "data" and "data2"
+    #
+    #    assert all("data" in node_data for node_data in graph.nodes.values())
+    #    assert all("data2" in node_data for node_data in graph.nodes.values())
 
-    assert all("data" in node_data for node_data in nx_graph.nodes.values())
-    assert all("data2" in node_data for node_data in nx_graph.nodes.values())
+    # data dictionaries for all of the nodes
+    all_node_data = [graph.node_data(node_id) for node_id in graph.node_indices]
+
+    assert all("data" in node_data for node_data in all_node_data)
+    assert all("data2" in node_data for node_data in all_node_data)
 
 
 def test_from_file_and_then_to_json_does_not_error(shapefile, target_file):
     graph = Graph.from_file(shapefile)
 
-    nx_graph = graph.get_nx_graph()
-
     # Even the geometry column is copied to the graph
-    assert all("geometry" in node_data for node_data in nx_graph.nodes.values())
+
+    # data dictionaries for all of the nodes
+    all_node_data = [graph.node_data(node_id) for node_id in graph.node_indices]
+
+    assert all("geometry" in node_data for node_data in all_node_data)
 
     graph.to_json(target_file)
 
 
 def test_from_file_and_then_to_json_with_geometries(shapefile, target_file):
     graph = Graph.from_file(shapefile)
-    
-    nx_graph = graph.get_nx_graph()
+
+    # data dictionaries for all of the nodes
+    all_node_data = [graph.node_data(node_id) for node_id in graph.node_indices]
 
     # Even the geometry column is copied to the graph
-    assert all("geometry" in node_data for node_data in nx_graph.nodes.values())
+    assert all("geometry" in node_data for node_data in all_node_data)
 
+    # frm: ???  Does anything check that the file is actually written? 
     graph.to_json(target_file, include_geometries_as_geojson=True)
 
 
 def test_graph_warns_for_islands():
     nx_graph = networkx.Graph()
     nx_graph.add_node(0)
-
     graph = Graph.from_networkx(nx_graph)
 
     with pytest.warns(Warning):
@@ -285,3 +293,6 @@ def test_make_graph_from_shapefile_has_crs(shapefile):
     graph = Graph.from_file(shapefile)
     df = gp.read_file(shapefile)
     assert CRS.from_json(graph.graph["crs"]).equals(df.crs)
+
+
+

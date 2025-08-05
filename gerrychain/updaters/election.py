@@ -108,6 +108,38 @@ class Election:
 
         self.updater = ElectionUpdater(self)
 
+    def _initialize_self(self, partition):
+        """
+        Because node_ids are changed when converting from NX to RX based graphs when
+        we create a partition, we need to delay initialization of internal data members
+        that depend on node_ids until AFTER the partition has been created.  That is 
+        because we don't know how to map original node_ids to internal node_ids until
+        the partition is created.
+
+        Note that the fact that node_ids have changed is hidden by the fact that 
+        """
+
+        # frm: TODO:  Clean this up...
+        #
+        # This is a mess - I am going to reset to the original code and make
+        # 100% sure I grok what is happening...
+
+        """
+        Convert _original_parties_to_columns to use internal_ids
+
+        internal_parties_to_columns = ??? translate original node_ids...
+           ??? handle the case when instead of a dict it is a list
+
+        Then just use the code from before, but with new node_ids 
+        """
+
+        # Compute totals for each "party" => dict of form: {part: sum} 
+        # where "part" is a district in partition 
+        self.tallies = {
+            party: DataTally(self.parties_to_columns[party], party)
+            for party in self.parties
+        }
+
     def __str__(self):
         return "Election '{}' with vote totals for parties {} from columns {}.".format(
             self.name, str(self.parties), str(self.columns)
@@ -167,6 +199,10 @@ class ElectionUpdater:
         return previous_totals_for_party
 
 
+# frm: TODO:  This routine, get_percents(), is only ever used inside ElectionResults.
+#
+#               Why is it not defined as an internal function inside ElectionResults?
+#
 def get_percents(counts: Dict, totals: Dict) -> Dict:
     """
     :param counts: A dictionary mapping each part in a partition to the

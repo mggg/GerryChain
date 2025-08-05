@@ -12,6 +12,13 @@ from gerrychain.updaters import cut_edges
 
 
 def test_Partition_can_be_flipped(example_partition):
+    # frm: TODO:  Verify that this flip is in internal RX-based graph node_ids and not "original" NX node_ids
+    #
+    # My guess is that this flip is intended to be in original node_ids but that the test works
+    # anyways because the assertion uses the same numbers.  It should probably be changed to use
+    # original node_ids and to translate the node_id and part in the assert into internal node_ids
+    # just to make it crystal clear to anyone following later what is going on...
+
     flip = {1: 2}
     new_partition = example_partition.flip(flip)
     assert new_partition.assignment[1] == 2
@@ -45,6 +52,9 @@ def test_Partition_knows_cut_edges_K3(example_partition):
 
 def test_propose_random_flip_proposes_a_partition(example_partition):
     partition = example_partition
+
+    # frm: TODO:  Verify that propose_random_flip() to make sure it is doing the right thing
+    #               wrt RX-based node_ids vs. original node_ids.
     proposal = propose_random_flip(partition)
     assert isinstance(proposal, partition.__class__)
 
@@ -54,10 +64,10 @@ def example_geographic_partition():
     graph = Graph.from_networkx(networkx.complete_graph(3))
     assignment = {0: 1, 1: 1, 2: 2}
     for node in graph.nodes:
-        graph.nodes[node]["boundary_node"] = False
-        graph.nodes[node]["area"] = 1
+        graph.node_data(node)["boundary_node"] = False
+        graph.node_data(node)["area"] = 1
     for edge in graph.edges:
-        graph.edges[edge]["shared_perim"] = 1
+        graph.edge_data(edge)["shared_perim"] = 1
     return GeographicPartition(graph, assignment, None, None, None)
 
 
@@ -69,15 +79,32 @@ def test_geographic_partition_can_be_instantiated(example_geographic_partition):
 def test_Partition_parts_is_a_dictionary_of_parts_to_nodes(example_partition):
     partition = example_partition
     flip = {1: 2}
-    new_partition = partition.flip(flip)
+    new_partition = partition.flip(flip, use_original_node_ids=True)
     assert all(isinstance(nodes, frozenset) for nodes in new_partition.parts.values())
     assert all(isinstance(nodes, frozenset) for nodes in partition.parts.values())
 
 
 def test_Partition_has_subgraphs(example_partition):
+    # Test that subgraphs work as intended.
+    # The partition has two parts (districts) with IDs: 1, 2
+    # Part #1 has nodes 0, 1, so the subgraph for part #1 should have these nodes
+    # Part #2 has node 2, so the subgraph for part #1 should have this node
+
+    # Note that the original node_ids are based on the original NX-based graph
+    # The node_ids in the partition's graph have been changed by the conversion
+    # from NX to RX, so we need to be careful about when to use "original" node_ids
+    # and when to use "internal" RX-based node_ids
+
     partition = example_partition
-    assert set(partition.subgraphs[1].nodes) == {0, 1}
-    assert set(partition.subgraphs[2].nodes) == {2}
+
+    subgraph_for_part_1 = partition.subgraphs[1]
+    internal_node_id_0 = subgraph_for_part_1.internal_node_id_for_original_node_id(0)
+    internal_node_id_1 = subgraph_for_part_1.internal_node_id_for_original_node_id(1)
+    assert set(partition.subgraphs[1].nodes) == {internal_node_id_0, internal_node_id_1}
+
+    subgraph_for_part_2 = partition.subgraphs[2]
+    internal_node_id = subgraph_for_part_2.internal_node_id_for_original_node_id(2)
+    assert set(partition.subgraphs[2].nodes) == {internal_node_id}
     assert len(list(partition.subgraphs)) == 2
 
 
@@ -92,10 +119,20 @@ def test_partition_implements_getattr_for_updater_access(example_partition):
 
 def test_can_be_created_from_a_districtr_file(graph, districtr_plan_file):
     for node in graph:
-        graph.nodes[node]["area_num_1"] = node
+        graph.node_data(node)["area_num_1"] = node
+
+    # frm: TODO:  NX vs. RX node_id issues here...
 
     partition = Partition.from_districtr_file(graph, districtr_plan_file)
-    assert partition.assignment.to_dict() == {
+
+    # Convert internal node_ids of the partition's graph to "original" node_ids
+    internal_node_assignment = partition.assignment.to_dict() 
+    original_node_assignment = {}
+    for internal_node_id, part in internal_node_assignment.items():
+        original_node_id = partition.graph.original_node_id_for_internal_node_id(internal_node_id)
+        original_node_assignment[original_node_id] = part
+
+    assert original_node_assignment == {
         0: 1,
         1: 1,
         2: 1,

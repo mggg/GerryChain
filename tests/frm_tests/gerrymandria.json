@@ -1,0 +1,1641 @@
+{
+    "directed": false,
+    "multigraph": false,
+    "graph": [],
+    "nodes": [
+        {
+            "TOTPOP": 1,
+            "x": 0,
+            "y": 0,
+            "county": "1",
+            "district": "1",
+            "precinct": 0,
+            "muni": "1",
+            "boundary_node": true,
+            "boundary_perim": 1,
+            "water_dist": "2",
+            "id": 0
+        },
+        {
+            "TOTPOP": 1,
+            "x": 0,
+            "y": 1,
+            "county": "1",
+            "district": "1",
+            "precinct": 1,
+            "muni": "1",
+            "boundary_node": true,
+            "boundary_perim": 1,
+            "water_dist": "2",
+            "id": 1
+        },
+        {
+            "TOTPOP": 1,
+            "x": 0,
+            "y": 2,
+            "county": "1",
+            "district": "1",
+            "precinct": 2,
+            "muni": "5",
+            "boundary_node": true,
+            "boundary_perim": 1,
+            "water_dist": "2",
+            "id": 2
+        },
+        {
+            "TOTPOP": 1,
+            "x": 0,
+            "y": 3,
+            "county": "1",
+            "district": "1",
+            "precinct": 3,
+            "muni": "5",
+            "boundary_node": true,
+            "boundary_perim": 1,
+            "water_dist": "2",
+            "id": 3
+        },
+        {
+            "TOTPOP": 1,
+            "x": 0,
+            "y": 4,
+            "county": "3",
+            "district": "1",
+            "precinct": 4,
+            "muni": "9",
+            "boundary_node": true,
+            "boundary_perim": 1,
+            "water_dist": "2",
+            "id": 4
+        },
+        {
+            "TOTPOP": 1,
+            "x": 0,
+            "y": 5,
+            "county": "3",
+            "district": "1",
+            "precinct": 5,
+            "muni": "9",
+            "boundary_node": true,
+            "boundary_perim": 1,
+            "water_dist": "2",
+            "id": 5
+        },
+        {
+            "TOTPOP": 1,
+            "x": 0,
+            "y": 6,
+            "county": "3",
+            "district": "1",
+            "precinct": 6,
+            "muni": "13",
+            "boundary_node": true,
+            "boundary_perim": 1,
+            "water_dist": "2",
+            "id": 6
+        },
+        {
+            "TOTPOP": 1,
+            "x": 0,
+            "y": 7,
+            "county": "3",
+            "district": "1",
+            "precinct": 7,
+            "muni": "13",
+            "boundary_node": true,
+            "boundary_perim": 1,
+            "water_dist": "2",
+            "id": 7
+        },
+        {
+            "TOTPOP": 1,
+            "x": 1,
+            "y": 0,
+            "county": "1",
+            "district": "2",
+            "precinct": 8,
+            "muni": "1",
+            "boundary_node": true,
+            "boundary_perim": 1,
+            "water_dist": "2",
+            "id": 8
+        },
+        {
+            "TOTPOP": 1,
+            "x": 1,
+            "y": 1,
+            "county": "1",
+            "district": "2",
+            "precinct": 9,
+            "muni": "1",
+            "boundary_node": false,
+            "boundary_perim": 0,
+            "water_dist": "2",
+            "id": 9
+        },
+        {
+            "TOTPOP": 1,
+            "x": 1,
+            "y": 2,
+            "county": "1",
+            "district": "2",
+            "precinct": 10,
+            "muni": "5",
+            "boundary_node": false,
+            "boundary_perim": 0,
+            "water_dist": "2",
+            "id": 10
+        },
+        {
+            "TOTPOP": 1,
+            "x": 1,
+            "y": 3,
+            "county": "1",
+            "district": "2",
+            "precinct": 11,
+            "muni": "5",
+            "boundary_node": false,
+            "boundary_perim": 0,
+            "water_dist": "2",
+            "id": 11
+        },
+        {
+            "TOTPOP": 1,
+            "x": 1,
+            "y": 4,
+            "county": "3",
+            "district": "2",
+            "precinct": 12,
+            "muni": "9",
+            "boundary_node": false,
+            "boundary_perim": 0,
+            "water_dist": "2",
+            "id": 12
+        },
+        {
+            "TOTPOP": 1,
+            "x": 1,
+            "y": 5,
+            "county": "3",
+            "district": "2",
+            "precinct": 13,
+            "muni": "9",
+            "boundary_node": false,
+            "boundary_perim": 0,
+            "water_dist": "2",
+            "id": 13
+        },
+        {
+            "TOTPOP": 1,
+            "x": 1,
+            "y": 6,
+            "county": "3",
+            "district": "2",
+            "precinct": 14,
+            "muni": "13",
+            "boundary_node": false,
+            "boundary_perim": 0,
+            "water_dist": "4",
+            "id": 14
+        },
+        {
+            "TOTPOP": 1,
+            "x": 1,
+            "y": 7,
+            "county": "3",
+            "district": "2",
+            "precinct": 15,
+            "muni": "13",
+            "boundary_node": true,
+            "boundary_perim": 1,
+            "water_dist": "4",
+            "id": 15
+        },
+        {
+            "TOTPOP": 1,
+            "x": 2,
+            "y": 0,
+            "county": "1",
+            "district": "3",
+            "precinct": 16,
+            "muni": "2",
+            "boundary_node": true,
+            "boundary_perim": 1,
+            "water_dist": "4",
+            "id": 16
+        },
+        {
+            "TOTPOP": 1,
+            "x": 2,
+            "y": 1,
+            "county": "1",
+            "district": "3",
+            "precinct": 17,
+            "muni": "2",
+            "boundary_node": false,
+            "boundary_perim": 0,
+            "water_dist": "4",
+            "id": 17
+        },
+        {
+            "TOTPOP": 1,
+            "x": 2,
+            "y": 2,
+            "county": "1",
+            "district": "3",
+            "precinct": 18,
+            "muni": "6",
+            "boundary_node": false,
+            "boundary_perim": 0,
+            "water_dist": "2",
+            "id": 18
+        },
+        {
+            "TOTPOP": 1,
+            "x": 2,
+            "y": 3,
+            "county": "1",
+            "district": "3",
+            "precinct": 19,
+            "muni": "6",
+            "boundary_node": false,
+            "boundary_perim": 0,
+            "water_dist": "2",
+            "id": 19
+        },
+        {
+            "TOTPOP": 1,
+            "x": 2,
+            "y": 4,
+            "county": "3",
+            "district": "3",
+            "precinct": 20,
+            "muni": "10",
+            "boundary_node": false,
+            "boundary_perim": 0,
+            "water_dist": "4",
+            "id": 20
+        },
+        {
+            "TOTPOP": 1,
+            "x": 2,
+            "y": 5,
+            "county": "3",
+            "district": "3",
+            "precinct": 21,
+            "muni": "10",
+            "boundary_node": false,
+            "boundary_perim": 0,
+            "water_dist": "4",
+            "id": 21
+        },
+        {
+            "TOTPOP": 1,
+            "x": 2,
+            "y": 6,
+            "county": "3",
+            "district": "3",
+            "precinct": 22,
+            "muni": "14",
+            "boundary_node": false,
+            "boundary_perim": 0,
+            "water_dist": "4",
+            "id": 22
+        },
+        {
+            "TOTPOP": 1,
+            "x": 2,
+            "y": 7,
+            "county": "3",
+            "district": "3",
+            "precinct": 23,
+            "muni": "14",
+            "boundary_node": true,
+            "boundary_perim": 1,
+            "water_dist": "4",
+            "id": 23
+        },
+        {
+            "TOTPOP": 1,
+            "x": 3,
+            "y": 0,
+            "county": "1",
+            "district": "4",
+            "precinct": 24,
+            "muni": "2",
+            "boundary_node": true,
+            "boundary_perim": 1,
+            "water_dist": "4",
+            "id": 24
+        },
+        {
+            "TOTPOP": 1,
+            "x": 3,
+            "y": 1,
+            "county": "1",
+            "district": "4",
+            "precinct": 25,
+            "muni": "2",
+            "boundary_node": false,
+            "boundary_perim": 0,
+            "water_dist": "4",
+            "id": 25
+        },
+        {
+            "TOTPOP": 1,
+            "x": 3,
+            "y": 2,
+            "county": "1",
+            "district": "4",
+            "precinct": 26,
+            "muni": "6",
+            "boundary_node": false,
+            "boundary_perim": 0,
+            "water_dist": "4",
+            "id": 26
+        },
+        {
+            "TOTPOP": 1,
+            "x": 3,
+            "y": 3,
+            "county": "1",
+            "district": "4",
+            "precinct": 27,
+            "muni": "6",
+            "boundary_node": false,
+            "boundary_perim": 0,
+            "water_dist": "4",
+            "id": 27
+        },
+        {
+            "TOTPOP": 1,
+            "x": 3,
+            "y": 4,
+            "county": "3",
+            "district": "4",
+            "precinct": 28,
+            "muni": "10",
+            "boundary_node": false,
+            "boundary_perim": 0,
+            "water_dist": "4",
+            "id": 28
+        },
+        {
+            "TOTPOP": 1,
+            "x": 3,
+            "y": 5,
+            "county": "3",
+            "district": "4",
+            "precinct": 29,
+            "muni": "10",
+            "boundary_node": false,
+            "boundary_perim": 0,
+            "water_dist": "1",
+            "id": 29
+        },
+        {
+            "TOTPOP": 1,
+            "x": 3,
+            "y": 6,
+            "county": "3",
+            "district": "4",
+            "precinct": 30,
+            "muni": "14",
+            "boundary_node": false,
+            "boundary_perim": 0,
+            "water_dist": "1",
+            "id": 30
+        },
+        {
+            "TOTPOP": 1,
+            "x": 3,
+            "y": 7,
+            "county": "3",
+            "district": "4",
+            "precinct": 31,
+            "muni": "14",
+            "boundary_node": true,
+            "boundary_perim": 1,
+            "water_dist": "1",
+            "id": 31
+        },
+        {
+            "TOTPOP": 1,
+            "x": 4,
+            "y": 0,
+            "county": "2",
+            "district": "5",
+            "precinct": 32,
+            "muni": "3",
+            "boundary_node": true,
+            "boundary_perim": 1,
+            "water_dist": "3",
+            "id": 32
+        },
+        {
+            "TOTPOP": 1,
+            "x": 4,
+            "y": 1,
+            "county": "2",
+            "district": "5",
+            "precinct": 33,
+            "muni": "3",
+            "boundary_node": false,
+            "boundary_perim": 0,
+            "water_dist": "3",
+            "id": 33
+        },
+        {
+            "TOTPOP": 1,
+            "x": 4,
+            "y": 2,
+            "county": "2",
+            "district": "5",
+            "precinct": 34,
+            "muni": "7",
+            "boundary_node": false,
+            "boundary_perim": 0,
+            "water_dist": "3",
+            "id": 34
+        },
+        {
+            "TOTPOP": 1,
+            "x": 4,
+            "y": 3,
+            "county": "2",
+            "district": "5",
+            "precinct": 35,
+            "muni": "7",
+            "boundary_node": false,
+            "boundary_perim": 0,
+            "water_dist": "4",
+            "id": 35
+        },
+        {
+            "TOTPOP": 1,
+            "x": 4,
+            "y": 4,
+            "county": "4",
+            "district": "5",
+            "precinct": 36,
+            "muni": "11",
+            "boundary_node": false,
+            "boundary_perim": 0,
+            "water_dist": "4",
+            "id": 36
+        },
+        {
+            "TOTPOP": 1,
+            "x": 4,
+            "y": 5,
+            "county": "4",
+            "district": "5",
+            "precinct": 37,
+            "muni": "11",
+            "boundary_node": false,
+            "boundary_perim": 0,
+            "water_dist": "1",
+            "id": 37
+        },
+        {
+            "TOTPOP": 1,
+            "x": 4,
+            "y": 6,
+            "county": "4",
+            "district": "5",
+            "precinct": 38,
+            "muni": "15",
+            "boundary_node": false,
+            "boundary_perim": 0,
+            "water_dist": "1",
+            "id": 38
+        },
+        {
+            "TOTPOP": 1,
+            "x": 4,
+            "y": 7,
+            "county": "4",
+            "district": "5",
+            "precinct": 39,
+            "muni": "15",
+            "boundary_node": true,
+            "boundary_perim": 1,
+            "water_dist": "1",
+            "id": 39
+        },
+        {
+            "TOTPOP": 1,
+            "x": 5,
+            "y": 0,
+            "county": "2",
+            "district": "6",
+            "precinct": 40,
+            "muni": "3",
+            "boundary_node": true,
+            "boundary_perim": 1,
+            "water_dist": "3",
+            "id": 40
+        },
+        {
+            "TOTPOP": 1,
+            "x": 5,
+            "y": 1,
+            "county": "2",
+            "district": "6",
+            "precinct": 41,
+            "muni": "3",
+            "boundary_node": false,
+            "boundary_perim": 0,
+            "water_dist": "3",
+            "id": 41
+        },
+        {
+            "TOTPOP": 1,
+            "x": 5,
+            "y": 2,
+            "county": "2",
+            "district": "6",
+            "precinct": 42,
+            "muni": "7",
+            "boundary_node": false,
+            "boundary_perim": 0,
+            "water_dist": "3",
+            "id": 42
+        },
+        {
+            "TOTPOP": 1,
+            "x": 5,
+            "y": 3,
+            "county": "2",
+            "district": "6",
+            "precinct": 43,
+            "muni": "7",
+            "boundary_node": false,
+            "boundary_perim": 0,
+            "water_dist": "4",
+            "id": 43
+        },
+        {
+            "TOTPOP": 1,
+            "x": 5,
+            "y": 4,
+            "county": "4",
+            "district": "6",
+            "precinct": 44,
+            "muni": "11",
+            "boundary_node": false,
+            "boundary_perim": 0,
+            "water_dist": "1",
+            "id": 44
+        },
+        {
+            "TOTPOP": 1,
+            "x": 5,
+            "y": 5,
+            "county": "4",
+            "district": "6",
+            "precinct": 45,
+            "muni": "11",
+            "boundary_node": false,
+            "boundary_perim": 0,
+            "water_dist": "1",
+            "id": 45
+        },
+        {
+            "TOTPOP": 1,
+            "x": 5,
+            "y": 6,
+            "county": "4",
+            "district": "6",
+            "precinct": 46,
+            "muni": "15",
+            "boundary_node": false,
+            "boundary_perim": 0,
+            "water_dist": "1",
+            "id": 46
+        },
+        {
+            "TOTPOP": 1,
+            "x": 5,
+            "y": 7,
+            "county": "4",
+            "district": "6",
+            "precinct": 47,
+            "muni": "15",
+            "boundary_node": true,
+            "boundary_perim": 1,
+            "water_dist": "1",
+            "id": 47
+        },
+        {
+            "TOTPOP": 1,
+            "x": 6,
+            "y": 0,
+            "county": "2",
+            "district": "7",
+            "precinct": 48,
+            "muni": "4",
+            "boundary_node": true,
+            "boundary_perim": 1,
+            "water_dist": "3",
+            "id": 48
+        },
+        {
+            "TOTPOP": 1,
+            "x": 6,
+            "y": 1,
+            "county": "2",
+            "district": "7",
+            "precinct": 49,
+            "muni": "4",
+            "boundary_node": false,
+            "boundary_perim": 0,
+            "water_dist": "3",
+            "id": 49
+        },
+        {
+            "TOTPOP": 1,
+            "x": 6,
+            "y": 2,
+            "county": "2",
+            "district": "7",
+            "precinct": 50,
+            "muni": "8",
+            "boundary_node": false,
+            "boundary_perim": 0,
+            "water_dist": "3",
+            "id": 50
+        },
+        {
+            "TOTPOP": 1,
+            "x": 6,
+            "y": 3,
+            "county": "2",
+            "district": "7",
+            "precinct": 51,
+            "muni": "8",
+            "boundary_node": false,
+            "boundary_perim": 0,
+            "water_dist": "3",
+            "id": 51
+        },
+        {
+            "TOTPOP": 1,
+            "x": 6,
+            "y": 4,
+            "county": "4",
+            "district": "7",
+            "precinct": 52,
+            "muni": "12",
+            "boundary_node": false,
+            "boundary_perim": 0,
+            "water_dist": "3",
+            "id": 52
+        },
+        {
+            "TOTPOP": 1,
+            "x": 6,
+            "y": 5,
+            "county": "4",
+            "district": "7",
+            "precinct": 53,
+            "muni": "12",
+            "boundary_node": false,
+            "boundary_perim": 0,
+            "water_dist": "1",
+            "id": 53
+        },
+        {
+            "TOTPOP": 1,
+            "x": 6,
+            "y": 6,
+            "county": "4",
+            "district": "7",
+            "precinct": 54,
+            "muni": "16",
+            "boundary_node": false,
+            "boundary_perim": 0,
+            "water_dist": "1",
+            "id": 54
+        },
+        {
+            "TOTPOP": 1,
+            "x": 6,
+            "y": 7,
+            "county": "4",
+            "district": "7",
+            "precinct": 55,
+            "muni": "16",
+            "boundary_node": true,
+            "boundary_perim": 1,
+            "water_dist": "1",
+            "id": 55
+        },
+        {
+            "TOTPOP": 1,
+            "x": 7,
+            "y": 0,
+            "county": "2",
+            "district": "8",
+            "precinct": 56,
+            "muni": "4",
+            "boundary_node": true,
+            "boundary_perim": 1,
+            "water_dist": "3",
+            "id": 56
+        },
+        {
+            "TOTPOP": 1,
+            "x": 7,
+            "y": 1,
+            "county": "2",
+            "district": "8",
+            "precinct": 57,
+            "muni": "4",
+            "boundary_node": true,
+            "boundary_perim": 1,
+            "water_dist": "3",
+            "id": 57
+        },
+        {
+            "TOTPOP": 1,
+            "x": 7,
+            "y": 2,
+            "county": "2",
+            "district": "8",
+            "precinct": 58,
+            "muni": "8",
+            "boundary_node": true,
+            "boundary_perim": 1,
+            "water_dist": "3",
+            "id": 58
+        },
+        {
+            "TOTPOP": 1,
+            "x": 7,
+            "y": 3,
+            "county": "2",
+            "district": "8",
+            "precinct": 59,
+            "muni": "8",
+            "boundary_node": true,
+            "boundary_perim": 1,
+            "water_dist": "3",
+            "id": 59
+        },
+        {
+            "TOTPOP": 1,
+            "x": 7,
+            "y": 4,
+            "county": "4",
+            "district": "8",
+            "precinct": 60,
+            "muni": "12",
+            "boundary_node": true,
+            "boundary_perim": 1,
+            "water_dist": "3",
+            "id": 60
+        },
+        {
+            "TOTPOP": 1,
+            "x": 7,
+            "y": 5,
+            "county": "4",
+            "district": "8",
+            "precinct": 61,
+            "muni": "12",
+            "boundary_node": true,
+            "boundary_perim": 1,
+            "water_dist": "1",
+            "id": 61
+        },
+        {
+            "TOTPOP": 1,
+            "x": 7,
+            "y": 6,
+            "county": "4",
+            "district": "8",
+            "precinct": 62,
+            "muni": "16",
+            "boundary_node": true,
+            "boundary_perim": 1,
+            "water_dist": "1",
+            "id": 62
+        },
+        {
+            "TOTPOP": 1,
+            "x": 7,
+            "y": 7,
+            "county": "4",
+            "district": "8",
+            "precinct": 63,
+            "muni": "16",
+            "boundary_node": true,
+            "boundary_perim": 1,
+            "water_dist": "1",
+            "id": 63
+        }
+    ],
+    "adjacency": [
+        [
+            {
+                "id": 8
+            },
+            {
+                "id": 1
+            }
+        ],
+        [
+            {
+                "id": 0
+            },
+            {
+                "id": 9
+            },
+            {
+                "id": 2
+            }
+        ],
+        [
+            {
+                "id": 1
+            },
+            {
+                "id": 10
+            },
+            {
+                "id": 3
+            }
+        ],
+        [
+            {
+                "id": 2
+            },
+            {
+                "id": 11
+            },
+            {
+                "id": 4
+            }
+        ],
+        [
+            {
+                "id": 3
+            },
+            {
+                "id": 12
+            },
+            {
+                "id": 5
+            }
+        ],
+        [
+            {
+                "id": 4
+            },
+            {
+                "id": 13
+            },
+            {
+                "id": 6
+            }
+        ],
+        [
+            {
+                "id": 5
+            },
+            {
+                "id": 14
+            },
+            {
+                "id": 7
+            }
+        ],
+        [
+            {
+                "id": 6
+            },
+            {
+                "id": 15
+            }
+        ],
+        [
+            {
+                "id": 0
+            },
+            {
+                "id": 16
+            },
+            {
+                "id": 9
+            }
+        ],
+        [
+            {
+                "id": 1
+            },
+            {
+                "id": 8
+            },
+            {
+                "id": 17
+            },
+            {
+                "id": 10
+            }
+        ],
+        [
+            {
+                "id": 2
+            },
+            {
+                "id": 9
+            },
+            {
+                "id": 18
+            },
+            {
+                "id": 11
+            }
+        ],
+        [
+            {
+                "id": 3
+            },
+            {
+                "id": 10
+            },
+            {
+                "id": 19
+            },
+            {
+                "id": 12
+            }
+        ],
+        [
+            {
+                "id": 4
+            },
+            {
+                "id": 11
+            },
+            {
+                "id": 20
+            },
+            {
+                "id": 13
+            }
+        ],
+        [
+            {
+                "id": 5
+            },
+            {
+                "id": 12
+            },
+            {
+                "id": 21
+            },
+            {
+                "id": 14
+            }
+        ],
+        [
+            {
+                "id": 6
+            },
+            {
+                "id": 13
+            },
+            {
+                "id": 22
+            },
+            {
+                "id": 15
+            }
+        ],
+        [
+            {
+                "id": 7
+            },
+            {
+                "id": 14
+            },
+            {
+                "id": 23
+            }
+        ],
+        [
+            {
+                "id": 8
+            },
+            {
+                "id": 24
+            },
+            {
+                "id": 17
+            }
+        ],
+        [
+            {
+                "id": 9
+            },
+            {
+                "id": 16
+            },
+            {
+                "id": 25
+            },
+            {
+                "id": 18
+            }
+        ],
+        [
+            {
+                "id": 10
+            },
+            {
+                "id": 17
+            },
+            {
+                "id": 26
+            },
+            {
+                "id": 19
+            }
+        ],
+        [
+            {
+                "id": 11
+            },
+            {
+                "id": 18
+            },
+            {
+                "id": 27
+            },
+            {
+                "id": 20
+            }
+        ],
+        [
+            {
+                "id": 12
+            },
+            {
+                "id": 19
+            },
+            {
+                "id": 28
+            },
+            {
+                "id": 21
+            }
+        ],
+        [
+            {
+                "id": 13
+            },
+            {
+                "id": 20
+            },
+            {
+                "id": 29
+            },
+            {
+                "id": 22
+            }
+        ],
+        [
+            {
+                "id": 14
+            },
+            {
+                "id": 21
+            },
+            {
+                "id": 30
+            },
+            {
+                "id": 23
+            }
+        ],
+        [
+            {
+                "id": 15
+            },
+            {
+                "id": 22
+            },
+            {
+                "id": 31
+            }
+        ],
+        [
+            {
+                "id": 16
+            },
+            {
+                "id": 32
+            },
+            {
+                "id": 25
+            }
+        ],
+        [
+            {
+                "id": 17
+            },
+            {
+                "id": 24
+            },
+            {
+                "id": 33
+            },
+            {
+                "id": 26
+            }
+        ],
+        [
+            {
+                "id": 18
+            },
+            {
+                "id": 25
+            },
+            {
+                "id": 34
+            },
+            {
+                "id": 27
+            }
+        ],
+        [
+            {
+                "id": 19
+            },
+            {
+                "id": 26
+            },
+            {
+                "id": 35
+            },
+            {
+                "id": 28
+            }
+        ],
+        [
+            {
+                "id": 20
+            },
+            {
+                "id": 27
+            },
+            {
+                "id": 36
+            },
+            {
+                "id": 29
+            }
+        ],
+        [
+            {
+                "id": 21
+            },
+            {
+                "id": 28
+            },
+            {
+                "id": 37
+            },
+            {
+                "id": 30
+            }
+        ],
+        [
+            {
+                "id": 22
+            },
+            {
+                "id": 29
+            },
+            {
+                "id": 38
+            },
+            {
+                "id": 31
+            }
+        ],
+        [
+            {
+                "id": 23
+            },
+            {
+                "id": 30
+            },
+            {
+                "id": 39
+            }
+        ],
+        [
+            {
+                "id": 24
+            },
+            {
+                "id": 40
+            },
+            {
+                "id": 33
+            }
+        ],
+        [
+            {
+                "id": 25
+            },
+            {
+                "id": 32
+            },
+            {
+                "id": 41
+            },
+            {
+                "id": 34
+            }
+        ],
+        [
+            {
+                "id": 26
+            },
+            {
+                "id": 33
+            },
+            {
+                "id": 42
+            },
+            {
+                "id": 35
+            }
+        ],
+        [
+            {
+                "id": 27
+            },
+            {
+                "id": 34
+            },
+            {
+                "id": 43
+            },
+            {
+                "id": 36
+            }
+        ],
+        [
+            {
+                "id": 28
+            },
+            {
+                "id": 35
+            },
+            {
+                "id": 44
+            },
+            {
+                "id": 37
+            }
+        ],
+        [
+            {
+                "id": 29
+            },
+            {
+                "id": 36
+            },
+            {
+                "id": 45
+            },
+            {
+                "id": 38
+            }
+        ],
+        [
+            {
+                "id": 30
+            },
+            {
+                "id": 37
+            },
+            {
+                "id": 46
+            },
+            {
+                "id": 39
+            }
+        ],
+        [
+            {
+                "id": 31
+            },
+            {
+                "id": 38
+            },
+            {
+                "id": 47
+            }
+        ],
+        [
+            {
+                "id": 32
+            },
+            {
+                "id": 48
+            },
+            {
+                "id": 41
+            }
+        ],
+        [
+            {
+                "id": 33
+            },
+            {
+                "id": 40
+            },
+            {
+                "id": 49
+            },
+            {
+                "id": 42
+            }
+        ],
+        [
+            {
+                "id": 34
+            },
+            {
+                "id": 41
+            },
+            {
+                "id": 50
+            },
+            {
+                "id": 43
+            }
+        ],
+        [
+            {
+                "id": 35
+            },
+            {
+                "id": 42
+            },
+            {
+                "id": 51
+            },
+            {
+                "id": 44
+            }
+        ],
+        [
+            {
+                "id": 36
+            },
+            {
+                "id": 43
+            },
+            {
+                "id": 52
+            },
+            {
+                "id": 45
+            }
+        ],
+        [
+            {
+                "id": 37
+            },
+            {
+                "id": 44
+            },
+            {
+                "id": 53
+            },
+            {
+                "id": 46
+            }
+        ],
+        [
+            {
+                "id": 38
+            },
+            {
+                "id": 45
+            },
+            {
+                "id": 54
+            },
+            {
+                "id": 47
+            }
+        ],
+        [
+            {
+                "id": 39
+            },
+            {
+                "id": 46
+            },
+            {
+                "id": 55
+            }
+        ],
+        [
+            {
+                "id": 40
+            },
+            {
+                "id": 56
+            },
+            {
+                "id": 49
+            }
+        ],
+        [
+            {
+                "id": 41
+            },
+            {
+                "id": 48
+            },
+            {
+                "id": 57
+            },
+            {
+                "id": 50
+            }
+        ],
+        [
+            {
+                "id": 42
+            },
+            {
+                "id": 49
+            },
+            {
+                "id": 58
+            },
+            {
+                "id": 51
+            }
+        ],
+        [
+            {
+                "id": 43
+            },
+            {
+                "id": 50
+            },
+            {
+                "id": 59
+            },
+            {
+                "id": 52
+            }
+        ],
+        [
+            {
+                "id": 44
+            },
+            {
+                "id": 51
+            },
+            {
+                "id": 60
+            },
+            {
+                "id": 53
+            }
+        ],
+        [
+            {
+                "id": 45
+            },
+            {
+                "id": 52
+            },
+            {
+                "id": 61
+            },
+            {
+                "id": 54
+            }
+        ],
+        [
+            {
+                "id": 46
+            },
+            {
+                "id": 53
+            },
+            {
+                "id": 62
+            },
+            {
+                "id": 55
+            }
+        ],
+        [
+            {
+                "id": 47
+            },
+            {
+                "id": 54
+            },
+            {
+                "id": 63
+            }
+        ],
+        [
+            {
+                "id": 48
+            },
+            {
+                "id": 57
+            }
+        ],
+        [
+            {
+                "id": 49
+            },
+            {
+                "id": 56
+            },
+            {
+                "id": 58
+            }
+        ],
+        [
+            {
+                "id": 50
+            },
+            {
+                "id": 57
+            },
+            {
+                "id": 59
+            }
+        ],
+        [
+            {
+                "id": 51
+            },
+            {
+                "id": 58
+            },
+            {
+                "id": 60
+            }
+        ],
+        [
+            {
+                "id": 52
+            },
+            {
+                "id": 59
+            },
+            {
+                "id": 61
+            }
+        ],
+        [
+            {
+                "id": 53
+            },
+            {
+                "id": 60
+            },
+            {
+                "id": 62
+            }
+        ],
+        [
+            {
+                "id": 54
+            },
+            {
+                "id": 61
+            },
+            {
+                "id": 63
+            }
+        ],
+        [
+            {
+                "id": 55
+            },
+            {
+                "id": 62
+            }
+        ]
+    ]
+}

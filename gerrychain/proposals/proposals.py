@@ -111,6 +111,8 @@ def slow_reversible_propose_bi(partition: Partition) -> Partition:
     :rtype: Partition
     """
 
+    # frm: TODO:  Rename x to be edge  *sigh*...
+
     b_nodes = {x[0] for x in partition["cut_edges"]}.union(
         {x[1] for x in partition["cut_edges"]}
     )

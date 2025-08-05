@@ -27,6 +27,13 @@ def invalid_cut_edges(partition):
     ]
     return invalid
 
+def translate_flips_to_internal_node_ids(partition, flips):
+    # Translate flips into the internal_node_ids for the partition
+    internal_flips = {}
+    for original_node_id, part in flips.items():
+        internal_node_id = partition.graph.internal_node_id_for_original_node_id(original_node_id)
+        internal_flips[internal_node_id] = part
+    return internal_flips
 
 def test_cut_edges_doesnt_duplicate_edges_with_different_order_of_nodes(
     three_by_three_grid,
@@ -39,10 +46,13 @@ def test_cut_edges_doesnt_duplicate_edges_with_different_order_of_nodes(
     # 222    222
     flip = {4: 2, 2: 1, 5: 1}
 
-    new_partition = Partition(parent=partition, flips=flip)
+    internal_flips = translate_flips_to_internal_node_ids(partition, flip)
+
+    new_partition = Partition(parent=partition, flips=internal_flips)
 
     result = new_partition["cut_edges"]
 
+    # Verify that the same edge is not in the result twice (just in different node_id order)
     for edge in result:
         assert (edge[1], edge[0]) not in result
 
@@ -56,13 +66,16 @@ def test_cut_edges_can_handle_multiple_flips(three_by_three_grid):
     # 222    222
     flip = {4: 2, 2: 1, 5: 1}
 
-    new_partition = Partition(parent=partition, flips=flip)
+    internal_flips = translate_flips_to_internal_node_ids(partition, flip)
+
+    new_partition = Partition(parent=partition, flips=internal_flips)
 
     result = new_partition["cut_edges"]
 
     naive_cut_edges = {
-        tuple(sorted(edge)) for edge in graph.edges if new_partition.crosses_parts(edge)
+        tuple(sorted(edge)) for edge in partition.graph.edges if new_partition.crosses_parts(edge)
     }
+
     assert result == naive_cut_edges
 
 
@@ -78,7 +91,9 @@ def test_cut_edges_by_part_doesnt_duplicate_edges_with_opposite_order_of_nodes(
     # 222    222
     flip = {4: 2, 2: 1, 5: 1}
 
-    new_partition = Partition(parent=partition, flips=flip)
+    internal_flips = translate_flips_to_internal_node_ids(partition, flip)
+
+    new_partition = Partition(parent=partition, flips=internal_flips)
 
     result = new_partition["cut_edges_by_part"]
 
@@ -97,11 +112,13 @@ def test_cut_edges_by_part_gives_same_total_edges_as_naive_method(three_by_three
     # 222    222
     flip = {4: 2, 2: 1, 5: 1}
 
-    new_partition = Partition(parent=partition, flips=flip)
+    internal_flips = translate_flips_to_internal_node_ids(partition, flip)
+
+    new_partition = Partition(parent=partition, flips=internal_flips)
 
     result = new_partition["cut_edges_by_part"]
     naive_cut_edges = {
-        tuple(sorted(edge)) for edge in graph.edges if new_partition.crosses_parts(edge)
+        tuple(sorted(edge)) for edge in partition.graph.edges if new_partition.crosses_parts(edge)
     }
 
     assert naive_cut_edges == {
@@ -115,11 +132,15 @@ def test_implementation_of_cut_edges_matches_naive_method(three_by_three_grid):
     partition = Partition(graph, assignment, {"cut_edges": cut_edges})
 
     flip = {4: 2}
-    new_partition = Partition(parent=partition, flips=flip)
+
+    internal_flips = translate_flips_to_internal_node_ids(partition, flip)
+
+    new_partition = Partition(parent=partition, flips=internal_flips)
+
     result = cut_edges(new_partition)
 
     naive_cut_edges = {
-        edge for edge in graph.edges if new_partition.crosses_parts(edge)
+        edge for edge in partition.graph.edges if new_partition.crosses_parts(edge)
     }
 
     assert edge_set_equal(result, naive_cut_edges)

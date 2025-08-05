@@ -8,6 +8,7 @@ from gerrychain.proposals import propose_random_flip
 import random
 from gerrychain.updaters.tally import DataTally, Tally
 random.seed(2018)
+import networkx
 
 def random_assignment(graph, num_districts):
     return {node: random.choice(range(num_districts)) for node in graph.nodes}
@@ -27,17 +28,30 @@ def test_data_tally_works_as_an_updater(three_by_three_grid):
 
 
 def test_data_tally_gives_expected_value(three_by_three_grid):
+    # Put all but one of the nodes in part #1, and put the one "first_node"
+    # into part #2.
+
     first_node = next(iter(three_by_three_grid.nodes))
     assignment = {node: 1 for node in three_by_three_grid.nodes}
     assignment[first_node] = 2
 
+    # All nodes get a value of 1 for the data to be tallied
     data = {node: 1 for node in three_by_three_grid}
     updaters = {"tally": DataTally(data, alias="tally")}
     partition = Partition(three_by_three_grid, assignment, updaters)
 
+    # Note that in general a flip using node_ids generated before creating
+    # a partition should be translated into "internal" RX-Graph based 
+    # node_ids.  In this case it is not needed, because it doesn't matter
+    # whether we are using the "original" or the "internal" node_id for 
+    # first_node because it still refers to the same node and nothing else
+    # is going on.
+
+    # Create a new partition, adding the "first_node" to part #1
     flip = {first_node: 1}
     new_partition = partition.flip(flip)
 
+    # The "tally" should increase by one because of the flipped node's data
     assert new_partition["tally"][1] == partition["tally"][1] + 1
 
 
@@ -49,7 +63,7 @@ def test_data_tally_mimics_old_tally_usage(graph_with_random_data_factory):
     assignment = {i: 1 if i in range(4) else 2 for i in range(9)}
 
     partition = Partition(graph, assignment, updaters)
-    expected_total_in_district_one = sum(graph.nodes[i]["total"] for i in range(4))
+    expected_total_in_district_one = sum(graph.node_data(i)["total"] for i in range(4))
     assert partition["total"][1] == expected_total_in_district_one
 
 
@@ -68,7 +82,7 @@ def test_tally_matches_naive_tally_at_every_step():
         expected = defaultdict(int)
         for node in partition.graph.nodes:
             part = partition.assignment[node]
-            expected[part] += partition.graph.nodes[node]["population"]
+            expected[part] += partition.graph.node_data(node)["population"]
         return expected
 
     for state in chain:
@@ -77,9 +91,10 @@ def test_tally_matches_naive_tally_at_every_step():
 
 
 def test_works_when_no_flips_occur():
-    graph = Graph([(0, 1), (1, 2), (2, 3), (3, 0)])
+    nx_graph = networkx.Graph([(0, 1), (1, 2), (2, 3), (3, 0)])
+    graph = Graph.from_networkx(nx_graph)
     for node in graph:
-        graph.nodes[node]["pop"] = node + 1
+        graph.node_data(node)["pop"] = node + 1
     partition = Partition(graph, {0: 0, 1: 0, 2: 1, 3: 1}, {"pop": Tally("pop")})
 
     chain = MarkovChain(lambda p: p.flip({}), [], always_accept, partition, 10)

@@ -4,12 +4,12 @@ from gerrychain.chain import MarkovChain
 
 
 class MockState:
-    def flip(self, changes):
+    def flip(self, changes, use_original_node_ids):
         return MockState()
 
 
 def mock_proposal(state):
-    return state.flip({1: 2})
+    return state.flip({1: 2}, use_original_node_ids=True)
 
 
 def mock_accept(state):

@@ -37,6 +37,7 @@ class Assignment(Mapping):
         :raises ValueError: if the keys of ``parts`` are not unique
         :raises TypeError: if the values of ``parts`` are not frozensets
         """
+
         if validate:
             number_of_keys = sum(len(keys) for keys in parts.values())
             number_of_unique_keys = len(set().union(*parts.values()))
@@ -77,6 +78,14 @@ class Assignment(Mapping):
         """
         Update the assignment for some nodes using the given flows.
         """
+        # frm: Update the assignment of nodes to partitions by adding 
+        #       all of the new nodes and removing all of the old nodes
+        #       as represented in the flows (dict keyed by district (part)
+        #       of nodes flowing "in" and "out" for that district).
+        #
+        #       Also, reset the mapping of node to partition (self.mapping)
+        #       to reassign each node to its new partition.
+        #
         for part, flow in flows.items():
             # Union between frozenset and set returns an object whose type
             # matches the object on the left, which here is a frozenset
@@ -146,9 +155,64 @@ class Assignment(Mapping):
             passed-in dictionary.
         :rtype: Assignment
         """
+
+        # frm: TODO:  Clean up from_dict().
+        #
+        # A couple of things:
+        #  * It uses a routine, level_sets(), which is only ever used here, so 
+        #    why bother having a separate routine.  All it does is convert a dict
+        #    mapping node_ids to parts into a dict mapping parts into sets of
+        #    node_ids.  Why not just have that code here inline?
+        #
+        #  * Also, the constructor for Assignment explicitly allows for the caller
+        #    to pass in a "mapping" of node_id to part, which we have right here.
+        #    Why don't we pass it in and save having to recompute it?
+        #
+
         parts = {part: frozenset(keys) for part, keys in level_sets(assignment).items()}
 
         return cls(parts)
+    
+    def new_assignment_convert_old_node_ids_to_new_node_ids(self, node_id_mapping: Dict) -> "Assignment":
+        """
+        Create a new Assignment object from the one passed in, where the node_ids are changed
+        according to the node_id_mapping from old node_ids to new node_ids.
+
+        This routine was motivated by the fact that node_ids are changed when converting from an
+        NetworkX based graph to a RustworkX based graph.  An Assignment based on the node_ids in 
+        the NetworkX based graph would need to be changed to use the new node_ids - the new
+        Asignment would be semantically equivalent - just converted to use the new node_ids in 
+        the RX based graph.
+
+        The node_id_mapping is of the form {old_node_id: new_node_id}
+        """
+
+        # Dict of the form: {node_id: part_id}
+        old_assignment_mapping = self.mapping
+        old_parts = self.parts
+
+        # convert old_node_ids to new_node_ids, keeping part IDs the same
+        new_assignment_mapping = {
+            node_id_mapping[old_node_id]: part
+            for old_node_id, part in old_assignment_mapping.items()
+        }
+        # Now upate the parts dict that has a frozenset of all the nodes in each part (district)
+        new_parts = {}
+        for cur_node_id, cur_part in new_assignment_mapping.items():
+            if not cur_part in new_parts:
+                new_parts[cur_part] = set()
+            new_parts[cur_part].add(cur_node_id)
+        for cur_part, set_of_nodes in new_parts.items():
+            new_parts[cur_part] = frozenset(set_of_nodes)
+
+           #  pandas.Series(data=part, index=nodes) for part, nodes in self.parts.items()
+
+        new_assignment = Assignment(
+            new_parts,
+            new_assignment_mapping
+        )
+
+        return new_assignment
 
 
 def get_assignment(
@@ -174,13 +238,23 @@ def get_assignment(
         is not provided.
     :raises TypeError: If the part_assignment is not a string or dictionary.
     """
+    
+    # frm: TODO:  Think about whether to split this into two functions.  AT
+    #               present, it does different things based on whether
+    #               the "part_assignment" parameter is a string, a dict, 
+    #               or an assignment.  Probably not worth the trouble (possible
+    #               legacy issues), but I just can't get used to the Python habit
+    #               of weak typing...
+
     if isinstance(part_assignment, str):
+        # Extract an assignment using the named node attribute
         if graph is None:
             raise TypeError(
                 "You must provide a graph when using a node attribute for the part_assignment"
             )
         return Assignment.from_dict(
-            {node: graph.nodes[node][part_assignment] for node in graph}
+            # frm: original code:   {node: graph.nodes[node][part_assignment] for node in graph}
+            {node: graph.node_data(node)[part_assignment] for node in graph}
         )
     # Check if assignment is a dict or a mapping type
     elif callable(getattr(part_assignment, "items", None)):
