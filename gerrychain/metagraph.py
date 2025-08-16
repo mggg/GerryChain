@@ -27,6 +27,11 @@ def all_cut_edge_flips(partition: Partition) -> Iterator[Dict]:
     :returns: An iterator that yields dictionaries representing the flipped edges.
     :rtype: Iterator[Dict]
     """
+    # frm: TODO:  Add some documentation so a future readef of this code
+    #             will not be as confused as I was...
+
+    # frm: TODO:  Why is this an iterator instead of just a dict?
+
     # frm: For my own edification...  It took me a while to understand why
     #       this routine made sense at a high level.  It finds all edges
     #       on the boundary of districts - those that are "cut edges" 

@@ -38,6 +38,7 @@ from scipy.sparse import csr_array
 
 #########################################################
 # frm Overview of changes (May 2025):
+# frm: TODO:  Revise (or perhaps just delete) this comment / discussion...
 """
 This comment is temporary - it describes the work done to encapsulate dependency on
 NetworkX so that this file is the only file that has any NetworkX dependencies.  
@@ -166,6 +167,7 @@ class Graph:
 
     """
 
+    # frm: TODO:  Update the comment below - making sure it is 100% accurate (and useful)
     # frm:      This class cannot have a constructor - because there is code that assumes
     #           that it can use the default constructor to create instances of it.
     #           That code is buried deep in non GerryChain code, so I don't really understand
@@ -210,6 +212,63 @@ class Graph:
         graph.nx_to_rx_node_id_map = None   # only set when an NX based graph is converted to be an RX based graph
         return graph
 
+    def to_networkx_graph(self):
+        if self.is_nx_graph():
+            return self.get_nx_graph()
+        
+        if not self.is_rx_graph():
+            # frm: TODO: Raise specific exception - type error?
+            raise Exception("to_networkx: bad Graph type")
+
+        # OK - we have an RX-based Graph, so create a NetworkX Graph object
+        # that has all of the node data and edge data, and which has the
+        # original node_ids and edge_ids.
+        #
+        # Original node_ids are those that were used in the original NX
+        # Graph used to create the RX-based Graph object.
+        #
+
+        rx_graph = self.get_rx_graph()
+
+        # Extract node data
+        node_data = []
+        for node_id in rx_graph.node_indices():
+            node_payload = rx_graph[node_id]
+            # Get the "original" node_id
+            original_node_id = self.original_node_id_for_internal_node_id(node_id)
+            node_data.append({"node_name": original_node_id, **node_payload})
+
+        # Extract edge data
+        edge_data = []
+        for edge_id in rx_graph.edge_indices():
+            edge = rx_graph.get_edge_endpoints_by_index(edge_id)
+            edge_0_node_id = edge[0]
+            edge_1_node_id = edge[1]
+            # Get the "original" node_ids
+            edge_0_original_node_id = self.original_node_id_for_internal_node_id(edge_0_node_id)
+            edge_1_original_node_id = self.original_node_id_for_internal_node_id(edge_1_node_id)
+            edge_payload = rx_graph.get_edge_data_by_index(edge_id)
+            # Add edges and edge data using the original node_ids
+            # as the names/IDs for the nodes that make up the edge
+            edge_data.append({"source": edge_0_original_node_id, "target": edge_1_original_node_id, **edge_payload})
+
+        # Create Pandas DataFrames
+    
+        nodes_df = pd.DataFrame(node_data)
+        edges_df = pd.DataFrame(edge_data)
+
+        # Create a NetworkX Graph object from the edges_df, using
+        # "source", and "tartet" to define edge node_ids, and adding
+        # all attribute data (True).
+        nx_graph = networkx.from_pandas_edgelist(edges_df, 'source', 'target', True, networkx.Graph)
+
+        # Add all of the node_data, using the "node_name" attr as the NX Graph node_id
+        nodes_df = nodes_df.set_index('node_name')
+        node_data_dict = nodes_df.to_dict(orient='index')
+        networkx.set_node_attributes(nx_graph, nodes_df.to_dict(orient='index'))
+
+        return nx_graph
+
     # frm: TODO: Create a test for this routine
     def original_node_ids_for_set(self, set_of_nodes):
         # Utility routine to quickly translate a set of node_ids to their original node_ids
@@ -246,6 +305,8 @@ class Graph:
     def verify_graph_is_valid(self):
 
         # Sanity check - this is where to add additional sanity checks in the future.
+
+        # frm: TODO:  Enhance this routine to do more...
 
         # Checks that there is one and only one graph
         if not (
@@ -757,6 +818,12 @@ class Graph:
 
         self.verify_graph_is_valid()
 
+        # frm: TODO:  Think about whether edges() should return a set or a list.
+        #
+        # nodes() returns a list, so my first take is that edges() should do so
+        # as well (or maybe nodes() should return a set).  Seems odd for them to return
+        # different types...
+
         if (self.is_nx_graph()):
             # A set of tuples extracted from the graph's EdgeView
             return set(self._nx_graph.edges)
@@ -789,7 +856,7 @@ class Graph:
             raise Exception("Graph.get_edge_tuple - bad kind of graph object")
 
     def add_data(
-        self, df: pd.DataFrame, columns: Optional[Iterable[str]] = None
+        self,  df: pd.DataFrame, columns: Optional[Iterable[str]] = None
     ) -> None:
         """
         Add columns of a DataFrame to a graph as node attributes

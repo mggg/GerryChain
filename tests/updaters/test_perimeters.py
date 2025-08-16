@@ -35,6 +35,12 @@ def test_interior_perimeter_handles_flips_with_a_simple_grid():
 
 
 def test_cut_edges_by_part_handles_flips_with_a_simple_grid():
+
+    # frm: TODO:  Add a graphic here 
+    # 
+    # That will allow the person reading this code to make sense
+    # of what it does...
+    #             
     grid, flipped_grid = setup()
 
     result = flipped_grid["cut_edges_by_part"]

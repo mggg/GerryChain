@@ -39,6 +39,13 @@ def flows_from_changes(old_partition, new_partition) -> Dict:
         `{'in': <set of nodes that flowed in>, 'out': <set of nodes that flowed out>}`.
     :rtype: Dict
     """
+    
+    # frm: TODO:  Grok why there is a test for:  source != target
+    #
+    # It would seem to me that it would be a logic bug if there 
+    # was a "flip" that did not in fact change the partition mapping...
+    #
+
     flows = collections.defaultdict(create_flow)
     for node, target in new_partition.flips.items():
         source = old_partition.assignment.mapping[node]

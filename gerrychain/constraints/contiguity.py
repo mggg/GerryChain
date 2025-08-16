@@ -101,8 +101,6 @@ def _are_reachable(graph: Graph, start_node: Any, avoid: Callable, targets: Any)
             continue  # already searched this node.
         node_distances[node_id] = distance
 
-        dbg_neighbors = graph.neighbors(node_id)
-
         for neighbor in graph.neighbors(node_id):
             if avoid(node_id, neighbor):
                 continue
@@ -360,12 +358,11 @@ def _bfs(graph: Dict[int, list]) -> bool:
     """
     q = [next(iter(graph))]
     visited = set()
-    # frm TODO:  Make sure len() is defined on Graph object...
-    total_vertices = len(graph)
+    num_nodes = len(graph)
 
     # Check if the district has a single vertex. If it does, then simply return
     # `True`, as it's trivially connected.
-    if total_vertices <= 1:
+    if num_nodes <= 1:
         return True
 
     # bfs!
@@ -378,7 +375,7 @@ def _bfs(graph: Dict[int, list]) -> bool:
                 visited.add(neighbor)
                 q += [neighbor]
 
-    return total_vertices == len(visited)
+    return num_nodes == len(visited)
 
 # frm: TODO:  Verify that is_connected_bfs() works - add a test or two...
 

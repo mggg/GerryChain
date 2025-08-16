@@ -13,6 +13,16 @@ def partition(graph):
 
 def test_all_cut_edge_flips(partition):
     
+    # frm: TODO:  Maybe change all_cut_edge_flips to return a dict
+    #
+    # At present, it returns an iterator, which makes the code below
+    # more complicated than it needs to be.  If it just returned
+    # a dict, then the code would be:
+    #
+    #    result = set(
+    #      node, part for all_cut_edge_flips(partition).items()
+    #    )
+    #
     result = set(
         (node, part)
         for flip in all_cut_edge_flips(partition)
@@ -52,6 +62,11 @@ def test_all_valid_flips(partition):
         return True
 
     constraints = [disallow_six_to_one]
+
+    # frm: TODO:  If I created a utility routine to convert
+    #             a list of flips to original node_ids,
+    #             then I could use that here and then
+    #             convert the resulting list to a set...
 
     result = set(
         (node, part)
