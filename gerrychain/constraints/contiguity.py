@@ -8,20 +8,22 @@ from .bounds import SelfConfiguringLowerBound
 
 from ..graph import Graph
 
-# frm TODO: Remove this comment about NX dependencies (once we are all set with the work)
-#
-#           NX dependencies:
-#               def _are_reachable(G: nx.Graph, ...)
-#               nx.is_connected(partition.subgraphs[part]) for part in _affected_parts(partition)
-#               adj = nx.to_dict_of_lists(partition.subgraphs[part])
-#
-
 # frm: TODO:  Think about the efficiency of the routines in this module.  Almost all
 #               of these involve traversing the entire graph, and I fear that callers
 #               might make multiple calls.
 #
 #               Possible solutions are to 1) speed up these routines somehow and 2) cache
 #               results so that at least we don't do the traversals over and over.
+
+# frm: TODO: Rethink WTF this module is all about.  
+# 
+# It seems like a grab bag for lots of different things - used in different places.
+# 
+# What got me to write this comment was looking at the signature for def contiguous() 
+# which operates on a partition, but lots of other routines here operate on graphs or
+# other things.  So, what is going on?
+#
+
 
 def _are_reachable(graph: Graph, start_node: Any, avoid: Callable, targets: Any) -> bool:
     """
@@ -378,6 +380,8 @@ def _bfs(graph: Dict[int, list]) -> bool:
     return num_nodes == len(visited)
 
 # frm: TODO:  Verify that is_connected_bfs() works - add a test or two...
+
+# frm: TODO:  Move this code into graph.py.  It is all about the Graph...
 
 # frm: Code obtained from the web - probably could be optimized...
 #       This code replaced calls on nx.is_connected()

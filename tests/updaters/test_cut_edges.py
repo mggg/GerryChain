@@ -30,8 +30,8 @@ def invalid_cut_edges(partition):
 def translate_flips_to_internal_node_ids(partition, flips):
     # Translate flips into the internal_node_ids for the partition
     internal_flips = {}
-    for original_node_id, part in flips.items():
-        internal_node_id = partition.graph.internal_node_id_for_original_node_id(original_node_id)
+    for original_nx_node_id, part in flips.items():
+        internal_node_id = partition.graph.internal_node_id_for_original_nx_node_id(original_nx_node_id)
         internal_flips[internal_node_id] = part
     return internal_flips
 

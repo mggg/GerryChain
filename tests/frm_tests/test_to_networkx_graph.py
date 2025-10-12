@@ -103,7 +103,7 @@ def test_to_networkx_graph_works():
 
     # Add some additional data
     for node_id in new_graph.node_indices:
-        new_graph.node_data(node_id)["internal-node-data"] = new_graph.original_node_id_for_internal_node_id(node_id)
+        new_graph.node_data(node_id)["internal-node-data"] = new_graph.original_nx_node_id_for_internal_node_id(node_id)
     for edge_id in new_graph.edge_indices:
         new_graph.edge_data(edge_id)["internal-edge-data"] = "internal-edge-data"
 
@@ -120,7 +120,7 @@ def test_to_networkx_graph_works():
 
     flips = {'A': 1, 'B': 1, 'C': 1}
     # Create a new partition based on these flips - using "original" node_ids
-    new_partition = partition.flip(flips, use_original_node_ids=True)
+    new_partition = partition.flip(flips, use_original_nx_node_ids=True)
 
 
     # Get the NX graph after doing the flips.
@@ -134,12 +134,12 @@ def test_to_networkx_graph_works():
     # convert the internal assignments into "original" node_ids
     original_assignment_0 = {}
     for node_id, part in internal_assignment_0.items():
-        original_node_id = partition.graph.original_node_id_for_internal_node_id(node_id)
-        original_assignment_0[original_node_id] = part
+        original_nx_node_id = partition.graph.original_nx_node_id_for_internal_node_id(node_id)
+        original_assignment_0[original_nx_node_id] = part
     original_assignment_1 = {}
     for node_id, part in internal_assignment_1.items():
-        original_node_id = partition.graph.original_node_id_for_internal_node_id(node_id)
-        original_assignment_1[original_node_id] = part
+        original_nx_node_id = partition.graph.original_nx_node_id_for_internal_node_id(node_id)
+        original_assignment_1[original_nx_node_id] = part
 
     # Check that all is well...
 

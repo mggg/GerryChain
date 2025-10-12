@@ -13,7 +13,7 @@ def setup():
 
     grid = Grid((4, 4), with_diagonals=False)
 
-    flipped_grid = grid.flip({(2, 1): 3}, use_original_node_ids=True)
+    flipped_grid = grid.flip({(2, 1): 3}, use_original_nx_node_ids=True)
 
     return grid, flipped_grid
 
@@ -51,8 +51,8 @@ def test_cut_edges_by_part_handles_flips_with_a_simple_grid():
         new_set_of_edges = set()
         for edge in set_of_edges:
             new_edge = (
-              flipped_grid.graph.original_node_id_for_internal_node_id(edge[0]),
-              flipped_grid.graph.original_node_id_for_internal_node_id(edge[1]),
+              flipped_grid.graph.original_nx_node_id_for_internal_node_id(edge[0]),
+              flipped_grid.graph.original_nx_node_id_for_internal_node_id(edge[1]),
             )
             new_set_of_edges.add(new_edge)
         new_result[part] = new_set_of_edges

@@ -159,16 +159,16 @@ class Partition:
         # a RustworkX graph, and make sure it is also a FrozenGraph.  Both
         # of these are important for performance.
 
-        # frm: TODO:  Do we want to continue to allow users to create a Partition
-        #               directly from an NX graph?  I suppose there is no harm...
+        # Note that we automatically convert NetworkX based graphs to use RustworkX
+        # when we create a Partition object.
         #
-        # The answer is YES - creating and manipulating NX Graphs is easy and users
+        # Creating and manipulating NX Graphs is easy and users
         # are familiar with doing so.  It makes sense to preserve the use case of 
         # creating an NX-Graph and then allowing the code to under-the-covers
         # convert to RX - both for legacy compatibility, but also because NX provides
         # a really nice and easy way to create graphs.
         #
-        # So this TODO should be interpreted as a todo-item to update the documentation
+        # TODO: update the documentation
         # to describe the use case of creating a graph using NX.  That documentation
         # should also describe how to post-process results of a MarkovChain run
         # but I haven't figured that out yet...
@@ -194,14 +194,6 @@ class Partition:
                   nx_to_rx_node_id_map
                 )
                 self.assignment = new_rx_assignment
-
-                # We also have to update the _node_id_to_original_node_id_map to refer to the node_ids
-                # in the NX Graph object.
-                _node_id_to_original_node_id_map = {}
-                for node_id in graph.nodes:
-                    original_node_id = graph.node_data(node_id)["__networkx_node__"]
-                    _node_id_to_original_node_id_map[node_id] = original_node_id
-                graph._node_id_to_original_node_id_map = _node_id_to_original_node_id_map
 
             else:
                 self.assignment = get_assignment(assignment, graph)
@@ -271,7 +263,7 @@ class Partition:
     def __len__(self):
         return len(self.parts)
 
-    def flip(self, flips: Dict, use_original_node_ids=False) -> "Partition":
+    def flip(self, flips: Dict, use_original_nx_node_ids=False) -> "Partition":
         """
         Returns the new partition obtained by performing the given `flips`
         on this partition.
@@ -281,7 +273,7 @@ class Partition:
         :rtype: Partition
         """
 
-        # frm: TODO: Change comments above to document new optional parameter, use_original_node_ids.
+        # frm: TODO: Change comments above to document new optional parameter, use_original_nx_node_ids.
         #
         # This is a new issue that arises from the fact that node_ids in RX are different from those
         # in the original NX graph.  In the pre-RX code, we did not need to distinguish between
@@ -296,10 +288,10 @@ class Partition:
         # Note that original node_ids in flips are typically used in tests
         #
 
-        if use_original_node_ids:
+        if use_original_nx_node_ids:
             new_flips = {}
-            for original_node_id, part in flips.items():
-                internal_node_id = self.graph.internal_node_id_for_original_node_id(original_node_id)
+            for original_nx_node_id, part in flips.items():
+                internal_node_id = self.graph.internal_node_id_for_original_nx_node_id(original_nx_node_id)
                 new_flips[internal_node_id] = part
             flips = new_flips
 
@@ -399,9 +391,10 @@ class Partition:
         import geopandas
 
         if geometries is None:
-            geometries = self.graph.geometry
-            # frm: TODO: Test that self.graph.geometry is not None - but first need to grok
-            #               where this is set (other than Graph.from_geodataframe())
+            if hasattr(self.graph, "geometry"):
+                geometries = self.graph.geometry
+            else:
+                raise Exception("Partition.plot: graph has no geometry data")
 
         if set(geometries.index) != set(self.graph.nodes):
             raise TypeError(

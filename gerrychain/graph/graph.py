@@ -32,9 +32,8 @@ import geopandas as gp
 from shapely.ops import unary_union
 from shapely.prepared import prep
 
-import numpy as np
-from scipy.sparse import csr_array
-
+import numpy 
+import scipy
 
 #########################################################
 # frm Overview of changes (May 2025):
@@ -181,6 +180,9 @@ class Graph:
 
     # frm: TODO:    Add documentation for new data members I am adding:
     #               _nx_graph, _rx_graph, _node_id_to_parent_node_id_map, _is_a_subgraph
+    #               _node_id_to_original_nx_node_id_map
+    #                   => used to recreate NX graph from an RX graph and also 
+    #                      as an aid for testing
 
     @classmethod
     def from_networkx(cls, nx_graph: networkx.Graph) -> "Graph":
@@ -193,12 +195,31 @@ class Graph:
         graph._node_id_to_parent_node_id_map = {node: node for node in graph.node_indices}   
         # Maps node_ids in the graph to the "original" node_ids in parent graph.
         # For top-level graphs, this is just an identity map 
-        graph._node_id_to_original_node_id_map = {node: node for node in graph.node_indices}   
+        graph._node_id_to_original_nx_node_id_map = {node: node for node in graph.node_indices}   
         graph.nx_to_rx_node_id_map = None   # only set when an NX based graph is converted to be an RX based graph
         return graph
     
     @classmethod
     def from_rustworkx(cls, rx_graph: rustworkx.PyGraph) -> "Graph":
+        # This routine is intended to be used to create top level graphs that
+        # are 1) not subgraphs and 2) not based on NetworkX Graphs.  Stated
+        # differently, subgraphs and RX graphs derived from NetworkX graphs 
+        # need to create translation maps for node_ids (either to the parent
+        # of a subgraph or the "original" node in a NetworkX Graph), and this
+        # routine does neither of those things.
+
+        # frm: TODO:  Think about node data dictionaries - do I need to check for them?
+        #
+        # While NX graphs always have a node data dictionary, RX graphs do not have to 
+        # have any data, and the data does not need to be a data dictionary.  Since 
+        # gerrychain code depends on having a data dictionary associated with nodes,
+        # it probably makes sense to make sure that the rustworkx graph provided
+        # as a parameter does in fact have a data dictionary for every node in the
+        # graph...
+        #
+        # The same applies for edge data...
+        #
+
         graph = cls()   
         graph._rx_graph = rx_graph
         graph._nx_graph = None
@@ -206,9 +227,13 @@ class Graph:
         # Maps node_ids in the graph to the "parent" node_ids in the parent graph.
         # For top-level graphs, this is just an identity map 
         graph._node_id_to_parent_node_id_map = {node: node for node in graph.node_indices}   
-        # Maps node_ids in the graph to the "original" node_ids in parent graph.
-        # For top-level graphs, this is just an identity map 
-        graph._node_id_to_original_node_id_map = {node: node for node in graph.node_indices}   
+        # Maps node_ids in the graph to the "original" NX node_ids.  At this point, we
+        # don't know if this RX based graph was indeed based on an NX graph, so we just 
+        # set this to the identity map - which makes sense if this was not derived from
+        # and NX-based Graph.  However, in the case when the graph is indeed derived from
+        # an NX-based Graph, it is the responsibility of the caller to set 
+        # the _node_id_to_original_nx_node_id_map appropriately.
+        graph._node_id_to_original_nx_node_id_map = {node: node for node in graph.node_indices}   
         graph.nx_to_rx_node_id_map = None   # only set when an NX based graph is converted to be an RX based graph
         return graph
 
@@ -228,6 +253,10 @@ class Graph:
         # Graph used to create the RX-based Graph object.
         #
 
+        # Confirm that this RX based graph was derived from an NX graph...
+        if self._node_id_to_original_nx_node_id_map == None:
+            raise Exception("to_networkx_graph: _node_id_to_original_nx_node_id_map is None")
+
         rx_graph = self.get_rx_graph()
 
         # Extract node data
@@ -235,8 +264,8 @@ class Graph:
         for node_id in rx_graph.node_indices():
             node_payload = rx_graph[node_id]
             # Get the "original" node_id
-            original_node_id = self.original_node_id_for_internal_node_id(node_id)
-            node_data.append({"node_name": original_node_id, **node_payload})
+            original_nx_node_id = self.original_nx_node_id_for_internal_node_id(node_id)
+            node_data.append({"node_name": original_nx_node_id, **node_payload})
 
         # Extract edge data
         edge_data = []
@@ -245,12 +274,12 @@ class Graph:
             edge_0_node_id = edge[0]
             edge_1_node_id = edge[1]
             # Get the "original" node_ids
-            edge_0_original_node_id = self.original_node_id_for_internal_node_id(edge_0_node_id)
-            edge_1_original_node_id = self.original_node_id_for_internal_node_id(edge_1_node_id)
+            edge_0_original_nx_node_id = self.original_nx_node_id_for_internal_node_id(edge_0_node_id)
+            edge_1_original_nx_node_id = self.original_nx_node_id_for_internal_node_id(edge_1_node_id)
             edge_payload = rx_graph.get_edge_data_by_index(edge_id)
             # Add edges and edge data using the original node_ids
             # as the names/IDs for the nodes that make up the edge
-            edge_data.append({"source": edge_0_original_node_id, "target": edge_1_original_node_id, **edge_payload})
+            edge_data.append({"source": edge_0_original_nx_node_id, "target": edge_1_original_nx_node_id, **edge_payload})
 
         # Create Pandas DataFrames
     
@@ -264,31 +293,32 @@ class Graph:
 
         # Add all of the node_data, using the "node_name" attr as the NX Graph node_id
         nodes_df = nodes_df.set_index('node_name')
+        # frm: TODO:  WTF is going on with the line immediately below?
         node_data_dict = nodes_df.to_dict(orient='index')
         networkx.set_node_attributes(nx_graph, nodes_df.to_dict(orient='index'))
 
         return nx_graph
 
     # frm: TODO: Create a test for this routine
-    def original_node_ids_for_set(self, set_of_nodes):
+    def original_nx_node_ids_for_set(self, set_of_nodes):
         # Utility routine to quickly translate a set of node_ids to their original node_ids
-        _node_id_to_original_node_id_map = self._node_id_to_original_node_id_map 
-        new_set = {_node_id_to_original_node_id_map[node_id] for node_id in set_of_nodes}
+        _node_id_to_original_nx_node_id_map = self._node_id_to_original_nx_node_id_map 
+        new_set = {_node_id_to_original_nx_node_id_map[node_id] for node_id in set_of_nodes}
         return new_set
 
     # frm: TODO: Create a test for this routine
-    def original_node_ids_for_list(self, list_of_nodes):
+    def original_nx_node_ids_for_list(self, list_of_nodes):
         # Utility routine to quickly translate a set of node_ids to their original node_ids
-        _node_id_to_original_node_id_map = self._node_id_to_original_node_id_map 
-        new_list = [_node_id_to_original_node_id_map[node_id] for node_id in set_of_nodes]
+        _node_id_to_original_nx_node_id_map = self._node_id_to_original_nx_node_id_map 
+        new_list = [_node_id_to_original_nx_node_id_map[node_id] for node_id in list_of_nodes]
         return new_list
     
-    def original_node_id_for_internal_node_id(self, internal_node_id):
-        return self._node_id_to_original_node_id_map[internal_node_id]
+    def original_nx_node_id_for_internal_node_id(self, internal_node_id):
+        return self._node_id_to_original_nx_node_id_map[internal_node_id]
 
     # frm: TODO: Create a test for this routine
-    def internal_node_id_for_original_node_id(self, original_node_id):
-        # frm: TODO:  Think about a better way to map original_node_ids to internal node_ids
+    def internal_node_id_for_original_nx_node_id(self, original_nx_node_id):
+        # frm: TODO:  Think about a better way to map original_nx_node_ids to internal node_ids
         #
         # The problem is that when this routine is called, it may often be called repeatedly 
         # for a list of nodes, and we create the reverse dict every time this is called which
@@ -298,9 +328,9 @@ class Graph:
         
         # reverse the map so we can go from original node_id to internal node_id
         orignal_node_id_to_internal_node_id_map = {
-          v: k for k,v in self._node_id_to_original_node_id_map.items()
+          v: k for k,v in self._node_id_to_original_nx_node_id_map.items()
         }
-        return orignal_node_id_to_internal_node_id_map[original_node_id]
+        return orignal_node_id_to_internal_node_id_map[original_nx_node_id]
 
     def verify_graph_is_valid(self):
 
@@ -346,9 +376,25 @@ class Graph:
         #
         self.verify_graph_is_valid()
         if self.is_nx_graph():
-            rx_graph = rustworkx.networkx_converter(self._nx_graph, keep_attributes=True)
+
+            if (self._is_a_subgraph):
+                # This routine is intended to be used in exactly one place - in converting
+                # an NX based Graph object to be RX based when creating a Partition object.
+                # In the future, it might become useful for other reasons, but until then
+                # to guard against careless uses, the code will insist that it not be a subgraph.
+
+                # frm: TODO:  Add a comment about the intended use of this routine to its 
+                #               overview comment above.
+                raise Exception("convert_from_nx_to_rx: graph to be converted is a subgraph")
+
+            nx_graph = self._nx_graph
+            rx_graph = rustworkx.networkx_converter(nx_graph, keep_attributes=True)
 
             converted_graph = Graph.from_rustworkx(rx_graph)
+
+            # Some graphs have geometry data (from a geodataframe), so preserve it if it exists
+            if hasattr(self, "geometry"):
+                converted_graph.geometry = self.geometry
 
             # Create a mapping from the old NX node_ids to the new RX node_ids (created by
             # RX when it converts from NX)
@@ -356,7 +402,15 @@ class Graph:
               converted_graph.node_data(node_id)["__networkx_node__"]: node_id
               for node_id in converted_graph._rx_graph.node_indices()
             }
-            converted_graph._nx_to_rx_node_id_map = nx_to_rx_node_id_map
+            converted_graph.nx_to_rx_node_id_map = nx_to_rx_node_id_map
+
+            # We also have to update the _node_id_to_original_nx_node_id_map to refer to the node_ids
+            # in the NX Graph object.
+            _node_id_to_original_nx_node_id_map = {}
+            for node_id in converted_graph.nodes:
+                original_nx_node_id = converted_graph.node_data(node_id)["__networkx_node__"]
+                _node_id_to_original_nx_node_id_map[node_id] = original_nx_node_id
+            converted_graph._node_id_to_original_nx_node_id_map = _node_id_to_original_nx_node_id_map
 
             return converted_graph
         elif self.is_rx_graph():
@@ -369,7 +423,7 @@ class Graph:
         if not self.is_rx_graph():
             raise Exception("get_nx_to_rx_node_id_map: Graph is not an RX based Graph")
 
-        return self._nx_to_rx_node_id_map
+        return self.nx_to_rx_node_id_map
 
     @classmethod
     def from_json(cls, json_file: str) -> "Graph":
@@ -834,6 +888,15 @@ class Graph:
             raise Exception("Graph.edges - bad kind of graph object")
 
     def add_edge(self, node_id1, node_id2):
+        # frm: TODO:  Think about whether this routine makes sense for RX based Graph objects
+        #
+        # The current paradigm is that the user will use NX to create and modify graphs, but
+        # then transition (automatically) to using RX once a Partition object is created.
+        # This paradigm would not allow modifying an RX graph, so maybe (until we transition
+        # to allowing folks to start with RX based Graph objects) we disallow this for RX
+        # based graphs
+        #
+
         self.verify_graph_is_valid()
 
         if (self.is_nx_graph()):
@@ -845,6 +908,14 @@ class Graph:
             raise Exception("Graph.add_edge - bad kind of graph object")
 
     def get_edge_tuple(self, edge_id):
+
+        # frm: TODO:  Delete this routine after verifying that nobody uses it.
+        #
+        # It appears that the gerrychain code does not use this.  Need to 
+        # verify that it was added by me (and hence is not part of any 
+        # external legacy code), but then it should be deleted as it is 
+        # semantically the same as get_edge_from_edge_id()
+
         self.verify_graph_is_valid()
 
         if (self.is_nx_graph()):
@@ -1094,7 +1165,7 @@ class Graph:
             new_subgraph = self.from_networkx(nx_subgraph)
             # for NX, the node_ids in subgraph are the same as in the parent graph
             _node_id_to_parent_node_id_map = {node: node for node in nodes}
-            _node_id_to_original_node_id_map = {node: node for node in nodes}   
+            _node_id_to_original_nx_node_id_map = {node: node for node in nodes}   
         elif (self.is_rx_graph()):
             # frm TODO:  Need to check logic below - not sure this works exactly correctly for RX...
             if isinstance(nodes, frozenset) or isinstance(nodes, set):
@@ -1110,9 +1181,24 @@ class Graph:
                 self.node_data(node_id)["parent_node_id"] = node_id
             
             # frm: TODO:  Since data is shared by nodes in subgraphs, perhaps we could just set
-            #               the "original_node_id" in the beginning and rely on it forever...
+            #               the "original_nx_node_id" in the beginning and rely on it forever...
+            #
+            # This actually gives me the heebie-jeebies - we have aliased data that we are overwriting.
+            # Either it is aliased data and we count on that and don't bother to update it, or else
+            # we ensure that it is NOT aliased data and then we can feel free to overwrite it and/or
+            # set it anew...
+            #
+            # In short, verify that data in subgraphs is shared (in RX) and then think to make sure
+            # that we do NOT need to set this value, because it is already set.
+            #
+            # A more general issue is whether it is OK for data in subgraphs to be shared.  I think
+            # so because we do not store any temporary or context dependent information in node-data
+            # but it would be nice to validate that (and ideally to test it).  At the very least
+            # if subgraph data (and in fact NX and RX node data) is shared, then that should be documented
+            # up the wazoo...
+            #
             for node_id in nodes:
-                self.node_data(node_id)["original_node_id"] = self._node_id_to_original_node_id_map[node_id]
+                self.node_data(node_id)["original_nx_node_id"] = self._node_id_to_original_nx_node_id_map[node_id]
 
             rx_subgraph = self._rx_graph.subgraph(nodes)
             new_subgraph = self.from_rustworkx(rx_subgraph)
@@ -1122,21 +1208,25 @@ class Graph:
             for subgraph_node_id in new_subgraph.node_indices:
                 _node_id_to_parent_node_id_map[subgraph_node_id] = new_subgraph.node_data(subgraph_node_id)["parent_node_id"]
             # frm: Create the map from subgraph node_id to the original graph's node_id
-            _node_id_to_original_node_id_map = {}
+            _node_id_to_original_nx_node_id_map = {}
             for subgraph_node_id in new_subgraph.node_indices:
-                _node_id_to_original_node_id_map[subgraph_node_id] = new_subgraph.node_data(subgraph_node_id)["original_node_id"]
+                _node_id_to_original_nx_node_id_map[subgraph_node_id] = new_subgraph.node_data(subgraph_node_id)["original_nx_node_id"]
 
         else:
             raise Exception("Graph.subgraph - bad kind of graph object")
 
         new_subgraph._is_a_subgraph = True
         new_subgraph._node_id_to_parent_node_id_map = _node_id_to_parent_node_id_map
-        new_subgraph._node_id_to_original_node_id_map = _node_id_to_original_node_id_map
+        new_subgraph._node_id_to_original_nx_node_id_map = _node_id_to_original_nx_node_id_map
 
         return new_subgraph
 
     def translate_subgraph_node_ids_for_flips(self, flips):
         # flips is a dictionary mapping node_ids to parts (districts).
+        # This routine replaces the node_ids of the subgraph with the node_ids
+        # for the same node in the parent graph.  This routine is used to
+        # when a computation is made on a subgraph but the resulting flips
+        # being returned want to be the appropriate node_ids for the parent graph.
         translated_flips = {}
         for subgraph_node_id, part in flips.items():
             parent_node_id = self._node_id_to_parent_node_id_map[subgraph_node_id]
@@ -1145,12 +1235,16 @@ class Graph:
         return translated_flips
 
     def translate_subgraph_node_ids_for_set_of_nodes(self, set_of_nodes):
+        # This routine replaces the node_ids of the subgraph with the node_ids
+        # for the same node in the parent graph.  This routine is used to
+        # when a computation is made on a subgraph but the resulting set of nodes
+        # being returned want to be the appropriate node_ids for the parent graph.
         translated_set_of_nodes = set()
         for node_id in set_of_nodes:
             translated_set_of_nodes.add(self._node_id_to_parent_node_id_map[node_id])
         return translated_set_of_nodes
 
-    def nx_generic_bfs_edges(self, source, neighbors=None, depth_limit=None):
+    def generic_bfs_edges(self, source, neighbors=None, depth_limit=None):
         # frm: Code copied from GitHub:
         #
         #  https://github.com/networkx/networkx/blob/main/networkx/algorithms/traversal/breadth_first_search.py
@@ -1254,7 +1348,7 @@ class Graph:
         #       the children of that node (list of node_ids).
         parent = root_node_id
         children = []
-        for p, c in self.nx_generic_bfs_edges(root_node_id):
+        for p, c in self.generic_bfs_edges(root_node_id):
             # frm: parent-child pairs appear ordered by their parent, so
             #       we can collect all of the children for a node by just
             #       iterating through pairs until the parent changes.
@@ -1276,7 +1370,7 @@ class Graph:
         # frm Note:  We had do implement our own, because the built-in RX version only worked 
         #               for directed graphs.
         predecessors = []
-        for s, t in self.nx_generic_bfs_edges(root_node_id):
+        for s, t in self.generic_bfs_edges(root_node_id):
             predecessors.append((t,s))
         return dict(predecessors)
 
@@ -1316,11 +1410,13 @@ class Graph:
         All of this is interesting, but I have not yet spent the
         time to figure out why it matters in the code.
 
-        TODO: The code in NetworkX for bfs_successors() and bfs_predecessors()
-              works on undirected graphs (with cleverness to cut cycles), but
-              the same named routines in RX only operate on directed graphs,
-              so there is work to be done to make this functionality work 
-              for RX...
+        TODO: Decide if it makes sense to have different implementations 
+              for NX and RX.  The code below has the original definition
+              from the pre-RX codebase, but the code for RX will work 
+              for NX too - so I think that there is no good reason to
+              have different code for NX. Maybe no harm, but on the other
+              hand, it seems like a needless difference and hence more 
+              complexity...
         """
 
         self.verify_graph_is_valid()
@@ -1401,10 +1497,10 @@ class Graph:
         elif (self.is_rx_graph()):
             data_dict = self._rx_graph.edges()[edge_id]
         else:
-            raise Exception("Graph.node_data - bad kind of graph object")
+            raise Exception("Graph.edge_data - bad kind of graph object")
 
         if not isinstance(data_dict, dict):
-            raise Exception("node data is not a dictionary");
+            raise Exception("edge data is not a dictionary");
         
         return data_dict
 
@@ -1434,24 +1530,98 @@ class Graph:
             # 1. Get the adjacency matrix
             adj_matrix = rustworkx.adjacency_matrix(rx_graph)
             # 2. Calculate the degree matrix (simplified for this example)
-            degree_matrix = np.diag([rx_graph.degree(node) for node in rx_graph.node_indices()])
+            degree_matrix = numpy.diag([rx_graph.degree(node) for node in rx_graph.node_indices()])
             # 3. Calculate the Laplacian matrix
             np_laplacian_matrix = degree_matrix - adj_matrix
-            # 4.  Convert the NumPy array to a csr_array
-            laplacian_matrix = csr_array(np_laplacian_matrix)
+            # 4.  Convert the NumPy array to a scipy.sparse array
+            laplacian_matrix = scipy.sparse.csr_array(np_laplacian_matrix)
         else:
             raise Exception("laplacian_matrix: badly configured graph parameter")
 
         return laplacian_matrix
 
     def normalized_laplacian_matrix(self):
+
+        def create_scipy_sparse_array_from_rx_graph(rx_graph):
+            num_nodes = rx_graph.num_nodes()
+
+            rows = []
+            cols = []
+            data = []
+
+            for u, v in rx_graph.edge_list():
+                rows.append(u)
+                cols.append(v)
+                data.append(1)   # simple adjacency matrix, so just 1 not weight attribute
+
+            sparse_array = scipy.sparse.coo_matrix((data, (rows,cols)), shape=(num_nodes, num_nodes))
+
+            return sparse_array
+
         if self.is_nx_graph():
             nx_graph = self._nx_graph
             laplacian_matrix = networkx.normalized_laplacian_matrix(nx_graph)
         elif self.is_rx_graph():
             # frm: TODO:  Implement normalized_laplacian_matrix() for RX
             rx_graph = self._rx_graph
-            raise Exception("normalized_laplacian_matrix NYI for RustworkX based Graph objects")
+            # raise Exception("normalized_laplacian_matrix NYI for RustworkX based Graph objects")
+            """
+            The following is code copied from the networkx linalg file, laplacianmatrix.py
+            for normalized_laplacian_matrix.  Below this code has been modified to work for
+            gerrychain (with an RX-based Graph object)
+
+            import numpy as np
+            import scipy as sp
+
+            if nodelist is None:
+                nodelist = list(G)
+            A = nx.to_scipy_sparse_array(G, nodelist=nodelist, weight=weight, format="csr")
+            n, _ = A.shape
+            diags = A.sum(axis=1)
+            D = sp.sparse.dia_array((diags, 0), shape=(n, n)).tocsr()
+            L = D - A
+            with np.errstate(divide="ignore"):
+                diags_sqrt = 1.0 / np.sqrt(diags)
+            diags_sqrt[np.isinf(diags_sqrt)] = 0
+            DH = sp.sparse.dia_array((diags_sqrt, 0), shape=(n, n)).tocsr()
+            return DH @ (L @ DH)
+
+            """
+
+            # frm: TODO:  Get someone to validate that this in fact does the right thing.
+            #
+            # The one test, test_proposal_returns_a_partition[spectral_recom], in test_proposals.py
+            # that uses normalized_laplacian_matrix() now passes, but it is for a small 6x6 graph
+            # and hence is not a real world test...
+            #
+            # I have left debugging print statements (commented out) in case someone in the future
+            # (probably me) wants to verify that the right things are happening...
+
+            # Original NetworkX Code:    
+            #     A = networkx.to_scipy_sparse_array(G, nodelist=nodelist, weight=weight, format="csr")
+            #
+            A = create_scipy_sparse_array_from_rx_graph(rx_graph)
+            n, _ = A.shape          # shape() => dimensions of the array (rows, cols), so n = num_rows
+            # print("")
+            # print(f"normalized_laplacian_matrix: num_rows = {n}")
+            # print(f"normalized_laplacian_matrix: sparse_array is: {A}")
+            diags = A.sum(axis=1)   # sum of values in each row => column vector
+            diags = diags.T         # convert to a row vector / 1D array
+            # print(f"normalized_laplacian_matrix: diags is: \n{diags}")
+            D = scipy.sparse.dia_array((diags, [0]), shape=(n, n)).tocsr()
+            # print(f"normalized_laplacian_matrix: D is: \n{D}")
+            L = D - A
+            # print(f"normalized_laplacian_matrix: L is: \n{L}")
+            with numpy.errstate(divide="ignore"):
+                diags_sqrt = 1.0 / numpy.sqrt(diags)
+            diags_sqrt[numpy.isinf(diags_sqrt)] = 0
+            # print(f"normalized_laplacian_matrix: diags_sqrt is: \n{diags_sqrt}")
+            DH = scipy.sparse.dia_array((diags_sqrt, 0), shape=(n, n)).tocsr()
+            # print(f"normalized_laplacian_matrix: DH is: \n{DH}")
+            normalized_laplacian = DH @ (L @ DH)
+            # print(f"normalized_laplacian_matrix: normalized_laplacian is: \n{normalized_laplacian}")
+            return normalized_laplacian
+
         else:
             raise Exception("normalized_laplacian_matrix: badly configured graph parameter")
 
@@ -1489,6 +1659,33 @@ class Graph:
 
         num_cc = len(connected_components)
         return num_cc
+
+    def is_a_tree(self):
+        if self.is_nx_graph():
+            nx_graph = self.get_nx_graph()
+            return networkx.is_tree(nx_graph)
+        elif self.is_rx_graph():
+            rx_graph = self.get_rx_graph()
+            num_nodes = rx_graph.num_nodes()
+            num_edges = rx_graph.num_edges()
+
+            # Condition 1: Check if the number of edges is one less than the number of nodes
+            if num_edges != num_nodes - 1:
+                return False
+
+            # Condition 2: Check for connectivity (and implicitly, acyclicity if E = V-1)
+            # A graph with V-1 edges and no cycles must be connected.
+            # A graph with V-1 edges and connected must be acyclic.
+
+            # We can check connectivity by ensuring there's only one connected component.
+            connected_components = rustworkx.connected_components(rx_graph)
+            if len(connected_components) != 1:
+                return False
+
+            return True
+        else:
+            raise Exception("is_a_tree: Bad kind of Graph")
+
 ######################################################
 
 class OriginalGraph(networkx.Graph):

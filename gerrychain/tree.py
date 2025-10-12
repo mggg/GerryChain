@@ -14,7 +14,7 @@ Key functionalities include:
   contraction or memoization techniques.
 - A suite of functions (`bipartition_tree`, `recursive_tree_part`, `_get_seed_chunks`, etc.)
   for partitioning graphs into balanced subsets based on population targets and tolerances.
-- Utility functions like `get_max_prime_factor_less_than` and `recursive_seed_part_inner`
+- Utility functions like `get_max_prime_factor_less_than` and `_recursive_seed_part_inner`
   to assist in complex partitioning tasks.
 
 Dependencies:
@@ -228,6 +228,16 @@ def random_spanning_tree(
     graph.verify_graph_is_valid()
 
     # frm: TODO:  Remove NX / RX dependency - maybe move to graph.py
+
+    # frm: TODO:  Think a bit about original_nx_node_ids 
+    #
+    # Original node_ids refer to the node_ids used when a graph was created.
+    # This mostly means remembering the NX node_ids when you create an RX
+    # based Graph object.  In the code below, we create an RX based Graph
+    # object, but we do not do anything to map original node_ids.  This is
+    # probably OK, but it depends on how the spanning tree is used elsewhere.
+    #
+    # In short, worth some thought...
 
     if (graph.is_nx_graph()):
         nx_graph = graph.get_nx_graph()
@@ -541,7 +551,6 @@ def find_balanced_edge_cuts_contraction(
                 Cut(
                     edge=e,
                     # frm: Original Code:  weight=h.graph.edges[e].get("random_weight", random.random()),
-                    # frm: TODO: edges vs. edge_ids:  edge_ids are wanted here (integers)
                     weight=h.graph.edge_data(
                         h.graph.get_edge_id_from_edge(e)
                     ).get("random_weight", random.random()),
@@ -1921,7 +1930,7 @@ def _get_seed_chunks(
 #       But maybe this is intended to be used externally...
 def get_max_prime_factor_less_than(n: int, ceil: int) -> Optional[int]:
     """
-    Helper function for recursive_seed_part_inner. Returns the largest prime factor of ``n``
+    Helper function for _recursive_seed_part_inner. Returns the largest prime factor of ``n``
     less than ``ceil``, or None if all are greater than ceil.
 
     :param n: The number to find the largest prime factor for.
@@ -1954,10 +1963,7 @@ def get_max_prime_factor_less_than(n: int, ceil: int) -> Optional[int]:
 
     return largest_factor
 
-# frm: only used in this file
-#       But maybe this is intended to be used externally...
-# frm TODO:  Peter says this is only ever used internally, so we can add underscore to the name
-def recursive_seed_part_inner(
+def _recursive_seed_part_inner(
     graph: Graph,           # frm: Original code:    graph: nx.Graph,
     num_dists: int,
     pop_target: Union[float, int],
@@ -2129,7 +2135,7 @@ def recursive_seed_part_inner(
         remaining_nodes -= nodes
         # frm: Create a list with the set of nodes returned by method() and then recurse
         #       to get the rest of the sets of nodes for remaining districts.
-        assignment = [nodes] + recursive_seed_part_inner(
+        assignment = [nodes] + _recursive_seed_part_inner(
             graph.subgraph(remaining_nodes),
             num_dists - 1,
             pop_target,
@@ -2155,7 +2161,7 @@ def recursive_seed_part_inner(
 
         assignment = []
         for chunk in chunks:
-            chunk_assignment = recursive_seed_part_inner(
+            chunk_assignment = _recursive_seed_part_inner(
                 graph.subgraph(chunk),
                 num_dists // num_chunks,    # new target number of districts
                 pop_target,
@@ -2170,7 +2176,7 @@ def recursive_seed_part_inner(
         # frm: From the logic above, this should never happen, but if it did
         #       because of a future edit (bug), at least this will catch it
         #       early before really bizarre things happen...
-        raise Exception("recursive_seed_part_inner(): Should never happen...")
+        raise Exception("_recursive_seed_part_inner(): Should never happen...")
 
     # The assignment object that has been created needs to have its
     # node_ids translated into parent_node_ids
@@ -2186,7 +2192,7 @@ def recursive_seed_part_inner(
 
 
 
-# frm ???:   This routine is never called - not in this file and not in any other GerryChain file.
+# frm TODO: ???:   This routine is never called - not in this file and not in any other GerryChain file.
 #               Is it intended to be used by end-users?  And if so, for what purpose?
 def recursive_seed_part(
     graph: Graph,         # frm: Original code:    graph: nx.Graph,
@@ -2201,7 +2207,7 @@ def recursive_seed_part(
 ) -> Dict:
     """
     Returns a partition with ``num_dists`` districts balanced within ``epsilon`` of
-    ``pop_target`` by recursively splitting graph using recursive_seed_part_inner.
+    ``pop_target`` by recursively splitting graph using _recursive_seed_part_inner.
 
     :param graph: The graph
     :type graph: nx.Graph
@@ -2237,7 +2243,7 @@ def recursive_seed_part(
     """
     
     # frm: Note: It is not strictly necessary to use a subgraph in the call below on
-    #               recursive_seed_part_inner(), because the top-level graph has
+    #               _recursive_seed_part_inner(), because the top-level graph has
     #               a _node_id_to_parent_node_id_map that just maps node_ids to themselves.  However,
     #               it seemed a good practice to ALWAYS call routines that are intended
     #               to deal with subgraphs, to use a subgraph even when not strictly 
@@ -2251,7 +2257,7 @@ def recursive_seed_part(
     #               In short - an agrument based on invariants being a good thing...
     #
     flips = {}
-    assignment = recursive_seed_part_inner(
+    assignment = _recursive_seed_part_inner(
         graph.subgraph(graph.node_indices),
         len(parts),
         pop_target,

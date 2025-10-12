@@ -32,10 +32,9 @@ def test_all_cut_edge_flips(partition):
     # Convert from internal node_ids to "original" node_ids
     new_result = set()
     for internal_node_id, part in result:
-        original_node_id = partition.graph.original_node_id_for_internal_node_id(internal_node_id)
-        new_result.add((original_node_id, part))
+        original_nx_node_id = partition.graph.original_nx_node_id_for_internal_node_id(internal_node_id)
+        new_result.add((original_nx_node_id, part))
 
-    # frm: TODO:  stmt below fails - the "result" has (2,2) instead of (3,2)
     assert new_result == {(6, 1), (7, 1), (8, 1), (4, 2), (5, 2), (3, 2)}
 
 
@@ -77,8 +76,7 @@ def test_all_valid_flips(partition):
     # Convert from internal node_ids to "original" node_ids
     new_result = set()
     for internal_node_id, part in result:
-        original_node_id = partition.graph.original_node_id_for_internal_node_id(internal_node_id)
-        new_result.add((original_node_id, part))
+        original_nx_node_id = partition.graph.original_nx_node_id_for_internal_node_id(internal_node_id)
+        new_result.add((original_nx_node_id, part))
 
-    # frm: TODO:  stmt below fails - the "result" has (2,2) instead of (3,2)
     assert new_result == {(7, 1), (8, 1), (4, 2), (5, 2), (3, 2)}

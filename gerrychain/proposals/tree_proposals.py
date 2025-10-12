@@ -200,8 +200,6 @@ def reversible_recom(
         # frm: Find all edges that cross from district a into district b
         return set(
             e
-            # frm: TODO: edges vs. edge_ids:  edges are wanted here (tuples)
-            # frm: Original Code:    for e in part.graph.edges
             for e in part.graph.edges
             if (
                 (
@@ -305,8 +303,6 @@ def reversible_recom(
     #               the subgraph's node_ids afterwards.
     #
     
-    # frm: TODO:  Clean up the code below - I munged it for debugging ...
-    
     # frm: Original Code:
     #    num_possible_districts, nodes = bipartition_tree_random_reversible(
     #        partition.graph.subgraph(subgraph_nodes),
@@ -322,7 +318,7 @@ def reversible_recom(
     num_possible_districts, nodes = result
 
     remaining_nodes = subgraph_nodes - set(nodes)
-    # frm: Notes to Self:  the ** operator below merges the two dicts into a single dict.
+    # Note:  the ** operator below merges the two dicts into a single dict.
     flips = {
         **{node: parts_to_merge[0] for node in nodes},
         **{node: parts_to_merge[1] for node in remaining_nodes},

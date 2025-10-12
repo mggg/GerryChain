@@ -160,8 +160,6 @@ class LocalitySplits:
         #
 
         if self.localities == []:
-            # frm: TODO:  NX vs. RX issues here.  graph.nodes(data=<xxx>) is NX specific...
-
             # frm: Original code:
             #    self.localitydict = dict(partition.graph.nodes(data=self.col_id))
             #

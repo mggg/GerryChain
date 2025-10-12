@@ -33,60 +33,23 @@ def random_assignment(graph, num_districts):
 def partition_with_election(graph_with_d_and_r_cols):
     graph = graph_with_d_and_r_cols
     assignment = random_assignment(graph, 3)
-    """
-    # frm: TODO:  NX vs RX Issue here - node_ids in parties_to_columns are in NX context...
-    
-    This is an "interesting" issue - mostly meaning it is a PITA.
 
-    The Election class allows you to specify what you want to tally as either a node
-    attribute or with an explicit external mapping of node_ids to values to be added.
-
-    The problem is that if you pass in an explicit external mapping, you are almost
-    certainly using node_ids that are the "original" NX node_ids which will NOT be
-    the same as the new RX node_ids assigned when a partition is created.
-
-    Note that if you just pass in an attribute name to get the data off the node
-    then there is no problem - the Tally code just uses the partition's part (district)
-    and nodes in the part (district) information.  No translation to/from original
-    node_ids necessary.
-
-    One approach to fixing this would be to just assume that any explicit mapping
-    should have the node_ids remapped after the partition is created.  This could
-    be done by having the Election class defer doing the tally until AFTER the 
-    partition has been created - the code would check to see if the tally exists,
-    and if it does not, then it would use the partition's information to 
-    translate the parties_to_columns data to use internal node_ids and compute
-    the initial tally.  After that, subsequent tallies for the next partition in
-    the chain should just work...
-
-    I am just not sure it is worth the extra complexity to continue to support
-    an explicit external mapping of node_ids to vote totals...
-
-    Need to ask Peter what he thinks we should do.  Do external / legacy users
-    use this???
-    
-    """
+    # Original Code - this was deprecated when we converted to using RustworkX
+    # based graphs in partitions.  The problem was that the node_ids used below
+    # are NX-based "original" node_ids that are not valid for the derived RustworkX
+    # based graph.
     #
-    # This is a royal pain, because we do not yet have a partition that tells us how 
-    # to map these "original" node_ids into "internal" node_ids.  
+    #    party_names_to_node_attribute_names = {
+    #        "D": {node: graph.node_data(node)["D"] for node in graph.nodes},
+    #        "R": {node: graph.node_data(node)["R"] for node in graph.nodes},
+    #    }
     #
-    # Even worse, this is a conceptual problem, since this use case - setting up an
-    # Election before creating a partition is perhaps a common use case, so we don't
-    # want to make it complicated for users.
+    # Instead we do the functionally equivalent operation which identifies where
+    # to find vote totals for each party using the attribute name for the party.
     #
-    # Need to think about what the proper solution is.  Should the Election updater
-    # translate from "original" node_ids to "internal" node_ids - perhaps keeping a 
-    # cache of the mapping to make it more efficient?
-    #
-    # What would the migration path be for 1) legacy NX users and 2) future RX users?
-    #
+    party_names_to_node_attribute_names = ["D", "R"]
 
-    parties_to_columns = {
-        "D": {node: graph.node_data(node)["D"] for node in graph.nodes},
-        "R": {node: graph.node_data(node)["R"] for node in graph.nodes},
-    }
-
-    election = Election("Mock Election", parties_to_columns)
+    election = Election("Mock Election", party_names_to_node_attribute_names)
     updaters = {"Mock Election": election, "cut_edges": cut_edges}
     return Partition(graph, assignment, updaters)
 
@@ -127,12 +90,12 @@ def test_Partition_can_update_stats():
     # Flip node with original node_id of 1 to be in part (district) 2
     flip = {1: 2}
 
-    new_partition = partition.flip(flip, use_original_node_ids=True)
+    new_partition = partition.flip(flip, use_original_nx_node_ids=True)
 
     assert new_partition["total_stat"][2] == 9
 
 
-def test_tally_multiple_columns(graph_with_d_and_r_cols):
+def test_tally_multiple_node_attribute_names(graph_with_d_and_r_cols):
     graph = graph_with_d_and_r_cols
 
     updaters = {"total": Tally(["D", "R"], alias="total")}
@@ -169,7 +132,7 @@ def test_vote_proportion_returns_nan_if_total_votes_is_zero(three_by_three_grid)
     graph = three_by_three_grid
 
     for node in graph.nodes:
-        for col in election.columns:
+        for col in election.node_attribute_names:
             graph.node_data(node)[col] = 0
 
     updaters = {"election": election}
@@ -334,8 +297,6 @@ def test_exterior_boundaries_as_a_set(three_by_three_grid):
 
 def test_exterior_boundaries(three_by_three_grid):
 
-    # frm: TODO:  Need to deal with NX vs. RX node_ids here - look at the other test_exterior_boundaries test
-
     graph = three_by_three_grid
 
     for i in [0, 1, 2, 3, 5, 6, 7, 8]:
@@ -361,7 +322,7 @@ def test_exterior_boundaries(three_by_three_grid):
     # Convert the flips into internal node_ids
     internal_flips = {}
     for node_id, part in flips.items():
-        internal_node_id = partition.graph.internal_node_id_for_original_node_id(node_id)
+        internal_node_id = partition.graph.internal_node_id_for_original_nx_node_id(node_id)
         internal_flips[internal_node_id] = part
 
     new_partition = Partition(parent=partition, flips=internal_flips)
@@ -382,20 +343,6 @@ def test_perimeter(three_by_three_grid):
     for edge in graph.edges:
         graph.edge_data(edge)["shared_perim"] = 1
 
-    """
-    frm: TODO:  BIG bug/issue here - assignments break when converting to RX
-
-    The problem is that RX renumbers nodes when it converts an NX graph to RX.  It
-    does this so that it can be sure that there are no gaps - and also because sometimes
-    node_ids in NX are not integers.  In any event, that means that any assignment 
-    for a Partition needs to have its node_ids (from NX) converted to be whatever RX
-    decided to use for the new node_ids.
-
-    I am not sure how to do this, because it does not appear that RX saves the NX
-    node_ids.  Need to check that, though...
-
-    HMMMMM....
-    """
     assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
     updaters = {
         "exterior_boundaries": exterior_boundaries,
@@ -424,21 +371,6 @@ def reject_half_of_all_flips(partition):
 
 def test_elections_match_the_naive_computation(partition_with_election):
     
-    # frm: TODO:  This test fails - find out why.
-
-    """
-    The pytest output follows:
-
-  File "/Users/fred/Documents/_play/_python/_redistricting/_gerrychain/_rustworkx_work/GerryChain/tests/updaters/test_updaters.py", line 391, in test_elections_match_the_naive_computation
-    assert expected_party_totals == election_view.totals_for_party
-AssertionError: assert {'D': {0: 119...2268, 2: 162}} == {'D': {0: 119...: 2430, 2: 0}}
-                             
-  Differing items:
-  {'D': {0: 1191, 1: 2946, 2: 152}} != {'D': {0: 1191, 1: 3098, 2: 0}}
-  {'R': {0: 1171, 1: 2268, 2: 162}} != {'R': {0: 1171, 1: 2430, 2: 0}}
-
-    """
-
     chain = MarkovChain(
         propose_random_flip,
         Validator([no_vanishing_districts, reject_half_of_all_flips]),
@@ -456,8 +388,8 @@ AssertionError: assert {'D': {0: 119...2268, 2: 162}} == {'D': {0: 119...: 2430,
         assert expected_party_totals == election_view.totals_for_party
 
 
-def expected_tally(partition, column):
+def expected_tally(partition, node_attribute_name):
     return {
-        part: sum(partition.graph.node_data(node)[column] for node in nodes)
+        part: sum(partition.graph.node_data(node)[node_attribute_name] for node in nodes)
         for part, nodes in partition.parts.items()
     }

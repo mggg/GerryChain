@@ -1,15 +1,6 @@
 from typing import List, Any, Tuple
 from ..graph import Graph
 
-# frm: ???: TODO:   Is this ever actually used by any other code?  If so, where and for what?
-#                   YES - it is used as the type of Partition.subgraphs.  So, I need to find
-#                   all access to partition.subgraphs and see how it is used.  It is also
-#                   used in contiguity.py
-#
-#                   This may be an opportunity to encapsulate knowldege of node_indices vs.
-#                   node_names...
-
-
 class SubgraphView:
     """
     A view for accessing subgraphs of :class:`Graph` objects.
