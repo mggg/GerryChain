@@ -122,7 +122,7 @@ def random_spanning_tree(
     :returns: The maximal spanning tree represented as a Networkx Graph.
     :rtype: nx.Graph
     """
-    # frm: ???:
+    # frm: TODO: Performance
     #           This seems to me to be an expensive way to build a random spanning
     #           tree.  It calls a routine to compute a "minimal" spanning tree that
     #           computes the total "weight" of the spanning tree and selects the 
@@ -190,19 +190,41 @@ def random_spanning_tree(
     #
     # since this doesn't reuse the reference.
 
-
-
-
-
     if region_surcharge is None:
         region_surcharge = dict()
 
     # frm: Original Code:   for edge in graph.edges():
     #       Changed because in RX edge_ids are integers while edges are tuples
 
+    # Add a random weight to each edge in the graph with the goal of 
+    # causing the selection of a different (random) spanning tree based
+    # on those weights.
+    #
+    # If a region_surcharge was passed in, then we want to add additional
+    # weight to edges that cross regions or that have a node that is 
+    # not in any region.  For example, if we want to keep municipalities
+    # together in the same district, the region_surcharge would contain
+    # an additional weight associated with the key for municipalities (say
+    # "mini") and if an edge went from one municipality to another or if
+    # either of the nodes in the edge were not in a municipality, then 
+    # the edge would be given the additional weight (value) associated
+    # with the region_surcharge.  This would preference/bias the 
+    # spanning_tree algorithm to select other edges... which would have
+    # the effect of prioritizing keeping regions intact.
+
+    # frm: TODO:  Verify that the comment above about region_surcharge is accurate
+
+    # Add random weights to the edges in the graph so that the spanning tree
+    # algorithm will select a different spanning tree each time.
+    #
     for edge_id in graph.edge_indices:
         edge = graph.get_edge_from_edge_id(edge_id)
         weight = random.random()
+
+        # If there are any entries in the region_surcharge dict, then add
+        # additional weight to the edge for 1) edges that cross region boundaries (one
+        # node is in one region and the other node is in a different region) and 2) edges
+        # where one (or both) of the nodes is not in a region
         for key, value in region_surcharge.items():
             # We surcharge edges that cross regions and those that are not in any region
             if (
@@ -218,7 +240,13 @@ def random_spanning_tree(
         # frm: Original Code:    graph.edges[edge]["random_weight"] = weight
         graph.edge_data(edge_id)["random_weight"] = weight
 
-    # frm: CROCK: (for the moment)
+    # frm: TODO: Think about (and at least document) the fact that edge_data (and node_data)
+    #            is shared by all partitions.  So, as we process a chain of partitions, we are
+    #            accessing the same underlying graph, and if we muck with edge_data and node_data
+    #            then we are changing that data for all partitions.  Stated differently, 
+    #            edge_data and node_data should be considered temporary and not persistent...
+
+    # frm: TODO: CROCK: (for the moment)
     #               We need to create a minimum spanning tree but the way to do so
     #               is different for NX and RX.  I am sure that there is a more elegant
     #               way to do this, and in any event, this dependence on NX vs RX 
@@ -800,6 +828,7 @@ def find_balanced_edge_cuts_memoization(
         ):
             e = (node, pred[node])
             wt = random.random()
+            # frm: TODO: Performance: Think if code below can be made faster...
             cuts.append(
                 Cut(
                     edge=e,
@@ -997,7 +1026,7 @@ def _region_preferred_max_weight_choice(
 
     return _max_weight_choice(cut_edge_list)
 
-# frm TODO:  RX version NYI...         def bipartition_tree(
+# frm TODO:     def bipartition_tree(
 #
 #               This might get complicated depending on what kinds of functions
 #               are used as parameters.  That is, do the functions used as parameters
@@ -1117,6 +1146,16 @@ def bipartition_tree(
     #           a function argument's signature?  What if someone refactors the code to have 
     #           different names???  *sigh*
     #
+    # A better strategy would be to lock in the function signature for ALL spanning_tree 
+    # functions and then just have the region_surcharge parameter not be used in some of them...
+    #
+    # Same with "one_sided_cut"
+    #
+    # Oh - and change "one_sided_cut" to be something a little more intuitive.  I have to 
+    # reset my mind every time I see it to figure out whether it means to split into
+    # two districts or just peel off one district...  *sigh*  Before doing this, check to
+    # see if "one_sided_cut" is a term of art that might make sense to some set of experts...
+    #
     if "region_surcharge" in signature(spanning_tree_fn).parameters:
         spanning_tree_fn = partial(spanning_tree_fn, region_surcharge=region_surcharge)
 
@@ -1144,6 +1183,32 @@ def bipartition_tree(
 
         # frm: ???: TODO:  Again - we should NOT be changing semantics based
         #                   on the names in signatures...
+        # Better approach is to have all of the poosible paramters exist
+        # in ALL of the versions of the cut_choice() functions and to
+        # have them default to None if not used by one of the functions.
+        # Then this code could just pass in the values to the 
+        # cut_choice function, and it could make sense of what to do.
+        #
+        # This makes it clear what the overall and comprehensive purpose
+        # of cut_choice functions are.  This centralizes the knowlege
+        # of what a cut_choice() function is supposed to do - or at least
+        # it prompts the programmer to document that a param in the 
+        # general scheme does not apply in a given instance.
+        #
+        # I realize that this is perhaps not "pythonic" - in that it 
+        # forces the programmer to document overall behavior instead
+        # of just finding a convenient way to sneak in something new.
+        # However, when code gets complicated, sneaky/clever code 
+        # is just not worth it - better to have each change be a little
+        # more painful (needing to change the function signature for 
+        # all instances of a generic function to add new functionality 
+        # that is only needed by one new instance).  This provides 
+        # a natural place (in comments of the generic function instances)
+        # to describe what is going on - and it alerts programmers
+        # that a given generic function has perhaps many different 
+        # instances - but that they all share the same high level
+        # responsibility.
+
         is_region_cut = (
             "region_surcharge" in signature(cut_choice).parameters
             and "populated_graph" in signature(cut_choice).parameters

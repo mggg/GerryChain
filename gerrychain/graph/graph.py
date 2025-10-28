@@ -334,9 +334,21 @@ class Graph:
 
     def verify_graph_is_valid(self):
 
+        # frm: TODO: Performance:  Only check verify_graph_is_valid() in development.
+        #
+        # For now, in order to assess performance differences between NX and RX
+        # I will just return True...
+        return True
+
+
         # Sanity check - this is where to add additional sanity checks in the future.
 
         # frm: TODO:  Enhance this routine to do more...
+
+        # frm: TODO: Performance:  verify_graph_is_valid() is expensive - called a lot
+        #
+        # Come up with a way to run this in "debug mode" - that is, while in development/testing
+        # but not in production.  It actually accounted for 5% of runtime...
 
         # Checks that there is one and only one graph
         if not (
@@ -345,8 +357,16 @@ class Graph:
            ):
             raise Exception("Graph.verify_graph_is_valid - graph not properly configured")
 
+    # frm: TODO: Performance:  is_nx_graph() and is_rx_graph() are expensive.
+    #
+    # Not all of the calls on these routines is needed in production - some are just
+    # sanity checking.  Find a way to NOT run this code when in production.
+
     def is_nx_graph(self):
-        self.verify_graph_is_valid()
+        # frm: TODO: Performance:  Only check graph_is_valid() in production
+        #
+        # Find a clever way to only run this code in development.  Commenting it out for now...
+        #     self.verify_graph_is_valid()
         return self._nx_graph is not None
 
     def get_nx_graph(self):
@@ -360,7 +380,10 @@ class Graph:
         return self._rx_graph
 
     def is_rx_graph(self):
-        self.verify_graph_is_valid()
+        # frm: TODO: Performance:  Only check graph_is_valid() in production
+        #
+        # Find a clever way to only run this code in development.  Commenting it out for now...
+        #     self.verify_graph_is_valid()
         return self._rx_graph is not None
 
     def convert_from_nx_to_rx(self) -> "Graph":
@@ -389,6 +412,12 @@ class Graph:
 
             nx_graph = self._nx_graph
             rx_graph = rustworkx.networkx_converter(nx_graph, keep_attributes=True)
+
+            # Note that the resulting RX graph will have multigraph set to False which
+            # ensures that there is never more than one edge between two specific nodes.
+            # This is perhaps not all that interesting in general, but it is critical
+            # when getting the edge_id from an edge using RX.edge_indices_from_endpoints()
+            # routine - because it ensures that only a single edge_id is returned...
 
             converted_graph = Graph.from_rustworkx(rx_graph)
 
@@ -630,6 +659,7 @@ class Graph:
         # Generate dict of dicts of dicts with shared perimeters according
         # to the requested adjacency rule
         adjacencies = neighbors(df, adjacency)      # Note - this is adjacency.neighbors()
+        # frm: TODO: Make it explicit that neighbors() above is adjacency.neighbors()
 
         # frm: Original Code:  graph = cls(adjacencies)
         nx_graph = networkx.Graph(adjacencies)
@@ -726,6 +756,15 @@ class Graph:
 
         return self.node_data(node, field)
 
+    # Performance Note:  
+    # 
+    # Most of the functions in the Graph class will be called after a 
+    # partition has been created and the underlying graph converted
+    # to be based on RX.  So, by testing first for RX we actually
+    # save a significant amount of time because we do not need to 
+    # also test for NX (if you test for NX first then you do two tests).
+    #
+
     @property
     def node_indices(self):
         self.verify_graph_is_valid()
@@ -733,10 +772,10 @@ class Graph:
         # frm: TODO:  This does the same thing that graph.nodes does - returning a list of node_ids.
         #               Do we really want to support two ways of doing the same thing?
 
-        if (self.is_nx_graph()):
-            return set(self._nx_graph.nodes)
-        elif (self.is_rx_graph()):
+        if (self.is_rx_graph()):
             return set(self._rx_graph.node_indices())
+        elif (self.is_nx_graph()):
+            return set(self._nx_graph.nodes)
         else:
             raise Exception("Graph.node_indices - bad kind of graph object")
 
@@ -744,12 +783,12 @@ class Graph:
     def edge_indices(self):
         self.verify_graph_is_valid()
 
-        if (self.is_nx_graph()):
-            # A set of edge_ids (tuples) extracted from the graph's EdgeView
-            return set(self._nx_graph.edges)
-        elif (self.is_rx_graph()):
+        if (self.is_rx_graph()):
             # A set of edge_ids for the edges
             return set(self._rx_graph.edge_indices())
+        elif (self.is_nx_graph()):
+            # A set of edge_ids (tuples) extracted from the graph's EdgeView
+            return set(self._nx_graph.edges)
         else:
             raise Exception("Graph.edges - bad kind of graph object")
 
@@ -764,12 +803,17 @@ class Graph:
         """
         self.verify_graph_is_valid()
 
-        if (self.is_nx_graph()):
+        if (self.is_rx_graph()):
+            # In RX, we need to go get the edge tuple
+            # frm: TODO: Performance - use get_edge_endpoints_by_index() to get edge 
+            #
+            # The original RX code (before October 27, 2025):
+            #     return self._rx_graph.edge_list()[edge_id]
+            endpoints = self._rx_graph.get_edge_endpoints_by_index(edge_id)
+            return (endpoints[0], endpoints[1])
+        elif (self.is_nx_graph()):
             # In NX, the edge_id is also the edge tuple
             return edge_id
-        elif (self.is_rx_graph()):
-            # In RX, we need to go get the edge tuple
-            return self._rx_graph.edge_list()[edge_id]
         else:
             raise Exception("Graph.get_edge_from_edge_id - bad kind of graph object")
 
@@ -781,25 +825,18 @@ class Graph:
         """
         self.verify_graph_is_valid()
 
-        if (self.is_nx_graph()):
+        if (self.is_rx_graph()):
+            # Note that while in general the routine, edge_indices_from_endpoints(),
+            # can return more than one edge in the case of a Multi-Graph (a graph that
+            # allows more than one edge between two nodes), we can rely on it only 
+            # returning a single edge because the RX graph object has multigraph set
+            # to false by RX.networkx_converter() - because the NX graph was undirected...
+            #
+            edge_indices = self._rx_graph.edge_indices_from_endpoints(edge[0], edge[1])
+            return edge_indices[0]  # there will always be one and only one 
+        elif (self.is_nx_graph()):
             # In NX, the edge_id is also the edge tuple
             return edge
-        elif (self.is_rx_graph()):
-            # In RX, we need to go get the edge_id from the edge tuple
-            # frm: TODO:  Think about whether there is a better way to do this.  I am 
-            #               worried that this might be expensive in terms of performance
-            #               with large graphs.  This is used in tree.py when seeing if a
-            #               cut edge has a weight assigned to it.
-            # frm: Note that we sort both the edge_list and the edge, to canonicalize
-            #       the edges so the smaller node_id is first.  This allows us to not 
-            #       worry about whether the edge was (3,5) or (5,3)
-
-            sorted_edge_list = sorted(list(self._rx_graph.edge_list()))
-            # frm: TODO:  There has to be a more elegant way to do this...  *sheesh*
-            sorted_edge = edge
-            if edge[0] > edge[1]:
-                sorted_edge = (edge[1], edge[0])
-            return sorted_edge_list.index(sorted_edge)
         else:
             raise Exception("Graph.get_edge_id_from_edge - bad kind of graph object")
 
@@ -807,12 +844,12 @@ class Graph:
     def nodes(self):
         self.verify_graph_is_valid()
 
-        if (self.is_nx_graph()):
-            # A list of node_ids -  
-            return list(self._nx_graph.nodes)
-        elif (self.is_rx_graph()):
+        if (self.is_rx_graph()):
             # A list of integer node_ids
             return list(self._rx_graph.node_indices())
+        elif (self.is_nx_graph()):
+            # A list of node_ids -  
+            return list(self._nx_graph.nodes)
         else:
             raise Exception("Graph.sdges - bad kind of graph object")
 
@@ -878,12 +915,12 @@ class Graph:
         # as well (or maybe nodes() should return a set).  Seems odd for them to return
         # different types...
 
-        if (self.is_nx_graph()):
-            # A set of tuples extracted from the graph's EdgeView
-            return set(self._nx_graph.edges)
-        elif (self.is_rx_graph()):
+        if (self.is_rx_graph()):
             # A set of tuples for the edges
             return set(self._rx_graph.edge_list())
+        elif (self.is_nx_graph()):
+            # A set of tuples extracted from the graph's EdgeView
+            return set(self._nx_graph.edges)
         else:
             raise Exception("Graph.edges - bad kind of graph object")
 
@@ -899,11 +936,11 @@ class Graph:
 
         self.verify_graph_is_valid()
 
-        if (self.is_nx_graph()):
-            self._nx_graph.add_edge(node_id1, node_id2)
-        elif (self.is_rx_graph()):
+        if (self.is_rx_graph()):
             # empty dict tells RX the edge data will be a dict 
             self._rx_graph.add_edge(node_id1, node_id2, {})
+        elif (self.is_nx_graph()):
+            self._nx_graph.add_edge(node_id1, node_id2)
         else:
             raise Exception("Graph.add_edge - bad kind of graph object")
 
@@ -918,11 +955,12 @@ class Graph:
 
         self.verify_graph_is_valid()
 
-        if (self.is_nx_graph()):
+        if (self.is_rx_graph()):
+            # frm: TODO: Performance:  There is probably a more efficnient way to do this
+            return self._rx_graph.edge_list()[edge_id]
+        elif (self.is_nx_graph()):
             # In NX, the edge_id is already a tuple with the two node_ids
             return edge_id
-        elif (self.is_rx_graph()):
-            return self._rx_graph.edge_list()[edge_id]
         else:
             raise Exception("Graph.get_edge_tuple - bad kind of graph object")
 
@@ -1077,10 +1115,10 @@ class Graph:
 
         # If attribute doesn't exist on this object, try
         # its underlying graph object...
-        if (self.is_nx_graph()):
-            return object.__getattribute__(self._nx_graph, __name)
-        elif (self.is_rx_graph()):
+        if (self.is_rx_graph()):
             return object.__getattribute__(self._rx_graph, __name)
+        elif (self.is_nx_graph()):
+            return object.__getattribute__(self._nx_graph, __name)
         else:
             raise Exception("Graph.__getattribute__ - bad kind of graph object")
 
@@ -1102,11 +1140,11 @@ class Graph:
         #
         self.verify_graph_is_valid()
 
-        if (self.is_nx_graph()):
-            return self._nx_graph[__name]
-        elif (self.is_rx_graph()):
+        if (self.is_rx_graph()):
             # frm TODO:
             raise Exception("Graph.__getitem__() NYI for RX")
+        elif (self.is_nx_graph()):
+            return self._nx_graph[__name]
         else:
             raise Exception("Graph.__getitem__() - bad kind of graph object")
 
@@ -1421,20 +1459,20 @@ class Graph:
 
         self.verify_graph_is_valid()
 
-        if (self.is_nx_graph()):
-            return {a: b for a, b in networkx.bfs_predecessors(self._nx_graph, root_node_id)}
-        elif (self.is_rx_graph()):
+        if (self.is_rx_graph()):
             return self.generic_bfs_predecessors(root_node_id)
+        elif (self.is_nx_graph()):
+            return {a: b for a, b in networkx.bfs_predecessors(self._nx_graph, root_node_id)}
         else:
             raise Exception("Graph.predecessors - bad kind of graph object")
 
     def successors(self, root_node_id):
         self.verify_graph_is_valid()
 
-        if (self.is_nx_graph()):
-            return {a: b for a, b in networkx.bfs_successors(self._nx_graph, root_node_id)}
-        elif (self.is_rx_graph()):
+        if (self.is_rx_graph()):
             return self.generic_bfs_successors(root_node_id)
+        elif (self.is_nx_graph()):
+            return {a: b for a, b in networkx.bfs_successors(self._nx_graph, root_node_id)}
         else:
             raise Exception("Graph.successors - bad kind of graph object")
 
@@ -1444,20 +1482,30 @@ class Graph:
         # NX  neighbors() returns a <dict_keyiterator> which iterates over the node_ids of neighbor nodes
         # RX  neighbors() returns a NodeIndices object with the list of node_ids of neighbor nodes
         # However, the code outside graph.py only ever iterates over all neighbors so returning a list works...
-        if (self.is_nx_graph()):
+        if (self.is_rx_graph()):
+            # frm: TODO: Performance:  Do not convert to a list
+            #
+            # The RX path (this path) is much more expensive than the NX path, and
+            # I am assuming that it is the conversion to a list in the original code
+            # that is expensive, so I am going to just not convert it to a list
+            # since the return type of rx.neighbors() is a NodeIndices object which
+            # is already essentially a Python list - in that it implements the Python sequence protocol
+            #
+            # Original code:
+            #     return list(self._rx_graph.neighbors(node))
+            return self._rx_graph.neighbors(node)
+        elif (self.is_nx_graph()):
             return list(self._nx_graph.neighbors(node))
-        elif (self.is_rx_graph()):
-            return list(self._rx_graph.neighbors(node))
         else:
             raise Exception("Graph.neighbors - bad kind of graph object")
 
     def degree(self, node: Any) -> int:
         self.verify_graph_is_valid()
 
-        if (self.is_nx_graph()):
-            return self._nx_graph.degree(node)
-        elif (self.is_rx_graph()):
+        if (self.is_rx_graph()):
             return self._rx_graph.degree(node)
+        elif (self.is_nx_graph()):
+            return self._nx_graph.degree(node)
         else:
             raise Exception("Graph.degree - bad kind of graph object")
 
@@ -1466,10 +1514,10 @@ class Graph:
 
         self.verify_graph_is_valid()
 
-        if (self.is_nx_graph()):
-            data_dict = self._nx_graph.nodes[node_id]
-        elif (self.is_rx_graph()):
+        if (self.is_rx_graph()):
             data_dict = self._rx_graph[node_id]
+        elif (self.is_nx_graph()):
+            data_dict = self._nx_graph.nodes[node_id]
         else:
             raise Exception("Graph.node_data - bad kind of graph object")
 
@@ -1492,10 +1540,14 @@ class Graph:
 
         self.verify_graph_is_valid()
 
-        if (self.is_nx_graph()):
+        if (self.is_rx_graph()):
+            # frm: TODO: Performance: use get_edge_data_by_index()
+            #
+            # Original code (pre October 2025) that indexed into all edges => slow
+            #     data_dict = self._rx_graph.edges()[edge_id]
+            data_dict = self._rx_graph.get_edge_data_by_index(edge_id)
+        elif (self.is_nx_graph()):
             data_dict = self._nx_graph.edges[edge_id]
-        elif (self.is_rx_graph()):
-            data_dict = self._rx_graph.edges()[edge_id]
         else:
             raise Exception("Graph.edge_data - bad kind of graph object")
 
@@ -1522,10 +1574,7 @@ class Graph:
         #               processing, I don't think this matters, but I should 
         #               check to be 100% certain.
 
-        if self.is_nx_graph():
-            nx_graph = self._nx_graph
-            laplacian_matrix = networkx.laplacian_matrix(nx_graph)
-        elif self.is_rx_graph():
+        if self.is_rx_graph():
             rx_graph = self._rx_graph
             # 1. Get the adjacency matrix
             adj_matrix = rustworkx.adjacency_matrix(rx_graph)
@@ -1535,6 +1584,9 @@ class Graph:
             np_laplacian_matrix = degree_matrix - adj_matrix
             # 4.  Convert the NumPy array to a scipy.sparse array
             laplacian_matrix = scipy.sparse.csr_array(np_laplacian_matrix)
+        elif self.is_nx_graph():
+            nx_graph = self._nx_graph
+            laplacian_matrix = networkx.laplacian_matrix(nx_graph)
         else:
             raise Exception("laplacian_matrix: badly configured graph parameter")
 
@@ -1558,13 +1610,8 @@ class Graph:
 
             return sparse_array
 
-        if self.is_nx_graph():
-            nx_graph = self._nx_graph
-            laplacian_matrix = networkx.normalized_laplacian_matrix(nx_graph)
-        elif self.is_rx_graph():
-            # frm: TODO:  Implement normalized_laplacian_matrix() for RX
+        if self.is_rx_graph():
             rx_graph = self._rx_graph
-            # raise Exception("normalized_laplacian_matrix NYI for RustworkX based Graph objects")
             """
             The following is code copied from the networkx linalg file, laplacianmatrix.py
             for normalized_laplacian_matrix.  Below this code has been modified to work for
@@ -1622,6 +1669,9 @@ class Graph:
             # print(f"normalized_laplacian_matrix: normalized_laplacian is: \n{normalized_laplacian}")
             return normalized_laplacian
 
+        elif self.is_nx_graph():
+            nx_graph = self._nx_graph
+            laplacian_matrix = networkx.normalized_laplacian_matrix(nx_graph)
         else:
             raise Exception("normalized_laplacian_matrix: badly configured graph parameter")
 
@@ -1632,15 +1682,15 @@ class Graph:
         #
         # This mirrors the nx.connected_components() routine in NetworkX
 
-        if self.is_nx_graph():
-            nx_graph = self.get_nx_graph()
-            subgraphs = [
-              self.subgraph(nodes) for nodes in networkx.connected_components(nx_graph)
-            ]
-        elif self.is_rx_graph():
+        if self.is_rx_graph():
             rx_graph = self.get_rx_graph()
             subgraphs = [
                 self.subgraph(nodes) for nodes in rustworkx.connected_components(rx_graph)
+            ]
+        elif self.is_nx_graph():
+            nx_graph = self.get_nx_graph()
+            subgraphs = [
+              self.subgraph(nodes) for nodes in networkx.connected_components(nx_graph)
             ]
         else:
             raise Exception("subgraphs_for_connected_components: Bad kind of Graph")
@@ -1648,12 +1698,12 @@ class Graph:
         return subgraphs
 
     def num_connected_components(self):
-        if self.is_nx_graph():
-            nx_graph = self.get_nx_graph()
-            connected_components = list(networkx.connected_components(nx_graph))
-        elif self.is_rx_graph():
+        if self.is_rx_graph():
             rx_graph = self.get_rx_graph()
             connected_components = rustworkx.connected_components(rx_graph)
+        elif self.is_nx_graph():
+            nx_graph = self.get_nx_graph()
+            connected_components = list(networkx.connected_components(nx_graph))
         else:
             raise Exception("num_connected_components: Bad kind of Graph")
 
@@ -1661,10 +1711,7 @@ class Graph:
         return num_cc
 
     def is_a_tree(self):
-        if self.is_nx_graph():
-            nx_graph = self.get_nx_graph()
-            return networkx.is_tree(nx_graph)
-        elif self.is_rx_graph():
+        if self.is_rx_graph():
             rx_graph = self.get_rx_graph()
             num_nodes = rx_graph.num_nodes()
             num_edges = rx_graph.num_edges()
@@ -1683,6 +1730,9 @@ class Graph:
                 return False
 
             return True
+        elif self.is_nx_graph():
+            nx_graph = self.get_nx_graph()
+            return networkx.is_tree(nx_graph)
         else:
             raise Exception("is_a_tree: Bad kind of Graph")
 

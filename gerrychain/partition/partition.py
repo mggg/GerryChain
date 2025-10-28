@@ -179,8 +179,15 @@ class Partition:
 
         # if a Graph object, make sure it is based on an embedded RustworkX.PyGraph
         if isinstance(graph, Graph):
-            if (graph.is_nx_graph()):
+            # frm: TODO: Remove this short-term hack to do performance testing
+            test_performance_using_NX_graph = False
+            if (graph.is_nx_graph()) and test_performance_using_NX_graph:
+                self.assignment = get_assignment(assignment, graph)
+                print("Performance-Test: using NetworkX for Partition object")
 
+            elif (graph.is_nx_graph()):
+
+                print("Partition: converting NX to RX")
                 # Get the assignment that would be appropriate for the NX-based graph
                 old_nx_assignment = get_assignment(assignment, graph)
 
