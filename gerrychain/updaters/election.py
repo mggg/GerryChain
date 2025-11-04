@@ -48,12 +48,12 @@ class Election:
     :type name: str
     :ivar parties: A list of the names of the parties in the election.
     :type parties: List[str]
-    :ivar columns: A list of the columns in the graph's node data that hold
+    :ivar node_attribute_names: A list of the node_attribute_names in the graph's node data that hold
         the vote totals for each party.
-    :type columns: List[str]
-    :ivar parties_to_columns: A dictionary mapping party names to the columns
+    :type node_attribute_names: List[str]
+    :ivar party_names_to_node_attribute_names: A dictionary mapping party names to the node_attribute_names
         in the graph's node data that hold the vote totals for that party.
-    :type parties_to_columns: Dict[str, str]
+    :type party_names_to_node_attribute_names: Dict[str, str]
     :ivar tallies: A dictionary mapping party names to :class:`DataTally` objects
         that manage the vote totals for that party.
     :type tallies: Dict[str, DataTally]
@@ -68,86 +68,103 @@ class Election:
     def __init__(
         self,
         name: str,
-        parties_to_columns: Union[Dict, List],
+        party_names_to_node_attribute_names: Union[Dict, List],
         alias: Optional[str] = None,
     ) -> None:
         """
         :param name: The name of the election. (e.g. "2008 Presidential")
         :type name: str
-        :param parties_to_columns: A dictionary matching party names to their
-            data columns, either as actual columns (list-like, indexed by nodes)
+        :param party_names_to_node_attribute_names: A mapping from the name of a 
+            party to the name of an attribute of a node that contains the 
+            vote totals for that party.  This parameter can be either a list or 
+            a dict.  If a list, then the name of the party and the name of the
+            node attribute are the same, for instance: ["Dem", "Rep"] would 
+            indicate that the "Dem" party vote totals are stored in the "Dem"
+            node attribute.  If a list, then there are two possibilities.
+        
+        A dictionary matching party names to their
+            data node_attribute_names, either as actual node_attribute_names (list-like, indexed by nodes)
             or as string keys for the node attributes that hold the party's
             vote totals. Or, a list of strings which will serve as both
             the party names and the node attribute keys.
-        :type parties_to_columns: Union[Dict, List]
+        :type party_names_to_node_attribute_names: Union[Dict, List]
         :param alias: Alias that the election is registered under
             in the Partition's dictionary of updaters.
         :type alias: Optional[str], optional
         """
+
         self.name = name
 
         if alias is None:
             alias = name
         self.alias = alias
 
-        if isinstance(parties_to_columns, dict):
-            self.parties = list(parties_to_columns.keys())
-            self.columns = list(parties_to_columns.values())
-            self.parties_to_columns = parties_to_columns
-        elif isinstance(parties_to_columns, list):
-            self.parties = parties_to_columns
-            self.columns = parties_to_columns
-            self.parties_to_columns = dict(zip(self.parties, self.columns))
+        # Canonicalize "parties", "node_attribute_names", and "party_names_to_node_attribute_names":
+        #
+        # "parties" are the names of the parties for purposes of reporting
+        # "node_attribute_names" are the names of the node attributes storing vote counts 
+        # "party_names_to_node_attribute_names" is a mapping from one to the other
+        #
+        if isinstance(party_names_to_node_attribute_names, dict):
+            self.parties = list(party_names_to_node_attribute_names.keys())
+            self.node_attribute_names = list(party_names_to_node_attribute_names.values())
+            self.party_names_to_node_attribute_names = party_names_to_node_attribute_names
+        elif isinstance(party_names_to_node_attribute_names, list):
+            # name of the party and the attribute name containing value is the same
+            self.parties = party_names_to_node_attribute_names
+            self.node_attribute_names = party_names_to_node_attribute_names
+            self.party_names_to_node_attribute_names = dict(zip(self.parties, self.node_attribute_names))
         else:
-            raise TypeError("Election expects parties_to_columns to be a dict or list")
+            raise TypeError("Election expects party_names_to_node_attribute_names to be a dict or list")
+
+        # A DataTally can be created with a first parameter that is either a string
+        # or a dict.  If a string, then the DataTally will interpret that string as
+        # the name of the node's attribute value that stores the data to be summed.
+        # However, if the first parameter is a node, then the DataTally will just 
+        # access the value in the dict for a given node to get the data to be 
+        # summed.  The string approach makes it easy/convenient to sum data that
+        # is already stored as attribute values, while the dict approach makes
+        # it possible to sum computed values that are not stored as node attributes.
+        #
+        # However, after converting to using RustworkX for Graph objects in 
+        # partitions, it no longer makes sense to use an explicit dict associating
+        # node_ids with data values for an election, because the node_ids given
+        # would need to be "original" node_ids derived from the NX-based graph
+        # that existed before creating the first partition, and those node_ids
+        # are useless once we convert the NX-based graph to RustworkX.
+        #
+        # So we disallow using a dict as a parameter to the DataTally below
+        #
+
+        for party in self.parties:
+            if isinstance(self.party_names_to_node_attribute_names[party], dict):
+                raise Exception("Election: Using explicit node_id to vote totals maps is no longer permitted")
 
         self.tallies = {
-            party: DataTally(self.parties_to_columns[party], party)
+            party: DataTally(self.party_names_to_node_attribute_names[party], party)
             for party in self.parties
         }
 
         self.updater = ElectionUpdater(self)
 
     def _initialize_self(self, partition):
-        """
-        Because node_ids are changed when converting from NX to RX based graphs when
-        we create a partition, we need to delay initialization of internal data members
-        that depend on node_ids until AFTER the partition has been created.  That is 
-        because we don't know how to map original node_ids to internal node_ids until
-        the partition is created.
 
-        Note that the fact that node_ids have changed is hidden by the fact that 
-        """
-
-        # frm: TODO:  Clean this up...
-        #
-        # This is a mess - I am going to reset to the original code and make
-        # 100% sure I grok what is happening...
-
-        """
-        Convert _original_parties_to_columns to use internal_ids
-
-        internal_parties_to_columns = ??? translate original node_ids...
-           ??? handle the case when instead of a dict it is a list
-
-        Then just use the code from before, but with new node_ids 
-        """
-
-        # Compute totals for each "party" => dict of form: {part: sum} 
-        # where "part" is a district in partition 
+        # Create DataTally objects for each party in the election.
         self.tallies = {
-            party: DataTally(self.parties_to_columns[party], party)
+            # For each party, create a DataTally using the string for the node
+            # attribute where that party's vote totals can be found.
+            party: DataTally(self.party_names_to_node_attribute_names[party], party)
             for party in self.parties
         }
 
     def __str__(self):
-        return "Election '{}' with vote totals for parties {} from columns {}.".format(
-            self.name, str(self.parties), str(self.columns)
+        return "Election '{}' with vote totals for parties {} from node_attribute_names {}.".format(
+            self.name, str(self.parties), str(self.node_attribute_names)
         )
 
     def __repr__(self):
-        return "Election(parties={}, columns={}, alias={})".format(
-            str(self.parties), str(self.columns), str(self.alias)
+        return "Election(parties={}, node_attribute_names={}, alias={})".format(
+            str(self.parties), str(self.node_attribute_names), str(self.alias)
         )
 
     def __call__(self, *args, **kwargs):

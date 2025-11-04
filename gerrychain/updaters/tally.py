@@ -46,24 +46,6 @@ class DataTally:
             # frm: TODO: Verify that if the "data" passed in is not a string that it
             #               is of the form: {node_id, data_value}
 
-            # frm: TODO: If self.data is a dict: {node: votes} then check if original node_ids
-            #
-            # This came up with Election udpaters - if you specify the data in an explicit
-            # dict of {node: votes}, then things get screwed up because at the time you create
-            # the Election object, the partition has not yet been created, so the node_ids are
-            # original node_ids which are not appropriate after the partition has been created
-            # and the new RX graph has new node_ids.
-            #
-            # In the Election updater case, the fix would be to delay the initial tally to 
-            # happen AFTER the partition is created and to at some point before doing the
-            # initial tally, translate the original node_ids to be internal RX node_ids.
-            #
-            # However, I am wondering if this problem is a general problem with tallies
-            # made by other updaters.  Stated differently, is it safe to assume that an
-            # explicit dict of {node_id: votes} is ALWAYS done with original node_ids in all
-            # cases of the use of tallies?
-            #
-            #   => What other code uses Tally?
 
             if isinstance(self.data, str):
 
@@ -75,6 +57,9 @@ class DataTally:
                 node_ids = partition.graph.node_indices
                 attribute = self.data
                 self.data = {node_id: graph.node_data(node_id)[attribute] for node_id in node_ids}
+
+                # frm: TODO:  Should probably check that the data for each node is numerical, since we
+                #             are going to sum it below...
             
             tally = collections.defaultdict(int)
             for node_id, part in partition.assignment.items():

@@ -33,16 +33,6 @@ def spectral_cut(
     # the return value's node_ids need to be translated back into the appropriate
     # parent node_ids.
 
-    # frm: TODO:  Subtle issue here - in NX there is no difference between a node ID
-    #               and a node index (what you use to get a node from a list), but 
-    #               in RX there is a difference - which manifests most in subgraphs
-    #               where RX goes ahead and renumbers the nodes in the graph.  To
-    #               make subgraphs work, we remember (in a map) what the node "IDs"
-    #               of the parent graph were.
-    #
-    #               The issue here is what the code wants here.  We are in an RX 
-    #               world at this point - so maybe it doesn't matter, but worth 
-    #               thinking about...
     node_list = list(subgraph.nodes)
     num_nodes = len(node_list)
 
@@ -50,13 +40,6 @@ def spectral_cut(
         # assign a random weight to each edge in the subgraph
         for edge_id in subgraph.edge_indices:
             subgraph.edge_data(edge_id)["weight"] = random.random()
-
-    # frm TODO: NX vs. RX Issue:   NYI: normalized_laplacian_matrix() for RX
-    #
-    #           Note that while the standard laplacian is straight forward mathematically
-    #           the normalized laplacian is a good bit more complicated.  However, since 
-    #           NetworkX is open source - perhaps we can get permission to just use their
-    #           code to create RX versions...
 
     # Compute the desired laplacian matrix (convert from sparse to dense)
     if lap_type == "normalized":

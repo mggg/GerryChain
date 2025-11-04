@@ -15,16 +15,14 @@ Dependencies:
 
 import math
 import networkx
-# frm TODO:     Decide whether to leave grid.py as-is, at least for now.
-#               While it imports NetworkX, it eventually creates a new
-#               Graph object which is added to a Partition which will
-#               eventually "freeze" and convert the new Graph object to
-#               be based on RX (under the covers).
+# frm TODO: Clarify what purpose grid.py serves.  
 #
-#               So, this can be thought of as legacy code that works just
-#               fine.  In the future if we want to go full RX everywhere
-#               we can decide what to do.
-#
+# It is a convenience module to help users create toy graphs.  It leverages
+# NX to create graphs, but it returns new Graph objects.  So, legacy user
+# code will need to be at least reviewed to make sure that it properly 
+# copes with new Graph objects.
+# 
+
 from gerrychain.partition import Partition
 from gerrychain.graph import Graph
 from gerrychain.updaters import (

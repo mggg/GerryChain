@@ -15,7 +15,7 @@ def mean_median(election_results) -> float:
     """
     Computes the Mean-Median score for the given ElectionResults.
     A positive value indicates an advantage for the first party listed
-    in the Election's parties_to_columns dictionary.
+    in the Election's party_names_to_node_attribute_names dictionary.
 
     :param election_results: An ElectionResults object
     :type election_results: ElectionResults
@@ -33,7 +33,7 @@ def mean_thirdian(election_results) -> float:
     """
     Computes the Mean-Median score for the given ElectionResults.
     A positive value indicates an advantage for the first party listed
-    in the Election's parties_to_columns dictionary.
+    in the Election's party_names_to_node_attribute_names dictionary.
 
     The motivation for this score is that the minority party in many
     states struggles to win even a third of the seats.
@@ -57,7 +57,7 @@ def efficiency_gap(election_results) -> float:
     """
     Computes the efficiency gap for the given ElectionResults.
     A positive value indicates an advantage for the first party listed
-    in the Election's parties_to_columns dictionary.
+    in the Election's party_names_to_node_attribute_names dictionary.
 
     :param election_results: An ElectionResults object
     :type election_results: ElectionResults

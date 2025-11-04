@@ -79,7 +79,8 @@ def test_add_data_to_graph_can_handle_column_names_that_start_with_numbers():
     df = pandas.DataFrame({"16SenDVote": [20, 30, 50], "node": ["01", "02", "03"]})
     df = df.set_index("node")
 
-    # frm: Note that the new Graph does not support add_data() 
+    # frm: Note that the new Graph only supports the add_data() routine if
+    #      the underlying graph object is an NX Graph
 
     graph = Graph.from_networkx(nx_graph)
 
@@ -203,8 +204,15 @@ def test_computes_boundary_perims(geodataframe_with_boundary):
 
 
 def edge_set_equal(set1, set2):
-    return {(y, x) for x, y in set1} | set1 == {(y, x) for x, y in set2} | set2
-
+    # Returns true if the two sets have the same edges.  The complication is that
+    # for an edge, (1,2) is the same as (2,1), so to compare them you need to 
+    # canonicalize the edges somehow.  This code just takes set1 and set2 and 
+    # creates a new set for each that has both edge pairs for each edge, and 
+    # it then compares those new sets.
+    #
+    canonical_set1 = {(y, x) for x, y in set1} | set1 
+    canonical_set2 = {(y, x) for x, y in set2} | set2
+    return canonical_set1 == canonical_set2
 
 def test_from_file_adds_all_data_by_default(shapefile):
     graph = Graph.from_file(shapefile)

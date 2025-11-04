@@ -13,6 +13,16 @@ def partition(graph):
 
 def test_all_cut_edge_flips(partition):
     
+    # frm: TODO:  Maybe change all_cut_edge_flips to return a dict
+    #
+    # At present, it returns an iterator, which makes the code below
+    # more complicated than it needs to be.  If it just returned
+    # a dict, then the code would be:
+    #
+    #    result = set(
+    #      node, part for all_cut_edge_flips(partition).items()
+    #    )
+    #
     result = set(
         (node, part)
         for flip in all_cut_edge_flips(partition)
@@ -22,10 +32,9 @@ def test_all_cut_edge_flips(partition):
     # Convert from internal node_ids to "original" node_ids
     new_result = set()
     for internal_node_id, part in result:
-        original_node_id = partition.graph.original_node_id_for_internal_node_id(internal_node_id)
-        new_result.add((original_node_id, part))
+        original_nx_node_id = partition.graph.original_nx_node_id_for_internal_node_id(internal_node_id)
+        new_result.add((original_nx_node_id, part))
 
-    # frm: TODO:  stmt below fails - the "result" has (2,2) instead of (3,2)
     assert new_result == {(6, 1), (7, 1), (8, 1), (4, 2), (5, 2), (3, 2)}
 
 
@@ -53,6 +62,11 @@ def test_all_valid_flips(partition):
 
     constraints = [disallow_six_to_one]
 
+    # frm: TODO:  If I created a utility routine to convert
+    #             a list of flips to original node_ids,
+    #             then I could use that here and then
+    #             convert the resulting list to a set...
+
     result = set(
         (node, part)
         for flip in all_valid_flips(partition, constraints)
@@ -62,8 +76,7 @@ def test_all_valid_flips(partition):
     # Convert from internal node_ids to "original" node_ids
     new_result = set()
     for internal_node_id, part in result:
-        original_node_id = partition.graph.original_node_id_for_internal_node_id(internal_node_id)
-        new_result.add((original_node_id, part))
+        original_nx_node_id = partition.graph.original_nx_node_id_for_internal_node_id(internal_node_id)
+        new_result.add((original_nx_node_id, part))
 
-    # frm: TODO:  stmt below fails - the "result" has (2,2) instead of (3,2)
     assert new_result == {(7, 1), (8, 1), (4, 2), (5, 2), (3, 2)}

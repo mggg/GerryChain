@@ -21,6 +21,9 @@ def boundary_nodes(partition, alias: str = "boundary_nodes") -> Set:
     #               It is used to get the value from the parent if there is
     #               a parent, but it is NOT used when computing the result
     #               for the first partition.  Seems like a logic bug...
+    #
+    # I think it is used as the attribute name on the partition for the 
+    # data stored by an updater that uses this routine...
 
     if partition.parent:
         return partition.parent[alias]
@@ -215,9 +218,6 @@ def interior_boundaries(
         boundary of that part.
     :rtype: Dict
     """
-
-    # frm: TODO:  NX vs. RX Issue - need to use edge_ids below to access edge information...
-    #               I think I have done this already below...
 
     added_perimeter = sum(
         # frm: Original Code:   partition.graph.edges[edge]["shared_perim"] for edge in new_edges

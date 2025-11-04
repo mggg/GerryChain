@@ -79,7 +79,7 @@ def test_geographic_partition_can_be_instantiated(example_geographic_partition):
 def test_Partition_parts_is_a_dictionary_of_parts_to_nodes(example_partition):
     partition = example_partition
     flip = {1: 2}
-    new_partition = partition.flip(flip, use_original_node_ids=True)
+    new_partition = partition.flip(flip, use_original_nx_node_ids=True)
     assert all(isinstance(nodes, frozenset) for nodes in new_partition.parts.values())
     assert all(isinstance(nodes, frozenset) for nodes in partition.parts.values())
 
@@ -98,12 +98,12 @@ def test_Partition_has_subgraphs(example_partition):
     partition = example_partition
 
     subgraph_for_part_1 = partition.subgraphs[1]
-    internal_node_id_0 = subgraph_for_part_1.internal_node_id_for_original_node_id(0)
-    internal_node_id_1 = subgraph_for_part_1.internal_node_id_for_original_node_id(1)
+    internal_node_id_0 = subgraph_for_part_1.internal_node_id_for_original_nx_node_id(0)
+    internal_node_id_1 = subgraph_for_part_1.internal_node_id_for_original_nx_node_id(1)
     assert set(partition.subgraphs[1].nodes) == {internal_node_id_0, internal_node_id_1}
 
     subgraph_for_part_2 = partition.subgraphs[2]
-    internal_node_id = subgraph_for_part_2.internal_node_id_for_original_node_id(2)
+    internal_node_id = subgraph_for_part_2.internal_node_id_for_original_nx_node_id(2)
     assert set(partition.subgraphs[2].nodes) == {internal_node_id}
     assert len(list(partition.subgraphs)) == 2
 
@@ -129,8 +129,8 @@ def test_can_be_created_from_a_districtr_file(graph, districtr_plan_file):
     internal_node_assignment = partition.assignment.to_dict() 
     original_node_assignment = {}
     for internal_node_id, part in internal_node_assignment.items():
-        original_node_id = partition.graph.original_node_id_for_internal_node_id(internal_node_id)
-        original_node_assignment[original_node_id] = part
+        original_nx_node_id = partition.graph.original_nx_node_id_for_internal_node_id(internal_node_id)
+        original_node_assignment[original_nx_node_id] = part
 
     assert original_node_assignment == {
         0: 1,
