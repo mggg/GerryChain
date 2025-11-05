@@ -82,18 +82,18 @@ def compute_county_splits(
 
         county_dict = dict()
 
-        for node in partition.graph.node_indices:
+        for node_id in partition.graph.node_indices:
             
             # First figure get current status of the county's information
-            county = partition.graph.lookup(node, county_field)
+            county = partition.graph.node_data(node_id)[county_field]
             if county in county_dict:
                 split, nodes, seen = county_dict[county]
             else:
                 split, nodes, seen = CountySplit.NOT_SPLIT, [], set()
 
-            # Now update "nodes" and "seen" with this node and the part (district) from partition's assignment.
-            nodes.append(node)
-            seen.update(set([partition.assignment.mapping[node]]))
+            # Now update "nodes" and "seen" with this node_id and the part (district) from partition's assignment.
+            nodes.append(node_id)
+            seen.update(set([partition.assignment.mapping[node_id]]))
 
             # lastly, if we have "seen" more than one part (district), then the county is split across parts.
             if len(seen) > 1:
@@ -108,7 +108,7 @@ def compute_county_splits(
 
     parent = partition.parent
     for county, county_info in parent[partition_field].items():
-        seen = set(partition.assignment.mapping[node] for node in county_info.nodes)
+        seen = set(partition.assignment.mapping[node_id] for node_id in county_info.nodes)
 
         split = CountySplit.NOT_SPLIT
 
@@ -151,21 +151,16 @@ def tally_region_splits(reg_attr_lst):
 def total_reg_splits(partition, reg_attr):
     """Returns the total number of times that reg_attr is split in the partition."""
     all_region_names = set(
-        # frm: original code:   partition.graph.nodes[node][reg_attr] for node in partition.graph.nodes
-        partition.graph.node_data(node)[reg_attr] for node in partition.graph.nodes
+        partition.graph.node_data(node_id)[reg_attr] for node_id in partition.graph.node_indices
     )
     split = {name: 0 for name in all_region_names}
     # Require that the cut_edges updater is attached to the partition
     for node1, node2 in partition["cut_edges"]:
         if (
             partition.assignment[node1] != partition.assignment[node2]
-            # frm: original code:   and partition.graph.nodes[node1][reg_attr]
-            # frm: original code:   == partition.graph.nodes[node2][reg_attr]
             and partition.graph.node_data(node1)[reg_attr]
             == partition.graph.node_data(node2)[reg_attr]
         ):
-            # frm: original code:   split[partition.graph.nodes[node1][reg_attr]] += 1
-            # frm: original code:   split[partition.graph.nodes[node2][reg_attr]] += 1
             split[partition.graph.node_data(node1)[reg_attr]] += 1
             split[partition.graph.node_data(node2)[reg_attr]] += 1
 

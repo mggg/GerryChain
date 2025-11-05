@@ -21,7 +21,7 @@ def cut_edge_accept(partition: Partition) -> bool:
     Always accepts the flip if the number of cut_edges increases.
     Otherwise, uses the Metropolis criterion to decide.
 
-    frm: TODO:  Add documentation on what the "Metropolis criterion" is...
+    frm: TODO: Documentation: Add documentation on what the "Metropolis criterion" is...
 
     :param partition: The current partition to accept a flip from.
     :type partition: Partition

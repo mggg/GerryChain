@@ -71,8 +71,11 @@ def nx_graph():
 @pytest.fixture
 def rx_graph():
     this_rx_graph = rx.PyGraph()
-    this_rx_graph.add_nodes_from([0, 1, 2, 3])
-    this_rx_graph.add_edges_from([(0, 1, "data"), (0, 2, "data"), (1, 2, "data"), (2, 3, "data")])
+    # argument to add_node_from() is the data to be associated with each node.
+    # To be compatible with GerryChain, nodes need to have data values that are dictionaries
+    # so we just have an empty dict for each node's data
+    this_rx_graph.add_nodes_from([{}, {}, {}, {}])
+    this_rx_graph.add_edges_from([(0, 1, {}), (0, 2, {}), (1, 2, {}), (2, 3, {})])
     return this_rx_graph
 
 

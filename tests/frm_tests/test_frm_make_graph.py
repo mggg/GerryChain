@@ -206,13 +206,6 @@ def edge_set_equal(set1, set2):
 def test_from_file_adds_all_data_by_default(shapefile):
     graph = Graph.from_file(shapefile)
 
-    # frm: Original Code:
-    #           Get all of the data dictionaries for each node and verify that each
-    #           of them contains data with the key "data" and "data2"
-    #
-    #    assert all("data" in node_data for node_data in graph.nodes.values())
-    #    assert all("data2" in node_data for node_data in graph.nodes.values())
-
     # data dictionaries for all of the nodes
     all_node_data = [graph.node_data(node_id) for node_id in graph.node_indices]
 

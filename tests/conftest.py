@@ -129,7 +129,6 @@ def graph_with_random_data_factory(three_by_three_grid):
 def attach_random_data(graph, columns):
     for node in graph.nodes:
         for col in columns:
-            # frm: Original code:  graph.nodes[node][col] = random.randint(1, 1000)
             graph.node_data(node)[col] = random.randint(1, 1000)
 
 

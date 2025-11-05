@@ -30,16 +30,8 @@ random.seed(2024)
 test_file_path = os.path.abspath(__file__)
 cur_directory = os.path.dirname(test_file_path)
 json_file_path = os.path.join(cur_directory, "gerrymandria.json")
-print("json file is: ", json_file_path)
 
 graph = Graph.from_json(json_file_path)
-
-print("Created Graph from JSON")
-
-# frm: DEBUGGING:
-# print("created graph")
-# print("nodes: ", list(graph.nodes))
-# print("edges: ", list(graph.edges))
 
 my_updaters = {
     "population": updaters.Tally("TOTPOP"),
@@ -65,8 +57,6 @@ proposal = partial(
     node_repeats=2
 )
 
-print("Got proposal")
-
 recom_chain = MarkovChain(
     proposal=proposal,
     constraints=[contiguous],
@@ -74,8 +64,6 @@ recom_chain = MarkovChain(
     initial_state=initial_partition,
     total_steps=40
 )
-
-print("Set up Markov Chain")
 
 assignment_list = []
 

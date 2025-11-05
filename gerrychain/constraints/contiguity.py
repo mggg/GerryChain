@@ -8,7 +8,7 @@ from .bounds import SelfConfiguringLowerBound
 
 from ..graph import Graph
 
-# frm: TODO:  Think about the efficiency of the routines in this module.  Almost all
+# frm: TODO: Performance: Think about the efficiency of the routines in this module.  Almost all
 #               of these involve traversing the entire graph, and I fear that callers
 #               might make multiple calls.
 #
@@ -22,6 +22,13 @@ from ..graph import Graph
 # What got me to write this comment was looking at the signature for def contiguous() 
 # which operates on a partition, but lots of other routines here operate on graphs or
 # other things.  So, what is going on?
+#
+# Peter replied to this comment in a pull request:
+#
+#     So anything that is prefixed with an underscore in here should be a helper 
+#     function and not a part of the public API. It looks like, other than 
+#     is_connected_bfs (which should probably be marked "private" with an 
+#     underscore) everything here is acting like an updater.
 #
 
 
@@ -41,7 +48,7 @@ def _are_reachable(graph: Graph, start_node: Any, avoid: Callable, targets: Any)
         It should take in three parameters: the start node, the end node, and
         the edges to avoid. It should return True if the edge should be avoided,
         False otherwise.
-        # frm: TODO:  Fix the comment above about the "avoid" function parameter.
+        # frm: TODO: Documentation:  Fix the comment above about the "avoid" function parameter.
         #               It may have once been accurate, but the original code below
         #               passed parameters to it of (node_id, neighbor_node_id, edge_data_dict)
         #               from NetworkX.Graph._succ  So, "the edges to avoid" above is wrong.
@@ -233,11 +240,6 @@ def contiguous(partition: Partition) -> bool:
     :returns: Whether the partition is contiguous
     :rtype: bool
     """
-    # frm: Original code:
-    #
-    # return all(
-    #     nx.is_connected(partition.subgraphs[part]) for part in _affected_parts(partition)
-    # )
 
     return all(
         is_connected_bfs(partition.subgraphs[part]) for part in _affected_parts(partition)
@@ -288,10 +290,6 @@ def number_of_contiguous_parts(partition: Partition) -> int:
     :returns: Number of contiguous parts in the partition.
     :rtype: int
     """
-    # frm: Original Code:
-    # parts = partition.assignment.parts
-    # return sum(1 for part in parts if nx.is_connected(partition.subgraphs[part]))
-    #
     parts = partition.assignment.parts
     return sum(1 for part in parts if is_connected_bfs(partition.subgraphs[part]))
 
@@ -333,12 +331,6 @@ def contiguous_components(partition: Partition) -> Dict[int, list]:
     #    3) From each part's subgraph to the subgraphs of contiguous_components...
     #
 
-    # frm: Original Code:
-    #    return {
-    #        part: [subgraph.subgraph(nodes) for nodes in nx.connected_components(subgraph)]
-    #        for part, subgraph in partition.subgraphs.items()
-    #    }
-    #
     connected_components_in_each_partition = {}
     for part, subgraph in partition.subgraphs.items():
         # create a subgraph for each set of connected nodes in the part's nodes

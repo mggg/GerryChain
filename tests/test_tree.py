@@ -40,6 +40,8 @@ random.seed(2018)
 # testing both NX-based and RX-based Graph objects clean.
 #
 
+# frm: TODO: Documentation:  test_tree.py: explain nx_to_rx_node_id_map 
+
 @pytest.fixture
 def graph_with_pop_nx(three_by_three_grid):
     # NX-based Graph object
@@ -169,12 +171,6 @@ def do_test_recursive_tree_part_returns_within_epsilon_of_target_pop(twelve_by_t
     partition = Partition(
         twelve_by_twelve_with_pop_graph, result, updaters={"pop": Tally("pop")}
     )
-    # frm: Original Code:
-    #
-    #    return all(
-    #        abs(part_pop - ideal_pop) / ideal_pop < epsilon
-    #        for part_pop in partition["pop"].values()
-    #    )
     assert all(
         abs(part_pop - ideal_pop) / ideal_pop < epsilon
         for part_pop in partition["pop"].values()
@@ -216,13 +212,6 @@ def do_test_recursive_tree_part_returns_within_epsilon_of_target_pop_using_contr
     partition = Partition(
         twelve_by_twelve_with_pop_graph, result, updaters={"pop": Tally("pop")}
     )
-    # frm: Original Code:
-    #
-    #    return all(
-    #        abs(part_pop - ideal_pop) / ideal_pop < epsilon
-    #        for part_pop in partition["pop"].values()
-    #    )
-    #
     assert all(
         abs(part_pop - ideal_pop) / ideal_pop < epsilon
         for part_pop in partition["pop"].values()
@@ -265,12 +254,6 @@ def do_test_recursive_seed_part_returns_within_epsilon_of_target_pop(
     partition = Partition(
         twelve_by_twelve_with_pop_graph, result, updaters={"pop": Tally("pop")}
     )
-    # frm: Original Code:
-    #
-    #    return all(
-    #        abs(part_pop - ideal_pop) / ideal_pop < epsilon
-    #        for part_pop in partition["pop"].values()
-    #    )
     assert all(
         abs(part_pop - ideal_pop) / ideal_pop < epsilon
         for part_pop in partition["pop"].values()
@@ -314,12 +297,6 @@ def do_test_recursive_seed_part_returns_within_epsilon_of_target_pop_using_contr
     partition = Partition(
         twelve_by_twelve_with_pop_graph, result, updaters={"pop": Tally("pop")}
     )
-    # frm: Original Code:
-    #
-    #    return all(
-    #        abs(part_pop - ideal_pop) / ideal_pop < epsilon
-    #        for part_pop in partition["pop"].values()
-    #    )
     assert all(
         abs(part_pop - ideal_pop) / ideal_pop < epsilon
         for part_pop in partition["pop"].values()
@@ -408,12 +385,6 @@ def do_test_recursive_seed_part_with_n_unspecified_within_epsilon(
     partition = Partition(
         twelve_by_twelve_with_pop_graph, result, updaters={"pop": Tally("pop")}
     )
-    # frm: Original Code:
-    #
-    #    return all(
-    #        abs(part_pop - ideal_pop) / ideal_pop < epsilon
-    #        for part_pop in partition["pop"].values()
-    #    )
     assert all(
         abs(part_pop - ideal_pop) / ideal_pop < epsilon
         for part_pop in partition["pop"].values()
@@ -431,7 +402,6 @@ def test_recursive_seed_part_with_n_unspecified_within_epsilon(
 
 def do_test_random_spanning_tree_returns_tree_with_pop_attribute(graph):
     tree = random_spanning_tree(graph)
-    # frm: Original code:    assert networkx.is_tree(tree)
     assert tree.is_a_tree()
 
 def test_random_spanning_tree_returns_tree_with_pop_attribute(graph_with_pop_nx, graph_with_pop_rx):
@@ -443,7 +413,6 @@ def test_random_spanning_tree_returns_tree_with_pop_attribute(graph_with_pop_nx,
 
 def do_test_uniform_spanning_tree_returns_tree_with_pop_attribute(graph):
     tree = uniform_spanning_tree(graph)
-    # frm: Original code:    assert networkx.is_tree(tree)
     assert tree.is_a_tree()
 
 def test_uniform_spanning_tree_returns_tree_with_pop_attribute(graph_with_pop_nx, graph_with_pop_rx):
@@ -460,47 +429,52 @@ def do_test_bipartition_tree_returns_a_tree(graph, spanning_tree):
         graph, "pop", ideal_pop, 0.25, 10, spanning_tree, lambda x: 4
     )
 
-    # frm: Original code:
-    #    assert networkx.is_tree(spanning_tree.subgraph(result))
-    #    assert networkx.is_tree(
-    #        spanning_tree.subgraph({node for node in tree if node not in result})
-    #    )
     assert spanning_tree.subgraph(result).is_a_tree()
     assert spanning_tree.subgraph({node for node in spanning_tree if node not in result}).is_a_tree()
 
-def create_graphs_from_nx_edges(list_of_edges_nx, nx_to_rx_node_id_map):
+def create_graphs_from_nx_edges(num_nodes, list_of_edges_nx, nx_to_rx_node_id_map):
 
-    # NX is easy - just use the lsit of NX edges
+    # NX is easy - just use the list of NX edges
     graph_nx = Graph.from_networkx(networkx.Graph(list_of_edges_nx))
 
-    print(f"create_graphs_from_nx_edges: list_of_edges_nx is: {list_of_edges_nx}")
-    print(f"create_graphs_from_nx_edges: nx_to_rx_node_id_map: {nx_to_rx_node_id_map}")
-
-    # RX requires more work.  First we have to translate the node_ids used in the
+    # RX requires more work.  
+    #
+    # First we create the RX graph and add nodes.
+    #
+    # frm: TODO: Update test so that the number of nodes is not hard-coded...
+    # 
+    # Then we to create the appropriate RX edges - the ones that 
+    # correspond to the NX edges but using the RX node_ids for the edges. 
+    #
+    # First we have to translate the node_ids used in the
     # list of edges to be the ones used in the RX graph using the
     # nx_to_rx_node_id_map.  Then we need to create a rustworkx.PyGraph and then
     # from that create a "new" Graph object.
 
+    # Create the RX graph
     rx_graph = rustworkx.PyGraph()
+    for i in range(num_nodes):
+        rx_graph.add_node({}) # empty data dict for node_data
+    # Verify that the nodes created have node_ids 0-(num_nodes-1)
+    assert(set(rx_graph.node_indices()) == set(range(num_nodes)))
+    # Set the attribute identifying the "original" NX node_id  
+    # This is normally set by the code that converts an NX graph to RX
+    # but we are cobbling together stuff for a test and so have to
+    # just do it here...
+    rx_to_nx_node_id_map = {v: k for k,v in nx_to_rx_node_id_map.items()}
+    # frm: TODO: Debugging: Remove debugging code
+    for node_id in rx_graph.node_indices():
+        rx_graph[node_id]["__networkx_node__"] = rx_to_nx_node_id_map[node_id]
 
     # translate the NX edges into the appropriate node_ids for the derived RX graph
-    empty_edge_data_dict = {}  # needed so we can attach edge data to each edge
     list_of_edges_rx = [
       (
         nx_to_rx_node_id_map[edge[0]],
         nx_to_rx_node_id_map[edge[1]],
-        empty_edge_data_dict
+        {} # empty data dict for edge_data
       ) 
       for edge in list_of_edges_nx
     ]
-    rx_graph = rustworkx.PyGraph();
-
-    # Create the RX nodes
-    for i in range(9):
-        empty_node_data_dict = {}  # needed so we can attach node data to each node
-        rx_graph.add_node(empty_node_data_dict)
-    # Verify that the nodes created have node_ids 0-8
-    assert(set(rx_graph.node_indices()) == set(range(9)))
 
     # Add the RX edges
     rx_graph.add_edges_from(list_of_edges_rx)
@@ -515,6 +489,7 @@ def test_bipartition_tree_returns_a_tree(graph_with_pop_nx, graph_with_pop_rx):
 
     spanning_tree_nx, spanning_tree_rx = \
       create_graphs_from_nx_edges(
+        9,
         spanning_tree_edges_nx, 
         graph_with_pop_rx.nx_to_rx_node_id_map
       )
@@ -639,6 +614,7 @@ def test_no_balanced_cuts_contraction_when_one_side_okay():
 
     tree_nx, tree_rx = \
       create_graphs_from_nx_edges(
+        5,
         list_of_nodes_nx, 
         nx_to_rx_node_id_map
       )
@@ -672,6 +648,7 @@ def test_find_balanced_cuts_memo():
 
     tree_nx, tree_rx = \
       create_graphs_from_nx_edges(
+        9,
         list_of_nodes_nx, 
         nx_to_rx_node_id_map
       )
@@ -712,6 +689,7 @@ def test_no_balanced_cuts_memo_when_one_side_okay():
 
     tree_nx, tree_rx = \
       create_graphs_from_nx_edges(
+        5,
         list_of_nodes_nx, 
         nx_to_rx_node_id_map
       )

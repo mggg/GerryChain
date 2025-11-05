@@ -17,22 +17,17 @@ def boundary_nodes(partition, alias: str = "boundary_nodes") -> Set:
     :rtype: Set
     """
 
-    # frm: TODO:  Figure out what is going on with the "alias" parameter.
-    #               It is used to get the value from the parent if there is
-    #               a parent, but it is NOT used when computing the result
-    #               for the first partition.  Seems like a logic bug...
-    #
-    # I think it is used as the attribute name on the partition for the 
-    # data stored by an updater that uses this routine...
+    # Note that the "alias" parameter is used as the attribute name 
+    # on the partition - using this "alias" you can retrieve the 
+    # the data stored by an updater that uses this routine...
 
     if partition.parent:
         return partition.parent[alias]
     else:
         result = {
-          node
-          for node in partition.graph.nodes
-          # frm: original code:   if partition.graph.nodes[node]["boundary_node"]
-          if partition.graph.node_data(node)["boundary_node"]
+          node_id
+          for node_id in partition.graph.node_indices
+          if partition.graph.node_data(node_id)["boundary_node"]
         }
         return result
 
@@ -103,7 +98,6 @@ def initialize_exterior_boundaries(partition) -> Dict[int, float]:
     boundaries = collections.defaultdict(lambda: 0)
     for node in graph_boundary:
         part = partition.assignment.mapping[node]
-        # frm: original code:   boundaries[part] += partition.graph.nodes[node]["boundary_perim"]
         boundaries[part] += partition.graph.node_data(node)["boundary_perim"]
     return boundaries
 
@@ -131,12 +125,10 @@ def exterior_boundaries(partition, previous: Set, inflow: Set, outflow: Set) -> 
     """
     graph_boundary = partition["boundary_nodes"]
     added_perimeter = sum(
-        # frm: original code:   partition.graph.nodes[node]["boundary_perim"]
         partition.graph.node_data(node)["boundary_perim"]
         for node in inflow & graph_boundary
     )
     removed_perimeter = sum(
-        # frm: original code:   partition.graph.nodes[node]["boundary_perim"]
         partition.graph.node_data(node)["boundary_perim"]
         for node in outflow & graph_boundary
     )
@@ -153,21 +145,13 @@ def initialize_interior_boundaries(partition):
     :rtype: Dict[int, float]
     """
 
-    # frm: RustworkX Note: 
+    # RustworkX Note: 
     #
-    #       The old NX code did not distinguish between edges and edge_ids - they were one 
-    #       and the same.  However, in RX an edge is a tuple and an edge_id is an integer.
-    #       The edges stored in partition["cut_edges_by_part"] are edges (tuples), so 
-    #       we need to get the edge_id for each edge in order to access the data for the edge.
+    # The old NX code did not distinguish between edges and edge_ids - they were one 
+    # and the same.  However, in RX an edge is a tuple and an edge_id is an integer.
+    # The edges stored in partition["cut_edges_by_part"] are edges (tuples), so 
+    # we need to get the edge_id for each edge in order to access the data for the edge.
     
-    # frm: Original Code:
-    #    return {
-    #        part: sum(
-    #            partition.graph.edges[edge]["shared_perim"]
-    #            for edge in partition["cut_edges_by_part"][part]
-    #        )
-    #    }
-        
     # Get edge_ids for each edge (tuple)
     edge_ids_for_part = {
         part: [
@@ -176,11 +160,6 @@ def initialize_interior_boundaries(partition):
         ]
         for part in partition.parts
     }
-
-    edge_to_edge_id_map = [
-      (edge, partition.graph.get_edge_id_from_edge(edge)) 
-      for edge in partition.graph.edges
-    ]
 
     # Compute length of the shared perimeter of each part
     shared_perimeters_for_part = {
@@ -220,15 +199,11 @@ def interior_boundaries(
     """
 
     added_perimeter = sum(
-        # frm: Original Code:   partition.graph.edges[edge]["shared_perim"] for edge in new_edges
-        # frm: edges vs edge_ids:  edge_ids are wanted here (integers)
         partition.graph.edge_data(
           partition.graph.get_edge_id_from_edge(edge)
         )["shared_perim"] for edge in new_edges
     )
     removed_perimeter = sum(
-        # frm: Original Code:  partition.graph.edges[edge]["shared_perim"] for edge in old_edges
-        # frm: edges vs edge_ids:  edge_ids are wanted here (integers)
         partition.graph.edge_data(
           partition.graph.get_edge_id_from_edge(edge)
         )["shared_perim"] for edge in old_edges

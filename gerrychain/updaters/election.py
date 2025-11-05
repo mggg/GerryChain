@@ -136,6 +136,12 @@ class Election:
         # So we disallow using a dict as a parameter to the DataTally below
         #
 
+        # frm: TODO: Peter said it was OK to make the change described above...
+        #
+        # He just wanted there to be an error saying that this has been deprecated
+        # which I think I have done below - maybe the Exception should be a specific
+        # kind of exception, though...
+
         for party in self.parties:
             if isinstance(self.party_names_to_node_attribute_names[party], dict):
                 raise Exception("Election: Using explicit node_id to vote totals maps is no longer permitted")

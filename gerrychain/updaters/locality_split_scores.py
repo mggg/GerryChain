@@ -160,9 +160,6 @@ class LocalitySplits:
         #
 
         if self.localities == []:
-            # frm: Original code:
-            #    self.localitydict = dict(partition.graph.nodes(data=self.col_id))
-            #
             self.localitydict = {}
             for node_id in partition.graph.node_indices:
                 self.localitydict[node_id] = partition.graph.node_data(node_id)[self.col_id]
@@ -185,15 +182,14 @@ class LocalitySplits:
             allowed_pieces = {}
 
             totpop = 0
-            for node in partition.graph.node_indices:
+            for node_id in partition.graph.node_indices:
                 # frm: TODO:  Once you have a partition, you cannot change the total population
                 #               in the Partition, so why don't we cache the total population as
                 #               a data member in Partition?
                 #
                 # Peter agreed that this would be a good thing to do
 
-                # frm: original code:   totpop += partition.graph.nodes[node][self.pop_col]
-                totpop += partition.graph.node_data(node)[self.pop_col]
+                totpop += partition.graph.node_data(node_id)[self.pop_col]
 
             # frm: TODO:  Ditto with num_districts - isn't this a constant once you create a Partition?
             #
@@ -309,7 +305,6 @@ class LocalitySplits:
         locality_intersections = {}
 
         for n in partition.graph.node_indices:
-            # frm: original code:   locality = partition.graph.nodes[n][self.col_id]
             locality = partition.graph.node_data(n)[self.col_id]
             if locality not in locality_intersections:
                 locality_intersections[locality] = set(
@@ -325,14 +320,10 @@ class LocalitySplits:
                     [
                         x
                         for x in partition.parts[d]
-                        # frm: original code:   if partition.graph.nodes[x][self.col_id] == locality
                         if partition.graph.node_data(x)[self.col_id] == locality
                     ]
                 )
 
-                # frm: Original Code:
-                #
-                #    pieces += nx.number_connected_components(subgraph)
                 pieces += subgraph.num_connected_components()
         return pieces
 
@@ -466,9 +457,6 @@ class LocalitySplits:
             vtds = district_dict[district]
             locality_pop = {k: 0 for k in self.localities}
             for vtd in vtds:
-                # frm: original code:   locality_pop[self.localitydict[vtd]] += partition.graph.nodes[vtd][
-                # frm: original code:       self.pop_col
-                # frm: original code:   ]
                 locality_pop[self.localitydict[vtd]] += partition.graph.node_data(vtd)[
                     self.pop_col
                 ]

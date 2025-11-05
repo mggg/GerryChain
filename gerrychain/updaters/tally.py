@@ -49,10 +49,6 @@ class DataTally:
 
             if isinstance(self.data, str):
 
-                # frm: Original Code:
-                #    nodes = partition.graph.nodes
-                #    attribute = self.data
-                #    self.data = {node: nodes[node][attribute] for node in nodes}
                 graph = partition.graph
                 node_ids = partition.graph.node_indices
                 attribute = self.data
@@ -60,6 +56,8 @@ class DataTally:
 
                 # frm: TODO:  Should probably check that the data for each node is numerical, since we
                 #             are going to sum it below...
+                #
+                # Peter said that would be a good idea
             
             tally = collections.defaultdict(int)
             for node_id, part in partition.assignment.items():
@@ -191,7 +189,7 @@ class Tally:
         return new_tally
 
     def _get_tally_from_node(self, partition, node):
-        return sum(partition.graph.lookup(node, field) for field in self.fields)
+        return sum(partition.graph.node_data(node)[field] for field in self.fields)
 
 
 def compute_out_flow(graph, fields: Union[str, List[str]], flow: Dict) -> int:
@@ -209,7 +207,7 @@ def compute_out_flow(graph, fields: Union[str, List[str]], flow: Dict) -> int:
     :returns: The sum of the "field" attribute of nodes in the "out" set of the flow.
     :rtype: int
     """
-    return sum(graph.lookup(node, field) for node in flow["out"] for field in fields)
+    return sum(graph.node_data(node)[field] for node in flow["out"] for field in fields)
 
 
 def compute_in_flow(graph, fields: Union[str, List[str]], flow: Dict) -> int:
@@ -227,4 +225,4 @@ def compute_in_flow(graph, fields: Union[str, List[str]], flow: Dict) -> int:
     :returns: The sum of the "field" attribute of nodes in the "in" set of the flow.
     :rtype: int
     """
-    return sum(graph.lookup(node, field) for node in flow["in"] for field in fields)
+    return sum(graph.node_data(node)[field] for node in flow["in"] for field in fields)

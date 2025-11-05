@@ -34,19 +34,6 @@ def partition_with_election(graph_with_d_and_r_cols):
     graph = graph_with_d_and_r_cols
     assignment = random_assignment(graph, 3)
 
-    # Original Code - this was deprecated when we converted to using RustworkX
-    # based graphs in partitions.  The problem was that the node_ids used below
-    # are NX-based "original" node_ids that are not valid for the derived RustworkX
-    # based graph.
-    #
-    #    party_names_to_node_attribute_names = {
-    #        "D": {node: graph.node_data(node)["D"] for node in graph.nodes},
-    #        "R": {node: graph.node_data(node)["R"] for node in graph.nodes},
-    #    }
-    #
-    # Instead we do the functionally equivalent operation which identifies where
-    # to find vote totals for each party using the attribute name for the party.
-    #
     party_names_to_node_attribute_names = ["D", "R"]
 
     election = Election("Mock Election", party_names_to_node_attribute_names)

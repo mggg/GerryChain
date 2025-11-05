@@ -303,11 +303,6 @@ def reversible_recom(
     #               the subgraph's node_ids afterwards.
     #
     
-    # frm: Original Code:
-    #    num_possible_districts, nodes = bipartition_tree_random_reversible(
-    #        partition.graph.subgraph(subgraph_nodes),
-    #        pop_col=pop_col, pop_target=pop_target, epsilon=epsilon
-    #    )
     result = bipartition_tree_random_reversible(
         partition.graph.subgraph(subgraph_nodes),
         pop_col=pop_col, pop_target=pop_target, epsilon=epsilon
@@ -318,7 +313,9 @@ def reversible_recom(
     num_possible_districts, nodes = result
 
     remaining_nodes = subgraph_nodes - set(nodes)
-    # Note:  the ** operator below merges the two dicts into a single dict.
+    # Note:  Clever way to create a single dictionary from
+    # two dictionaries - the ** operator unpacks each dictionary 
+    # and then they get merged into a new dictionary.
     flips = {
         **{node: parts_to_merge[0] for node in nodes},
         **{node: parts_to_merge[1] for node in remaining_nodes},

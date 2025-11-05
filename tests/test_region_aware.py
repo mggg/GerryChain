@@ -163,11 +163,6 @@ def straddled_regions(partition, reg_attr, all_reg_names):
 
     # frm: TODO: Grok what this tests - not clear to me at this time...
 
-    # frm: Original Code:
-    #    for node1, node2 in set(partition.graph.edges() - partition["cut_edges"]):
-    #        split[partition.graph.nodes[node1][reg_attr]] += 1
-    #        split[partition.graph.nodes[node2][reg_attr]] += 1
-    #
     for node1, node2 in set(partition.graph.edges() - partition["cut_edges"]):
         split[partition.graph.node_data(node1)[reg_attr]] += 1
         split[partition.graph.node_data(node2)[reg_attr]] += 1
