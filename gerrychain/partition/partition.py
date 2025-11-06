@@ -133,7 +133,7 @@ class Partition:
         :returns: The partition created with a random assignment
         :rtype: Partition
         """
-        # frm: ???: BUG:  TODO:  The param, flips, is never used in this routine...
+        # frm: TODO: BUG:  The param, flips, is never used in this routine...
 
         total_pop = sum(graph.node_data(n)[pop_col] for n in graph)
         ideal_pop = total_pop / n_parts
@@ -213,7 +213,7 @@ class Partition:
             self.graph = FrozenGraph(graph)
 
         elif isinstance(graph, FrozenGraph):
-            # frm: TODO: Verify that the embedded graph is RX
+            # frm: TODO: Code: Verify that the embedded graph is RX
             self.graph = graph
             self.assignment = get_assignment(assignment, graph)
 
@@ -340,14 +340,14 @@ class Partition:
         #
 
         if key not in self._cache:
-            # frm: TODO:  Add code to check that the desired updater actually is
+            # frm: TODO: Code:  Add code to check that the desired updater actually is
             #               defined in the list of updaters.  If not, then this 
             #               would produce a perhaps difficult to debug problem...
             self._cache[key] = self.updaters[key](self)
         return self._cache[key]
 
     def __getattr__(self, key):
-        # frm TODO:  Not sure it makes sense to allow two ways to accomplish the same thing...
+        # frm TODO: Refactor:  Not sure it makes sense to allow two ways to accomplish the same thing...
         #
         # The code below allows Partition users to get the results of updaters by just 
         # doing:  partition.<updater_name>  which is the same as doing: partition["<updater_name>"]
@@ -462,7 +462,7 @@ class Partition:
                 "needed to match the Districtr assignment to the nodes of the graph."
             )
 
-        # frm: TODO:  NX vs. RX issues:  does "node in graph" work for both NX and RX?
+        # frm: TODO: Code: NX vs. RX issues:  does "node in graph" work for both NX and RX?
         assignment = {node: districtr_assignment[node_to_id[node]] for node in graph}
 
         return cls(graph, assignment, updaters)

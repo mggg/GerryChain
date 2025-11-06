@@ -21,7 +21,7 @@ happily use ints or floats, but it means that for this test I need
 to convert the NX version's result to have floating point values.
 """
 
-# frm: TODO:  Add additional tests for laplacian matrix calculations, in 
+# frm: TODO: Testing:  Add additional tests for laplacian matrix calculations, in 
 #             particular, add a test for normalized_laplacian_matrix()
 #             once that routine has been implemented.
 

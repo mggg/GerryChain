@@ -90,7 +90,7 @@ def test_nx_rx_node_indices_agree(gerrychain_nx_graph, gerrychain_rx_graph):
     assert nx_node_indices == rx_node_indices
 
 def test_nx_rx_edges_agree(gerrychain_nx_graph, gerrychain_rx_graph):
-    # TODO:  Rethink this test.  At the moment it relies on the edge_list()
+    # TODO: Testing:  Rethink this test.  At the moment it relies on the edge_list()
     #           call which does not exist on a GerryChain Graph object
     #           being handled by RX through clever __getattr__ stuff.
     #           I think we should add an edge_list() method to GerryChain Graph
@@ -106,14 +106,14 @@ def test_nx_rx_node_neighbors_agree(gerrychain_nx_graph, gerrychain_rx_graph):
         assert nx_neighbors == rx_neighbors
 
 def test_nx_rx_subgraphs_agree(gerrychain_nx_graph, gerrychain_rx_graph):
-    subgraph_nodes = [0,1,2,3,4,5]      # TODO: make this a fixture dependent on JSON graph
+    subgraph_nodes = [0,1,2,3,4,5]      # TODO: Testing: make this a fixture dependent on JSON graph
     nx_subgraph = gerrychain_nx_graph.subgraph(subgraph_nodes)
     rx_subgraph = gerrychain_rx_graph.subgraph(subgraph_nodes)
     for node_id in nx_subgraph:
         nx_node_data = nx_subgraph.node_data(node_id)
         rx_node_data = rx_subgraph.node_data(node_id)
         assert nx_node_data == rx_node_data
-    # frm: TODO:  This does not test that the rx_subgraph has the exact same number of
+    # frm: TODO: Testing:  This does not test that the rx_subgraph has the exact same number of
     #                   nodes as the nx_subgraph, and it does not test edge data...
 
 def test_nx_rx_degrees_agree(gerrychain_nx_graph, gerrychain_rx_graph):
@@ -129,7 +129,7 @@ def test_nx_rx_degrees_agree(gerrychain_nx_graph, gerrychain_rx_graph):
 
 
 """
-frm: TODO:
+frm: TODO: Testing:
 
     * Functions:
         * predecessors()

@@ -12,7 +12,7 @@ from gerrychain.updaters import cut_edges
 
 
 def test_Partition_can_be_flipped(example_partition):
-    # frm: TODO:  Verify that this flip is in internal RX-based graph node_ids and not "original" NX node_ids
+    # frm: TODO: Testing:  Verify that this flip is in internal RX-based graph node_ids and not "original" NX node_ids
     #
     # My guess is that this flip is intended to be in original node_ids but that the test works
     # anyways because the assertion uses the same numbers.  It should probably be changed to use
@@ -53,7 +53,7 @@ def test_Partition_knows_cut_edges_K3(example_partition):
 def test_propose_random_flip_proposes_a_partition(example_partition):
     partition = example_partition
 
-    # frm: TODO:  Verify that propose_random_flip() to make sure it is doing the right thing
+    # frm: TODO: Testing:  Verify that propose_random_flip() to make sure it is doing the right thing
     #               wrt RX-based node_ids vs. original node_ids.
     proposal = propose_random_flip(partition)
     assert isinstance(proposal, partition.__class__)
@@ -121,7 +121,7 @@ def test_can_be_created_from_a_districtr_file(graph, districtr_plan_file):
     for node in graph:
         graph.node_data(node)["area_num_1"] = node
 
-    # frm: TODO:  NX vs. RX node_id issues here...
+    # frm: TODO: Testing:  NX vs. RX node_id issues here...
 
     partition = Partition.from_districtr_file(graph, districtr_plan_file)
 

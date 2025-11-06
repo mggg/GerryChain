@@ -64,12 +64,12 @@ import networkx as nx
 import rustworkx as rx
 import numpy as np
 from scipy.sparse import csr_array
-# frm TODO:     Remove import of networkx and rustworkx once we have moved networkx
+# frm: TODO: Refactoring:     Remove import of networkx and rustworkx once we have moved networkx
 #               dependencies out of this file - see comments below on 
 #               spanning trees.
 
 import networkx.algorithms.tree as nxtree
-# frm TODO:     Remove import of "tree" from networkx.algorithms in this file
+# frm: TODO: Refactoring     Remove import of "tree" from networkx.algorithms in this file
 #               It is only used to get a spanning tree function:
 #
 #                   spanning_tree = nxtree.minimum_spanning_tree(
@@ -152,7 +152,7 @@ def random_spanning_tree(
     node_ids for this function and all will be well...
     """
 
-    # frm: TODO:  WTF is up with region_surcharge being unset?  The region_surcharge
+    # frm: TODO: Refactoring: WTF is up with region_surcharge being unset?  The region_surcharge
     #               is only ever accessed in this routine in the for-loop below to
     #               increase the weight on the edge - setting it to be an empty dict
     #               just prevents the code below from blowing up.  Why not just put
@@ -236,7 +236,7 @@ def random_spanning_tree(
 
         graph.edge_data(edge_id)["random_weight"] = weight
 
-    # frm: TODO: CROCK: (for the moment)
+    # frm: TODO: Refactoring: Code: CROCK: (for the moment)
     #               We need to create a minimum spanning tree but the way to do so
     #               is different for NX and RX.  I am sure that there is a more elegant
     #               way to do this, and in any event, this dependence on NX vs RX 
@@ -245,9 +245,9 @@ def random_spanning_tree(
 
     graph.verify_graph_is_valid()
 
-    # frm: TODO:  Remove NX / RX dependency - maybe move to graph.py
+    # frm: TODO: Refactoring:  Remove NX / RX dependency - maybe move to graph.py
 
-    # frm: TODO:  Think a bit about original_nx_node_ids 
+    # frm: TODO: Documentation:  Think a bit about original_nx_node_ids 
     #
     # Original node_ids refer to the node_ids used when a graph was created.
     # This mostly means remembering the NX node_ids when you create an RX
@@ -331,7 +331,7 @@ def uniform_spanning_tree(
 
     # frm DONE:  To support RX, I added an add_edge() method to Graph. 
 
-    # frm: TODO:  Remove dependency on NX below
+    # frm: TODO: Refactoring:  Remove dependency on NX below
 
     nx_graph = nx.Graph()
     G = Graph.from_networkx(nx_graph)
@@ -343,10 +343,14 @@ def uniform_spanning_tree(
     return G
 
 
-# frm TODO:  
+# frm TODO: Documentation: PopulatedGraph - state that this only exists in tree.py
 #
-#               I think that this is only ever used inside this module (except)
-#               for testing.
+# I think that this is only ever used inside this module (except)
+# for testing.
+#
+# Decide if this is intended to only ever be used inside tree.py (and for testing),
+# and if so: 1) document that fact and 2) see if there is any Pythonic convention
+# for a class that is intended to NOT be used externally (like a leading underscore)
 #
 class PopulatedGraph:
     """
@@ -393,7 +397,7 @@ class PopulatedGraph:
         self.epsilon = epsilon
         self._degrees = {node_id: graph.degree(node_id) for node_id in graph.node_indices}
 
-    # frm TODO:  Verify that this does the right thing for the new Graph object
+    # frm TODO: Code: ???  Verify that this does the right thing for the new Graph object
     def __iter__(self):
         return iter(self.graph)
 
@@ -411,7 +415,7 @@ class PopulatedGraph:
     # frm: ???: What the fat does this do?  Start with what a population is.  It 
     #           appears to be indexed by node.  Also, what is a subset?  GRRRR...
     def contract_node(self, node, parent) -> None:
-        # frm: ???: TODO:  This routine is only used once, so why have a separate
+        # frm: TODO: Code: ???  This routine is only used once, so why have a separate
         #                   routine - why not just include this code inline where
         #                   the function is now called?  It would be simpler to read
         #                   inline than having to go find this definition.
@@ -441,7 +445,9 @@ class PopulatedGraph:
         :rtype: bool
         """
         
-        # frm: ???: TODO:  this logic is repeated several times in this file.  Consider
+        # frm: TODO: Code: Refactoring: Create a helper function for this
+        # 
+        #   this logic is repeated several times in this file.  Consider
         #                   refactoring the code so that the logic lives in exactly
         #                   one place.
         #
@@ -493,7 +499,9 @@ Cut.subset.__doc__ = (
     "The (frozen) subset of nodes on one side of the cut. Defaults to None."
 )
 
-# frm: TODO:  Not sure how this is used, and so I do not know whether it needs
+# frm: TODO:  Documentation:  Document what Cut objects are used for
+# 
+# Not sure how this is used, and so I do not know whether it needs
 #               to translate node_ids to the parent_node_id context.  I am assuming not...
 #
 # Here is an example of how it is used (in test_tree.py):
@@ -670,11 +678,11 @@ def _part_nodes(start, succ):
     merely starts at the root of the subtree (start) and goes down
     the subtree, adding each node to a set.
 
-    frm: ???: TODO:  Rename this to be more descriptive - perhaps ]
+    frm: TODO:  Documentation: Rename this to be more descriptive - perhaps ]
                      something like: _nodes_in_subtree() or
                      _nodes_for_cut()
     
-    frm: TODO:  Add the above explanation for what a Cut is and how
+    frm: TODO:  Documentation: Add the above explanation for what a Cut is and how
                 we find them by converting the graph to a DAG and
                 then looking for subtrees to a block header at the
                 top of this file.  It will give the reader some
@@ -789,7 +797,7 @@ def find_balanced_edge_cuts_memoization(
 
         return cuts
 
-    # frm: TODO:  Refactor this code to make its two use cases clearer:
+    # frm: TODO: Refactoring: this code to make its two use cases clearer:
     #
     # One use case is bisecting the graph (one_sided_cut is False).  The 
     # other use case is to peel off one part (district) with the appropriate
@@ -885,9 +893,11 @@ def _max_weight_choice(cut_edge_list: List[Cut]) -> Cut:
     return max(cut_edge_list, key=lambda cut: cut.weight)
 
 
-# frm: ???:  Only ever used once...
-# frm: ???: TODO:  Figure out what this does.  There is no NX/RX issue here, I just
+# frm: TODO:  Documentation: document what _power_set_sorted_by_size_then_sum() does
+# 
+#  Figure out what this does.  There is no NX/RX issue here, I just
 #                   don't yet know what it does or why...
+# Note that this is only ever used once...
 def _power_set_sorted_by_size_then_sum(d):
     power_set = [
         s for i in range(1, len(d) + 1) for s in itertools.combinations(d.keys(), i)
@@ -1002,7 +1012,7 @@ def _region_preferred_max_weight_choice(
 
     return _max_weight_choice(cut_edge_list)
 
-# frm TODO:     def bipartition_tree(
+# frm TODO: Refactoring:    def bipartition_tree(
 #
 #               This might get complicated depending on what kinds of functions
 #               are used as parameters.  That is, do the functions used as parameters
@@ -1049,7 +1059,7 @@ def bipartition_tree(
     allow_pair_reselection: bool = False,
     cut_choice: Callable = _region_preferred_max_weight_choice,
 ) -> Set:
-    # frm: TODO:  Change the names of ALL function formal parameters to end in "_fn" - to make it clear
+    # frm: TODO: Refactoring: Change the names of ALL function formal parameters to end in "_fn" - to make it clear
     #               that the paraemter is a function.  This will make it easier to do a global search
     #               to find all function parameters - as well as just being good coding practice...
     """
@@ -1164,13 +1174,13 @@ def bipartition_tree(
 
     while max_attempts is None or attempts < max_attempts:
         if restarts == node_repeats:
-            # frm: TODO: ???:  Not sure what this if-stmt is for...
+            # frm: TODO: Code: ???:  Not sure what this if-stmt is for...
             spanning_tree = spanning_tree_fn(subgraph_to_split)
             # print(f"bipartition_tree(): new spanning_tree edges: {spanning_tree.edges}")
             restarts = 0
         h = PopulatedGraph(spanning_tree, populations, pop_target, epsilon)
 
-        # frm: ???: TODO:  Again - we should NOT be changing semantics based
+        # frm: TODO: Refactoring:  Again - we should NOT be changing semantics based
         #                   on the names in signatures...
         # Better approach is to have all of the poosible paramters exist
         # in ALL of the versions of the cut_choice() functions and to
@@ -1248,10 +1258,11 @@ def bipartition_tree(
     raise RuntimeError(f"Could not find a possible cut after {max_attempts} attempts.")
 
 
-# frm: WTF: TODO:  This function has a leading underscore indicating that it is a private
+# frm: TODO: Refactoring:  This function has a leading underscore indicating that it is a private
 #                   function, but in fact it is used in tree_proposals.py...  It also returns
 #                   Cuts which I had hoped would be an internal data structure, but...
-# frm: RX-TODO:  This is called in tree_proposals.py with a subgraph, so it needs to 
+
+# frm: RX-TODO: Code:  This is called in tree_proposals.py with a subgraph, so it needs to 
 #               return translated Cut objects.  However, it is also called internally in 
 #               this code.  I need to make sure that I do not translate the node_ids to the
 #               parent_node_ids twice.  At present, they are converted in this file by the 
@@ -1278,7 +1289,7 @@ def _bipartition_tree_random_all(
     balance_edge_fn: Callable = find_balanced_edge_cuts_memoization,
     choice: Callable = random.choice,
     max_attempts: Optional[int] = 100000,
-) -> List[Tuple[Hashable, Hashable]]:    # frm: TODO: Change this to be a set of node_ids (ints)
+) -> List[Tuple[Hashable, Hashable]]:    # frm: TODO: Documentation: Change this to be a set of node_ids (ints)
     """
     Randomly bipartitions a tree into two subgraphs until a valid bipartition is found.
 
@@ -1338,7 +1349,9 @@ def _bipartition_tree_random_all(
         h = PopulatedGraph(spanning_tree, populations, pop_target, epsilon)
         possible_cuts = balance_edge_fn(h, choice=choice)
 
-        # frm: RX-TODO:  Translate cuts into node_id context of the parent.
+        # frm: TODO: Code:  Translate cuts into node_id context of the parent.
+        #
+        # Not sure if this really needs to be done, but check it out...
         if not (repeat_until_valid and len(possible_cuts) == 0):
             return possible_cuts
 
@@ -1434,7 +1447,7 @@ def bipartition_tree_random_with_num_cuts(
     :rtype: Union[Set[Any], None]
     """
     
-    # frm: ???: TODO:  Again - semantics should not depend on signatures...
+    # frm: TODO: Refactoring:  Again - semantics should not depend on signatures...
     if "one_sided_cut" in signature(balance_edge_fn).parameters:
         balance_edge_fn = partial(balance_edge_fn, one_sided_cut=True)
 
@@ -1457,11 +1470,11 @@ def bipartition_tree_random_with_num_cuts(
         parent_nodes = graph.translate_subgraph_node_ids_for_set_of_nodes(chosen_cut.subset)
         return num_cuts, frozenset(parent_nodes)  # frm: Not sure if important that it be frozenset
     else:
-        # frm: TODO:  Grok when this returns None and why and what the calling code does and why...
+        # frm: TODO: Code: ???:  Grok when this returns None and why and what the calling code does and why...
         return None
 
 #######################
-# frm TODO:  Check to make sure there is a test for this...
+# frm TODO:  Testing: Check to make sure there is a test for this...
 def bipartition_tree_random(
     subgraph_to_split: Graph,
     pop_col: str,
@@ -1533,7 +1546,7 @@ def bipartition_tree_random(
     :rtype: Union[Set[Any], None]
     """
     
-    # frm: ???: TODO:  Again - semantics should not depend on signatures...
+    # frm: TODO: Refactoring:  Again - semantics should not depend on signatures...
     #
     # This is odd - there are two balance_edge_functions defined in tree.py but 
     # both of them have a formal parameter with the name "one_sided_cut", so this
@@ -1659,10 +1672,10 @@ def epsilon_tree_bipartition(
 
     return translated_flips
 
-    # frm: TODO:  I think I need to translate flips elsewhere - need to check...
+    # frm: TODO: Code: ???: I think I need to translate flips elsewhere - need to check...
 
 
-# TODO: Move these recursive partition functions to their own module. They are not
+# frm: TODO: Refactoring: Move these recursive partition functions to their own module. They are not
 # central to the operation of the recom function despite being tree methods.
 # frm: defined here but only used in partition.py
 #       But maybe this is intended to be used externally...
@@ -1842,14 +1855,14 @@ def _get_seed_chunks(
     :rtype: List[List[int]]
     """
     
-    # frm: ??? TODO:  Change the name of num_chunks_left to instead be num_districts_per_chunk.
+    # frm: TODO: Refactoring:  Change the name of num_chunks_left to instead be num_districts_per_chunk.
     # frm: ???: It is not clear to me when num_chunks will not evenly divide num_dists.  In 
     #           the only place where _get_seed_chunks() is called, it is inside an if-stmt
     #           branch that validates that num_chunks evenly divides num_dists...
     #
     num_chunks_left = num_dists // num_chunks
 
-    # frm: ???: TODO:  Change the name of parts below to be something / anything else.  Normally
+    # frm: TODO: Refactoring:  Change the name of parts below to be something / anything else.  Normally
     #                   parts refers to districts, but here is is just a way to keep track of 
     #                   sets of nodes for chunks.  Yes - they eventually become districts when
     #                   this code gets to the base cases, but I found it confusing at this 
@@ -1866,7 +1879,7 @@ def _get_seed_chunks(
     for node in graph.node_indices:
         chunk_pop += graph.node_data(node)[pop_col]
 
-    # frm: TODO:  See if there is a better way to structure this instead of a while True loop...
+    # frm: TODO: Refactoring:  See if there is a better way to structure this instead of a while True loop...
     while True:
         epsilon = abs(epsilon)
 
@@ -2019,7 +2032,7 @@ def _recursive_seed_part_inner(
     Returns a partition with ``num_dists`` districts balanced within ``epsilon`` of
     ``pop_target``.
 
-    frm: ???: TODO:     Correct the above statement that this function returns a partition.
+    frm: TODO: Documentation:     Correct the above statement that this function returns a partition.
                         In fact, it returns a list of sets of nodes, which is conceptually 
                         equivalent to a partition, but is not a Partition object.  Each
                         set of nodes constitutes a district, but the district does not 
@@ -2187,7 +2200,7 @@ def _recursive_seed_part_inner(
         )
 
     # split graph into num_chunks chunks, and recurse into each chunk
-    # frm: TODO: Add documentation for why a subgraph in call below
+    # frm: TODO: Documentation: Add documentation for why a subgraph in call below
     elif num_dists % num_chunks == 0:
         chunks = _get_seed_chunks(
             graph.subgraph(graph.node_indices),     # needs to be a subgraph
@@ -2232,7 +2245,7 @@ def _recursive_seed_part_inner(
 
 
 
-# frm TODO: ???:   This routine is never called - not in this file and not in any other GerryChain file.
+# frm TODO: Refactoring:   This routine is never called - not in this file and not in any other GerryChain file.
 #               Is it intended to be used by end-users?  And if so, for what purpose?
 def recursive_seed_part(
     graph: Graph,

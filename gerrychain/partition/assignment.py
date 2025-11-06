@@ -156,7 +156,7 @@ class Assignment(Mapping):
         :rtype: Assignment
         """
 
-        # frm: TODO:  Clean up from_dict().
+        # frm: TODO: Refactoring:  Clean up from_dict().
         #
         # A couple of things:
         #  * It uses a routine, level_sets(), which is only ever used here, so 
@@ -239,7 +239,7 @@ def get_assignment(
     :raises TypeError: If the part_assignment is not a string or dictionary.
     """
     
-    # frm: TODO:  Think about whether to split this into two functions.  AT
+    # frm: TODO: Refactoring:  Think about whether to split this into two functions.  AT
     #               present, it does different things based on whether
     #               the "part_assignment" parameter is a string, a dict, 
     #               or an assignment.  Probably not worth the trouble (possible

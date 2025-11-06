@@ -1,13 +1,13 @@
 # Imports
 from collections import defaultdict, Counter
-# frm TODO: Remove dependence on NetworkX.  
+# frm TODO: Refactoring: Remove dependence on NetworkX.  
 #           The only use is:
 #                pieces += nx.number_connected_components(subgraph)
 import networkx as nx
 import math
 from typing import List
 
-# frm: TODO:  Do performance testing and improve performance of these routines.
+# frm: TODO: Performance: Do performance testing and improve performance of these routines.
 #
 # Peter made the comment in a PR that we should make this code more efficient:
 #
@@ -144,7 +144,7 @@ class LocalitySplits:
 
     def __call__(self, partition):
 
-        # frm: TODO: LocalitySplits: Figure out how this is intended to be used...
+        # frm: TODO: Refactoring:   LocalitySplits: Figure out how this is intended to be used...
         # 
         # Not quite sure why it is better to have a "__call()__" method instead of a 
         # get_scores(self) method, but whatever...
@@ -183,7 +183,7 @@ class LocalitySplits:
 
             totpop = 0
             for node_id in partition.graph.node_indices:
-                # frm: TODO:  Once you have a partition, you cannot change the total population
+                # frm: TODO: Refactoring:  Once you have a partition, you cannot change the total population
                 #               in the Partition, so why don't we cache the total population as
                 #               a data member in Partition?
                 #
@@ -191,7 +191,7 @@ class LocalitySplits:
 
                 totpop += partition.graph.node_data(node_id)[self.pop_col]
 
-            # frm: TODO:  Ditto with num_districts - isn't this a constant once you create a Partition?
+            # frm: TODO: Refactoring:  Ditto with num_districts - isn't this a constant once you create a Partition?
             #
             # Peter agreed that this would be a good thing to do.
 
@@ -199,7 +199,7 @@ class LocalitySplits:
 
             # Compute the total population for each locality and then the number of "allowed pieces"
             for loc in self.localities:
-                # frm: TODO:    The code below just calculates the total population for a set of nodes.
+                # frm: TODO: Refactoring:    The code below just calculates the total population for a set of nodes.
                 #               This sounds like a good candidate for a utility function.  See if this
                 #               logic is repeated elsewhere...
                 
@@ -220,7 +220,8 @@ class LocalitySplits:
                 #
                 #    pop = 0
                 #    for n in sg.nodes():
-                #        # frm: TODO:  I think this needs to change to work for RX...
+                #        # frm: TODO: Code:  I think this needs to change to work for RX...
+                #        #      => Note that I think this TODO is moot since I rewrote the code anyways...
                 #        pop += sg.nodes[n][self.pop_col]
                 #
                 #    allowed_pieces[loc] = math.ceil(pop / (totpop / num_districts))
@@ -238,7 +239,7 @@ class LocalitySplits:
                     else:
                         locality_population[locality_name] += locality_pop
 
-                # frm: TODO:  Peter commented (in PR) that this is another thing that
+                # frm: TODO: Refactoring:  Peter commented (in PR) that this is another thing that
                 #               could be cached so we didn't recompute it over and over...
                 ideal_population_per_district = totpop / num_districts
 

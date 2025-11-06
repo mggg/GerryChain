@@ -136,7 +136,7 @@ class Election:
         # So we disallow using a dict as a parameter to the DataTally below
         #
 
-        # frm: TODO: Peter said it was OK to make the change described above...
+        # frm: TODO: Code: Peter said it was OK to make the change described above...
         #
         # He just wanted there to be an error saying that this has been deprecated
         # which I think I have done below - maybe the Exception should be a specific
@@ -222,7 +222,7 @@ class ElectionUpdater:
         return previous_totals_for_party
 
 
-# frm: TODO:  This routine, get_percents(), is only ever used inside ElectionResults.
+# frm: TODO: Refactoring:  This routine, get_percents(), is only ever used inside ElectionResults.
 #
 #               Why is it not defined as an internal function inside ElectionResults?
 #

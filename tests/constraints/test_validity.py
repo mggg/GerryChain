@@ -55,7 +55,7 @@ def test_contiguous_with_contiguity_no_flips_is_true(contiguous_partition):
 
 def test_contiguous_with_contiguity_flips_is_true(contiguous_partition_with_flips):
     contiguous_partition, test_flips = contiguous_partition_with_flips
-    # frm: TODO:  Figure out whether test_flips are in original node_ids or internal RX node_ids
+    # frm: TODO: Testing:  Figure out whether test_flips are in original node_ids or internal RX node_ids
     contiguous_partition2 = contiguous_partition.flip(test_flips)
     assert contiguous(contiguous_partition2)
     assert single_flip_contiguous(contiguous_partition2)
@@ -80,7 +80,7 @@ def test_discontiguous_with_contiguous_flips_is_false(
     discontiguous_partition_with_flips
 ):
     part, test_flips = discontiguous_partition_with_flips
-    # frm: TODO:  Figure out whether test_flips are in original node_ids or internal RX node_ids
+    # frm: TODO: Testing:  Figure out whether test_flips are in original node_ids or internal RX node_ids
     discontiguous_partition2 = part.flip(test_flips)
     assert not contiguous(discontiguous_partition2)
 
@@ -93,7 +93,7 @@ def test_discontiguous_with_single_flip_contiguous_flips_is_false(
     discontiguous_partition_with_flips
 ):
     part, test_flips = discontiguous_partition_with_flips
-    # frm: TODO:  Figure out whether test_flips are in original node_ids or internal RX node_ids
+    # frm: TODO: Testing:  Figure out whether test_flips are in original node_ids or internal RX node_ids
     discontiguous_partition2 = part.flip(test_flips)
     assert not single_flip_contiguous(discontiguous_partition2)
 
@@ -102,7 +102,7 @@ def test_discontiguous_with_contiguous_bfs_flips_is_false(
     discontiguous_partition_with_flips
 ):
     part, test_flips = discontiguous_partition_with_flips
-    # frm: TODO:  Figure out whether test_flips are in original node_ids or internal RX node_ids
+    # frm: TODO: Testing:  Figure out whether test_flips are in original node_ids or internal RX node_ids
     discontiguous_partition2 = part.flip(test_flips)
     assert not contiguous_bfs(discontiguous_partition2)
 

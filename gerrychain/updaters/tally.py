@@ -43,7 +43,7 @@ class DataTally:
             # If not, then assume that the "data" passed in is already of the
             # form: {node_id: data_value}
 
-            # frm: TODO: Verify that if the "data" passed in is not a string that it
+            # frm: TODO: Code: Verify that if the "data" passed in is not a string that it
             #               is of the form: {node_id, data_value}
 
 
@@ -54,7 +54,7 @@ class DataTally:
                 attribute = self.data
                 self.data = {node_id: graph.node_data(node_id)[attribute] for node_id in node_ids}
 
-                # frm: TODO:  Should probably check that the data for each node is numerical, since we
+                # frm: TODO: Code:  Should probably check that the data for each node is numerical, since we
                 #             are going to sum it below...
                 #
                 # Peter said that would be a good idea
@@ -63,7 +63,7 @@ class DataTally:
             for node_id, part in partition.assignment.items():
                 add = self.data[node_id]
 
-                # frm: TODO:  Should I also test that the "add" variable is a number or something
+                # frm: TODO: Code:  Should I also test that the "add" variable is a number or something
                 #               that can be added?
                 if math.isnan(add):
                     warnings.warn(

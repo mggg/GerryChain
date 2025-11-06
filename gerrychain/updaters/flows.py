@@ -40,7 +40,7 @@ def flows_from_changes(old_partition, new_partition) -> Dict:
     :rtype: Dict
     """
     
-    # frm: TODO:  Grok why there is a test for:  source != target
+    # frm: TODO: Code: ???:  Grok why there is a test for:  source != target
     #
     # It would seem to me that it would be a logic bug if there 
     # was a "flip" that did not in fact change the partition mapping...

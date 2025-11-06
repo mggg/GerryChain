@@ -193,7 +193,7 @@ def test_election_result_has_a_cute_str_method():
 
 def _convert_dict_of_set_of_rx_node_ids_to_set_of_nx_node_ids(dict_of_set_of_rx_nodes, nx_to_rx_node_id_map):
 
-    # frm: TODO:  This way to convert node_ids is clumsy and inconvenient.  Think of something better...
+    # frm: TODO: Testing:  This way to convert node_ids is clumsy and inconvenient.  Think of something better...
 
     # When we create a partition from an NX based Graph we convert it to be an 
     # RX based Graph which changes the node_ids of the graph.  If one wants
@@ -236,7 +236,7 @@ def test_exterior_boundaries_as_a_set(three_by_three_grid):
 
     result = partition["exterior_boundaries_as_a_set"]
 
-    # frm: TOdO: Come up with a nice way to convert the result which uses
+    # frm: TODO: Testing: Come up with a nice way to convert the result which uses
     #               RX based node_ids back to the original NX based node_ids...
 
     # If the original graph that the partition was based on was an NX graph
@@ -323,7 +323,7 @@ def test_perimeter(three_by_three_grid):
     graph = three_by_three_grid
     for i in [0, 1, 2, 3, 5, 6, 7, 8]:
         graph.node_data(i)["boundary_node"] = True
-        # frm: TODO:  Update test - boundary_perim should be 2 for corner nodes...
+        # frm: TODO: Testing:  Update test - boundary_perim should be 2 for corner nodes...
         graph.node_data(i)["boundary_perim"] = 1
     graph.node_data(4)["boundary_node"] = False
 

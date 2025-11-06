@@ -174,7 +174,7 @@ def test_convert_from_nx_to_rx(four_by_five_graph_nx):
       f"Expected 26 edges but got {len(graph.edge_indices)}"
 
     # Node data is the same
-    # frm: TODO:  Do this the clever Python way and test ALL at the same time
+    # frm: TODO: Refactoring:  Do this the clever Python way and test ALL at the same time
     for node_id in graph.node_indices:
         assert graph.node_data(node_id)["population"] == 10, \
           f"Expected population of 10 but got {graph.node_data(node_id)['population']}"
@@ -185,7 +185,7 @@ def test_convert_from_nx_to_rx(four_by_five_graph_nx):
     for node_id in converted_graph.node_indices:
         assert graph.node_data(node_id)["population"] == 10, \
           f"Expected population of 10 but got {graph.node_data(node_id)['population']}"
-        # frm: TODO: Need to use node_id map to get appropriate node_ids for RX graph
+        # frm: TODO: Code: Need to use node_id map to get appropriate node_ids for RX graph
         # assert graph.node_data(node_id)["nx_node_id"] == node_id, \
         #   f"Expected nx_node_id of {node_id} but got {graph.node_data(node_id)['nx_node_id']}"
         assert graph.node_data(node_id)["MVAP"] == 2, \
@@ -542,7 +542,7 @@ def test_generic_bfs_edges(four_by_five_graph_nx, four_by_five_graph_rx):
     assert the_graph_has_a_cycle == False
 
     """
-    TODO:  
+    TODO: Testing:
       * Think about whether this test is actually appropriate.  The
         issue is that the expected_set_of_edges is the right set
         for this particular graph, but I am not sure that this is
@@ -553,7 +553,7 @@ def test_generic_bfs_edges(four_by_five_graph_nx, four_by_five_graph_rx):
         but perhaps we should have more cases that stress the test...
     """
 def test_generic_bfs_successors_generator():
-    # TODO: Write a test for this routine
+    # TODO: Testing: Write a test for this routine
     # 
     # Note that the code for this routine is very straight-forward, so
     # writing a test is not high-priority.  The only reason I did not 
@@ -564,7 +564,7 @@ def test_generic_bfs_successors_generator():
     assert True
 
 def test_generic_bfs_successors():
-    # TODO: Write a test for this routine
+    # TODO: Testing: Write a test for this routine
     #
     # Code is trivial, but because this routine is important it 
     # deserves a test - just not clear off top of my head how 
@@ -573,7 +573,7 @@ def test_generic_bfs_successors():
     assert True
 
 def test_generic_bfs_predecessors():
-    # TODO: Write a test for this routine
+    # TODO: Testing: Write a test for this routine
     #
     # Code is trivial, but because this routine is important it 
     # deserves a test - just not clear off top of my head how 
@@ -582,7 +582,7 @@ def test_generic_bfs_predecessors():
     assert True
 
 def test_predecessors():
-    # TODO: Write a test for this routine
+    # TODO: Testing: Write a test for this routine
     #
     # Code is trivial, but because this routine is important it 
     # deserves a test - just not clear off top of my head how 
@@ -591,7 +591,7 @@ def test_predecessors():
     assert True
 
 def test_successors():
-    # TODO: Write a test for this routine
+    # TODO: Testing: Write a test for this routine
     #
     # Code is trivial, but because this routine is important it 
     # deserves a test - just not clear off top of my head how 
@@ -600,7 +600,7 @@ def test_successors():
     assert True
 
 def test_laplacian_matrix():
-    # TODO: Write a test for this routine
+    # TODO: Testing: Write a test for this routine
     #
     # Not clear off the top of my head how 
     # to write the test...
@@ -608,7 +608,7 @@ def test_laplacian_matrix():
     assert True
 
 def test_normalized_laplacian_matrix():
-    # TODO: Write a test for this routine
+    # TODO: Testing: Write a test for this routine
     #
     # This routine has not yet been implemented (as
     # of October 2025), but when it is implemented
@@ -620,7 +620,7 @@ def test_normalized_laplacian_matrix():
 """
 =============================================================
 
-TODO:
+TODO: Code: ???
 
   * Aliasing concerns:
 

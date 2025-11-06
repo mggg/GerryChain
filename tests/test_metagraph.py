@@ -13,7 +13,7 @@ def partition(graph):
 
 def test_all_cut_edge_flips(partition):
     
-    # frm: TODO:  Maybe change all_cut_edge_flips to return a dict
+    # frm: TODO: Testing:  Maybe change all_cut_edge_flips to return a dict
     #
     # At present, it returns an iterator, which makes the code below
     # more complicated than it needs to be.  If it just returned
@@ -53,7 +53,7 @@ class TestAllValidStatesOneFlipAway:
 
 
 def test_all_valid_flips(partition):
-    # frm: TODO:  NX vs. RX node_id issues...
+    # frm: TODO: Testing:  NX vs. RX node_id issues...
     def disallow_six_to_one(partition):
         for node, part in partition.flips.items():
             if node == 6 and part == 1:
@@ -62,7 +62,7 @@ def test_all_valid_flips(partition):
 
     constraints = [disallow_six_to_one]
 
-    # frm: TODO:  If I created a utility routine to convert
+    # frm: TODO: Testing:  If I created a utility routine to convert
     #             a list of flips to original node_ids,
     #             then I could use that here and then
     #             convert the resulting list to a set...

@@ -441,7 +441,7 @@ def create_graphs_from_nx_edges(num_nodes, list_of_edges_nx, nx_to_rx_node_id_ma
     #
     # First we create the RX graph and add nodes.
     #
-    # frm: TODO: Update test so that the number of nodes is not hard-coded...
+    # frm: TODO: Testing: Update test so that the number of nodes is not hard-coded...
     # 
     # Then we to create the appropriate RX edges - the ones that 
     # correspond to the NX edges but using the RX node_ids for the edges. 
@@ -462,7 +462,6 @@ def create_graphs_from_nx_edges(num_nodes, list_of_edges_nx, nx_to_rx_node_id_ma
     # but we are cobbling together stuff for a test and so have to
     # just do it here...
     rx_to_nx_node_id_map = {v: k for k,v in nx_to_rx_node_id_map.items()}
-    # frm: TODO: Debugging: Remove debugging code
     for node_id in rx_graph.node_indices():
         rx_graph[node_id]["__networkx_node__"] = rx_to_nx_node_id_map[node_id]
 
@@ -548,7 +547,7 @@ def test_reversible_recom_works_as_a_proposal(partition_with_pop):
     # the value of epsilon (of 10%) is never used, whatever...
     #
 
-    # frm: TODO:  Grok this test - what is it trying to accomplish?
+    # frm: TODO: Testing:  Grok this test - what is it trying to accomplish?
     #
     # The proposal uses reversible_recom() with the default value for the "repeat_until_valid" 
     # parameter which is False.  This means that the call to try to combine and then split two
@@ -576,11 +575,11 @@ def test_reversible_recom_works_as_a_proposal(partition_with_pop):
     for state in chain:
         assert contiguous(state)
 
-# frm: TODO:  Add more tests using MarkovChain...
+# frm: TODO: Testing:  Add more tests using MarkovChain...
 
 def test_find_balanced_cuts_contraction():
 
-    # frm: TODO:  Add test for RX-based Graph object
+    # frm: TODO: Testing:  Add test for RX-based Graph object
 
     tree = Graph.from_networkx(
         networkx.Graph([(0, 1), (1, 2), (1, 4), (3, 4), (4, 5), (3, 6), (6, 7), (6, 8)])

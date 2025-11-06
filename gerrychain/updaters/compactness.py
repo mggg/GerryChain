@@ -228,7 +228,7 @@ def perimeter_of_part(partition, part: int) -> float:
     """
     Totals up the perimeter of the part in the partition.
 
-    .. Warning::  frm: TODO:  Add code to enforce this warning...
+    .. Warning::  frm: TODO: Refactoring:   Add code to enforce this warning...
 
         Requires that 'boundary_perim' be a node attribute, 'shared_perim' be an edge
         attribute, 'cut_edges' be an updater, and 'exterior_boundaries' be an updater.

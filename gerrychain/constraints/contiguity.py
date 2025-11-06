@@ -15,7 +15,7 @@ from ..graph import Graph
 #               Possible solutions are to 1) speed up these routines somehow and 2) cache
 #               results so that at least we don't do the traversals over and over.
 
-# frm: TODO: Rethink WTF this module is all about.  
+# frm: TODO: Refactoring: Rethink WTF this module is all about.  
 # 
 # It seems like a grab bag for lots of different things - used in different places.
 # 
@@ -119,7 +119,7 @@ def _are_reachable(graph: Graph, start_node: Any, avoid: Callable, targets: Any)
                 seen[neighbor] = neighbor_distance
                 push(fringe, (neighbor_distance, next(c), neighbor))
 
-    # frm: TODO:  Simplify this code.  It computes distances and counts but
+    # frm: TODO: Refactoring:  Simplify this code.  It computes distances and counts but
     #               never uses them.  These must be relics of code copied 
     #               from somewhere else where it had more uses...
 
@@ -257,7 +257,7 @@ def contiguous_bfs(partition: Partition) -> bool:
     :rtype: bool
     """
     
-    # frm: TODO:   Try to figure out why this routine exists.  It seems to be
+    # frm: TODO: Code: ???:   Try to figure out why this routine exists.  It seems to be
     #               exactly the same conceptually as contiguous().  It looks 
     #               at the "affected" parts - those that have changed node
     #               assignments from parent, and sees if those parts are 
@@ -314,7 +314,7 @@ def contiguous_components(partition: Partition) -> Dict[int, list]:
     :rtype: dict
     """
 
-    # frm: TODO:  NX vs RX Issues here:
+    # frm: TODO: Code: ???:  NX vs RX Issues here:
     #
     # The call on subgraph() below is perhaps problematic because it will renumber
     # node_ids...
@@ -371,11 +371,11 @@ def _bfs(graph: Dict[int, list]) -> bool:
 
     return num_nodes == len(visited)
 
-# frm: TODO:  Verify that is_connected_bfs() works - add a test or two...
+# frm: TODO: Testing:  Verify that is_connected_bfs() works - add a test or two...
 
-# frm: TODO:  Move this code into graph.py.  It is all about the Graph...
+# frm: TODO: Refactoring:  Move this code into graph.py.  It is all about the Graph...
 
-# frm: Code obtained from the web - probably could be optimized...
+# frm: TODO: Documentation: This code was obtained from the web - probably could be optimized...
 #       This code replaced calls on nx.is_connected()
 def is_connected_bfs(graph: Graph):
     if not graph:

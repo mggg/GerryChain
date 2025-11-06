@@ -250,7 +250,7 @@ class Graph:
 
     # frm: TODO: Testing: Create a test for this routine
     def internal_node_id_for_original_nx_node_id(self, original_nx_node_id):
-        # frm: TODO:  Think about a better way to map original_nx_node_ids to internal node_ids
+        # frm: TODO: Refactoring:  Think about a better way to map original_nx_node_ids to internal node_ids
         #
         # The problem is that when this routine is called, it may often be called repeatedly 
         # for a list of nodes, and we create the reverse dict every time this is called which
@@ -635,7 +635,7 @@ class Graph:
 
         nx_graph.geometry = df.geometry
 
-        # frm: TODO: Style: Rethink the name of add_boundary_perimeters
+        # frm: TODO: Refactoring: Rethink the name of add_boundary_perimeters
         # 
         # It acts on an nx_graph which seems wrong with the given name.  
         # Maybe it should be: add_boundary_perimeters_to_nx_graph()
@@ -643,7 +643,7 @@ class Graph:
         # Need to check in with Peter to see if this is considered 
         # part of the external API.
 
-        # frm: TODO: Code: Create an nx_utilities module
+        # frm: TODO: Refactoring: Create an nx_utilities module
         #
         # It raises the question of whether there should be an nx_utilities 
         # module for stuff designed to only work on nx_graph objects.
@@ -695,7 +695,7 @@ class Graph:
     def node_indices(self):
         self.verify_graph_is_valid()
 
-        # frm: TODO:  node_indices() does the same thing that graph.nodes does - returning a list of node_ids.
+        # frm: TODO: Refactoring:  node_indices() does the same thing that graph.nodes does - returning a list of node_ids.
         #               Do we really want to support two ways of doing the same thing?
         # Actually this returns a set rather than a list - not sure that matters though...
         #
@@ -823,7 +823,7 @@ class Graph:
     def edges(self):
         # Return a set of edge tuples
 
-        # frm: TODO: Should edges return a list instead of a set?
+        # frm: TODO: Code: ???: Should edges return a list instead of a set?
         #
         # Peter said he thought users would expect a list - but why?
 
@@ -964,7 +964,7 @@ class Graph:
         return set(node_id for node_id in self.node_indices if self.degree(node_id) == 0)
 
     def is_directed(self):
-        # frm TODO:   Get rid of this hack in is_directed().  
+        # frm TODO: Code:   Get rid of this hack in is_directed().  
         # 
         # I added it because code in contiguity.py 
         # called nx.is_connected() which eventually called is_directed()
@@ -1055,10 +1055,10 @@ class Graph:
             )
 
     def __iter__(self) -> Iterable[Any]:
-        # frm: TODO:  Verify that __iter__() does the right thing...
+        # frm: TODO: Code: ???:  Verify that __iter__() does the right thing...
         #               It seems to do the right thing - iterating over node_ids which
         #               works so long as NX uses integers for node_ids.  
-        # frm: TODO:    Perhaps I should test for non-integer node_ids in NX graphs and issue a warning...
+        # frm: TODO: Code: ???:    Perhaps I should test for non-integer node_ids in NX graphs and issue a warning...
         #               In any event, this deserves thought: what to do for NX graphs that do not use
         #               integers for node_ids?
         yield from self.node_indices

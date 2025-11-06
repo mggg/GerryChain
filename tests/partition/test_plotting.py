@@ -69,8 +69,12 @@ class TestPartitionPlotting:
         graph = Graph.from_geodataframe(geodataframe)
         partition = Partition(graph=graph, assignment={node: 0 for node in graph})
 
-        # frm: TODO: the following statement blows up because we do not copy
+        # frm: TODO: Testing: how to handle geometry?
+        # 
+        # Originally, the following statement blew up because we do not copy
         #               geometry data from NX to RX when we convert to RX.
+        #
+        # I said at the time:
         #               Need to grok what the right way to deal with geometry 
         #               data is (is it only an issue for from_geodataframe() or
         #               are there other ways a geometry value might be set?)
