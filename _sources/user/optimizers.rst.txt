@@ -329,7 +329,7 @@ threshold value :math:`t`, so :math:`n = \sum_{p_i \in P} \mathbb{1}_{p_i\geq t}
 
 - ``reward_partial_dist``: Given a ``Partition``, this function will return :math:`n + \max(\{p_i : p_i < t\})`.
 
-- ``reward_next_highest_close``: Given a ``Partition``, let :math:`p_k` be the percentage of the district with the next highest percentage of minority population that is not over the threshold value :math:`t`. This function will return :math:`n + 1` if :math:`p_k > t-0.1` and :math:`n + 10(p_k - t + 0.1)` otherwise.
+- ``reward_next_highest_close``: Given a ``Partition``, let :math:`p_k = \max(\{p_i : p_i < t\})`. This function will return :math:`n` if :math:`p_k + 0.1 < t` and :math:`n + 10(p_k - t + 0.1)` otherwise.
 
 - ``penalize_maximum_over``: Given a ``Partition``, this function will return 0 if :math:`n = 0` and :math:`n - \frac{1-\max(\{p_i\})}{1-t}` otherwise.
 
