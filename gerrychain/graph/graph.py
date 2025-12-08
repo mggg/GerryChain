@@ -171,7 +171,6 @@ class Graph:
         this routine provides a simple way to create an 
         RX-based GerryChain graph object.
 
-    def from_rustworkx(cls, rx_graph: rustworkx.PyGraph) -> "Graph":
         :param rx_graph: a RustworkX PyGraph object
         :type rx_graph: rustworkx.PyGraph
 
