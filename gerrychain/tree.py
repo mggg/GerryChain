@@ -106,6 +106,18 @@ from .graph import Graph
 
 # frm TODO: Documentation: Update function param docmentation to get rid of nx.Graph and use just Graph
 
+# frm TODO: Documentation: Migration Guide: tree.py is no longer a general purpose module - it is GerryChain specific
+#
+# Before the work to integrate RX, many of the routines ij tree.py
+# operated on NetworkX Graph objects, which meant that the module
+# was not bound to just GerryChain work - someone could conceivably 
+# have used it for a graph oriented project that had nothing to do
+# with GerryChain or redistricting.
+#
+# That is no lnoger true, as the parameters to the routines have
+# been changed to be GerryChain Graph objects which are not subclasses
+# of NetworkX Graph objects.
+
 def random_spanning_tree(
     graph: Graph,              
     region_surcharge: Optional[Dict] = None
@@ -113,14 +125,14 @@ def random_spanning_tree(
     """
     Builds a spanning tree chosen by Kruskal's method using random weights.
 
-    :param graph: The input graph to build the spanning tree from. Should be a Networkx Graph.
-    :type graph: nx.Graph
+    :param graph: The input graph to build the spanning tree from. 
+    :type graph: Graph
     :param region_surcharge: Dictionary of surcharges to add to the random
         weights used in region-aware variants.
     :type region_surcharge: Optional[Dict], optional
 
-    :returns: The maximal spanning tree represented as a Networkx Graph.
-    :rtype: nx.Graph
+    :returns: The maximal spanning tree represented as a GerryChain Graph.
+    :rtype: Graph
     """
     # frm: TODO: Performance
     #           This seems to me to be an expensive way to build a random spanning
@@ -284,13 +296,13 @@ def uniform_spanning_tree(
     Builds a spanning tree chosen uniformly from the space of all
     spanning trees of the graph. Uses Wilson's algorithm.
 
-    :param graph: Networkx Graph
-    :type graph: nx.Graph
+    :param graph: Graph
+    :type graph: Graph
     :param choice: :func:`random.choice`. Defaults to :func:`random.choice`.
     :type choice: Callable, optional
 
     :returns: A spanning tree of the graph chosen uniformly at random.
-    :rtype: nx.Graph
+    :rtype: Graph
     """
     
     """
@@ -357,7 +369,7 @@ class PopulatedGraph:
     A class representing a graph with population information.
 
     :ivar graph: The underlying graph structure.
-    :type graph: nx.Graph
+    :type graph: Graph
     :ivar subsets: A dictionary mapping nodes to their subsets.
     :type subsets: Dict
     :ivar population: A dictionary mapping nodes to their populations.
@@ -380,7 +392,7 @@ class PopulatedGraph:
     ) -> None:
         """
         :param graph: The underlying graph structure.
-        :type graph: nx.Graph
+        :type graph: Graph
         :param populations: A dictionary mapping nodes to their populations.
         :type populations: Dict
         :param ideal_pop: The ideal population for each district.
@@ -397,31 +409,38 @@ class PopulatedGraph:
         self.epsilon = epsilon
         self._degrees = {node_id: graph.degree(node_id) for node_id in graph.node_indices}
 
-    # frm TODO: Code: ???  Verify that this does the right thing for the new Graph object
+        # frm: TODO: Refactor: _degrees ???  Why separately store the degree of every node?
+        #
+        # The _degrees data member above is used to define a method below called "degree()"
+        # What is odd is that the implementation of this degree() method could just as
+        # easily have been self.graph.degree(node_id).  And in fact, every call on the
+        # new degree function could be replaced with just <PopulatedGraph>.graph.degree(node_id)
+        # 
+        # So unless there is a big performace gain (or some other reason), I would be 
+        # in favor of deleting the degree() method below and just using 
+        # <PopulatedGraph>.graph.degree(node_id) on the assumption that both NX and RX
+        # have an efficient implementation of degree()...
+
+
     def __iter__(self):
-        return iter(self.graph)
+        # Note: in the pre RustworkX code, this was implemented as:
+        #
+        #     return iter(self.graph)
+        #
+        # But RustworkX does not support __iter__() - it is not iterable.
+        #
+        # The way to do this in the new RustworkX based code is to use 
+        # the node_indices() method which is accessed as a property as in:
+        #
+        #     for node_id in graph.node_indices:
+        #         ...do something with the node_id
+        #
+        raise NotImplementedError("Graph is not iterable - use graph.node_indices instead")
 
     def degree(self, node) -> int:
         return self._degrees[node]
 
-    # frm: only ever used inside this file
-    #       But maybe this is intended to be used externally...
-    #
-    # In PR: Peter said:
-    #
-    # We do use this external to the class when calling find_balance_edge_cuts_contraction
-
-
-    # frm: ???: What the fat does this do?  Start with what a population is.  It 
-    #           appears to be indexed by node.  Also, what is a subset?  GRRRR...
     def contract_node(self, node, parent) -> None:
-        # frm: TODO: Code: ???  This routine is only used once, so why have a separate
-        #                   routine - why not just include this code inline where
-        #                   the function is now called?  It would be simpler to read
-        #                   inline than having to go find this definition.
-        #
-        #                   Perhaps it is of use externally, but that seems doubtful...
-
         self.population[parent] += self.population[node]
         self.subsets[parent] |= self.subsets[node]
         self._degrees[parent] -= 1
@@ -445,21 +464,21 @@ class PopulatedGraph:
         :rtype: bool
         """
         
-        # frm: TODO: Code: Refactoring: Create a helper function for this
+        # frm: TODO: Refactoring: Create a helper function for this
         # 
-        #   this logic is repeated several times in this file.  Consider
-        #                   refactoring the code so that the logic lives in exactly
-        #                   one place.
+        # This logic is repeated several times in this file.  Consider 
+        # refactoring the code so that the logic lives in exactly
+        # one place.
         #
-        #                   When thinking about refactoring, consider whether it makes
-        #                   sense to toggle what this routine does by the "one_sided_cut"
-        #                   parameter.  Why not have two separate routines with 
-        #                   similar but distinguishing names.  I need to be absolutely
-        #                   clear about what the two cases are all about, but my current
-        #                   hypothesis is that when one_sided_cut == False, we are looking
-        #                   for the edge which when cut produces two districts of 
-        #                   approximately equal size - so a bisect rather than a find all
-        #                   meaning...
+        # When thinking about refactoring, consider whether it makes
+        # sense to toggle what this routine does by the "one_sided_cut"
+        # parameter.  Why not have two separate routines with 
+        # similar but distinguishing names.  I need to be absolutely
+        # clear about what the two cases are all about, but my current
+        # hypothesis is that when one_sided_cut == False, we are looking
+        # for the edge which when cut produces two districts of 
+        # approximately equal size - so a bisect rather than a find all
+        # meaning...
 
         if one_sided_cut:
             return (
@@ -541,7 +560,7 @@ def find_balanced_edge_cuts_contraction(
     :rtype: List[Cut]
     """
 
-    root = choice([x for x in h if h.degree(x) > 1])
+    root = choice([node_id for node_id in h.graph.node_indices if h.degree(node_id) > 1])
     # BFS predecessors for iteratively contracting leaves
     pred = h.graph.predecessors(root)
 
@@ -562,7 +581,7 @@ def find_balanced_edge_cuts_contraction(
     #           that does something similar (perhaps exactly the same).
     #           Need to figure out why there are more than one way to do this...
 
-    leaves = deque(x for x in h if h.degree(x) == 1)
+    leaves = deque(node_id for node_id in h.graph.node_indices if h.degree(node_id) == 1)
     while len(leaves) > 0:
         leaf = leaves.popleft()
         if h.has_ideal_population(leaf, one_sided_cut=one_sided_cut):
@@ -752,7 +771,7 @@ def find_balanced_edge_cuts_memoization(
 
     # frm: ???:  Why does a root have to have degree > 1?  I would think that any node would do...
 
-    root = choice([x for x in h if h.degree(x) > 1])
+    root = choice([node_id for node_id in h.graph.node_indices if h.degree(node_id) > 1])
     pred = h.graph.predecessors(root)
     succ = h.graph.successors(root)
     total_pop = h.tot_pop
@@ -1072,7 +1091,7 @@ def bipartition_tree(
     is ``epsilon * pop_target`` away from ``pop_target``.
 
     :param graph: The graph to partition.
-    :type graph: nx.Graph
+    :type graph: Graph
     :param pop_col: The node attribute holding the population of each node.
     :type pop_col: str
     :param pop_target: The target population for the returned subset of nodes.
@@ -1085,7 +1104,7 @@ def bipartition_tree(
     :type node_repeats: int, optional
     :param spanning_tree: The spanning tree for the algorithm to use (used when the
         algorithm chooses a new root and for testing).
-    :type spanning_tree: Optional[nx.Graph], optional
+    :type spanning_tree: Optional[Graph], optional
     :param spanning_tree_fn: The random spanning tree algorithm to use if a spanning
         tree is not provided. Defaults to :func:`random_spanning_tree`.
     :type spanning_tree_fn: Callable, optional
@@ -1174,7 +1193,6 @@ def bipartition_tree(
 
     while max_attempts is None or attempts < max_attempts:
         if restarts == node_repeats:
-            # frm: TODO: Code: ???:  Not sure what this if-stmt is for...
             spanning_tree = spanning_tree_fn(subgraph_to_split)
             # print(f"bipartition_tree(): new spanning_tree edges: {spanning_tree.edges}")
             restarts = 0
@@ -1257,28 +1275,16 @@ def bipartition_tree(
 
     raise RuntimeError(f"Could not find a possible cut after {max_attempts} attempts.")
 
-
-# frm: TODO: Refactoring:  This function has a leading underscore indicating that it is a private
-#                   function, but in fact it is used in tree_proposals.py...  It also returns
-#                   Cuts which I had hoped would be an internal data structure, but...
-
-# frm: RX-TODO: Code:  This is called in tree_proposals.py with a subgraph, so it needs to 
-#               return translated Cut objects.  However, it is also called internally in 
-#               this code.  I need to make sure that I do not translate the node_ids to the
-#               parent_node_ids twice.  At present, they are converted in this file by the 
-#               caller, but that won't work in tree_proposals.py, because there it is called
-#               with a subgraph, so it would be too late to try to do it in the caller.
-#
-#               Two options:  1) Have this routine do the translation and then comment the
-#               crap out of the call in this file to make sure we do NOT translate them again, or
-#               2) figure out a way to get this OUT of tree_proposals.py where it seems it should
-#               not be in the first place...
-#
 def _bipartition_tree_random_all(
-    # frm: Note:  Changed the name from "graph" to "subgraph_to_split" to remind any future readers
-    #               of the code that the graph passed in is not the partition's graph, and
-    #               that any node_ids passed back should be translated into parent_node_ids.
-    subgraph_to_split: Graph,
+    #
+    # Note: Complexity Alert...  _bipartition_tree_random_all does NOT translate node_ids to parent
+    #
+    # Unlike many/most of the routines in this module, _bipartition_tree_random_all() does
+    # not translate node_ids into the IDs of the parent, because calls to it are not made
+    # on subgraphs.  That is, it returns possible Cuts using the same node_ids as the parent.
+    # It is up to the caller to translate node_ids (if appropriate).
+    #
+    graph_to_split: Graph,
     pop_col: str,
     pop_target: Union[int, float],
     epsilon: float,
@@ -1294,7 +1300,7 @@ def _bipartition_tree_random_all(
     Randomly bipartitions a tree into two subgraphs until a valid bipartition is found.
 
     :param graph: The input graph.
-    :type graph: nx.Graph
+    :type graph: Graph
     :param pop_col: The name of the column in the graph nodes that contains the population data.
     :type pop_col: str
     :param pop_target: The target population for each subgraph.
@@ -1309,7 +1315,7 @@ def _bipartition_tree_random_all(
     :type repeat_until_valid: bool, optional
     :param spanning_tree: The spanning tree to use for bipartitioning. If None, a random spanning
         tree will be generated. Defaults to None.
-    :type spanning_tree: Optional[nx.Graph], optional
+    :type spanning_tree: Optional[Graph], optional
     :param spanning_tree_fn: The function to generate a spanning tree. Defaults to
         random_spanning_tree.
     :type spanning_tree_fn: Callable, optional
@@ -1331,27 +1337,24 @@ def _bipartition_tree_random_all(
 
     # dict of node_id: population for the nodes in the subgraph
     populations = {
-        node_id: subgraph_to_split.node_data(node_id)[pop_col] 
-        for node_id in subgraph_to_split.node_indices
+        node_id: graph_to_split.node_data(node_id)[pop_col] 
+        for node_id in graph_to_split.node_indices
     }
 
     possible_cuts = []
     if spanning_tree is None:
-        spanning_tree = spanning_tree_fn(subgraph_to_split)
+        spanning_tree = spanning_tree_fn(graph_to_split)
 
     restarts = 0
     attempts = 0
 
     while max_attempts is None or attempts < max_attempts:
         if restarts == node_repeats:
-            spanning_tree = spanning_tree_fn(subgraph_to_split)
+            spanning_tree = spanning_tree_fn(graph_to_split)
             restarts = 0
         h = PopulatedGraph(spanning_tree, populations, pop_target, epsilon)
         possible_cuts = balance_edge_fn(h, choice=choice)
 
-        # frm: TODO: Code:  Translate cuts into node_id context of the parent.
-        #
-        # Not sure if this really needs to be done, but check it out...
         if not (repeat_until_valid and len(possible_cuts) == 0):
             return possible_cuts
 
@@ -1403,7 +1406,7 @@ def bipartition_tree_random_with_num_cuts(
     is ``epsilon * pop_target`` away from ``pop_target``.
 
     :param graph: The graph to partition.
-    :type graph: nx.Graph
+    :type graph: Graph
     :param pop_col: The node attribute holding the population of each node.
     :type pop_col: str
     :param pop_target: The target population for the returned subset of nodes.
@@ -1421,7 +1424,7 @@ def bipartition_tree_random_with_num_cuts(
     :type repeat_until_valid: bool, optional
     :param spanning_tree: The spanning tree for the algorithm to use (used when the
         algorithm chooses a new root and for testing). Defaults to None.
-    :type spanning_tree: Optional[nx.Graph], optional
+    :type spanning_tree: Optional[Graph], optional
     :param spanning_tree_fn: The random spanning tree algorithm to use if a spanning
         tree is not provided. Defaults to :func:`random_spanning_tree`.
     :type spanning_tree_fn: Callable, optional
@@ -1452,7 +1455,7 @@ def bipartition_tree_random_with_num_cuts(
         balance_edge_fn = partial(balance_edge_fn, one_sided_cut=True)
 
     possible_cuts = _bipartition_tree_random_all(
-        subgraph_to_split=graph,
+        graph_to_split=graph,
         pop_col=pop_col,
         pop_target=pop_target,
         epsilon=epsilon,
@@ -1470,7 +1473,6 @@ def bipartition_tree_random_with_num_cuts(
         parent_nodes = graph.translate_subgraph_node_ids_for_set_of_nodes(chosen_cut.subset)
         return num_cuts, frozenset(parent_nodes)  # frm: Not sure if important that it be frozenset
     else:
-        # frm: TODO: Code: ???:  Grok when this returns None and why and what the calling code does and why...
         return None
 
 #######################
@@ -1502,7 +1504,7 @@ def bipartition_tree_random(
     is ``epsilon * pop_target`` away from ``pop_target``.
 
     :param graph: The graph to partition.
-    :type graph: nx.Graph
+    :type graph: Graph
     :param pop_col: The node attribute holding the population of each node.
     :type pop_col: str
     :param pop_target: The target population for the returned subset of nodes.
@@ -1520,7 +1522,7 @@ def bipartition_tree_random(
     :type repeat_until_valid: bool, optional
     :param spanning_tree: The spanning tree for the algorithm to use (used when the
         algorithm chooses a new root and for testing). Defaults to None.
-    :type spanning_tree: Optional[nx.Graph], optional
+    :type spanning_tree: Optional[Graph], optional
     :param spanning_tree_fn: The random spanning tree algorithm to use if a spanning
         tree is not provided. Defaults to :func:`random_spanning_tree`.
     :type spanning_tree_fn: Callable, optional
@@ -1563,7 +1565,7 @@ def bipartition_tree_random(
         balance_edge_fn = partial(balance_edge_fn, one_sided_cut=True)
 
     possible_cuts = _bipartition_tree_random_all(
-        subgraph_to_split=subgraph_to_split,
+        graph_to_split=subgraph_to_split,
         pop_col=pop_col,
         pop_target=pop_target,
         epsilon=epsilon,
@@ -1598,7 +1600,7 @@ def epsilon_tree_bipartition(
     two parts of population ``pop_target`` (within ``epsilon``).
 
     :param graph: The graph to partition into two :math:`\varepsilon`-balanced parts.
-    :type graph: nx.Graph
+    :type graph: Graph
     :param parts: Iterable of part (district) labels (like ``[0,1,2]`` or ``range(4)``).
     :type parts: Sequence
     :param pop_target: Target population for each part of the partition.
@@ -1672,9 +1674,6 @@ def epsilon_tree_bipartition(
 
     return translated_flips
 
-    # frm: TODO: Code: ???: I think I need to translate flips elsewhere - need to check...
-
-
 # frm: TODO: Refactoring: Move these recursive partition functions to their own module. They are not
 # central to the operation of the recom function despite being tree methods.
 # frm: defined here but only used in partition.py
@@ -1694,7 +1693,7 @@ def recursive_tree_part(
     generate initial seed plans or to implement ReCom-like "merge walk" proposals.
 
     :param graph: The graph to partition into ``len(parts)`` :math:`\varepsilon`-balanced parts.
-    :type graph: nx.Graph
+    :type graph: Graph
     :param parts: Iterable of part (district) labels (like ``[0,1,2]`` or ``range(4)``).
     :type parts: Sequence
     :param pop_target: Target population for each part of the partition.
@@ -1832,7 +1831,7 @@ def _get_seed_chunks(
     balanced within new_epsilon <= ``epsilon`` of a balanced target population.
 
     :param graph: The graph
-    :type graph: nx.Graph
+    :type graph: Graph
     :param num_chunks: The number of chunks to partition the graph into
     :type num_chunks: int
     :param num_dists: The number of districts
@@ -2063,7 +2062,7 @@ def _recursive_seed_part_inner(
                 Even so, why this particular strategy for divide and conquer?
 
     :param graph: The underlying graph structure.
-    :type graph: nx.Graph
+    :type graph: Graph
     :param num_dists: number of districts to partition the graph into
     :type num_dists: int
     :param pop_target: Target population for each part of the partition
@@ -2263,7 +2262,7 @@ def recursive_seed_part(
     ``pop_target`` by recursively splitting graph using _recursive_seed_part_inner.
 
     :param graph: The graph
-    :type graph: nx.Graph
+    :type graph: Graph
     :param parts: Iterable of part labels (like ``[0,1,2]`` or ``range(4)``
     :type parts: Sequence
     :param pop_target: Target population for each part of the partition

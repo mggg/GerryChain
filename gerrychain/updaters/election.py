@@ -117,34 +117,35 @@ class Election:
         else:
             raise TypeError("Election expects party_names_to_node_attribute_names to be a dict or list")
 
-        # A DataTally can be created with a first parameter that is either a string
-        # or a dict.  If a string, then the DataTally will interpret that string as
-        # the name of the node's attribute value that stores the data to be summed.
-        # However, if the first parameter is a node, then the DataTally will just 
-        # access the value in the dict for a given node to get the data to be 
-        # summed.  The string approach makes it easy/convenient to sum data that
-        # is already stored as attribute values, while the dict approach makes
-        # it possible to sum computed values that are not stored as node attributes.
+        # frm: TODO: Documentation: Migration: Using node_ids to vote tally maps...
+        # 
+        # A DataTally used to support a first parameter that was either a string
+        # or a dict.  
         #
-        # However, after converting to using RustworkX for Graph objects in 
-        # partitions, it no longer makes sense to use an explicit dict associating
-        # node_ids with data values for an election, because the node_ids given
-        # would need to be "original" node_ids derived from the NX-based graph
-        # that existed before creating the first partition, and those node_ids
-        # are useless once we convert the NX-based graph to RustworkX.
-        #
-        # So we disallow using a dict as a parameter to the DataTally below
-        #
-
-        # frm: TODO: Code: Peter said it was OK to make the change described above...
-        #
-        # He just wanted there to be an error saying that this has been deprecated
-        # which I think I have done below - maybe the Exception should be a specific
-        # kind of exception, though...
+        # The idea was that in most cases, the values to be tallied would be present
+        # as the values of attributes associated with nodes, so it made sense to just
+        # provide the name of the attribute (a string) to identify what to tally.
+        # 
+        # However, the code also supported providing an explicit mapping from node_id
+        # to the value to be tallied (a dict).  This was useful for testing because
+        # it allowed for tallying values without having to implement an updater that
+        # would be based on a node's attribute.  It provided a way to map values that
+        # were not part of the graph to vote totals.  
+        # 
+        # The problem was that when we started using RX for the embedded graph for
+        # partitions, the node_ids were no longer the same as the ones the user 
+        # specified when creating the (NX) graph.  This complicated the logic of 
+        # having an explicit mapping from node_id to a value to be tallied - to 
+        # make this work the code would have needed to translate the node_ids into
+        # the internal RX node_ids.
+        # 
+        # The decision was made (Fred and Peter) that this extra complexity was not
+        # worth the trouble, so we now disallow passing in an explicit mapping (dict). 
+        # 
 
         for party in self.parties:
             if isinstance(self.party_names_to_node_attribute_names[party], dict):
-                raise Exception("Election: Using explicit node_id to vote totals maps is no longer permitted")
+                raise Exception("Election: Using a map from node_id to vote totals is no longer permitted")
 
         self.tallies = {
             party: DataTally(self.party_names_to_node_attribute_names[party], party)

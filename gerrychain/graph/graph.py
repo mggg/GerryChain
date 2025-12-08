@@ -9,6 +9,8 @@ facilitating the integration of graph-based algorithms with geographic informati
 Note:
 This module relies on NetworkX, pandas, and geopandas, which should be installed and
 imported as required.
+
+TODO: Documentation: Update top-level documentation for graph.py
 """
 
 import functools
@@ -21,12 +23,13 @@ from networkx.classes.function import frozen
 from networkx.readwrite import json_graph
 import pandas as pd
 
-# frm: added to support RustworkX graphs (in the future)
 import rustworkx
 
 from .adjacency import neighbors
 from .geo import GeometryError, invalid_geometries, reprojected
-from typing import List, Iterable, Optional, Set, Tuple, Union
+
+# frm: codereview note: removed type hints that are now baked into Python 
+from typing import Iterable, Optional, Generator, Union
 
 import geopandas as gp
 from shapely.ops import unary_union
@@ -35,6 +38,10 @@ from shapely.prepared import prep
 import numpy 
 import scipy
 
+# frm: TODO: Refactor: Move json_serialize() closer to its use.
+#
+# It should not be the first thing someone sees when looking at this code...
+#
 def json_serialize(input_object: Any) -> Optional[int]:
     """
     This function is used to handle one of the common issues that
@@ -92,6 +99,27 @@ class Graph:
 
     @classmethod
     def from_networkx(cls, nx_graph: networkx.Graph) -> "Graph":
+        """
+        Create a :class:`Graph` from a NetworkX.Graph object
+
+        This supports the use case of users creating a graph using NetworkX 
+        which is convenient - both for users of the previous implementation of
+        a GerryChain object which was a subclass of NetworkX.Graph and for 
+        users more generally who are familiar with NetworkX.
+
+        Note that most users will not ever call this function directly,
+        because they can create a GerryChain Partition object directly
+        from a NetworkX graph, and the Partition initialization code 
+        will use this function to convert the NetworkX graph to a 
+        GerryChain Graph object.
+
+        :param nx_graph: A NetworkX.Graph object with node and edge data
+            to be converted into a GerryChain Graph object.
+        :type nx_graph: networkx.Graph
+
+        :returns: ...text...
+        :rtype: <type>
+        """
         graph = cls()
         graph._nx_graph = nx_graph
         graph._rx_graph = None
@@ -107,30 +135,70 @@ class Graph:
     
     @classmethod
     def from_rustworkx(cls, rx_graph: rustworkx.PyGraph) -> "Graph":
-        # This routine is intended to be used to create top level graphs that
-        # are 1) not subgraphs and 2) not based on NetworkX Graphs.  Stated
-        # differently, subgraphs and RX graphs derived from NetworkX graphs 
-        # need to create translation maps for node_ids (either to the parent
-        # of a subgraph or the "original" node in a NetworkX Graph), and this
-        # routine does neither of those things.
+        """
+        <Overview text for what the function does>
 
-        # frm: TODO: Testing: from_rustworkx(): Add a test for node and edge data being dicts
+        Create a :class:`Graph` from a RustworkX.PyGraph object
+
+        There are three primary use cases for this routine: 
+        1) converting an NX-based Graph to be an RX-based 
+        Graph, 2) creating a subgraph of an RX-based Graph, and 
+        3) creating a Graph whose node_ids do not need to be 
+        mapped to some previous graph's node_ids.
+
+        In a little more detail: 
+
+        1) A typical way to use GerryChain is to create a graph 
+        using NetworkX functionality and to then rely on the 
+        initialization code in the Partition class to create 
+        an RX-based Graph object.  That initialization code
+        constructs a RustworkX PyGraph and then uses this 
+        routine to create an RX-based Graph object, and it then
+        creates maps from the node_ids of the resulting RX-based
+        Graph back to the original NetworkX.Graph's node_ids.
+
+        2) When creating a subgraph of a RustworkX PyGraph 
+        object, the node_ids of the subgraph are (in general) 
+        different from those of the parent graph.  So we 
+        create a mapping from the subgraph's node_ids to the 
+        node_ids of the parent.  The subgraph() routine 
+        creates a RustworkX PyGraph subgraph, then uses this
+        routine to create an RX-based Graph using that subgraph,
+        and it then creates the mapping of subgraph node_ids
+        to the parent (RX) graph's node_ids.
+
+        3) In those cases where no node_id mapping is needed
+        this routine provides a simple way to create an 
+        RX-based GerryChain graph object.
+
+    def from_rustworkx(cls, rx_graph: rustworkx.PyGraph) -> "Graph":
+        :param rx_graph: a RustworkX PyGraph object
+        :type rx_graph: rustworkx.PyGraph
+
+        :returns: a GerryChain Graph object with an embedded RustworkX.PyGraph object
+        :rtype: "Graph"
+        """
 
         # Ensure that the RX graph has node and edge data dictionaries
         #
-        # While NX graphs always have a node data dictionary, the node data for the nodes
-        # in RX graphs do not have to be a data dictionary - they can be any Python object.
-        # Since gerrychain code depends on having a data dictionary associated with nodes and edges,
-        # we need to check the RX graph to see if it already has node and edge data and if so,
+        # While NX graphs always have node and edge data dictionaries,
+        # the node data for the nodes in RX graphs do not have to be 
+        # a data dictionary - they can be any Python object.  Since 
+        # gerrychain code depends on having a data dictionary 
+        # associated with nodes and edges, we need to check the RX 
+        # graph to see if it already has node and edge data and if so,
         # whether that node and edge data is a data dictionary.
         #
-        # Note that there is no way to change the type of the data associated with an RX node.
-        # So if the data for a node is not already a dict then we have an unrecoverable error.
+        # Note that there is no way to change the type of the data 
+        # associated with an RX node.  So if the data for a node 
+        # is not already a dict then we have an unrecoverable error.
         #
-        # However, RX does allow you to update the data for edges, so if we find an edge with 
-        # no data (None), then we can create an empty dict for the edge data, and if the edge data is 
-        # some other type, then we can also replace the existing edge data with a dict (retaining
-        # the original data as a value in the new dict)
+        # However, RX does allow you to update the data for edges, 
+        # so if we find an edge with no data (None), then we can 
+        # create an empty dict for the edge data, and if the edge 
+        # data is some other type, then we can also replace the 
+        # existing edge data with a dict (retaining the original 
+        # data as a value in the new dict)
          
         for node_id in rx_graph.node_indices():
             data_dict = rx_graph[node_id]
@@ -152,6 +220,14 @@ class Graph:
         graph._nx_graph = None
         graph._is_a_subgraph = False        # See comments on RX subgraph issues.
 
+        # frm: TODO: Documentation: from_rustworkx(): Make these comments more coherent
+        #
+        # Instead of these very specific comments, just say that at this 
+        # point, we don't know whether the graph is derived from NX, is a
+        # subgraph, or is something that can stand alone, so the maps are
+        # all identity maps.  It is responsibility of callers to reset the
+        # maps if that is appropriate...
+
         # Maps node_ids in the graph to the "parent" node_ids in the parent graph.
         # For top-level graphs, this is just an identity map 
         graph._node_id_to_parent_node_id_map = {node_id: node_id for node_id in graph.node_indices}   
@@ -170,7 +246,27 @@ class Graph:
 
         return graph
 
-    def to_networkx_graph(self):
+    def to_networkx_graph(self) -> networkx.Graph:
+        """
+        Create a NetworkX.Graph object that has the same nodes, edges, 
+        node_data, and edge_data as the GerryChain Graph object.
+
+        The intended purpose of this routine is to allow a user to
+        run a MarkovChain - which uses an embedded RustworkX graph
+        and then extract an equivalent version of that graph with all
+        of its data as a NetworkX.Graph object - in order to use
+        NetworkX routines to access and manipulate the graph.
+
+        In short, this routine allows users to use NetworkX 
+        functionality on a graph after running a MarkovChain.
+
+        If the GerryChain graph object is NX-based, then this 
+        routine merely returns the embedded NetworkX.Graph object.
+
+        :returns: A NetworkX.Graph object that is equivalent to the 
+            GerryChain Graph object (nodes, edges, node_data, edge_data)
+        :rtype: networkx.Graph
+        """
         if self.is_nx_graph():
             return self.get_nx_graph()
         
@@ -231,32 +327,87 @@ class Graph:
 
         return nx_graph
 
-    # frm: TODO: Testing: Create a test for this routine
-    def original_nx_node_ids_for_set(self, set_of_nodes):
-        # Utility routine to quickly translate a set of node_ids to their original node_ids
-        _node_id_to_original_nx_node_id_map = self._node_id_to_original_nx_node_id_map 
-        new_set = {_node_id_to_original_nx_node_id_map[node_id] for node_id in set_of_nodes}
-        return new_set
+    # frm: TODO: Refactoring: Create a defined type name "node_id" to use instead of "Any"
+    #
+    # This is purely cosmetic, but it would provide an opportunity to add a comment that
+    # talked about NX node_ids vs. RX node_ids and hence why the type for a node_id is
+    # a vague "Any"...
 
-    # frm: TODO: Testing: Create a test for this routine
-    def original_nx_node_ids_for_list(self, list_of_nodes):
-        # Utility routine to quickly translate a set of node_ids to their original node_ids
-        _node_id_to_original_nx_node_id_map = self._node_id_to_original_nx_node_id_map 
-        new_list = [_node_id_to_original_nx_node_id_map[node_id] for node_id in list_of_nodes]
-        return new_list
-    
-    def original_nx_node_id_for_internal_node_id(self, internal_node_id):
+    def original_nx_node_id_for_internal_node_id(self, internal_node_id: Any) -> Any:
+        """
+        Translate a node_id to its "original" node_id.
+
+        :param internal_node_id: A node_id to be translated
+        :type internal_node_id: Any
+
+        :returns: A translated node_id
+        :rtype: Any
+        """
         return self._node_id_to_original_nx_node_id_map[internal_node_id]
 
     # frm: TODO: Testing: Create a test for this routine
-    def internal_node_id_for_original_nx_node_id(self, original_nx_node_id):
-        # frm: TODO: Refactoring:  Think about a better way to map original_nx_node_ids to internal node_ids
+    def original_nx_node_ids_for_set(self, set_of_node_ids: set[Any]) -> Any:
+        """
+        Translate a set of node_ids to their "original" node_ids.
+
+        :param set_of_node_ids: A set of node_ids to be translated
+        :type set_of_node_ids: set[Any]
+
+        :returns: A set of translated node_ids
+        :rtype: set[Any]
+        """
+        _node_id_to_original_nx_node_id_map = self._node_id_to_original_nx_node_id_map 
+        new_set = {_node_id_to_original_nx_node_id_map[node_id] for node_id in set_of_node_ids}
+        return new_set
+
+    # frm: TODO: Testing: Create a test for this routine
+    def original_nx_node_ids_for_list(self, list_of_node_ids: list[Any]) -> list[Any]:
+        """
+        Translate a list of node_ids to their "original" node_ids.
+
+        :param list_of_node_ids: A list of node_ids to be translated
+        :type list_of_node_ids: list[Any]
+
+        :returns: A list of translated node_ids
+        :rtype: list[Any]
+        """
+        # Utility routine to quickly translate a set of node_ids to their original node_ids
+        _node_id_to_original_nx_node_id_map = self._node_id_to_original_nx_node_id_map 
+        new_list = [_node_id_to_original_nx_node_id_map[node_id] for node_id in list_of_node_ids]
+        return new_list
+    
+    def internal_node_id_for_original_nx_node_id(self, original_nx_node_id: Any) -> Any:
+        """
+        Discover the "internal" node_id in the current GerryChain graph
+        that corresponds to the "original" node_id in the top-level
+        graph (presumably an NX-based graph object). 
+
+        This was originally created to facilitate testing where it was
+        convenient to express the test success criteria in terms of
+        "original" node_ids, but the actual test needed to be made
+        using the "internal" (RX) node_ids.
+        
+        :param original_nx_node_id: The "original" node_id 
+        :type original_nx_node_id: Any
+
+        :returns: The corresponding "internal" node_id
+        :rtype: Any
+        """
+        # Note: TODO: Performance: This code is inefficient but it is not a priority to fix now...
         #
-        # The problem is that when this routine is called, it may often be called repeatedly 
-        # for a list of nodes, and we create the reverse dict every time this is called which
-        # is needlessly expensive.  We could just cache this reverse map, but that is often
-        # dangerous because we have two sources of truth and if someone needs to update one
-        # they may forget to update the other...
+        # The code reverses the dict that maps internal node_ids to "original" 
+        # node_ids, which has an entry for every node in the graph - hence large
+        # for large graphs, which is costly, but worse - it does this every time
+        # it is called, so if the calling code is looping through a list of nodes
+        # then this reverse dict computation will happen each time.
+        #
+        # The obvious fix is to just create the reverse map once when the "internal" 
+        # graph is created.  This would be simple to do and safe, because the
+        # "internal" graph is frozen.
+        #
+        # However, at present (December 2025) this routine is only ever used for
+        # tests, so I am putting it on the back burner... 
+
         
         # reverse the map so we can go from original node_id to internal node_id
         orignal_node_id_to_internal_node_id_map = {
@@ -264,7 +415,17 @@ class Graph:
         }
         return orignal_node_id_to_internal_node_id_map[original_nx_node_id]
 
-    def verify_graph_is_valid(self):
+    def verify_graph_is_valid(self) -> bool:
+        """
+        Verify that the graph is valid.
+
+        This may be overkill, but the idea is that at least in 
+        development mode, it would be prudent to check periodically 
+        to see that the graph data structure has not been corrupted.
+
+        :returns: True if the graph is deemed valid
+        :rtype: bool
+        """
 
         # frm: TODO: Performance:  Only check verify_graph_is_valid() in development.
         #
@@ -291,31 +452,53 @@ class Graph:
 
     # frm: TODO: Performance:  is_nx_graph() and is_rx_graph() are expensive.
     #
-    # Not all of the calls on these routines is needed in production - some are just
+    # Not all of the calls on these routines are needed in production - some are just
     # sanity checking.  Find a way to NOT run this code when in production.
 
-    def is_nx_graph(self):
+    # frm: TODO: Refactoring:  Reorder these following routines in sensible order
+
+    def is_nx_graph(self) -> bool:
+        """
+        Determine if the graph is NX-based
+
+        :rtype: bool
+        """
         # frm: TODO: Performance:  Only check graph_is_valid() in production
         #
         # Find a clever way to only run this code in development.  Commenting it out for now...
         #     self.verify_graph_is_valid()
         return self._nx_graph is not None
 
-    def get_nx_graph(self):
+    def get_nx_graph(self) -> networkx.Graph:
+        """
+        Return the embedded NX graph object
+
+        :rtype: networkx.Graph
+        """
         if not self.is_nx_graph():
             raise TypeError(
               "Graph passed to 'get_nx_graph()' must be a networkx graph"
             )
         return self._nx_graph
 
-    def get_rx_graph(self):
+    def get_rx_graph(self) -> rustworkx.PyGraph:
+        """
+        Return the embedded RX graph object
+
+        :rtype: rustworkx.PyGraph
+        """
         if not self.is_rx_graph():
             raise TypeError(
               "Graph passed to 'get_rx_graph()' must be a rustworkx graph"
             )
         return self._rx_graph
 
-    def is_rx_graph(self):
+    def is_rx_graph(self) -> bool:
+        """
+        Determine if the graph is RX-based
+
+        :rtype: bool
+        """
         # frm: TODO: Performance:  Only check graph_is_valid() in production
         #
         # Find a clever way to only run this code in development.  Commenting it out for now...
@@ -323,9 +506,19 @@ class Graph:
         return self._rx_graph is not None
 
     def convert_from_nx_to_rx(self) -> "Graph":
-        # Return a Graph object which has a RustworkX Graph object as its
-        # embedded graph object.
-        #
+        """
+        Convert an NX-based graph object to be an RX-based graph object.
+
+        The primary use case for this routine is support for users 
+        constructing a graph using NetworkX functionality and then 
+        converting that NetworkX graph to RustworkX when creating a
+        Partition object.
+
+
+        :returns: An RX-based graph that is "the same" as the given NX-based graph
+        :rtype: "Graph"
+        """
+
         # Note that in both cases in the if-stmt below, the nodes are not copied.
         # This is arguably dangerous, but in our case I think it is OK.  Stated 
         # differently, the actual node data (the dictionaries) in the original 
@@ -386,7 +579,20 @@ class Graph:
               "a networkx-based graph nor a rustworkx-based graph"
             )
 
-    def get_nx_to_rx_node_id_map(self):
+    def get_nx_to_rx_node_id_map(self) -> dict[Any, Any]:
+        """
+        Return the dict that maps NX node_ids to RX node_ids
+
+        The primary use case for this routine is to support automatically
+        converting NX-based graph objects to be RX-based when creating a 
+        Partition object.  The issue is that when you convert from NX to RX
+        the node_ids change and so you need to update the Partition object's
+        Assignment to use the new RX node_ids.  This routine is used
+        to translate those NX node_ids to the new RX node_ids when 
+        initializing a Partition object.
+
+        :rtype: dict[Any, Any]
+        """
         # Simple getter method
         if not self.is_rx_graph():
             raise TypeError(
@@ -396,23 +602,43 @@ class Graph:
         return self.nx_to_rx_node_id_map
 
     @classmethod
-    def from_json(cls, json_file: str) -> "Graph":
+    def from_json(cls, json_file_name: str) -> "Graph":
+        """
+        Create a :class:`Graph` from a JSON file
+
+        :param json_file_name: JSON file
+            # frm: TODO: Documentation: more detail on contents of JSON file needed here
+        :type json_file_name: str
+
+        :returns: A GerryChain Graph object with data from JSON file
+        :rtype: "Graph"
+        """
 
         # Note that this returns an NX-based Graph object.  At some point in
         # the future, if we embrace an all RX world, it will make sense to
         # have it produce an RX-based Graph object.
 
-        with open(json_file) as f:
+        with open(json_file_name) as f:
             data = json.load(f)
-        # frm: A bit of Python magic - an adjacency graph is a dict of dict of dicts
-        #       which is structurally equivalent to a NetworkX graph, so you can just
-        #       pretend that is what it is and it all works.
+
+        # A bit of Python magic - an adjacency graph is a dict of dict of dicts
+        # which is structurally equivalent to a NetworkX graph, so you can just
+        # pretend that is what it is and it all works.
         nx_graph = json_graph.adjacency_graph(data)
+
         graph = cls.from_networkx(nx_graph)
         graph.issue_warnings()
         return graph 
 
-    def to_json(self, json_file: str, include_geometries_as_geojson: bool = False) -> None:
+    def to_json(self, json_file_name: str, include_geometries_as_geojson: bool = False) -> None:
+        """
+        Dump a GerryChain Graph object to disk as a JSON file
+
+        :param json_file_name: name of JSON file to be created
+        :type json_file_name: str
+
+        :rtype: None
+        """
         # frm TODO: Code: Implement graph.to_json for an RX based graph
         if not self.is_nx_graph():
             raise TypeError(
@@ -426,7 +652,7 @@ class Graph:
         else:
             remove_geometries(data)
 
-        with open(json_file, "w") as f:
+        with open(json_file_name, "w") as f:
             json.dump(data, f, default=json_serialize)
 
     @classmethod
@@ -434,7 +660,7 @@ class Graph:
         cls,
         filename: str,
         adjacency: str = "rook",
-        cols_to_add: Optional[List[str]] = None,
+        cols_to_add: Optional[list[str]] = None,
         reproject: bool = False,
         ignore_errors: bool = False,
     ) -> "Graph":
@@ -449,7 +675,7 @@ class Graph:
         :type adjacency: str, optional
         :param cols_to_add: The names of the columns that you want to
             add to the graph as node attributes. Default is None.
-        :type cols_to_add: Optional[List[str]], optional
+        :type cols_to_add: Optional[list[str]], optional
         :param reproject: Whether to reproject to a UTM projection before
             creating the graph. Default is False.
         :type reproject: bool, optional
@@ -524,7 +750,7 @@ class Graph:
         cls,
         dataframe: pd.DataFrame,
         adjacency: str = "rook",
-        cols_to_add: Optional[List[str]] = None,
+        cols_to_add: Optional[list[str]] = None,
         reproject: bool = False,
         ignore_errors: bool = False,
         crs_override: Optional[Union[str, int]] = None,
@@ -534,7 +760,7 @@ class Graph:
         #       Graph object at the end of the function.
 
         """
-        Creates the adjacency :class:`Graph` of geometries described by `dataframe`.
+        Create the adjacency :class:`Graph` of geometries described by `dataframe`.
         The areas of the polygons are included as node attributes (with key `area`).
         The shared perimeter of neighboring polygons are included as edge attributes
         (with key `shared_perim`).
@@ -557,7 +783,7 @@ class Graph:
         :type adjacency: str, optional
         :param cols_to_add: The names of the columns that you want to
             add to the graph as node attributes. Default is None.
-        :type cols_to_add: Optional[List[str]], optional
+        :type cols_to_add: Optional[list[str]], optional
         :param reproject: Whether to reproject to a UTM projection before
             creating the graph. Default is ``False``.
         :type reproject: bool, optional
@@ -692,7 +918,12 @@ class Graph:
     #
 
     @property
-    def node_indices(self):
+    def node_indices(self) -> set[Any]:
+        """
+        Return a set of the node_ids in the graph
+
+        :rtype: set[Any]
+        """
         self.verify_graph_is_valid()
 
         # frm: TODO: Refactoring:  node_indices() does the same thing that graph.nodes does - returning a list of node_ids.
@@ -714,7 +945,12 @@ class Graph:
             )
 
     @property
-    def edge_indices(self):
+    def edge_indices(self) -> set[Any]:
+        """
+        Return a set of the edge_ids in the graph
+
+        :rtype: set[Any]
+        """
         self.verify_graph_is_valid()
 
         if (self.is_rx_graph()):
@@ -729,15 +965,23 @@ class Graph:
               "a networkx-based graph nor a rustworkx-based graph"
             )
 
-    def get_edge_from_edge_id(self, edge_id):
+    def get_edge_from_edge_id(self, edge_id: Any) -> tuple[Any, Any]:
         """
-        In NX, an edge_id is a tuple of node_ids, but in RX an edge_id
-        is an integer.  To get the tuple of node_ids in RX, you need to
-        make a call using the edge_id.
+        Return the edge (tuple of node_ids) corresponding to the 
+        given edge_id
 
-        Stated differently, in NX an edge and an edge ID are the same, but
-        not in RX...
+        Note that in NX, an edge_id is the same as an edge - it is
+        just a tuple of node_ids.  However, in RX, an edge_id is
+        an integer, so if you want to get the tuple of node_ids
+        you need to use the edge_id to get that tuple...
+
+        :param edge_id: The ID of the desired edge
+        :type edge_id: Any
+
+        :returns: An edge, namely a tuple of node_ids
+        :rtype: tuple[Any, Any]
         """
+
         self.verify_graph_is_valid()
 
         if (self.is_rx_graph()):
@@ -757,15 +1001,52 @@ class Graph:
               "a networkx-based graph nor a rustworkx-based graph"
             )
 
-    def get_edge_id_from_edge(self, edge):
+    # frm: TODO: Refactoring: Create abstract "edge" and "edge_id" type names
+    #
+    # As with node_id, this is cosmetic but it will provide a nice place to
+    # put a comment about the difference between NX and RX and it will make
+    # the type annotations make more sense...
+
+    def get_edge_id_from_edge(self, edge: tuple[Any, Any]) -> Any:
         """
-        Another case where we need to deal with the fact that in 
-        NX an edge ID is a tuple of node_ids, where in RX an edge ID
-        is an integer assocaited with an edge.
+        Get the edge_id that corresponds to the given edge.
+
+        In RX an edge_id is an integer that designates an edge (an edge is
+        a tuple of node_ids).  In NX, an edge_id IS the tuple of node_ids.
+        So, in general, to support both NX and RX, if you want to get access
+        to the edge data for an edge (tuple of node_ids), you need to 
+        ask for the edge_id.
+
+        This functionality is needed, for instance, when 
+
+        :param edge: A tuple of node_ids.
+        :type edge: tuple[Any, Any]
+
+        :returns: The ID associated with the given edge
+        :rtype: Any
         """
         self.verify_graph_is_valid()
 
         if (self.is_rx_graph()):
+
+            # frm: TODO: Performance: Perhaps get_edge_id_from_edge() is too expensive...
+            #
+            # If this routine becomes a signficant performance issue, then perhaps
+            # we can change the algorithms that use it so that it is not needed.
+            # In particular, there are several routines in tree.py that use it 
+            # by traversing chains of nodes (successors and predecessors) which 
+            # requires the code to recreate the edges from the nodes in hand.  This
+            # was not a problem in an NX world - the tuple of nodes was exactly what
+            # and edge_id was, but in the RX world it is not - necessitating this routine.
+            #
+            # BUT...  If the code had chains of edges rather than chains of nodes, 
+            # then you could have the edge_ids at hand already and avoid having to 
+            # do this lookup.
+            #
+            # However, it may be that the RX edge_indices_from_endpoints() is smart
+            # enough (for instance if it caches a dict mapping) that the performance
+            # hit is minimal...  Here's to hoping that RX is "smart enough"... ;-)
+
             # Note that while in general the routine, edge_indices_from_endpoints(),
             # can return more than one edge in the case of a Multi-Graph (a graph that
             # allows more than one edge between two nodes), we can rely on it only 
@@ -784,7 +1065,38 @@ class Graph:
             )
 
     @property
-    def nodes(self):
+    def nodes(self) -> list[Any]:
+        """
+        Return a list of all of the node_ids in the graph.
+
+        This routine still exists because there is a lot of legacy
+        code that uses this syntax to iterate through all of the nodes
+        in a graph.  
+
+        There is another routine, node_indices(), which does essentially
+        the same thing (it returns a set of node_ids, however, rather than 
+        a list).
+
+        Why have two routines that do the same thing?  The answer is that with 
+        move to RX, it seemed appropriate to emphasize the distinction 
+        between objects and the IDs for objects, hence the introduction of
+        node_indices() and edge_indices() routines.  This distinction is 
+        critical for edges, but mostly not important for nodes.  In fact
+        this routine is implemented by just converting node_indices to a list.
+        So, it is essentially a style issue - when referring to nodes, we
+        are almost always really referring to node_ids, so why not use a
+        routine called node_indices()?
+
+        Note that there is a subtle point to be made about node names vs.
+        node_ids.  It was common before the transition to RX to create 
+        nodes with IDs that were essentially names.  That is, the ID had
+        semantic weight.  This is not true with RX node_ids.  So, any
+        code that relies on the semantics of a node's ID (treating it 
+        like a name) is suspect in the new RX world.
+
+        :returns: A list of all of the node_ids in the graph
+        :rtype: list[Any]
+        """
 
         # frm: TODO: Documentation:  Warn users in Migration Guide that nodes() has gone away
         #
@@ -805,6 +1117,15 @@ class Graph:
         # old way, it won't work out well.
         #
 
+        # frm: TODO: Refactoring: Think about whether to do away entirely with graph.nodes
+        #
+        # All this routine does now is to coerce the set of nodes obtained by node_indices()
+        # to be a list (which I think is unnecessary).  So, why have it at all?  Why not just
+        # tell legacy users via an exception that it no longer exists?
+        #
+        # On the other hand, it maybe does no harm to allow legacy users to indulge in 
+        # what appears to be a very common idiom in legacy code...
+
         self.verify_graph_is_valid()
 
         if (self.is_rx_graph()):
@@ -820,7 +1141,13 @@ class Graph:
             )
 
     @property
-    def edges(self):
+    def edges(self) -> set[tuple[Any, Any]]:
+        """
+        Return a set of all of the edges in the graph, where each 
+        edge is a tuple of node_ids
+
+        :rtype: set[tuple[Any, Any]]:
+        """
         # Return a set of edge tuples
 
         # frm: TODO: Code: ???: Should edges return a list instead of a set?
@@ -841,7 +1168,27 @@ class Graph:
               "a networkx-based graph nor a rustworkx-based graph"
             )
 
-    def add_edge(self, node_id1, node_id2):
+    def add_edge(self, node_id1: Any, node_id2: Any) -> None:
+        """
+        Add an edge to the graph from node_id1 to node_id2
+
+        :param node_id1: The node_id for one of the nodes in the edge
+        :type node_id1: Any
+        :param node_id2: The node_id for one of the nodes in the edge
+        :type node_id2: Any
+
+        :rtype: None
+        """
+
+        # frm: TODO: Code: add_edge(): Check that nodes exist and that they have data dicts.
+        #
+        # This checking should probably be limited to development mode, but
+        # the issue is that an RX node need not have a data value that is 
+        # a dict, but GerryChain code depends on having a data dict.  So,
+        # it makes sense to test and make sure that the nodes exist and 
+        # have a data dict...
+
+        # frm: TODO: Code: add_edge(): Do we need to check to make sure the edge does not already exist?
 
         self.verify_graph_is_valid()
 
@@ -865,7 +1212,7 @@ class Graph:
 
         :param df: Dataframe containing given columns.
         :type df: :class:`pandas.DataFrame`
-        :param columns: List of dataframe column names to add. Default is None.
+        :param columns: list of dataframe column names to add. Default is None.
         :type columns: Optional[Iterable[str]], optional
 
         :returns: None
@@ -895,7 +1242,7 @@ class Graph:
     def join(
         self,
         dataframe: pd.DataFrame,
-        columns: Optional[List[str]] = None,
+        columns: Optional[list[str]] = None,
         left_index: Optional[str] = None,
         right_index: Optional[str] = None,
     ) -> None:
@@ -907,7 +1254,7 @@ class Graph:
         :type dataframe: :class:`pandas.DataFrame`
         :columns: The columns whose data you wish to add to the graph.
             If not provided, all columns are added. Default is None.
-        :type columns: Optional[List[str]], optional
+        :type columns: Optional[list[str]], optional
         :left_index: The node attribute used to match nodes to rows.
             If not provided, node IDs are used. Default is None.
         :type left_index: Optional[str], optional
@@ -959,20 +1306,39 @@ class Graph:
         networkx.set_node_attributes(nx_graph, node_attributes)
 
     @property
-    def islands(self):
+    def islands(self) -> set[Any]:
+        """
+        Return a set of all node_ids that are not connected via an
+        edge to any other node in the graph - that is, nodes with
+        degree = 0
+
+        :returns: A set of all node_ids for nodes of degree 0
+        :rtype: set[Any]
+        """
         # Return all nodes of degree 0 (those not connected in an edge to another node)
         return set(node_id for node_id in self.node_indices if self.degree(node_id) == 0)
 
-    def is_directed(self):
-        # frm TODO: Code:   Get rid of this hack in is_directed().  
+    def is_directed(self) -> bool:
+        # frm TODO: Code:   Delete this code: graph.is_directed() once convinced it is safe to do so...
         # 
         # I added it because code in contiguity.py 
         # called nx.is_connected() which eventually called is_directed()
         # assuming the graph was an nx_graph.
+        #
+        # Changing from return False to raising an exception just to make 
+        # sure nobody uses it.  
 
-        return False
+        raise NotImplementedError("graph.is_directed() should not be used")
+
     
     def warn_for_islands(self) -> None:
+        """
+        Issue a warning if there are any islands in the graph - that is,
+        if there are any nodes in the graph that are not connected to any
+        other node (degree = 0)
+
+        :rtype: None
+        """
         islands = self.islands
         if len(self.islands) > 0:
             warnings.warn(
@@ -980,12 +1346,33 @@ class Graph:
         )
     
     def issue_warnings(self) -> None:
+        """
+        Issue any warnings concerning the content or structure
+        of the graph.
+
+        :rtype: None
+        """
         self.warn_for_islands()
 
     def __len__(self) -> int:
+        """
+        Return the number of nodes in the graph
+
+        :rtype: int
+        """
         return len(self.node_indices)
 
     def __getattr__(self, __name: str) -> Any:
+        """
+        <Overview text for what the function does>
+
+        :param <param_name>: ...text...
+            ...more text...
+        :type <param_name>: <type>
+
+        :returns: ...text...
+        :rtype: <type>
+        """
         # frm: TODO: Code: Get rid of _getattr_ eventually - it is very dangerous...
 
         # frm: Interesting bug lurking if __name is "nx_graph".  This occurs when legacy code
@@ -1025,6 +1412,16 @@ class Graph:
             )
 
     def __getitem__(self, __name: str) -> Any:
+        """
+        <Overview text for what the function does>
+
+        :param <param_name>: ...text...
+            ...more text...
+        :type <param_name>: <type>
+
+        :returns: ...text...
+        :rtype: <type>
+        """
         # frm: TODO: Code: Does any of the code actually use __getitem__ ?
         #
         #           It is a clever Python way to use square bracket
@@ -1055,15 +1452,43 @@ class Graph:
             )
 
     def __iter__(self) -> Iterable[Any]:
-        # frm: TODO: Code: ???:  Verify that __iter__() does the right thing...
-        #               It seems to do the right thing - iterating over node_ids which
-        #               works so long as NX uses integers for node_ids.  
-        # frm: TODO: Code: ???:    Perhaps I should test for non-integer node_ids in NX graphs and issue a warning...
-        #               In any event, this deserves thought: what to do for NX graphs that do not use
-        #               integers for node_ids?
+        """
+        <Overview text for what the function does>
+
+        :param <param_name>: ...text...
+            ...more text...
+        :type <param_name>: <type>
+
+        :returns: ...text...
+        :rtype: <type>
+        """
         yield from self.node_indices
 
     def subgraph(self, nodes: Iterable[Any]) -> "Graph":
+        """
+        Create a subgraph that contains the given nodes.
+
+        Note that creating a subgraph of an RustworkX (RX) graph 
+        renumbers the nodes, so that a node that had node_id: 4
+        in the parent graph might have node_id: 2 in the subgraph.
+        This is a HUGE difference from the NX world where the 
+        node_ids in a subgraph do not change from those in the 
+        parent graph.
+
+        In order to make sense of the nodes in a subgraph in the
+        RX world, we need to maintain mappings from the node_ids
+        in the subgraph to the node_ids of the immediate parent
+        graph and to the "original" top-level graph that contains
+        all of the nodes.  You will notice the creation of those
+        maps in the code below.
+
+        :param nodes: The nodes to be included in the subgraph
+        :type nodes: Iterable[Any]
+
+        :returns: A subgraph containing the given nodes.
+        :rtype: "Graph"
+        """
+
         """
         frm: RX Documentation:
 
@@ -1168,12 +1593,37 @@ class Graph:
 
         return new_subgraph
 
-    def translate_subgraph_node_ids_for_flips(self, flips):
-        # flips is a dictionary mapping node_ids to parts (districts).
-        # This routine replaces the node_ids of the subgraph with the node_ids
-        # for the same node in the parent graph.  This routine is used to
-        # when a computation is made on a subgraph but the resulting flips
-        # being returned want to be the appropriate node_ids for the parent graph.
+    # frm: TODO: Refactoring: Create abstract type name for "Flip" and "Flip_Dict".  
+    #
+    # This is cosmetic, but it would (IMHO) make the code easier to understand, and it
+    # would provide a logical place to define WTF a flip is...
+
+    def translate_subgraph_node_ids_for_flips(self, flips: dict[Any, int]) -> dict[Any, int]:
+        """
+        Translate the given flips so that the subgraph node_ids in the flips
+        have been translated to the appropriate node_ids in the 
+        parent graph.
+
+        The flips parameter is a dict mapping node_ids to parts (districts).
+
+        This routine is used when a computation that creates flips is made 
+        on a subgraph, but those flips want to be translated into the context
+        of the parent graph at the end of the computation.
+
+        For more details, refer to the larger comment on subgraphs...
+
+        :param flips: A dict containing "flips" which associate a node with
+            a new part in a partition (a "part" is the same as a district in 
+            common parlance).
+        :type flips: dict[Any, int]
+
+        :returns: A dict containing "flips" that have been translated to have
+            node_ids appropriate for the parent graph
+        :rtype: dict[Any, int]
+        """
+
+        # frm: TODO: Documentation: Write an overall comment on subgraphs and node_id maps
+
         translated_flips = {}
         for subgraph_node_id, part in flips.items():
             parent_node_id = self._node_id_to_parent_node_id_map[subgraph_node_id]
@@ -1181,7 +1631,24 @@ class Graph:
 
         return translated_flips
 
-    def translate_subgraph_node_ids_for_set_of_nodes(self, set_of_nodes):
+    def translate_subgraph_node_ids_for_set_of_nodes(self, set_of_nodes: set[Any]) -> set[Any]:
+        """
+        Translate the given set_of_nodes to have the appropriate
+        node_ids for the parent graph.
+
+        This routine is used when a computation that creates a set of nodes is made 
+        on a subgraph, but those nodes want to be translated into the context
+        of the parent graph at the end of the computation.
+
+        For more details, refer to the larger comment on subgraphs...
+
+        :param set_of_nodes: A set of node_ids in a subgraph
+        :type set_of_nodes: set[Any]
+
+        :returns: A set of node_ids that have been translated to have 
+            the node_ids appropriate for the parent graph
+        :rtype: set[Any]
+        """
         # This routine replaces the node_ids of the subgraph with the node_ids
         # for the same node in the parent graph.  This routine is used to
         # when a computation is made on a subgraph but the resulting set of nodes
@@ -1191,7 +1658,17 @@ class Graph:
             translated_set_of_nodes.add(self._node_id_to_parent_node_id_map[node_id])
         return translated_set_of_nodes
 
-    def generic_bfs_edges(self, source, neighbors=None, depth_limit=None):
+    def generic_bfs_edges(self, source, neighbors=None, depth_limit=None) -> Generator[tuple[Any, Any], None, None]:
+        """
+        <Overview text for what the function does>
+
+        :param <param_name>: ...text...
+            ...more text...
+        :type <param_name>: <type>
+
+        :returns: ...text...
+        :rtype: <type>
+        """
         # frm: Code copied from GitHub:
         #
         #  https://github.com/networkx/networkx/blob/main/networkx/algorithms/traversal/breadth_first_search.py
@@ -1283,14 +1760,24 @@ class Graph:
                         seen.add(child)
                         # frm: add this node's children to list to be processed later...
                         next_parents_children.append((child, neighbors(child)))
-                        yield parent, child
+                        yield (parent, child)
                 if len(seen) == n:
                     return
             depth += 1
 
     # frm: TODO: Testing:  Add tests for all of the new routines I have added...
 
-    def generic_bfs_successors_generator(self, root_node_id):
+    def generic_bfs_successors_generator(self, root_node_id: Any) -> Generator[tuple[Any, Any], None, None]:
+        """
+        <Overview text for what the function does>
+
+        :param <param_name>: ...text...
+            ...more text...
+        :type <param_name>: <type>
+
+        :returns: ...text...
+        :rtype: <type>
+        """
         # frm: Generate in sequence a tuple for the parent (node_id) and
         #       the children of that node (list of node_ids).
         parent = root_node_id
@@ -1310,10 +1797,30 @@ class Graph:
             parent = p
         yield (parent, children)
     
-    def generic_bfs_successors(self, root_node_id):
+    def generic_bfs_successors(self, root_node_id: Any) -> dict[Any: Any]:
+        """
+        <Overview text for what the function does>
+
+        :param <param_name>: ...text...
+            ...more text...
+        :type <param_name>: <type>
+
+        :returns: ...text...
+        :rtype: <type>
+        """
         return dict(self.generic_bfs_successors_generator(root_node_id))
 
-    def generic_bfs_predecessors(self, root_node_id):
+    def generic_bfs_predecessors(self, root_node_id: Any) -> dict[Any, Any]:
+        """
+        <Overview text for what the function does>
+
+        :param <param_name>: ...text...
+            ...more text...
+        :type <param_name>: <type>
+
+        :returns: ...text...
+        :rtype: <type>
+        """
         # frm Note:  We had do implement our own, because the built-in RX version only worked 
         #               for directed graphs.
         predecessors = []
@@ -1322,7 +1829,17 @@ class Graph:
         return dict(predecessors)
 
 
-    def predecessors(self, root_node_id):
+    def predecessors(self, root_node_id: Any) -> dict[Any: Any]:
+        """
+        <Overview text for what the function does>
+
+        :param <param_name>: ...text...
+            ...more text...
+        :type <param_name>: <type>
+
+        :returns: ...text...
+        :rtype: <type>
+        """
 
         """
         frm: It took me a while to grok what predecessors() and successors()
@@ -1381,7 +1898,17 @@ class Graph:
               "a networkx-based graph nor a rustworkx-based graph"
             )
 
-    def successors(self, root_node_id):
+    def successors(self, root_node_id: Any) -> dict[Any: Any]:
+        """
+        <Overview text for what the function does>
+
+        :param <param_name>: ...text...
+            ...more text...
+        :type <param_name>: <type>
+
+        :returns: ...text...
+        :rtype: <type>
+        """
         self.verify_graph_is_valid()
 
         if (self.is_rx_graph()):
@@ -1394,37 +1921,78 @@ class Graph:
               "a networkx-based graph nor a rustworkx-based graph"
             )
 
-    def neighbors(self, node):
+    def neighbors(self, node_id: Any) -> list[Any]:
+        """
+        Return a list of the node_ids of the nodes that are neighbors of 
+        the given node - that is, all of the nodes that are directly 
+        connected to the given node by an edge.
+
+        :param node_id: The ID of a node
+        :type node_id: Any
+
+        :returns: A list of neighbor node_ids
+        :rtype: list[Any]
+        """
         self.verify_graph_is_valid()
 
-        # NX  neighbors() returns a <dict_keyiterator> which iterates over the node_ids of neighbor nodes
-        # RX  neighbors() returns a NodeIndices object with the list of node_ids of neighbor nodes
-        # However, the code outside graph.py only ever iterates over all neighbors so returning a list works...
         if (self.is_rx_graph()):
-            return self._rx_graph.neighbors(node)
+            return list(self._rx_graph.neighbors(node_id))
         elif (self.is_nx_graph()):
-            return list(self._nx_graph.neighbors(node))
+            return list(self._nx_graph.neighbors(node_id))
         else:
             raise TypeError(
               "Graph passed to 'neighbors()' is neither "
               "a networkx-based graph nor a rustworkx-based graph"
             )
 
-    def degree(self, node: Any) -> int:
+    def degree(self, node_id: Any) -> int:
+        """
+        Return the degree of the given node, that is, the number
+        of other nodes directly connected to the given node.
+
+        :param node_id: The ID of a node
+        :type node_id: Any
+
+        :returns: Number of nodes directly connected to the given node
+        :rtype: int
+        """
         self.verify_graph_is_valid()
 
         if (self.is_rx_graph()):
-            return self._rx_graph.degree(node)
+            return self._rx_graph.degree(node_id)
         elif (self.is_nx_graph()):
-            return self._nx_graph.degree(node)
+            return self._nx_graph.degree(node_id)
         else:
             raise TypeError(
               "Graph passed to 'degree()' is neither "
               "a networkx-based graph nor a rustworkx-based graph"
             )
 
-    def node_data(self, node_id):
-        # This routine returns the data dictionary for the given node's data
+    def node_data(self, node_id: Any) -> dict[Any, Any]:
+        """
+        Return the data dictionary that contains the given node's data.
+
+        As docmented elsewhere, in GerryChain code before the conversion
+        to RustworkX, users could access node data using the syntax:
+
+            graph.nodes[node_id][attribute_name]
+        
+        This was because a GerryChain Graph object in that codebase was a 
+        subclass of NetworkX.Graph, and NetworkX was clever and implemented
+        dict-like behavior for the syntax graph.nodes[]...
+
+        This Python cleverness was not carried over to the RustworkX 
+        implementation, so in the current GerryChain Graph implementation 
+        users need to access node data using the syntax:
+
+            graph.node_data(node_id)[attribute_name]
+
+        :param node_id: The ID of a node
+        :type node_id: Any
+
+        :returns: Data dictionary containing the given node's data.
+        :rtype: dict[Any, Any]
+        """
 
         self.verify_graph_is_valid()
 
@@ -1443,16 +2011,20 @@ class Graph:
         
         return data_dict
 
-    def edge_data(self, edge_id):
-        # This routine returns the data dictionary for the given edge's data
-
+    def edge_data(self, edge_id: Any) -> dict[Any, Any]:
         """
-        CLEVERNESS ALERT!
-        
-        The type of the edge_id parameter will be a tuple in the case of an 
-        embedded NX graph but will be an integer in the case of an RX embedded
-        graph.
-        
+        Return the data dictionary that contains the data for the given edge.
+
+        Note that in NetworkX an edge_id can be almost anything, for instance,
+        a string or even a tuple.  However, in RustworkX, an edge_id is 
+        an integer.  This code handles both kinds of edge_ids - hence the
+        type, Any.
+
+        :param edge_id: The ID of the edge
+        :type edge_id: Any
+
+        :returns: The data dictionary for the given edge's data
+        :rtype: dict[Any, Any]
         """
 
         self.verify_graph_is_valid()
@@ -1467,18 +2039,34 @@ class Graph:
               "a networkx-based graph nor a rustworkx-based graph"
             )
 
+        # Sanity check - RX edges do not need to have a data dict for node data
+        #
+        # A GerryChain Graph object should always be constructed with a data dict
+        # for edge data, but it doesn't hurt to check.
         if not isinstance(data_dict, dict):
             raise TypeError("graph.edge(): data for edge is not a dict")
         
         return data_dict
 
 
-    # frm: Note:  I added the laplacian_matrix routines as methods of the Graph
+    # frm: TODO: Documentation: Note:  I added the laplacian_matrix routines as methods of the Graph
     #               class because they are only ever used on Graph objects.  It
     #               bloats the Graph class, but it still seems like the best
     #               option.
+    #
+    # A goal is to encapsulate ALL NX dependencies in this file.
 
-    def laplacian_matrix(self):
+    def laplacian_matrix(self) -> scipy.sparse.csr_array:
+        """
+        <Overview text for what the function does>
+
+        :param <param_name>: ...text...
+            ...more text...
+        :type <param_name>: <type>
+
+        :returns: ...text...
+        :rtype: <type>
+        """
         # A local "gc" (as in GerryChain) version of the laplacian matrix
 
         # frm: TODO: Code: laplacian_matrix(): should NX and RX return same type (float vs. int)?
@@ -1513,9 +2101,29 @@ class Graph:
 
         return laplacian_matrix
 
-    def normalized_laplacian_matrix(self):
+    def normalized_laplacian_matrix(self) -> scipy.sparse.dia_array:
+        """
+        <Overview text for what the function does>
 
-        def create_scipy_sparse_array_from_rx_graph(rx_graph):
+        :param <param_name>: ...text...
+            ...more text...
+        :type <param_name>: <type>
+
+        :returns: ...text...
+        :rtype: <type>
+        """
+
+        def create_scipy_sparse_array_from_rx_graph(rx_graph: rustworkx.PyGraph) -> scipy.sparse.coo_matrix:
+            """
+            <Overview text for what the function does>
+
+            :param <param_name>: ...text...
+                ...more text...
+            :type <param_name>: <type>
+
+            :returns: ...text...
+            :rtype: <type>
+        """
             num_nodes = rx_graph.num_nodes()
 
             rows = []
@@ -1587,10 +2195,24 @@ class Graph:
 
         return laplacian_matrix
 
-    def subgraphs_for_connected_components(self):
-        # Create a list of subgraphs - one for each subset of connected nodes in the graph
-        #
-        # This mirrors the nx.connected_components() routine in NetworkX
+    def subgraphs_for_connected_components(self) -> list["Graph"]:
+        """
+        Create and return a list of subgraphs for each set of nodes
+        in the given graph that are connected.
+
+        Note that a connected graph is one in which there is a path
+        from every node in the graph to every other node in the 
+        graph.
+        
+        Note also that each of the subgraphs returned is a 
+        maximal subgraph of connected components, meaning that there
+        is no other larger subgraph of connected components that 
+        includes it as a subset.
+
+        :returns: A list of "maximal" subgraphs each of which 
+            contains nodes that are connected.
+        :rtype: list["Graph"]
+        """
 
         if self.is_rx_graph():
             rx_graph = self.get_rx_graph()
@@ -1610,7 +2232,31 @@ class Graph:
         
         return subgraphs
 
-    def num_connected_components(self):
+    def num_connected_components(self) -> int:
+        """
+        Return the number of connected components.  
+
+        Note: A connected component is a maximal subgraph 
+        where every vertex is reachable from every other vertex in 
+        that same subgraph. In a graph that is not fully connected, 
+        connected components are the separate, distinct "islands" of 
+        connected nodes. Every node in a graph belongs to exactly 
+        one connected component. 
+
+        :returns: The number of connected components
+        :rtype: int
+        """
+
+        # frm: TODO: Performance:  num_connected_components(): do both NX and RX have builtins for this?
+        #
+        # NetworkX and RustworkX both have a routine number_connected_components().  
+        # I am guessing that it is more efficient to call these than it is
+        # to construct the connected components and then determine how many
+        # of them there are.
+        #
+        # So - should be a simple issue of trying it and running tests, but
+        # I will do that another day...
+        
         if self.is_rx_graph():
             rx_graph = self.get_rx_graph()
             connected_components = rustworkx.connected_components(rx_graph)
@@ -1626,7 +2272,22 @@ class Graph:
         num_cc = len(connected_components)
         return num_cc
 
-    def is_a_tree(self):
+    def is_a_tree(self) -> bool:
+        """
+        Return whether the current graph is a tree - meaning that
+        it is connected and that it has no cycles.
+
+        :returns: Whether the current graph is a tree
+        :rtype: bool
+        """
+
+        # frm: TODO: Refactor: is_a_tree() is only called in a test (test_tree.py) - delete it?
+        #
+        # Talk to Peter to see if there is any reason to keep this function.  Does anyone
+        # use it externally?
+        #
+        # On the other hand, perhaps it is OK to keep it even if it is only ever used in a test...
+
         if self.is_rx_graph():
             rx_graph = self.get_rx_graph()
             num_nodes = rx_graph.num_nodes()
@@ -1806,15 +2467,38 @@ class FrozenGraph:
         #   
         #   self.size = len(self.graph)
 
-        # frm TODO: Add logic to have this work for RX.
+        # frm TODO: Code: Add logic to FrozenGraph so that it is indeed "frozen" (for both NX and RX)
+        #
+        # I think this just means redefining those methods that change the graph
+        # to return an error / exception if called.
 
         self.graph = graph
         self.size = len(self.graph.node_indices)
 
     def __len__(self) -> int:
+        """
+        <Overview text for what the function does>
+
+        :param <param_name>: ...text...
+            ...more text...
+        :type <param_name>: <type>
+
+        :returns: ...text...
+        :rtype: <type>
+        """
         return self.size
 
     def __getattribute__(self, __name: str) -> Any:
+        """
+        <Overview text for what the function does>
+
+        :param <param_name>: ...text...
+            ...more text...
+        :type <param_name>: <type>
+
+        :returns: ...text...
+        :rtype: <type>
+        """
         try:
             return object.__getattribute__(self, __name)
         except AttributeError:
@@ -1822,13 +2506,33 @@ class FrozenGraph:
             return self.graph.__getattribute__(__name)
 
     def __getitem__(self, __name: str) -> Any:
+        """
+        <Overview text for what the function does>
+
+        :param <param_name>: ...text...
+            ...more text...
+        :type <param_name>: <type>
+
+        :returns: ...text...
+        :rtype: <type>
+        """
         return self.graph[__name]
 
     def __iter__(self) -> Iterable[Any]:
+        """
+        <Overview text for what the function does>
+
+        :param <param_name>: ...text...
+            ...more text...
+        :type <param_name>: <type>
+
+        :returns: ...text...
+        :rtype: <type>
+        """
         yield from self.node_indices
 
     @functools.lru_cache(16384)
-    def neighbors(self, n: Any) -> Tuple[Any, ...]:
+    def neighbors(self, n: Any) -> tuple[Any, ...]:
         return self.graph.neighbors(n)
 
     @functools.cached_property

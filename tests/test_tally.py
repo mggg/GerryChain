@@ -15,6 +15,8 @@ def random_assignment(graph, num_districts):
 
 
 def test_data_tally_works_as_an_updater(three_by_three_grid):
+    # Simple test that a DataTally creates an attribute on a partition.
+    # Another test (below) checks that the computed "tally" is correct.
     assignment = random_assignment(three_by_three_grid, 4)
     data = {node: random.randint(1, 100) for node in three_by_three_grid.nodes}
     parts = tuple(set(assignment.values()))

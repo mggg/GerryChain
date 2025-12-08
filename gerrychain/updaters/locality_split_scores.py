@@ -202,31 +202,6 @@ class LocalitySplits:
                 # frm: TODO: Refactoring:    The code below just calculates the total population for a set of nodes.
                 #               This sounds like a good candidate for a utility function.  See if this
                 #               logic is repeated elsewhere...
-                
-                # frm: I changed the original code for a couple of reasons:
-                #
-                #        * There were NX depedencies in the original code.
-                #              partition.graph.nodes(data=True)
-                #        * Creating a subgraph just to get a subset of nodes seemed unnecessary
-                #          and probably expensive.
-                #        * I found the code dense and it took me too long to figure out what it did.
-
-                # frm: Original Code:
-                #
-                #    sg = partition.graph.subgraph(
-                #        for n, v in partition.graph.nodes(data=True)
-                #        if v[self.col_id] == loc
-                #    )
-                #
-                #    pop = 0
-                #    for n in sg.nodes():
-                #        # frm: TODO: Code:  I think this needs to change to work for RX...
-                #        #      => Note that I think this TODO is moot since I rewrote the code anyways...
-                #        pop += sg.nodes[n][self.pop_col]
-                #
-                #    allowed_pieces[loc] = math.ceil(pop / (totpop / num_districts))
-
-                # frm: new version of this code that is less clever...
 
                 # Compute the population associated with each location
                 the_graph = partition.graph

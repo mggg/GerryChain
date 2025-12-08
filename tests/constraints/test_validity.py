@@ -5,7 +5,7 @@ import numpy
 import pytest
 
 from gerrychain.constraints import (SelfConfiguringLowerBound, Validator,
-                                    contiguous, contiguous_bfs,
+                                    contiguous, 
                                     districts_within_tolerance,
                                     no_vanishing_districts,
                                     single_flip_contiguous,
@@ -50,7 +50,7 @@ def discontiguous_partition(discontiguous_partition_with_flips):
 def test_contiguous_with_contiguity_no_flips_is_true(contiguous_partition):
     assert contiguous(contiguous_partition)
     assert single_flip_contiguous(contiguous_partition)
-    assert contiguous_bfs(contiguous_partition)
+    assert contiguous(contiguous_partition)
 
 
 def test_contiguous_with_contiguity_flips_is_true(contiguous_partition_with_flips):
@@ -59,7 +59,7 @@ def test_contiguous_with_contiguity_flips_is_true(contiguous_partition_with_flip
     contiguous_partition2 = contiguous_partition.flip(test_flips)
     assert contiguous(contiguous_partition2)
     assert single_flip_contiguous(contiguous_partition2)
-    assert contiguous_bfs(contiguous_partition2)
+    assert contiguous(contiguous_partition2)
 
 
 def test_discontiguous_with_contiguous_no_flips_is_false(discontiguous_partition):
@@ -72,8 +72,8 @@ def test_discontiguous_with_single_flip_contiguous_no_flips_is_false(
     assert not single_flip_contiguous(discontiguous_partition)
 
 
-def test_discontiguous_with_contiguous_bfs_no_flips_is_false(discontiguous_partition):
-    assert not contiguous_bfs(discontiguous_partition)
+def test_discontiguous_with_contiguous_no_flips_is_false(discontiguous_partition):
+    assert not contiguous(discontiguous_partition)
 
 
 def test_discontiguous_with_contiguous_flips_is_false(
@@ -98,13 +98,13 @@ def test_discontiguous_with_single_flip_contiguous_flips_is_false(
     assert not single_flip_contiguous(discontiguous_partition2)
 
 
-def test_discontiguous_with_contiguous_bfs_flips_is_false(
+def test_discontiguous_with_contiguous_flips_is_false(
     discontiguous_partition_with_flips
 ):
     part, test_flips = discontiguous_partition_with_flips
     # frm: TODO: Testing:  Figure out whether test_flips are in original node_ids or internal RX node_ids
     discontiguous_partition2 = part.flip(test_flips)
-    assert not contiguous_bfs(discontiguous_partition2)
+    assert not contiguous(discontiguous_partition2)
 
 
 def test_districts_within_tolerance_returns_false_if_districts_are_not_within_tolerance():

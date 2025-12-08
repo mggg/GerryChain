@@ -257,16 +257,21 @@ def contiguous_bfs(partition: Partition) -> bool:
     :rtype: bool
     """
     
-    # frm: TODO: Code: ???:   Try to figure out why this routine exists.  It seems to be
-    #               exactly the same conceptually as contiguous().  It looks 
-    #               at the "affected" parts - those that have changed node
-    #               assignments from parent, and sees if those parts are 
-    #               contiguous.
+    # frm: TODO: Refactoring:  Figure out why this routine, contiguous_bfs() exists.  
     #
-    #               For now, I have just replaced the existing code which depended
-    #               on NX with a call on contiguous(partition).
+    # It is mentioned in __init__.py so maybe it is used externally in legacy code.
     #
-
+    # However, I have changed the code so that it just calls contiguous() and all
+    # of the tests pass, so I am going to assume that my comment below is accurate, 
+    # that is, I am assuming that this function does not need to exist independently
+    # except for legacy purposes.  Stated differently, if someone can verify that 
+    # this routine is NOT needed for legacy purposes, then we can just delete it.
+    # 
+    # It seems to be exactly the same conceptually as contiguous().  It looks 
+    # at the "affected" parts - those that have changed node
+    # assignments from parent, and sees if those parts are 
+    # contiguous.
+    #
     # frm: Original Code: 
     #
     #    parts_to_check = _affected_parts(partition)
@@ -314,7 +319,7 @@ def contiguous_components(partition: Partition) -> Dict[int, list]:
     :rtype: dict
     """
 
-    # frm: TODO: Code: ???:  NX vs RX Issues here:
+    # frm: TODO: Documentation: Migration Guide:  NX vs RX Issues here:
     #
     # The call on subgraph() below is perhaps problematic because it will renumber
     # node_ids...

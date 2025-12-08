@@ -213,7 +213,6 @@ class Partition:
             self.graph = FrozenGraph(graph)
 
         elif isinstance(graph, FrozenGraph):
-            # frm: TODO: Code: Verify that the embedded graph is RX
             self.graph = graph
             self.assignment = get_assignment(assignment, graph)
 
@@ -340,9 +339,14 @@ class Partition:
         #
 
         if key not in self._cache:
-            # frm: TODO: Code:  Add code to check that the desired updater actually is
-            #               defined in the list of updaters.  If not, then this 
-            #               would produce a perhaps difficult to debug problem...
+            # frm: TODO: Testing:  Add a test checking what happens if no updater defined
+            #
+            # This code checks that the desired updater actually is 
+            # defined in the list of updaters.  If not, then this 
+            # would produce a perhaps difficult to debug problem...
+            if key not in self.updaters:
+                raise KeyError(f"__getitem__(): updater: {key} not defined in the updaters for the partition")
+
             self._cache[key] = self.updaters[key](self)
         return self._cache[key]
 
@@ -462,7 +466,8 @@ class Partition:
                 "needed to match the Districtr assignment to the nodes of the graph."
             )
 
-        # frm: TODO: Code: NX vs. RX issues:  does "node in graph" work for both NX and RX?
-        assignment = {node: districtr_assignment[node_to_id[node]] for node in graph}
+        # frm: TODO: Testing: Verify that there is a test for from_districtr_file()
+
+        assignment = {node_id: districtr_assignment[node_to_id[node_id]] for node_id in graph.node_indices}
 
         return cls(graph, assignment, updaters)
