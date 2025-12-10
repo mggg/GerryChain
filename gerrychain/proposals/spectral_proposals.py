@@ -33,7 +33,7 @@ def spectral_cut(
     # the return value's node_ids need to be translated back into the appropriate
     # parent node_ids.
 
-    node_list = list(subgraph.nodes)
+    node_list = list(subgraph.node_indices)
     num_nodes = len(node_list)
 
     if weight_type == "random":
@@ -47,7 +47,7 @@ def spectral_cut(
     else:
         laplacian_matrix = (subgraph.laplacian_matrix()).todense()
 
-    # frm TODO: Add a better explanation for why eigenvectors are useful
+    # frm TODO: Documentation: Add a better explanation for why eigenvectors are useful
     #           for determining flips.  Perhaps just a URL to an article 
     #           somewhere...
     #

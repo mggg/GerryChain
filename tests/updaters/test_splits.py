@@ -50,7 +50,7 @@ class TestComputeCountySplits:
 
     def test_no_splits(self, graph_with_counties):
 
-        # frm: TODO:  Why does this not just use "split_partition"?  Isn't it the same?
+        # frm: TODO: Testing:  Why does this not just use "split_partition"?  Isn't it the same?
         partition = Partition(graph_with_counties, assignment="county")
 
         result = compute_county_splits(partition, "county", None)

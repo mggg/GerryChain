@@ -156,7 +156,7 @@ class Assignment(Mapping):
         :rtype: Assignment
         """
 
-        # frm: TODO:  Clean up from_dict().
+        # frm: TODO: Refactoring:  Clean up from_dict().
         #
         # A couple of things:
         #  * It uses a routine, level_sets(), which is only ever used here, so 
@@ -239,7 +239,7 @@ def get_assignment(
     :raises TypeError: If the part_assignment is not a string or dictionary.
     """
     
-    # frm: TODO:  Think about whether to split this into two functions.  AT
+    # frm: TODO: Refactoring:  Think about whether to split this into two functions.  AT
     #               present, it does different things based on whether
     #               the "part_assignment" parameter is a string, a dict, 
     #               or an assignment.  Probably not worth the trouble (possible
@@ -253,7 +253,6 @@ def get_assignment(
                 "You must provide a graph when using a node attribute for the part_assignment"
             )
         return Assignment.from_dict(
-            # frm: original code:   {node: graph.nodes[node][part_assignment] for node in graph}
             {node: graph.node_data(node)[part_assignment] for node in graph}
         )
     # Check if assignment is a dict or a mapping type

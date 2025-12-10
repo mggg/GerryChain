@@ -24,7 +24,6 @@ def _num_spanning_trees_in_district(partition, district: int) -> int:
     :rtype: int
     """
     graph = partition.subgraphs[district]
-    # frm: Original Code:    laplacian = networkx.laplacian_matrix(graph)
     laplacian = partition.graph.laplacian_matrix()
     L = numpy.delete(numpy.delete(laplacian.todense(), 0, 0), 1, 1)
     return math.exp(numpy.linalg.slogdet(L)[1])

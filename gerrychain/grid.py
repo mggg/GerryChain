@@ -15,7 +15,7 @@ Dependencies:
 
 import math
 import networkx
-# frm TODO: Clarify what purpose grid.py serves.  
+# frm TODO: Documentation: Clarify what purpose grid.py serves.  
 #
 # It is a convenience module to help users create toy graphs.  It leverages
 # NX to create graphs, but it returns new Graph objects.  So, legacy user
@@ -128,7 +128,7 @@ class Grid(Partition):
             if not assignment:
                 thresholds = tuple(math.floor(n / 2) for n in self.dimensions)
                 assignment = {
-                    node: color_quadrants(node, thresholds) for node in graph.nodes  # type: ignore
+                    node_id: color_quadrants(node_id, thresholds) for node_id in graph.node_indices  # type: ignore
                 }
 
             if not updaters:
@@ -165,17 +165,19 @@ class Grid(Partition):
         return [[self.assignment.mapping[(i, j)] for i in range(m)] for j in range(n)]
 
 
-# frm TODO: Is this intended to be callable / useful for external users?
-#           For now, I am going to leave this as operating on NetworkX graphs, since 
-#           it appears to only be used internally in this Class.  However, I may discover
-#           that it has been used externally with the intention of returning a Graph object.
-#           If so, then I will need to return a Graph object (from_networkx(nx_graphg)) and change
-#           the call inside this class to expect a Graph object instead of a NetworkX.Graph object.
-
-# frm: TODO: Decide if I should change this to return a Graph object or not...
-
-# frm: Original Code - function signature:
-# def create_grid_graph(dimensions: Tuple[int, int], with_diagonals: bool) -> Graph:
+# frm: Documentation:  Document what grid.py is intended to be used for
+#
+# I will need to do some research, but my guess is that there are two use
+# cases:
+#
+#   1) Testing - make it easy to create tests
+#   2) User Code - make it easy for users to play around.
+#
+# For #1, it is OK to have some routines return NX-Graph objects and some to return new Graph
+# objects, but that is probably confusing to users, so the todo list items are:
+#
+#   * Decide whether to support returning NX-based Graphs sometimes and new Graphs others,
+#   * Document whatever we decide
 #
 
 def _create_grid_nx_graph(dimensions: Tuple[int, int], with_diagonals: bool) -> Graph:
@@ -246,9 +248,8 @@ def give_constant_attribute(graph: Graph, attribute: Any, value: Any) -> None:
 
     :returns: None
     """
-    for node in graph.nodes:
-        # frm original code: graph.nodes[node][attribute] = value
-        graph.node_data(node)[attribute] = value
+    for node_id in graph.node_indices:
+        graph.node_data(node_id)[attribute] = value
 
 
 def _tag_boundary_nodes(nx_graph: networkx.Graph, dimensions: Tuple[int, int]) -> None:

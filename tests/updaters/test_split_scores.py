@@ -6,14 +6,6 @@ from gerrychain.updaters.cut_edges import cut_edges
 from gerrychain import Graph
 import networkx
 
-# frm: TODO:  This test fails due to NX dependencies in locality_split_scores.py
-#
-# There are lots of comments in that file about what needs to be fixed, but 
-# it is a low priority becauxe the code in locality_split_scores.py is not used
-# in the gerrychain codebase - it is presumeably used by other users of GC, so
-# this needs to be fixed sometime - but later...
-# 
-
 @pytest.fixture
 def three_by_three_grid():
     """Returns a graph that looks like this:
@@ -78,8 +70,6 @@ def split_partition(graph_with_counties):
             'symmetric_entropy', 'num_split_localities'])},
     )
     return partition
-
-# frm: TODO:  NX vs. RX node_id issues here.
 
 class TestSplittingScores:
 	

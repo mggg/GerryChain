@@ -108,7 +108,7 @@ def recom(
         #       find one that can be split, or you have tried all possible pairs
         #       of adjacent districts...
         try:
-            # frm: TODO:  see if there is some way to avoid a while True loop...
+            # frm: TODO: Refactoring:  see if there is some way to avoid a while True loop...
             while True:
                 edge = random.choice(tuple(partition["cut_edges"]))
                 # Need to sort the tuple so that the order is consistent
@@ -254,7 +254,7 @@ def reversible_recom(
     for out_part in parts:
         for in_part in parts:
             dist_pairs.append((out_part, in_part))
-            # frm: TODO:  Grok why this code considers pairs that are the same part...
+            # frm: TODO: Code: ???:   Grok why this code considers pairs that are the same part...
             #
             # For instance, if there are only two parts (districts), then this code will 
             # produce four pairs: (0,0), (0,1), (1,0), (1,1).  The code below tests
@@ -274,7 +274,7 @@ def reversible_recom(
     if random_pair[0] == random_pair[1] or not pair_edges:
         return partition  # self-loop: no adjacency
 
-    # frm: TODO:  Grok why it is OK to return the partition unchanged as the next step.
+    # frm: TODO: Code: ???:  Grok why it is OK to return the partition unchanged as the next step.
     #
     # This runs the risk of running an entire chain without ever changing the partition.
     # I assume that the logic is that there is deliberate randomness introduced each time,
@@ -303,11 +303,6 @@ def reversible_recom(
     #               the subgraph's node_ids afterwards.
     #
     
-    # frm: Original Code:
-    #    num_possible_districts, nodes = bipartition_tree_random_reversible(
-    #        partition.graph.subgraph(subgraph_nodes),
-    #        pop_col=pop_col, pop_target=pop_target, epsilon=epsilon
-    #    )
     result = bipartition_tree_random_reversible(
         partition.graph.subgraph(subgraph_nodes),
         pop_col=pop_col, pop_target=pop_target, epsilon=epsilon
@@ -318,7 +313,9 @@ def reversible_recom(
     num_possible_districts, nodes = result
 
     remaining_nodes = subgraph_nodes - set(nodes)
-    # Note:  the ** operator below merges the two dicts into a single dict.
+    # Note:  Clever way to create a single dictionary from
+    # two dictionaries - the ** operator unpacks each dictionary 
+    # and then they get merged into a new dictionary.
     flips = {
         **{node: parts_to_merge[0] for node in nodes},
         **{node: parts_to_merge[1] for node in remaining_nodes},
@@ -339,7 +336,7 @@ def reversible_recom(
     return partition  # self-loop
 
 
-# frm TODO:  I do not think that ReCom() is ever called.  Note that it 
+# frm TODO: Refactoring:  I do not think that ReCom() is ever called.  Note that it 
 #           only defines a constructor and a __call__() which would allow
 #           you to call the recom() function by creating a ReCom object and then 
 #           "calling" that object - why not just call the recom function?

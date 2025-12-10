@@ -16,7 +16,7 @@ from .subgraphs import SubgraphView
 from ..tree import recursive_tree_part
 from typing import Any, Callable, Dict, Optional, Tuple
 
-# frm TODO:     Add documentation about how this all works.  For instance,
+# frm TODO: Documentation:     Add documentation about how this all works.  For instance,
 #               what is computationally expensive and how does a FrozenGraph
 #               help?  Why do we need both assignments and parts?  
 #
@@ -133,9 +133,8 @@ class Partition:
         :returns: The partition created with a random assignment
         :rtype: Partition
         """
-        # frm: ???: BUG:  TODO:  The param, flips, is never used in this routine...
+        # frm: TODO: BUG:  The param, flips, is never used in this routine...
 
-        # frm: original code:   total_pop = sum(graph.nodes[n][pop_col] for n in graph)
         total_pop = sum(graph.node_data(n)[pop_col] for n in graph)
         ideal_pop = total_pop / n_parts
 
@@ -168,7 +167,7 @@ class Partition:
         # convert to RX - both for legacy compatibility, but also because NX provides
         # a really nice and easy way to create graphs.
         #
-        # TODO: update the documentation
+        # TODO: Documentation: update the documentation
         # to describe the use case of creating a graph using NX.  That documentation
         # should also describe how to post-process results of a MarkovChain run
         # but I haven't figured that out yet...
@@ -179,15 +178,21 @@ class Partition:
 
         # if a Graph object, make sure it is based on an embedded RustworkX.PyGraph
         if isinstance(graph, Graph):
-            # frm: TODO: Remove this short-term hack to do performance testing
+            # frm: TODO: Performance: Remove this short-term hack to do performance testing
+            #
+            # This "test_performance_using_NX_graph" hack just forces the partition
+            # to NOT convert the NX graph to be RX based.  This allows me to 
+            # compare RX performance to NX performance with the same code - so that
+            # whatever is different is crystal clear.
             test_performance_using_NX_graph = False
             if (graph.is_nx_graph()) and test_performance_using_NX_graph:
                 self.assignment = get_assignment(assignment, graph)
+                print("=====================================================")
                 print("Performance-Test: using NetworkX for Partition object")
+                print("=====================================================")
 
             elif (graph.is_nx_graph()):
 
-                print("Partition: converting NX to RX")
                 # Get the assignment that would be appropriate for the NX-based graph
                 old_nx_assignment = get_assignment(assignment, graph)
 
@@ -208,7 +213,6 @@ class Partition:
             self.graph = FrozenGraph(graph)
 
         elif isinstance(graph, FrozenGraph):
-            # frm: TODO: Verify that the embedded graph is RX
             self.graph = graph
             self.assignment = get_assignment(assignment, graph)
 
@@ -280,7 +284,7 @@ class Partition:
         :rtype: Partition
         """
 
-        # frm: TODO: Change comments above to document new optional parameter, use_original_nx_node_ids.
+        # frm: TODO: Documentation: Change comments above to document new optional parameter, use_original_nx_node_ids.
         #
         # This is a new issue that arises from the fact that node_ids in RX are different from those
         # in the original NX graph.  In the pre-RX code, we did not need to distinguish between
@@ -335,14 +339,19 @@ class Partition:
         #
 
         if key not in self._cache:
-            # frm: TODO:  Add code to check that the desired updater actually is
-            #               defined in the list of updaters.  If not, then this 
-            #               would produce a perhaps difficult to debug problem...
+            # frm: TODO: Testing:  Add a test checking what happens if no updater defined
+            #
+            # This code checks that the desired updater actually is 
+            # defined in the list of updaters.  If not, then this 
+            # would produce a perhaps difficult to debug problem...
+            if key not in self.updaters:
+                raise KeyError(f"__getitem__(): updater: {key} not defined in the updaters for the partition")
+
             self._cache[key] = self.updaters[key](self)
         return self._cache[key]
 
     def __getattr__(self, key):
-        # frm TODO:  Not sure it makes sense to allow two ways to accomplish the same thing...
+        # frm TODO: Refactor:  Not sure it makes sense to allow two ways to accomplish the same thing...
         #
         # The code below allows Partition users to get the results of updaters by just 
         # doing:  partition.<updater_name>  which is the same as doing: partition["<updater_name>"]
@@ -403,7 +412,7 @@ class Partition:
             else:
                 raise Exception("Partition.plot: graph has no geometry data")
 
-        if set(geometries.index) != set(self.graph.nodes):
+        if set(geometries.index) != self.graph.node_indices:
             raise TypeError(
                 "The provided geometries do not match the nodes of the graph."
             )
@@ -450,7 +459,6 @@ class Partition:
         id_column_key = districtr_plan["idColumn"]["key"]
         districtr_assignment = districtr_plan["assignment"]
         try:
-            # frm: original code:   node_to_id = {node: str(graph.nodes[node][id_column_key]) for node in graph}
             node_to_id = {node: str(graph.node_data(node)[id_column_key]) for node in graph}
         except KeyError:
             raise TypeError(
@@ -458,7 +466,8 @@ class Partition:
                 "needed to match the Districtr assignment to the nodes of the graph."
             )
 
-        # frm: TODO:  NX vs. RX issues:  does "node in graph" work for both NX and RX?
-        assignment = {node: districtr_assignment[node_to_id[node]] for node in graph}
+        # frm: TODO: Testing: Verify that there is a test for from_districtr_file()
+
+        assignment = {node_id: districtr_assignment[node_to_id[node_id]] for node_id in graph.node_indices}
 
         return cls(graph, assignment, updaters)

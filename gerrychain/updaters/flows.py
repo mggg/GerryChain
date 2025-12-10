@@ -2,7 +2,7 @@ import collections
 import functools
 from typing import Dict, Set, Tuple, Callable
 
-# frm: TODO: This file needs documentation / comments!!!
+# frm: TODO: Documentation: This file needs documentation / comments!!!
 #
 # Peter agrees...
 
@@ -40,7 +40,7 @@ def flows_from_changes(old_partition, new_partition) -> Dict:
     :rtype: Dict
     """
     
-    # frm: TODO:  Grok why there is a test for:  source != target
+    # frm: TODO: Code: ???:  Grok why there is a test for:  source != target
     #
     # It would seem to me that it would be a logic bug if there 
     # was a "flip" that did not in fact change the partition mapping...

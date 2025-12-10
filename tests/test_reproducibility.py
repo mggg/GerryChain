@@ -58,7 +58,6 @@ def test_repeatable(three_by_three_grid):
         {3: 1},
     ]
     flips = [partition.flips for partition in chain]
-    print(flips)
     assert flips == expected_flips
 
 

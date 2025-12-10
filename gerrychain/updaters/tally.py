@@ -19,6 +19,16 @@ class DataTally:
     :type alias: str
     """
 
+    # frm: TODO: Code:  Check to see if DataTally used for data that is NOT attribute of a node
+    #
+    # The comment above indicates that you can use a DataTally for data that is not stored
+    # as an attribute of a node.  Check to see if it is ever actually used that way.  If so,
+    # then update the documentation above to state the use cases for adding up data that is
+    # NOT stored as a node attribute...
+    #
+    # It appears that some tests use the ability to specify tallies that do not involve a
+    # node attribute, but it is not clear if any "real" code does that...
+
     __slots__ = ["data", "alias", "_call"]
 
     def __init__(self, data: Union[Dict, pandas.Series, str], alias: str) -> None:
@@ -43,30 +53,23 @@ class DataTally:
             # If not, then assume that the "data" passed in is already of the
             # form: {node_id: data_value}
 
-            # frm: TODO: Verify that if the "data" passed in is not a string that it
-            #               is of the form: {node_id, data_value}
-
-
             if isinstance(self.data, str):
 
-                # frm: Original Code:
-                #    nodes = partition.graph.nodes
-                #    attribute = self.data
-                #    self.data = {node: nodes[node][attribute] for node in nodes}
+                # if the "data" passed in was a string, then replace its value with
+                # a dict of {node_id: attribute_value of the node}
                 graph = partition.graph
                 node_ids = partition.graph.node_indices
                 attribute = self.data
                 self.data = {node_id: graph.node_data(node_id)[attribute] for node_id in node_ids}
 
-                # frm: TODO:  Should probably check that the data for each node is numerical, since we
-                #             are going to sum it below...
-            
             tally = collections.defaultdict(int)
             for node_id, part in partition.assignment.items():
                 add = self.data[node_id]
 
-                # frm: TODO:  Should I also test that the "add" variable is a number or something
-                #               that can be added?
+                # Note: math.isnan() will raise an exception if the value passed in is not
+                # numeric, so there is no need to do another check to ensure that the value
+                # is numeric - that test is implicit in math.isnan()
+                #
                 if math.isnan(add):
                     warnings.warn(
                         "ignoring nan encountered at node_id '{}' for attribute '{}'".format(
@@ -191,7 +194,7 @@ class Tally:
         return new_tally
 
     def _get_tally_from_node(self, partition, node):
-        return sum(partition.graph.lookup(node, field) for field in self.fields)
+        return sum(partition.graph.node_data(node)[field] for field in self.fields)
 
 
 def compute_out_flow(graph, fields: Union[str, List[str]], flow: Dict) -> int:
@@ -209,7 +212,7 @@ def compute_out_flow(graph, fields: Union[str, List[str]], flow: Dict) -> int:
     :returns: The sum of the "field" attribute of nodes in the "out" set of the flow.
     :rtype: int
     """
-    return sum(graph.lookup(node, field) for node in flow["out"] for field in fields)
+    return sum(graph.node_data(node)[field] for node in flow["out"] for field in fields)
 
 
 def compute_in_flow(graph, fields: Union[str, List[str]], flow: Dict) -> int:
@@ -227,4 +230,4 @@ def compute_in_flow(graph, fields: Union[str, List[str]], flow: Dict) -> int:
     :returns: The sum of the "field" attribute of nodes in the "in" set of the flow.
     :rtype: int
     """
-    return sum(graph.lookup(node, field) for node in flow["in"] for field in fields)
+    return sum(graph.node_data(node)[field] for node in flow["in"] for field in fields)
