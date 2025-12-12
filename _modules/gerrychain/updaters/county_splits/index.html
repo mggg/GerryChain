@@ -1,0 +1,310 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>gerrychain.updaters.county_splits &mdash; GerryChain  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/custom.css?v=fb2c2a70" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=187304be"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex/" />
+    <link rel="search" title="Search" href="../../../../search/" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #0099cd" >
+
+          
+          
+          <a href="../../../../" class="icon icon-home">
+            GerryChain
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search/" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../user/intro/">Overview of the Chain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../user/install/">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../user/quickstart/">Getting started with GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../user/recom/">Running a chain with ReCom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../user/partitions/">Working with Partitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../user/updaters/">Updaters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../user/data/">Good Data Practices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../user/geometries/">Working With Geometries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../user/optimizers/">Optimization Methods of GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../user/geometric_optimizers/">Advanced Example: Optimizing Using Geographic Quantities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/">API Reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Topics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../topics/reproducibility/">Reproducibility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../topics/tools/">Evaluating districting plans in the real world</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../topics/contributing/">Contributing to GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../topics/reporting/">Reporting Issues</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Index</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../full_ref/">Full Package Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #0099cd" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../">GerryChain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../">Module code</a></li>
+      <li class="breadcrumb-item active">gerrychain.updaters.county_splits</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for gerrychain.updaters.county_splits</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">collections</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span>
+
+<span class="n">CountyInfo</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;CountyInfo&quot;</span><span class="p">,</span> <span class="s2">&quot;split nodes contains&quot;</span><span class="p">)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">A named tuple to store county split information.</span>
+
+<span class="sd">:param split: The county split status. Makes use of</span>
+<span class="sd">    :class:`.CountySplit` enum to compute.</span>
+<span class="sd">:type split: int</span>
+<span class="sd">:param nodes: The nodes that are contained in the county.</span>
+<span class="sd">:type nodes: List</span>
+<span class="sd">:param contains: The assignment IDs that are contained in the county.</span>
+<span class="sd">:type contains: Set</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="CountySplit">
+<a class="viewcode-back" href="../../../../full_ref/#gerrychain.updaters.CountySplit">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CountySplit</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Enum to track county splits in a partition.</span>
+
+<span class="sd">    :cvar NOT_SPLIT: The county is not split.</span>
+<span class="sd">    :cvar NEW_SPLIT: The county is split in the current partition.</span>
+<span class="sd">    :cvar OLD_SPLIT: The county is split in the parent partition.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">NOT_SPLIT</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">NEW_SPLIT</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">OLD_SPLIT</span> <span class="o">=</span> <span class="mi">2</span></div>
+
+
+
+<div class="viewcode-block" id="county_splits">
+<a class="viewcode-back" href="../../../../full_ref/#gerrychain.updaters.county_splits">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">county_splits</span><span class="p">(</span><span class="n">partition_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">county_field_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Update that allows for the tracking of county splits.</span>
+
+<span class="sd">    :param partition_name: Name that the :class:`.Partition` instance will store.</span>
+<span class="sd">    :type partition_name: str</span>
+<span class="sd">    :param county_field_name: Name of county ID field on the graph.</span>
+<span class="sd">    :type county_field_name: str</span>
+
+<span class="sd">    :returns: The tracked data is a dictionary keyed on the county ID. The</span>
+<span class="sd">              stored values are tuples of the form `(split, nodes, seen)`.</span>
+<span class="sd">              `split` is a :class:`.CountySplit` enum, `nodes` is a list of</span>
+<span class="sd">              node IDs, and `seen` is a list of assignment IDs that are</span>
+<span class="sd">              contained in the county.</span>
+<span class="sd">    :rtype: Callable</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_county_splits</span><span class="p">(</span><span class="n">partition</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">compute_county_splits</span><span class="p">(</span><span class="n">partition</span><span class="p">,</span> <span class="n">county_field_name</span><span class="p">,</span> <span class="n">partition_name</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">_get_county_splits</span></div>
+
+
+
+<div class="viewcode-block" id="compute_county_splits">
+<a class="viewcode-back" href="../../../../full_ref/#gerrychain.updaters.compute_county_splits">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_county_splits</span><span class="p">(</span>
+    <span class="n">partition</span><span class="p">,</span> <span class="n">county_field</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">partition_field</span><span class="p">:</span> <span class="nb">str</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CountyInfo</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Track nodes in counties and information about their splitting.</span>
+
+<span class="sd">    :param partition: The partition object to compute county splits for.</span>
+<span class="sd">    :type partition: :class:`~gerrychain.partition.Partition`</span>
+<span class="sd">    :param county_field: Name of county ID field on the graph.</span>
+<span class="sd">    :type county_field: str</span>
+<span class="sd">    :param partition_field: Name of the attribute in the graph</span>
+<span class="sd">        that stores the partition information. The county</span>
+<span class="sd">        split information will be computed with respect to this</span>
+<span class="sd">        division of the graph.</span>
+<span class="sd">    :type partition_field: str</span>
+
+<span class="sd">    :returns: A dict containing the information on how counties changed</span>
+<span class="sd">        between the parent and child partitions. If there is no parent</span>
+<span class="sd">        partition, then only the OLD_SPLIT and NOT_SPLIT values will be</span>
+<span class="sd">        used.</span>
+<span class="sd">    :rtype: Dict[str, CountyInfo]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Create the initial county data containers.</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">partition</span><span class="o">.</span><span class="n">parent</span><span class="p">:</span>
+
+        <span class="n">county_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">node_id</span> <span class="ow">in</span> <span class="n">partition</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">node_indices</span><span class="p">:</span>
+
+            <span class="c1"># First figure get current status of the county&#39;s information</span>
+            <span class="n">county</span> <span class="o">=</span> <span class="n">partition</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">node_data</span><span class="p">(</span><span class="n">node_id</span><span class="p">)[</span><span class="n">county_field</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">county</span> <span class="ow">in</span> <span class="n">county_dict</span><span class="p">:</span>
+                <span class="n">split</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">seen</span> <span class="o">=</span> <span class="n">county_dict</span><span class="p">[</span><span class="n">county</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">split</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">seen</span> <span class="o">=</span> <span class="n">CountySplit</span><span class="o">.</span><span class="n">NOT_SPLIT</span><span class="p">,</span> <span class="p">[],</span> <span class="nb">set</span><span class="p">()</span>
+
+            <span class="c1"># Now update &quot;nodes&quot; and &quot;seen&quot; with this node_id and the part (district) from</span>
+            <span class="c1"># partition&#39;s assignment.</span>
+            <span class="n">nodes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">node_id</span><span class="p">)</span>
+            <span class="n">seen</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">set</span><span class="p">([</span><span class="n">partition</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">mapping</span><span class="p">[</span><span class="n">node_id</span><span class="p">]]))</span>
+
+            <span class="c1"># lastly, if we have &quot;seen&quot; more than one part (district), then the county is split</span>
+            <span class="c1"># across parts.</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">seen</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">split</span> <span class="o">=</span> <span class="n">CountySplit</span><span class="o">.</span><span class="n">OLD_SPLIT</span>
+
+            <span class="c1"># update the county_dict with new information</span>
+            <span class="n">county_dict</span><span class="p">[</span><span class="n">county</span><span class="p">]</span> <span class="o">=</span> <span class="n">CountyInfo</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">seen</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">county_dict</span>
+
+    <span class="n">new_county_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">partition</span><span class="o">.</span><span class="n">parent</span>
+    <span class="k">for</span> <span class="n">county</span><span class="p">,</span> <span class="n">county_info</span> <span class="ow">in</span> <span class="n">parent</span><span class="p">[</span><span class="n">partition_field</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">seen</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">partition</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">mapping</span><span class="p">[</span><span class="n">node_id</span><span class="p">]</span> <span class="k">for</span> <span class="n">node_id</span> <span class="ow">in</span> <span class="n">county_info</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span>
+
+        <span class="n">split</span> <span class="o">=</span> <span class="n">CountySplit</span><span class="o">.</span><span class="n">NOT_SPLIT</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">seen</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">county_info</span><span class="o">.</span><span class="n">split</span> <span class="o">!=</span> <span class="n">CountySplit</span><span class="o">.</span><span class="n">OLD_SPLIT</span><span class="p">:</span>
+                <span class="n">split</span> <span class="o">=</span> <span class="n">CountySplit</span><span class="o">.</span><span class="n">NEW_SPLIT</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">split</span> <span class="o">=</span> <span class="n">CountySplit</span><span class="o">.</span><span class="n">OLD_SPLIT</span>
+
+        <span class="n">new_county_dict</span><span class="p">[</span><span class="n">county</span><span class="p">]</span> <span class="o">=</span> <span class="n">CountyInfo</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="n">county_info</span><span class="o">.</span><span class="n">nodes</span><span class="p">,</span> <span class="n">seen</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">new_county_dict</span></div>
+
+
+
+<div class="viewcode-block" id="tally_region_splits">
+<a class="viewcode-back" href="../../../../full_ref/#gerrychain.updaters.tally_region_splits">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">tally_region_splits</span><span class="p">(</span><span class="n">reg_attr_lst</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A naive updater for tallying the number of times a region attribute is split.</span>
+<span class="sd">    for each region attribute in reg_attr_lst.</span>
+
+<span class="sd">    :param reg_attr_lst: A list of region names to tally splits for.</span>
+<span class="sd">    :type reg_attr_lst: List[str]</span>
+
+<span class="sd">    :returns: A function that takes a partition and returns a dictionary which</span>
+<span class="sd">        maps the region name to the number of times that it is split in a</span>
+<span class="sd">        a particular partition.</span>
+<span class="sd">    :rtype: Callable</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_splits</span><span class="p">(</span><span class="n">partition</span><span class="p">):</span>
+        <span class="k">nonlocal</span> <span class="n">reg_attr_lst</span>
+        <span class="k">if</span> <span class="s2">&quot;cut_edges&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">partition</span><span class="o">.</span><span class="n">updaters</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The cut_edges updater must be attached to the partition&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">reg_attr</span><span class="p">:</span> <span class="n">total_reg_splits</span><span class="p">(</span><span class="n">partition</span><span class="p">,</span> <span class="n">reg_attr</span><span class="p">)</span> <span class="k">for</span> <span class="n">reg_attr</span> <span class="ow">in</span> <span class="n">reg_attr_lst</span><span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">_get_splits</span></div>
+
+
+
+<div class="viewcode-block" id="total_reg_splits">
+<a class="viewcode-back" href="../../../../full_ref/#gerrychain.updaters.total_reg_splits">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">total_reg_splits</span><span class="p">(</span><span class="n">partition</span><span class="p">,</span> <span class="n">reg_attr</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the total number of times that reg_attr is split in the partition.&quot;&quot;&quot;</span>
+    <span class="n">all_region_names</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span>
+        <span class="n">partition</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">node_data</span><span class="p">(</span><span class="n">node_id</span><span class="p">)[</span><span class="n">reg_attr</span><span class="p">]</span> <span class="k">for</span> <span class="n">node_id</span> <span class="ow">in</span> <span class="n">partition</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">node_indices</span>
+    <span class="p">)</span>
+    <span class="n">split</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">all_region_names</span><span class="p">}</span>
+    <span class="c1"># Require that the cut_edges updater is attached to the partition</span>
+    <span class="k">for</span> <span class="n">node1</span><span class="p">,</span> <span class="n">node2</span> <span class="ow">in</span> <span class="n">partition</span><span class="p">[</span><span class="s2">&quot;cut_edges&quot;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">partition</span><span class="o">.</span><span class="n">assignment</span><span class="p">[</span><span class="n">node1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">partition</span><span class="o">.</span><span class="n">assignment</span><span class="p">[</span><span class="n">node2</span><span class="p">]</span>
+            <span class="ow">and</span> <span class="n">partition</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">node_data</span><span class="p">(</span><span class="n">node1</span><span class="p">)[</span><span class="n">reg_attr</span><span class="p">]</span>
+            <span class="o">==</span> <span class="n">partition</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">node_data</span><span class="p">(</span><span class="n">node2</span><span class="p">)[</span><span class="n">reg_attr</span><span class="p">]</span>
+        <span class="p">):</span>
+            <span class="n">split</span><span class="p">[</span><span class="n">partition</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">node_data</span><span class="p">(</span><span class="n">node1</span><span class="p">)[</span><span class="n">reg_attr</span><span class="p">]]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">split</span><span class="p">[</span><span class="n">partition</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">node_data</span><span class="p">(</span><span class="n">node2</span><span class="p">)[</span><span class="n">reg_attr</span><span class="p">]]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">split</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">if</span> <span class="n">value</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Metric Geometry and Gerrymandering Group.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

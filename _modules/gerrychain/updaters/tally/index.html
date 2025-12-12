@@ -1,0 +1,375 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>gerrychain.updaters.tally &mdash; GerryChain  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/custom.css?v=fb2c2a70" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=187304be"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex/" />
+    <link rel="search" title="Search" href="../../../../search/" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #0099cd" >
+
+          
+          
+          <a href="../../../../" class="icon icon-home">
+            GerryChain
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search/" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../user/intro/">Overview of the Chain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../user/install/">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../user/quickstart/">Getting started with GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../user/recom/">Running a chain with ReCom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../user/partitions/">Working with Partitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../user/updaters/">Updaters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../user/data/">Good Data Practices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../user/geometries/">Working With Geometries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../user/optimizers/">Optimization Methods of GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../user/geometric_optimizers/">Advanced Example: Optimizing Using Geographic Quantities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/">API Reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Topics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../topics/reproducibility/">Reproducibility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../topics/tools/">Evaluating districting plans in the real world</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../topics/contributing/">Contributing to GerryChain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../topics/reporting/">Reporting Issues</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Index</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../full_ref/">Full Package Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #0099cd" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../">GerryChain</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../">Module code</a></li>
+      <li class="breadcrumb-item active">gerrychain.updaters.tally</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for gerrychain.updaters.tally</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">collections</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.flows</span><span class="w"> </span><span class="kn">import</span> <span class="n">flows_from_changes</span><span class="p">,</span> <span class="n">on_flow</span>
+
+
+<div class="viewcode-block" id="DataTally">
+<a class="viewcode-back" href="../../../../full_ref/#gerrychain.updaters.DataTally">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DataTally</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An updater for tallying numerical data that is not necessarily stored as</span>
+<span class="sd">    node attributes</span>
+
+<span class="sd">    :ivar data: A Dict or Series indexed by the graph&#39;s nodes,</span>
+<span class="sd">        or the string key for a node attribute containing the Tally&#39;s data.</span>
+<span class="sd">    :type data: Union[Dict, pandas.Series, str]</span>
+<span class="sd">    :ivar alias: The name of the tally in the Partition&#39;s `updaters` dictionary</span>
+<span class="sd">    :type alias: str</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># frm: TODO: Code:  Check to see if DataTally used for data that is NOT attribute of a node</span>
+    <span class="c1">#</span>
+    <span class="c1"># The comment above indicates that you can use a DataTally for data that is not stored</span>
+    <span class="c1"># as an attribute of a node.  Check to see if it is ever actually used that way.  If so,</span>
+    <span class="c1"># then update the documentation above to state the use cases for adding up data that is</span>
+    <span class="c1"># NOT stored as a node attribute...</span>
+    <span class="c1">#</span>
+    <span class="c1"># It appears that some tests use the ability to specify tallies that do not involve a</span>
+    <span class="c1"># node attribute, but it is not clear if any &quot;real&quot; code does that...</span>
+
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="s2">&quot;alias&quot;</span><span class="p">,</span> <span class="s2">&quot;_call&quot;</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Dict</span><span class="p">,</span> <span class="n">pandas</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">alias</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param data: A Dict or Series indexed by the graph&#39;s nodes,</span>
+<span class="sd">            or the string key for a node attribute containing the Tally&#39;s data.</span>
+<span class="sd">        :type data: Union[Dict, pandas.Series, str]</span>
+<span class="sd">        :param alias: The name of the tally in the Partition&#39;s `updaters` dictionary</span>
+<span class="sd">        :type alias: str</span>
+
+<span class="sd">        :returns: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alias</span> <span class="o">=</span> <span class="n">alias</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">initialize_tally</span><span class="p">(</span><span class="n">partition</span><span class="p">):</span>
+
+            <span class="c1"># If the &quot;data&quot; passed in was a string, then interpret that string</span>
+            <span class="c1"># as the name of a node attribute in the graph, and construct</span>
+            <span class="c1"># a dict of the form: {node_id: node_attribution_value}</span>
+            <span class="c1">#</span>
+            <span class="c1"># If not, then assume that the &quot;data&quot; passed in is already of the</span>
+            <span class="c1"># form: {node_id: data_value}</span>
+
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+
+                <span class="c1"># if the &quot;data&quot; passed in was a string, then replace its value with</span>
+                <span class="c1"># a dict of {node_id: attribute_value of the node}</span>
+                <span class="n">graph</span> <span class="o">=</span> <span class="n">partition</span><span class="o">.</span><span class="n">graph</span>
+                <span class="n">node_ids</span> <span class="o">=</span> <span class="n">partition</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">node_indices</span>
+                <span class="n">attribute</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="n">node_id</span><span class="p">:</span> <span class="n">graph</span><span class="o">.</span><span class="n">node_data</span><span class="p">(</span><span class="n">node_id</span><span class="p">)[</span><span class="n">attribute</span><span class="p">]</span> <span class="k">for</span> <span class="n">node_id</span> <span class="ow">in</span> <span class="n">node_ids</span><span class="p">}</span>
+
+            <span class="n">tally</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">node_id</span><span class="p">,</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">partition</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">add</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">node_id</span><span class="p">]</span>
+
+                <span class="c1"># Note: math.isnan() will raise an exception if the value passed in is not</span>
+                <span class="c1"># numeric, so there is no need to do another check to ensure that the value</span>
+                <span class="c1"># is numeric - that test is implicit in math.isnan()</span>
+                <span class="c1">#</span>
+                <span class="k">if</span> <span class="n">math</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">add</span><span class="p">):</span>
+                    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                        <span class="s2">&quot;ignoring nan encountered at node_id &#39;</span><span class="si">{}</span><span class="s2">&#39; for attribute &#39;</span><span class="si">{}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                            <span class="n">node_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">alias</span>
+                        <span class="p">)</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">tally</span><span class="p">[</span><span class="n">part</span><span class="p">]</span> <span class="o">+=</span> <span class="n">add</span>
+
+            <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">tally</span><span class="p">)</span>
+
+        <span class="nd">@on_flow</span><span class="p">(</span><span class="n">initialize_tally</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="n">alias</span><span class="p">)</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">update_tally</span><span class="p">(</span><span class="n">partition</span><span class="p">,</span> <span class="n">previous</span><span class="p">,</span> <span class="n">new_nodes</span><span class="p">,</span> <span class="n">old_nodes</span><span class="p">):</span>
+            <span class="n">inflow</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">new_nodes</span><span class="p">)</span>
+            <span class="n">outflow</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">old_nodes</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">previous</span> <span class="o">+</span> <span class="n">inflow</span> <span class="o">-</span> <span class="n">outflow</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_call</span> <span class="o">=</span> <span class="n">update_tally</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partition</span><span class="p">,</span> <span class="n">previous</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span><span class="n">partition</span><span class="p">,</span> <span class="n">previous</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="Tally">
+<a class="viewcode-back" href="../../../../full_ref/#gerrychain.updaters.Tally">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Tally</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An updater for keeping a tally of one or more node attributes.</span>
+
+<span class="sd">    :ivar fields: The list of node attributes that you want to tally. Or just a</span>
+<span class="sd">        single attribute name as a string.</span>
+<span class="sd">    :type fields: Union[str, List[str]]</span>
+<span class="sd">    :ivar alias: The aliased name of this Tally (meaning, the key corresponding to</span>
+<span class="sd">        this Tally in the Partition&#39;s updaters dictionary)</span>
+<span class="sd">    :type alias: Optional[str]</span>
+<span class="sd">    :ivar dtype: The type (int, float, etc.) that you want the tally to have</span>
+<span class="sd">    :type dtype: Any</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;fields&quot;</span><span class="p">,</span> <span class="s2">&quot;alias&quot;</span><span class="p">,</span> <span class="s2">&quot;dtype&quot;</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">fields</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span>
+        <span class="n">alias</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">dtype</span><span class="p">:</span> <span class="n">Type</span> <span class="o">=</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param fields: The list of node attributes that you want to tally. Or a just a</span>
+<span class="sd">            single attribute name as a string.</span>
+<span class="sd">        :type fields: Union[str, List[str]]</span>
+<span class="sd">        :param alias: The aliased name of this Tally (meaning, the key corresponding to</span>
+<span class="sd">            this Tally in the Partition&#39;s updaters dictionary).</span>
+<span class="sd">            Default is None.</span>
+<span class="sd">        :type alias: Optional[str], optional</span>
+<span class="sd">        :param dtype: The type (int, float, etc.) that you want the tally to have.</span>
+<span class="sd">            Default is int.</span>
+<span class="sd">        :type dtype: Any, optional</span>
+
+<span class="sd">        :returns: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">fields</span> <span class="o">=</span> <span class="p">[</span><span class="n">fields</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">alias</span><span class="p">:</span>
+            <span class="n">alias</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fields</span> <span class="o">=</span> <span class="n">fields</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alias</span> <span class="o">=</span> <span class="n">alias</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span> <span class="o">=</span> <span class="n">dtype</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partition</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">partition</span><span class="o">.</span><span class="n">parent</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_tally</span><span class="p">(</span><span class="n">partition</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_tally</span><span class="p">(</span><span class="n">partition</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_initialize_tally</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partition</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the initial district-wide tally of data stored in the &quot;field&quot;</span>
+<span class="sd">        attribute of nodes.</span>
+
+<span class="sd">        :param partition: The partition to compute the tally for.</span>
+<span class="sd">        :type partition: :class:`~gerrychain.partition.Partition`</span>
+
+<span class="sd">        :returns: A dictionary keyed by the parts of the partition, with values</span>
+<span class="sd">            being the sum of the &quot;field&quot; attribute of nodes in that part.</span>
+<span class="sd">        :rtype: Dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tally</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">defaultdict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">node</span><span class="p">,</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">partition</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">add</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_tally_from_node</span><span class="p">(</span><span class="n">partition</span><span class="p">,</span> <span class="n">node</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">math</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">add</span><span class="p">):</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                    <span class="s2">&quot;ignoring nan encountered at node &#39;</span><span class="si">{}</span><span class="s2">&#39; for attribute &#39;</span><span class="si">{}</span><span class="s2">&#39; &quot;</span>
+                    <span class="s2">&quot;with fields </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">alias</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">tally</span><span class="p">[</span><span class="n">part</span><span class="p">]</span> <span class="o">+=</span> <span class="n">add</span>
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">tally</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_update_tally</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partition</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the district-wide tally of data stored in the &quot;field&quot; attribute</span>
+<span class="sd">        of nodes, given proposed changes.</span>
+
+<span class="sd">        :param partition: The partition to update the tally for.</span>
+<span class="sd">        :type partition: :class:`~gerrychain.partition.Partition`</span>
+
+<span class="sd">        :returns: A dictionary keyed by the parts of the partition, with</span>
+<span class="sd">            the updated tallies of the &quot;field&quot; attribute of nodes in each part.</span>
+<span class="sd">        :rtype: Dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">parent</span> <span class="o">=</span> <span class="n">partition</span><span class="o">.</span><span class="n">parent</span>
+
+        <span class="n">old_tally</span> <span class="o">=</span> <span class="n">parent</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">alias</span><span class="p">]</span>
+        <span class="n">new_tally</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">old_tally</span><span class="p">)</span>
+
+        <span class="n">graph</span> <span class="o">=</span> <span class="n">partition</span><span class="o">.</span><span class="n">graph</span>
+
+        <span class="k">for</span> <span class="n">part</span><span class="p">,</span> <span class="n">flow</span> <span class="ow">in</span> <span class="n">flows_from_changes</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">partition</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">out_flow</span> <span class="o">=</span> <span class="n">compute_out_flow</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">,</span> <span class="n">flow</span><span class="p">)</span>
+            <span class="n">in_flow</span> <span class="o">=</span> <span class="n">compute_in_flow</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">,</span> <span class="n">flow</span><span class="p">)</span>
+            <span class="n">new_tally</span><span class="p">[</span><span class="n">part</span><span class="p">]</span> <span class="o">=</span> <span class="n">old_tally</span><span class="p">[</span><span class="n">part</span><span class="p">]</span> <span class="o">-</span> <span class="n">out_flow</span> <span class="o">+</span> <span class="n">in_flow</span>
+
+        <span class="k">return</span> <span class="n">new_tally</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_tally_from_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partition</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">partition</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">node_data</span><span class="p">(</span><span class="n">node</span><span class="p">)[</span><span class="n">field</span><span class="p">]</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="compute_out_flow">
+<a class="viewcode-back" href="../../../../full_ref/#gerrychain.updaters.compute_out_flow">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_out_flow</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">fields</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span> <span class="n">flow</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :param graph: The graph that the partition is defined on.</span>
+<span class="sd">    :type graph: :class:`~gerrychain.graph.Graph`</span>
+<span class="sd">    :param fields: The list of node attributes that you want to tally. Or just a</span>
+<span class="sd">        single attribute name as a string.</span>
+<span class="sd">    :type fields: Union[str, List[str]]</span>
+<span class="sd">    :param flow: A dictionary containing the flow from the parent of this partition</span>
+<span class="sd">        to this partition. This dictionary is of the form</span>
+<span class="sd">        `{part: {&#39;in&#39;: &lt;set of nodes that flowed in&gt;, &#39;out&#39;: &lt;set of nodes that flowed out&gt;}}`.</span>
+<span class="sd">    :type flow: Dict</span>
+
+<span class="sd">    :returns: The sum of the &quot;field&quot; attribute of nodes in the &quot;out&quot; set of the flow.</span>
+<span class="sd">    :rtype: int</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">node_data</span><span class="p">(</span><span class="n">node</span><span class="p">)[</span><span class="n">field</span><span class="p">]</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">flow</span><span class="p">[</span><span class="s2">&quot;out&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="compute_in_flow">
+<a class="viewcode-back" href="../../../../full_ref/#gerrychain.updaters.compute_in_flow">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_in_flow</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">fields</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span> <span class="n">flow</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :param graph: The graph that the partition is defined on.</span>
+<span class="sd">    :type graph: :class:`~gerrychain.graph.Graph`</span>
+<span class="sd">    :param fields: The list of node attributes that you want to tally. Or just a</span>
+<span class="sd">        single attribute name as a string.</span>
+<span class="sd">    :type fields: Union[str, List[str]]</span>
+<span class="sd">    :param flow: A dictionary containing the flow from the parent of this partition</span>
+<span class="sd">        to this partition. This dictionary is of the form</span>
+<span class="sd">        `{part: {&#39;in&#39;: &lt;set of nodes that flowed in&gt;, &#39;out&#39;: &lt;set of nodes that flowed out&gt;}}`.</span>
+<span class="sd">    :type flow: Dict</span>
+
+<span class="sd">    :returns: The sum of the &quot;field&quot; attribute of nodes in the &quot;in&quot; set of the flow.</span>
+<span class="sd">    :rtype: int</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">node_data</span><span class="p">(</span><span class="n">node</span><span class="p">)[</span><span class="n">field</span><span class="p">]</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">flow</span><span class="p">[</span><span class="s2">&quot;in&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Metric Geometry and Gerrymandering Group.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
