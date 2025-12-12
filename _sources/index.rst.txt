@@ -37,7 +37,11 @@ repository, where `bug reports and feature requests`_, as well as
 .. _`contributions`: https://github.com/mggg/gerrychain/pulls
 
 
-.. include:: user/install.rst
+.. include:: user/install_header.rst
+
+For more detailed installation instructions, including instructions for
+setting up virtual environments, please see the following section:
+:doc:`user/install`.
 
 .. toctree::
     :caption: User Guide

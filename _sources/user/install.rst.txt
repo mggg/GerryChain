@@ -1,20 +1,4 @@
-Installation
-============
-
-Supported Python Versions
--------------------------
-
-The most recent version of GerryChain (as of April 2024) supports
-
-- Python 3.9
-- Python 3.10
-- Python 3.11
-- Python 3.12
-
-If you do not have one of these versions installed on you machine, we
-recommend that you go to the 
-`Python website <https://www.python.org/downloads/>`_ and
-download the installer for one of these versions. [1]_
+.. include:: ./install_header.rst
 
 .. admonition:: A Note For Windows Users
   :class: note
@@ -130,17 +114,6 @@ ready to install GerryChain.
 To install GerryChain from PyPI_, run ``pip install gerrychain`` from
 the command line. 
 
-If you plan on using GerryChain's GIS functions, such as computing
-adjacencies or reading in shapefiles, then run
-``pip install gerrychain[geo]`` from the command line.
-
-This approach sometimes fails due to compatibility issues between our
-different Python GIS dependencies, like ``geopandas``, ``pyproj``,
-``fiona``, and ``shapely``. If you run into this issue, try installing
-the dependencies using the 
-`geo_settings.txt <https://github.com/mggg/GerryChain/tree/main/docs/geo_settings.txt>`_
-file. To do this, run ``pip install -r geo_settings.txt`` from the
-command line.
 
 .. note::
 
@@ -151,10 +124,6 @@ command line.
   line.
 
 .. _PyPI: https://pypi.org/
-.. [1] Of course, if you are using a Linux system, you will either need to use your
-  system's package manager or install from source. You may also find luck installing
-  Python directly from the package manager if you find installing from source to be
-  troublesome.
 
 
 .. include:: ../repeated_subsections/reproducible_envs.rst

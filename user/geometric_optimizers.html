@@ -1,23 +1,25 @@
+
+
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Advanced Example: Optimizing Using Geographic Quantities &mdash; GerryChain  documentation</title><link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../_static/copybutton.css" type="text/css" />
-      <link rel="stylesheet" href="../_static/css/custom.css" type="text/css" />
-  <!--[if lt IE 9]>
-    <script src="../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script src="../_static/jquery.js"></script>
-        <script src="../_static/underscore.js"></script>
-        <script src="../_static/doctools.js"></script>
-        <script src="../_static/language_data.js"></script>
-        <script src="../_static/clipboard.min.js"></script>
-        <script src="../_static/copybutton.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  <title>Advanced Example: Optimizing Using Geographic Quantities &mdash; GerryChain  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=fb2c2a70" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../_static/copybutton.js?v=f281be69"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -30,17 +32,21 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search"  style="background: #0099cd" >
-            <a href="../index.html" class="icon icon-home"> GerryChain
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            GerryChain
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption"><span class="caption-text">User Guide</span></p>
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="intro.html">Overview of the Chain</a></li>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
@@ -58,18 +64,18 @@
 </ul>
 </li>
 </ul>
-<p class="caption"><span class="caption-text">API Reference</span></p>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../api.html">API Reference</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Topics</span></p>
+<p class="caption" role="heading"><span class="caption-text">Topics</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../topics/reproducibility.html">Reproducibility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../topics/tools.html">Evaluating districting plans in the real world</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../topics/contributing.html">Contributing to GerryChain</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../topics/reporting.html">Reporting Issues</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Index</span></p>
+<p class="caption" role="heading"><span class="caption-text">Index</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../full_ref.html">Full Package Reference</a></li>
 </ul>
@@ -87,8 +93,8 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>Advanced Example: Optimizing Using Geographic Quantities</li>
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Advanced Example: Optimizing Using Geographic Quantities</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../_sources/user/geometric_optimizers.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -98,23 +104,23 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <div class="section" id="advanced-example-optimizing-using-geographic-quantities">
-<h1>Advanced Example: Optimizing Using Geographic Quantities<a class="headerlink" href="#advanced-example-optimizing-using-geographic-quantities" title="Permalink to this headline">¶</a></h1>
+  <section id="advanced-example-optimizing-using-geographic-quantities">
+<h1>Advanced Example: Optimizing Using Geographic Quantities<a class="headerlink" href="#advanced-example-optimizing-using-geographic-quantities" title="Link to this heading"></a></h1>
 <p>In the previous section we saw how to use the <code class="docutils literal notranslate"><span class="pre">SingleMetricOptimizer</span></code> to optimize
 for plans that contain the minimum number of cut edges. However, sometimes we may wish to
 include other geographic quantities in our optimization equation. Obtaining and working
 with this sort of data can be a bit more involved, so here we will show how to use the
 <code class="docutils literal notranslate"><span class="pre">requests</span></code> package to download data directly from the Census API and how to use that data
 for optimization.</p>
-<div class="section" id="getting-the-data">
-<h2>Getting the Data<a class="headerlink" href="#getting-the-data" title="Permalink to this headline">¶</a></h2>
+<section id="getting-the-data">
+<h2>Getting the Data<a class="headerlink" href="#getting-the-data" title="Link to this heading"></a></h2>
 <p>First, we will need to install the <code class="docutils literal notranslate"><span class="pre">requests</span></code> package:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install requests
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>requests
 </pre></div>
 </div>
 <p>Then we can import the package in the head of our jupyter notebook and download the data:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">requests</span>
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
 <span class="n">shape_url</span> <span class="o">=</span> <span class="s2">&quot;https://www2.census.gov/geo/tiger/TIGER2020PL/LAYER/BG/2020/tl_2020_01_bg20.zip&quot;</span>
 
@@ -133,23 +139,23 @@ for optimization.</p>
 </pre></div>
 </div>
 <p>Note that we have now saved the data for later so that we can use it more easily in the next section.</p>
-</div>
-<div class="section" id="preparing-the-data">
-<h2>Preparing the Data<a class="headerlink" href="#preparing-the-data" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="preparing-the-data">
+<h2>Preparing the Data<a class="headerlink" href="#preparing-the-data" title="Link to this heading"></a></h2>
 <p>We are now ready to work with the optimizer. First, we will need to import the necessary packages:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">gerrychain</span> <span class="kn">import</span> <span class="n">Graph</span><span class="p">,</span> <span class="n">GeographicPartition</span><span class="p">,</span> <span class="n">MarkovChain</span>
-<span class="kn">from</span> <span class="nn">gerrychain.updaters</span> <span class="kn">import</span> <span class="n">Tally</span>
-<span class="kn">from</span> <span class="nn">gerrychain.metrics.compactness</span> <span class="kn">import</span> <span class="n">polsby_popper</span>
-<span class="kn">from</span> <span class="nn">gerrychain.proposals</span> <span class="kn">import</span> <span class="n">recom</span>
-<span class="kn">from</span> <span class="nn">gerrychain.tree</span> <span class="kn">import</span> <span class="n">bipartition_tree</span>
-<span class="kn">from</span> <span class="nn">gerrychain.accept</span> <span class="kn">import</span> <span class="n">always_accept</span>
-<span class="kn">from</span> <span class="nn">gerrychain.optimization</span> <span class="kn">import</span> <span class="n">SingleMetricOptimizer</span>
-<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-<span class="kn">import</span> <span class="nn">geopandas</span> <span class="k">as</span> <span class="nn">gpd</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">gerrychain</span><span class="w"> </span><span class="kn">import</span> <span class="n">Graph</span><span class="p">,</span> <span class="n">GeographicPartition</span><span class="p">,</span> <span class="n">MarkovChain</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gerrychain.updaters</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tally</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gerrychain.metrics.compactness</span><span class="w"> </span><span class="kn">import</span> <span class="n">polsby_popper</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gerrychain.proposals</span><span class="w"> </span><span class="kn">import</span> <span class="n">recom</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gerrychain.tree</span><span class="w"> </span><span class="kn">import</span> <span class="n">bipartition_tree</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gerrychain.accept</span><span class="w"> </span><span class="kn">import</span> <span class="n">always_accept</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gerrychain.optimization</span><span class="w"> </span><span class="kn">import</span> <span class="n">SingleMetricOptimizer</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">partial</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">geopandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gpd</span>
 
-<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
 <span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">2024</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -273,9 +279,9 @@ to fix that.</p>
 <span class="go">&#39;TOTPOP&#39;: 1171}</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="using-singlemetricoptimizer">
-<h2>Using <code class="docutils literal notranslate"><span class="pre">SingleMetricOptimizer</span></code><a class="headerlink" href="#using-singlemetricoptimizer" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="using-singlemetricoptimizer">
+<h2>Using <code class="docutils literal notranslate"><span class="pre">SingleMetricOptimizer</span></code><a class="headerlink" href="#using-singlemetricoptimizer" title="Link to this heading"></a></h2>
 <p>There is a <code class="docutils literal notranslate"><span class="pre">polsby_popper</span></code> updater in GerryChain, but you need to make sure that the
 CRS for your data is correct before you use it. If is is not, then you can run into some issues with
 distortion of the geometry. However, we already checked that our CRS is appropriate in this
@@ -326,8 +332,8 @@ of a regular <code class="docutils literal notranslate"><span class="pre">Partit
 <span class="go">0.30465552990184624</span>
 </pre></div>
 </div>
-</div>
-</div>
+</section>
+</section>
 
 
            </div>
