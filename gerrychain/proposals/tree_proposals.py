@@ -92,7 +92,6 @@ def recom(
     :type method: Callable, optional
 
     :returns: The new partition resulting from the ReCom algorithm.
-        print("bipartition_tree: updating restarts and attempts")
     :rtype: Partition
     """
 
@@ -277,6 +276,14 @@ def reversible_recom(
     # so eventually, if it is possible, the chain will get started, but it seems like there
     # should be some kind of check to see if it doesn't ever get started, so that the
     # user can have a clue about what is going on...
+    #
+    # Peter said (in December 2025): The long and the short of why we have all of
+    # these weird conditions here is because Reversible ReCom targets the spanning
+    # tree distribution. By modifying how the acceptance of partituclar partitioning
+    # schemes is handled, we are able to sample exactly from that distribution
+    # rather than an approximation of it like we do in regular ReCom.
+    #
+    # So maybe this is really just a documentation issue now...
 
     edge = random.choice(list(pair_edges))
     parts_to_merge = (

@@ -296,6 +296,15 @@ def test_subgraph(four_by_five_graph_rx):
     in the gerrychain codebase is on RX based Graph objects.
     """
 
+    # frm: TODO: Testing: Peter suggested adding a "fuzzed" version of this.
+    #
+    # Here is what he said:
+    #
+    # We should probably add a fuzzed version of this where we do a random 
+    # connected graph on 1000 nodes and then take random subgraphs of random 
+    # size (say with between 100 and 200 nodes) and then repeat a few times.
+
+
     # Create a subgraph for an arbitrary set of nodes:
     subgraph_node_ids = [2, 4, 5, 8, 11, 13]
     parent_graph_rx = four_by_five_graph_rx  # make the code below clearer

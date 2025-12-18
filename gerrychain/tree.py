@@ -134,7 +134,8 @@ def random_spanning_tree(graph: Graph, region_surcharge: Optional[Dict] = None) 
     :returns: The maximal spanning tree represented as a GerryChain Graph.
     :rtype: Graph
     """
-    # frm: TODO: Performance
+    # frm: TODO: Performance: random_spanning_tree()
+    #
     #           This seems to me to be an expensive way to build a random spanning
     #           tree.  It calls a routine to compute a "minimal" spanning tree that
     #           computes the total "weight" of the spanning tree and selects the
