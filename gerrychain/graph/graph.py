@@ -137,8 +137,6 @@ class Graph:
     @classmethod
     def from_rustworkx(cls, rx_graph: rustworkx.PyGraph) -> "Graph":
         """
-        <Overview text for what the function does>
-
         Create a :class:`Graph` from a RustworkX.PyGraph object
 
         There are three primary use cases for this routine:
@@ -223,7 +221,7 @@ class Graph:
         graph._nx_graph = None
         graph._is_a_subgraph = False  # See comments on RX subgraph issues.
 
-        # frm: TODO: Documentation: from_rustworkx(): Make these comments more coherent
+        # frm: * TODO: Documentation: from_rustworkx(): Make these comments more coherent
         #
         # Instead of these very specific comments, just say that at this
         # point, we don't know whether the graph is derived from NX, is a
@@ -542,7 +540,7 @@ class Graph:
                 # In the future, it might become useful for other reasons, but until then
                 # to guard against careless uses, the code will insist that it not be a subgraph.
 
-                # frm: TODO: Documentation:  Add a comment about the intended use of this routine
+                # frm: * TODO: Documentation:  Add a comment about the intended use of this routine
                 # to its overview comment above.
                 raise Exception("convert_from_nx_to_rx(): graph to be converted is a subgraph")
 
@@ -614,12 +612,13 @@ class Graph:
         Create a :class:`Graph` from a JSON file
 
         :param json_file_name: JSON file
-            # frm: TODO: Documentation: more detail on contents of JSON file needed here
         :type json_file_name: str
 
         :returns: A GerryChain Graph object with data from JSON file
         :rtype: "Graph"
         """
+
+        # frm: TODO: Documentation: more detail on contents of JSON file needed above in docstrings
 
         # Note that this returns an NX-based Graph object.  At some point in
         # the future, if we embrace an all RX world, it will make sense to
@@ -712,7 +711,7 @@ class Graph:
             reproject=reproject,
             ignore_errors=ignore_errors,
         )
-        # frm: TODO: Documentation: Make it clear that this creates an NX-based
+        # frm: * TODO: Documentation: Make it clear that this creates an NX-based
         #               Graph object.
         #
         #               Also add some documentation (here or elsewhere)
@@ -835,7 +834,7 @@ class Graph:
 
         nx_graph = networkx.Graph(adjacencies)
 
-        # frm: TODO: Documentation:  Document what geometry is used for.
+        # frm: * TODO: Documentation:  Document what geometry is used for.
         #
         #               Need to grok what geometry is used for - it is used in partition.py.plot()
         #               and maybe that is the only place it is used, but it is also used below
@@ -930,15 +929,6 @@ class Graph:
         """
         self.verify_graph_is_valid()
 
-        # frm: TODO: Refactoring:  node_indices() does the same thing that graph.nodes does
-        # - returning a list of node_ids.
-        #               Do we really want to support two ways of doing the same thing?
-        # Actually this returns a set rather than a list - not sure that matters though...
-        #
-        # My code uses node_indices() to make it clear we are talking about node_ids...
-        #
-        # The question is whether to deprecate nodes()...
-
         if self.is_rx_graph():
             return set(self._rx_graph.node_indices())
         elif self.is_nx_graph():
@@ -991,10 +981,6 @@ class Graph:
 
         if self.is_rx_graph():
             # In RX, we need to go get the edge tuple
-            # frm: TODO: Performance - use get_edge_endpoints_by_index() to get edge
-            #
-            # The original RX code (before October 27, 2025):
-            #     return self._rx_graph.edge_list()[edge_id]
             endpoints = self._rx_graph.get_edge_endpoints_by_index(edge_id)
             return (endpoints[0], endpoints[1])
         elif self.is_nx_graph():
@@ -1102,25 +1088,6 @@ class Graph:
         :returns: A list of all of the node_ids in the graph
         :rtype: list[Any]
         """
-
-        # frm: TODO: Documentation:  Warn users in Migration Guide that nodes() has gone away
-        #
-        # Since the legacy code implemented a GerryChain Graph as a subclass of NetworkX.Graph
-        # legacy code could take advantage of NX cleverness - NX returns a NodeView object for
-        # nx_graph.nodes which supports much more than just a list of node_ids (which is all that
-        # code below does).
-        #
-        # Probably the most common use of nx_graph.nodes was to access node data as in:
-        #
-        #    nx_graph.nodes[node_id][<dict_key_for_attribute_value>]
-        #
-        # In the new world, to do that you need to do:
-        #
-        #    graph.node_data(node_id)[<dict_key_for_attribute_value>]
-        #
-        # So, almost the same number of keystrokes, but if a legacy user uses nodes[...] the
-        # old way, it won't work out well.
-        #
 
         # frm: TODO: Refactoring: Think about whether to do away entirely with graph.nodes
         #
@@ -1316,17 +1283,25 @@ class Graph:
         return set(node_id for node_id in self.node_indices if self.degree(node_id) == 0)
 
     def is_directed(self) -> bool:
-        # frm TODO: Code:   Delete this code: graph.is_directed() once convinced it is safe to
+        """
+        Returns False, because GerryChain graphs are not directed.
+
+        This is used by low level routines that can operate on both directed
+        and un-directed graphs, that is, it exists so that we can use
+        off-the-shelf code that needs to know if the graph is directed or not.
+
+        :return: False
+        :rtype: bool
+        """
+        # frm * TODO: Code:   Delete this code: graph.is_directed() once convinced it is safe to
         # do so...
         #
-        # I added it because code in contiguity.py
-        # called nx.is_connected() which eventually called is_directed()
-        # assuming the graph was an nx_graph.
+        # Not quite sure what the problem is, but when I changed this to raise an
+        # exception, that is what it did.  It appeared that it was being called from
+        # RX code, which makes no sense.  So, there is some sleuthing to be done...
         #
-        # Changing from return False to raising an exception just to make
-        # sure nobody uses it.
 
-        raise NotImplementedError("graph.is_directed() should not be used")
+        return False
 
     def warn_for_islands(self) -> None:
         """
@@ -1368,7 +1343,7 @@ class Graph:
         :returns: ...text...
         :rtype: <type>
         """
-        # frm: TODO: Code: Get rid of _getattr_ eventually - it is very dangerous...
+        # frm: * TODO: Code: Get rid of _getattr_ eventually - it is very dangerous...
 
         # frm: Interesting bug lurking if __name is "nx_graph".  This occurs when legacy code
         #       uses the default constructor, Graph(), and then references a built-in NX
@@ -1390,7 +1365,7 @@ class Graph:
         # It's very, very rare to use the default constructor, so I don't imagine that
         # people will really run into this.
 
-        # frm: TODO: Code: Fix this hack (in __getattr__) - see comment above...
+        # frm: * TODO: Code: Fix this hack (in __getattr__) - see comment above...
         if (__name == "_nx_graph") or (__name == "_rx_graph"):
             return None
 
@@ -1417,7 +1392,7 @@ class Graph:
         :returns: ...text...
         :rtype: <type>
         """
-        # frm: TODO: Code: Does any of the code actually use __getitem__ ?
+        # frm: * TODO: Code: Does any of the code actually use __getitem__ ?
         #
         #           It is a clever Python way to use square bracket
         #           notation to access something (anything) you want.
@@ -1436,7 +1411,7 @@ class Graph:
         self.verify_graph_is_valid()
 
         if self.is_rx_graph():
-            # frm TODO: Code: Decide if __getitem__() should work for RX
+            # frm * TODO: Code: Decide if __getitem__() should work for RX
             raise TypeError("Graph._getitem__() is not defined for a rustworkx graph")
         elif self.is_nx_graph():
             return self._nx_graph[__name]
@@ -1620,7 +1595,7 @@ class Graph:
         :rtype: dict[Any, int]
         """
 
-        # frm: TODO: Documentation: Write an overall comment on subgraphs and node_id maps
+        # frm: * TODO: Documentation: Write an overall comment on subgraphs and node_id maps
 
         translated_flips = {}
         for subgraph_node_id, part in flips.items():
@@ -1656,25 +1631,35 @@ class Graph:
             translated_set_of_nodes.add(self._node_id_to_parent_node_id_map[node_id])
         return translated_set_of_nodes
 
-    def generic_bfs_edges(
-        self, source, neighbors=None, depth_limit=None
-    ) -> Generator[tuple[Any, Any], None, None]:
+    def _generic_bfs_edges(self, source) -> Generator[tuple[Any, Any], None, None]:
         """
-        <Overview text for what the function does>
+        Yields a tuple of node_ids: (parent_node_id, child_node_id) that is the
+        next parent/child pair in a breadth-first search of the graph, with
+        a root node specified by the "source" node_id.
 
-        :param <param_name>: ...text...
-            ...more text...
-        :type <param_name>: <type>
+        :param source: The node_id of the first "parent" node - the starting
+            node for the breadth first search
+        :type source: Any
 
-        :returns: ...text...
-        :rtype: <type>
+        :returns: The next parent/child pair in a depth first traversal of the
+            given graph, starting at the "source" node
+        :rtype: Generator[tuple[Any, Any], None, None]
         """
-        # frm: Code copied from GitHub:
+
+        # frm: * TODO: Documentation: Verify above docstrings
+        #
+        # Check syntax for docstrings for optional params and for function params
+        #
+
+        # The code below was copied from GitHub:
         #
         #  https://github.com/networkx/networkx/blob/main/networkx/algorithms/traversal/breadth_first_search.py
         #
         #       Code was not modified - it worked as written for both rx.PyGraph and a graph.Graph object
         #       with an RX graph embedded in it...
+        #
+        #       The only changes was getting rid of the optional parameters in the NX function for
+        #       the neighbors function and the depth_limit - since the GerryChain code does not need them.
 
         """Iterate over edges in a breadth-first search.
 
@@ -1740,11 +1725,10 @@ class Graph:
         .. _PADS: http://www.ics.uci.edu/~eppstein/PADS/BFS.py
         .. _Depth-limited-search: https://en.wikipedia.org/wiki/Depth-limited_search
         """
-        # frm: These two if-stmts work for both rx.PyGraph and gerrychain.Graph with RX inside
-        if neighbors is None:
-            neighbors = self.neighbors
-        if depth_limit is None:
-            depth_limit = len(self)
+
+        # Original NX code passed these in as optional parameters...
+        neighbors = self.neighbors
+        depth_limit = len(self)
 
         seen = {source}
         n = len(self)
@@ -1765,26 +1749,28 @@ class Graph:
                     return
             depth += 1
 
-    # frm: TODO: Testing:  Add tests for all of the new routines I have added...
-
     def generic_bfs_successors_generator(
         self, root_node_id: Any
-    ) -> Generator[tuple[Any, Any], None, None]:
+    ) -> Generator[tuple[Any, list[Any]], None, None]:
         """
-        <Overview text for what the function does>
+        Does a breadth-first traversal of the given graph, starting at the
+        node specified by "root_node_id", and yields (in breadth-first
+        order) a tuple consisting of each of the nodes traversed along
+        with the children of that node.
 
-        :param <param_name>: ...text...
-            ...more text...
-        :type <param_name>: <type>
+        :param root_node_id: The node_id for the node to use to start
+            the BFS traversal
+        :type root_node_id: Any
 
-        :returns: ...text...
-        :rtype: <type>
+        :returns: Yields tuple (parent, children) of graph in breadth-first
+            order, with the first parent specified by the "root_node_id"
+        :rtype: Generator[tuple[Any, list[Any]], None, None]:
         """
         # frm: Generate in sequence a tuple for the parent (node_id) and
         #       the children of that node (list of node_ids).
         parent = root_node_id
         children = []
-        for p, c in self.generic_bfs_edges(root_node_id):
+        for p, c in self._generic_bfs_edges(root_node_id):
             # frm: parent-child pairs appear ordered by their parent, so
             #       we can collect all of the children for a node by just
             #       iterating through pairs until the parent changes.
@@ -1799,16 +1785,20 @@ class Graph:
             parent = p
         yield (parent, children)
 
-    def generic_bfs_successors(self, root_node_id: Any) -> dict[Any:Any]:
+    def generic_bfs_successors(self, root_node_id: Any) -> dict[Any : list[Any]]:
         """
-        <Overview text for what the function does>
+        Does a breadth-first traversal of the given graph, starting at the
+        node specified by "root_node_id", and returns a dict mapping parent
+        node_ids to a list of the node_ids for that node's children.
 
-        :param <param_name>: ...text...
-            ...more text...
-        :type <param_name>: <type>
+        :param root_node_id: The node_id for the node to use to start
+            the BFS traversal
+        :type root_node_id: Any
 
-        :returns: ...text...
-        :rtype: <type>
+        :returns: A dict mapping parent node_ids to a list of the node_ids
+            for that node's children.
+
+        :rtype: dict[Any: list[Any]]
         """
         return dict(self.generic_bfs_successors_generator(root_node_id))
 
@@ -1826,7 +1816,7 @@ class Graph:
         # frm Note:  We had do implement our own, because the built-in RX version only worked
         #               for directed graphs.
         predecessors = []
-        for s, t in self.generic_bfs_edges(root_node_id):
+        for s, t in self._generic_bfs_edges(root_node_id):
             predecessors.append((t, s))
         return dict(predecessors)
 
@@ -2049,7 +2039,8 @@ class Graph:
 
         return data_dict
 
-    # frm: TODO: Documentation: Note:  I added the laplacian_matrix routines as methods of the Graph
+    # frm: * TODO: Documentation: Note:  Add brief comment in both laplacian
+    #               functions that I added them as methods of the Graph
     #               class because they are only ever used on Graph objects.  It
     #               bloats the Graph class, but it still seems like the best
     #               option.
@@ -2168,7 +2159,7 @@ class Graph:
 
             """
 
-            # frm: TODO:  Get someone to validate that this in fact does the right thing.
+            # frm: * TODO:  Get someone to validate that this in fact does the right thing.
             #
             # The one test, test_proposal_returns_a_partition[spectral_recom], in test_proposals.py
             # that uses normalized_laplacian_matrix() now passes, but it is for a small 6x6 graph
@@ -2334,7 +2325,9 @@ def add_boundary_perimeters(nx_graph: networkx.Graph, geometries: pd.Series) -> 
     # frm: TODO: add_boundary_perimeters(): Think about whether it is reasonable to require this
     # to work on an NetworkX.Graph object.
 
-    # frm: The original code operated on the Graph object which was a subclass of
+    # frm: * TODO: Documentation:  Add this to the docstring:
+    #
+    #       The original code operated on the Graph object which was a subclass of
     #       NetworkX.Graph.  I have changed it to operate on a NetworkX.Graph object
     #       with the understanding that callers will reach down into a Graph object
     #       and pass in the inner nx_graph data member.

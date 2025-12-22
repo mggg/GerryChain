@@ -47,7 +47,7 @@ def _are_reachable(graph: Graph, start_node: Any, avoid: Callable, targets: Any)
         It should take in three parameters: the start node, the end node, and
         the edges to avoid. It should return True if the edge should be avoided,
         False otherwise.
-        # frm: TODO: Documentation:  Fix the comment above about the "avoid" function parameter.
+        # frm: * TODO: Documentation:  Fix the comment above about the "avoid" function parameter.
         #               It may have once been accurate, but the original code below
         #               passed parameters to it of (node_id, neighbor_node_id, edge_data_dict)
         #               from NetworkX.Graph._succ  So, "the edges to avoid" above is wrong.

@@ -104,21 +104,8 @@ from .graph import Graph
 # Note Peter agrees with this...
 
 
-# frm TODO: Documentation: Update function param docmentation to get rid of nx.Graph and use
+# frm * TODO: Documentation: Update function param docmentation to get rid of nx.Graph and use
 #     just Graph
-
-# frm TODO: Documentation: Migration Guide: tree.py is no longer a general purpose module - it is
-#     GerryChain specific
-#
-# Before the work to integrate RX, many of the routines ij tree.py
-# operated on NetworkX Graph objects, which meant that the module
-# was not bound to just GerryChain work - someone could conceivably
-# have used it for a graph oriented project that had nothing to do
-# with GerryChain or redistricting.
-#
-# That is no lnoger true, as the parameters to the routines have
-# been changed to be GerryChain Graph objects which are not subclasses
-# of NetworkX Graph objects.
 
 
 def random_spanning_tree(graph: Graph, region_surcharge: Optional[Dict] = None) -> Graph:
@@ -165,7 +152,7 @@ def random_spanning_tree(graph: Graph, region_surcharge: Optional[Dict] = None) 
     node_ids for this function and all will be well...
     """
 
-    # frm: TODO: Refactoring: WTF is up with region_surcharge being unset?  The region_surcharge
+    # frm: * TODO: Refactoring: What is up with region_surcharge being unset?  The region_surcharge
     #               is only ever accessed in this routine in the for-loop below to
     #               increase the weight on the edge - setting it to be an empty dict
     #               just prevents the code below from blowing up.  Why not just put
@@ -225,7 +212,7 @@ def random_spanning_tree(graph: Graph, region_surcharge: Optional[Dict] = None) 
     # spanning_tree algorithm to select other edges... which would have
     # the effect of prioritizing keeping regions intact.
 
-    # frm: TODO: Documentation:  Verify that the comment above about region_surcharge is accurate
+    # frm: * TODO: Documentation:  Verify that the comment above about region_surcharge is accurate
 
     # Add random weights to the edges in the graph so that the spanning tree
     # algorithm will select a different spanning tree each time.
@@ -249,16 +236,7 @@ def random_spanning_tree(graph: Graph, region_surcharge: Optional[Dict] = None) 
 
         graph.edge_data(edge_id)["random_weight"] = weight
 
-    # frm: TODO: Refactoring: Code: CROCK: (for the moment)
-    #               We need to create a minimum spanning tree but the way to do so
-    #               is different for NX and RX.  I am sure that there is a more elegant
-    #               way to do this, and in any event, this dependence on NX vs RX
-    #               should not be in this file, tree.py, but for now, I am just trying
-    #               to get this to work, so I am using CROCKS...
-
     graph.verify_graph_is_valid()
-
-    # frm: TODO: Refactoring:  Remove NX / RX dependency - maybe move to graph.py
 
     # frm: TODO: Documentation:  Think a bit about original_nx_node_ids
     #
@@ -269,6 +247,13 @@ def random_spanning_tree(graph: Graph, region_surcharge: Optional[Dict] = None) 
     # probably OK, but it depends on how the spanning tree is used elsewhere.
     #
     # In short, worth some thought...
+
+    # frm: TODO: Refactoring: Code: Eliminate NX dependence in tree.py
+    #
+    # Create a routine in graph.py to compute a minimum spanning tree
+    # and then use that routine here.
+    #
+    # Note that the RX version is *much* faster
 
     if graph.is_nx_graph():
         nx_graph = graph.get_nx_graph()
@@ -356,14 +341,12 @@ def uniform_spanning_tree(graph: Graph, choice: Callable = random.choice) -> Gra
     return G
 
 
-# frm TODO: Documentation: PopulatedGraph - state that this only exists in tree.py
+# frm TODO: Documentation: PopulatedGraph
 #
-# I think that this is only ever used inside this module (except)
-# for testing.
+# State what the purpose of this class is in the docstring comment below.
 #
-# Decide if this is intended to only ever be used inside tree.py (and for testing),
-# and if so: 1) document that fact and 2) see if there is any Pythonic convention
-# for a class that is intended to NOT be used externally (like a leading underscore)
+# It is only ever used inside this module (except) for testing.  If that is so, then
+# change the name to have a leading underscore.
 #
 class PopulatedGraph:
     """
@@ -811,7 +794,7 @@ def find_balanced_edge_cuts_memoization(
 
         return cuts
 
-    # frm: TODO: Refactoring: this code to make its two use cases clearer:
+    # frm: TODO: Refactoring: Change this code to make its two use cases clearer:
     #
     # One use case is bisecting the graph (one_sided_cut is False).  The
     # other use case is to peel off one part (district) with the appropriate
@@ -1169,13 +1152,6 @@ def bipartition_tree(
         for node_id in subgraph_to_split.node_indices
     }
 
-    # frm: TODO: Debugging: Remove debugging code
-    # print(" ")
-    # print(f"bipartition_tree(): Entering...")
-    # print(f"bipartition_tree(): balance_edge_fn is: {balance_edge_fn}")
-    # print(f"bipartition_tree(): spanning_tree_fn is: {spanning_tree_fn}")
-    # print(f"bipartition_tree(): populations in subgraph are: {populations}")
-
     possible_cuts: List[Cut] = []
     if spanning_tree is None:
         spanning_tree = spanning_tree_fn(subgraph_to_split)
@@ -1233,9 +1209,6 @@ def bipartition_tree(
         # This returns a list of Cut objects with attributes edge and subset
         possible_cuts = balance_edge_fn(h, choice=choice)
 
-        # frm: TODO: Debugging: Remove debugging code below
-        # print(f"bipartition_tree(): possible_cuts = {possible_cuts}")
-
         # frm: RX Subgraph
         if len(possible_cuts) != 0:
             chosen_cut = None
@@ -1246,7 +1219,6 @@ def bipartition_tree(
             translated_nodes = subgraph_to_split.translate_subgraph_node_ids_for_set_of_nodes(
                 chosen_cut.subset
             )
-            # print(f"bipartition_tree(): translated_nodes = {translated_nodes}")
             # frm: Not sure if it is important that the returned set be a frozenset...
             return frozenset(translated_nodes)
 
@@ -1294,7 +1266,7 @@ def _bipartition_tree_random_all(
     max_attempts: Optional[int] = 100000,
 ) -> List[
     Tuple[Hashable, Hashable]
-]:  # frm: TODO: Documentation: Change this to be a set of node_ids (ints)
+]:  # frm: * TODO: Documentation: Change this to be a set of node_ids (ints)
     """
     Randomly bipartitions a tree into two subgraphs until a valid bipartition is found.
 
@@ -1478,7 +1450,7 @@ def bipartition_tree_random_with_num_cuts(
 
 
 #######################
-# frm TODO:  Testing: Check to make sure there is a test for this...
+# frm * TODO:  Testing: Check to make sure there is a test for this...
 def bipartition_tree_random(
     subgraph_to_split: Graph,
     pop_col: str,
@@ -2041,7 +2013,7 @@ def _recursive_seed_part_inner(
     Returns a partition with ``num_dists`` districts balanced within ``epsilon`` of
     ``pop_target``.
 
-    frm: TODO: Documentation:     Correct the above statement that this function returns a
+    frm: * TODO: Documentation:     Correct the above statement that this function returns a
                         partition. In fact, it returns a list of sets of nodes, which is
                         conceptually equivalent to a partition, but is not a Partition object.
                         Each set of nodes constitutes a district, but the district does not
@@ -2064,7 +2036,7 @@ def _recursive_seed_part_inner(
     this function bites off a single district from the graph and recursively partitions
     the remaining graph into ``num_dists - 1`` districts.
 
-    frm: ???:   OK, but why is the logic above for num_chunks the correct number?  Is there
+    frm: * TODO: ???:   OK, but why is the logic above for num_chunks the correct number?  Is there
                 a mathematical reason for it?  I assume so, but that explanation is missing...
 
                 I presume that the reason is that something in the code that finds a
@@ -2209,7 +2181,7 @@ def _recursive_seed_part_inner(
         )
 
     # split graph into num_chunks chunks, and recurse into each chunk
-    # frm: TODO: Documentation: Add documentation for why a subgraph in call below
+    # frm: * TODO: Documentation: Add documentation for why a subgraph in call below
     elif num_dists % num_chunks == 0:
         chunks = _get_seed_chunks(
             graph.subgraph(graph.node_indices),  # needs to be a subgraph

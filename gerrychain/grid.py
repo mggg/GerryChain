@@ -30,7 +30,7 @@ from gerrychain.updaters import (
     perimeter,
 )
 
-# frm TODO: Documentation: Clarify what purpose grid.py serves.
+# frm: * TODO: Documentation: Clarify what purpose grid.py serves.
 #
 # It is a convenience module to help users create toy graphs.  It leverages
 # NX to create graphs, but it returns new Graph objects.  So, legacy user
@@ -72,7 +72,7 @@ class Grid(Partition):
         assignment: Optional[Dict] = None,
         updaters: Optional[Dict[str, Callable]] = None,
         parent: Optional["Grid"] = None,
-        # frm: ???: TODO:  This code indicates that flips are a dict of tuple: int which would be
+        # frm: ???: * TODO:  This code indicates that flips are a dict of tuple: int which would be
         #                   correct for edge flips, but not for node flips.  Need to check again
         #                   to see if this is correct.  Note that flips is used in the constructor
         #                   so it should fall through to Partition._from_parent()...
@@ -124,7 +124,7 @@ class Grid(Partition):
 
         if dimensions:
             self.dimensions = dimensions
-            graph = Graph.from_networkx(_create_grid_nx_graph(dimensions, with_diagonals))
+            graph = _create_grid_nx_graph(dimensions, with_diagonals)
 
             if not assignment:
                 thresholds = tuple(math.floor(n / 2) for n in self.dimensions)
@@ -209,29 +209,16 @@ def _create_grid_nx_graph(dimensions: Tuple[int, ...], with_diagonals: bool) -> 
         nw_to_se = [((i, j), (i + 1, j + 1)) for i in range(m - 1) for j in range(n - 1)]
         sw_to_ne = [((i, j + 1), (i + 1, j)) for i in range(m - 1) for j in range(n - 1)]
         diagonal_edges = nw_to_se + sw_to_ne
-        # frm: TODO: Check that graph is an NX graph before calling graph.add_edges_from().
-        #      Eventually make this work for RX too...
         nx_graph.add_edges_from(diagonal_edges)
         for edge in diagonal_edges:
-            # frm: TODO:  When/if grid.py is converted to operate on GerryChain Graph
-            #               objects instead of NX.Graph objects, this use of NX
-            #               EdgeView to get/set edge data will need to change to use
-            #               gerrychain_graph.edge_data()
-            #
-            #               We will also need to think about edge vs edge_id.  In this
-            #               case we want an edge_id, so that means we need to look at
-            #               how diagonal_edges are created - but that is for the future...
             nx_graph.edges[edge]["shared_perim"] = 0
 
-    # frm: These just set all nodes/edges in the graph to have the given attributes with a value
-    # of 1
-    # frm: TODO: These won't work for the new graph, and they won't work for RX
     networkx.set_node_attributes(nx_graph, 1, "population")
     networkx.set_node_attributes(nx_graph, 1, "area")
 
     _tag_boundary_nodes(nx_graph, dimensions)
 
-    return nx_graph
+    return Graph.from_networkx(nx_graph)
 
 
 # frm ???:  Why is this here instead of in graph.py?  Who is it intended for?

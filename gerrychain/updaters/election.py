@@ -122,7 +122,7 @@ class Election:
                 "Election expects party_names_to_node_attribute_names to be a dict or list"
             )
 
-        # frm: TODO: Documentation: Migration: Using node_ids to vote tally maps...
+        # frm: * TODO: Documentation: Migration: Using node_ids to vote tally maps...
         #
         # A DataTally used to support a first parameter that was either a string
         # or a dict.

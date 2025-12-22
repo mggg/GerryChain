@@ -4,6 +4,7 @@ PYTHON_VERSION = 3.11
 VENV_DIR ?= .venv
 PKG ?= gerrychain
 TEST_PATHS ?= tests
+export UV_MANAGED_PYTHON = 1
 
 .PHONY: help setup install install-docs test lint format precommit docs clean
 
