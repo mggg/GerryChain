@@ -65,16 +65,14 @@ import warnings
 from collections import deque, namedtuple
 from functools import partial
 from inspect import signature
-from typing import (
+from typing import (  # Hashable,; Tuple,
     Any,
     Callable,
     Dict,
-    Hashable,
     List,
     Optional,
     Sequence,
     Set,
-    Tuple,
     Union,
 )
 
@@ -102,10 +100,6 @@ from .graph import Graph
 #               into graph.py and to encapsulate the NX vs RX code there.
 #
 # Note Peter agrees with this...
-
-
-# frm * TODO: Documentation: Update function param docmentation to get rid of nx.Graph and use
-#     just Graph
 
 
 def random_spanning_tree(graph: Graph, region_surcharge: Optional[Dict] = None) -> Graph:
@@ -152,7 +146,7 @@ def random_spanning_tree(graph: Graph, region_surcharge: Optional[Dict] = None) 
     node_ids for this function and all will be well...
     """
 
-    # frm: * TODO: Refactoring: What is up with region_surcharge being unset?  The region_surcharge
+    # frm: TODO: Refactoring: What is up with region_surcharge being unset?  The region_surcharge
     #               is only ever accessed in this routine in the for-loop below to
     #               increase the weight on the edge - setting it to be an empty dict
     #               just prevents the code below from blowing up.  Why not just put
@@ -212,7 +206,7 @@ def random_spanning_tree(graph: Graph, region_surcharge: Optional[Dict] = None) 
     # spanning_tree algorithm to select other edges... which would have
     # the effect of prioritizing keeping regions intact.
 
-    # frm: * TODO: Documentation:  Verify that the comment above about region_surcharge is accurate
+    # frm: TODO: Documentation:  Verify that the comment above about region_surcharge is accurate
 
     # Add random weights to the edges in the graph so that the spanning tree
     # algorithm will select a different spanning tree each time.
@@ -1264,9 +1258,7 @@ def _bipartition_tree_random_all(
     balance_edge_fn: Callable = find_balanced_edge_cuts_memoization,
     choice: Callable = random.choice,
     max_attempts: Optional[int] = 100000,
-) -> List[
-    Tuple[Hashable, Hashable]
-]:  # frm: * TODO: Documentation: Change this to be a set of node_ids (ints)
+) -> List[Cut]:
     """
     Randomly bipartitions a tree into two subgraphs until a valid bipartition is found.
 
@@ -2010,19 +2002,18 @@ def _recursive_seed_part_inner(
 ) -> List[Set]:
     """
     Inner function for recursive_seed_part.
-    Returns a partition with ``num_dists`` districts balanced within ``epsilon`` of
-    ``pop_target``.
 
-    frm: * TODO: Documentation:     Correct the above statement that this function returns a
-                        partition. In fact, it returns a list of sets of nodes, which is
-                        conceptually equivalent to a partition, but is not a Partition object.
-                        Each set of nodes constitutes a district, but the district does not
-                        have an ID, and there is nothing that associates these nodes
-                        with a specific graph - that is implicit, depending on the graph
-                        object passed in, so the caller is responsible for knowing that
-                        the returned list of sets belongs to the graph passed in...
+    Returns a list of sets of nodes with ``num_dists`` districts balanced within
+    ``epsilon`` of ``pop_target``.
 
-    Splits graph into num_chunks chunks, and then recursively splits each chunk into
+    This list of sets of nodes is conceptually equivalent to a Partition object.
+    Each set of nodes constitutes a district, but the district does not
+    have an ID, and there is nothing that associates these nodes
+    with a specific graph - that is implicit, depending on the graph
+    object passed in, so the caller is responsible for knowing that
+    the returned list of sets belongs to the graph passed in...
+
+    It splits graph into num_chunks chunks, and then recursively splits each chunk into
     ``num_dists``/num_chunks chunks.
     The number num_chunks of chunks is chosen based on ``n`` and ``ceil`` as follows:
 
@@ -2035,13 +2026,6 @@ def _recursive_seed_part_inner(
     Finally, if the number of chunks as chosen above does not divide ``num_dists``, then
     this function bites off a single district from the graph and recursively partitions
     the remaining graph into ``num_dists - 1`` districts.
-
-    frm: * TODO: ???:   OK, but why is the logic above for num_chunks the correct number?  Is there
-                a mathematical reason for it?  I assume so, but that explanation is missing...
-
-                I presume that the reason is that something in the code that finds a
-                district scales exponentially, so it makes sense to divide and conquer.
-                Even so, why this particular strategy for divide and conquer?
 
     :param graph: The underlying graph structure.
     :type graph: Graph
@@ -2077,17 +2061,34 @@ def _recursive_seed_part_inner(
     """
 
     """
-    frm: This code is quite nice once you grok it.
+    frm: TODO: Documentation: _recursive_seed_part_inner() - clarify what this does
+
+    I started to update the documentation a while back, but didn't finish it.  I now
+    need to remember what I was going to write, but the mere fact that I need to
+    remember it is a good reason to write the documentation!
+
+
+
+    This code is quite nice once you grok it.
 
     The goal is to find the given number of districts - but to do it in an
     efficient way - meaning with smaller graphs.  So conceptually, you want
-    to
-    HERE
+    to...
 
     There are two base cases when the number of districts still to be found are
-    either 1 or
+    either 1 or...
 
+
+    Also - address this comment which I now do not grok:
+
+        OK, but why is the logic above for num_chunks the correct number?  Is there
+        a mathematical reason for it?  I assume so, but that explanation is missing...
+
+        I presume that the reason is that something in the code that finds a
+        district scales exponentially, so it makes sense to divide and conquer.
+        Even so, why this particular strategy for divide and conquer?
     """
+
     # Chooses num_chunks
     if n is None:
         if ceil is None:
