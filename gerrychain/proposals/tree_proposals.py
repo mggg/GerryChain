@@ -103,11 +103,21 @@ def recom(
     if "region_surcharge" in signature(method).parameters:
         method = partial(method, region_surcharge=region_surcharge)
 
+    # frm: TODO: Refactoring:  Should we sanity check region_surcharge usage?
+    #
+    # If the caller passed in a non-None value for region_surcharge, then presumably
+    # he/she should have also passed in a function for the "method" parameter that
+    # accepts a region_surcharge parameter.
+    #
+
     while len(bad_district_pairs) < tot_pairs:
-        # frm: In no particular order, try to merge and then split pairs of districts
-        #       that have a cut_edge - meaning that they are adjacent, until you either
-        #       find one that can be split, or you have tried all possible pairs
-        #       of adjacent districts...
+        # frm: TODO: Documentation: Confirm that this comment is accurate:
+        #
+        #  In no particular order, try to merge and then split pairs of districts
+        #  that have a cut_edge - meaning that they are adjacent, until you either
+        #  find one that can be split, or you have tried all possible pairs
+        #  of adjacent districts...
+        #
         try:
             # frm: TODO: Refactoring:  see if there is some way to avoid a while True loop...
             while True:
@@ -160,7 +170,7 @@ def reversible_recom(
     pop_target: Union[int, float],
     epsilon: float,
     balance_edge_fn: Callable = find_balanced_edge_cuts_memoization,
-    M: int = 1,
+    M: int = 1,  # frm: TODO: Documentation: WTF does 'M' stand for?
     repeat_until_valid: bool = False,
     choice: Callable = random.choice,
 ) -> Partition:
@@ -208,6 +218,17 @@ def reversible_recom(
             )
         )
 
+    # frm: TODO: Refactoring: Get rid of *args and **kwargs below.
+    #
+    # The reason for this hack is that the signatures for the different balance_edge_fn's
+    # are different, so the "bounded_balance_edge_fn" cannot know exactly what params
+    # make sense.  The *args, and **kwargs just allow it to ignorantly pass through whatever
+    # it gets, hoping that they make sense for the balance_edge_fun cal.
+    #
+    # The way out of this is to normalize the signatures for all balanced edge functions so
+    # that we know what the parameters are in all cases.  Then we can just use those
+    # canonical parameters below.
+
     def bounded_balance_edge_fn(*args, **kwargs):
         cuts = balance_edge_fn(*args, **kwargs)
         if len(cuts) > M:
@@ -215,34 +236,6 @@ def reversible_recom(
                 f"Found {len(cuts)} balance edges, " f"but the upper bound is {M}."
             )
         return cuts
-
-    """
-    frm: Original Code:
-
-    bipartition_tree_random_reversible = partial(
-        _bipartition_tree_random_all,
-        repeat_until_valid=repeat_until_valid,
-        spanning_tree_fn=uniform_spanning_tree,
-        balance_edge_fn=bounded_balance_edge_fn,
-    )
-
-    I deemed this code to be evil, if only because it used an internal tree.py routine
-    _bipartition_tree_random_all().  This internal routine returns a set of Cut objects
-    which otherwise never appear outside tree.py, so this just adds complexity.
-
-    The only reason the original code used _bipartition_tree_random_all() instead of just
-    using bipartition_tree_random() is that it needs to know how many possible new
-    districts there are.  So, I created a new function in tree.py that does EXACTLY
-    what bipartition_tree_random() does but which also returns the number of possible
-    new districts.
-
-    """
-    bipartition_tree_random_reversible = partial(
-        bipartition_tree_random_with_num_cuts,
-        repeat_until_valid=repeat_until_valid,
-        spanning_tree_fn=uniform_spanning_tree,
-        balance_edge_fn=bounded_balance_edge_fn,
-    )
 
     parts = sorted(list(partition.parts.keys()))
     dist_pairs = []
@@ -306,11 +299,14 @@ def reversible_recom(
     #               the subgraph's node_ids afterwards.
     #
 
-    result = bipartition_tree_random_reversible(
+    result = bipartition_tree_random_with_num_cuts(
         partition.graph.subgraph(subgraph_nodes),
         pop_col=pop_col,
         pop_target=pop_target,
         epsilon=epsilon,
+        repeat_until_valid=repeat_until_valid,
+        spanning_tree_fn=uniform_spanning_tree,
+        balance_edge_fn=bounded_balance_edge_fn,
     )
     if not result:
         return partition  # self-loop: no balance edge

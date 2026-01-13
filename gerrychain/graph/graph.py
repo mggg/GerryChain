@@ -118,8 +118,8 @@ class Graph:
             to be converted into a GerryChain Graph object.
         :type nx_graph: networkx.Graph
 
-        :returns: ...text...
-        :rtype: <type>
+        :returns: A Graph object embedding the given NetworkX Graph
+        :rtype: Graph
         """
         graph = cls()
         graph._nx_graph = nx_graph
@@ -137,6 +137,24 @@ class Graph:
             None  # only set when an NX based graph is converted to be an RX based graph
         )
         return graph
+
+    @classmethod
+    def from_null_networkx(cls) -> "Graph":
+        """
+        Create a :class:`Graph` that has an empty embedded NetworkX Graph
+
+        This was originally implemented as a way to encapsulate NetworkX
+        dependencies in GerryChain code to this module (graph.py).
+
+        It supports the use case of a user who wants to build a graph from scratch
+        without reference to NetworkX.
+
+        :returns: A Graph object with no nodes
+        :rtype: Graph
+        """
+
+        nx_graph = networkx.Graph()
+        return Graph.from_networkx(nx_graph)
 
     @classmethod
     def from_rustworkx(cls, rx_graph: rustworkx.PyGraph) -> "Graph":
@@ -1867,6 +1885,39 @@ class Graph:
                 "Graph passed to 'successors()' is neither "
                 "a networkx-based graph nor a rustworkx-based graph"
             )
+
+    def minimum_spanning_tree_from_edge_weight(self, edge_weight_attribute_name: str) -> "Graph":
+        """
+        Computes and returns the minimum spanning tree give the edge weights.
+
+        :param edge_weight_attribute_nanme: The name of the edge
+            attribute containing the weight of the edge
+        :type edge_weight_attribute_nanme: str
+
+        :returns: A Graph object containing the miniumum spanning tree given the edge weights.
+        :rtype: Graph
+        """
+
+        if self.is_nx_graph():
+            nx_graph = self.get_nx_graph()
+            spanning_tree = networkx.algorithms.tree.minimum_spanning_tree(
+                nx_graph, algorithm="kruskal", weight=edge_weight_attribute_name
+            )
+            spanning_graph = Graph.from_networkx(spanning_tree)
+        elif self.is_rx_graph():
+            rx_graph = self.get_rx_graph()
+
+            def get_weight(edge_data):
+                # function to get the weight of an edge from its data
+                # This function is passed a dict with the data for the edge.
+                return edge_data[edge_weight_attribute_name]
+
+            spanning_tree = rustworkx.minimum_spanning_tree(rx_graph, get_weight)
+            spanning_graph = Graph.from_rustworkx(spanning_tree)
+        else:
+            raise Exception("random_spanning_tree - bad kind of graph object")
+
+        return spanning_graph
 
     def neighbors(self, node_id: Any) -> list[Any]:
         """
