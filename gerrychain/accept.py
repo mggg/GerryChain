@@ -19,7 +19,7 @@ def always_accept(partition: Partition) -> bool:
 
 def cut_edge_accept(partition: Partition) -> bool:
     """
-    Always accepts the flip if the number of cut_edges increases.
+    Always accepts the flip if the number of cut_edges decreases.
     Otherwise, uses the Metropolis criterion to decide.
 
     :param partition: The current partition to accept a flip from.
