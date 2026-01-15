@@ -66,8 +66,8 @@ class Graph:
     additions specific to GerryChain.  It was created initially to represent geographical
     data (such as voting precincts) that would support the creation of voting district
     plans, but it can be used for general graph operations.  For a more detailed
-    description of the kinds of operations this class supports, please Google
-    NetworkX.
+    description of the kinds of operations this class supports, please refer to
+    the NetworkX documentation (https://networkx.org/documentation/stable/)
 
     Note that this class encapsulates / wraps an underlying graph object which can either be a
     NetworkX graph or a RustworkX graph.  The intent is that this class provides the same
