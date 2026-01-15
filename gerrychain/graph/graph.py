@@ -2059,8 +2059,9 @@ class Graph:
         """
         Return a SciPy sparse array containing the Laplacian matrix for the given graph.
 
-        Details on what the Laplacian matrix is can be found online - for instance there
-        is a Wikipedia article on it.
+        For more details on the Graph Laplacian matrix, please refer to
+        - https://fanchung.ucsd.edu/research/cb/ch1.pdf 
+        - https://en.wikipedia.org/wiki/Laplacian_matrix
 
         :returns: A SciPy sparse array containing the Laplacian matrix
         :rtype: scipy.sparse.csr_array
