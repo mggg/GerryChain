@@ -1600,7 +1600,7 @@ class Graph:
         :rtype: Generator[tuple[Any, Any], None, None]
         """
 
-        # The code below was copied from GitHub:
+        # The code below was copied from GitHub and is under the 3-clause BSD license:
         #
         #  https://github.com/networkx/networkx/blob/main/networkx/algorithms/traversal/breadth_first_search.py
         #
