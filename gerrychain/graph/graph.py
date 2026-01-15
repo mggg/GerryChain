@@ -2105,9 +2105,9 @@ class Graph:
         Return a SciPy sparse array containing the normalized Laplacian
         matrix for the given graph.
 
-        Details on what the normalized Laplacian matrix is can be found
-        online - for instance there is a Wikipedia article on it (included
-        as part of the description of the "Laplacian matrix")
+        For more details on the normalized Graph Laplacian matrix, please refer to
+        - https://fanchung.ucsd.edu/research/cb/ch1.pdf 
+        - https://en.wikipedia.org/wiki/Laplacian_matrix#Laplacian_matrix_normalization_2
 
         :returns: A SciPy sparse diagonal array containing the Laplacian matrix
         :rtype: scipy.sparse.dia_array
