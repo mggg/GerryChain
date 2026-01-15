@@ -16,7 +16,7 @@ from ..updaters import compute_edge_flows, cut_edges, flows_from_changes
 from .assignment import get_assignment
 from .subgraphs import SubgraphView
 
-# frm TODO: Documentation:     Add documentation about how this all works.  For instance,
+# frm * TODO: Documentation:     Add documentation about how this all works.  For instance,
 #               what is computationally expensive and how does a FrozenGraph
 #               help?  Why do we need both assignments and parts?
 #
@@ -131,7 +131,6 @@ class Partition:
         :returns: The partition created with a random assignment
         :rtype: Partition
         """
-        # frm: TODO: BUG:  The param, flips, is never used in this routine...
 
         total_pop = sum(graph.node_data(n)[pop_col] for n in graph)
         ideal_pop = total_pop / n_parts
@@ -165,7 +164,7 @@ class Partition:
         # convert to RX - both for legacy compatibility, but also because NX provides
         # a really nice and easy way to create graphs.
         #
-        # TODO: Documentation: update the documentation
+        # * TODO: Documentation: update the documentation
         # to describe the use case of creating a graph using NX.  That documentation
         # should also describe how to post-process results of a MarkovChain run
         # but I haven't figured that out yet...
@@ -176,13 +175,17 @@ class Partition:
 
         # if a Graph object, make sure it is based on an embedded RustworkX.PyGraph
         if isinstance(graph, Graph):
-            # frm: TODO: Performance: Remove this short-term hack to do performance testing
+
+            # Performance Testing:  In order to compare the performance of
+            # RustworkX vs NetworkX, we enable using an NX-based Graph in a partition
+            # by setting the variable, test_performance_using_NX_graph, to be True.
+            # This allows us to run a test with NX and then again with RX in order
+            # to compare the results.
             #
-            # This "test_performance_using_NX_graph" hack just forces the partition
-            # to NOT convert the NX graph to be RX based.  This allows me to
-            # compare RX performance to NX performance with the same code - so that
-            # whatever is different is crystal clear.
+            # RustworkX is much faster, so the default value is False.
+            #
             test_performance_using_NX_graph = False
+
             if (graph.is_nx_graph()) and test_performance_using_NX_graph:
                 self.assignment = get_assignment(assignment, graph)
                 print("=====================================================")
@@ -272,7 +275,7 @@ class Partition:
     def __len__(self):
         return len(self.parts)
 
-    def flip(self, flips: Dict, use_original_nx_node_ids=False) -> "Partition":
+    def flip(self, flips: Dict, flips_passed_in_use_original_nx_node_ids=False) -> "Partition":
         """
         Returns the new partition obtained by performing the given `flips`
         on this partition.
@@ -282,8 +285,8 @@ class Partition:
         :rtype: Partition
         """
 
-        # frm: TODO: Documentation: Change comments above to document new optional parameter,
-        # use_original_nx_node_ids.
+        # frm: * TODO: Documentation: Change comments above to document new optional parameter,
+        # flips_passed_in_use_original_nx_node_ids.
         #
         # This is a new issue that arises from the fact that node_ids in RX are different from
         # those in the original NX graph.  In the pre-RX code, we did not need to distinguish
@@ -298,7 +301,7 @@ class Partition:
         # Note that original node_ids in flips are typically used in tests
         #
 
-        if use_original_nx_node_ids:
+        if flips_passed_in_use_original_nx_node_ids:
             new_flips = {}
             for original_nx_node_id, part in flips.items():
                 internal_node_id = self.graph.internal_node_id_for_original_nx_node_id(
@@ -354,7 +357,7 @@ class Partition:
         return self._cache[key]
 
     def __getattr__(self, key):
-        # frm TODO: Refactor:  Not sure it makes sense to allow two ways to accomplish the same
+        # frm * TODO: Refactor:  Not sure it makes sense to allow two ways to accomplish the same
         # thing...
         #
         # The code below allows Partition users to get the results of updaters by just

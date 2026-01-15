@@ -7,14 +7,13 @@ from ..graph import Graph
 from ..partition import Partition
 from .bounds import SelfConfiguringLowerBound
 
-# frm: TODO: Performance: Think about the efficiency of the routines in this module.  Almost all
-#               of these involve traversing the entire graph, and I fear that callers
-#               might make multiple calls.
+# frm: TODO: Performance: Think about the efficiency of the routines in this module.
 #
-#               Possible solutions are to 1) speed up these routines somehow and 2) cache
-#               results so that at least we don't do the traversals over and over.
+# Almost all of these involve traversing the entire graph, and I fear that callers
+# might make multiple calls.  Possible solutions are to 1) speed up these routines
+# somehow and 2) cache results so that at least we don't do the traversals over and over.
 
-# frm: TODO: Refactoring: Rethink WTF this module is all about.
+# frm: TODO: Refactoring: Rethink what this module is all about.
 #
 # It seems like a grab bag for lots of different things - used in different places.
 #
@@ -44,21 +43,8 @@ def _are_reachable(graph: Graph, start_node: Any, avoid: Callable, targets: Any)
     :param start_node: The starting node
     :type start_node: int
     :param avoid: The function that determines if an edge should be avoided.
-        It should take in three parameters: the start node, the end node, and
-        the edges to avoid. It should return True if the edge should be avoided,
-        False otherwise.
-        # frm: TODO: Documentation:  Fix the comment above about the "avoid" function parameter.
-        #               It may have once been accurate, but the original code below
-        #               passed parameters to it of (node_id, neighbor_node_id, edge_data_dict)
-        #               from NetworkX.Graph._succ  So, "the edges to avoid" above is wrong.
-        #               This whole issue is moot, however, since the only routine
-        #               that is used as an avoid function ignores the third parameter.
-        #               Or rather it used to avoid the third parameter, but it has
-        #               been updated to only take two parameters, and the code below
-        #               has been modified to use Graph.neighbors() instead of _succ
-        #               because 1) we can't use NX and 2) because we don't need the
-        #               edge data dictionary anyways...
-        #
+        It should take two parameters: the node_ids that define the edge.
+        It should return True if the edge should be avoided, False otherwise.
     :type avoid: Callable
     :param targets: The target nodes that we would like to reach
     :type targets: Any
@@ -70,10 +56,13 @@ def _are_reachable(graph: Graph, start_node: Any, avoid: Callable, targets: Any)
     push = heappush
     pop = heappop
     node_distances = {}  # dictionary of final distances
-    seen = {}
-    # fringe is heapq with 3-tuples (distance,c,node)
+    seen = {}  # dictionary of node_id to node_distance for nodes not yet
+
     # use the count c to avoid comparing nodes (may not be able to)
     c = count()
+
+    # fringe is heapq with 3-tuples (distance,c,node) where distance is
+    # the number of edges from the start_node to the current node.
     fringe = []
 
     seen[start_node] = 0
@@ -81,43 +70,76 @@ def _are_reachable(graph: Graph, start_node: Any, avoid: Callable, targets: Any)
 
     # frm: Original Code:
     #
-    # while not all(t in seen for t in targets) and fringe:
-    #     (d, _, v) = pop(fringe)
-    #     if v in dist:
-    #         continue  # already searched this node.
-    #     dist[v] = d
-    #     for u, e in G_succ[v].items():
-    #         if avoid(v, u, e):
-    #             continue
+    # Note that the original code used an avoid() function that took three
+    # parameters.  That code had been copied from some other codebase and
+    # as a result it contained code that was not applicable to GerryChain
+    # uses - I forget the specifics, but the GerryChain code did not need
+    # to provide three parameters to the avoid function.
     #
-    #         vu_dist = dist[v] + 1
-    #         if u not in seen or vu_dist < seen[u]:
-    #             seen[u] = vu_dist
-    #             push(fringe, (vu_dist, next(c), u))
+    #     while not all(t in seen for t in targets) and fringe:
+    #         (d, _, v) = pop(fringe)
+    #         if v in dist:
+    #             continue  # already searched this node.
+    #         dist[v] = d
+    #         for u, e in G_succ[v].items():
+    #             if avoid(v, u, e):
+    #                 continue
     #
-    # return all(t in seen for t in targets)
+    #             vu_dist = dist[v] + 1
+    #             if u not in seen or vu_dist < seen[u]:
+    #                 seen[u] = vu_dist
+    #                 push(fringe, (vu_dist, next(c), u))
+    #
+    #     return all(t in seen for t in targets)
     #
 
     # While we have not yet seen all of our targets and while there is
-    # still some fringe...
+    # still some fringe (nodes that we have not yet processed)
     while not all(tgt in seen for tgt in targets) and fringe:
         (distance, _, node_id) = pop(fringe)
         if node_id in node_distances:
             continue  # already searched this node.
         node_distances[node_id] = distance
 
-        for neighbor in graph.neighbors(node_id):
-            if avoid(node_id, neighbor):
+        # Add all of the neighbors (children) of this node to the stack
+        for neighbor_node_id in graph.neighbors(node_id):
+
+            if avoid(node_id, neighbor_node_id):
+                # If the current neighbor is to be avoided, skip it...
+
+                # frm: TODO: Refactoring: Just use: if not avoid(node_id, neighbor_node_id): instead of continue
+                #
+                # For lots of reasons, it is best to avoid leaving a loop in multiple ways...
+                #
                 continue
 
             neighbor_distance = node_distances[node_id] + 1
-            if neighbor not in seen or neighbor_distance < seen[neighbor]:
-                seen[neighbor] = neighbor_distance
-                push(fringe, (neighbor_distance, next(c), neighbor))
+            # if this (neighbor) node has not ever been added to the stack or if
+            # we have found a shorter distance to the node, then add it to the stack.
+            if neighbor_node_id not in seen or neighbor_distance < seen[neighbor_node_id]:
+                seen[neighbor_node_id] = neighbor_distance
+                push(fringe, (neighbor_distance, next(c), neighbor_node_id))
 
-    # frm: TODO: Refactoring:  Simplify this code.  It computes distances and counts but
-    #               never uses them.  These must be relics of code copied
-    #               from somewhere else where it had more uses...
+    # frm: TODO: Refactoring:  _are_reachable() computes values it never uses
+    #
+    # It computes distances and counts but never uses them.  These must be
+    # relics of code copied from somewhere else where it had more uses...
+    #
+    # The variable, "node_distances", stores 1) the fact that a node has been processed
+    # and 2) what the distance is for that node from the start_node, but the distance
+    # is never used.  In fact, the distance could be anything and the code would work.
+    #
+    # Similarly, the variable, "seen", stores 1) the fact that a node has been added
+    # to the stack at some point in time and 2) the distance to the node from the start_node
+    # but the distance is never used.  As with node_distances the value could be anything.
+    #
+    # The if statement that checks to see if we should add a node to the stack checks
+    # to see if the distance for the current path is less than a previously calculated
+    # distance, and if so, adds it to the stack - presumably so that at the end we have
+    # recorded the shortest distance to each reachable node, but since we never make
+    # any use of those distances, this test is not useful.
+    #
+    # *sigh*
 
     return all(tgt in seen for tgt in targets)
 
@@ -149,22 +171,22 @@ def single_flip_contiguous(partition: Partition) -> bool:
     def _partition_edge_avoid(start_node: Any, end_node: Any):
         """
         Helper function used in the graph traversal to avoid edges that cross between different
-        assignments. It's crucial for ensuring that the traversal only considers paths within
-        the same assignment class.
+        districts (parts).
+
+        It is crucial for ensuring that the traversal only considers paths within
+        the same district (part).
 
         :param start_node: The start node of the edge.
         :type start_node: Any
         :param end_node: The end node of the edge.
         :type end_node: Any
-        :param edge_attrs: The attributes of the edge (not used in this function). Needed
-            because this function is passed to :func:`_are_reachable`, which expects the
-            avoid function to have this signature.
-        :type edge_attrs: Dict
 
-        :returns: True if the edge should be avoided (i.e., if it crosses assignment classes),
-            False otherwise.
+        :returns: True if the edge should be avoided (i.e., if it crosses
+            from one district to another), False otherwise.
         :rtype: bool
         """
+
+        # Return True if both the start_node and end_node are in the same district (part).
         return assignment.mapping[start_node] != assignment.mapping[end_node]
 
     for changed_node in flips:
@@ -186,7 +208,7 @@ def single_flip_contiguous(partition: Partition) -> bool:
 
         # Check if all old neighbors in the same assignment are still reachable.
         # The "_partition_edge_avoid" function will prevent searching across
-        # a part (district) boundary
+        # a district (part) boundary
         connected = _are_reachable(graph, start_neighbor, _partition_edge_avoid, old_neighbors)
 
         if not connected:

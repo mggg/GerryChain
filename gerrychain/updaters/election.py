@@ -124,6 +124,15 @@ class Election:
 
         # frm: TODO: Documentation: Migration: Using node_ids to vote tally maps...
         #
+        # The question is whether the discussion below should be included in the
+        # Migration Guide to the RX version of GerryChain.  I think perhaps not
+        # since the feature that we removed is only really useful for testing, but
+        # perhaps there is a user out there that depends on it.
+        #
+        # Once we have made the Migration Guide decision, this should just become
+        # a comment that lives in the code for historical purposes until someone
+        # decides that this bit of history is no longer interesting...
+        #
         # A DataTally used to support a first parameter that was either a string
         # or a dict.
         #

@@ -1,6 +1,6 @@
 import collections
 from enum import Enum
-from typing import Callable, Dict
+from typing import Callable, Dict, List
 
 CountyInfo = collections.namedtuple("CountyInfo", "split nodes contains")
 """
@@ -124,7 +124,7 @@ def compute_county_splits(
     return new_county_dict
 
 
-def tally_region_splits(reg_attr_lst):
+def tally_region_splits(reg_attr_lst: List[str]) -> Callable:
     """
     A naive updater for tallying the number of times a region attribute is split.
     for each region attribute in reg_attr_lst.

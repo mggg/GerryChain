@@ -1,12 +1,31 @@
+import itertools
+import random
+import warnings
+from collections import deque, namedtuple
+from functools import partial
+from inspect import signature
+from typing import (  # Hashable,; Tuple,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Union,
+)
+
+# frm:  import the new Graph object which encapsulates NX and RX Graph...
+from .graph import Graph
+
 """
 This module provides tools and algorithms for manipulating and analyzing graphs,
 particularly focused on partitioning graphs based on population data. It leverages the
-NetworkX library to handle graph structures and implements various algorithms for graph
+GerryChain Graph object to handle graph structures and implements various algorithms for graph
 partitioning and tree traversal.
 
 Key functionalities include:
 
-- Predecessor and successor functions for graph traversal using breadth-first search.
 - Implementation of random and uniform spanning trees for graph partitioning.
 - The `PopulatedGraph` class, which represents a graph with additional population data,
   and methods for assessing and modifying this data.
@@ -19,111 +38,198 @@ Key functionalities include:
 
 Dependencies:
 
-- networkx: Used for graph data structure and algorithms.
 - random: Provides random number generation for probabilistic approaches.
 - typing: Used for type hints.
 
-Last Updated: 25 April 2024
+Last Updated: January 2026
 
-frm:  This file, tree.py, needed to be modified to operate on new Graph
-      objects instead of NetworkX Graph objects because the routines are
-      used by the Graph objects inside a Partion, which will soon be based
-      on RustworkX.  More specifically, these routines are used by Proposals,
-      and we will soon switch to having the underlying Graph object used
-      in Partitions and Proposals be based on RustworkX.
+RustworkX Issues:
 
-      It may be the case that they are ONLY ever used by Proposals and
-      hence could just have been rewritten to operate on RustworkX Graph
-      objects, but there seemed to be no harm in having them work either
-      way.  It was also a good proving ground for testing whether the new
-      Graph object could behave like a NetworkX Graph object (in terms of
-      attribute access and syntax).
+Note: This module has been modified in order to be able to operate on
+RustworkX.PyGraph objects in addition to NetworkX.Graph objects.  The
+new GerryChain Graph object embeds a graph object that can be based
+either on NetworkX or RustworkX (the old GerryChain graph object was
+a subclass of NetworkX.Graph).  The reason for supporting
+RustworkX.PyGrapy is performance - it is much faster than NetworkX.
 
-frm: RX Documentation
+The default usage model is for users to create graphs using Networkx,
+both because of legacy concerns but also because it is just convenient
+to create graphs in NetworkX.  When the user creates a Partition
+object, the embedded NetworkX.Graph object will be automatically
+converted to be a RustworkX.PyGraph object.  And since most of the
+routines in this module are used after the creation of a Partition
+object, the underlying graph operations will be performed by
+RustworkX code.
 
-Many of the functions in this file operate on subgraphs which are different from
-NX subgraphs because the node_ids change in the subgraph.  To deal with this,
-in graph.py we have a _node_id_to_parent_node_id_map data member for Graph objects which maps
-the node_ids in a subgraph to the corresponding node_id in its parent graph.  This
-will allow routines operating on subgraphs to return results using the node_ids
-of the parent graph.
+There is a way to override this behavior by setting the value of a
+variable in the code (in partition.py).  The variable in
+partition.py that controls this (and its default setting) is:
 
-Note that for top-level graphs, we still define this _node_id_to_parent_node_id_map, but in
-this case it is an identity map that just maps each node_id to itself.  This allows
-code to always translate correctly, even if operating on a top-level graph.
+    test_performance_using_NX_graph = False
 
-As a matter of coding convention, all calls to graph.subgraph() have been placed
-in the actual parameter list of function calls.  This limits the scope of the
-subgraph node_ids to the called function - eliminating the risk of those node_ids
-leaking into surrounding code.  Stated differently, this eliminates the cognitive
-load of trying to remember whether a node_id is a parent or a subgraph node_id.
+Many of the functions in this file operate on subgraphs which
+behave differently from NX subgraphs.  In particular, RustworkX subgraphs
+typically change the IDs for the nodes in the subgraph, so that a node with
+an ID of say, 5, in a parent graph might have an ID of say, 2, in the subgraph.
+It is the same node, with the same data, but its ID has changed.
+
+To deal with subgraphs having different node_ids from their parent graph
+the code has implemented mappings (dictionaries) for subgraph node_ids to
+parent graph node_ids, allowing routines to convert any results obtained
+using a subgraph to the appropriate node_ids for the parent graph.  Note
+that the same issue applies for edges - they need to be converted back to
+use the node_ids of the parent graph.
+
+To manage the need to translate node_ids from subgraphs to parent graphs,
+the code only calls subgraph as an actual parameter to a function call.
+This prevents subgraph node_ids from being available (and hence causing bugs)
+in the context of the calling code.  Functions that return node_ids or
+edge_ids or edges have the obligation to translate the node_ids of
+the subgraph back into the appropriate node_ids for the parent graph.
+
+So - if you decide to write custom code that involves subgraphs, please
+spend a little time reviewing how the code in this module is implemented
+so that you can avoid subtle nasty bugs...
+
+Note: Predecessor and successor functions have been moved to the new
+GerryChain Graph object.  The reason for moving them was to remove dependencies
+on NetworkX (and RustworkX) from this module.
 """
 
-import itertools
-import random
-import warnings
-from collections import deque, namedtuple
-from functools import partial
-from inspect import signature
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Hashable,
-    List,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Union,
-)
+"""
+frm: TODO: Get OK from Peter for proposed changes (to be made in near future):
 
-import networkx as nx
-import networkx.algorithms.tree as nxtree
-import rustworkx as rx
+I have started the refactoring of this module, but there is much that I would
+like to do.  Before I do it, however, I would like to get your feedback.
 
-# frm:  import the new Graph object which encapsulates NX and RX Graph...
-from .graph import Graph
+I am pressed for time - want to get this PR done for tomorrow, so this will
+be a little scattershot, but hopefully it is better to have it mostly in one
+place.  If it is too confusing, then let me know and I will spend some time
+to make it clearer and then post a new PR (or an updated one).
 
-# frm: TODO: Refactoring:     Remove import of networkx and rustworkx once we have moved networkx
-#               dependencies out of this file - see comments below on
-#               spanning trees.
+The first thing I would like to do is to move some functions out of this
+module so that it can concentrate on biparition_tree() and the code that
+supports it.
+
+Move recursive_tree_part() and recursive_seed_part()
+
+    Maybe to assignment.py or partition.py because these routines are used to create
+    assignments.  They use tree functions but they are not themselves tree functions.
+
+Move espilon_tree_bipartition() tree_proposals.py
+
+    This routine, epsilon_tree_biparition() is only ever used by recom(), and it
+    will probably end up only being used by recom().  So that is one reason for
+    moving it - so that it will be closer to its use.
+
+    However, as with the argument for moving recursive_tree_part() and recursive_seed_part()
+    out of tree.py, epsilon_tree_bipartition() is not a general purpose tree operation, and
+    moving it out of tree.py will reduce the cognitive load for someone trying to
+    understand what tree.py is all about.
+
+Unify the code that does the heavy lifting for biparition_tree().
+
+    This module is hard to grok, and putting all of the code that uses function
+    variables and region_surcharges, and one_sided_cuts into fewer places
+    simplifies the logic.
+
+    I created a routine _get_possible_cuts_and_populated_graph() which does the
+    heavy lifting, and then had other routines call it.  Take a look and see if
+    it looks good as-is or whether you would like tweaks or wholesale different
+    approach.
+
+    It is unfortunate that this routine returns a tuple.  It had to do so because
+    region_surchage logic needed access to the populated graph so that it could
+    do its fancy weighted cut. On the other hand, it is an internal function, so
+    the ugliness is internal...
+
+    I would like to unify the signatures of random_spanning_tree() and
+    uniform_spanning_tree() - just to get rid of the tests against the signatures
+    of functions.  This is perhaps religion - the code works just fine as-is,
+    but OTOH there seems little harm in unifying them.
+
+    There are some other questions in the comments below about why we even
+    offer uniform_spanning_tree() - I would be interested in your answers to
+    those questions.
+
+    There are tons of comments that you are welcome to ignore.  As I said, I have
+    lots of thoughts about how to improve this code, but the above are the
+    biggies.
+
+    All of the tests pass now, so I think this is solid.
+
+    Looking forward to your feedback!
+
+    -Fred
 
 
-# frm: TODO: Refactoring     Remove import of "tree" from networkx.algorithms in this file
-#               It is only used to get a spanning tree function:
+
+"""
+
+# frm: TODO: Refactoring:  random_spanning_tree() and uniform_spanning_tree() should have same signature
 #
-#                   spanning_tree = nxtree.minimum_spanning_tree(
+# These two functions are essentially instances of a generic spanning_tree_fn that is used as a
+# function parameter.  Because these two routines have different signatures in the current
+# codebase, the routines that take a spanning_tree_fn parameter need to inspect the actual
+# parameter's signature to see what to do, which is kind of exactly what a generic should NOT be.
 #
-#               There is an RX function that also computes a spanning tree - hopefully
-#               it works as we want it to work and hence can be used.
+# So, I suggest that we modify the signatures of these two functions so that they have the
+# same signature, which would be:
 #
-#               I think it probably makes sense to move this spanning tree function
-#               into graph.py and to encapsulate the NX vs RX code there.
+#     <fname>(
+#       graph: Graph,
+#       choice: Callable = random.choice,
+#       region_surcharge: dict = {}
+#     )
 #
-# Note Peter agrees with this...
-
-
-# frm TODO: Documentation: Update function param docmentation to get rid of nx.Graph and use
-#     just Graph
-
-# frm TODO: Documentation: Migration Guide: tree.py is no longer a general purpose module - it is
-#     GerryChain specific
+# The uniform_spanning_tree() function could just ignore the "region_surcharge" parameter -
+# or maybe issue a warning if that parameter were not an empty dict.  Similarly, the
+# random_spanning_tree() function could just ignore the "choice" parameter - or maybe
+# issue a warning it it were anything other than random.choice.
 #
-# Before the work to integrate RX, many of the routines ij tree.py
-# operated on NetworkX Graph objects, which meant that the module
-# was not bound to just GerryChain work - someone could conceivably
-# have used it for a graph oriented project that had nothing to do
-# with GerryChain or redistricting.
-#
-# That is no lnoger true, as the parameters to the routines have
-# been changed to be GerryChain Graph objects which are not subclasses
-# of NetworkX Graph objects.
+# Ask Peter if he agrees.
 
 
 def random_spanning_tree(graph: Graph, region_surcharge: Optional[Dict] = None) -> Graph:
     """
     Builds a spanning tree chosen by Kruskal's method using random weights.
+
+    The region_surcharge parameter allows the caller to bias the selection of
+    edges by increasing the weights of some edges that the caller would like
+    to be kept together (if possible).
+
+    Kruskal's method chooses the edges with the lowest weight first, so edges
+    with high weights will be selected last - with the highest weights not chosen
+    at all (once all the nodes are in the tree, the algorithm stops adding edges).
+    This has the effect of making adjacent nodes that belong to the same region be
+    highly connected.
+
+    Note that the algorihm adds weights to edges when the nodes are NOT in the
+    same region.  So, in the case where we have a region_surcharge adding an
+    additional weight of 1 to all edges where the two nodes are NOT in the
+    same municipality, the weights of edges for nodes in the same municipality
+    will be less than 1 while the weights of all other edges will be greater
+    than one, which would guarantee that all of the nodes in a given municipality
+    would be connected to each other.  This would not guarantee that all
+    of the nodes in a municipality were placed in the same district, but it
+    would certainly prioritize preserving municipalities in a few rather than
+    a large number of different districts.
+
+    If no region_surcharges are provided, then the algorithm just randomly
+    specifies the weights of all edges before generating an MST which is
+    essentially a random spanning_tree generator.  In this case, the caller
+    could have instead used the uniform_spanning_tree() function.  The performance
+    difference between uniform_spanning_tree() and random_spanning_tree()
+    depends on the structure of the graph.
+
+    In short, if you want to bias the selection of districts to keep some nodes
+    together, you want to use this routine, random_spanning_tree().
+
+    Note that the random weights applied to edges have values between 0 and 1
+    so the additional weights supplied in the region_surcharge should be sized
+    appropriately.  If the region_surcharge weight is greater than 1, then it
+    will be heavier than any other edge that has not had a surcharge applied to
+    it.
 
     :param graph: The input graph to build the spanning tree from.
     :type graph: Graph
@@ -134,22 +240,6 @@ def random_spanning_tree(graph: Graph, region_surcharge: Optional[Dict] = None) 
     :returns: The maximal spanning tree represented as a GerryChain Graph.
     :rtype: Graph
     """
-    # frm: TODO: Performance
-    #           This seems to me to be an expensive way to build a random spanning
-    #           tree.  It calls a routine to compute a "minimal" spanning tree that
-    #           computes the total "weight" of the spanning tree and selects the
-    #           minmal total weight.  By making the weights random, this will select
-    #           a different spanning tree each time.  This works, but it does not
-    #           in any way depend on the optimization.
-    #
-    #           Why isn't the uniform_spanning_tree() below adequate?  It takes
-    #           a random walk at each point to create the spanning tree.  This
-    #           would seem to be a much cheaper way to calculate a spanning tree.
-    #
-    #           What am I missing???
-    #
-    #           The region_surcharge allows the caller to tweak the ramdommess
-    #           which might be useful...
 
     """
     frm: RX Documentation:
@@ -164,7 +254,7 @@ def random_spanning_tree(graph: Graph, region_surcharge: Optional[Dict] = None) 
     node_ids for this function and all will be well...
     """
 
-    # frm: TODO: Refactoring: WTF is up with region_surcharge being unset?  The region_surcharge
+    # frm: TODO: Refactoring: What is up with region_surcharge being unset?  The region_surcharge
     #               is only ever accessed in this routine in the for-loop below to
     #               increase the weight on the edge - setting it to be an empty dict
     #               just prevents the code below from blowing up.  Why not just put
@@ -186,7 +276,7 @@ def random_spanning_tree(graph: Graph, region_surcharge: Optional[Dict] = None) 
     # @peterrrock2 peterrrock2 last week
     # Also, I imagine that I originally wanted the function modification to look like
     #
-    #     def random_spanning_tree(
+    #    def random_spanning_tree(
     #         graph: Graph,
     #         region_surcharge: dict = dict()
     #     ) -> Graph:
@@ -210,54 +300,44 @@ def random_spanning_tree(graph: Graph, region_surcharge: Optional[Dict] = None) 
 
     # Add a random weight to each edge in the graph with the goal of
     # causing the selection of a different (random) spanning tree based
-    # on those weights.
+    # on those weights.  Note that the value of this random weight
+    # will be between 0 and 1.
     #
-    # If a region_surcharge was passed in, then we want to add additional
-    # weight to edges that cross regions or that have a node that is
-    # not in any region.  For example, if we want to keep municipalities
-    # together in the same district, the region_surcharge would contain
-    # an additional weight associated with the key for municipalities (say
-    # "mini") and if an edge went from one municipality to another or if
-    # either of the nodes in the edge were not in a municipality, then
-    # the edge would be given the additional weight (value) associated
-    # with the region_surcharge.  This would preference/bias the
-    # spanning_tree algorithm to select other edges... which would have
-    # the effect of prioritizing keeping regions intact.
-
-    # frm: TODO: Documentation:  Verify that the comment above about region_surcharge is accurate
-
-    # Add random weights to the edges in the graph so that the spanning tree
-    # algorithm will select a different spanning tree each time.
+    # If a region_surcharge was passed in, then add the
+    # appropriate region_surcharge value to the weight for those
+    # edges that are NOT in the region.
     #
     for edge_id in graph.edge_indices:
         edge = graph.get_edge_from_edge_id(edge_id)
         weight = random.random()
 
         # If there are any entries in the region_surcharge dict, then add
-        # additional weight to the edge for 1) edges that cross region boundaries (one
-        # node is in one region and the other node is in a different region) and 2) edges
-        # where one (or both) of the nodes is not in a region
+        # additional weight to the edge if the nodes in the edge are not
+        # in the same "region", that is:
+        #
+        #    * if one of the nodes is NOT in a region (for instance in the
+        #      case of a "municipality" region defined by the key "muni",
+        #      the node was not in any municpality and hence there was no
+        #      node_data for the atrribute, "muni")
+        #
+        #    * or if the nodes were in different "regions"
+        #
         for key, value in region_surcharge.items():
-            # We surcharge edges that cross regions and those that are not in any region
+            # We surcharge edges that are in different regions and those that are not in any region
+            node_id1 = edge[0]
+            node_id2 = edge[1]
+            node_id1_region = graph.node_data(node_id1)[key]
+            node_id2_region = graph.node_data(node_id2)[key]
             if (
-                graph.node_data(edge[0])[key] != graph.node_data(edge[1])[key]
-                or graph.node_data(edge[0])[key] is None
-                or graph.node_data(edge[1])[key] is None
+                node_id1_region != node_id2_region
+                or node_id1_region is None
+                or node_id2_region is None
             ):
                 weight += value
 
         graph.edge_data(edge_id)["random_weight"] = weight
 
-    # frm: TODO: Refactoring: Code: CROCK: (for the moment)
-    #               We need to create a minimum spanning tree but the way to do so
-    #               is different for NX and RX.  I am sure that there is a more elegant
-    #               way to do this, and in any event, this dependence on NX vs RX
-    #               should not be in this file, tree.py, but for now, I am just trying
-    #               to get this to work, so I am using CROCKS...
-
     graph.verify_graph_is_valid()
-
-    # frm: TODO: Refactoring:  Remove NX / RX dependency - maybe move to graph.py
 
     # frm: TODO: Documentation:  Think a bit about original_nx_node_ids
     #
@@ -269,32 +349,52 @@ def random_spanning_tree(graph: Graph, region_surcharge: Optional[Dict] = None) 
     #
     # In short, worth some thought...
 
-    if graph.is_nx_graph():
-        nx_graph = graph.get_nx_graph()
-        spanning_tree = nxtree.minimum_spanning_tree(
-            nx_graph, algorithm="kruskal", weight="random_weight"
-        )
-        spanningGraph = Graph.from_networkx(spanning_tree)
-    elif graph.is_rx_graph():
-        rx_graph = graph.get_rx_graph()
+    # frm: TODO: Refactoring: Code: Eliminate NX dependence in tree.py
+    #
+    # Create a routine in graph.py to compute a minimum spanning tree
+    # and then use that routine here.
+    #
+    # The fact that the NX version uses edge data directly while the RX
+    # version uses a function (that does the same thing) means that
+    # a utility routine in graph.py that did the delegation to NX or RX
+    # would need to have different parameters - a string vs. a function.
+    # So, maybe this is not worth doing after all...
+    #
+    # Note that the RX version is *much* faster
 
-        def get_weight(edge_data):
-            # function to get the weight of an edge from its data
-            # This function is passed a dict with the data for the edge.
-            return edge_data["random_weight"]
-
-        spanning_tree = rx.minimum_spanning_tree(rx_graph, get_weight)
-        spanningGraph = Graph.from_rustworkx(spanning_tree)
-    else:
-        raise Exception("random_spanning_tree - bad kind of graph object")
-
-    return spanningGraph
+    minimum_spanning_tree = graph.minimum_spanning_tree_from_edge_weight(
+        edge_weight_attribute_name="random_weight"
+    )
+    return minimum_spanning_tree
 
 
 def uniform_spanning_tree(graph: Graph, choice: Callable = random.choice) -> Graph:
     """
     Builds a spanning tree chosen uniformly from the space of all
     spanning trees of the graph. Uses Wilson's algorithm.
+
+    If interested, there is a nice animated description of Wilson's
+    algorithm here:
+
+    https://weblog.jamisbuck.org/2011/1/20/maze-generation-wilson-s-algorithm
+
+    A brief description of Wilson's Alorithm follows:
+
+    Pick a node at random for the root node of the spanning tree.  Then
+    pick any other node and do a random walk until you end up at the root
+    node, but as you go remember the last move you made at each node - which
+    will overwrite any previous move.  When you end up at the root node, go
+    back to the starting node and follow the path left behind, which will
+    cleverly contain no cycles because the paths for any cycles were
+    overwritten.
+
+    Add the nodes in the path (remembering child and parent) to the list
+    of nodes you have added to the tree.  Then pick another node at random
+    that is not already in the tree and do another random walk, ending
+    when you fall on a node already in the tree.  Then add the nodes for
+    that random walk to the tree.
+
+    Rinse and repeat until all nodes have been added to the tree.
 
     :param graph: Graph
     :type graph: Graph
@@ -305,64 +405,47 @@ def uniform_spanning_tree(graph: Graph, choice: Callable = random.choice) -> Gra
     :rtype: Graph
     """
 
-    """
-    frm: RX Docmentation:
-
-    As with random_spanning_tree, I am assuming that the issue of RX subgraphs having
-    different node_ids is not an issue for this routine...
-    """
     # Pick a starting point at random
     root_id = choice(list(graph.node_indices))
-    tree_nodes = set([root_id])
-    next_node_id = {root_id: None}
 
-    # frm: I think that this builds a tree bottom up.  It takes
-    #       every node in the graph (in sequence).  If the node
-    #       is already in the list of nodes that have been seen
-    #       which means it has a neighbor registered as a next_node,
-    #       then it is skipped.  If this node does not yet have
-    #       a neighbor registered, then it is given one, and
-    #       that neighbor becomes the next node looked at.
-    #
-    #       This essentially takes a node and travels "up" until
-    #       it finds a node that is already in the tree.  Multiple
-    #       nodes can end up with the same "next_node" - which
-    #       in tree-speak means that next_node is the parent of
-    #       all of the nodes that end on it.
+    # Initiallize the tree to contain the root_node (with no parent)
+    tree_nodes = set([root_id])
+    parent_node_id = {root_id: None}
 
     for node_id in graph.node_indices:
+
+        # Random walk (perhaps with cycles) that records the
+        # last path taken before hitting a node already in
+        # tree_nodes.  Note that recording the last path
+        # taken effectively removes cycles from the path.
         u = node_id
         while u not in tree_nodes:
-            next_node_id[u] = choice(list(graph.neighbors(u)))
-            u = next_node_id[u]
+            parent_node_id[u] = choice(list(graph.neighbors(u)))
+            u = parent_node_id[u]
 
+        # Record the "direct" path (the one with no cycles)
+        # from the starting node, u, to a node already
+        # in tree_nodes.
         u = node_id
         while u not in tree_nodes:
             tree_nodes.add(u)
-            u = next_node_id[u]
+            u = parent_node_id[u]
 
-    # frm DONE:  To support RX, I added an add_edge() method to Graph.
-
-    # frm: TODO: Refactoring:  Remove dependency on NX below
-
-    nx_graph = nx.Graph()
-    G = Graph.from_networkx(nx_graph)
+    G = Graph.from_null_networkx()
 
     for node_id in tree_nodes:
-        if next_node_id[node_id] is not None:
-            G.add_edge(node_id, next_node_id[node_id])
+        if parent_node_id[node_id] is not None:
+            G.add_edge(node_id, parent_node_id[node_id])
 
     return G
 
 
-# frm TODO: Documentation: PopulatedGraph - state that this only exists in tree.py
+# frm TODO: Documentation: PopulatedGraph
 #
-# I think that this is only ever used inside this module (except)
-# for testing.
+# State what the purpose of this class is in the docstring comment below.
 #
-# Decide if this is intended to only ever be used inside tree.py (and for testing),
-# and if so: 1) document that fact and 2) see if there is any Pythonic convention
-# for a class that is intended to NOT be used externally (like a leading underscore)
+# It is only ever used inside this module (except) for testing.  If that is so, then
+# change the name to have a leading underscore.
 #
 class PopulatedGraph:
     """
@@ -528,6 +611,13 @@ Cut.subset.__doc__ = "The (frozen) subset of nodes on one side of the cut. Defau
 #        tree, {node: 1 for node in tree}, len(tree) / 2, 0.5
 #    )
 #    cuts = find_balanced_edge_cuts_contraction(populated_tree)
+
+# frm: TODO: Refactoring: params are balance_edge_fn but routines are balanced_edge_...
+#
+# Another nit, but it would be nice if the parameter names were balanced_edge_fn (with a 'd'),
+# but that is probably not possible given legacy code.
+#
+# Ask Peter to confirm that we should not change the name of either the param or the functions...
 
 
 def find_balanced_edge_cuts_contraction(
@@ -810,7 +900,7 @@ def find_balanced_edge_cuts_memoization(
 
         return cuts
 
-    # frm: TODO: Refactoring: this code to make its two use cases clearer:
+    # frm: TODO: Refactoring: Change this code to make its two use cases clearer:
     #
     # One use case is bisecting the graph (one_sided_cut is False).  The
     # other use case is to peel off one part (district) with the appropriate
@@ -823,6 +913,21 @@ def find_balanced_edge_cuts_memoization(
 
     # We are looking for a way to bisect the graph (one_sided_cut is False)
     for node, tree_pop in subtree_pops.items():
+
+        # frm: TODO: Refactoring:  Why keep looping if you have found a solution?
+        #
+        # This is perhaps a nit, but it is technically possible to have more than one
+        # edge that, if cut, would result in two almost equal sized districts.  One example
+        # is a root node that itself has zero population and two child nodes each of which
+        # has in its subtree half of the population.  In this case cutting either of the
+        # edges to the root's children would work - hence more than one solution.
+        #
+        # However, I do not think that any code in GerryChain cares about this in the
+        # case when it wants two equal sized districts from one graph.  So, we could
+        # be a little more efficient by just returning after finding the first (and
+        # probably the only) solution.
+        #
+        # Ask Peter what he thinks...
 
         if (abs(tree_pop - h.ideal_pop) <= h.ideal_pop * h.epsilon) and (
             abs((total_pop - tree_pop) - h.ideal_pop) <= h.ideal_pop * h.epsilon
@@ -913,12 +1018,31 @@ def _max_weight_choice(cut_edge_list: List[Cut]) -> Cut:
 #  Figure out what this does.  There is no NX/RX issue here, I just
 #                   don't yet know what it does or why...
 # Note that this is only ever used once...
-def _power_set_sorted_by_size_then_sum(d):
-    power_set = [s for i in range(1, len(d) + 1) for s in itertools.combinations(d.keys(), i)]
+def _power_set_sorted_by_size_then_sum(region_surcharge_dict: Dict):
+    """
+    This function computes the power set of regions that are
+    listed in the region_surcharge_dict, and then sorts
+    that power set by size and then sum.
+
+    Note that a power set contains all possible subsets of
+    a given set, so for instance, the power set of
+    of elements of a given set
+
+    :param region_surcharge_dict: Description
+    :type region_surcharge_dict: Dict
+    """
+    num_regions = len(region_surcharge_dict)
+    power_set = [
+        s
+        for i in range(1, num_regions + 1)
+        for s in itertools.combinations(region_surcharge_dict.keys(), i)
+    ]
 
     # Sort the subsets in descending order based on
     # the sum of their corresponding values in the dictionary
-    sorted_power_set = sorted(power_set, key=lambda s: (len(s), sum(d[i] for i in s)), reverse=True)
+    sorted_power_set = sorted(
+        power_set, key=lambda s: (len(s), sum(region_surcharge_dict[i] for i in s)), reverse=True
+    )
 
     return sorted_power_set
 
@@ -982,20 +1106,21 @@ def _region_preferred_max_weight_choice(
     # Prepare data for efficient access
     edge_region_info = {
         cut: {
-            # frm: This code is a bit dense (at least for me).
-            #       Given a cut_edge_list (whose elements have an
-            #       attribute, "edge",) construct a dict
-            #       that associates with each "cut" the
-            #       values of the region_surcharge values
-            #       for both nodes in the edge.
+            # Given a cut_edge_list (whose elements have an
+            # attribute, "edge",) construct a dict
+            # that associates with each "cut" the
+            # values of the region_surcharge values
+            # for both nodes in the edge.
             #
-            #       So, if the region_surcharge dict was
-            #       {"muni": 0.2, "water": 0.8} then for
-            #       each cut, cut_n, there would be a
-            #       dict value that looked like:
-            #       {"muni": ("siteA", "siteA",
-            #        "water": ("water1", "water2")
-            #       }
+            # So, if the region_surcharge dict was
+            # {"muni": 0.2, "water": 0.8} then for
+            # each cut, cut_n, there would be a
+            # dict value that looked like:
+            #
+            #           {
+            #             "muni": (<node_1_muni_weight>, <node_2_muni_weight>)
+            #             "water": (<node_1_water_weight>, <node_2_water_weight>)
+            #           }
             #
             key: (
                 populated_graph.graph.node_data(cut.edge[0]).get(key),
@@ -1024,38 +1149,141 @@ def _region_preferred_max_weight_choice(
     return _max_weight_choice(cut_edge_list)
 
 
-# frm TODO: Refactoring:    def bipartition_tree(
+# frm TODO: Refactoring:  How to prevent users writing custom code from getting screwed by RX...
 #
-#               This might get complicated depending on what kinds of functions
-#               are used as parameters.  That is, do the functions used as parameters
-#               assume they are working with an NX graph?
+# I am actually not sure if this is a real concern or not, but the issue is whether
+# custom code that expects the graph object to be NX will get screwed up now that by default
+# the embedded graph object in RX-based.
 #
-#               I think all of the functions used as parameters have been converted
-#               to work on the new Graph object, but perhaps end users have created
-#               their own?  Should probably add logic to verify that the
-#               functions are not written to be operating on an NX Graph.  Not sure
-#               how to do that though...
+# The most obvious way custom code could screw up is by not dealing with subgraphs properly.
+# It would be really nice to have some clever way to detect code that assumed it was dealing
+# with NX and issue a warning, but I am not that clever...
 #
-# Peter's comments from PR:
+# In most cases, the user will do something NX based that will trigger an error - such as
+# accessing node or edge data using graph.nodes[node_id] instead of graph.node_data(node_id),
+# so maybe this is not a huge issue...
 #
-# Users do sometimes write custom spanning tree and cut edge functions. My
-# recommendation would be to make this simple for now. Have a list of "RX_compatible"
-# functions and then have the MarkovChain class do some coersion to store an
-# appropriate graph and partition object at initialization. We always expect
-# the workflow to be something like
+# Peter wrote a comment in a PR that is applicable here, so I will include it for future
+# reference:
 #
-#     Graph -> Partition -> MarkovChain
+#     Peter's comments from PR:
 #
-# But we do copy operations in each step, so I wouldn't expect any weird
-# side-effects from pushing the determination of what graph type to use
-# off onto the MarkovChain class
+#     Users do sometimes write custom spanning tree and cut edge functions. My
+#     recommendation would be to make this simple for now. Have a list of "RX_compatible"
+#     functions and then have the MarkovChain class do some coersion to store an
+#     appropriate graph and partition object at initialization. We always expect
+#     the workflow to be something like
+#
+#         Graph -> Partition -> MarkovChain
+#
+#     But we do copy operations in each step, so I wouldn't expect any weird
+#     side-effects from pushing the determination of what graph type to use
+#     off onto the MarkovChain class
+#
+# I think I am now comfortable with leaving this as-is.  My logic is that if a
+# user has written custom code then he/she will almost certainly use some NX
+# idiom (like graph.nodes[node_id][attribute_name]) which will blow up, so
+# he/she will be alerted that something is not right, and then look for help
+# which the RX Migration Guide should provide.
+#
+# Peter - what do you think?
 
-# frm: used in this file and in tree_proposals.py
-#       But maybe this is intended to be used externally...
+# frm: TODO: Refactoring: Consolidate logic into bipartition_tree()
 #
+# There are a couple of issues that would be really nice to resolve:
+#
+#   1) region_surcharge:
+#
+#      This is more of a documenation issue (I think).  The issue is that
+#      it is not clear exactly how a region_surcharge affects the operation
+#      of the bipartition_tree() algorithm.  We supply two spanning_tree
+#      functions, uniform_spanning_tree() which uses Wilson's algorithm
+#      and random_spanning_tree() which uses Kruskal's algorithm.  In fact,
+#      both of these are "random" so the naming of the two routines is
+#      unfortunate, but the real question is why we even bother to
+#      provide uniform_spanning_tree() as an option.  In what cases would
+#      it be preferable to random_spanning_tree()?
+#
+#      The first observation is that both functions are "random".  The
+#      uniform_spanning_tree() function uses Wilson's algorithm which
+#      is random all by itself.  The random_spanning_tree() function is
+#      also random because it assigns random weights to edges and then
+#      uses Kruskal's algorithm to pick a "minimal" spanning tree based
+#      on those random weights.
+#
+#      The random_spanning_tree() function, however, can be biased to
+#      preserve "regions" by passing in a "region_surcharge".
+#
+#      So, why do we need uniform_spanning_tree() at all?  What advantage
+#      does it provide and in what circumstances?  I thought that it must
+#      be performance, but the web implies that Kruskal's algorithm is
+#      often faster than Wilson's algorithm especially for sparse graphs,
+#      and I think GerryChain graphs are pretty sparse.  So why not just
+#      get rid of uniform_spanning_tree?
+#
+#      It occurred to me that the shapes of the trees that result from
+#      the two algorithms might differ - the simulations I saw of Kruskal's
+#      algorithm seemed to create quite unbalanced trees which would perhaps
+#      make it harder to find subtrees with the correct population.  Is this
+#      a factor?
+#
+#      So, in the end, this is all about helping the user understand
+#      when to use what spanning_tree function, and my guess is that
+#      the answer is to always use random_spanning_tree() even if the
+#      user is NOT providing a region_surcharge.
+#
+#      Peter: Is the above correct?  Is there, in fact, no reason
+#             to provide uniform_spanning_tree()?
+#
+#      This all stemmed from an earlier thought that the code should
+#      do a sanity check and warn the user if random_spanning_tree() was
+#      called without supplying a region_surcharge.  I now think that
+#      it should ALWAYS be called - regardless of whether there is a
+#      region_surcharge.
+#
+#      In any event, I would still like to unify the function signatures
+#      of the two spanning_tree functions and then insert a test
+#      in uniform_spanning_tree() that issues a warning if the
+#      region_surcharge passed in was not None.
+#
+#   2) one_sided_cut
+#
+#      I found the term "one_sided_cut" unintuitive, and I had to refresh my
+#      memory every time I read the code to remember whether True meant carving
+#      off a district or whether True meant split the graph into two "equal"
+#      districts.
+#
+#      But, mostly, I would like to change the code in bipartition_tree() to make
+#      it crystal clear to the user that it does two quite different things
+#      depending on the value of this parameter.
+#
+#      I suggest creating two helper functions - one that "carves" away a district
+#      and another that splits the graph into two "equal" districts.  This would
+#      make it clear to a reader of the code what is going on.  Something like:
+#
+#          # setup variables needed by both helper functions
+#          ...
+#
+#          if one_sided_cut:
+#              carve_out_district(...)
+#          else
+#              split_into_two(...)
+#
+#   3) differet functions for doing bipartition_tree - I think we can get by with
+#      a single function
+#
+#      At present, there are two bipartition_tree routines in the code (January 10, 2026).
+#      The differences between them are small, and I believe it would be easy to unify
+#      them into a single routine.  While this would make the unified routine more complex
+#      I think it would make understanding what is going on overall simpler.  If you
+#      understand what bipartition_tree() does, then you have a handle on everything that
+#      GerryChain does and how it does it.  Everything else is just flow control and
+#      book-keeping
+#
+# Get Peter's feedback on whether this all makes sense.
 
 
-def bipartition_tree(
+def old_bipartition_tree(
     subgraph_to_split: Graph,
     pop_col: str,
     pop_target: Union[int, float],
@@ -1168,20 +1396,9 @@ def bipartition_tree(
         for node_id in subgraph_to_split.node_indices
     }
 
-    # frm: TODO: Debugging: Remove debugging code
-    # print(" ")
-    # print(f"bipartition_tree(): Entering...")
-    # print(f"bipartition_tree(): balance_edge_fn is: {balance_edge_fn}")
-    # print(f"bipartition_tree(): spanning_tree_fn is: {spanning_tree_fn}")
-    # print(f"bipartition_tree(): populations in subgraph are: {populations}")
-
     possible_cuts: List[Cut] = []
     if spanning_tree is None:
         spanning_tree = spanning_tree_fn(subgraph_to_split)
-
-    # print(" ")
-    # print(f"bipartition_tree(): subgraph edges: {subgraph_to_split.edges}")
-    # print(f"bipartition_tree(): initial spanning_tree edges: {spanning_tree.edges}")
 
     restarts = 0
     attempts = 0
@@ -1189,7 +1406,6 @@ def bipartition_tree(
     while max_attempts is None or attempts < max_attempts:
         if restarts == node_repeats:
             spanning_tree = spanning_tree_fn(subgraph_to_split)
-            # print(f"bipartition_tree(): new spanning_tree edges: {spanning_tree.edges}")
             restarts = 0
         h = PopulatedGraph(spanning_tree, populations, pop_target, epsilon)
 
@@ -1221,31 +1437,28 @@ def bipartition_tree(
         # instances - but that they all share the same high level
         # responsibility.
 
-        is_region_cut = (
-            "region_surcharge" in signature(cut_choice).parameters
-            and "populated_graph" in signature(cut_choice).parameters
-        )
-
         # frm:  Find one or more edges in the spanning tree, that if cut would
         #       result in a subtree with the appropriate population.
 
         # This returns a list of Cut objects with attributes edge and subset
         possible_cuts = balance_edge_fn(h, choice=choice)
 
-        # frm: TODO: Debugging: Remove debugging code below
-        # print(f"bipartition_tree(): possible_cuts = {possible_cuts}")
+        is_region_cut = (
+            "region_surcharge" in signature(cut_choice).parameters
+            and "populated_graph" in signature(cut_choice).parameters
+        )
 
-        # frm: RX Subgraph
         if len(possible_cuts) != 0:
+
             chosen_cut = None
             if is_region_cut:
                 chosen_cut = cut_choice(h, region_surcharge, possible_cuts)
             else:
                 chosen_cut = cut_choice(possible_cuts)
+
             translated_nodes = subgraph_to_split.translate_subgraph_node_ids_for_set_of_nodes(
                 chosen_cut.subset
             )
-            # print(f"bipartition_tree(): translated_nodes = {translated_nodes}")
             # frm: Not sure if it is important that the returned set be a frozenset...
             return frozenset(translated_nodes)
 
@@ -1262,6 +1475,19 @@ def bipartition_tree(
                 BipartitionWarning,
             )
 
+    # frm: TODO: Refactoring:  raise ReselectException seems evil...
+    #
+    # I was taught that raising exceptions should be for bad things, not for
+    # clever logic for "normal" situations.  In this case, raising this exception
+    # allows recom() - and only recom() to detect that this pair of districts
+    # didn't work out so it should try a different pair.
+    #
+    # Why not just return None - doing that would signal that no bipartition
+    # was found which is exactly what this exception signals.  It just seenms
+    # odd to have a function use an exception as the way to return a result-code.
+    #
+    # Am I being old-fashioned?  Is this the new Pythonic way of doing things?
+
     if allow_pair_reselection:
         raise ReselectException(
             f"Failed to find a balanced cut after {max_attempts} attempts.\n"
@@ -1271,29 +1497,237 @@ def bipartition_tree(
     raise RuntimeError(f"Could not find a possible cut after {max_attempts} attempts.")
 
 
-def _bipartition_tree_random_all(
+##################################
+# Start of new code:
+
+
+def bipartition_tree(
+    subgraph_to_split: Graph,
+    pop_col: str,
+    pop_target: Union[int, float],
+    epsilon: float,
+    node_repeats: int = 1,
+    spanning_tree: Optional[Graph] = None,
+    spanning_tree_fn: Callable = random_spanning_tree,
+    region_surcharge: Optional[Dict] = None,
+    balance_edge_fn: Callable = find_balanced_edge_cuts_memoization,
+    one_sided_cut: bool = False,
+    choice: Callable = random.choice,
+    max_attempts: Optional[int] = 100000,
+    warn_attempts: int = 1000,
+    allow_pair_reselection: bool = False,
+    cut_choice: Callable = _region_preferred_max_weight_choice,
+) -> Set:
+    # frm: TODO: Refactoring: Change the names of ALL function formal parameters to end
+    #      in "_fn" - to make it clear that the paraemter is a function.  This will make it
+    #      easier to do a global search to find all function parameters - as well as just being
+    #      good coding practice...
+    """
+    This function finds a balanced 2 partition of a graph by drawing a
+    spanning tree and finding an edge to cut that leaves at most an epsilon
+    imbalance between the populations of the parts. If a root fails, new roots
+    are tried until node_repeats in which case a new tree is drawn.
+
+    Builds up a connected subgraph with a connected complement whose population
+    is ``epsilon * pop_target`` away from ``pop_target``.
+
+    :param graph: The graph to partition.
+    :type graph: Graph
+    :param pop_col: The node attribute holding the population of each node.
+    :type pop_col: str
+    :param pop_target: The target population for the returned subset of nodes.
+    :type pop_target: Union[int, float]
+    :param epsilon: The allowable deviation from ``pop_target`` (as a percentage of
+        ``pop_target``) for the subgraph's population.
+    :type epsilon: float
+    :param node_repeats: A parameter for the algorithm: how many different choices
+        of root to use before drawing a new spanning tree. Defaults to 1.
+    :type node_repeats: int, optional
+    :param spanning_tree: The spanning tree for the algorithm to use (used when the
+        algorithm chooses a new root and for testing).
+    :type spanning_tree: Optional[Graph], optional
+    :param spanning_tree_fn: The random spanning tree algorithm to use if a spanning
+        tree is not provided. Defaults to :func:`random_spanning_tree`.
+    :type spanning_tree_fn: Callable, optional
+    :param region_surcharge: A dictionary of surcharges for the spanning tree algorithm.
+        Defaults to None.
+    :type region_surcharge: Optional[Dict], optional
+    :param balance_edge_fn: The function to find balanced edge cuts. Defaults to
+        :func:`find_balanced_edge_cuts_memoization`.
+    :type balance_edge_fn: Callable, optional
+    :param one_sided_cut: Passed to the ``balance_edge_fn``. Determines whether or not we are
+        cutting off a single district when partitioning the tree. When
+        set to False, we check if the node we are cutting and the remaining graph
+        are both within epsilon of the ideal population. When set to True, we only
+        check if the node we are cutting is within epsilon of the ideal population.
+        Defaults to False.
+    :type one_sided_cut: bool, optional
+    :param choice: The function to make a random choice of root node for the population
+        tree. Passed to ``balance_edge_fn``. Can be substituted for testing.
+        Defaults to :func:`random.random()`.
+    :type choice: Callable, optional
+    :param max_attempts: The maximum number of attempts that should be made to bipartition.
+        Defaults to 10000.
+    :type max_attempts: Optional[int], optional
+    :param warn_attempts: The number of attempts after which a warning is issued if a balanced
+        cut cannot be found. Defaults to 1000.
+    :type warn_attempts: int, optional
+    :param allow_pair_reselection: Whether we would like to return an error to the calling
+        function to ask it to reselect the pair of nodes to try and recombine. Defaults to False.
+    :type allow_pair_reselection: bool, optional
+    :param cut_choice: The function used to select the cut edge from the list of possible
+        balanced cuts. Defaults to :meth:`_region_preferred_max_weight_choice` .
+    :type cut_choice: Callable, optional
+
+    :returns: A subset of nodes of ``graph`` (whose induced subgraph is connected). The other
+        part of the partition is the complement of this subset.
+    :rtype: Set
+
+    :raises BipartitionWarning: If a possible cut cannot be found after 1000 attempts.
+    :raises RuntimeError: If a possible cut cannot be found after the maximum number of attempts
+        given by ``max_attempts``.
+    """
+    # Try to add the region-aware in if the spanning_tree_fn accepts a surcharge dictionary
+    # frm ???:  REALLY???  You are going to change the semantics of your program based on the
+    #           a function argument's signature?  What if someone refactors the code to have
+    #           different names???  *sigh*
     #
-    # Note: Complexity Alert...  _bipartition_tree_random_all does NOT translate node_ids to parent
+    # A better strategy would be to lock in the function signature for ALL spanning_tree
+    # functions and then just have the region_surcharge parameter not be used in some of them...
     #
-    # Unlike many/most of the routines in this module, _bipartition_tree_random_all() does
+    # Same with "one_sided_cut"
+    #
+    # Oh - and change "one_sided_cut" to be something a little more intuitive.  I have to
+    # reset my mind every time I see it to figure out whether it means to split into
+    # two districts or just peel off one district...  *sigh*  Before doing this, check to
+    # see if "one_sided_cut" is a term of art that might make sense to some set of experts...
+    #
+    if "region_surcharge" in signature(spanning_tree_fn).parameters:
+        spanning_tree_fn = partial(spanning_tree_fn, region_surcharge=region_surcharge)
+
+    if "one_sided_cut" in signature(balance_edge_fn).parameters:
+        balance_edge_fn = partial(balance_edge_fn, one_sided_cut=one_sided_cut)
+
+    # Find possible edge cuts if they exist.
+    #
+    # Note that _get_possible_edge_cuts_and_populated_graph() will raise and exception if max_attempts is exceeded.
+    #
+    cuts_and_populated_graph = _get_possible_edge_cuts_and_populated_graph(
+        subgraph_to_split,
+        pop_col,
+        pop_target,
+        epsilon,
+        node_repeats=node_repeats,
+        spanning_tree=spanning_tree,
+        spanning_tree_fn=spanning_tree_fn,
+        balance_edge_fn=balance_edge_fn,
+        choice=choice,
+        max_attempts=max_attempts,
+        warn_attempts=warn_attempts,
+        repeat_until_valid=True,
+        allow_pair_reselection=allow_pair_reselection,
+    )
+    possible_cuts = cuts_and_populated_graph[0]
+    populated_graph = cuts_and_populated_graph[1]
+
+    # frm: TODO: Refactoring:  Think about whether we should pass warn_attempts to other calls on _get_possible_edge_cuts_and_populated_graph()
+
+    if len(possible_cuts) != 0:
+
+        is_region_cut = (
+            "region_surcharge" in signature(cut_choice).parameters
+            and "populated_graph" in signature(cut_choice).parameters
+        )
+
+        chosen_cut = None
+        if is_region_cut:
+            chosen_cut = cut_choice(populated_graph, region_surcharge, possible_cuts)
+        else:
+            chosen_cut = cut_choice(possible_cuts)
+
+        translated_nodes = subgraph_to_split.translate_subgraph_node_ids_for_set_of_nodes(
+            chosen_cut.subset
+        )
+        # frm: Not sure if it is important that the returned set be a frozenset...
+        return frozenset(translated_nodes)
+
+    else:
+        # frm: TODO: Refactoring: Clean this up...
+        raise Exception("This should never happen...")
+
+        # frm: TODO: Refactoring:  Again - we should NOT be changing semantics based
+        #                   on the names in signatures...
+        # Better approach is to have all of the poosible paramters exist
+        # in ALL of the versions of the cut_choice() functions and to
+        # have them default to None if not used by one of the functions.
+        # Then this code could just pass in the values to the
+        # cut_choice function, and it could make sense of what to do.
+        #
+        # This makes it clear what the overall and comprehensive purpose
+        # of cut_choice functions are.  This centralizes the knowlege
+        # of what a cut_choice() function is supposed to do - or at least
+        # it prompts the programmer to document that a param in the
+        # general scheme does not apply in a given instance.
+        #
+        # I realize that this is perhaps not "pythonic" - in that it
+        # forces the programmer to document overall behavior instead
+        # of just finding a convenient way to sneak in something new.
+        # However, when code gets complicated, sneaky/clever code
+        # is just not worth it - better to have each change be a little
+        # more painful (needing to change the function signature for
+        # all instances of a generic function to add new functionality
+        # that is only needed by one new instance).  This provides
+        # a natural place (in comments of the generic function instances)
+        # to describe what is going on - and it alerts programmers
+        # that a given generic function has perhaps many different
+        # instances - but that they all share the same high level
+        # responsibility.
+
+    # frm: TODO: Refactoring:  raise ReselectException seems evil...
+    #
+    # I was taught that raising exceptions should be for bad things, not for
+    # clever logic for "normal" situations.  In this case, raising this exception
+    # allows recom() - and only recom() to detect that this pair of districts
+    # didn't work out so it should try a different pair.
+    #
+    # Why not just return None - doing that would signal that no bipartition
+    # was found which is exactly what this exception signals.  It just seenms
+    # odd to have a function use an exception as the way to return a result-code.
+    #
+    # Am I being old-fashioned?  Is this the new Pythonic way of doing things?
+
+
+# End of new code:1
+##################################
+
+
+def _get_possible_edge_cuts_and_populated_graph(
+    #
+    # Note: Complexity Alert...  _get_possible_edge_cuts_and_populated_graph does NOT translate
+    # node_ids to parent
+    #
+    # Unlike many/most of the routines in this module, _get_possible_edge_cuts_and_populated_graph() does
     # not translate node_ids into the IDs of the parent, because calls to it are not made
     # on subgraphs.  That is, it returns possible Cuts using the same node_ids as the parent.
     # It is up to the caller to translate node_ids (if appropriate).
     #
+    # As stated somewhere else, I would love to change the name of this function so that
+    # it does not potentially confuse the reader that it is the same as the other
+    # bipartition_tree functions.
     graph_to_split: Graph,
     pop_col: str,
     pop_target: Union[int, float],
     epsilon: float,
     node_repeats: int = 1,
-    repeat_until_valid: bool = True,
     spanning_tree: Optional[Graph] = None,
     spanning_tree_fn: Callable = random_spanning_tree,
     balance_edge_fn: Callable = find_balanced_edge_cuts_memoization,
     choice: Callable = random.choice,
+    repeat_until_valid: bool = True,
+    warn_attempts: int = 1000,
     max_attempts: Optional[int] = 100000,
-) -> List[
-    Tuple[Hashable, Hashable]
-]:  # frm: TODO: Documentation: Change this to be a set of node_ids (ints)
+    allow_pair_reselection: bool = False,
+) -> tuple[List[Cut], PopulatedGraph]:
     """
     Randomly bipartitions a tree into two subgraphs until a valid bipartition is found.
 
@@ -1326,8 +1760,9 @@ def _bipartition_tree_random_all(
         there is no limit. Defaults to None.
     :type max_attempts: Optional[int], optional
 
-    :returns: A list of possible cuts that bipartition the tree into two subgraphs.
-    :rtype: List[Tuple[Hashable, Hashable]]
+    :returns: A tuple with a list of possible cuts that bipartition the tree into two subgraphs and
+        the PopulatedGraph the cuts were obtained from.
+    :rtype: tuple[List[Tuple[Hashable, Hashable]], PopulatedGraph]
 
     :raises RuntimeError: If a valid bipartition cannot be found after the specified number of
         attempts.
@@ -1346,6 +1781,7 @@ def _bipartition_tree_random_all(
     restarts = 0
     attempts = 0
 
+    # frm: TODO: Code: When would it make sense for max_attempts to be None?  Infinite loop potential...
     while max_attempts is None or attempts < max_attempts:
         if restarts == node_repeats:
             spanning_tree = spanning_tree_fn(graph_to_split)
@@ -1353,11 +1789,78 @@ def _bipartition_tree_random_all(
         h = PopulatedGraph(spanning_tree, populations, pop_target, epsilon)
         possible_cuts = balance_edge_fn(h, choice=choice)
 
-        if not (repeat_until_valid and len(possible_cuts) == 0):
-            return possible_cuts
+        # frm: TODO: Refactoring: change name of repeat_until_valid and think a bit...
+        #
+        # There is only one tine in the GerryCode codebase where "repeat_until_valid" is set
+        # to False, and that is in reversible_recom().  What I think is really going on is
+        # that in reversible_recom() and ONLY in reversible_recom(), we want to try once to
+        # get the cuts but to fail if we don't get it on the first try.  I do not understand
+        # the logic of reversible_recom() well enough to know if this is 100% accurate, but
+        # the point remains that what repeat_until_valid really means is "only_try_one_time".
+        #
+        # I would also argue against the boolean logic here - needlessly complex.  What
+        # would make more sense to me is:
+        #
+        #     if (not repeat_until_valid):
+        #         return possible_cuts
+        #     elif len(possible_cuts) != 0:
+        #         return possible_cuts
+        #
+        # or if you change the name of repeat_until_valid:
+        #
+        #     only_try_one_time = not repeat_until_valid   # clarify what param means...
+        #     if (only_try_one_time):
+        #         return possible_cuts    # return even if possible_cuts is None
+        #     elif len(possible_cuts) != 0:
+        #         return possible_cuts
+        #
+        # I realize that repeat_until_valid could be interpreted as do_not_return_None, but that
+        # was not my initial understanding - I thought it meant "keep iterating forever".  My
+        # initial reaction was "uh oh - infinite loop danger".
+        #
+        # So, not quite sure what the right name is for this param, but it took me a while to
+        # convince myself that the code made sense.
+        #
+
+        # In the case of reversible_recom, we are OK returning None.
+        if not repeat_until_valid:
+            return (possible_cuts, h)
+
+        # If we have found at least one possible cut, return
+        if len(possible_cuts) != 0:
+            return (possible_cuts, h)
+
+        # Don't forget to change the documentation if you change this number
+        if attempts == warn_attempts and not allow_pair_reselection:
+            warnings.warn(
+                f"\nFailed to find a balanced cut after {warn_attempts} attempts.\n"
+                "If possible, consider enabling pair reselection within your\n"
+                "MarkovChain proposal method to allow the algorithm to select\n"
+                "a different pair of districts for recombination.",
+                BipartitionWarning,
+            )
 
         restarts += 1
         attempts += 1
+
+    # frm: TODO: Refactoring:  raise ReselectException seems evil...
+    #
+    # I was taught that raising exceptions should be for bad things, not for
+    # clever logic for "normal" situations.  In this case, raising this exception
+    # allows recom() - and only recom() to detect that this pair of districts
+    # didn't work out so it should try a different pair.
+    #
+    # Why not just return None - doing that would signal that no bipartition
+    # was found which is exactly what this exception signals.  It just seenms
+    # odd to have a function use an exception as the way to return a result-code.
+    #
+    # Am I being old-fashioned?  Is this the new Pythonic way of doing things?
+
+    if allow_pair_reselection:
+        raise ReselectException(
+            f"Failed to find a balanced cut after {max_attempts} attempts.\n"
+            f"Selecting a new district pair."
+        )
 
     raise RuntimeError(f"Could not find a possible cut after {max_attempts} attempts.")
 
@@ -1380,7 +1883,7 @@ def _bipartition_tree_random_all(
 #               revisit when we decide a general code cleanup is in order...
 #
 def bipartition_tree_random_with_num_cuts(
-    graph: Graph,
+    subgraph_to_split: Graph,
     pop_col: str,
     pop_target: Union[int, float],
     epsilon: float,
@@ -1405,8 +1908,8 @@ def bipartition_tree_random_with_num_cuts(
     Builds up a connected subgraph with a connected complement whose population
     is ``epsilon * pop_target`` away from ``pop_target``.
 
-    :param graph: The graph to partition.
-    :type graph: Graph
+    :param subgraph_to_split: The graph to partition.
+    :type subgraph_to_split: Graph
     :param pop_col: The node attribute holding the population of each node.
     :type pop_col: str
     :param pop_target: The target population for the returned subset of nodes.
@@ -1454,8 +1957,8 @@ def bipartition_tree_random_with_num_cuts(
     if "one_sided_cut" in signature(balance_edge_fn).parameters:
         balance_edge_fn = partial(balance_edge_fn, one_sided_cut=True)
 
-    possible_cuts = _bipartition_tree_random_all(
-        graph_to_split=graph,
+    cuts_and_populated_graph = _get_possible_edge_cuts_and_populated_graph(
+        graph_to_split=subgraph_to_split,
         pop_col=pop_col,
         pop_target=pop_target,
         epsilon=epsilon,
@@ -1467,18 +1970,78 @@ def bipartition_tree_random_with_num_cuts(
         choice=choice,
         max_attempts=max_attempts,
     )
+    possible_cuts = cuts_and_populated_graph[0]
+
     if possible_cuts:
         chosen_cut = choice(possible_cuts)
         num_cuts = len(possible_cuts)
-        parent_nodes = graph.translate_subgraph_node_ids_for_set_of_nodes(chosen_cut.subset)
+        parent_nodes = subgraph_to_split.translate_subgraph_node_ids_for_set_of_nodes(
+            chosen_cut.subset
+        )
         return num_cuts, frozenset(parent_nodes)  # frm: Not sure if important that it be frozenset
     else:
         return None
 
 
 #######################
-# frm TODO:  Testing: Check to make sure there is a test for this...
+# frm * TODO:  Testing: Check to make sure there is a test for this...
 def bipartition_tree_random(
+    subgraph_to_split: Graph,
+    pop_col: str,
+    pop_target: Union[int, float],
+    epsilon: float,
+    node_repeats: int = 1,
+    repeat_until_valid: bool = True,
+    spanning_tree: Optional[Graph] = None,
+    spanning_tree_fn: Callable = random_spanning_tree,
+    balance_edge_fn: Callable = find_balanced_edge_cuts_memoization,
+    one_sided_cut: bool = False,
+    choice: Callable = random.choice,
+    max_attempts: Optional[int] = 100000,
+) -> Union[Set[Any], None]:
+    # frm: TODO: Documentation: Add docstrings...
+    #
+    # The docstrings should probably just defer to bipartition_tree_random_with_num_cuts()
+    # with just an overview of what is going on.
+    #
+
+    # bipartition_tree_random_with_num_cuts() does what we want and more.
+    # so call it and then just disregard the num_cuts, which we don't care about...
+    #
+    num_cuts, node_ids = bipartition_tree_random_with_num_cuts(
+        subgraph_to_split=subgraph_to_split,
+        pop_col=pop_col,
+        pop_target=pop_target,
+        epsilon=epsilon,
+        node_repeats=node_repeats,
+        repeat_until_valid=repeat_until_valid,
+        spanning_tree=spanning_tree,
+        spanning_tree_fn=spanning_tree_fn,
+        balance_edge_fn=balance_edge_fn,
+        one_sided_cut=one_sided_cut,
+        choice=choice,
+        max_attempts=max_attempts,
+    )
+    return node_ids
+
+
+# frm: TODO: Refactoring: Remove old_bipartition_tree_random() after PR code review
+#
+# A while ago I added the routine, bipartition_tree_random_with_num_cuts() because
+# the routine, reversible_recom() in tree_proposals.py had used an internal routine
+# called _get_possible_edge_cuts_and_populated_graph() because it wanted to know how many possible
+# cut solutions existed.  I did what was expedient and just added a function inside
+# tree.py that did what the code in tree_proposals.py did in order to hide the
+# internal routine.  I later realized that it was EXACTLY the same as bipartition_tree_random()
+# except that it passed back one more value, so I just replaced the definitioin of
+# bipartition_tree_random() with a call to bipartition_tree_random_with_num_cuts() and
+# then discarded the extra num_cuts returned value.
+#
+# I am leaving this in the codebase for now, just to make it easier for Peter to see
+# what is going on when he does a review.  Note that after this change all tests passed
+# (January 9, 20206)
+#
+def old_bipartition_tree_random(
     subgraph_to_split: Graph,
     pop_col: str,
     pop_target: Union[int, float],
@@ -1564,7 +2127,7 @@ def bipartition_tree_random(
     if "one_sided_cut" in signature(balance_edge_fn).parameters:
         balance_edge_fn = partial(balance_edge_fn, one_sided_cut=True)
 
-    possible_cuts = _bipartition_tree_random_all(
+    cuts_and_populated_graph = _get_possible_edge_cuts_and_populated_graph(
         graph_to_split=subgraph_to_split,
         pop_col=pop_col,
         pop_target=pop_target,
@@ -1577,6 +2140,7 @@ def bipartition_tree_random(
         choice=choice,
         max_attempts=max_attempts,
     )
+    possible_cuts = cuts_and_populated_graph[0]
     if possible_cuts:
         chosen_cut = choice(possible_cuts)
         translated_nodes = subgraph_to_split.translate_subgraph_node_ids_for_set_of_nodes(
@@ -1585,11 +2149,19 @@ def bipartition_tree_random(
         return frozenset(translated_nodes)  # frm: Not sure if important that it be frozenset
 
 
-# frm: used in this file and in tree_proposals.py
-#       But maybe this is intended to be used externally...
+# frm: TODO: Refactoring:  Would be nice to rename "method" to "bipartition_tree_method"
+#
+# This is clearly not a high priority, but it would be nice to have a parameter name that
+# better stated what it meant.  "method" indicates that it is a function, but what does
+# the function do?  When reading the code where "method" is called, it would have been
+# nice to see bipartition_tree_method(...) instead.
+#
+# However, for legacy code reasons it is probably not worth changing.  *sigh*
+#
+# Peter - please confirm that this is not something that is worth changing, and
+# then I will be able to put it behind me ;-).
 
 
-# frm: Note that this routine is only used in recom()
 def epsilon_tree_bipartition(
     subgraph_to_split: Graph,
     parts: Sequence,
@@ -1679,10 +2251,26 @@ def epsilon_tree_bipartition(
     return translated_flips
 
 
-# frm: TODO: Refactoring: Move these recursive partition functions to their own module. They
-# are not central to the operation of the recom function despite being tree methods.
-# frm: defined here but only used in partition.py
-#       But maybe this is intended to be used externally...
+# frm: TODO: Refactoring: Move functions that create initial assignments to partition,py
+#
+# The two routines, recursive_tree_part() and recursive_seed_part() do not really have
+# anything to do with tree algorithms  It is true that the USE tree algorighms, but
+# they are not generally useful tree routines.
+#
+# They exist in order to create initial assignments to use to create a Partition object.
+# As such they should live in partition.py.  This will have two nice effects:
+#
+#   1) They will live in the same module where they "belong" - the reader of code in
+#      partition.py knows about assignments and can see routines that need assignments
+#      so it makes perfect sense to include routines that create assignments there.
+#
+#   2) It will declutter tree.py which is already complex and hard to understand
+#
+# This may cause legacy users some pain if they use these routines in code that does
+# not already import partition, but the error message should be clear enough to let them
+# figure it out easily.
+
+
 def recursive_tree_part(
     graph: Graph,
     parts: Sequence,
@@ -1695,7 +2283,7 @@ def recursive_tree_part(
     """
     Uses :func:`~gerrychain.tree.bipartition_tree` recursively to partition a tree into
     ``len(parts)`` parts of population ``pop_target`` (within ``epsilon``). Can be used to
-    generate initial seed plans or to implement ReCom-like "merge walk" proposals.
+    generate initial seed plans (partition assignments) or to implement ReCom-like "merge walk" proposals.
 
     :param graph: The graph to partition into ``len(parts)`` :math:`\varepsilon`-balanced parts.
     :type graph: Graph
@@ -2037,19 +2625,18 @@ def _recursive_seed_part_inner(
 ) -> List[Set]:
     """
     Inner function for recursive_seed_part.
-    Returns a partition with ``num_dists`` districts balanced within ``epsilon`` of
-    ``pop_target``.
 
-    frm: TODO: Documentation:     Correct the above statement that this function returns a
-                        partition. In fact, it returns a list of sets of nodes, which is
-                        conceptually equivalent to a partition, but is not a Partition object.
-                        Each set of nodes constitutes a district, but the district does not
-                        have an ID, and there is nothing that associates these nodes
-                        with a specific graph - that is implicit, depending on the graph
-                        object passed in, so the caller is responsible for knowing that
-                        the returned list of sets belongs to the graph passed in...
+    Returns a list of sets of nodes with ``num_dists`` districts balanced within
+    ``epsilon`` of ``pop_target``.
 
-    Splits graph into num_chunks chunks, and then recursively splits each chunk into
+    This list of sets of nodes is conceptually equivalent to an Assignment object.
+    Each set of nodes constitutes a district, but the district does not
+    have an ID, and there is nothing that associates these nodes
+    with a specific graph - that is implicit, depending on the graph
+    object passed in, so the caller is responsible for knowing that
+    the returned list of sets belongs to the graph passed in...
+
+    It splits the graph into num_chunks chunks, and then recursively splits each chunk into
     ``num_dists``/num_chunks chunks.
     The number num_chunks of chunks is chosen based on ``n`` and ``ceil`` as follows:
 
@@ -2062,13 +2649,6 @@ def _recursive_seed_part_inner(
     Finally, if the number of chunks as chosen above does not divide ``num_dists``, then
     this function bites off a single district from the graph and recursively partitions
     the remaining graph into ``num_dists - 1`` districts.
-
-    frm: ???:   OK, but why is the logic above for num_chunks the correct number?  Is there
-                a mathematical reason for it?  I assume so, but that explanation is missing...
-
-                I presume that the reason is that something in the code that finds a
-                district scales exponentially, so it makes sense to divide and conquer.
-                Even so, why this particular strategy for divide and conquer?
 
     :param graph: The underlying graph structure.
     :type graph: Graph
@@ -2104,17 +2684,34 @@ def _recursive_seed_part_inner(
     """
 
     """
-    frm: This code is quite nice once you grok it.
+    frm: TODO: Documentation: _recursive_seed_part_inner() - clarify what this does
+
+    I started to update the documentation a while back, but didn't finish it.  I now
+    need to remember what I was going to write, but the mere fact that I need to
+    remember it is a good reason to write the documentation!
+
+
+
+    This code is quite nice once you grok it.
 
     The goal is to find the given number of districts - but to do it in an
     efficient way - meaning with smaller graphs.  So conceptually, you want
-    to
-    HERE
+    to...
 
     There are two base cases when the number of districts still to be found are
-    either 1 or
+    either 1 or...
 
+
+    Also - address this comment which I now do not grok:
+
+        OK, but why is the logic above for num_chunks the correct number?  Is there
+        a mathematical reason for it?  I assume so, but that explanation is missing...
+
+        I presume that the reason is that something in the code that finds a
+        district scales exponentially, so it makes sense to divide and conquer.
+        Even so, why this particular strategy for divide and conquer?
     """
+
     # Chooses num_chunks
     if n is None:
         if ceil is None:
@@ -2153,14 +2750,26 @@ def _recursive_seed_part_inner(
             one_sided_cut=False,
         )
 
-        # frm: Note to Self:  the name "one_sided_cut" seems unnecessarily opaque.  What it really
-        #                       means is whether to split the graph into two equal districts or
-        #                       whether to just find one district from a larger graph.  When we
-        #                       clean up this code, consider changing the name of this parameter
-        #                       to something like: find_two_equal_sized_districts...
+        # frm: TODO: Refactoring:  the name "one_sided_cut" seems unnecessarily opaque.
         #
-        #                       Consider creating a wrapper function which has the better
-        #                       name that delegates to a private method to do the work.
+        # First find out if it a term of art that means something to the GerryChain user
+        # community.  I asked Google what it was, and Google said that it was not a term-of-art
+        # for graph theory...
+        #
+        # In GerryChain "one_sided_cut" it means (if set to True) that the bipartition_tree()
+        # algorithm should just carve off a single district from the nodes in the graph.  If
+        # set to False it means the graph should be split into exactly two districts.
+        #
+        # There are two issues here: 1) I dislike the name and am inclined to change it, but
+        # I am afraid that doing so will piss off legacy users - need Peter's input (but probably
+        # not worth the risk of pissing someone off) and 2) whether for understandability it
+        # would make sense to create a partial function that binds the value of "one_sided_cut"
+        # just to provide a clearer name - something like: carve_out_one_district() .
+        #
+        # One more thing - I think it would be good practice to NEVER let one_sided_cut
+        # default.  If only for documentation purposes, this parameter should always be explicitly
+        # set and named, because carving off a district is very different from splitting
+        # a graph into two districts.
 
         nodes_for_one_district = set(nodes)
         nodes_for_the_other_district = set(graph.node_indices) - nodes_for_one_district
@@ -2208,7 +2817,7 @@ def _recursive_seed_part_inner(
         )
 
     # split graph into num_chunks chunks, and recurse into each chunk
-    # frm: TODO: Documentation: Add documentation for why a subgraph in call below
+    # frm: * TODO: Documentation: Add documentation for why a subgraph in call below
     elif num_dists % num_chunks == 0:
         chunks = _get_seed_chunks(
             graph.subgraph(graph.node_indices),  # needs to be a subgraph
@@ -2250,8 +2859,15 @@ def _recursive_seed_part_inner(
     return translated_assignment
 
 
-# frm TODO: Refactoring:   This routine is never called - not in this file and not in any other
-#     GerryChain file. Is it intended to be used by end-users?  And if so, for what purpose?
+# frm TODO: Refactoring:   recursicve_seed_part() is never called - not in this file and not in any other
+#     GerryChain file. Is it intended to be used by end-users?
+#
+# It calculates an initial assignment dictionary - for use in creating a Partition object.
+#
+# Are there other uses as well?  The comment for recursive_tree_part() implied that there
+# might be other uses for creating an initial assigment-like dict...
+
+
 def recursive_seed_part(
     graph: Graph,
     parts: Sequence,
@@ -2264,7 +2880,7 @@ def recursive_seed_part(
     ceil: Optional[int] = None,
 ) -> Dict:
     """
-    Returns a partition with ``num_dists`` districts balanced within ``epsilon`` of
+    Returns an assignment dictionary with ``num_dists`` districts balanced within ``epsilon`` of
     ``pop_target`` by recursively splitting graph using _recursive_seed_part_inner.
 
     :param graph: The graph
@@ -2312,7 +2928,7 @@ def recursive_seed_part(
     #               retain it - again, for consistency: Every graph knows how to translate to
     #               parent_node_ids even if it is a top-level graph.
     #
-    #               In short - an agrument based on invariants being a good thing...
+    #               In short - an argument based on invariants being a good thing...
     #
     flips = {}
     assignment = _recursive_seed_part_inner(

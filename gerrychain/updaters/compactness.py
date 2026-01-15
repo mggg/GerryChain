@@ -220,7 +220,7 @@ def perimeter_of_part(partition, part: int) -> float:
     """
     Totals up the perimeter of the part in the partition.
 
-    .. Warning::  frm: TODO: Refactoring:   Add code to enforce this warning...
+    .. Warning::
 
         Requires that 'boundary_perim' be a node attribute, 'shared_perim' be an edge
         attribute, 'cut_edges' be an updater, and 'exterior_boundaries' be an updater.
@@ -233,6 +233,9 @@ def perimeter_of_part(partition, part: int) -> float:
     :returns: The perimeter of the desired part.
     :rtype: float
     """
+
+    # frm: TODO: Refactoring:   Add code to enforce the warning in the docstring above
+
     exterior_perimeter = partition["exterior_boundaries"][part]
     interior_perimeter = partition["interior_boundaries"][part]
 
