@@ -14,6 +14,10 @@ in :mod:`gerrychain.graph.adjacency`, and the class
 of those files for more information.
 """
 
+# frm: TODO: Documentation:  Update documentation for graph/__init__.py
+#
+# It still refers to the old Graphy object extending NetworkX.Graph
+
 from .adjacency import *
 from .geo import *
 from .graph import *

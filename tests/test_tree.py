@@ -9,20 +9,24 @@ import rustworkx
 from gerrychain import MarkovChain
 from gerrychain.constraints import contiguous, within_percent_of_ideal_population
 from gerrychain.graph import Graph
-from gerrychain.partition import Partition
+from gerrychain.partition import (
+    Partition,
+    recursive_seed_part,
+    recursive_tree_part,
+)
+from gerrychain.partition.initial_partition_generators import get_max_prime_factor_less_than
 from gerrychain.proposals import recom, reversible_recom
 from gerrychain.tree import (
-    PopulatedGraph,
     bipartition_tree,
     bipartition_tree_random,
     find_balanced_edge_cuts_contraction,
     find_balanced_edge_cuts_memoization,
-    get_max_prime_factor_less_than,
     random_spanning_tree,
-    recursive_seed_part,
-    recursive_tree_part,
     uniform_spanning_tree,
 )
+
+# Need to explicitly import "internal" class
+from gerrychain.tree.bipartition_tree import _PopulatedGraph
 from gerrychain.updaters import Tally, cut_edges
 
 random.seed(2018)
@@ -224,7 +228,7 @@ def do_test_recursive_tree_part_returns_within_epsilon_of_target_pop_using_contr
         ideal_pop,
         "pop",
         epsilon,
-        method=partial(
+        bipartition_tree_fn=partial(
             bipartition_tree,
             max_attempts=10000,
             balance_edge_fn=find_balanced_edge_cuts_contraction,
@@ -307,7 +311,7 @@ def do_test_recursive_seed_part_returns_within_epsilon_of_target_pop_using_contr
         epsilon,
         n=5,
         ceil=None,
-        method=partial(
+        bipartition_tree_fn=partial(
             bipartition_tree,
             max_attempts=10000,
             balance_edge_fn=find_balanced_edge_cuts_contraction,
@@ -334,10 +338,10 @@ def test_recursive_seed_part_returns_within_epsilon_of_target_pop_using_contract
 # ---------------------------------------------------------------------
 
 
-def do_test_recursive_seed_part_uses_method(twelve_by_twelve_with_pop_graph):
+def do_test_recursive_seed_part_uses_bipartition_tree_fn(twelve_by_twelve_with_pop_graph):
     calls = 0
 
-    def dummy_method(graph, pop_col, pop_target, epsilon, node_repeats, one_sided_cut):
+    def dummy_bipartition_tree_fn(graph, pop_col, pop_target, epsilon, node_repeats, one_sided_cut):
         nonlocal calls
         calls += 1
         return bipartition_tree(
@@ -366,21 +370,21 @@ def do_test_recursive_seed_part_uses_method(twelve_by_twelve_with_pop_graph):
         epsilon,
         n=5,
         ceil=None,
-        method=dummy_method,
+        bipartition_tree_fn=dummy_bipartition_tree_fn,
     )
     # Called at least once for each district besides the last one
-    # (note that current implementation of recursive_seed_part calls method
+    # (note that current implementation of recursive_seed_part calls bipartition_tree_fn
     # EXACTLY once for each district besides the last one, but that is an
     # implementation detail)
     assert calls >= n_districts - 1
 
 
-def test_recursive_seed_part_uses_method(
+def test_recursive_seed_part_uses_bipartition_tree_fn(
     twelve_by_twelve_with_pop_nx, twelve_by_twelve_with_pop_rx
 ):
     # Test both NX-based and RX-based Graph objects
-    do_test_recursive_seed_part_uses_method(twelve_by_twelve_with_pop_nx)
-    do_test_recursive_seed_part_uses_method(twelve_by_twelve_with_pop_rx)
+    do_test_recursive_seed_part_uses_bipartition_tree_fn(twelve_by_twelve_with_pop_nx)
+    do_test_recursive_seed_part_uses_bipartition_tree_fn(twelve_by_twelve_with_pop_rx)
 
 
 # ---------------------------------------------------------------------
@@ -576,11 +580,11 @@ def test_reversible_recom_works_as_a_proposal(partition_with_pop):
     # upper bounds for a given value - in this case 0.25 percent of the ideal population.
     #
     # The more I did into this the more I shake my head.  The value of "epsilon" passed into the
-    # reversible_recom() seems to only ever be used when creating a PopulatedGraph which in turn
+    # reversible_recom() seems to only ever be used when creating a _PopulatedGraph which in turn
     # only ever uses it when doing a specific balanced edge cut algorithm.  That is, the value of
     # epsilon is very rarely used, and yet it is passed in as one of the important paramters to
     # reversible_recom().  It looks like the original coders thought that it would be a great thing
-    # to have in the PopulatedGraph object, but then they didn't actually use it.  *sigh*
+    # to have in the _PopulatedGraph object, but then they didn't actually use it.  *sigh*
     #
     # Then this test defines a constraint for population defining it to be OK if the population
     # is within 25% of ideal - which is at odds with the value of epsilon above of 10%, but since
@@ -634,7 +638,7 @@ def test_find_balanced_cuts_contraction():
     # |
     # 8
 
-    populated_tree = PopulatedGraph(tree, {node: 1 for node in tree}, len(tree) / 2, 0.5)
+    populated_tree = _PopulatedGraph(tree, {node: 1 for node in tree}, len(tree) / 2, 0.5)
     cuts = find_balanced_edge_cuts_contraction(populated_tree)
     edges = set(tuple(sorted(cut.edge)) for cut in cuts)
     assert edges == {(1, 4), (3, 4), (3, 6)}
@@ -655,10 +659,10 @@ def test_no_balanced_cuts_contraction_when_one_side_okay():
     # OK to use the same populations for NX and RX graphs
     populations = {0: 4, 1: 4, 2: 3, 3: 3, 4: 3}
 
-    populated_tree_nx = PopulatedGraph(
+    populated_tree_nx = _PopulatedGraph(
         graph=tree_nx, populations=populations, ideal_pop=10, epsilon=0.1
     )
-    populated_tree_rx = PopulatedGraph(
+    populated_tree_rx = _PopulatedGraph(
         graph=tree_rx, populations=populations, ideal_pop=10, epsilon=0.1
     )
 
@@ -689,10 +693,10 @@ def test_find_balanced_cuts_memo():
     #         |
     #         8
 
-    populated_tree_nx = PopulatedGraph(
+    populated_tree_nx = _PopulatedGraph(
         tree_nx, {node: 1 for node in tree_nx}, len(tree_nx) / 2, 0.5
     )
-    populated_tree_rx = PopulatedGraph(
+    populated_tree_rx = _PopulatedGraph(
         tree_rx, {node: 1 for node in tree_rx}, len(tree_rx) / 2, 0.5
     )
 
@@ -720,10 +724,10 @@ def test_no_balanced_cuts_memo_when_one_side_okay():
     # OK to use the same populations with both NX and RX Graphs
     populations = {0: 4, 1: 4, 2: 3, 3: 3, 4: 3}
 
-    populated_tree_nx = PopulatedGraph(
+    populated_tree_nx = _PopulatedGraph(
         graph=tree_nx, populations=populations, ideal_pop=10, epsilon=0.1
     )
-    populated_tree_rx = PopulatedGraph(
+    populated_tree_rx = _PopulatedGraph(
         graph=tree_rx, populations=populations, ideal_pop=10, epsilon=0.1
     )
 

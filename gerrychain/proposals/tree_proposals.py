@@ -1,16 +1,18 @@
 import random
 from functools import partial
 from inspect import signature
-from typing import Callable, Dict, Optional, Union
+from typing import Callable, Dict, Optional, Sequence, Union
 
 from gerrychain.partition import Partition
 
-from ..tree import (
+from ..graph import Graph
+from ..tree import (  # epsilon_tree_bipartition,
+    BalanceError,
+    PopulationBalanceError,
     ReselectException,
     bipartition_tree,
     bipartition_tree_random,
     bipartition_tree_random_with_num_cuts,
-    epsilon_tree_bipartition,
     find_balanced_edge_cuts_memoization,
     uniform_spanning_tree,
 )
@@ -36,6 +38,101 @@ class ValueWarning(UserWarning):
     pass
 
 
+# frm: Note to Peter:  param name, "method", has been changed everywhere to "bipartition_tree_fn"
+#
+# I have added a note to the rx_release_notes.md file that we should warn users about this
+# change.
+
+
+def epsilon_tree_bipartition(
+    subgraph_to_split: Graph,
+    parts: Sequence,
+    pop_target: Union[float, int],
+    pop_col: str,
+    epsilon: float,
+    node_repeats: int = 1,
+    bipartition_tree_fn: Callable = partial(bipartition_tree, max_attempts=10000),
+) -> Dict:
+    """
+    Uses :func:`~gerrychain.tree.bipartition_tree` to partition a tree into
+    two parts of population ``pop_target`` (within ``epsilon``).
+
+    :param graph: The graph to partition into two :math:`\varepsilon`-balanced parts.
+    :type graph: Graph
+    :param parts: Iterable of part (district) labels (like ``[0,1,2]`` or ``range(4)``).
+    :type parts: Sequence
+    :param pop_target: Target population for each part of the partition.
+    :type pop_target: Union[float, int]
+    :param pop_col: Node attribute key holding population data.
+    :type pop_col: str
+    :param epsilon: How far (as a percentage of ``pop_target``) from ``pop_target`` the parts
+        of the partition can be.
+    :type epsilon: float
+    :param node_repeats: Parameter for :func:`~gerrychain.tree.bipartition_tree` to use.
+        Defaults to 1.
+    :type node_repeats: int, optional
+    :param bipartition_tree_fn: The partition method to use. Defaults to
+        `partial(bipartition_tree, max_attempts=10000)`.
+    :type bipartition_tree_fn: Callable, optional
+
+    :returns: New assignments for the nodes of ``graph``.
+    :rtype: dict
+    """
+    if len(parts) != 2:
+        raise ValueError(
+            "This function only supports bipartitioning. Please ensure that there"
+            + " are exactly 2 parts in the parts list."
+        )
+
+    flips = {}
+    remaining_nodes = subgraph_to_split.node_indices
+
+    lb_pop = pop_target * (1 - epsilon)
+    ub_pop = pop_target * (1 + epsilon)
+    check_pop = lambda x: lb_pop <= x <= ub_pop
+
+    nodes = bipartition_tree_fn(
+        subgraph_to_split.subgraph(remaining_nodes),
+        pop_col=pop_col,
+        pop_target=pop_target,
+        epsilon=epsilon,
+        node_repeats=node_repeats,
+        one_sided_cut=False,
+    )
+
+    if nodes is None:
+        raise BalanceError()
+
+    # Calculate the total population for the two districts based on the
+    # results of the "bipartition_tree_fn()" partitioning.
+    part_pop = 0
+    for node in nodes:
+        # frm: ???:  The code above has already confirmed that len(parts) is 2
+        #               so why use negative index values - why not just use
+        #               parts[0] and parts[1]?
+        flips[node] = parts[-2]
+        part_pop += subgraph_to_split.node_data(node)[pop_col]
+
+    if not check_pop(part_pop):
+        raise PopulationBalanceError()
+
+    remaining_nodes -= nodes
+
+    # All of the remaining nodes go in the last part
+    part_pop = 0
+    for node in remaining_nodes:
+        flips[node] = parts[-1]
+        part_pop += subgraph_to_split.node_data(node)[pop_col]
+
+    if not check_pop(part_pop):
+        raise PopulationBalanceError()
+
+    # translate subgraph node_ids back into node_ids in parent graph
+    translated_flips = subgraph_to_split.translate_subgraph_node_ids_for_flips(flips)
+
+    return translated_flips
+
+
 def recom(
     partition: Partition,
     pop_col: str,
@@ -43,7 +140,7 @@ def recom(
     epsilon: float,
     node_repeats: int = 1,
     region_surcharge: Optional[Dict] = None,
-    method: Callable = bipartition_tree,
+    bipartition_tree_fn: Callable = bipartition_tree,
 ) -> Partition:
     """
     ReCom (short for ReCombination) is a Markov Chain Monte Carlo (MCMC) algorithm
@@ -87,9 +184,9 @@ def recom(
     :param region_surcharge: The surcharge dictionary for the graph used for region-aware
         partitioning of the grid. Default is None.
     :type region_surcharge: Optional[Dict], optional
-    :param method: The method used for bipartitioning the tree. Default is
+    :param bipartition_tree_fn: The method used for bipartitioning the tree. Default is
         :func:`~gerrychain.tree.bipartition_tree`.
-    :type method: Callable, optional
+    :type bipartition_tree_fn: Callable, optional
 
     :returns: The new partition resulting from the ReCom algorithm.
     :rtype: Partition
@@ -99,15 +196,20 @@ def recom(
     n_parts = len(partition)
     tot_pairs = n_parts * (n_parts - 1) / 2  # n choose 2
 
-    # Try to add the region aware in if the method accepts the surcharge dictionary
-    if "region_surcharge" in signature(method).parameters:
-        method = partial(method, region_surcharge=region_surcharge)
+    # Try to add the region aware in if the bipartition_tree_fn accepts the surcharge dictionary
+    if "region_surcharge" in signature(bipartition_tree_fn).parameters:
+        bipartition_tree_fn = partial(bipartition_tree_fn, region_surcharge=region_surcharge)
 
     # frm: TODO: Refactoring:  Should we sanity check region_surcharge usage?
     #
     # If the caller passed in a non-None value for region_surcharge, then presumably
-    # he/she should have also passed in a function for the "method" parameter that
+    # he/she should have also passed in a function for the "bipartition_tree_fn" parameter that
     # accepts a region_surcharge parameter.
+    #
+    # Peter said (January 2026): A lot of our users are not coders, so they
+    # do silly things. I'm open to changing this to have it just fail if the
+    # bipartition_tree_fn does not have the corresponding parameter, but we should have
+    # a defensive pattern here.
     #
 
     while len(bad_district_pairs) < tot_pairs:
@@ -143,7 +245,7 @@ def recom(
                 pop_target=pop_target,
                 epsilon=epsilon,
                 node_repeats=node_repeats,
-                method=method,
+                bipartition_tree_fn=bipartition_tree_fn,
             )
             break
 
@@ -162,6 +264,19 @@ def recom(
         )
 
     return partition.flip(flips)
+
+
+# frm: TODO: Refactoring: Change name and default value of M below.
+#
+# Peter said (January 2026):
+#
+# This comes from the paper in section 3.2:
+#
+# https://mggg.org/rrc
+#
+# But M is a terrible name for a parameter, and we should force the user to
+# provide this. 1 is actually the worst value that this could be since
+# this should be a global upper bound..
 
 
 def reversible_recom(
@@ -368,7 +483,7 @@ class ReCom:
         pop_col: str,
         ideal_pop: Union[int, float],
         epsilon: float,
-        method: Callable = bipartition_tree_random,
+        bipartition_tree_fn: Callable = bipartition_tree_random,
     ):
         """
         :param pop_col: The name of the column in the partition that contains the population data.
@@ -378,17 +493,23 @@ class ReCom:
         :param epsilon: The epsilon value for population deviation as a percentage of the
             target population.
         :type epsilon: float
-        :param method: The method used for bipartitioning the tree.
+        :param bipartition_tree_fn: The method used for bipartitioning the tree.
             Defaults to `bipartition_tree_random`.
-        :type method: function, optional
+        :type bipartition_tree_fn: function, optional
         """
         self.pop_col = pop_col
         self.ideal_pop = ideal_pop
         self.epsilon = epsilon
-        self.method = method
+        self.bipartition_tree_fn = bipartition_tree_fn
 
     def __call__(self, partition: Partition):
-        return recom(partition, self.pop_col, self.ideal_pop, self.epsilon, method=self.method)
+        return recom(
+            partition,
+            self.pop_col,
+            self.ideal_pop,
+            self.epsilon,
+            bipartition_tree_fn=self.bipartition_tree_fn,
+        )
 
 
 class ReversibilityError(Exception):

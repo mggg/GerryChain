@@ -129,6 +129,10 @@ class Election:
         # since the feature that we removed is only really useful for testing, but
         # perhaps there is a user out there that depends on it.
         #
+        # Peter said (January 2026): I say that we leave the discussion out of
+        # the migration guide and I'll just deal with the one user's email if
+        # they ever materialize.
+        #
         # Once we have made the Migration Guide decision, this should just become
         # a comment that lives in the code for historical purposes until someone
         # decides that this bit of history is no longer interesting...

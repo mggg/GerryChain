@@ -140,6 +140,12 @@ def _are_reachable(graph: Graph, start_node: Any, avoid: Callable, targets: Any)
     # any use of those distances, this test is not useful.
     #
     # *sigh*
+    #
+    # Peter said (January 2026): Yeah, it looks like this is a modified version of
+    # multisource Dijkstra. All that really needs to be done here is make sure that
+    # there is some path between all the nodes that doesn't cross partition
+    # boundaries. It doesn't need to be the shortest path (which is what
+    # Dijkstra computes).
 
     return all(tgt in seen for tgt in targets)
 
