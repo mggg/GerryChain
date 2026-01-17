@@ -20,3 +20,4 @@ of those files for more information.
 # be changed to apply to tree...
 
 from .bipartition_tree import *
+from .spanning_tree import *

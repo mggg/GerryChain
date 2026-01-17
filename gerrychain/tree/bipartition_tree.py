@@ -15,8 +15,12 @@ from typing import (  # Hashable,; Tuple,
     Union,
 )
 
-# frm:  import the new Graph object which encapsulates NX and RX Graph...
 from ..graph import Graph
+
+# frm:  import the new Graph object which encapsulates NX and RX Graph...
+from .spanning_tree import random_spanning_tree
+
+# frm: TODO: Documentation: Update the high level description for biparition_tree.py below
 
 """
 This module provides tools and algorithms for manipulating and analyzing graphs,
@@ -201,7 +205,7 @@ Unify the code that does the heavy lifting for biparition_tree().
 # Ask Peter if he agrees.
 
 
-def random_spanning_tree(graph: Graph, region_surcharge: Optional[Dict] = None) -> Graph:
+def old_random_spanning_tree(graph: Graph, region_surcharge: Optional[Dict] = None) -> Graph:
     """
     Builds a spanning tree chosen by Kruskal's method using random weights.
 
@@ -379,7 +383,7 @@ def random_spanning_tree(graph: Graph, region_surcharge: Optional[Dict] = None) 
     return minimum_spanning_tree
 
 
-def uniform_spanning_tree(graph: Graph, choice: Callable = random.choice) -> Graph:
+def old_uniform_spanning_tree(graph: Graph, choice: Callable = random.choice) -> Graph:
     """
     Builds a spanning tree chosen uniformly from the space of all
     spanning trees of the graph. Uses Wilson's algorithm.
