@@ -12,7 +12,7 @@ from typing import (
 
 # frm:  import the new Graph object which encapsulates NX and RX Graph...
 from ..graph import Graph
-from ..tree import BalanceError, PopulationBalanceError, bipartition_tree, bipartition_tree_random
+from ..tree import BalanceError, PopulationBalanceError, bipartition_tree
 
 # frm: TODO: Update docstrings below
 """
@@ -171,7 +171,7 @@ def _get_seed_chunks(
     pop_col: str,
     epsilon: float,
     node_repeats: int = 1,
-    bipartition_tree_fn: Callable = partial(bipartition_tree_random, max_attempts=10000),
+    bipartition_tree_fn: Callable = partial(bipartition_tree, max_attempts=10000),
 ) -> List[List[int]]:
     """
     Helper function for recursive_seed_part. Partitions the graph into ``num_chunks`` chunks,
@@ -190,11 +190,11 @@ def _get_seed_chunks(
     :param epsilon: How far (as a percentage of ``pop_target``) from ``pop_target`` the parts
         of the partition can be
     :type epsilon: float
-    :param node_repeats: Parameter for :func:`~gerrychain.tree.bipartition_tree_random`
+    :param node_repeats: Parameter for :func:`~gerrychain.tree.bipartition_tree`
         to use. Defaults to 1.
     :type node_repeats: int, optional
     :param bipartition_tree_fn: The method to use for bipartitioning the graph.
-        Defaults to :func:`~gerrychain.tree.bipartition_tree_random`
+        Defaults to :func:`~gerrychain.tree.bipartition_tree`
     :type bipartition_tree_fn: Callable, optional
 
     :returns: New assignments for the nodes of ``graph``.

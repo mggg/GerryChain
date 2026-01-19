@@ -231,7 +231,7 @@ def do_test_recursive_tree_part_returns_within_epsilon_of_target_pop_using_contr
         bipartition_tree_fn=partial(
             bipartition_tree,
             max_attempts=10000,
-            balance_edge_fn=find_balanced_edge_cuts_contraction,
+            find_balanced_edge_cuts_fn=find_balanced_edge_cuts_contraction,
         ),
     )
     partition = Partition(twelve_by_twelve_with_pop_graph, result, updaters={"pop": Tally("pop")})
@@ -314,7 +314,7 @@ def do_test_recursive_seed_part_returns_within_epsilon_of_target_pop_using_contr
         bipartition_tree_fn=partial(
             bipartition_tree,
             max_attempts=10000,
-            balance_edge_fn=find_balanced_edge_cuts_contraction,
+            find_balanced_edge_cuts_fn=find_balanced_edge_cuts_contraction,
         ),
     )
     partition = Partition(twelve_by_twelve_with_pop_graph, result, updaters={"pop": Tally("pop")})

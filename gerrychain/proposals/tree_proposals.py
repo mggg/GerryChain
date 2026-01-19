@@ -11,7 +11,6 @@ from ..tree import (  # epsilon_tree_bipartition,
     PopulationBalanceError,
     ReselectException,
     bipartition_tree,
-    bipartition_tree_random,
     bipartition_tree_random_with_num_cuts,
     find_balanced_edge_cuts_memoization,
     uniform_spanning_tree,
@@ -284,7 +283,7 @@ def reversible_recom(
     pop_col: str,
     pop_target: Union[int, float],
     epsilon: float,
-    balance_edge_fn: Callable = find_balanced_edge_cuts_memoization,
+    find_balanced_edge_cuts_fn: Callable = find_balanced_edge_cuts_memoization,
     M: int = 1,  # frm: TODO: Documentation: WTF does 'M' stand for?
     repeat_until_valid: bool = False,
     choice: Callable = random.choice,
@@ -306,9 +305,9 @@ def reversible_recom(
     :param epsilon: The epsilon value for population deviation as a percentage of the
         target population.
     :type epsilon: float
-    :param balance_edge_fn: The balance edge function. Default is
+    :param find_balanced_edge_cuts_fn: The balance edge function. Default is
         find_balanced_edge_cuts_memoization.
-    :type balance_edge_fn: Callable, optional
+    :type find_balanced_edge_cuts_fn: Callable, optional
         frm: it returns a list of Cuts - a named tuple defined in tree.py
     :param M: The maximum number of balance edges. Default is 1.
     :type M: int, optional
@@ -335,8 +334,8 @@ def reversible_recom(
 
     # frm: TODO: Refactoring: Get rid of *args and **kwargs below.
     #
-    # The reason for this hack is that the signatures for the different balance_edge_fn's
-    # are different, so the "bounded_balance_edge_fn" cannot know exactly what params
+    # The reason for this hack is that the signatures for the different find_balanced_edge_cuts_fn's
+    # are different, so the "bounded_find_balanced_edge_cuts_fn" cannot know exactly what params
     # make sense.  The *args, and **kwargs just allow it to ignorantly pass through whatever
     # it gets, hoping that they make sense for the balance_edge_fun cal.
     #
@@ -344,8 +343,8 @@ def reversible_recom(
     # that we know what the parameters are in all cases.  Then we can just use those
     # canonical parameters below.
 
-    def bounded_balance_edge_fn(*args, **kwargs):
-        cuts = balance_edge_fn(*args, **kwargs)
+    def bounded_find_balanced_edge_cuts_fn(*args, **kwargs):
+        cuts = find_balanced_edge_cuts_fn(*args, **kwargs)
         if len(cuts) > M:
             raise ReversibilityError(
                 f"Found {len(cuts)} balance edges, " f"but the upper bound is {M}."
@@ -421,12 +420,11 @@ def reversible_recom(
         epsilon=epsilon,
         repeat_until_valid=repeat_until_valid,
         spanning_tree_fn=uniform_spanning_tree,
-        balance_edge_fn=bounded_balance_edge_fn,
+        find_balanced_edge_cuts_fn=bounded_find_balanced_edge_cuts_fn,
     )
-    if not result:
-        return partition  # self-loop: no balance edge
-
     num_possible_districts, nodes = result
+    if num_possible_districts == 0:
+        return partition  # self-loop: no balance edge
 
     remaining_nodes = subgraph_nodes - set(nodes)
     # Note:  Clever way to create a single dictionary from
@@ -483,7 +481,15 @@ class ReCom:
         pop_col: str,
         ideal_pop: Union[int, float],
         epsilon: float,
-        bipartition_tree_fn: Callable = bipartition_tree_random,
+        bipartition_tree_fn: Callable = bipartition_tree,
+        # frm: TODO: Refactoring: Delete this comment after Peter OK's PR
+        #
+        # I changed this from biparition_tree_random to bipartition_tree because every other
+        # invocation of recom() that I saw passed it bipartition_tree(), so I assumed that this
+        # use of bipartition_tree_random was left over from pre-history.
+        #
+        # Note that I have not been able to find any use of the ReCom class, so I think we
+        # should just delete it entirely...
     ):
         """
         :param pop_col: The name of the column in the partition that contains the population data.
@@ -494,7 +500,7 @@ class ReCom:
             target population.
         :type epsilon: float
         :param bipartition_tree_fn: The method used for bipartitioning the tree.
-            Defaults to `bipartition_tree_random`.
+            Defaults to `bipartition_tree`.
         :type bipartition_tree_fn: function, optional
         """
         self.pop_col = pop_col
