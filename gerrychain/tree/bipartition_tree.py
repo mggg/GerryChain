@@ -17,8 +17,6 @@ from typing import (  # Hashable,; Tuple,
 from ..graph import Graph
 from .spanning_tree import random_spanning_tree
 
-# frm: TODO: Documentation: Update the high level description for biparition_tree.py below
-
 """
 This module implements algorithms for finding balanced subsets of nodes in a graph.
 
@@ -131,7 +129,7 @@ Unified the code that does the heavy lifting for biparition_tree().
     the ugliness is internal...
 
     I also unified the many bipartition tree functions so that the use a
-    new routine, internal_bipartition_tree(), which puts all of the logic
+    new routine, _internal_bipartition_tree(), which puts all of the logic
     in one place.  The differences between the externally visible bipartition
     tree functions are now trivial.
 
@@ -194,6 +192,8 @@ Unified the code that does the heavy lifting for biparition_tree().
 # frm TODO: Documentation: _PopulatedGraph
 #
 # State what the purpose of this class is in the docstring comment below.
+#
+# Note that I changed this to be an internal class (leading underscore).
 #
 class _PopulatedGraph:
     """
@@ -1091,10 +1091,13 @@ def _region_preferred_max_weight_choice(
 #      GerryChain does and how it does it.  Everything else is just flow control and
 #      book-keeping
 #
-# Get Peter's feedback on whether this all makes sense.
+#        => This is essentially DONE.  The logic for bipartition_tree for all cases is
+#           now encapculated in two routines, _internal_bipartition_tree() and
+#           _get_possible_edge_cuts_and_populated_graph().
+#
 
 
-def internal_bipartition_tree(
+def _internal_bipartition_tree(
     subgraph_to_split: Graph,
     pop_col: str,
     pop_target: Union[int, float],
@@ -1112,14 +1115,6 @@ def internal_bipartition_tree(
     repeat_until_valid: bool = True,  # frm: TODO: Have this NOT default...
     cut_choice_fn: Callable = _region_preferred_max_weight_choice,
 ) -> Union[Set[Any], None]:
-
-    # frm: TODO: Refactoring: Change the names of ALL function formal parameters to end
-    #      in "_fn" - to make it clear that the paraemter is a function.  This will make it
-    #      easier to do a global search to find all function parameters - as well as just being
-    #      good coding practice...
-    #
-    # Peter said (January 2026): For the love of all that is good, please do. This
-    # drives me nuts and a major release is a great place to make this sort of change
     """
     This function finds a balanced 2 partition of a graph by drawing a
     spanning tree and finding an edge to cut that leaves at most an epsilon
@@ -1188,21 +1183,6 @@ def internal_bipartition_tree(
     :raises RuntimeError: If a possible cut cannot be found after the maximum number of attempts
         given by ``max_attempts``.
     """
-    # Try to add the region-aware in if the spanning_tree_fn accepts a surcharge dictionary
-    # frm ???:  REALLY???  You are going to change the semantics of your program based on the
-    #           a function argument's signature?  What if someone refactors the code to have
-    #           different names???  *sigh*
-    #
-    # A better strategy would be to lock in the function signature for ALL spanning_tree
-    # functions and then just have the region_surcharge parameter not be used in some of them...
-    #
-    # Same with "one_sided_cut"
-    #
-    # Oh - and change "one_sided_cut" to be something a little more intuitive.  I have to
-    # reset my mind every time I see it to figure out whether it means to split into
-    # two districts or just peel off one district...  *sigh*  Before doing this, check to
-    # see if "one_sided_cut" is a term of art that might make sense to some set of experts...
-    #
     if "region_surcharge" in signature(spanning_tree_fn).parameters:
         spanning_tree_fn = partial(spanning_tree_fn, region_surcharge=region_surcharge)
 
@@ -1291,7 +1271,7 @@ def internal_bipartition_tree(
 # see what used to happen before I unified the logic for all of the
 # different bipartition_tree functions.
 #
-# As you will see bipartition_tree() now just calls internal_bipartition_tree()
+# As you will see bipartition_tree() now just calls _internal_bipartition_tree()
 # which does the real work, with the help of _get_possible_edge_cuts_and_populated_graph().
 
 
@@ -1312,13 +1292,6 @@ def old_bipartition_tree(
     allow_pair_reselection: bool = False,
     cut_choice_fn: Callable = _region_preferred_max_weight_choice,
 ) -> Set:
-    # frm: TODO: Refactoring: Change the names of ALL function formal parameters to end
-    #      in "_fn" - to make it clear that the paraemter is a function.  This will make it
-    #      easier to do a global search to find all function parameters - as well as just being
-    #      good coding practice...
-    #
-    # Peter said (January 2026): For the love of all that is good, please do. This
-    # drives me nuts and a major release is a great place to make this sort of change
     """
     This function finds a balanced 2 partition of a graph by drawing a
     spanning tree and finding an edge to cut that leaves at most an epsilon
@@ -1387,21 +1360,6 @@ def old_bipartition_tree(
     :raises RuntimeError: If a possible cut cannot be found after the maximum number of attempts
         given by ``max_attempts``.
     """
-    # Try to add the region-aware in if the spanning_tree_fn accepts a surcharge dictionary
-    # frm ???:  REALLY???  You are going to change the semantics of your program based on the
-    #           a function argument's signature?  What if someone refactors the code to have
-    #           different names???  *sigh*
-    #
-    # A better strategy would be to lock in the function signature for ALL spanning_tree
-    # functions and then just have the region_surcharge parameter not be used in some of them...
-    #
-    # Same with "one_sided_cut"
-    #
-    # Oh - and change "one_sided_cut" to be something a little more intuitive.  I have to
-    # reset my mind every time I see it to figure out whether it means to split into
-    # two districts or just peel off one district...  *sigh*  Before doing this, check to
-    # see if "one_sided_cut" is a term of art that might make sense to some set of experts...
-    #
     if "region_surcharge" in signature(spanning_tree_fn).parameters:
         spanning_tree_fn = partial(spanning_tree_fn, region_surcharge=region_surcharge)
 
@@ -1515,13 +1473,6 @@ def bipartition_tree(
     allow_pair_reselection: bool = False,
     cut_choice_fn: Callable = _region_preferred_max_weight_choice,
 ) -> Set:
-    # frm: TODO: Refactoring: Change the names of ALL function formal parameters to end
-    #      in "_fn" - to make it clear that the paraemter is a function.  This will make it
-    #      easier to do a global search to find all function parameters - as well as just being
-    #      good coding practice...
-    #
-    # Peter said (January 2026): For the love of all that is good, please do. This
-    # drives me nuts and a major release is a great place to make this sort of change
     """
     This function finds a balanced 2 partition of a graph by drawing a
     spanning tree and finding an edge to cut that leaves at most an epsilon
@@ -1590,7 +1541,7 @@ def bipartition_tree(
     :raises RuntimeError: If a possible cut cannot be found after the maximum number of attempts
         given by ``max_attempts``.
     """
-    num_cuts, node_ids = internal_bipartition_tree(
+    num_cuts, node_ids = _internal_bipartition_tree(
         subgraph_to_split=subgraph_to_split,
         pop_col=pop_col,
         pop_target=pop_target,
@@ -1613,12 +1564,12 @@ def bipartition_tree(
     # whether node_ids is allowed to be the empty_set.
     #
     # Typically, repeat_until_valid is set to True (usually by default) which
-    # tells the internal_bipartition_tree() function to keep trying to find
+    # tells the _internal_bipartition_tree() function to keep trying to find
     # balanced edge cuts until it reaches max_attempt, at which point it
     # raises an exception (hence no node_ids returned at all).
     #
     # However, if repeat_until_valid is set to False (which is done for
-    # reversible_recom(), then internal_bipartition_tree() will NOT loop
+    # reversible_recom(), then _internal_bipartition_tree() will NOT loop
     # and it will just return whatever it finds for balanced edge cuts
     # after the first attempt, in which case node_ids can be the empty set).
 
@@ -1651,12 +1602,6 @@ def bipartition_tree(
     # that a given generic function has perhaps many different
     # instances - but that they all share the same high level
     # responsibility.
-
-
-# frm: TODO: Refactoring: should _get_possible...() have default values for params?
-#
-# It is an internal routine that is called by routines that should know exactly
-# what they want, so I am inclined to remove ALL of the default parameter values...
 
 
 def _get_possible_edge_cuts_and_populated_graph(
@@ -1831,7 +1776,7 @@ def _get_possible_edge_cuts_and_populated_graph(
 # see what used to happen before I unified the logic for all of the
 # different bipartition_tree functions.
 #
-# As you will see bipartition_tree_random_with_num_cuts() now just calls internal_bipartition_tree()
+# As you will see bipartition_tree_random_with_num_cuts() now just calls _internal_bipartition_tree()
 # which does the real work, with the help of _get_possible_edge_cuts_and_populated_graph().
 
 
@@ -2030,7 +1975,7 @@ def bipartition_tree_random_with_num_cuts(
     :rtype: tuple[int, Set[Any]]
     """
 
-    num_cuts, node_ids = internal_bipartition_tree(
+    num_cuts, node_ids = _internal_bipartition_tree(
         subgraph_to_split=subgraph_to_split,
         pop_col=pop_col,
         pop_target=pop_target,
