@@ -1195,7 +1195,7 @@ def _internal_bipartition_tree(
     #
     # Note that _get_possible_edge_cuts_and_populated_graph() will raise and exception if max_attempts is exceeded.
     #
-    cuts_and_populated_graph = _get_possible_edge_cuts_and_populated_graph(
+    possible_cuts, populated_graph = _get_possible_edge_cuts_and_populated_graph(
         graph_to_split=subgraph_to_split,
         pop_col=pop_col,
         pop_target=pop_target,
@@ -1210,8 +1210,6 @@ def _internal_bipartition_tree(
         repeat_until_valid=repeat_until_valid,
         allow_pair_reselection=allow_pair_reselection,
     )
-    possible_cuts = cuts_and_populated_graph[0]
-    populated_graph = cuts_and_populated_graph[1]
 
     # frm: TODO: Refactoring:  Think about whether we should pass warn_attempts to
     # other calls on _get_possible_edge_cuts_and_populated_graph()
