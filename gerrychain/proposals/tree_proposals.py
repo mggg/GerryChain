@@ -37,12 +37,6 @@ class ValueWarning(UserWarning):
     pass
 
 
-# frm: Note to Peter:  param name, "method", has been changed everywhere to "bipartition_tree_fn"
-#
-# I have added a note to the rx_release_notes.md file that we should warn users about this
-# change.
-
-
 def epsilon_tree_bipartition(
     subgraph_to_split: Graph,
     parts: Sequence,
@@ -450,23 +444,171 @@ def reversible_recom(
     return partition  # self-loop
 
 
-# frm TODO: Refactoring:  I do not think that ReCom() is ever called.  Note that it
-#           only defines a constructor and a __call__() which would allow
-#           you to call the recom() function by creating a ReCom object and then
-#           "calling" that object - why not just call the recom function?
+# frm TODO: Refactoring:  Finish making class ReCom useful...
 #
-#           ...confused...
+# Peter responded in a January 2026 code review that he thinks the purpose
+# of the ReCom class is to make it easier for folks who find partial functions
+# odd/confusing.  The idea is that this class can be used instead of creating
+# a partial function.
 #
-#           My guess is that someone started writing this code thinking that
-#           a class would make sense but then realized that the only use
-#           was to call the recom() function but never went back to remove
-#           the class.  In short, I think that we should probably remove the
-#           class and just keep the function...
+# I have to admit that I personally find using a class instead of a
+# partial function MORE confusing, but whatever.
 #
-# What Peter said in a PR:
+# Here is what Peter said in the PR (with some comments by me afterwards):
 #
-# Another bit of legacy code. I am also not sure why this exists. Seems like
-# there were plans for this and then it got dropped when someone graduated
+# I am not so sure that we want to get rid of this. I think that this was
+# built by someone trying to solve the problem where, when a user wants
+# to run a chain with ReCom, they have to do the following bit of
+# syntax twister:
+#
+#     from functools import partial
+#
+#     proposal = partial(
+#         recom,
+#         pop_col="TOTPOP",
+#         pop_target=ideal_population,
+#         epsilon=0.01,
+#         node_repeats=2
+#     )
+#
+# This partial application is familiar to anyone that does
+# functional programming, and is effectively just
+#
+#     def proposal(state: Partition) -> Partition:
+#         return recom(
+#             state,
+#             pop_col="TOTPOP",
+#             pop_target=ideal_population,
+#             epsilon=0.01,
+#             node_repeats=2,
+#         )
+#
+# in disguise. But our users are not programmers, and I get a
+# lot of questions about the "partial" function that appears
+# in the documentation. The ReCom class does this partial application
+# under the hood using its __call__ attribute, and eliminates the need
+# for the import of partial from functools, so the user only has to do
+#
+#     Recom(
+#         pop_col="TOTPOP",
+#         ideal_pop=ideal_population,
+#         epsilon=0.01,
+#     )
+#
+# rather than the partial rigmarole.
+#
+# I discovered this class existed in the codebase after doing a big
+# refresh on the main documentation a while ago. I have been waiting
+# to update things until a major release because the values that need
+# to be passed to the __init__ of Recom depend on the underlying
+# bipartition function, and the class would probably be better
+# transformed into something closer to a "namespace" to improve
+# discoverability
+#
+# class ReCom:
+#     def __init__(self, *args, **kwargs):
+#         raise TypeError("ReCom is not instantiable; use ReCom.mst(...), etc.")
+#
+#     @classmethod
+#     def mst(...):
+#         # minimum spanning tree version
+#
+#     @classmethod
+#     def B(...):
+#         # This is the "district pairs minimum spanning tree".  An absolutely terrible name
+#         # for a function, to be sure, but it will make replication of what is in the
+#         # Reversible ReCom paper (https://data-democracy.org/rrc) we published a while
+#         # back easier for other people. This function would just be a wrapper around mst
+#         # defined above.
+#
+# and so on. I am happy to put all of this functionality in later if you don't
+# want to mess with it..
+#
+# ===========================================
+# Fred's comments to Peter's remarks above:
+#
+# Firstly a nit: Peter should have said ReCom(...) instead of Recom()...
+#
+# As Peter points out, there is the issue of passing the proper set of parameters
+# to the ReCom __init__() function.  Given the recent update to tree.py - creating
+# a new module bipartition_tree.py with a unified bipartition_tree approach
+# using _internal_bipartition_tree(), the set of parameters for the ReCom
+# constructor would just be the set of parameters to _internal_bipartition_tree(),
+# which unfortunately is a long list.
+#
+# Peter's other approach, to create a bunch of specific routines (via a namespace
+# approach) would allow the user to deal with fewer parameters - only providing
+# the ones needed).  I presume that the implementation for each of these
+# class methods would just be a partial function.
+#
+# So this is kind of just syntactic sugar, but hey sugar tastes good!
+#
+# One nice thing about this approach is that it is a way to make it obvious
+# to people what the standard ways of doing things are, and it provides
+# the opportunity to introduce a user to partial functions, by adding
+# comments in the ReCom class that tell the user that he/she can create
+# his/her own ReCom function by just creating their own partial function.
+# Stated differently, this provides a very nice, logical, discoverable
+# place in the codebase for a user to grok how the recom approach works
+# and how to extend it if he/she would like to.
+#
+# My only question to Peter is how this namespace should look.  I think
+# the following is what would be the first step, and then Peter could
+# add more later:
+#
+#     from functools import partial
+#
+#     class ReCom:
+#
+#         def __init__(self, *args, **kwargs):
+#             raise TypeError("ReCom is not instantiable; use ReCom.mst(...), etc.")
+#
+#         @classmethod
+#         def std_recom_proposal(
+#             partition: Partition,
+#             pop_col: str,
+#             pop_target: Union[int, float],
+#             epsilon: float,
+#             node_repeats: int = 1,
+#             region_surcharge: Optional[Dict] = None,
+#             bipartition_tree_fn: Callable = bipartition_tree,
+#         ) -> Partition:
+#             new_proposal = partial(
+#                 recom,
+#                 pop_col = pop_col,
+#                 pop_target = pop_target,
+#                 epsilon = epsilon,
+#                 node_repeats = node_repeats,
+#                 region_surcharge =  region_surcharge,
+#                 bipartition_tree_fn = bipartition_tree_fn,
+#             )
+#             return new_proposal
+#
+#         @classmethod
+#         def mst(...):
+#             # minimum spanning tree version
+
+
+#         @classmethod
+#         def B(...):
+#             # This is the "district pairs minimum spanning tree".  An absolutely terrible name
+#             # for a function, to be sure, but it will make replication of what is in the
+#             # Reversible ReCom paper (https://data-democracy.org/rrc) we published a while
+#             # back easier for other people. This function would just be a wrapper around mst
+#             # defined above..
+#
+# and then a user could just do:
+#
+#     my_proposal = ReCom.std_recom_proposal(
+#         pop_col="TOTPOP",
+#         pop_target=ideal_population,
+#         epsilon=0.01,
+#         node_repeats=2
+#     )
+#
+# Peter: Is this what you had in mind?
+#
+# ===========================================
 #
 class ReCom:
     """
@@ -482,14 +624,6 @@ class ReCom:
         ideal_pop: Union[int, float],
         epsilon: float,
         bipartition_tree_fn: Callable = bipartition_tree,
-        # frm: TODO: Refactoring: Delete this comment after Peter OK's PR
-        #
-        # I changed this from biparition_tree_random to bipartition_tree because every other
-        # invocation of recom() that I saw passed it bipartition_tree(), so I assumed that this
-        # use of bipartition_tree_random was left over from pre-history.
-        #
-        # Note that I have not been able to find any use of the ReCom class, so I think we
-        # should just delete it entirely...
     ):
         """
         :param pop_col: The name of the column in the partition that contains the population data.

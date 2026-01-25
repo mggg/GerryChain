@@ -18,6 +18,39 @@ from ..tree import BalanceError, PopulationBalanceError, bipartition_tree
 """
 This module provides routines to create initial assignments for a Partition object.
 
+In particular, it defines two functions, recursive_tree_part() and recursive_seed_part().
+
+The recursive_seed_part() function uses a divide and conquer approach which avoids the
+potential problem that recursive_tree_part() has where it sometimes paints itself into
+a corner.
+
+There are 2 main issues with the recursive_tree_part that appear when you are trying
+to subdivide into a large number of districts that the seed part method solves
+
+  1. recursive_tree_part only carves off one district at a time, but since each of
+     the districts are approximately population balanced, you need to dynamically
+     adjust the target range as you carve things off. If you cut off something
+     slightly larger than ideal, then adjust the target for the next district
+     down, and visa versa. This sort of bookeeping is a bit tricky, and, if the
+     allowable population band is too large, can end up with you getting stuck.
+
+  2.Since recursive_tree_part only carves off one district at a time, if there
+    are a lot of districts to cut off, you can cut off districts in such a way
+    that the remaining graph is impossible to population balance. This is mostly
+    caused by cutting off districts in a "snake-y" way so as to leave very small
+    bits of unassigned graphs (with possibly high nodes population) between
+    assigned areas. In the abstract, you can imagine that you produce something
+    very close to a path with the following populations:
+
+4 - 10 - 12 - 8
+
+There is no way to subdivide this graph into 2 pieces of even size. In fact,
+you can't even get within 10% population tolerance (17 +/- 1.7).
+
+The recursive_seed_part method keeps this from happening so much by biting off
+large, approximately balanced things, and then recursing inward. Under this
+schema, it's a lot harder to make a snake-y patchwork of districts.
+
 """
 
 

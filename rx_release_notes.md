@@ -14,7 +14,8 @@ TODO:
     that is mentioned up top of this file.
   * Say that the "method" param that identified which bipartition_tree() function
     to use has been renamed to be "bipartition_tree_fn"
-  * ?
+  * Tell folks about splitting up tree.py into a directory with files under it.
+  * Tell folks that we deleted bipartition_tree_random() - they should just use bipartition_tree()
   * ?
   * ?
   * ?
