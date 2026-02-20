@@ -1145,9 +1145,6 @@ def _internal_bipartition_tree(
         repeat_until_valid=repeat_until_valid,
         allow_pair_reselection=allow_pair_reselection,
     )
-    # frm: TODO: Delete the next two lines once all tests pass
-    # possible_cuts = cuts_and_populated_graph[0]
-    # populated_graph = cuts_and_populated_graph[1]
 
     # frm: TODO: Refactoring:  Think about whether we should pass warn_attempts to
     # other calls on _get_possible_edge_cuts_and_populated_graph()
