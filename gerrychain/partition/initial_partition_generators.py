@@ -54,14 +54,6 @@ schema, it's a lot harder to make a snake-y patchwork of districts.
 """
 
 
-# frm: TODO: Delete this note to Peter:
-#
-# Note to Peter:  param name, "method", has been changed everywhere to "bipartition_tree_fn"
-#
-# I have added a note to the rx_release_notes.md file that we should warn users about this
-# change.
-
-
 def recursive_tree_part(
     graph: Graph,
     parts: Sequence,

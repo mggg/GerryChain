@@ -2286,12 +2286,9 @@ class Graph:
         :rtype: bool
         """
 
-        # frm: TODO: Refactor: is_a_tree() is only called in a test (test_tree.py) - delete it?
+        # Note: is_a_tree() is only called in a test (test_tree.py)
         #
-        # Talk to Peter to see if there is any reason to keep this function.  Does anyone
-        # use it externally?
-        #
-        # On the other hand, perhaps it is OK to keep it even if it is only ever used in a test...
+        # However, it does no harm, and it might be useful, perhaps...
 
         if self.is_rx_graph():
             rx_graph = self.get_rx_graph()
