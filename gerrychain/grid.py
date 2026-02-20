@@ -237,6 +237,9 @@ def _create_grid_nx_graph(dimensions: Tuple[int, ...], with_diagonals: bool) -> 
 # If we keep it, however, it should be moved to graph.py as it is a general purpose
 # graph utility not a Grid related function.
 #
+# Peter said (January 2026): Nah, let's get rid of it...
+
+
 def give_constant_attribute(graph: Graph, attribute: Any, value: Any) -> None:
     """
     Sets the specified attribute to the specified value for all nodes in the graph.

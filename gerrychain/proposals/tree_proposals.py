@@ -1,16 +1,17 @@
 import random
 from functools import partial
 from inspect import signature
-from typing import Callable, Dict, Optional, Union
+from typing import Callable, Dict, Optional, Sequence, Union
 
 from gerrychain.partition import Partition
 
-from ..tree import (
+from ..graph import Graph
+from ..tree import (  # epsilon_tree_bipartition,
+    BalanceError,
+    PopulationBalanceError,
     ReselectException,
     bipartition_tree,
-    bipartition_tree_random,
     bipartition_tree_random_with_num_cuts,
-    epsilon_tree_bipartition,
     find_balanced_edge_cuts_memoization,
     uniform_spanning_tree,
 )
@@ -36,6 +37,95 @@ class ValueWarning(UserWarning):
     pass
 
 
+def epsilon_tree_bipartition(
+    subgraph_to_split: Graph,
+    parts: Sequence,
+    pop_target: Union[float, int],
+    pop_col: str,
+    epsilon: float,
+    node_repeats: int = 1,
+    bipartition_tree_fn: Callable = partial(bipartition_tree, max_attempts=10000),
+) -> Dict:
+    """
+    Uses :func:`~gerrychain.tree.bipartition_tree` to partition a tree into
+    two parts of population ``pop_target`` (within ``epsilon``).
+
+    :param graph: The graph to partition into two :math:`\varepsilon`-balanced parts.
+    :type graph: Graph
+    :param parts: Iterable of part (district) labels (like ``[0,1,2]`` or ``range(4)``).
+    :type parts: Sequence
+    :param pop_target: Target population for each part of the partition.
+    :type pop_target: Union[float, int]
+    :param pop_col: Node attribute key holding population data.
+    :type pop_col: str
+    :param epsilon: How far (as a percentage of ``pop_target``) from ``pop_target`` the parts
+        of the partition can be.
+    :type epsilon: float
+    :param node_repeats: Parameter for :func:`~gerrychain.tree.bipartition_tree` to use.
+        Defaults to 1.
+    :type node_repeats: int, optional
+    :param bipartition_tree_fn: The partition method to use. Defaults to
+        `partial(bipartition_tree, max_attempts=10000)`.
+    :type bipartition_tree_fn: Callable, optional
+
+    :returns: New assignments for the nodes of ``graph``.
+    :rtype: dict
+    """
+    if len(parts) != 2:
+        raise ValueError(
+            "This function only supports bipartitioning. Please ensure that there"
+            + " are exactly 2 parts in the parts list."
+        )
+
+    flips = {}
+    remaining_nodes = subgraph_to_split.node_indices
+
+    lb_pop = pop_target * (1 - epsilon)
+    ub_pop = pop_target * (1 + epsilon)
+    check_pop = lambda x: lb_pop <= x <= ub_pop
+
+    nodes = bipartition_tree_fn(
+        subgraph_to_split.subgraph(remaining_nodes),
+        pop_col=pop_col,
+        pop_target=pop_target,
+        epsilon=epsilon,
+        node_repeats=node_repeats,
+        one_sided_cut=False,
+    )
+
+    if nodes is None:
+        raise BalanceError()
+
+    # Calculate the total population for the two districts based on the
+    # results of the "bipartition_tree_fn()" partitioning.
+    part_pop = 0
+    for node in nodes:
+        # frm: ???:  The code above has already confirmed that len(parts) is 2
+        #               so why use negative index values - why not just use
+        #               parts[0] and parts[1]?
+        flips[node] = parts[-2]
+        part_pop += subgraph_to_split.node_data(node)[pop_col]
+
+    if not check_pop(part_pop):
+        raise PopulationBalanceError()
+
+    remaining_nodes -= nodes
+
+    # All of the remaining nodes go in the last part
+    part_pop = 0
+    for node in remaining_nodes:
+        flips[node] = parts[-1]
+        part_pop += subgraph_to_split.node_data(node)[pop_col]
+
+    if not check_pop(part_pop):
+        raise PopulationBalanceError()
+
+    # translate subgraph node_ids back into node_ids in parent graph
+    translated_flips = subgraph_to_split.translate_subgraph_node_ids_for_flips(flips)
+
+    return translated_flips
+
+
 def recom(
     partition: Partition,
     pop_col: str,
@@ -43,7 +133,7 @@ def recom(
     epsilon: float,
     node_repeats: int = 1,
     region_surcharge: Optional[Dict] = None,
-    method: Callable = bipartition_tree,
+    bipartition_tree_fn: Callable = bipartition_tree,
 ) -> Partition:
     """
     ReCom (short for ReCombination) is a Markov Chain Monte Carlo (MCMC) algorithm
@@ -87,9 +177,9 @@ def recom(
     :param region_surcharge: The surcharge dictionary for the graph used for region-aware
         partitioning of the grid. Default is None.
     :type region_surcharge: Optional[Dict], optional
-    :param method: The method used for bipartitioning the tree. Default is
+    :param bipartition_tree_fn: The method used for bipartitioning the tree. Default is
         :func:`~gerrychain.tree.bipartition_tree`.
-    :type method: Callable, optional
+    :type bipartition_tree_fn: Callable, optional
 
     :returns: The new partition resulting from the ReCom algorithm.
     :rtype: Partition
@@ -99,15 +189,20 @@ def recom(
     n_parts = len(partition)
     tot_pairs = n_parts * (n_parts - 1) / 2  # n choose 2
 
-    # Try to add the region aware in if the method accepts the surcharge dictionary
-    if "region_surcharge" in signature(method).parameters:
-        method = partial(method, region_surcharge=region_surcharge)
+    # Try to add the region aware in if the bipartition_tree_fn accepts the surcharge dictionary
+    if "region_surcharge" in signature(bipartition_tree_fn).parameters:
+        bipartition_tree_fn = partial(bipartition_tree_fn, region_surcharge=region_surcharge)
 
     # frm: TODO: Refactoring:  Should we sanity check region_surcharge usage?
     #
     # If the caller passed in a non-None value for region_surcharge, then presumably
-    # he/she should have also passed in a function for the "method" parameter that
+    # he/she should have also passed in a function for the "bipartition_tree_fn" parameter that
     # accepts a region_surcharge parameter.
+    #
+    # Peter said (January 2026): A lot of our users are not coders, so they
+    # do silly things. I'm open to changing this to have it just fail if the
+    # bipartition_tree_fn does not have the corresponding parameter, but we should have
+    # a defensive pattern here.
     #
 
     while len(bad_district_pairs) < tot_pairs:
@@ -143,7 +238,7 @@ def recom(
                 pop_target=pop_target,
                 epsilon=epsilon,
                 node_repeats=node_repeats,
-                method=method,
+                bipartition_tree_fn=bipartition_tree_fn,
             )
             break
 
@@ -164,12 +259,25 @@ def recom(
     return partition.flip(flips)
 
 
+# frm: TODO: Refactoring: Change name and default value of M below.
+#
+# Peter said (January 2026):
+#
+# This comes from the paper in section 3.2:
+#
+# https://mggg.org/rrc
+#
+# But M is a terrible name for a parameter, and we should force the user to
+# provide this. 1 is actually the worst value that this could be since
+# this should be a global upper bound..
+
+
 def reversible_recom(
     partition: Partition,
     pop_col: str,
     pop_target: Union[int, float],
     epsilon: float,
-    balance_edge_fn: Callable = find_balanced_edge_cuts_memoization,
+    find_balanced_edge_cuts_fn: Callable = find_balanced_edge_cuts_memoization,
     M: int = 1,  # frm: TODO: Documentation: WTF does 'M' stand for?
     repeat_until_valid: bool = False,
     choice: Callable = random.choice,
@@ -191,9 +299,9 @@ def reversible_recom(
     :param epsilon: The epsilon value for population deviation as a percentage of the
         target population.
     :type epsilon: float
-    :param balance_edge_fn: The balance edge function. Default is
+    :param find_balanced_edge_cuts_fn: The balance edge function. Default is
         find_balanced_edge_cuts_memoization.
-    :type balance_edge_fn: Callable, optional
+    :type find_balanced_edge_cuts_fn: Callable, optional
         frm: it returns a list of Cuts - a named tuple defined in tree.py
     :param M: The maximum number of balance edges. Default is 1.
     :type M: int, optional
@@ -220,8 +328,8 @@ def reversible_recom(
 
     # frm: TODO: Refactoring: Get rid of *args and **kwargs below.
     #
-    # The reason for this hack is that the signatures for the different balance_edge_fn's
-    # are different, so the "bounded_balance_edge_fn" cannot know exactly what params
+    # The reason for this hack is that the signatures for the different find_balanced_edge_cuts_fn's
+    # are different, so the "bounded_find_balanced_edge_cuts_fn" cannot know exactly what params
     # make sense.  The *args, and **kwargs just allow it to ignorantly pass through whatever
     # it gets, hoping that they make sense for the balance_edge_fun cal.
     #
@@ -229,8 +337,8 @@ def reversible_recom(
     # that we know what the parameters are in all cases.  Then we can just use those
     # canonical parameters below.
 
-    def bounded_balance_edge_fn(*args, **kwargs):
-        cuts = balance_edge_fn(*args, **kwargs)
+    def bounded_find_balanced_edge_cuts_fn(*args, **kwargs):
+        cuts = find_balanced_edge_cuts_fn(*args, **kwargs)
         if len(cuts) > M:
             raise ReversibilityError(
                 f"Found {len(cuts)} balance edges, " f"but the upper bound is {M}."
@@ -306,12 +414,11 @@ def reversible_recom(
         epsilon=epsilon,
         repeat_until_valid=repeat_until_valid,
         spanning_tree_fn=uniform_spanning_tree,
-        balance_edge_fn=bounded_balance_edge_fn,
+        find_balanced_edge_cuts_fn=bounded_find_balanced_edge_cuts_fn,
     )
-    if not result:
-        return partition  # self-loop: no balance edge
-
     num_possible_districts, nodes = result
+    if num_possible_districts == 0:
+        return partition  # self-loop: no balance edge
 
     remaining_nodes = subgraph_nodes - set(nodes)
     # Note:  Clever way to create a single dictionary from
@@ -337,23 +444,171 @@ def reversible_recom(
     return partition  # self-loop
 
 
-# frm TODO: Refactoring:  I do not think that ReCom() is ever called.  Note that it
-#           only defines a constructor and a __call__() which would allow
-#           you to call the recom() function by creating a ReCom object and then
-#           "calling" that object - why not just call the recom function?
+# frm TODO: Refactoring:  Finish making class ReCom useful...
 #
-#           ...confused...
+# Peter responded in a January 2026 code review that he thinks the purpose
+# of the ReCom class is to make it easier for folks who find partial functions
+# odd/confusing.  The idea is that this class can be used instead of creating
+# a partial function.
 #
-#           My guess is that someone started writing this code thinking that
-#           a class would make sense but then realized that the only use
-#           was to call the recom() function but never went back to remove
-#           the class.  In short, I think that we should probably remove the
-#           class and just keep the function...
+# I have to admit that I personally find using a class instead of a
+# partial function MORE confusing, but whatever.
 #
-# What Peter said in a PR:
+# Here is what Peter said in the PR (with some comments by me afterwards):
 #
-# Another bit of legacy code. I am also not sure why this exists. Seems like
-# there were plans for this and then it got dropped when someone graduated
+# I am not so sure that we want to get rid of this. I think that this was
+# built by someone trying to solve the problem where, when a user wants
+# to run a chain with ReCom, they have to do the following bit of
+# syntax twister:
+#
+#     from functools import partial
+#
+#     proposal = partial(
+#         recom,
+#         pop_col="TOTPOP",
+#         pop_target=ideal_population,
+#         epsilon=0.01,
+#         node_repeats=2
+#     )
+#
+# This partial application is familiar to anyone that does
+# functional programming, and is effectively just
+#
+#     def proposal(state: Partition) -> Partition:
+#         return recom(
+#             state,
+#             pop_col="TOTPOP",
+#             pop_target=ideal_population,
+#             epsilon=0.01,
+#             node_repeats=2,
+#         )
+#
+# in disguise. But our users are not programmers, and I get a
+# lot of questions about the "partial" function that appears
+# in the documentation. The ReCom class does this partial application
+# under the hood using its __call__ attribute, and eliminates the need
+# for the import of partial from functools, so the user only has to do
+#
+#     Recom(
+#         pop_col="TOTPOP",
+#         ideal_pop=ideal_population,
+#         epsilon=0.01,
+#     )
+#
+# rather than the partial rigmarole.
+#
+# I discovered this class existed in the codebase after doing a big
+# refresh on the main documentation a while ago. I have been waiting
+# to update things until a major release because the values that need
+# to be passed to the __init__ of Recom depend on the underlying
+# bipartition function, and the class would probably be better
+# transformed into something closer to a "namespace" to improve
+# discoverability
+#
+# class ReCom:
+#     def __init__(self, *args, **kwargs):
+#         raise TypeError("ReCom is not instantiable; use ReCom.mst(...), etc.")
+#
+#     @classmethod
+#     def mst(...):
+#         # minimum spanning tree version
+#
+#     @classmethod
+#     def B(...):
+#         # This is the "district pairs minimum spanning tree".  An absolutely terrible name
+#         # for a function, to be sure, but it will make replication of what is in the
+#         # Reversible ReCom paper (https://data-democracy.org/rrc) we published a while
+#         # back easier for other people. This function would just be a wrapper around mst
+#         # defined above.
+#
+# and so on. I am happy to put all of this functionality in later if you don't
+# want to mess with it..
+#
+# ===========================================
+# Fred's comments to Peter's remarks above:
+#
+# Firstly a nit: Peter should have said ReCom(...) instead of Recom()...
+#
+# As Peter points out, there is the issue of passing the proper set of parameters
+# to the ReCom __init__() function.  Given the recent update to tree.py - creating
+# a new module bipartition_tree.py with a unified bipartition_tree approach
+# using _internal_bipartition_tree(), the set of parameters for the ReCom
+# constructor would just be the set of parameters to _internal_bipartition_tree(),
+# which unfortunately is a long list.
+#
+# Peter's other approach, to create a bunch of specific routines (via a namespace
+# approach) would allow the user to deal with fewer parameters - only providing
+# the ones needed).  I presume that the implementation for each of these
+# class methods would just be a partial function.
+#
+# So this is kind of just syntactic sugar, but hey sugar tastes good!
+#
+# One nice thing about this approach is that it is a way to make it obvious
+# to people what the standard ways of doing things are, and it provides
+# the opportunity to introduce a user to partial functions, by adding
+# comments in the ReCom class that tell the user that he/she can create
+# his/her own ReCom function by just creating their own partial function.
+# Stated differently, this provides a very nice, logical, discoverable
+# place in the codebase for a user to grok how the recom approach works
+# and how to extend it if he/she would like to.
+#
+# My only question to Peter is how this namespace should look.  I think
+# the following is what would be the first step, and then Peter could
+# add more later:
+#
+#     from functools import partial
+#
+#     class ReCom:
+#
+#         def __init__(self, *args, **kwargs):
+#             raise TypeError("ReCom is not instantiable; use ReCom.mst(...), etc.")
+#
+#         @classmethod
+#         def std_recom_proposal(
+#             partition: Partition,
+#             pop_col: str,
+#             pop_target: Union[int, float],
+#             epsilon: float,
+#             node_repeats: int = 1,
+#             region_surcharge: Optional[Dict] = None,
+#             bipartition_tree_fn: Callable = bipartition_tree,
+#         ) -> Partition:
+#             new_proposal = partial(
+#                 recom,
+#                 pop_col = pop_col,
+#                 pop_target = pop_target,
+#                 epsilon = epsilon,
+#                 node_repeats = node_repeats,
+#                 region_surcharge =  region_surcharge,
+#                 bipartition_tree_fn = bipartition_tree_fn,
+#             )
+#             return new_proposal
+#
+#         @classmethod
+#         def mst(...):
+#             # minimum spanning tree version
+
+
+#         @classmethod
+#         def B(...):
+#             # This is the "district pairs minimum spanning tree".  An absolutely terrible name
+#             # for a function, to be sure, but it will make replication of what is in the
+#             # Reversible ReCom paper (https://data-democracy.org/rrc) we published a while
+#             # back easier for other people. This function would just be a wrapper around mst
+#             # defined above..
+#
+# and then a user could just do:
+#
+#     my_proposal = ReCom.std_recom_proposal(
+#         pop_col="TOTPOP",
+#         pop_target=ideal_population,
+#         epsilon=0.01,
+#         node_repeats=2
+#     )
+#
+# Peter: Is this what you had in mind?
+#
+# ===========================================
 #
 class ReCom:
     """
@@ -368,7 +623,7 @@ class ReCom:
         pop_col: str,
         ideal_pop: Union[int, float],
         epsilon: float,
-        method: Callable = bipartition_tree_random,
+        bipartition_tree_fn: Callable = bipartition_tree,
     ):
         """
         :param pop_col: The name of the column in the partition that contains the population data.
@@ -378,17 +633,23 @@ class ReCom:
         :param epsilon: The epsilon value for population deviation as a percentage of the
             target population.
         :type epsilon: float
-        :param method: The method used for bipartitioning the tree.
-            Defaults to `bipartition_tree_random`.
-        :type method: function, optional
+        :param bipartition_tree_fn: The method used for bipartitioning the tree.
+            Defaults to `bipartition_tree`.
+        :type bipartition_tree_fn: function, optional
         """
         self.pop_col = pop_col
         self.ideal_pop = ideal_pop
         self.epsilon = epsilon
-        self.method = method
+        self.bipartition_tree_fn = bipartition_tree_fn
 
     def __call__(self, partition: Partition):
-        return recom(partition, self.pop_col, self.ideal_pop, self.epsilon, method=self.method)
+        return recom(
+            partition,
+            self.pop_col,
+            self.ideal_pop,
+            self.epsilon,
+            bipartition_tree_fn=self.bipartition_tree_fn,
+        )
 
 
 class ReversibilityError(Exception):

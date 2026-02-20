@@ -11,9 +11,9 @@ import networkx
 
 from gerrychain.graph.graph import FrozenGraph, Graph
 
-from ..tree import recursive_tree_part
 from ..updaters import compute_edge_flows, cut_edges, flows_from_changes
 from .assignment import get_assignment
+from .initial_partition_generators import recursive_tree_part
 from .subgraphs import SubgraphView
 
 # frm * TODO: Documentation:     Add documentation about how this all works.  For instance,
@@ -183,6 +183,10 @@ class Partition:
             # to compare the results.
             #
             # RustworkX is much faster, so the default value is False.
+            #
+            # Peter said (January 2026): It might be worth changing this to a global
+            # variable that we can set easily. I'll want to remove it once we get
+            # to release 2.0.0, but it could be useful in the meantime..
             #
             test_performance_using_NX_graph = False
 

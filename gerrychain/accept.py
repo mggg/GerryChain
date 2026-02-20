@@ -35,6 +35,25 @@ def cut_edge_accept(partition: Partition) -> bool:
     # there is some statistical property of the Metropolis Criterion that is
     # useful, but at a higher level, it is not clear (to me) what cut_edge_accept()
     # is trying to do.
+    #
+    # Peter said (January 2026):
+    #
+    # Okay, the doc sting in this is just wrong (and has apparently been wrong
+    # since 2018). The idea is to use the acceptance function to drive the
+    # algorithm towards districts that are more compact. In some sense, the
+    # number of cut edges in a districting plan is a measure of compactness,
+    # so always accepting when the number of cut edges decreases improves
+    # the compactness score.
+    #
+    # However, sometimes it is not possible to improve the score any further
+    # in a neighborhood of your current state, so you allow the chain to get
+    # unstuck by accepting something "worse" with a probability proportional
+    # to how much worse it has gotten.
+    #
+    # This was originally probably used back when we ran "flip" chains rather
+    # than ReCom chains as the main method of ensemble generation because flip
+    # chains have a tendency to produce districts that are not very compact.
+    #
 
     bound = 1.0
 

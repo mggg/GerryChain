@@ -628,6 +628,8 @@ class Graph:
         """
 
         # frm: TODO: Documentation: more detail on contents of JSON file needed above in docstrings
+        #
+        # Peter agreed - January 2026
 
         # Note that this returns an NX-based Graph object.  At some point in
         # the future, if we embrace an all RX world, it will make sense to
@@ -2060,7 +2062,7 @@ class Graph:
         Return a SciPy sparse array containing the Laplacian matrix for the given graph.
 
         For more details on the Graph Laplacian matrix, please refer to
-        - https://fanchung.ucsd.edu/research/cb/ch1.pdf 
+        - https://fanchung.ucsd.edu/research/cb/ch1.pdf
         - https://en.wikipedia.org/wiki/Laplacian_matrix
 
         :returns: A SciPy sparse array containing the Laplacian matrix
@@ -2106,7 +2108,7 @@ class Graph:
         matrix for the given graph.
 
         For more details on the normalized Graph Laplacian matrix, please refer to
-        - https://fanchung.ucsd.edu/research/cb/ch1.pdf 
+        - https://fanchung.ucsd.edu/research/cb/ch1.pdf
         - https://en.wikipedia.org/wiki/Laplacian_matrix#Laplacian_matrix_normalization_2
 
         :returns: A SciPy sparse diagonal array containing the Laplacian matrix
@@ -2284,12 +2286,9 @@ class Graph:
         :rtype: bool
         """
 
-        # frm: TODO: Refactor: is_a_tree() is only called in a test (test_tree.py) - delete it?
+        # Note: is_a_tree() is only called in a test (test_tree.py)
         #
-        # Talk to Peter to see if there is any reason to keep this function.  Does anyone
-        # use it externally?
-        #
-        # On the other hand, perhaps it is OK to keep it even if it is only ever used in a test...
+        # However, it does no harm, and it might be useful, perhaps...
 
         if self.is_rx_graph():
             rx_graph = self.get_rx_graph()
@@ -2359,6 +2358,10 @@ def add_boundary_perimeters(nx_graph: networkx.Graph, geometries: pd.Series) -> 
     # then there is no harm in leaving it with a NetworkX.Graph parameter.  If we decide
     # that is it NOT part of the external API, then we should rename it to have a
     # leading underscore.
+    #
+    # Peter said (January 2026): I don't think that users need this as part of the
+    # external API. The only place I see this getting called is in the process of
+    # building the graph from a geodataframe.
 
     if not (isinstance(nx_graph, networkx.Graph)):
         raise TypeError("Graph passed into add_boundary_perimeters() " "is not a networkx graph")
