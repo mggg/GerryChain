@@ -60,7 +60,7 @@ to create graphs in NetworkX.  When the user creates a Partition
 object, the embedded NetworkX.Graph object will be automatically
 converted to be a RustworkX.PyGraph object.  And since most of the
 routines in this module are used after the creation of a Partition
-object, the underlying graph operations will be performed by
+object, the underlying graph operations will most often be performed by
 RustworkX code.
 
 There is a way to override this behavior by setting the value of a
@@ -69,25 +69,36 @@ partition.py that controls this (and its default setting) is:
 
     test_performance_using_NX_graph = False
 
-Many of the functions in this file operate on subgraphs which
+As the name of the variable suggests, setting the variable to True
+allows comparison of performance between NX and RX.  If set to True,
+the code that creates a partition does NOT convert the underlying
+graph object from NX to RX.  So, the code is designed to work on
+both kinds of embedded graph objects - NX and RX.
+
+Many of the functions in this file operate on subgraphs, and subgraphs
 behave differently from NX subgraphs.  In particular, RustworkX subgraphs
 typically change the IDs for the nodes in the subgraph, so that a node with
 an ID of say, 5, in a parent graph might have an ID of say, 2, in the subgraph.
-It is the same node, with the same data, but its ID has changed.
+It is the same node, with the same data, but its ID has changed.  Note that
+this affects edges too - edges are also reassigned new edge_ids.
 
 To deal with subgraphs having different node_ids from their parent graph
-the code has implemented mappings (dictionaries) for subgraph node_ids to
-parent graph node_ids, allowing routines to convert any results obtained
-using a subgraph to the appropriate node_ids for the parent graph.  Note
-that the same issue applies for edges - they need to be converted back to
-use the node_ids of the parent graph.
+the code has implemented a mapping (dictionary) for subgraph node_ids to
+parent graph node_ids. This makes it possible for routines to convert any
+results obtained using a subgraph to the appropriate node_ids for the
+parent graph.  Stated differently, if a routine computes node_id or edge_id
+related results using subgraphs, then those results need to be translated
+back (in the case of RX) into the context of the parent graph, and this
+mapping makes that possible.
 
-To manage the need to translate node_ids from subgraphs to parent graphs,
-the code only calls subgraph as an actual parameter to a function call.
-This prevents subgraph node_ids from being available (and hence causing bugs)
-in the context of the calling code.  Functions that return node_ids or
-edge_ids or edges have the obligation to translate the node_ids of
-the subgraph back into the appropriate node_ids for the parent graph.
+One way that the code in this module tries to reduce the risk of using
+the wrong node_ids and edge_ids is to have all calls on subgraph()
+happen as actual parameters to a function call.  This ensures that
+the node_ids and edge_ids of the subgraph are only visible in the
+context of the called function - they cannot "leak" into the code
+that uses parent graph node_ids and edge_ids.  It is the responsibility
+of the called function to translate any node_id and edge_id results
+back to the context of the parent graph.
 
 So - if you decide to write custom code that involves subgraphs, please
 spend a little time reviewing how the code in this module is implemented
@@ -98,107 +109,20 @@ GerryChain Graph object.  The reason for moving them was to remove dependencies
 on NetworkX (and RustworkX) from this module.
 """
 
-"""
-frm: TODO: Delete this comment after Peter does his part of the PR...
 
-UPDATED PR COMMENT FOLLOWS:
-
-I have substantially refactored this module.  This is what I have done:
-
-Created a "tree" directory with an __init__.py and then created modules/files
-below that.
-
-Moved recursive_tree_part() and recursive_seed_part() into their own module
-
-Moved espilon_tree_bipartition()
-
-Unified the code that does the heavy lifting for biparition_tree().
-
-    This module is hard to grok, and putting all of the code that uses function
-    variables and region_surcharges, and one_sided_cuts into fewer places
-    simplifies the logic.
-
-    I created a routine _get_possible_cuts_and_populated_graph() which does the
-    heavy lifting, and then had other routines call it.  Take a look and see if
-    it looks good as-is or whether you would like tweaks or wholesale different
-    approach.
-
-    It is unfortunate that this routine returns a tuple.  It had to do so because
-    region_surchage logic needed access to the populated graph so that it could
-    do its fancy weighted cut. On the other hand, it is an internal function, so
-    the ugliness is internal...
-
-    I also unified the many bipartition tree functions so that the use a
-    new routine, _internal_bipartition_tree(), which puts all of the logic
-    in one place.  The differences between the externally visible bipartition
-    tree functions are now trivial.
-
-    I would like to unify the signatures of random_spanning_tree() and
-    uniform_spanning_tree() - just to get rid of the tests against the signatures
-    of functions.  This is perhaps religion - the code works just fine as-is,
-    but OTOH there seems little harm in unifying them.
-
-    Peter said (January 2026): I would actually prefer a more unified
-    interface. It makes it way easier to maintain when things are consistent.
-
-    There are some other questions in the comments below about why we even
-    offer uniform_spanning_tree() - I would be interested in your answers to
-    those questions.
-
-    Peter said (January 2026): The broad answer is that uniform spanning
-    trees samples from a completely different probability space compared to
-    minimum spanning trees and there are reasons for preferring one
-    distribution or the other.
-
-    There are tons of comments that you are welcome to ignore.  As I said, I have
-    lots of thoughts about how to improve this code, but the above are the
-    biggies.
-
-    All of the tests pass now.
-
-
-    -Fred
-"""
-
-# frm: TODO: Refactoring:  random_spanning_tree() and uniform_spanning_tree() should have same signature
-#
-# These two functions are essentially instances of a generic spanning_tree_fn that is used as a
-# function parameter.  Because these two routines have different signatures in the current
-# codebase, the routines that take a spanning_tree_fn parameter need to inspect the actual
-# parameter's signature to see what to do, which is kind of exactly what a generic should NOT be.
-#
-# So, I suggest that we modify the signatures of these two functions so that they have the
-# same signature, which would be:
-#
-#     <fname>(
-#       graph: Graph,
-#       choice: Callable = random.choice,
-#       region_surcharge: dict = {}
-#     )
-#
-# The uniform_spanning_tree() function could just ignore the "region_surcharge" parameter -
-# or maybe issue a warning if that parameter were not an empty dict.  Similarly, the
-# random_spanning_tree() function could just ignore the "choice" parameter - or maybe
-# issue a warning it it were anything other than random.choice.
-#
-# Ask Peter if he agrees.
-
-
-# frm TODO: Documentation: _PopulatedGraph
-#
-# State what the purpose of this class is in the docstring comment below.
-#
-# Note that I changed this to be an internal class (leading underscore).
-#
 class _PopulatedGraph:
     """
-    A class representing a graph with population information.
+    A class representing a graph with population information.  It is used by
+    the code that finds districts (subsets of nodes) that each have
+    the appropriate population (within epsilon of the ideal district population).
 
     :ivar graph: The underlying graph structure.
     :type graph: Graph
-    :ivar subsets: A dictionary mapping nodes to their subsets.
+    :ivar subsets: A dictionary mapping nodes to their subsets.  This is used
+        as a way to accumulate nodes that "belong together", so it is kind of
+        a scratchpad for nodes that hopefully will become a district.
     :type subsets: Dict
-    :ivar population: A dictionary mapping nodes to their populations.
+    :ivar population: A dictionary mapping nodes to the population of the node.
     :type population: Dict
     :ivar tot_pop: The total population of the graph.
     :type tot_pop: Union[int, float]
@@ -233,19 +157,10 @@ class _PopulatedGraph:
         self.tot_pop = sum(self.population.values())
         self.ideal_pop = ideal_pop
         self.epsilon = epsilon
-        self._degrees = {node_id: graph.degree(node_id) for node_id in graph.node_indices}
 
-        # frm: TODO: Refactor: _degrees ???  Why separately store the degree of every node?
-        #
-        # The _degrees data member above is used to define a method below called "degree()"
-        # What is odd is that the implementation of this degree() method could just as
-        # easily have been self.graph.degree(node_id).  And in fact, every call on the
-        # new degree function could be replaced with just <_PopulatedGraph>.graph.degree(node_id)
-        #
-        # So unless there is a big performace gain (or some other reason), I would be
-        # in favor of deleting the degree() method below and just using
-        # <_PopulatedGraph>.graph.degree(node_id) on the assumption that both NX and RX
-        # have an efficient implementation of degree()...
+        # Note: _degrees maintains the number of edges from a node which can change
+        # when a node is "contracted" - see _contract_node() below.
+        self._degrees = {node_id: graph.degree(node_id) for node_id in graph.node_indices}
 
     def __iter__(self):
         # Note: in the pre RustworkX code, this was implemented as:
@@ -265,7 +180,10 @@ class _PopulatedGraph:
     def degree(self, node) -> int:
         return self._degrees[node]
 
-    def contract_node(self, node, parent) -> None:
+    def _contract_node(self, node, parent) -> None:
+        # Merge the population and the subset of nodes from "self"
+        # into the parent node, and reduce the degrees of the parent
+        # indicating that the "self" node is no longer in the tree.
         self.population[parent] += self.population[node]
         self.subsets[parent] |= self.subsets[node]
         self._degrees[parent] -= 1
@@ -433,10 +351,10 @@ def find_balanced_edge_cuts_contraction(
         # Contract the leaf:  frm: merge the leaf's population into the parent and add the
         # parent to "leaves"
         parent = pred[leaf]
-        # frm: Add child population and subsets to parent, reduce parent's degree by 1
-        #       This effectively removes the leaf from the tree, adding all of its data
-        #       to the parent.
-        h.contract_node(leaf, parent)
+        # Add child population and subsets to parent, reduce parent's degree by 1
+        # This effectively removes the leaf from the tree, adding all of its data
+        # to the parent.
+        h._contract_node(leaf, parent)
         if h.degree(parent) == 1 and parent != root:
             # frm: Only add the parent to the end of the queue when we are merging
             #       the last leaf - this makes sure we only add the parent node to
