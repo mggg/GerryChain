@@ -1900,6 +1900,8 @@ class Graph:
         :rtype: Graph
         """
 
+        # Note that the RX version of this function is MUCH faster than the NX version.
+
         if self.is_nx_graph():
             nx_graph = self.get_nx_graph()
             spanning_tree = networkx.algorithms.tree.minimum_spanning_tree(
