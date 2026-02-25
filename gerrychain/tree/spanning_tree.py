@@ -5,169 +5,93 @@ from typing import (
     Optional,
 )
 
-# frm:  import the new Graph object which encapsulates NX and RX Graph...
 from ..graph import Graph
 
 # frm: TODO: Documentation: Update the high level description for spanning_tree.py below
 
 """
-This module provides tools and algorithms for manipulating and analyzing graphs,
-particularly focused on partitioning graphs based on population data. It leverages the
-GerryChain Graph object to handle graph structures and implements various algorithms for graph
-partitioning and tree traversal.
+This module provides two implementation of spanning tree functions:
+uniform_spanning_tree() and random_spanning_tree().
+
+A spanning tree is a tree formed from a connected undirected graph that contains
+all of the nodes in the graph, but only some of the edges, so that the resulting
+graph is a tree (with no cycles). You can learn more here:
+
+    https://en.wikipedia.org/wiki/Spanning_tree
+
+Given a spanning tree for a graph, one can easily compute the population of every
+subtree by doing a bottom up tree traversal.  Given the population totals for
+every subtree, one can carve off subtrees that have the desired population, one
+by one, and thereby construct a set of districts (note that this can fail if
+the population of a subtree is below epsilon of the population target and
+the parent subtree is above epsilon).
+
+Two two implementations are:
+
+    uniform_spanning_tree() - a uniform spanning tree:
+
+        A spanning tree that is chosen randomly from among all possible
+        spanning trees with equal probability is called a uniform spanning
+        tree. Wilson's algorithm can be used to generate uniform spanning
+        trees in polynomial time by a process of taking a random walk on
+        the given graph and erasing the cycles created by this walk.
+        uniform_spanning_tree() implements Wilson's algorithm.
+
+    random_spanning_tree() - a minimum spanning tree (MST):
+
+        Unlike a uniform spanning tree, an MST selects a spanning tree from
+        a subset of all spanning trees, based on edge weights.  It selects
+        a spanning tree that minimizes the total of all of the edge weights
+        in the graph.
+
+        In GerryChain, the random_spanning_tree() function implements an
+        MST using Kruksal's Algorithm with random weights.  That is,
+        the code associates a random weight (between 0 and 1) to each
+        edge in the graph and then computes the MST for those weights.
+
+        The random_spanning_tree() function additionally supports
+        a "region surcharge" that increases the weights for specific
+        edges.  This allows one to construct a spanning tree that
+        tends to keep the nodes of some edges together in the same
+        district.  The details are documented elsewhere - the point
+        here is that the random_spanning_tree() function is the one
+        you want to use if you want to bias the outcome to keep some
+        nodes together in the resulting district plan (for instance
+        nodes that are in the same county).
+
+        You can learn more about MST's here:
+
+            https://en.wikipedia.org/wiki/Minimum_spanning_tree
+
+Note that the uniform_spanning_tree() function selects "uniformly"
+from the space of possible spanning trees, and minimum
+spanning trees do NOT. So depending on your target distribution, you
+might prefer one spanning tree function vs. the other.
 
 Key functionalities include:
 
 - Implementation of random and uniform spanning trees for graph partitioning.
-- The `_PopulatedGraph` class, which represents a graph with additional population data,
-  and methods for assessing and modifying this data.
-- Functions for finding balanced edge cuts in a populated graph, either through
-  contraction or memoization techniques.
-- A suite of functions (`bipartition_tree`, `recursive_tree_part`, `_get_seed_chunks`, etc.)
-  for partitioning graphs into balanced subsets based on population targets and tolerances.
-- Utility functions like `get_max_prime_factor_less_than` and `_recursive_seed_part_inner`
-  to assist in complex partitioning tasks.
 
 Dependencies:
 
 - random: Provides random number generation for probabilistic approaches.
 - typing: Used for type hints.
 
-Last Updated: January 2026
-
-RustworkX Issues:
-
-Note: This module has been modified in order to be able to operate on
-RustworkX.PyGraph objects in addition to NetworkX.Graph objects.  The
-new GerryChain Graph object embeds a graph object that can be based
-either on NetworkX or RustworkX (the old GerryChain graph object was
-a subclass of NetworkX.Graph).  The reason for supporting
-RustworkX.PyGrapy is performance - it is much faster than NetworkX.
-
-The default usage model is for users to create graphs using Networkx,
-both because of legacy concerns but also because it is just convenient
-to create graphs in NetworkX.  When the user creates a Partition
-object, the embedded NetworkX.Graph object will be automatically
-converted to be a RustworkX.PyGraph object.  And since most of the
-routines in this module are used after the creation of a Partition
-object, the underlying graph operations will be performed by
-RustworkX code.
-
-There is a way to override this behavior by setting the value of a
-variable in the code (in partition.py).  The variable in
-partition.py that controls this (and its default setting) is:
-
-    test_performance_using_NX_graph = False
-
-Many of the functions in this file operate on subgraphs which
-behave differently from NX subgraphs.  In particular, RustworkX subgraphs
-typically change the IDs for the nodes in the subgraph, so that a node with
-an ID of say, 5, in a parent graph might have an ID of say, 2, in the subgraph.
-It is the same node, with the same data, but its ID has changed.
-
-To deal with subgraphs having different node_ids from their parent graph
-the code has implemented mappings (dictionaries) for subgraph node_ids to
-parent graph node_ids, allowing routines to convert any results obtained
-using a subgraph to the appropriate node_ids for the parent graph.  Note
-that the same issue applies for edges - they need to be converted back to
-use the node_ids of the parent graph.
-
-To manage the need to translate node_ids from subgraphs to parent graphs,
-the code only calls subgraph as an actual parameter to a function call.
-This prevents subgraph node_ids from being available (and hence causing bugs)
-in the context of the calling code.  Functions that return node_ids or
-edge_ids or edges have the obligation to translate the node_ids of
-the subgraph back into the appropriate node_ids for the parent graph.
-
-So - if you decide to write custom code that involves subgraphs, please
-spend a little time reviewing how the code in this module is implemented
-so that you can avoid subtle nasty bugs...
-
-Note: Predecessor and successor functions have been moved to the new
-GerryChain Graph object.  The reason for moving them was to remove dependencies
-on NetworkX (and RustworkX) from this module.
 """
 
 """
-frm: TODO: Get OK from Peter for proposed changes (to be made in near future):
+frm: RX Documentation:
 
-I have started the refactoring of this module, but there is much that I would
-like to do.  Before I do it, however, I would like to get your feedback.
+As far as I can tell a spanning tree is only ever used to populate a _PopulatedGraph
+and so, there is no need to worry about translating the spanning tree's nodes into
+the context of the parent.  Stated differently, a spanning tree is not used to
+compute something about a subgraph but rather to compute something about whatever
+graph is currently being dealt with.
 
-I am pressed for time - want to get this PR done for tomorrow, so this will
-be a little scattershot, but hopefully it is better to have it mostly in one
-place.  If it is too confusing, then let me know and I will spend some time
-to make it clearer and then post a new PR (or an updated one).
-
-The first thing I would like to do is to move some functions out of this
-module so that it can concentrate on biparition_tree() and the code that
-supports it.
-
-Peter said (January 2026): Fine with me! We can make "tree" into it's
-own submodule and put each distinct kind of thing in its own file.
-
-Move recursive_tree_part() and recursive_seed_part()
-
-    Maybe to assignment.py or partition.py because these routines are used to create
-    assignments.  They use tree functions but they are not themselves tree functions.
-
-Move espilon_tree_bipartition() tree_proposals.py
-
-    This routine, epsilon_tree_biparition() is only ever used by recom(), and it
-    will probably end up only being used by recom().  So that is one reason for
-    moving it - so that it will be closer to its use.
-
-    However, as with the argument for moving recursive_tree_part() and recursive_seed_part()
-    out of tree.py, epsilon_tree_bipartition() is not a general purpose tree operation, and
-    moving it out of tree.py will reduce the cognitive load for someone trying to
-    understand what tree.py is all about.
-
-Unify the code that does the heavy lifting for biparition_tree().
-
-    This module is hard to grok, and putting all of the code that uses function
-    variables and region_surcharges, and one_sided_cuts into fewer places
-    simplifies the logic.
-
-    I created a routine _get_possible_cuts_and_populated_graph() which does the
-    heavy lifting, and then had other routines call it.  Take a look and see if
-    it looks good as-is or whether you would like tweaks or wholesale different
-    approach.
-
-    It is unfortunate that this routine returns a tuple.  It had to do so because
-    region_surchage logic needed access to the populated graph so that it could
-    do its fancy weighted cut. On the other hand, it is an internal function, so
-    the ugliness is internal...
-
-    I would like to unify the signatures of random_spanning_tree() and
-    uniform_spanning_tree() - just to get rid of the tests against the signatures
-    of functions.  This is perhaps religion - the code works just fine as-is,
-    but OTOH there seems little harm in unifying them.
-
-    Peter said (January 2026): I would actually prefer a more unified
-    interface. It makes it way easier to maintain when things are consistent.
-
-    There are some other questions in the comments below about why we even
-    offer uniform_spanning_tree() - I would be interested in your answers to
-    those questions.
-
-    Peter said (January 2026): The broad answer is that uniform spanning
-    trees samples from a completely different probability space compared to
-    minimum spanning trees and there are reasons for preferring one
-    distribution or the other.
-
-    There are tons of comments that you are welcome to ignore.  As I said, I have
-    lots of thoughts about how to improve this code, but the above are the
-    biggies.
-
-    All of the tests pass now, so I think this is solid.
-
-    Looking forward to your feedback!
-
-    -Fred
-
-
-
+In short, I am assuming that we can ignore the fact that RX subgraphs have different
+node_ids for this function and all will be well...
 """
+
 
 # frm: TODO: Refactoring:  random_spanning_tree() and uniform_spanning_tree() should have same signature
 #
@@ -193,30 +117,58 @@ Unify the code that does the heavy lifting for biparition_tree().
 # Ask Peter if he agrees.
 
 
+# frm: TODO: Documentation: Ask Peter for better description of region surcharge
+#
+# I have to admit that I am a bit confused about how region surcharge works.
+#
+# It has the effect of retaining the edges of nodes that are in the "same region".
+# There is no guarantee where these nodes will end up in the tree, however,
+# because the root of the tree that is eventually chosen in the find_balanced_edge_fn
+# is typically randomly selected.  This seems to just have the effect of keeping
+# nodes that are in the same region close to each other in the tree.  Stated
+# differently, if an edge for nodes in the same region was NOT included, then
+# then the two nodes could end up farther apart in the spanning tree, and hence
+# more likely to be put in separate districts.
+#
+# What has me puzzled, however, is that the nature of GerryChain graphs is that
+# because nodes represent geographic areas, nodes that are in the "same region"
+# are already "close" to each other geographically and hence close to each
+# other in the graph.  So the effect of a region surcharge is probably
+# pretty small - since nodes in the same region are already typically close
+# to each other in the spanning tree.
+#
+# The choice of the root of the spanning tree seems to be pretty important.
+# If the root is in a region that has a surchage then all of the nodes in
+# the shared region will be at the top of the tree.  This would seem to
+# increase the liklihood that those nodes would be put in the same district.
+# Actually, what you really want is a way to have all of the nodes in the
+# same region be grouped together in a subtree at the BOTTOM of the
+# spanning tree, because the find_balanced_edge_cuts functions all go
+# bottom up.
+#
+# In short, I find that I do not really grok why region surcharge works,
+# how effective it really is, and why there is not a better solution to
+# keeping regions together...
+#
+# Another issue is how users should think about the weights used for
+# a region surcharge.  This is especially interesting when there are
+# more than one "region" being surcharged - for instance "muni" and "water".
+
+
 def random_spanning_tree(graph: Graph, region_surcharge: Optional[Dict] = None) -> Graph:
     """
-    Builds a spanning tree chosen by Kruskal's method using random weights.
+    Builds a minimum spanning tree chosen by Kruskal's method using random weights.
 
     The region_surcharge parameter allows the caller to bias the selection of
-    edges by increasing the weights of some edges that the caller would like
-    to be kept together (if possible).
+    edges by increasing the weights of some edges.  For example, if you specify
+    a region surcharge for "county", then all edges whose nodes do NOT have the
+    same non-null value for "county" will have a surcharge added to that edge.
+    This will have the effect of biasing the algorithm to preferentially select
+    nodes that belong to the same county.
 
     Kruskal's method chooses the edges with the lowest weight first, so edges
     with high weights will be selected last - with the highest weights not chosen
     at all (once all the nodes are in the tree, the algorithm stops adding edges).
-    This has the effect of making adjacent nodes that belong to the same region be
-    highly connected.
-
-    Note that the algorihm adds weights to edges when the nodes are NOT in the
-    same region.  So, in the case where we have a region_surcharge adding an
-    additional weight of 1 to all edges where the two nodes are NOT in the
-    same municipality, the weights of edges for nodes in the same municipality
-    will be less than 1 while the weights of all other edges will be greater
-    than one, which would guarantee that all of the nodes in a given municipality
-    would be connected to each other.  This would not guarantee that all
-    of the nodes in a municipality were placed in the same district, but it
-    would certainly prioritize preserving municipalities in a few rather than
-    a large number of different districts.
 
     If no region_surcharges are provided, then the algorithm just randomly
     specifies the weights of all edges before generating an MST which is
@@ -244,18 +196,17 @@ def random_spanning_tree(graph: Graph, region_surcharge: Optional[Dict] = None) 
     :rtype: Graph
     """
 
-    """
-    frm: RX Documentation:
-
-    As far as I can tell a spanning tree is only ever used to populate a _PopulatedGraph
-    and so, there is no need to worry about translating the spanning tree's nodes into
-    the context of the parent.  Stated differently, a spanning tree is not used to
-    compute something about a subgraph but rather to compute something about whatever
-    graph is currently being dealt with.
-
-    In short, I am assuming that we can ignore the fact that RX subgraphs have different
-    node_ids for this function and all will be well...
-    """
+    # frm: TODO: Documentation:  What values make sense for region surcharge?
+    #
+    # We should make clear what the issues are for different values of
+    # region_surcharge.  The random values are between 0-1, so any region
+    # surcharge value greater than 1 will dominate.  What happens if the
+    # user provides several region surcharge values for different
+    # node attributes?  I do not know, and I presume users won't know.
+    #
+    # Note that the documentation currently existing sometimes says that
+    # region surcharge values should be between 0-1 and then it has
+    # example code where the values are 1 or greater than 1...
 
     # frm: TODO: Refactoring: What is up with region_surcharge being unset?  The region_surcharge
     #               is only ever accessed in this routine in the for-loop below to
@@ -327,6 +278,31 @@ def random_spanning_tree(graph: Graph, region_surcharge: Optional[Dict] = None) 
         #
         for key, value in region_surcharge.items():
             # We surcharge edges that are in different regions and those that are not in any region
+
+            # frm: TODO: BUG?  Why do we surcharge when either node is not in the region?
+            #
+            # In the paper that Peter sent me titled, Models of Random Spanning Trees, it states:
+            #
+            #     When users desire to make it more likely that two nodes are placed in
+            #     different pieces of a partition, they can add a positive “surcharge”
+            #     to the weight on the edge between those nodes. When a collection of
+            #     contiguous nodes makes up a region that users prefer to keep in the
+            #     same piece, the same idea can be used to surcharge the boundary edges
+            #     of the region. This has the effect that minimum spanning tree is more
+            #     likely to restrict to a tree on the designated region; in the
+            #     bipartition step, that means the region will be kept whole or split
+            #     at most once.
+            #
+            # But the code below surcharges both when the nodes are in different regions
+            # AND when either of the nodes is not in a region at all.  From what the
+            # article says, we should not surcharge when BOTH nodes are not in a region
+            # at all.
+            #
+            # ...confused...
+            #
+            # Ask Peter...
+            #
+
             node_id1 = edge[0]
             node_id2 = edge[1]
             node_id1_region = graph.node_data(node_id1)[key]
@@ -342,29 +318,6 @@ def random_spanning_tree(graph: Graph, region_surcharge: Optional[Dict] = None) 
 
     graph.verify_graph_is_valid()
 
-    # frm: TODO: Documentation:  Think a bit about original_nx_node_ids
-    #
-    # Original node_ids refer to the node_ids used when a graph was created.
-    # This mostly means remembering the NX node_ids when you create an RX
-    # based Graph object.  In the code below, we create an RX based Graph
-    # object, but we do not do anything to map original node_ids.  This is
-    # probably OK, but it depends on how the spanning tree is used elsewhere.
-    #
-    # In short, worth some thought...
-
-    # frm: TODO: Refactoring: Code: Eliminate NX dependence in tree.py
-    #
-    # Create a routine in graph.py to compute a minimum spanning tree
-    # and then use that routine here.
-    #
-    # The fact that the NX version uses edge data directly while the RX
-    # version uses a function (that does the same thing) means that
-    # a utility routine in graph.py that did the delegation to NX or RX
-    # would need to have different parameters - a string vs. a function.
-    # So, maybe this is not worth doing after all...
-    #
-    # Note that the RX version is *much* faster
-
     minimum_spanning_tree = graph.minimum_spanning_tree_from_edge_weight(
         edge_weight_attribute_name="random_weight"
     )
@@ -379,7 +332,7 @@ def uniform_spanning_tree(graph: Graph, choice: Callable = random.choice) -> Gra
     If interested, there is a nice animated description of Wilson's
     algorithm here:
 
-    https://weblog.jamisbuck.org/2011/1/20/maze-generation-wilson-s-algorithm
+        https://weblog.jamisbuck.org/2011/1/20/maze-generation-wilson-s-algorithm
 
     A brief description of Wilson's Alorithm follows:
 

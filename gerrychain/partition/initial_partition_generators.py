@@ -106,15 +106,15 @@ def recursive_tree_part(
     ub_pop = pop_target * (1 + epsilon)
     check_pop = lambda x: lb_pop <= x <= ub_pop
 
-    # frm: Notes to self:  The code in the for-loop creates n-2 districts (where n is
-    #                       the number of partitions desired) by calling the "bipartition_tree_fn"
-    #                       function, whose job it is to produce a connected set of
-    #                       nodes that has the desired population target.
+    # The code in the for-loop creates n-2 districts (where n is
+    # the number of partitions desired) by calling the "bipartition_tree_fn"
+    # function, whose job it is to produce a connected set of
+    # nodes that has the desired population target.
     #
-    #                       Note that it sets one_sided_cut=True which tells the
-    #                       "bipartition_tree_fn" function that it is NOT bisecting the graph
-    #                       but is rather supposed to just find one connected
-    #                       set of nodes of the correct population size.
+    # Note that it sets one_sided_cut=True which tells the
+    # "bipartition_tree_fn" function that it is NOT bisecting the graph
+    # but is rather supposed to just find one connected
+    # set of nodes of the correct population size.
 
     for part in parts[:-2]:
         min_pop = max(pop_target * (1 - epsilon), pop_target * (1 - epsilon) - debt)
@@ -150,9 +150,9 @@ def recursive_tree_part(
     # After making n-2 districts, we need to make sure that the last
     # two districts are both balanced.
 
-    # frm: For the last call to "bipartition_tree_fn", set one_sided_cut=False to
-    #       request that "bipartition_tree_fn" create two equal sized districts
-    #       with the given population goal by bisecting the graph.
+    # For the last call to "bipartition_tree_fn", set one_sided_cut=False to
+    # request that "bipartition_tree_fn" create two equal sized districts
+    # with the given population goal by bisecting the graph.
     node_ids = bipartition_tree_fn(
         graph.subgraph(remaining_nodes),
         pop_col=pop_col,
@@ -187,7 +187,6 @@ def recursive_tree_part(
     return flips
 
 
-# frm: only used in this file, so I changed the name to have a leading underscore
 def _get_seed_chunks(
     graph: Graph,
     num_chunks: int,
@@ -201,6 +200,8 @@ def _get_seed_chunks(
     """
     Helper function for recursive_seed_part. Partitions the graph into ``num_chunks`` chunks,
     balanced within new_epsilon <= ``epsilon`` of a balanced target population.
+
+    It calls the bipartition_tree_fn function repeatedly to create parts (districts).
 
     :param graph: The graph
     :type graph: Graph
@@ -226,24 +227,19 @@ def _get_seed_chunks(
     :rtype: List[List[int]]
     """
 
-    # frm: TODO: Refactoring:  Change the name of num_chunks_left to instead be
-    #      num_districts_per_chunk.
-    # frm: ???: It is not clear to me when num_chunks will not evenly divide num_dists.  In
-    #           the only place where _get_seed_chunks() is called, it is inside an if-stmt
-    #           branch that validates that num_chunks evenly divides num_dists...
-    #
-    num_chunks_left = num_dists // num_chunks
+    if num_dists % num_chunks != 0:
+        raise Exception(
+            "_get_seed_chunks: internal error: num_chunks does not evenly divide num_dists"
+        )
 
-    # frm: TODO: Refactoring:  Change the name of parts below to be something / anything else.
-    #      Normally parts refers to districts, but here is is just a way to keep track of
-    #      sets of nodes for chunks.  Yes - they eventually become districts when this code gets
-    #      to the base cases, but I found it confusing at this level...
-    #
+    num_districts_per_chunk = num_dists // num_chunks
+
+    # Create a list of names (integers) for each of the parts (districts) we will create.
     parts = range(num_chunks)
     # frm: ???: I think that new_epsilon is the epsilon to use for each district, in which
     #           case the epsilon passed in would be for the  HERE...
-    new_epsilon = epsilon / (num_chunks_left * num_chunks)
-    if num_chunks_left == 1:
+    new_epsilon = epsilon / (num_districts_per_chunk * num_chunks)
+    if num_districts_per_chunk == 1:
         new_epsilon = epsilon
 
     chunk_pop = 0
@@ -268,8 +264,8 @@ def _get_seed_chunks(
 
         # frm: Note:  This just scales epsilon by the number of districts for each chunk
         #               so we can get chunks with the appropriate population sizes...
-        min_pop = pop_target * (1 - new_epsilon) * num_chunks_left
-        max_pop = pop_target * (1 + new_epsilon) * num_chunks_left
+        min_pop = pop_target * (1 - new_epsilon) * num_districts_per_chunk
+        max_pop = pop_target * (1 + new_epsilon) * num_districts_per_chunk
 
         chunk_pop_target = chunk_pop / num_chunks
 
@@ -295,7 +291,7 @@ def _get_seed_chunks(
         #               default to the last part.
         #
 
-        # Assign all nodes to one of the parts
+        # Assign all nodes to one of the parts (districts)
         for i in range(len(parts[:-1])):
             part = parts[i]
 
@@ -324,10 +320,10 @@ def _get_seed_chunks(
         for node in remaining_nodes:
             part_pop += graph.node_data(node)[pop_col]
         # frm: ???: Compute what the population total would be for each district in chunk
-        part_pop_as_dist = part_pop / num_chunks_left
+        part_pop_as_dist = part_pop / num_districts_per_chunk
         fake_epsilon = epsilon
         # frm: ???: If the chunk is for more than one district, divide epsilon by two
-        if num_chunks_left != 1:
+        if num_districts_per_chunk != 1:
             fake_epsilon = epsilon / 2
         # frm: ???:  Calculate max and min populations on a district level
         #               This will just be based on epsilon if we only want one district from
@@ -461,35 +457,6 @@ def _recursive_seed_part_inner(
     :rtype: List of sets, each set is a district
     """
 
-    """
-    frm: TODO: Documentation: _recursive_seed_part_inner() - clarify what this does
-
-    I started to update the documentation a while back, but didn't finish it.  I now
-    need to remember what I was going to write, but the mere fact that I need to
-    remember it is a good reason to write the documentation!
-
-
-
-    This code is quite nice once you grok it.
-
-    The goal is to find the given number of districts - but to do it in an
-    efficient way - meaning with smaller graphs.  So conceptually, you want
-    to...
-
-    There are two base cases when the number of districts still to be found are
-    either 1 or...
-
-
-    Also - address this comment which I now do not grok:
-
-        OK, but why is the logic above for num_chunks the correct number?  Is there
-        a mathematical reason for it?  I assume so, but that explanation is missing...
-
-        I presume that the reason is that something in the code that finds a
-        district scales exponentially, so it makes sense to divide and conquer.
-        Even so, why this particular strategy for divide and conquer?
-    """
-
     # Chooses num_chunks
     if n is None:
         if ceil is None:
@@ -525,7 +492,7 @@ def _recursive_seed_part_inner(
             pop_target=pop_target,
             epsilon=epsilon,
             node_repeats=node_repeats,
-            one_sided_cut=False,
+            one_sided_cut=False,  # flag to say we want to bisect graph
         )
 
         # frm: TODO: Refactoring:  the name "one_sided_cut" seems unnecessarily opaque.

@@ -1,23 +1,27 @@
 """
-This module provides a :class:`~gerrychain.graph.Graph` class that
-extends the :class:`networkx.Graph` and includes some useful methods
-for working with graphs representing geographic data. The class
-:class:`~gerrychain.graph.Graph` is the only part of this module that
-is intended to be used directly by users of GerryChain.
+GerryChain creates district plans where a district is a set of nodes
+in a graph that satisfy the specified conditions - for example, having
+an appropriate population.
 
-The other classes and functions in this module are used internally by
-GerryChain. These include the geographic manipulation functions
-available in :mod:`gerrychain.graph.geo`, the adjacency functions
-in :mod:`gerrychain.graph.adjacency`, and the class
-:class:`~gerrychain.graph.FrozenGraph` in the file
-:mod:`gerrychain.graph.graph`. See the documentation at the top
-of those files for more information.
+This module implements the algorithms that decide what nodes belong
+in a district (often called a "part" in the code).
+
+There are two sub-modules that provide these implementations:
+
+spanning_tree.py implements functions to create a spanning tree for
+a graph (or subgraph).  Spanning trees are fundamental to how
+GerryChain works - they convert a graph into a tree that can
+then be traversed bottom up to compute population totals for
+each subtree, which then allows the code to identify subtrees that
+can form a district (part).
+
+bipartition.py implements the code that walks spanning trees to
+identify sets of nodes that are candidates for becoming a
+district (part).
+
+There is additional documentation in each of these sub-modules.
+
 """
-
-# frm: TODO: Documentation:  Update documentation for tree/__init__.py
-#
-# It is just a copy of the __init__.py from graph, so it needs to
-# be changed to apply to tree...
 
 from .bipartition_tree import (
     BalanceError,
