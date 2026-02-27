@@ -1,6 +1,7 @@
 import math
 import random
-from typing import Any, Callable, List, Union
+from collections.abc import Callable, Generator
+from typing import Any
 
 from tqdm import tqdm
 
@@ -33,12 +34,12 @@ class SingleMetricOptimizer:
     def __init__(
         self,
         proposal: Callable[[Partition], Partition],
-        constraints: Union[Callable[[Partition], bool], List[Callable[[Partition], bool]]],
+        constraints: Callable[[Partition], bool] | list[Callable[[Partition], bool]],
         initial_state: Partition,
         optimization_metric: Callable[[Partition], Any],
         maximize: bool = True,
         step_indexer: str = "step",
-    ):
+    ) -> None:
         """Initialize a SingleMetricOptimizer instance.
 
         Args:
@@ -128,7 +129,7 @@ class SingleMetricOptimizer:
             Callable[[Partition], bool]: An acceptance function for tilted chains.
         """
 
-        def tilted_acceptance_function(part):
+        def tilted_acceptance_function(part: Partition) -> bool:
             if part.parent is None:
                 return True
 
@@ -144,7 +145,7 @@ class SingleMetricOptimizer:
 
     def _simulated_annealing_acceptance_function(
         self, beta_function: Callable[[int], float], beta_magnitude: float
-    ):
+    ) -> Callable[[Partition], bool]:
         """Function factory that binds and returns a simulated annealing acceptance function.
 
         Args:
@@ -158,7 +159,7 @@ class SingleMetricOptimizer:
             Callable[[Partition], bool]: A acceptance function for simulated annealing runs.
         """
 
-        def simulated_annealing_acceptance_function(part):
+        def simulated_annealing_acceptance_function(part: Partition) -> bool:
             if part.parent is None:
                 return True
             score_delta = self.score(part) - self.score(part.parent)
@@ -187,7 +188,7 @@ class SingleMetricOptimizer:
         """
         cycle_length = duration_hot + duration_cold
 
-        def beta_function(step: int):
+        def beta_function(step: int) -> float:
             time_in_cycle = step % cycle_length
             return float(time_in_cycle >= duration_hot)
 
@@ -213,7 +214,7 @@ class SingleMetricOptimizer:
         """
         cycle_length = duration_hot + 2 * duration_cooldown + duration_cold
 
-        def beta_function(step: int):
+        def beta_function(step: int) -> float:
             time_in_cycle = step % cycle_length
             if time_in_cycle < duration_hot:
                 return 0
@@ -228,8 +229,8 @@ class SingleMetricOptimizer:
 
     @classmethod
     def linear_jumpcycle_beta_function(
-        cls, duration_hot: int, duration_cooldown, duration_cold: int
-    ):
+        cls, duration_hot: int, duration_cooldown: int, duration_cold: int
+    ) -> Callable[[int], float]:
         """Return Beta function defining linear jumpcycle hot-cool cycle.
 
         The linear jumpcycle hot-cool function runs hot for some given duration, cools down
@@ -246,7 +247,7 @@ class SingleMetricOptimizer:
         """
         cycle_length = duration_hot + duration_cooldown + duration_cold
 
-        def beta_function(step: int):
+        def beta_function(step: int) -> float:
             time_in_cycle = step % cycle_length
             if time_in_cycle < duration_hot:
                 return 0
@@ -283,10 +284,10 @@ class SingleMetricOptimizer:
         cycle_length = duration_hot + 2 * duration_cooldown + duration_cold
 
         # this will scale from 0 to 1 approximately
-        def logit(x):
+        def logit(x: float) -> float:
             return (math.log(x / (1 - x)) + 5) / 10
 
-        def beta_function(step: int):
+        def beta_function(step: int) -> float:
             time_in_cycle = step % cycle_length
             if time_in_cycle <= duration_hot:
                 return 0
@@ -337,10 +338,10 @@ class SingleMetricOptimizer:
         cycle_length = duration_hot + duration_cooldown + duration_cold
 
         # this will scale from 0 to 1 approximately
-        def logit(x):
+        def logit(x: float) -> float:
             return (math.log(x / (1 - x)) + 5) / 10
 
-        def beta_function(step: int):
+        def beta_function(step: int) -> float:
             time_in_cycle = step % cycle_length
             if time_in_cycle <= duration_hot:
                 return 0
@@ -362,7 +363,7 @@ class SingleMetricOptimizer:
         num_bursts: int,
         accept: Callable[[Partition], bool] = always_accept,
         with_progress_bar: bool = False,
-    ):
+    ) -> Generator[Partition, None, None]:
         """Performs a short burst run using the instance's score function.
 
         Each burst starts at the best performing plan of the previous burst. If there's a tie, the
@@ -409,7 +410,7 @@ class SingleMetricOptimizer:
         beta_function: Callable[[int], float],
         beta_magnitude: float = 1,
         with_progress_bar: bool = False,
-    ):
+    ) -> Generator[Partition, None, None]:
         """Performs simulated annealing with respect to the class instance's score function.
 
         Args:
@@ -452,7 +453,7 @@ class SingleMetricOptimizer:
         num_bursts: int,
         p: float,
         with_progress_bar: bool = False,
-    ):
+    ) -> Generator[Partition, None, None]:
         """Performs a short burst run using the instance's score function.
 
         Each burst starts at the best performing plan of the previous burst. If there's a tie, the
@@ -484,7 +485,7 @@ class SingleMetricOptimizer:
         stuck_buffer: int,
         accept: Callable[[Partition], bool] = always_accept,
         with_progress_bar: bool = False,
-    ):
+    ) -> Generator[Partition, None, None]:
         """Performs a short burst where the burst length is allowed to increase dynamically.
 
         The burst length starts at some initial value and increases (doubles) each time there is no
@@ -540,7 +541,9 @@ class SingleMetricOptimizer:
             if time_stuck >= stuck_buffer * burst_length:
                 burst_length *= 2
 
-    def tilted_run(self, num_steps: int, p: float, with_progress_bar: bool = False):
+    def tilted_run(
+        self, num_steps: int, p: float, with_progress_bar: bool = False
+    ) -> Generator[Partition, None, None]:
         """Performs a tilted run.
 
         A chain where the acceptance function always accepts better plans and accepts worse plans

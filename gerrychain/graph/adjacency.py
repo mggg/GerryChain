@@ -10,12 +10,14 @@ unspecified because of import issues.
 """
 
 import warnings
-from typing import Dict
+from collections.abc import Hashable, Iterable, Iterator
 
-from geopandas import GeoDataFrame
+from geopandas import GeoDataFrame, GeoSeries
+from shapely.geometry.base import BaseGeometry
+from shapely.strtree import STRtree
 
 
-def neighbors(df: GeoDataFrame, adjacency: str) -> Dict:
+def neighbors(df: GeoDataFrame, adjacency: str) -> dict:
     if adjacency not in ("rook", "queen"):
         raise ValueError(
             "The adjacency parameter provided is not supported. "
@@ -25,7 +27,7 @@ def neighbors(df: GeoDataFrame, adjacency: str) -> Dict:
     return adjacencies[adjacency](df.geometry)
 
 
-def str_tree(geometries):
+def str_tree(geometries: GeoSeries) -> STRtree:
     """Creates a STR tree for spatial indexing. Useful for spatial operations.
 
     Args:
@@ -44,7 +46,9 @@ def str_tree(geometries):
     return tree
 
 
-def neighboring_geometries(geometries, tree=None):
+def neighboring_geometries(
+    geometries: GeoSeries, tree: STRtree | None = None
+) -> Iterator[tuple[Hashable, tuple[Hashable, ...]]]:
     """Generator yielding tuples of the form (id, (ids of neighbors)).
 
     Args:
@@ -69,7 +73,9 @@ def neighboring_geometries(geometries, tree=None):
         yield (geometry_id, actual)
 
 
-def intersections_with_neighbors(geometries):
+def intersections_with_neighbors(
+    geometries: GeoSeries,
+) -> Iterator[tuple[Hashable, dict[Hashable, BaseGeometry]]]:
     """Generator yielding tuples of the form (id, {neighbor_id: intersection}).
 
     Note:
@@ -86,7 +92,9 @@ def intersections_with_neighbors(geometries):
         yield (i, intersections)
 
 
-def warn_for_overlaps(intersection_pairs):
+def warn_for_overlaps(
+    intersection_pairs: Iterable[tuple[Hashable, dict[Hashable, BaseGeometry]]],
+) -> Iterator[tuple[Hashable, dict[Hashable, BaseGeometry]]]:
     """Return A generator yielding tuples of intersection pairs.
 
     Args:
@@ -110,12 +118,10 @@ def warn_for_overlaps(intersection_pairs):
         )
         yield (i, intersections)
     if len(overlaps) > 0:
-        warnings.warn(
-            "Found overlaps among the given polygons. Indices of overlaps: {}".format(overlaps)
-        )
+        warnings.warn(f"Found overlaps among the given polygons. Indices of overlaps: {overlaps}")
 
 
-def queen(geometries):
+def queen(geometries: GeoSeries) -> dict[Hashable, dict[Hashable, dict[str, float]]]:
     """Return queen adjacency dictionary for the given collection of polygons.
 
     Args:
@@ -136,7 +142,7 @@ def queen(geometries):
     }
 
 
-def rook(geometries):
+def rook(geometries: GeoSeries) -> dict[Hashable, dict[Hashable, dict[str, float]]]:
     """Return rook adjacency dictionary for the given collection of polygons.
 
     Args:

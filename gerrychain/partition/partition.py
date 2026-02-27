@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import json
-from typing import Any, Callable, Dict, Optional, Tuple
+from collections.abc import Callable, KeysView
+from typing import Any
 
 # frm:  Only used in _first_time() inside __init__() to allow for creating
 #       a Partition from a NetworkX Graph object:
@@ -12,7 +15,7 @@ import networkx
 from gerrychain.graph.graph import FrozenGraph, Graph
 
 from ..updaters import compute_edge_flows, cut_edges, flows_from_changes
-from .assignment import get_assignment
+from .assignment import Assignment, get_assignment
 from .initial_partition_generators import recursive_tree_part
 from .subgraphs import SubgraphView
 
@@ -89,13 +92,13 @@ class Partition:
 
     def __init__(
         self,
-        graph=None,
-        assignment=None,
-        updaters=None,
-        parent=None,
-        flips=None,
-        use_default_updaters=True,
-    ):
+        graph: Graph | FrozenGraph | networkx.Graph | None = None,
+        assignment: dict | Assignment | str | None = None,
+        updaters: dict[str, Callable] | None = None,
+        parent: Partition | None = None,
+        flips: dict | None = None,
+        use_default_updaters: bool = True,
+    ) -> None:
         """Initialize a Partition instance.
 
         Args:
@@ -132,10 +135,10 @@ class Partition:
         n_parts: int,
         epsilon: float,
         pop_col: str,
-        updaters: Optional[Dict[str, Callable]] = None,
+        updaters: dict[str, Callable] | None = None,
         use_default_updaters: bool = True,
         method: Callable = recursive_tree_part,
-    ) -> "Partition":
+    ) -> Partition:
         """Create a Partition with a random assignment of nodes to districts.
 
         This method creates a Partition with a random assignment of nodes to districts. It returns
@@ -173,7 +176,13 @@ class Partition:
             use_default_updaters=use_default_updaters,
         )
 
-    def _first_time(self, graph, assignment, updaters, use_default_updaters):
+    def _first_time(
+        self,
+        graph: Graph | FrozenGraph | networkx.Graph,
+        assignment: dict | Assignment | str | None,
+        updaters: dict[str, Callable] | None,
+        use_default_updaters: bool,
+    ) -> None:
         # Make sure that the embedded graph for the Partition is based on
         # a RustworkX graph, and make sure it is also a FrozenGraph.  Both
         # of these are important for performance.
@@ -273,7 +282,7 @@ class Partition:
     #               That is, is there any reason why anyone might ever
     #               call this except __init__()?
 
-    def _from_parent(self, parent: "Partition", flips: Dict) -> None:
+    def _from_parent(self, parent: Partition, flips: dict) -> None:
         self.parent = parent
         self.flips = flips
 
@@ -288,15 +297,17 @@ class Partition:
         if "cut_edges" in self.updaters:
             self.edge_flows = compute_edge_flows(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         number_of_parts = len(self)
         s = "s" if number_of_parts > 1 else ""
-        return "<{} [{} part{}]>".format(self.__class__.__name__, number_of_parts, s)
+        return f"<{self.__class__.__name__} [{number_of_parts} part{s}]>"
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.parts)
 
-    def flip(self, flips: Dict, flips_passed_in_use_original_nx_node_ids=False) -> "Partition":
+    def flip(
+        self, flips: dict, flips_passed_in_use_original_nx_node_ids: bool = False
+    ) -> Partition:
         """Returns the new partition obtained by performing the given `flips` on this partition.
 
         This method returns the new partition obtained by performing the given `flips` on this
@@ -325,7 +336,7 @@ class Partition:
 
         return self.__class__(parent=self, flips=flips)
 
-    def crosses_parts(self, edge: Tuple) -> bool:
+    def crosses_parts(self, edge: tuple) -> bool:
         """Return True if the edge crosses from one part of the partition to another.
 
         This method returns True if the edge crosses from one part of the partition to another. It
@@ -374,7 +385,7 @@ class Partition:
             self._cache[key] = self.updaters[key](self)
         return self._cache[key]
 
-    def __getattr__(self, key):
+    def __getattr__(self, key: str) -> object:
         # frm * TODO: Refactor:  Not sure it makes sense to allow two ways to accomplish the same
         # thing...
         #
@@ -399,14 +410,14 @@ class Partition:
         #
         return self[key]
 
-    def keys(self):
+    def keys(self) -> KeysView[str]:
         return self.updaters.keys()
 
     @property
-    def parts(self):
+    def parts(self) -> dict:
         return self.assignment.parts
 
-    def plot(self, geometries=None, **kwargs):
+    def plot(self, geometries: object | None = None, **kwargs: object) -> object:
         #
         # frm ???:  I think that this plots districts on a map that is defined
         #           by the geometries parameter (presumably polygons or something similar).
@@ -453,8 +464,8 @@ class Partition:
         cls,
         graph: Graph,
         districtr_file: str,
-        updaters: Optional[Dict[str, Callable]] = None,
-    ) -> "Partition":
+        updaters: dict[str, Callable] | None = None,
+    ) -> Partition:
         """Return partition created from the Districtr file.
 
         Create a Partition from a districting plan created with `Districtr`_, a free and

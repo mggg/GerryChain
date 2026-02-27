@@ -1,11 +1,16 @@
+from __future__ import annotations
+
 import collections
-from typing import Dict, Set
+from typing import TYPE_CHECKING
 
 from .cut_edges import on_edge_flow
 from .flows import on_flow
 
+if TYPE_CHECKING:
+    from ..partition.partition import Partition
 
-def boundary_nodes(partition, alias: str = "boundary_nodes") -> Set:
+
+def boundary_nodes(partition: Partition, alias: str = "boundary_nodes") -> set[int]:
     """Return set of nodes in the partition that are on the boundary.
 
     Args:
@@ -32,7 +37,7 @@ def boundary_nodes(partition, alias: str = "boundary_nodes") -> Set:
         return result
 
 
-def initialize_exterior_boundaries_as_a_set(partition) -> Dict[int, Set]:
+def initialize_exterior_boundaries_as_a_set(partition: Partition) -> dict[int, set[int]]:
     """Return exterior boundary nodes for each part in the partition.
 
     Args:
@@ -50,7 +55,9 @@ def initialize_exterior_boundaries_as_a_set(partition) -> Dict[int, Set]:
 
 
 @on_flow(initialize_exterior_boundaries_as_a_set, alias="exterior_boundaries_as_a_set")
-def exterior_boundaries_as_a_set(partition, previous: Set, inflow: Set, outflow: Set) -> Set:
+def exterior_boundaries_as_a_set(
+    partition: Partition, previous: set[int], inflow: set[int], outflow: set[int]
+) -> set[int]:
     """Updater function that responds to the flow of nodes between different partitions.
 
     Args:
@@ -77,7 +84,7 @@ def exterior_boundaries_as_a_set(partition, previous: Set, inflow: Set, outflow:
     return (previous | (inflow & graph_boundary)) - outflow
 
 
-def initialize_exterior_boundaries(partition) -> Dict[int, float]:
+def initialize_exterior_boundaries(partition: Partition) -> dict[int, float]:
     """Return A dictionary mapping each part of a partition to the total perimeter of the boundary.
 
     Args:
@@ -96,7 +103,9 @@ def initialize_exterior_boundaries(partition) -> Dict[int, float]:
 
 
 @on_flow(initialize_exterior_boundaries, alias="exterior_boundaries")
-def exterior_boundaries(partition, previous: Set, inflow: Set, outflow: Set) -> Dict:
+def exterior_boundaries(
+    partition: Partition, previous: float, inflow: set[int], outflow: set[int]
+) -> float:
     """Computes the total perimeter of the boundary nodes in each part of the partition.
 
     Args:
@@ -119,7 +128,7 @@ def exterior_boundaries(partition, previous: Set, inflow: Set, outflow: Set) -> 
     return previous + added_perimeter - removed_perimeter
 
 
-def initialize_interior_boundaries(partition):
+def initialize_interior_boundaries(partition: Partition) -> dict[int, float]:
     """Return A dictionary mapping each part of a partition to the total perimeter the given part.
 
     Args:
@@ -159,7 +168,12 @@ def initialize_interior_boundaries(partition):
 
 
 @on_edge_flow(initialize_interior_boundaries, alias="interior_boundaries")
-def interior_boundaries(partition, previous: Set, new_edges: Set, old_edges: Set) -> Dict:
+def interior_boundaries(
+    partition: Partition,
+    previous: float,
+    new_edges: set[tuple[int, int]],
+    old_edges: set[tuple[int, int]],
+) -> float:
     """Computes the total perimeter of the shared boundary between different parts of the partition.
 
     Args:
@@ -184,7 +198,7 @@ def interior_boundaries(partition, previous: Set, new_edges: Set, old_edges: Set
     return previous + added_perimeter - removed_perimeter
 
 
-def flips(partition) -> Dict:
+def flips(partition: Partition) -> dict:
     """Return flips that were made to get from the parent partition to the given partition.
 
     This function returns flips that were made to get from the parent partition to the given
@@ -201,7 +215,7 @@ def flips(partition) -> Dict:
     return partition.flips
 
 
-def perimeter_of_part(partition, part: int) -> float:
+def perimeter_of_part(partition: Partition, part: int) -> float:
     """Totals up the perimeter of the part in the partition.
 
     .. Warning::
@@ -225,7 +239,7 @@ def perimeter_of_part(partition, part: int) -> float:
     return exterior_perimeter + interior_perimeter
 
 
-def perimeter(partition) -> Dict[int, float]:
+def perimeter(partition: Partition) -> dict[int, float]:
     """Computes the perimeter of each part in the partition.
 
     Args:

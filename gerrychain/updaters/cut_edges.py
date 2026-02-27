@@ -1,10 +1,19 @@
+from __future__ import annotations
+
 import collections
-from typing import Dict, List, Set, Tuple
+from collections.abc import Iterable
+from typing import TYPE_CHECKING
 
 from .flows import neighbor_flips, on_edge_flow
 
+if TYPE_CHECKING:
+    from ..partition.assignment import Assignment
+    from ..partition.partition import Partition
 
-def _put_edges_into_parts(cut_edges: List, assignment: Dict) -> Dict:
+
+def _put_edges_into_parts(
+    cut_edges: Iterable[tuple[int, int]], assignment: Assignment
+) -> dict[int, set[tuple[int, int]]]:
     """Return A dictionary mapping each part of a partition to the set of cut_edges in that part.
 
     Args:
@@ -24,7 +33,7 @@ def _put_edges_into_parts(cut_edges: List, assignment: Dict) -> Dict:
     return by_part
 
 
-def _new_cuts(partition) -> Set[Tuple]:
+def _new_cuts(partition: Partition) -> set[tuple[int, int]]:
     """Return set of edges that were not cut, but now are.
 
     Args:
@@ -40,7 +49,7 @@ def _new_cuts(partition) -> Set[Tuple]:
     }
 
 
-def _obsolete_cuts(partition) -> Set[Tuple]:
+def _obsolete_cuts(partition: Partition) -> set[tuple[int, int]]:
     """Return set of edges that were cut, but now are not.
 
     Args:
@@ -57,7 +66,7 @@ def _obsolete_cuts(partition) -> Set[Tuple]:
     }
 
 
-def initialize_cut_edges(partition):
+def initialize_cut_edges(partition: Partition) -> dict[int, set[tuple[int, int]]]:
     """A dictionary mapping each part of a partition to the set of cut edges in that part.
 
     Args:
@@ -92,8 +101,11 @@ def initialize_cut_edges(partition):
 
 @on_edge_flow(initialize_cut_edges, alias="cut_edges_by_part")
 def cut_edges_by_part(
-    partition, previous: Set[Tuple], new_edges: Set[Tuple], old_edges: Set[Tuple]
-) -> Set[Tuple]:
+    partition: Partition,
+    previous: set[tuple[int, int]],
+    new_edges: set[tuple[int, int]],
+    old_edges: set[tuple[int, int]],
+) -> set[tuple[int, int]]:
     #
     # frm TODO: Documentation: Update / expand the documentation for this routine.
     #
@@ -116,7 +128,7 @@ def cut_edges_by_part(
     return (previous | new_edges) - old_edges
 
 
-def cut_edges(partition):
+def cut_edges(partition: Partition) -> set[tuple[int, int]]:
     """Computes the set of edges for a given partition.
 
     Args:

@@ -7,13 +7,14 @@ within a given GeoDataFrame.
 
 from collections import Counter
 
-# from shapely.geometry.base import BaseGeometry
 from geopandas import GeoDataFrame
+from shapely.geometry import Point
+from shapely.geometry.base import BaseGeometry
 
 from gerrychain.vendor.utm import from_latlon
 
 
-def utm_of_point(point):
+def utm_of_point(point: Point) -> int:
     """Given a point, return the Universal Transverse Mercator zone number for that point.
 
     Args:
@@ -42,7 +43,7 @@ def identify_utm_zone(df: GeoDataFrame) -> int:
 
 
 # Explicit type hint intentionally omitted here because of import issues.
-def explain_validity(geo) -> str:
+def explain_validity(geo: BaseGeometry) -> str:
     """Given a geometry that is shapely interpretable, call Shapely's explain_validity function.
 
     Args:
@@ -56,7 +57,7 @@ def explain_validity(geo) -> str:
     return shapely.validation.explain_validity(geo)
 
 
-def invalid_geometries(df):
+def invalid_geometries(df: GeoDataFrame) -> list[int]:
     """Given a GeoDataFrame, returns a list of row indices with invalid geometries.
 
     Args:
@@ -73,7 +74,7 @@ def invalid_geometries(df):
     return invalid
 
 
-def reprojected(df):
+def reprojected(df: GeoDataFrame) -> GeoDataFrame:
     """Returns a copy of `df`, projected into the CRS of a suitable UTM zone.
 
     Args:
@@ -85,9 +86,7 @@ def reprojected(df):
     .. _`Universal Transverse Mercator`: https://en.wikipedia.org/wiki/UTM_coordinate_system
     """
     utm = identify_utm_zone(df)
-    return df.to_crs(
-        "+proj=utm +zone={utm} +ellps=WGS84 +datum=WGS84 +units=m +no_defs".format(utm=utm)
-    )
+    return df.to_crs(f"+proj=utm +zone={utm} +ellps=WGS84 +datum=WGS84 +units=m +no_defs")
 
 
 class GeometryError(Exception):

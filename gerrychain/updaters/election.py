@@ -1,8 +1,13 @@
+from __future__ import annotations
+
 import math
-from typing import Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING
 
 import gerrychain.metrics.partisan as pm
 from gerrychain.updaters.tally import DataTally
+
+if TYPE_CHECKING:
+    from ..partition.partition import Partition
 
 
 class Election:
@@ -66,8 +71,8 @@ class Election:
     def __init__(
         self,
         name: str,
-        party_names_to_node_attribute_names: Union[Dict, List],
-        alias: Optional[str] = None,
+        party_names_to_node_attribute_names: dict | list,
+        alias: str | None = None,
     ) -> None:
         """Initialize a Election instance.
 
@@ -169,7 +174,7 @@ class Election:
 
         self.updater = ElectionUpdater(self)
 
-    def _initialize_self(self, partition):
+    def _initialize_self(self, partition: Partition) -> None:
 
         # Create DataTally objects for each party in the election.
         self.tallies = {
@@ -179,19 +184,17 @@ class Election:
             for party in self.parties
         }
 
-    def __str__(self):
+    def __str__(self) -> str:
         return (
             f"Election '{self.name}' with vote totals for parties {self.parties} "
             f"from node_attribute_names {self.node_attribute_names}."
         )
 
-    def __repr__(self):
-        return "Election(parties={}, node_attribute_names={}, alias={})".format(
-            str(self.parties), str(self.node_attribute_names), str(self.alias)
-        )
+    def __repr__(self) -> str:
+        return f"Election(parties={str(self.parties)}, node_attribute_names={str(self.node_attribute_names)}, alias={str(self.alias)})"
 
-    def __call__(self, *args, **kwargs):
-        return self.updater(*args, **kwargs)
+    def __call__(self, partition: Partition) -> ElectionResults:
+        return self.updater(partition)
 
 
 class ElectionUpdater:
@@ -207,7 +210,7 @@ class ElectionUpdater:
     def __init__(self, election: Election) -> None:
         self.election = election
 
-    def __call__(self, partition):
+    def __call__(self, partition: Partition) -> ElectionResults:
         previous_totals_for_party = self.get_previous_values(partition)
         parties = self.election.parties
         tallies = self.election.tallies
@@ -219,7 +222,7 @@ class ElectionUpdater:
 
         return ElectionResults(self.election, counts, regions=partition.parts)
 
-    def get_previous_values(self, partition) -> Dict[str, Dict[int, float]]:
+    def get_previous_values(self, partition: Partition) -> dict[str, dict[int, float] | None]:
         """Returns a dictionary mapping party names to the vote totals that party received in each.
 
         Args:
@@ -242,7 +245,7 @@ class ElectionUpdater:
 #
 #               Why is it not defined as an internal function inside ElectionResults?
 #
-def get_percents(counts: Dict, totals: Dict) -> Dict:
+def get_percents(counts: dict, totals: dict) -> dict:
     """Returns a dictionary mapping each part in a partition to the percentage of votes that a
     party received in that part.
 
@@ -284,8 +287,8 @@ class ElectionResults:
     def __init__(
         self,
         election: Election,
-        counts: Dict[str, Dict[int, float]],
-        regions: List[int],
+        counts: dict[str, dict[int, float]],
+        regions: list[int],
     ) -> None:
         """Initialize a ElectionResults instance.
 
@@ -311,13 +314,11 @@ class ElectionResults:
             party: get_percents(counts[party], self.totals) for party in election.parties
         }
 
-    def __str__(self):
+    def __str__(self) -> str:
         results_by_part = "\n".join(
             format_part_results(self.percents_for_party, part) for part in self.totals
         )
-        return "Election Results for {name}\n{results}".format(
-            name=self.election.name, results=results_by_part
-        )
+        return f"Election Results for {self.election.name}\n{results_by_part}"
 
     def seats(self, party: str) -> int:
         """Return number of seats that ``party`` won.
@@ -341,7 +342,7 @@ class ElectionResults:
         """
         return self.seats(party)
 
-    def percent(self, party: str, region: Optional[int] = None) -> float:
+    def percent(self, party: str, region: int | None = None) -> float:
         """Return vote share for ``party`` in one region or overall.
 
         If ``region`` is provided, this returns the vote share in that region. Otherwise, it
@@ -361,7 +362,7 @@ class ElectionResults:
             return self.percents_for_party[party][region]
         return sum(self.votes(party)) / sum(self.totals[region] for region in self.regions)
 
-    def percents(self, party: str) -> Tuple:
+    def percents(self, party: str) -> tuple:
         """Return vote shares for ``party`` across all regions.
 
         The returned tuple contains one vote-share value per region, in the order of
@@ -376,7 +377,7 @@ class ElectionResults:
         """
         return tuple(self.percents_for_party[party][region] for region in self.regions)
 
-    def count(self, party: str, region: Optional[str] = None) -> int:
+    def count(self, party: str, region: str | None = None) -> int:
         """Return vote total for ``party`` in one region or overall.
 
         If ``region`` is provided, this returns the total vote count in that region. Otherwise, it
@@ -395,7 +396,7 @@ class ElectionResults:
             return self.totals_for_party[party][region]
         return sum(self.totals_for_party[party][region] for region in self.regions)
 
-    def counts(self, party: str) -> Tuple:
+    def counts(self, party: str) -> tuple:
         """Return tuple of the total votes cast for ``party`` in each part of the partition.
 
         Args:
@@ -406,7 +407,7 @@ class ElectionResults:
         """
         return tuple(self.totals_for_party[party][region] for region in self.regions)
 
-    def votes(self, party: str) -> Tuple:
+    def votes(self, party: str) -> tuple:
         """An alias for :meth:`counts`.
 
         It returns a tuple of the total votes cast for ``party`` in each part of the partition.
@@ -494,7 +495,7 @@ class ElectionResults:
         return pm.partisan_gini(self)
 
 
-def format_part_results(percents_for_party: Dict[str, Dict[int, float]], part: int) -> str:
+def format_part_results(percents_for_party: dict[str, dict[int, float]], part: int) -> str:
     """Return A formatted string containing the results for the given part of the partition.
 
     Args:
@@ -506,11 +507,9 @@ def format_part_results(percents_for_party: Dict[str, Dict[int, float]], part: i
     Returns:
         str: A formatted string containing the results for the given part of the partition.
     """
-    heading = "{part}:\n".format(part=str(part))
+    heading = f"{str(part)}:\n"
     body = "\n".join(
-        "  {party}: {percent}".format(
-            party=str(party), percent=round(percents_for_party[party][part], 4)
-        )
+        f"  {str(party)}: {round(percents_for_party[party][part], 4)}"
         for party in percents_for_party
     )
     return heading + body

@@ -1,6 +1,12 @@
+from __future__ import annotations
+
 import collections
 import functools
-from typing import Callable, Dict, Set, Tuple
+from collections.abc import Callable
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..partition.partition import Partition
 
 # frm: * TODO: Documentation: This file needs documentation / comments!!!
 #
@@ -8,7 +14,7 @@ from typing import Callable, Dict, Set, Tuple
 
 
 @functools.lru_cache(maxsize=2)
-def neighbor_flips(partition) -> Set[Tuple]:
+def neighbor_flips(partition: Partition) -> set[tuple[int, int]]:
     """Return set of edges that were flipped in the given partition compared to its parent.
 
     Args:
@@ -24,12 +30,14 @@ def neighbor_flips(partition) -> Set[Tuple]:
     }
 
 
-def create_flow():
+def create_flow() -> dict[str, set]:
     return {"in": set(), "out": set()}
 
 
 @functools.lru_cache(maxsize=2)
-def flows_from_changes(old_partition, new_partition) -> Dict:
+def flows_from_changes(
+    old_partition: Partition, new_partition: Partition
+) -> dict[int, dict[str, set[int]]]:
     """Return per-part node flow updates between two partitions.
 
     Args:
@@ -97,9 +105,9 @@ def on_flow(initializer: Callable, alias: str) -> Callable:
         Callable: A decorator that takes a function as input and returns a wrapped function.
     """
 
-    def decorator(function):
+    def decorator(function: Callable[..., object]) -> Callable:
         @functools.wraps(function)
-        def wrapped(partition, previous=None):
+        def wrapped(partition: Partition, previous: dict | None = None) -> dict:
             if partition.parent is None:
                 return initializer(partition)
 
@@ -118,7 +126,7 @@ def on_flow(initializer: Callable, alias: str) -> Callable:
     return decorator
 
 
-def compute_edge_flows(partition) -> Dict:
+def compute_edge_flows(partition: Partition) -> dict[int, dict[str, set[tuple[int, int]]]]:
     """Computes the flow of cut edges between a partition and its parent.
 
     Args:
@@ -228,9 +236,9 @@ def on_edge_flow(initializer: Callable, alias: str) -> Callable:
         Callable: A decorator that takes a function as input and returns a wrapped function.
     """
 
-    def decorator(f):
+    def decorator(f: Callable[..., object]) -> Callable:
         @functools.wraps(f)
-        def wrapper(partition):
+        def wrapper(partition: Partition) -> dict:
             if not partition.parent:
                 return initializer(partition)
             edge_flows = partition.edge_flows

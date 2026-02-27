@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 from collections import defaultdict
-from collections.abc import Mapping
-from typing import DefaultDict, Dict, Optional, Set, Type, Union
+from collections.abc import Hashable, Iterator, Mapping
 
 import pandas
 
@@ -21,7 +22,7 @@ class Assignment(Mapping):
 
     __slots__ = ["parts", "mapping"]
 
-    def __init__(self, parts: Dict, mapping: Optional[Dict] = None, validate: bool = True) -> None:
+    def __init__(self, parts: dict, mapping: dict | None = None, validate: bool = True) -> None:
         """Initialize a Assignment instance.
 
         Args:
@@ -52,19 +53,19 @@ class Assignment(Mapping):
         else:
             self.mapping = mapping
 
-    def __repr__(self):
-        return "<Assignment [{} keys, {} parts]>".format(len(self), len(self.parts))
+    def __repr__(self) -> str:
+        return f"<Assignment [{len(self)} keys, {len(self.parts)} parts]>"
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Hashable]:
         return self.keys()
 
-    def __len__(self):
+    def __len__(self) -> int:
         return sum(len(keys) for keys in self.parts.values())
 
-    def __getitem__(self, node):
+    def __getitem__(self, node: Hashable) -> Hashable:
         return self.mapping[node]
 
-    def copy(self):
+    def copy(self) -> Assignment:
         """Returns a copy of the assignment.
 
         Does not duplicate the frozensets of nodes, just the parts dictionary.
@@ -74,7 +75,7 @@ class Assignment(Mapping):
         """
         return Assignment(self.parts.copy(), self.mapping.copy(), validate=False)
 
-    def update_flows(self, flows):
+    def update_flows(self, flows: dict[Hashable, dict[str, set[Hashable]]]) -> None:
         """Update the assignment for some nodes using the given flows.
 
         This method updates the assignment for some nodes using the given flows. The arguments
@@ -102,17 +103,17 @@ class Assignment(Mapping):
             for node in flow["in"]:
                 self.mapping[node] = part
 
-    def items(self):
+    def items(self) -> Iterator[tuple[Hashable, Hashable]]:
         """Iterate over ``(node, part)`` tuples, where ``node`` is assigned to ``part``."""
         yield from self.mapping.items()
 
-    def keys(self):
+    def keys(self) -> Iterator[Hashable]:
         yield from self.mapping.keys()
 
-    def values(self):
+    def values(self) -> Iterator[Hashable]:
         yield from self.mapping.values()
 
-    def update_parts(self, new_parts: Dict) -> None:
+    def update_parts(self, new_parts: dict) -> None:
         """Update some parts of the assignment.
 
         Args:
@@ -135,7 +136,7 @@ class Assignment(Mapping):
         groups = [pandas.Series(data=part, index=nodes) for part, nodes in self.parts.items()]
         return pandas.concat(groups)
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Convert to dict.
 
         Returns:
@@ -144,7 +145,7 @@ class Assignment(Mapping):
         return self.mapping
 
     @classmethod
-    def from_dict(cls, assignment: Dict) -> "Assignment":
+    def from_dict(cls, assignment: dict) -> Assignment:
         """Create an :class:`Assignment` from a dictionary.
 
         Args:
@@ -173,8 +174,8 @@ class Assignment(Mapping):
         return cls(parts)
 
     def new_assignment_convert_old_node_ids_to_new_node_ids(
-        self, node_id_mapping: Dict
-    ) -> "Assignment":
+        self, node_id_mapping: dict
+    ) -> Assignment:
         """Create a new Assignment object from the one passed in, where the node_ids are changed.
 
         Create a new Assignment object from the one passed in, where the node_ids are changed
@@ -213,7 +214,7 @@ class Assignment(Mapping):
 
 
 def get_assignment(
-    part_assignment: Union[str, Dict, Assignment], graph: Optional[Graph] = None
+    part_assignment: str | dict | Assignment, graph: Graph | None = None
 ) -> Assignment:
     """Either extracts an :class:`Assignment` object from the input graph using the provided key or
     attempts to convert part_assignment into an :class:`Assignment` object.
@@ -259,7 +260,7 @@ def get_assignment(
         raise TypeError("Assignment must be a dict or a node attribute key")
 
 
-def level_sets(mapping: Dict, container: Type[Set] = set) -> DefaultDict:
+def level_sets(mapping: dict, container: type[set] = set) -> defaultdict:
     """Inverts a dictionary.
 
     ``{key: value}`` becomes ``{value: <container of keys that map to value>}``.
@@ -280,7 +281,7 @@ def level_sets(mapping: Dict, container: Type[Set] = set) -> DefaultDict:
         >>> level_sets({'a': 1, 'b': 1, 'c': 2})
         defaultdict(<class 'set'>, {1: {'a', 'b'}, 2: {'c'}})
     """
-    sets: Dict = defaultdict(container)
+    sets: dict = defaultdict(container)
     for source, target in mapping.items():
         sets[target].add(source)
     return sets

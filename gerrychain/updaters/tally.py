@@ -1,11 +1,17 @@
+from __future__ import annotations
+
 import collections
 import math
 import warnings
-from typing import Dict, List, Optional, Type, Union
+from typing import TYPE_CHECKING
 
 import pandas
 
 from .flows import flows_from_changes, on_flow
+
+if TYPE_CHECKING:
+    from ..graph.graph import Graph
+    from ..partition.partition import Partition
 
 
 class DataTally:
@@ -31,7 +37,7 @@ class DataTally:
 
     __slots__ = ["data", "alias", "_call"]
 
-    def __init__(self, data: Union[Dict, pandas.Series, str], alias: str) -> None:
+    def __init__(self, data: dict | pandas.Series | str, alias: str) -> None:
         """Initialize a DataTally instance.
 
         Args:
@@ -43,7 +49,7 @@ class DataTally:
         self.data = data
         self.alias = alias
 
-        def initialize_tally(partition):
+        def initialize_tally(partition: Partition) -> dict[int, float]:
 
             # If the "data" passed in was a string, then interpret that string
             # as the name of a node attribute in the graph, and construct
@@ -70,9 +76,7 @@ class DataTally:
                 #
                 if math.isnan(add):
                     warnings.warn(
-                        "ignoring nan encountered at node_id '{}' for attribute '{}'".format(
-                            node_id, self.alias
-                        )
+                        f"ignoring nan encountered at node_id '{node_id}' for attribute '{self.alias}'"
                     )
                 else:
                     tally[part] += add
@@ -80,14 +84,21 @@ class DataTally:
             return dict(tally)
 
         @on_flow(initialize_tally, alias=alias)
-        def update_tally(partition, previous, new_nodes, old_nodes):
+        def update_tally(
+            partition: Partition,
+            previous: float,
+            new_nodes: set[int],
+            old_nodes: set[int],
+        ) -> float:
             inflow = sum(self.data[node] for node in new_nodes)
             outflow = sum(self.data[node] for node in old_nodes)
             return previous + inflow - outflow
 
         self._call = update_tally
 
-    def __call__(self, partition, previous=None):
+    def __call__(
+        self, partition: Partition, previous: dict[int, float] | None = None
+    ) -> dict[int, float]:
         return self._call(partition, previous)
 
 
@@ -108,9 +119,9 @@ class Tally:
 
     def __init__(
         self,
-        fields: Union[str, List[str]],
-        alias: Optional[str] = None,
-        dtype: Type = int,
+        fields: str | list[str],
+        alias: str | None = None,
+        dtype: type = int,
     ) -> None:
         """Initialize a Tally instance.
 
@@ -132,12 +143,12 @@ class Tally:
         self.alias = alias
         self.dtype = dtype
 
-    def __call__(self, partition):
+    def __call__(self, partition: Partition) -> dict:
         if partition.parent is None:
             return self._initialize_tally(partition)
         return self._update_tally(partition)
 
-    def _initialize_tally(self, partition) -> Dict:
+    def _initialize_tally(self, partition: Partition) -> dict:
         """Compute initial part-level tallies for the configured field values.
 
         Args:
@@ -154,14 +165,14 @@ class Tally:
 
             if math.isnan(add):
                 warnings.warn(
-                    "ignoring nan encountered at node '{}' for attribute '{}' "
-                    "with fields {}".format(node, self.alias, self.fields)
+                    f"ignoring nan encountered at node '{node}' for attribute '{self.alias}' "
+                    f"with fields {self.fields}"
                 )
             else:
                 tally[part] += add
         return dict(tally)
 
-    def _update_tally(self, partition):
+    def _update_tally(self, partition: Partition) -> dict:
         """Compute the district-wide tally of data stored in the "field" attribute of nodes.
 
         Args:
@@ -186,11 +197,11 @@ class Tally:
 
         return new_tally
 
-    def _get_tally_from_node(self, partition, node):
+    def _get_tally_from_node(self, partition: Partition, node: int) -> float:
         return sum(partition.graph.node_data(node)[field] for field in self.fields)
 
 
-def compute_out_flow(graph, fields: Union[str, List[str]], flow: Dict) -> int:
+def compute_out_flow(graph: Graph, fields: str | list[str], flow: dict[str, set[int]]) -> float:
     """Return sum of the "field" attribute of nodes in the "out" set of the flow.
 
     Args:
@@ -207,7 +218,7 @@ def compute_out_flow(graph, fields: Union[str, List[str]], flow: Dict) -> int:
     return sum(graph.node_data(node)[field] for node in flow["out"] for field in fields)
 
 
-def compute_in_flow(graph, fields: Union[str, List[str]], flow: Dict) -> int:
+def compute_in_flow(graph: Graph, fields: str | list[str], flow: dict[str, set[int]]) -> float:
     """Return sum of the "field" attribute of nodes in the "in" set of the flow.
 
     Args:

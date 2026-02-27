@@ -1,7 +1,8 @@
 import random
+from collections.abc import Callable
 from heapq import heappop, heappush
 from itertools import count
-from typing import Any, Callable, Dict, Set
+from typing import Any
 
 from ..graph import Graph
 from ..partition import Partition
@@ -163,7 +164,7 @@ def single_flip_contiguous(partition: Partition) -> bool:
     graph = partition.graph
     assignment = partition.assignment
 
-    def _partition_edge_avoid(start_node: Any, end_node: Any):
+    def _partition_edge_avoid(start_node: Any, end_node: Any) -> bool:
         """Helper function used in the graph traversal to avoid edges that cross districts (parts).
 
         Args:
@@ -208,7 +209,7 @@ def single_flip_contiguous(partition: Partition) -> bool:
     return True
 
 
-def _affected_parts(partition: Partition) -> Set[int]:
+def _affected_parts(partition: Partition) -> set[int]:
     """Checks which partitions were affected by the change of nodes.
 
     Args:
@@ -312,7 +313,7 @@ def number_of_contiguous_parts(partition: Partition) -> int:
 no_more_discontiguous = SelfConfiguringLowerBound(number_of_contiguous_parts)
 
 
-def contiguous_components(partition: Partition) -> Dict[int, list]:
+def contiguous_components(partition: Partition) -> dict[int, list]:
     """Determines the connected components of each of the subgraphs of the parts of the partition.
 
     Args:
@@ -349,7 +350,7 @@ def contiguous_components(partition: Partition) -> Dict[int, list]:
     return connected_components_in_each_partition
 
 
-def _bfs(graph: Dict[int, list]) -> bool:
+def _bfs(graph: dict[int, list]) -> bool:
     """Performs BFS on the provided graph and returns if the graph is connected.
 
     Args:
@@ -387,7 +388,7 @@ def _bfs(graph: Dict[int, list]) -> bool:
 
 # frm: TODO: Documentation: This code was obtained from the web - probably could be optimized...
 #       This code replaced calls on nx.is_connected()
-def is_connected_bfs(graph: Graph):
+def is_connected_bfs(graph: Graph) -> bool:
     if not graph:
         return True
 

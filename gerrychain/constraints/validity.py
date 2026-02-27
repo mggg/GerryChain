@@ -1,4 +1,4 @@
-from typing import Callable, Dict, List
+from collections.abc import Callable, Iterable
 
 import numpy
 
@@ -24,7 +24,7 @@ class Validator:
         constraints (List[Callable]): List of validator functions that will check partitions.
     """
 
-    def __init__(self, constraints: List[Callable]) -> None:
+    def __init__(self, constraints: list[Callable]) -> None:
         """Initialize a Validator instance.
 
         Args:
@@ -54,7 +54,7 @@ class Validator:
             elif is_valid is True:
                 pass
             else:
-                raise TypeError("Constraint {} returned a non-boolean.".format(repr(constraint)))
+                raise TypeError(f"Constraint {repr(constraint)} returned a non-boolean.")
 
         # all constraints are satisfied
         return True
@@ -81,7 +81,7 @@ def within_percent_of_ideal_population(
             ``pop_key``.
     """
 
-    def population(partition):
+    def population(partition: Partition) -> Iterable[float]:
         return partition[pop_key].values()
 
     number_of_districts = len(initial_partition[pop_key].keys())
@@ -92,7 +92,7 @@ def within_percent_of_ideal_population(
     return Bounds(population, bounds=bounds)
 
 
-def deviation_from_ideal(partition: Partition, attribute: str = "population") -> Dict[int, float]:
+def deviation_from_ideal(partition: Partition, attribute: str = "population") -> dict[int, float]:
     """Determine the deviation of the given attribute from the ideal value among parts of the partition.
 
     Computes the deviation of the given ``attribute`` from exact equality among parts of the

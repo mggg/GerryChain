@@ -1,7 +1,7 @@
 import random
+from collections.abc import Callable, Hashable, Sequence
 from functools import partial
 from inspect import signature
-from typing import Callable, Dict, Optional, Sequence, Union
 
 from gerrychain.partition import Partition
 
@@ -40,12 +40,12 @@ class ValueWarning(UserWarning):
 def epsilon_tree_bipartition(
     subgraph_to_split: Graph,
     parts: Sequence,
-    pop_target: Union[float, int],
+    pop_target: float | int,
     pop_col: str,
     epsilon: float,
     node_repeats: int = 1,
     bipartition_tree_fn: Callable = partial(bipartition_tree, max_attempts=10000),
-) -> Dict:
+) -> dict:
     """Bipartition a tree into two :math:`\varepsilon`-balanced parts.
 
     Args:
@@ -121,10 +121,10 @@ def epsilon_tree_bipartition(
 def recom(
     partition: Partition,
     pop_col: str,
-    pop_target: Union[int, float],
+    pop_target: int | float,
     epsilon: float,
     node_repeats: int = 1,
-    region_surcharge: Optional[Dict] = None,
+    region_surcharge: dict | None = None,
     bipartition_tree_fn: Callable = bipartition_tree,
 ) -> Partition:
     """Return new partition resulting from the ReCom algorithm.
@@ -257,7 +257,7 @@ def recom(
 def reversible_recom(
     partition: Partition,
     pop_col: str,
-    pop_target: Union[int, float],
+    pop_target: int | float,
     epsilon: float,
     find_balanced_edge_cuts_fn: Callable = find_balanced_edge_cuts_memoization,
     M: int = 1,  # frm: TODO: Documentation: WTF does 'M' stand for?
@@ -289,7 +289,9 @@ def reversible_recom(
         Partition: The new partition resulting from the reversible ReCom algorithm.
     """
 
-    def dist_pair_edges(part, a, b):
+    def dist_pair_edges(
+        part: Partition, a: Hashable, b: Hashable
+    ) -> set[tuple[Hashable, Hashable]]:
         # frm: Find all edges that cross from district a into district b
         return set(
             e
@@ -311,7 +313,7 @@ def reversible_recom(
     # that we know what the parameters are in all cases.  Then we can just use those
     # canonical parameters below.
 
-    def bounded_find_balanced_edge_cuts_fn(*args, **kwargs):
+    def bounded_find_balanced_edge_cuts_fn(*args: object, **kwargs: object) -> list:
         cuts = find_balanced_edge_cuts_fn(*args, **kwargs)
         if len(cuts) > M:
             raise ReversibilityError(
@@ -595,10 +597,10 @@ class ReCom:
     def __init__(
         self,
         pop_col: str,
-        ideal_pop: Union[int, float],
+        ideal_pop: int | float,
         epsilon: float,
         bipartition_tree_fn: Callable = bipartition_tree,
-    ):
+    ) -> None:
         """Initialize a ReCom instance.
 
         Args:
@@ -615,7 +617,7 @@ class ReCom:
         self.epsilon = epsilon
         self.bipartition_tree_fn = bipartition_tree_fn
 
-    def __call__(self, partition: Partition):
+    def __call__(self, partition: Partition) -> Partition:
         return recom(
             partition,
             self.pop_col,
@@ -628,5 +630,5 @@ class ReCom:
 class ReversibilityError(Exception):
     """Raised when the cut edge upper bound is violated."""
 
-    def __init__(self, msg):
+    def __init__(self, msg: str) -> None:
         self.message = msg

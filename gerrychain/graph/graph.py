@@ -13,12 +13,15 @@ imported as required.
 TODO: Documentation: Update top-level documentation for graph.py
 """
 
+from __future__ import annotations
+
 import functools
 import json
 import warnings
+from collections.abc import Generator, Iterable
 
 # frm: codereview note: removed type hints that are now baked into Python
-from typing import Any, Generator, Iterable, Optional, Union
+from typing import Any
 
 import geopandas as gp
 import networkx
@@ -38,7 +41,7 @@ from .geo import GeometryError, invalid_geometries, reprojected
 #
 # It should not be the first thing someone sees when looking at this code...
 #
-def json_serialize(input_object: Any) -> Optional[int]:
+def json_serialize(input_object: Any) -> int | None:
     """Return converted pandas object or None if input is not of type pd.Int64Dtype.
 
     This function is used to handle one of the common issues that appears when trying to convert a
@@ -98,7 +101,7 @@ class Graph:
     #       needs to happen in the "from_xxx()" routines.
 
     @classmethod
-    def from_networkx(cls, nx_graph: networkx.Graph) -> "Graph":
+    def from_networkx(cls, nx_graph: networkx.Graph) -> Graph:
         """Create a :class:`Graph` from a NetworkX.Graph object.
 
         This supports the use case of users creating a graph using NetworkX which is convenient -
@@ -135,7 +138,7 @@ class Graph:
         return graph
 
     @classmethod
-    def from_null_networkx(cls) -> "Graph":
+    def from_null_networkx(cls) -> Graph:
         """Create a :class:`Graph` that has an empty embedded NetworkX Graph.
 
         This was originally implemented as a way to encapsulate NetworkX dependencies in GerryChain
@@ -152,7 +155,7 @@ class Graph:
         return Graph.from_networkx(nx_graph)
 
     @classmethod
-    def from_rustworkx(cls, rx_graph: rustworkx.PyGraph) -> "Graph":
+    def from_rustworkx(cls, rx_graph: rustworkx.PyGraph) -> Graph:
         """Create a :class:`Graph` from a RustworkX.PyGraph object.
 
         There are three primary use cases for this routine: 1) converting an NX-based Graph to be
@@ -492,7 +495,7 @@ class Graph:
         #     self.verify_graph_is_valid()
         return self._rx_graph is not None
 
-    def convert_from_nx_to_rx(self) -> "Graph":
+    def convert_from_nx_to_rx(self) -> Graph:
         """Convert an NX-based graph object to be an RX-based graph object.
 
         The primary use case for this routine is support for users constructing a graph using
@@ -580,7 +583,7 @@ class Graph:
         return self.nx_to_rx_node_id_map
 
     @classmethod
-    def from_json(cls, json_file_name: str) -> "Graph":
+    def from_json(cls, json_file_name: str) -> Graph:
         """Create a :class:`Graph` from a JSON file.
 
         This method creates a :class:`Graph` from a JSON file. It returns a GerryChain Graph object
@@ -640,10 +643,10 @@ class Graph:
         cls,
         filename: str,
         adjacency: str = "rook",
-        cols_to_add: Optional[list[str]] = None,
+        cols_to_add: list[str] | None = None,
         reproject: bool = False,
         ignore_errors: bool = False,
-    ) -> "Graph":
+    ) -> Graph:
         """Create a :class:`Graph` from a shapefile, GeoPackage, GeoJSON, or similar source.
 
         This method reads any format that :mod:`geopandas` can load and builds a graph from it.
@@ -688,11 +691,11 @@ class Graph:
         cls,
         dataframe: pd.DataFrame,
         adjacency: str = "rook",
-        cols_to_add: Optional[list[str]] = None,
+        cols_to_add: list[str] | None = None,
         reproject: bool = False,
         ignore_errors: bool = False,
-        crs_override: Optional[Union[str, int]] = None,
-    ) -> "Graph":
+        crs_override: str | int | None = None,
+    ) -> Graph:
         """Create the adjacency :class:`Graph` of geometries described by `dataframe`.
 
         The areas of the polygons are included as node attributes (with key `area`). The shared
@@ -731,10 +734,10 @@ class Graph:
             invalid = invalid_geometries(dataframe)
             if len(invalid) > 0:
                 raise GeometryError(
-                    "Invalid geometries at rows {} before "
+                    f"Invalid geometries at rows {invalid} before "
                     "reprojection. Consider repairing the affected geometries with "
                     "`.buffer(0)`, or pass `ignore_errors=True` to attempt to create "
-                    "the graph anyways.".format(invalid)
+                    "the graph anyways."
                 )
 
         # Project the dataframe to an appropriate UTM projection unless
@@ -746,10 +749,10 @@ class Graph:
                 print(invalid_reproj)
                 if len(invalid_reproj) > 0:
                     raise GeometryError(
-                        "Invalid geometries at rows {} after "
+                        f"Invalid geometries at rows {invalid_reproj} after "
                         "reprojection. Consider reloading the GeoDataFrame with "
                         "`reproject=False` or repairing the affected geometries "
-                        "with `.buffer(0)`.".format(invalid_reproj)
+                        "with `.buffer(0)`."
                     )
         else:
             df = dataframe
@@ -1071,7 +1074,7 @@ class Graph:
                 "a networkx-based graph nor a rustworkx-based graph"
             )
 
-    def add_data(self, df: pd.DataFrame, columns: Optional[Iterable[str]] = None) -> None:
+    def add_data(self, df: pd.DataFrame, columns: Iterable[str] | None = None) -> None:
         """Add columns of a DataFrame to a graph as node attributes by matching the DataFrame's.
 
         Args:
@@ -1102,9 +1105,9 @@ class Graph:
     def join(
         self,
         dataframe: pd.DataFrame,
-        columns: Optional[list[str]] = None,
-        left_index: Optional[str] = None,
-        right_index: Optional[str] = None,
+        columns: list[str] | None = None,
+        left_index: str | None = None,
+        right_index: str | None = None,
     ) -> None:
         """Add data from a dataframe to the graph, matching nodes to rows when the node's.
 
@@ -1200,7 +1203,7 @@ class Graph:
         """
         islands = self.islands
         if len(self.islands) > 0:
-            warnings.warn("Found islands (degree-0 nodes). Indices of islands: {}".format(islands))
+            warnings.warn(f"Found islands (degree-0 nodes). Indices of islands: {islands}")
 
     def issue_warnings(self) -> None:
         """Issue any warnings concerning the content or structure of the graph."""
@@ -1302,7 +1305,7 @@ class Graph:
         """
         yield from self.node_indices
 
-    def subgraph(self, nodes: Iterable[Any]) -> "Graph":
+    def subgraph(self, nodes: Iterable[Any]) -> Graph:
         """Create a subgraph that contains the given nodes.
 
         Note that creating a subgraph of an RustworkX (RX) graph renumbers the nodes, so that a
@@ -1491,7 +1494,7 @@ class Graph:
             translated_set_of_nodes.add(self._node_id_to_parent_node_id_map[node_id])
         return translated_set_of_nodes
 
-    def _generic_bfs_edges(self, source) -> Generator[tuple[Any, Any], None, None]:
+    def _generic_bfs_edges(self, source: Any) -> Generator[tuple[Any, Any], None, None]:
         """Yield parent/child pairs in a breadth first traversal of the graph starting at "source".
 
         Args:
@@ -1781,7 +1784,7 @@ class Graph:
                 "a networkx-based graph nor a rustworkx-based graph"
             )
 
-    def minimum_spanning_tree_from_edge_weight(self, edge_weight_attribute_name: str) -> "Graph":
+    def minimum_spanning_tree_from_edge_weight(self, edge_weight_attribute_name: str) -> Graph:
         """Computes and returns the minimum spanning tree give the edge weights.
 
         This method computes and returns the minimum spanning tree give the edge weights. It
@@ -1806,7 +1809,7 @@ class Graph:
         elif self.is_rx_graph():
             rx_graph = self.get_rx_graph()
 
-            def get_weight(edge_data):
+            def get_weight(edge_data: dict[str, float]) -> float:
                 # function to get the weight of an edge from its data
                 # This function is passed a dict with the data for the edge.
                 return edge_data[edge_weight_attribute_name]
@@ -2093,7 +2096,7 @@ class Graph:
 
         return laplacian_matrix
 
-    def subgraphs_for_connected_components(self) -> list["Graph"]:
+    def subgraphs_for_connected_components(self) -> list[Graph]:
         """Create and return a list of subgraphs for each set of nodes in the given graph that are.
 
         connected. Note that a connected graph is one in which there is a path from every node in
@@ -2271,7 +2274,7 @@ def check_dataframe(df: pd.DataFrame) -> None:
     """
     for column in df.columns:
         if sum(df[column].isna()) > 0:
-            warnings.warn("NA values found in column {}!".format(column))
+            warnings.warn(f"NA values found in column {column}!")
 
 
 def remove_geometries(data: networkx.Graph) -> None:
@@ -2409,5 +2412,5 @@ class FrozenGraph:
     def degree(self, n: Any) -> int:
         return self.graph.degree(n)
 
-    def subgraph(self, nodes: Iterable[Any]) -> "FrozenGraph":
+    def subgraph(self, nodes: Iterable[Any]) -> FrozenGraph:
         return FrozenGraph(self.graph.subgraph(nodes))

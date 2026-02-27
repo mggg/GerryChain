@@ -1,6 +1,12 @@
+from __future__ import annotations
+
 import collections
+from collections.abc import Callable
 from enum import Enum
-from typing import Callable, Dict, List
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..partition.partition import Partition
 
 CountyInfo = collections.namedtuple("CountyInfo", "split nodes contains")
 """
@@ -43,15 +49,15 @@ def county_splits(partition_name: str, county_field_name: str) -> Callable:
             contained in the county.
     """
 
-    def _get_county_splits(partition):
+    def _get_county_splits(partition: Partition) -> dict[str, CountyInfo]:
         return compute_county_splits(partition, county_field_name, partition_name)
 
     return _get_county_splits
 
 
 def compute_county_splits(
-    partition, county_field: str, partition_field: str
-) -> Dict[str, CountyInfo]:
+    partition: Partition, county_field: str, partition_field: str
+) -> dict[str, CountyInfo]:
     """Computes the number of counties that are split in a partition.
 
     Args:
@@ -114,7 +120,7 @@ def compute_county_splits(
     return new_county_dict
 
 
-def tally_region_splits(reg_attr_lst: List[str]) -> Callable:
+def tally_region_splits(reg_attr_lst: list[str]) -> Callable:
     """A naive updater for tallying the number of times a region attribute is split.
 
     Args:
@@ -125,7 +131,7 @@ def tally_region_splits(reg_attr_lst: List[str]) -> Callable:
             name to the number of times that it is split in a a particular partition.
     """
 
-    def _get_splits(partition):
+    def _get_splits(partition: Partition) -> dict[str, int]:
         nonlocal reg_attr_lst
         if "cut_edges" not in partition.updaters:
             raise ValueError("The cut_edges updater must be attached to the partition")
@@ -134,7 +140,7 @@ def tally_region_splits(reg_attr_lst: List[str]) -> Callable:
     return _get_splits
 
 
-def total_reg_splits(partition, reg_attr):
+def total_reg_splits(partition: Partition, reg_attr: str) -> int:
     """Computes the total number of times that reg_attr is split in the partition.
 
     Args:

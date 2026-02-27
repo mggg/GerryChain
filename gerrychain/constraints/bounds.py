@@ -1,4 +1,4 @@
-from typing import Callable, Tuple
+from collections.abc import Callable
 
 from ..partition import Partition
 
@@ -13,7 +13,7 @@ class Bounds:
 
     """
 
-    def __init__(self, func: Callable, bounds: Tuple[float, float]) -> None:
+    def __init__(self, func: Callable, bounds: tuple[float, float]) -> None:
         """Initialize a Bounds instance.
 
         This initializer sets up `Bounds` with the provided arguments and validates required state.
@@ -26,17 +26,17 @@ class Bounds:
         self.func = func
         self.bounds = bounds
 
-    def __call__(self, *args, **kwargs) -> bool:
+    def __call__(self, *args: object, **kwargs: object) -> bool:
         lower, upper = self.bounds
         values = self.func(*args, **kwargs)
         return lower <= min(values) and max(values) <= upper
 
     @property
     def __name__(self) -> str:
-        return "Bounds({},{})".format(self.func.__name__, str(self.bounds))
+        return f"Bounds({self.func.__name__},{str(self.bounds)})"
 
     def __repr__(self) -> str:
-        return "<{}>".format(self.__name__)
+        return f"<{self.__name__}>"
 
 
 class UpperBound:
@@ -62,15 +62,15 @@ class UpperBound:
         self.func = func
         self.bound = bound
 
-    def __call__(self, *args, **kwargs) -> bool:
+    def __call__(self, *args: object, **kwargs: object) -> bool:
         return self.func(*args, **kwargs) <= self.bound
 
     @property
     def __name__(self) -> str:
-        return "UpperBound({} >= {})".format(self.func.__name__, self.bound)
+        return f"UpperBound({self.func.__name__} >= {self.bound})"
 
     def __repr__(self) -> str:
-        return "<{}>".format(self.__name__)
+        return f"<{self.__name__}>"
 
 
 class LowerBound:
@@ -96,15 +96,15 @@ class LowerBound:
         self.func = func
         self.bound = bound
 
-    def __call__(self, *args, **kwargs) -> bool:
+    def __call__(self, *args: object, **kwargs: object) -> bool:
         return self.func(*args, **kwargs) >= self.bound
 
     @property
     def __name__(self) -> str:
-        return "LowerBound({} <= {})".format(self.func.__name__, self.bound)
+        return f"LowerBound({self.func.__name__} <= {self.bound})"
 
     def __repr__(self) -> str:
-        return "<{}>".format(self.__name__)
+        return f"<{self.__name__}>"
 
 
 class SelfConfiguringUpperBound:
@@ -139,10 +139,10 @@ class SelfConfiguringUpperBound:
 
     @property
     def __name__(self) -> str:
-        return "SelfConfiguringUpperBound({})".format(self.func.__name__)
+        return f"SelfConfiguringUpperBound({self.func.__name__})"
 
     def __repr__(self) -> str:
-        return "<{}>".format(self.__name__)
+        return f"<{self.__name__}>"
 
 
 class SelfConfiguringLowerBound:
@@ -180,10 +180,10 @@ class SelfConfiguringLowerBound:
 
     @property
     def __name__(self) -> str:
-        return "SelfConfiguringLowerBound({})".format(self.func.__name__)
+        return f"SelfConfiguringLowerBound({self.func.__name__})"
 
     def __repr__(self) -> str:
-        return "<{}>".format(self.__name__)
+        return f"<{self.__name__}>"
 
 
 class WithinPercentRangeOfBounds:
@@ -227,7 +227,7 @@ class WithinPercentRangeOfBounds:
 
     @property
     def __name__(self) -> str:
-        return "WithinPercentRangeOfBounds({})".format(self.func.__name__)
+        return f"WithinPercentRangeOfBounds({self.func.__name__})"
 
     def __repr__(self) -> str:
-        return "<{}>".format(self.__name__)
+        return f"<{self.__name__}>"

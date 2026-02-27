@@ -24,7 +24,9 @@ Dependencies:
 Last Updated: 11 Jan 2024
 """
 
-from typing import Callable, Iterable, Optional, Union
+from __future__ import annotations
+
+from collections.abc import Callable, Iterable
 
 from gerrychain.constraints import Bounds, Validator
 from gerrychain.partition import Partition
@@ -51,7 +53,7 @@ class MarkovChain:
     def __init__(
         self,
         proposal: Callable,
-        constraints: Union[Iterable[Callable], Validator, Iterable[Bounds], Callable],
+        constraints: Iterable[Callable] | Validator | Iterable[Bounds] | Callable,
         accept: Callable,
         initial_state: Partition,
         total_steps: int,
@@ -116,7 +118,7 @@ class MarkovChain:
     @constraints.setter
     def constraints(
         self,
-        constraints: Union[Iterable[Callable], Validator, Iterable[Bounds], Callable],
+        constraints: Iterable[Callable] | Validator | Iterable[Bounds] | Callable,
     ) -> None:
         """Setter for the constraints property.
 
@@ -151,7 +153,7 @@ class MarkovChain:
 
         self.is_valid = is_valid
 
-    def __iter__(self) -> "MarkovChain":
+    def __iter__(self) -> MarkovChain:
         """Resets the Markov chain iterator.
 
         This method is called when an iterator is required for a container. It sets the counter to
@@ -164,7 +166,7 @@ class MarkovChain:
         self.state = self.initial_state
         return self
 
-    def __next__(self) -> Optional[Partition]:
+    def __next__(self) -> Partition | None:
         """Advances the Markov chain to the next state.
 
         This method is called to get the next item in the iteration. It proposes the next state and
@@ -204,9 +206,9 @@ class MarkovChain:
         return self.total_steps
 
     def __repr__(self) -> str:
-        return "<MarkovChain [{} steps]>".format(len(self))
+        return f"<MarkovChain [{len(self)} steps]>"
 
-    def with_progress_bar(self):
+    def with_progress_bar(self) -> Iterable[Partition]:
         """Wraps the Markov chain in a tqdm progress bar.
 
         Useful for long-running Markov chains where you want to keep track of the progress.

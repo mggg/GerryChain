@@ -6,14 +6,19 @@ but cannot be given an explicit type annotation due to problems
 with circular imports.
 """
 
-from typing import Tuple
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 import numpy
+
+if TYPE_CHECKING:
+    from ..updaters.election import ElectionResults
 
 # frm: TODO: Refactoring: Why are these not just included in the file that defines ElectionResults?
 
 
-def mean_median(election_results) -> float:
+def mean_median(election_results: ElectionResults) -> float:
     """Computes the Mean-Median score for the given ElectionResults.
 
     A positive value indicates an advantage for the first party listed in the Election's
@@ -31,7 +36,7 @@ def mean_median(election_results) -> float:
     return numpy.median(data) - numpy.mean(data)
 
 
-def mean_thirdian(election_results) -> float:
+def mean_thirdian(election_results: ElectionResults) -> float:
     """Computes the Mean-Median score for the given ElectionResults.
 
     A positive value indicates an advantage for the first party listed in the Election's
@@ -55,7 +60,7 @@ def mean_thirdian(election_results) -> float:
     return thirdian - numpy.mean(data)
 
 
-def efficiency_gap(election_results) -> float:
+def efficiency_gap(election_results: ElectionResults) -> float:
     """Computes the efficiency gap for the given ElectionResults.
 
     A positive value indicates an advantage for the first party listed in the Election's
@@ -74,7 +79,7 @@ def efficiency_gap(election_results) -> float:
     return numerator / total_votes
 
 
-def wasted_votes(party1_votes: int, party2_votes: int) -> Tuple[int, int]:
+def wasted_votes(party1_votes: int, party2_votes: int) -> tuple[int, int]:
     """Computes the wasted votes for each party in the given race.
 
     This function computes the wasted votes for each party in the given race. It returns a tuple of
@@ -97,7 +102,7 @@ def wasted_votes(party1_votes: int, party2_votes: int) -> Tuple[int, int]:
     return party1_waste, party2_waste
 
 
-def partisan_bias(election_results) -> float:
+def partisan_bias(election_results: ElectionResults) -> float:
     """Computes the partisan bias for the given ElectionResults.
 
     The partisan bias is defined as the number of districts with above-mean vote share by the first
@@ -116,7 +121,7 @@ def partisan_bias(election_results) -> float:
     return (above_mean_districts / len(party_shares)) - 0.5
 
 
-def partisan_gini(election_results) -> float:
+def partisan_gini(election_results: ElectionResults) -> float:
     """Computes the partisan Gini score for the given ElectionResults.
 
     The partisan Gini score is defined as the area between the seats-votes curve and its reflection

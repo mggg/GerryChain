@@ -1,6 +1,6 @@
 import warnings
+from collections.abc import Callable, Iterable
 from functools import partial
-from typing import Callable, Iterable, Optional, Union
 
 import numpy as np
 
@@ -23,15 +23,15 @@ class Gingleator(SingleMetricOptimizer):
     def __init__(
         self,
         proposal: Callable,
-        constraints: Union[Iterable[Callable], Validator, Iterable[Bounds], Callable],
+        constraints: Iterable[Callable] | Validator | Iterable[Bounds] | Callable,
         initial_state: Partition,
-        minority_perc_col: Optional[str] = None,
+        minority_perc_col: str | None = None,
         threshold: float = 0.5,
-        score_function: Optional[Callable] = None,
-        minority_pop_col: Optional[str] = None,
+        score_function: Callable | None = None,
+        minority_pop_col: str | None = None,
         total_pop_col: str = "TOTPOP",
         min_perc_column_name: str = "_gingleator_auxiliary_helper_updater_min_perc_col",
-    ):
+    ) -> None:
         """Initialize a Gingleator instance.
 
         Args:
@@ -129,7 +129,9 @@ class Gingleator(SingleMetricOptimizer):
         return num_opport_dists + next_dist
 
     @classmethod
-    def reward_next_highest_close(cls, part: Partition, minority_perc_col: str, threshold: float):
+    def reward_next_highest_close(
+        cls, part: Partition, minority_perc_col: str, threshold: float
+    ) -> float:
         """Returns the number of opportunity districts + a scaled reward for the closest district.
 
         Given a partition, returns the number of opportunity districts, if no additional district
@@ -157,7 +159,9 @@ class Gingleator(SingleMetricOptimizer):
             return num_opport_dists + (next_dist - threshold + 0.1) * 10
 
     @classmethod
-    def penalize_maximum_over(cls, part: Partition, minority_perc_col: str, threshold: float):
+    def penalize_maximum_over(
+        cls, part: Partition, minority_perc_col: str, threshold: float
+    ) -> float:
         """Returns the number of opportunity districts + (1 - the maximum excess) scaled to
         between 0 and 1.
 
@@ -180,7 +184,7 @@ class Gingleator(SingleMetricOptimizer):
             return num_opportunity_dists + (1 - max_dist) / (1 - threshold)
 
     @classmethod
-    def penalize_avg_over(cls, part: Partition, minority_perc_col: str, threshold: float):
+    def penalize_avg_over(cls, part: Partition, minority_perc_col: str, threshold: float) -> float:
         """Returns the number of opportunity districts + (1 - the average excess) scaled to
         between 0 and 1.
 

@@ -2,13 +2,18 @@
 Updaters that compute spanning tree statistics.
 """
 
+from __future__ import annotations
+
 import math
-from typing import Dict
+from typing import TYPE_CHECKING
 
 import numpy
 
+if TYPE_CHECKING:
+    from ..partition.partition import Partition
 
-def _num_spanning_trees_in_district(partition, district: int) -> int:
+
+def _num_spanning_trees_in_district(partition: Partition, district: int) -> int:
     """Computes the number of spanning trees in a subgraph of the partition defined by a district.
 
     Args:
@@ -24,7 +29,7 @@ def _num_spanning_trees_in_district(partition, district: int) -> int:
     return math.exp(numpy.linalg.slogdet(L)[1])
 
 
-def num_spanning_trees(partition) -> Dict[int, int]:
+def num_spanning_trees(partition: Partition) -> dict[int, int]:
     """Return number of spanning trees in each part (district) of a partition.
 
     Returns:

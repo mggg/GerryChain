@@ -1,5 +1,10 @@
+from __future__ import annotations
+
 import math
-from typing import Dict
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..partition.partition import Partition
 
 # frm: TODO: Documentation: Add import of Partition just to be clear...
 
@@ -22,7 +27,7 @@ def compute_polsby_popper(area: float, perimeter: float) -> float:
 
 # Partition type hint left out due to circular import
 # def polsby_popper(partition: Partition) -> Dict[int, float]:
-def polsby_popper(partition) -> Dict[int, float]:
+def polsby_popper(partition: Partition) -> dict[int, float]:
     """Computes Polsby-Popper compactness scores for each district in the partition.
 
     This function computes Polsby-Popper compactness scores for each district in the partition. It

@@ -13,7 +13,8 @@ Dependencies:
 """
 
 import math
-from typing import Any, Callable, Dict, Optional, Tuple
+from collections.abc import Callable
+from typing import Any, Optional
 
 import networkx
 
@@ -86,12 +87,12 @@ class Grid(Partition):
 
     def __init__(
         self,
-        dimensions: Optional[Tuple[int, int]] = None,
+        dimensions: tuple[int, int] | None = None,
         with_diagonals: bool = False,
-        assignment: Optional[Dict] = None,
-        updaters: Optional[Dict[str, Callable]] = None,
+        assignment: dict | None = None,
+        updaters: dict[str, Callable] | None = None,
         parent: Optional["Grid"] = None,
-        flips: Optional[Dict[Tuple[int, int], int]] = None,
+        flips: dict[tuple[int, int], int] | None = None,
     ) -> None:
         """Initialize a Grid instance.
 
@@ -136,17 +137,17 @@ class Grid(Partition):
         else:
             raise Exception("Not a good way to create a Partition")
 
-    def __str__(self):
+    def __str__(self) -> str:
         rows = self._as_list_of_lists()
         return "\n".join(["".join([str(x) for x in row]) for row in rows]) + "\n"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         dims = "x".join(str(d) for d in self.dimensions)
         number_of_parts = len(self.parts)
         s = "s" if number_of_parts > 1 else ""
-        return "{} Grid\nPartitioned into {} part{}".format(dims, number_of_parts, s)
+        return f"{dims} Grid\nPartitioned into {number_of_parts} part{s}"
 
-    def _as_list_of_lists(self):
+    def _as_list_of_lists(self) -> list[list[int]]:
         """Return List of lists representing the grid.
 
         Returns the grid as a list of lists (like a matrix), where the (i,j)th entry is the
@@ -159,7 +160,7 @@ class Grid(Partition):
         return [[self.assignment.mapping[(i, j)] for i in range(m)] for j in range(n)]
 
 
-def _create_grid_nx_graph(dimensions: Tuple[int, ...], with_diagonals: bool) -> Graph:
+def _create_grid_nx_graph(dimensions: tuple[int, ...], with_diagonals: bool) -> Graph:
     """Creates a grid graph with the specified dimensions
 
     Node Data:
@@ -236,7 +237,7 @@ def give_constant_attribute(graph: Graph, attribute: Any, value: Any) -> None:
         graph.node_data(node_id)[attribute] = value
 
 
-def _tag_boundary_nodes(nx_graph: networkx.Graph, dimensions: Tuple[int, int]) -> None:
+def _tag_boundary_nodes(nx_graph: networkx.Graph, dimensions: tuple[int, int]) -> None:
     """Adds the boolean attribute ``boundary_node`` to each node in the graph.
 
     If the node is on the boundary of the grid, that node also gets the attribute
@@ -263,7 +264,7 @@ def _tag_boundary_nodes(nx_graph: networkx.Graph, dimensions: Tuple[int, int]) -
             nx_graph.nodes[node_id]["boundary_node"] = False
 
 
-def _get_boundary_perim(node_id: Tuple[int, int], dimensions: Tuple[int, int]) -> int:
+def _get_boundary_perim(node_id: tuple[int, int], dimensions: tuple[int, int]) -> int:
     """Determines the boundary perimeter of a node on the grid.
 
     Args:
@@ -286,7 +287,7 @@ def _get_boundary_perim(node_id: Tuple[int, int], dimensions: Tuple[int, int]) -
 
 # frm: TODO: Refactoring:  color_half() is never used anywhere in GerryChain code.  Delete it?
 #
-def color_half(node: Tuple[int, int], threshold: int) -> int:
+def color_half(node: tuple[int, int], threshold: int) -> int:
     """Assigns a color (as an integer) to a node based on its x-coordinate.
 
     This function is used to partition the grid into two parts based on a given threshold. Nodes
@@ -305,7 +306,7 @@ def color_half(node: Tuple[int, int], threshold: int) -> int:
     return 0 if x <= threshold else 1
 
 
-def _color_quadrants(node: Tuple[int, int], thresholds: Tuple[int, int]) -> int:
+def _color_quadrants(node: tuple[int, int], thresholds: tuple[int, int]) -> int:
     """Assigns a color (as an integer) to a node based to divide the grid into four quadrants.
 
     The function uses two threshold values (one for each axis) to determine the color. Each
