@@ -8,12 +8,13 @@ Dependencies:
 
 - math: For math.floor() function.
 - networkx: For graph operations with using the graph structure in
-    :class:`~gerrychain.graph.Graph`.
+    Graph.
 - typing: Used for type hints.
 """
 
 import math
-from typing import Callable, Dict, Optional, Tuple
+from collections.abc import Callable
+from typing import Any, Optional
 
 import networkx
 
@@ -33,7 +34,7 @@ from gerrychain.updaters import (
 
 class Grid(Partition):
     """
-    The :class:`Grid` class is a subclass of Partition.  It represents a grid graph
+    The Grid class is a subclass of Partition.  It represents a grid graph
     with some node data and some edge data and that has been partitioned into
     districts (parts).  It is a quick way to get a Partition that you can then
     experiment with.
@@ -44,7 +45,7 @@ class Grid(Partition):
     In a real GerryChain task, one would typically need to find data, clean that data
     (for instance to get rid of islands), make sure that the data you wanted
     for your analysis exists for every node (for instance, population), and then
-    create an initial assignment of nodes to districts (parts).  The :class:`Grid`
+    create an initial assignment of nodes to districts (parts).  The Grid
     class allows you to obtain a Partition object that has all of those tasks
     already done.
 
@@ -86,46 +87,30 @@ class Grid(Partition):
 
     def __init__(
         self,
-        dimensions: Optional[Tuple[int, int]] = None,
+        dimensions: tuple[int, int] | None = None,
         with_diagonals: bool = False,
-        assignment: Optional[Dict] = None,
-        updaters: Optional[Dict[str, Callable]] = None,
+        assignment: dict | None = None,
+        updaters: dict[str, Callable] | None = None,
         parent: Optional["Grid"] = None,
-        flips: Optional[Dict[Tuple[int, int], int]] = None,
+        flips: dict[tuple[int, int], int] | None = None,
     ) -> None:
-        """
-        If the updaters are not specified, the default updaters are used, which are as follows::
+        """Initialize a Grid instance.
 
-            default_updaters = {
-                "cut_edges": cut_edges,
-                "population": Tally("population"),
-                "perimeter": perimeter,
-                "exterior_boundaries": exterior_boundaries,
-                "interior_boundaries": interior_boundaries,
-                "boundary_nodes": boundary_nodes,
-                "area": Tally("area", alias="area"),
-                "polsby_popper": polsby_popper,
-                "cut_edges_by_part": cut_edges_by_part,
-            }
+        Args:
+            dimensions (Tuple[int, int], optional): The grid dimensions (rows, columns), defaults
+                to None.
+            with_diagonals (bool, optional): If True, includes diagonal connections, defaults to
+                False.
+            assignment (Dict, optional): Node-to-district assignments, defaults to None.
+            updaters (Dict[str, Callable], optional): Custom updater functions, defaults to None.
+            parent (Grid, optional): Parent Grid object for inheritance, defaults to None.
+            flips (Dict[Tuple[int, int], int], optional): Node flips for partition changes,
+                defaults to None. Note that flips are a dict of the form: {node_id: part}. In the
+                case of a Grid, a node_id is a tuple indicating its position in the grid, so for a
+                Grid the flips look like: {(row_node_id, col_node_id): part}
 
-
-        :param dimensions: The grid dimensions (rows, columns), defaults to None.
-        :type dimensions: Tuple[int, int], optional
-        :param with_diagonals: If True, includes diagonal connections, defaults to False.
-        :type with_diagonals: bool, optional
-        :param assignment: Node-to-district assignments, defaults to None.
-        :type assignment: Dict, optional
-        :param updaters: Custom updater functions, defaults to None.
-        :type updaters: Dict[str, Callable], optional
-        :param parent: Parent Grid object for inheritance, defaults to None.
-        :type parent: Grid, optional
-        :param flips: Node flips for partition changes, defaults to None.
-            Note that flips are a dict of the form: {node_id: part}.  In the case
-            of a Grid, a node_id is a tuple indicating its position in the grid,
-            so for a Grid the flips look like: {(row_node_id, col_node_id): part}
-        :type flips: Dict[Tuple[int, int], int], optional
-
-        :raises Exception: If neither dimensions nor parent is provided.
+        Raises:
+            Exception: If neither dimensions nor parent is provided.
         """
 
         # Note that Grid graphs have node_ids that are tuples not integers.
@@ -152,56 +137,52 @@ class Grid(Partition):
         else:
             raise Exception("Not a good way to create a Partition")
 
-    def __str__(self):
+    def __str__(self) -> str:
         rows = self._as_list_of_lists()
         return "\n".join(["".join([str(x) for x in row]) for row in rows]) + "\n"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         dims = "x".join(str(d) for d in self.dimensions)
         number_of_parts = len(self.parts)
         s = "s" if number_of_parts > 1 else ""
-        return "{} Grid\nPartitioned into {} part{}".format(dims, number_of_parts, s)
+        return f"{dims} Grid\nPartitioned into {number_of_parts} part{s}"
 
-    def _as_list_of_lists(self):
-        """
-        Returns the grid as a list of lists (like a matrix), where the (i,j)th
-        entry is the assigned district of the node in position (i,j) on the
-        grid.
+    def _as_list_of_lists(self) -> list[list[int]]:
+        """Return List of lists representing the grid.
 
-        :returns: List of lists representing the grid.
-        :rtype: List[List[int]]
+        Returns the grid as a list of lists (like a matrix), where the (i,j)th entry is the
+        assigned district of the node in position (i,j) on the grid.
+
+        Returns:
+            List[List[int]]: List of lists representing the grid.
         """
         m, n = self.dimensions
         return [[self.assignment.mapping[(i, j)] for i in range(m)] for j in range(n)]
 
 
-def _create_grid_nx_graph(dimensions: Tuple[int, ...], with_diagonals: bool) -> Graph:
-    """
-    Creates a grid graph with the specified dimensions.
-    Optionally includes diagonal connections (edges) between nodes.
-
-    It sets the following data on nodes and edges:
+def _create_grid_nx_graph(dimensions: tuple[int, ...], with_diagonals: bool) -> Graph:
+    """Creates a grid graph with the specified dimensions
 
     Node Data:
 
-    * "population" set to 1,
-    * "area" set to 1
-    * "boundary_node" set to True iff a boundary node - see _get_boundary_perim()
-    * "boundary_perim" set to perimeter touching the boundary - see _get_boundary_perim()
+        * "population" set to 1,
+        * "area" set to 1
+        * "boundary_node" set to True iff a boundary node - see _get_boundary_perim()
+        * "boundary_perim" set to perimeter touching the boundary - see _get_boundary_perim()
 
     Edge Data:
 
-    * "shared_perim" set to 1 except for diagonal edges (if any)
+        * "shared_perim" set to 1 except for diagonal edges (if any)
 
-    :param dimensions: The grid dimensions (rows, columns).
-    :type dimensions: Tuple[int, int]
-    :param with_diagonals: If True, includes diagonal connections.
-    :type with_diagonals: bool
+    Args:
+        dimensions (Tuple[int, int]): The grid dimensions (rows, columns).
+        with_diagonals (bool): If True, includes diagonal connections.
 
-    :returns: A grid graph.
-    :rtype: Graph
+    Returns:
+        Graph: A grid graph.
 
-    :raises ValueError: If the dimensions are not a tuple of length 2.
+    Raises:
+        ValueError: If the dimensions are not a tuple of length 2.
     """
     if len(dimensions) != 2:
         raise ValueError("Expected two dimensions.")
@@ -229,18 +210,43 @@ def _create_grid_nx_graph(dimensions: Tuple[int, ...], with_diagonals: bool) -> 
     return Graph.from_networkx(nx_graph)
 
 
-def _tag_boundary_nodes(nx_graph: networkx.Graph, dimensions: Tuple[int, int]) -> None:
+# frm: TODO: Refactoring: give_constant_attribute() is never used - delete it?
+#
+# This routine is never used in GerryChain code, and its implementation is
+# trivial, so I am inclined to delete it - but perhaps it is used in legacy code?
+#
+# If we keep it, however, it should be moved to graph.py as it is a general purpose
+# graph utility not a Grid related function.
+#
+# Peter said (January 2026): Nah, let's get rid of it...
+
+
+def give_constant_attribute(graph: Graph, attribute: Any, value: Any) -> None:
+    """Sets the specified attribute to the specified value for all nodes in the graph.
+
+    This function sets the specified attribute to the specified value for all nodes in the graph.
+    The arguments below control how the operation is performed.
+
+    Args:
+        graph (Graph): The graph to modify.
+        attribute (Any): The attribute to set.
+        value (Any): The value to set the attribute to.
+
     """
-    Adds the boolean attribute ``boundary_node`` to each node in the graph.
+    for node_id in graph.node_indices:
+        graph.node_data(node_id)[attribute] = value
+
+
+def _tag_boundary_nodes(nx_graph: networkx.Graph, dimensions: tuple[int, int]) -> None:
+    """Adds the boolean attribute ``boundary_node`` to each node in the graph.
+
     If the node is on the boundary of the grid, that node also gets the attribute
-    ``boundary_perim`` which is determined by the function :func:`_get_boundary_perim`.
+    ``boundary_perim`` which is determined by the function `_get_boundary_perim`.
 
-    :param graph: The graph to modify.
-    :type graph: Graph
-    :param dimensions: The dimensions of the grid.
-    :type dimensions: Tuple[int, int]
+    Args:
+        graph (Graph): The graph to modify.
+        dimensions (Tuple[int, int]): The dimensions of the grid.
 
-    :returns: None
     """
 
     # Note that in the code below, a node_id is a tuple indicating its position
@@ -258,21 +264,17 @@ def _tag_boundary_nodes(nx_graph: networkx.Graph, dimensions: Tuple[int, int]) -
             nx_graph.nodes[node_id]["boundary_node"] = False
 
 
-def _get_boundary_perim(node_id: Tuple[int, int], dimensions: Tuple[int, int]) -> int:
-    """
-    Determines the boundary perimeter of a node on the grid.
-    The boundary perimeter is the number of sides of the node that
-    are on the boundary of the grid.
+def _get_boundary_perim(node_id: tuple[int, int], dimensions: tuple[int, int]) -> int:
+    """Determines the boundary perimeter of a node on the grid.
 
-    :param node_id: The ID of the node to check.  Note that the node_id is
-        a tuple of the form (row, col) so that node_id[0] denotes the row
-        a node is in and node_id[1] denotes its column.
-    :type node_id: Tuple[int, int]
-    :param dimensions: The dimensions of the grid.
-    :type dimensions: Tuple[int, int]
+    Args:
+        node_id (Tuple[int, int]): The ID of the node to check. Note that the node_id is a tuple of
+            the form (row, col) so that node_id[0] denotes the row a node is in and node_id[1]
+            denotes its column.
+        dimensions (Tuple[int, int]): The dimensions of the grid.
 
-    :returns: The boundary perimeter of the node.
-    :rtype: int
+    Returns:
+        int: The boundary perimeter of the node.
     """
     m, n = dimensions
     if node_id in [(0, 0), (m - 1, 0), (0, n - 1), (m - 1, n - 1)]:
@@ -285,44 +287,39 @@ def _get_boundary_perim(node_id: Tuple[int, int], dimensions: Tuple[int, int]) -
 
 # frm: TODO: Refactoring:  color_half() is never used anywhere in GerryChain code.  Delete it?
 #
-def color_half(node: Tuple[int, int], threshold: int) -> int:
-    """
-    Assigns a color (as an integer) to a node based on its x-coordinate.
+def color_half(node: tuple[int, int], threshold: int) -> int:
+    """Assigns a color (as an integer) to a node based on its x-coordinate.
 
-    This function is used to partition the grid into two parts based on a given threshold.
-    Nodes with an x-coordinate less than or equal to the threshold are assigned one color,
-    and nodes with an x-coordinate greater than the threshold are assigned another.
+    This function is used to partition the grid into two parts based on a given threshold. Nodes
+    with an x-coordinate less than or equal to the threshold are assigned one color, and nodes with
+    an x-coordinate greater than the threshold are assigned another.
 
-    :param node: The node to color, represented as a tuple of coordinates (x, y).
-    :type node: Tuple[int, int]
-    :param threshold: The x-coordinate value that determines the color assignment.
-    :type threshold: int
+    Args:
+        node (Tuple[int, int]): The node to color, represented as a tuple of coordinates (x, y).
+        threshold (int): The x-coordinate value that determines the color assignment.
 
-    :returns: An integer representing the color of the node. Returns 0 for nodes with
-        x-coordinate less than or equal to the threshold, and 1 otherwise.
-    :rtype: int
+    Returns:
+        int: An integer representing the color of the node. Returns 0 for nodes with x-coordinate
+            less than or equal to the threshold, and 1 otherwise.
     """
     x = node[0]
     return 0 if x <= threshold else 1
 
 
-def _color_quadrants(node: Tuple[int, int], thresholds: Tuple[int, int]) -> int:
-    """
-    Assigns a color (as an integer) to a node based on its position relative to
-    specified threshold coordinates, effectively dividing the grid into four quadrants.
+def _color_quadrants(node: tuple[int, int], thresholds: tuple[int, int]) -> int:
+    """Assigns a color (as an integer) to a node based to divide the grid into four quadrants.
 
-    The function uses two threshold values (one for each axis) to determine the color.
-    Each combination of being higher or lower than the threshold on each axis results
-    in a different color.
+    The function uses two threshold values (one for each axis) to determine the color. Each
+    combination of being higher or lower than the threshold on each axis results in a different
+    color.
 
-    :param node: The node to color, represented as a tuple of coordinates (x, y).
-    :type node: Tuple[int, int]
-    :param thresholds: A tuple of two integers representing the threshold coordinates
-        (x_threshold, y_threshold).
-    :type thresholds: Tuple[int, int]
+    Args:
+        node (Tuple[int, int]): The node to color, represented as a tuple of coordinates (x, y).
+        thresholds (Tuple[int, int]): A tuple of two integers representing the threshold
+            coordinates (x_threshold, y_threshold).
 
-    :returns: An integer representing the color of the node, determined by its quadrant.
-    :rtype: int
+    Returns:
+        int: An integer representing the color of the node, determined by its quadrant.
     """
     x, y = node
     x_color = 0 if x < thresholds[0] else 1

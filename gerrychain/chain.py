@@ -8,7 +8,7 @@ Key Components:
 
 - MarkovChain: The main class used for creating and iterating over Markov chain states.
 - Validator: A helper class for validating proposed states in the Markov chain. See
-  :class:`~gerrychain.constraints.Validator` for more details.
+  Validator for more details.
 
 
 Usage:
@@ -24,7 +24,9 @@ Dependencies:
 Last Updated: 11 Jan 2024
 """
 
-from typing import Callable, Iterable, Optional, Union
+from __future__ import annotations
+
+from collections.abc import Callable, Iterable
 
 from gerrychain.constraints import Bounds, Validator
 from gerrychain.partition import Partition
@@ -51,30 +53,27 @@ class MarkovChain:
     def __init__(
         self,
         proposal: Callable,
-        constraints: Union[Iterable[Callable], Validator, Iterable[Bounds], Callable],
+        constraints: Iterable[Callable] | Validator | Iterable[Bounds] | Callable,
         accept: Callable,
         initial_state: Partition,
         total_steps: int,
     ) -> None:
-        """
-        :param proposal: Function proposing the next state from the current state.
-        :type proposal: Callable
-        :param constraints: A function with signature ``Partition -> bool`` determining whether
-            the proposed next state is valid (passes all binary constraints). Usually
-            this is a :class:`~gerrychain.constraints.Validator` class instance.
-        :type constraints: Union[Iterable[Callable], Validator, Iterable[Bounds], Callable]
-        :param accept: Function accepting or rejecting the proposed state. In the most basic
-            use case, this always returns ``True``. But if the user wanted to use a
-            Metropolis-Hastings acceptance rule, this is where you would implement it.
-        :type accept: Callable
-        :param initial_state: Initial :class:`gerrychain.partition.Partition` class.
-        :type initial_state: Partition
-        :param total_steps: Number of steps to run.
-        :type total_steps: int
+        """Initialize a MarkovChain instance.
 
-        :returns: None
+        Args:
+            proposal (Callable): Function proposing the next state from the current state.
+            constraints (Union[Iterable[Callable], Validator, Iterable[Bounds], Callable]): A
+                function with signature ``Partition -> bool`` determining whether the proposed next
+                state is valid (passes all binary constraints). Usually this is a
+                Validator class instance.
+            accept (Callable): Function accepting or rejecting the proposed state. In the most
+                basic use case, this always returns ``True``. But if the user wanted to use a
+                Metropolis-Hastings acceptance rule, this is where you would implement it.
+            initial_state (Partition): Initial Partition class.
+            total_steps (int): Number of steps to run.
 
-        :raises ValueError: If the initial_state is not valid according to the constraints.
+        Raises:
+            ValueError: If the initial_state is not valid according to the constraints.
         """
 
         if callable(constraints):
@@ -103,32 +102,30 @@ class MarkovChain:
 
     @property
     def constraints(self) -> Validator:
-        """
-        Read_only alias for the is_valid property.
-        Returns the constraints of the Markov chain.
+        """Read_only property for the constraints of the Markov chain.
 
-        :returns: The constraints of the Markov chain.
-        :rtype: String
+        Returns:
+            String: The constraints of the Markov chain.
         """
         return self.is_valid
 
     @constraints.setter
     def constraints(
         self,
-        constraints: Union[Iterable[Callable], Validator, Iterable[Bounds], Callable],
+        constraints: Iterable[Callable] | Validator | Iterable[Bounds] | Callable,
     ) -> None:
-        """
-        Setter for the is_valid property.
-        Checks if the initial state is valid according to the new constraints.
-        being imposed on the Markov chain, and raises a ValueError if the
-        initial state is not valid and lists the failed constraints.
+        """Setter for the constraints property.
 
-        :param constraints: The new constraints to be imposed on the Markov chain.
-        :type constraints: Union[Iterable[Callable], Validator, Iterable[Bounds], Callable]
+        Checks if the initial state is valid according to the new constraints being imposed on the
+        Markov chain, and raises a ValueError if the initial state is not valid and lists the
+        failed constraints.
 
-        :returns: None
+        Args:
+            constraints (Union[Iterable[Callable], Validator, Iterable[Bounds], Callable]): The new
+                constraints to be imposed on the Markov chain.
 
-        :raises ValueError: If the initial_state is not valid according to the new constraints.
+        Raises:
+            ValueError: If the initial_state is not valid according to the new constraints.
         """
 
         if callable(constraints):
@@ -150,34 +147,32 @@ class MarkovChain:
 
         self.is_valid = is_valid
 
-    def __iter__(self) -> "MarkovChain":
-        """
-        Resets the Markov chain iterator.
+    def __iter__(self) -> MarkovChain:
+        """Resets the Markov chain iterator.
 
-        This method is called when an iterator is required for a container. It sets the
-        counter to 0 and resets the state to the initial state.
+        This method is called when an iterator is required for a container. It sets the counter to
+        0 and resets the state to the initial state.
 
-        :returns: Returns itself as an iterator object.
-        :rtype: MarkovChain
+        Returns:
+            MarkovChain: Returns itself as an iterator object.
         """
         self.counter = 0
         self.state = self.initial_state
         return self
 
-    def __next__(self) -> Optional[Partition]:
-        """
-        Advances the Markov chain to the next state.
+    def __next__(self) -> Partition | None:
+        """Advances the Markov chain to the next state.
 
-        This method is called to get the next item in the iteration.
-        It proposes the next state and moves to it if that state is
-        valid according to the constraints and if accepted by the
-        acceptance function. If the total number of steps has been
-        reached, it raises a StopIteration exception.
+        This method is called to get the next item in the iteration. It proposes the next state and
+        moves to it if that state is valid according to the constraints and if accepted by the
+        acceptance function. If the total number of steps has been reached, it raises a
+        StopIteration exception.
 
-        :returns: The next state of the Markov chain.
-        :rtype: Optional[Partition]
+        Returns:
+            Optional[Partition]: The next state of the Markov chain.
 
-        :raises StopIteration: If the total number of steps has been reached.
+        Raises:
+            StopIteration: If the total number of steps has been reached.
         """
         if self.counter == 0:
             self.counter += 1
@@ -197,25 +192,24 @@ class MarkovChain:
         raise StopIteration
 
     def __len__(self) -> int:
-        """
-        Returns the total number of steps in the Markov chain.
+        """Returns the total number of steps in the Markov chain.
 
-        :returns: The total number of steps in the Markov chain.
-        :rtype: int
+        Returns:
+            int: The total number of steps in the Markov chain.
         """
         return self.total_steps
 
     def __repr__(self) -> str:
-        return "<MarkovChain [{} steps]>".format(len(self))
+        return f"<MarkovChain [{len(self)} steps]>"
 
-    def with_progress_bar(self):
-        """
-        Wraps the Markov chain in a tqdm progress bar.
+    def with_progress_bar(self) -> Iterable[Partition]:
+        """Wraps the Markov chain in a tqdm progress bar.
 
-        Useful for long-running Markov chains where you want to keep track
-        of the progress. Requires the `tqdm` package to be installed.
+        Useful for long-running Markov chains where you want to keep track of the progress.
+        Requires the `tqdm` package to be installed.
 
-        :returns: A tqdm-wrapped Markov chain.
+        Returns:
+            Any: A tqdm-wrapped Markov chain.
         """
         from tqdm.auto import tqdm
 

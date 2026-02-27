@@ -14,19 +14,31 @@ from gerrychain.partition import Partition
 
 
 def always_accept(partition: Partition) -> bool:
+    """Always accepts the a proposed next state.
+
+    Args:
+        partition (Partition): The current partition to accept a flip from.
+
+    Returns:
+        bool: True
+    """
     return True
 
 
 def cut_edge_accept(partition: Partition) -> bool:
-    """
-    Always accepts the flip if the number of cut_edges decreases.
-    Otherwise, uses the Metropolis criterion to decide.
+    """Always accepts the flip if the number of cut_edges decreases Otherwise, uses the Metropolis.
 
-    :param partition: The current partition to accept a flip from.
-    :type partition: Partition
+    This function always accepts the flip if the number of cut_edges decreases. Otherwise, uses the
+    Metropolis criterion to determine whether to accept the flip. The Metropolis criterion accepts
+    the flip with probability min(1, old_cut_edges/new_cut_edges) where old_cut_edges is the number
+    of cut edges in the parent partition and new_cut_edges is the number of cut edges in the
+    proposed partition.
 
-    :returns: True if accepted, False to remain in place
-    :rtype: bool
+    Args:
+        partition (Partition): The current partition to accept a flip from.
+
+    Returns:
+        bool: True if accepted, False to remain in place
     """
     # frm: TODO: Documentation: Add documentation on what the "Metropolis criterion" is...
     #

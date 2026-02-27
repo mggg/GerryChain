@@ -49,6 +49,7 @@ release = ""
 # ones.
 extensions = [
     "sphinx.ext.autodoc",
+    "sphinx.ext.napoleon",
     "sphinx.ext.coverage",
     "sphinx.ext.mathjax",
     "sphinx.ext.viewcode",
@@ -198,3 +199,7 @@ autodoc_default_flags = ["members"]
 # Prepend the module name of classes.
 add_module_names = True
 autodoc_inherit_docstrings = False
+
+# Parse Google-style docstrings used throughout the codebase.
+napoleon_google_docstring = True
+napoleon_numpy_docstring = False

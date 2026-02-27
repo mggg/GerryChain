@@ -7,24 +7,33 @@ within a given GeoDataFrame.
 
 from collections import Counter
 
-# from shapely.geometry.base import BaseGeometry
 from geopandas import GeoDataFrame
+from shapely.geometry import Point
+from shapely.geometry.base import BaseGeometry
 
 from gerrychain.vendor.utm import from_latlon
 
 
-def utm_of_point(point):
-    """
-    Given a point, return the Universal Transverse Mercator zone number
-    for that point.
+def utm_of_point(point: Point) -> int:
+    """Given a point, return the Universal Transverse Mercator zone number for that point.
+
+    Args:
+        point (shapely.geometry.Point): A Shapely Point geometry object representing a geographic
+            location.
+
+    Returns:
+        int: The Universal Transverse Mercator zone number for the given point.
     """
     return from_latlon(point.y, point.x)[2]
 
 
 def identify_utm_zone(df: GeoDataFrame) -> int:
-    """
-    Given a GeoDataFrame, identify the Universal Transverse Mercator zone
-    number for the centroid of the geometries in the dataframe.
+    """Given a GeoDataFrame, identify the UTM zone number for that GeoDataFrame.
+
+    Note:
+        This function uses the centroid of the geometries in the GeoDataFrame to determine the UTM
+        zone.
+
     """
     wgs_df = df.to_crs("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
     utm_counts = Counter(utm_of_point(point) for point in wgs_df["geometry"].centroid)
@@ -34,32 +43,28 @@ def identify_utm_zone(df: GeoDataFrame) -> int:
 
 
 # Explicit type hint intentionally omitted here because of import issues.
-def explain_validity(geo) -> str:
-    """
-    Given a geometry that is shapely interpretable, explain the validity.
-    Light wrapper around shapely's explain_validity.
+def explain_validity(geo: BaseGeometry) -> str:
+    """Given a geometry that is shapely interpretable, call Shapely's explain_validity function.
 
-    :param geo: Shapely geometry object
-    :type geo: shapely.geometry.BaseGeometry
+    Args:
+        geo (shapely.geometry.BaseGeometry): Shapely geometry object
 
-    :returns: Explanation for the validity of the geometry
-    :rtype: str
+    Returns:
+        str: Explanation for the validity of the geometry
     """
     import shapely.validation
 
     return shapely.validation.explain_validity(geo)
 
 
-def invalid_geometries(df):
-    """
-    Given a GeoDataFrame, returns a list of row indices
-    with invalid geometries.
+def invalid_geometries(df: GeoDataFrame) -> list[int]:
+    """Given a GeoDataFrame, returns a list of row indices with invalid geometries.
 
-    :param df: The GeoDataFrame to examine
-    :type df: :class:`geopandas.GeoDataFrame`
+    Args:
+        df (GeoDataFrame): The GeoDataFrame to examine
 
-    :returns: List of row indices with invalid geometries
-    :rtype: list of int
+    Returns:
+        list of int: List of row indices with invalid geometries
     """
     invalid = []
     for idx, row in df.iterrows():
@@ -69,24 +74,19 @@ def invalid_geometries(df):
     return invalid
 
 
-def reprojected(df):
-    """
-    Returns a copy of `df`, projected into the coordinate reference system of a suitable
-        `Universal Transverse Mercator`_ zone.
+def reprojected(df: GeoDataFrame) -> GeoDataFrame:
+    """Returns a copy of `df`, projected into the CRS of a suitable UTM zone.
 
-    :param df: The GeoDataFrame to reproject
-    :type df: :class:`geopandas.GeoDataFrame`
+    Args:
+        df (GeoDataFrame): The GeoDataFrame to reproject
 
-    :returns: A copy of `df`, projected into the coordinate reference system of a suitable
-        UTM zone.
-    :rtype: :class:`geopandas.GeoDataFrame`
-
+    Returns:
+        GeoDataFrame: A copy of `df`, projected into the coordinate reference
+            system of a suitable UTM zone.
     .. _`Universal Transverse Mercator`: https://en.wikipedia.org/wiki/UTM_coordinate_system
     """
     utm = identify_utm_zone(df)
-    return df.to_crs(
-        "+proj=utm +zone={utm} +ellps=WGS84 +datum=WGS84 +units=m +no_defs".format(utm=utm)
-    )
+    return df.to_crs(f"+proj=utm +zone={utm} +ellps=WGS84 +datum=WGS84 +units=m +no_defs")
 
 
 class GeometryError(Exception):

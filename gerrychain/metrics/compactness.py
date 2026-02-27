@@ -1,20 +1,23 @@
+from __future__ import annotations
+
 import math
-from typing import Dict
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..partition.partition import Partition
 
 # frm: TODO: Documentation: Add import of Partition just to be clear...
 
 
 def compute_polsby_popper(area: float, perimeter: float) -> float:
-    """
-    Computes the Polsby-Popper score for a single district.
+    """Computes the Polsby-Popper score for a single district.
 
-    :param area: The area of the district
-    :type area: float
-    :param perimeter: The perimeter of the district
-    :type perimeter: float
+    Args:
+        area (float): The area of the district
+        perimeter (float): The perimeter of the district
 
-    :returns: The Polsby-Popper score for the district
-    :rtype: float
+    Returns:
+        float: The Polsby-Popper score for the district
     """
     try:
         return 4 * math.pi * area / perimeter**2
@@ -24,15 +27,17 @@ def compute_polsby_popper(area: float, perimeter: float) -> float:
 
 # Partition type hint left out due to circular import
 # def polsby_popper(partition: Partition) -> Dict[int, float]:
-def polsby_popper(partition) -> Dict[int, float]:
-    """
-    Computes Polsby-Popper compactness scores for each district in the partition.
+def polsby_popper(partition: Partition) -> dict[int, float]:
+    """Computes Polsby-Popper compactness scores for each district in the partition.
 
-    :param partition: The partition to compute scores for
-    :type partition: Partition
+    This function computes Polsby-Popper compactness scores for each district in the partition. It
+    returns a dictionary mapping each district ID to its Polsby-Popper score.
 
-    :returns: A dictionary mapping each district ID to its Polsby-Popper score
-    :rtype: Dict[int, float]
+    Args:
+        partition (Partition): The partition to compute scores for
+
+    Returns:
+        Dict[int, float]: A dictionary mapping each district ID to its Polsby-Popper score
     """
     return {
         part: compute_polsby_popper(partition["area"][part], partition["perimeter"][part])

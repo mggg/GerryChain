@@ -1,7 +1,7 @@
 import random
+from collections.abc import Callable, Hashable, Sequence
 from functools import partial
 from inspect import signature
-from typing import Callable, Dict, Optional, Sequence, Union
 
 from gerrychain.partition import Partition
 
@@ -40,36 +40,28 @@ class ValueWarning(UserWarning):
 def epsilon_tree_bipartition(
     subgraph_to_split: Graph,
     parts: Sequence,
-    pop_target: Union[float, int],
+    pop_target: float | int,
     pop_col: str,
     epsilon: float,
     node_repeats: int = 1,
     bipartition_tree_fn: Callable = partial(bipartition_tree, max_attempts=10000),
-) -> Dict:
-    """
-    Uses :func:`~gerrychain.tree.bipartition_tree` to partition a tree into
-    two parts of population ``pop_target`` (within ``epsilon``).
+) -> dict:
+    """Bipartition a tree into two :math:`\varepsilon`-balanced parts.
 
-    :param graph: The graph to partition into two :math:`\varepsilon`-balanced parts.
-    :type graph: Graph
-    :param parts: Iterable of part (district) labels (like ``[0,1,2]`` or ``range(4)``).
-    :type parts: Sequence
-    :param pop_target: Target population for each part of the partition.
-    :type pop_target: Union[float, int]
-    :param pop_col: Node attribute key holding population data.
-    :type pop_col: str
-    :param epsilon: How far (as a percentage of ``pop_target``) from ``pop_target`` the parts
-        of the partition can be.
-    :type epsilon: float
-    :param node_repeats: Parameter for :func:`~gerrychain.tree.bipartition_tree` to use.
-        Defaults to 1.
-    :type node_repeats: int, optional
-    :param bipartition_tree_fn: The partition method to use. Defaults to
-        `partial(bipartition_tree, max_attempts=10000)`.
-    :type bipartition_tree_fn: Callable, optional
+    Args:
+        graph (Graph): The graph to partition into two :math:`\varepsilon`-balanced parts.
+        parts (Sequence): Iterable of part (district) labels (like ``[0,1,2]`` or ``range(4)``).
+        pop_target (Union[float, int]): Target population for each part of the partition.
+        pop_col (str): Node attribute key holding population data.
+        epsilon (float): How far (as a percentage of ``pop_target``) from ``pop_target`` the parts
+            of the partition can be.
+        node_repeats (int, optional): Parameter for `gerrychain.tree.bipartition_tree` to
+            use. Defaults to 1.
+        bipartition_tree_fn (Callable, optional): The partition method to use. Defaults to
+            `partial(bipartition_tree, max_attempts=10000)`.
 
-    :returns: New assignments for the nodes of ``graph``.
-    :rtype: dict
+    Returns:
+        dict: New assignments for the nodes of ``graph``.
     """
     if len(parts) != 2:
         raise ValueError(
@@ -129,24 +121,22 @@ def epsilon_tree_bipartition(
 def recom(
     partition: Partition,
     pop_col: str,
-    pop_target: Union[int, float],
+    pop_target: int | float,
     epsilon: float,
     node_repeats: int = 1,
-    region_surcharge: Optional[Dict] = None,
+    region_surcharge: dict | None = None,
     bipartition_tree_fn: Callable = bipartition_tree,
 ) -> Partition:
-    """
-    ReCom (short for ReCombination) is a Markov Chain Monte Carlo (MCMC) algorithm
-    used for redistricting. At each step of the algorithm, a pair of adjacent districts
-    is selected at random and merged into a single district. The region is then split
-    into two new districts by generating a spanning tree using the Kruskal/Karger
-    algorithm and cutting an edge at random. The edge is checked to ensure that it
-    separates the region into two new districts that are population balanced, and,
-    if not, a new edge is selected at random and the process is repeated.
+    """Return new partition resulting from the ReCom algorithm.
+
+    ReCom (short for ReCombination) is a Markov Chain Monte Carlo (MCMC) algorithm used for
+    redistricting. At each step of the algorithm, a pair of adjacent districts is selected at
+    random and merged into a single district. The region is then split into two new districts by
+    generating a spanning tree using the Kruskal/Karger algorithm and cutting an edge at random.
+    The edge is checked to ensure that it separates the region into two new districts that are
+    population balanced, and, if not, a new edge is selected at random and the process is repeated.
 
     Example usage:
-
-    .. code-block:: python
 
         from functools import partial
         from gerrychain import MarkovChain
@@ -154,8 +144,7 @@ def recom(
 
         # ...define constraints, accept, partition, total_steps here...
 
-        # Ideal population:
-        pop_target = sum(partition["population"].values()) / len(partition)
+        # Ideal population: pop_target = sum(partition["population"].values()) / len(partition)
 
         proposal = partial(
             recom, pop_col="POP10", pop_target=pop_target, epsilon=.05, node_repeats=10
@@ -163,26 +152,21 @@ def recom(
 
         chain = MarkovChain(proposal, constraints, accept, partition, total_steps)
 
-    :param partition: The initial partition.
-    :type partition: Partition
-    :param pop_col: The name of the population column.
-    :type pop_col: str
-    :param pop_target: The target population for each district.
-    :type pop_target: Union[int,float]
-    :param epsilon: The epsilon value for population deviation as a percentage of the
-        target population.
-    :type epsilon: float
-    :param node_repeats: The number of times to repeat the bipartitioning step. Default is 1.
-    :type node_repeats: int, optional
-    :param region_surcharge: The surcharge dictionary for the graph used for region-aware
-        partitioning of the grid. Default is None.
-    :type region_surcharge: Optional[Dict], optional
-    :param bipartition_tree_fn: The method used for bipartitioning the tree. Default is
-        :func:`~gerrychain.tree.bipartition_tree`.
-    :type bipartition_tree_fn: Callable, optional
+    Args:
+        partition (Partition): The initial partition.
+        pop_col (str): The name of the population column.
+        pop_target (Union[int,float]): The target population for each district.
+        epsilon (float): The epsilon value for population deviation as a percentage of the target
+            population.
+        node_repeats (int, optional): The number of times to repeat the bipartitioning step.
+            Default is 1.
+        region_surcharge (Optional[Dict], optional): The surcharge dictionary for the graph used
+            for region-aware partitioning of the grid. Default is None.
+        bipartition_tree_fn (Callable, optional): The method used for bipartitioning the tree.
+            Default is `gerrychain.tree.bipartition_tree`.
 
-    :returns: The new partition resulting from the ReCom algorithm.
-    :rtype: Partition
+    Returns:
+        Partition: The new partition resulting from the ReCom algorithm.
     """
 
     bad_district_pairs = set()
@@ -290,47 +274,41 @@ def recom(
 def reversible_recom(
     partition: Partition,
     pop_col: str,
-    pop_target: Union[int, float],
+    pop_target: int | float,
     epsilon: float,
     max_balanced_edge_cuts: int,
     find_balanced_edge_cuts_fn: Callable = find_balanced_edge_cuts_memoization,
     repeat_until_valid: bool = False,
     choice: Callable = random.choice,
 ) -> Partition:
-    """
-    Reversible ReCom algorithm for redistricting.
+    """Reversible ReCom algorithm for redistricting.
 
-    This function performs the reversible ReCom algorithm, which is a Markov Chain Monte
-    Carlo (MCMC) algorithm used for redistricting. For more information, see the paper
-    "Spanning Tree Methods for Sampling Graph Partitions" by Cannon, et al. (2022) at
+    This function performs the reversible ReCom algorithm, which is a Markov Chain Monte Carlo
+    (MCMC) algorithm used for redistricting. For more information, see the paper "Spanning Tree
+    Methods for Sampling Graph Partitions" by Cannon, et al. (2022) at
     https://arxiv.org/abs/2210.01401
 
-    :param partition: The initial partition.
-    :type partition: Partition
-    :param pop_col: The name of the population column.
-    :type pop_col: str
-    :param pop_target: The target population for each district.
-    :type pop_target: Union[int,float]
-    :param epsilon: The epsilon value for population deviation as a percentage of the
-        target population.
-    :type epsilon: float
-    :param find_balanced_edge_cuts_fn: The balance edge function. Default is
-        find_balanced_edge_cuts_memoization.
-    :type find_balanced_edge_cuts_fn: Callable, optional
-        frm: it returns a list of Cuts - a named tuple defined in tree.py
-    :param max_balanced_edge_cuts: The maximum number of balance edges. Default is 1.
-    :type max_balanced_edge_cuts: int, optional
-    :param repeat_until_valid: Flag indicating whether to repeat until a valid partition is
-        found. Default is False.
-    :type repeat_until_valid: bool, optional
-    :param choice: The choice function for selecting a random element. Default is random.choice.
-    :type choice: Callable, optional
+    Args:
+        partition (Partition): The initial partition.
+        pop_col (str): The name of the population column.
+        pop_target (Union[int,float]): The target population for each district.
+        epsilon (float): The epsilon value for population deviation as a percentage of the target
+            population.
+        find_balanced_edge_cuts_fn (Callable, optional): The balance edge function. Default is
+            find_balanced_edge_cuts_memoization.
+        M (int, optional): The maximum number of balance edges. Default is 1.
+        repeat_until_valid (bool, optional): Flag indicating whether to repeat until a valid
+            partition is found. Default is False.
+        choice (Callable, optional): The choice function for selecting a random element. Default is
+            random.choice.
 
-    :returns: The new partition resulting from the reversible ReCom algorithm.
-    :rtype: Partition
+    Returns:
+        Partition: The new partition resulting from the reversible ReCom algorithm.
     """
 
-    def dist_pair_edges(part, a, b):
+    def dist_pair_edges(
+        part: Partition, a: Hashable, b: Hashable
+    ) -> set[tuple[Hashable, Hashable]]:
         # frm: Find all edges that cross from district a into district b
         return set(
             e
@@ -352,12 +330,11 @@ def reversible_recom(
     # that we know what the parameters are in all cases.  Then we can just use those
     # canonical parameters below.
 
-    def bounded_find_balanced_edge_cuts_fn(*args, **kwargs):
+    def bounded_find_balanced_edge_cuts_fn(*args: object, **kwargs: object) -> list:
         cuts = find_balanced_edge_cuts_fn(*args, **kwargs)
         if len(cuts) > max_balanced_edge_cuts:
             raise ReversibilityError(
-                f"Found {len(cuts)} balance edges, "
-                f"but the upper bound is {max_balanced_edge_cuts}."
+                f"Found {len(cuts)} balance edges, but the upper bound is {max_balanced_edge_cuts}."
             )
         return cuts
 
@@ -637,28 +614,27 @@ class ReCom:
     def __init__(
         self,
         pop_col: str,
-        ideal_pop: Union[int, float],
+        ideal_pop: int | float,
         epsilon: float,
         bipartition_tree_fn: Callable = bipartition_tree,
-    ):
-        """
-        :param pop_col: The name of the column in the partition that contains the population data.
-        :type pop_col: str
-        :param ideal_pop: The ideal population for each district.
-        :type ideal_pop: Union[int,float]
-        :param epsilon: The epsilon value for population deviation as a percentage of the
-            target population.
-        :type epsilon: float
-        :param bipartition_tree_fn: The method used for bipartitioning the tree.
-            Defaults to `bipartition_tree`.
-        :type bipartition_tree_fn: function, optional
+    ) -> None:
+        """Initialize a ReCom instance.
+
+        Args:
+            pop_col (str): The name of the column in the partition that contains the population
+                data.
+            ideal_pop (Union[int,float]): The ideal population for each district.
+            epsilon (float): The epsilon value for population deviation as a percentage of the
+                target population.
+            bipartition_tree_fn (function, optional): The method used for bipartitioning the tree.
+                Defaults to `bipartition_tree`.
         """
         self.pop_col = pop_col
         self.ideal_pop = ideal_pop
         self.epsilon = epsilon
         self.bipartition_tree_fn = bipartition_tree_fn
 
-    def __call__(self, partition: Partition):
+    def __call__(self, partition: Partition) -> Partition:
         return recom(
             partition,
             self.pop_col,
@@ -671,5 +647,5 @@ class ReCom:
 class ReversibilityError(Exception):
     """Raised when the cut edge upper bound is violated."""
 
-    def __init__(self, msg):
+    def __init__(self, msg: str) -> None:
         self.message = msg
