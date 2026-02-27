@@ -65,7 +65,7 @@ def recursive_tree_part(
 ) -> Dict:
     """Return new assignments for the nodes of ``graph``.
 
-    Uses :func:`~gerrychain.tree.bipartition_tree` recursively to partition a tree into
+    Uses `gerrychain.tree.bipartition_tree` recursively to partition a tree into
     ``len(parts)`` parts of population ``pop_target`` (within ``epsilon``).
 
     Can be used to generate initial seed plans (partition assignments) or to implement ReCom-like
@@ -79,7 +79,7 @@ def recursive_tree_part(
         pop_col (str): Node attribute key holding population data.
         epsilon (float): How far (as a percentage of ``pop_target``) from ``pop_target`` the parts
             of the partition can be.
-        node_repeats (int, optional): Parameter for :func:`~gerrychain.tree.bipartition_tree` to
+        node_repeats (int, optional): Parameter for `gerrychain.tree.bipartition_tree` to
             use. Defaluts to 1.
         bipartition_tree_fn (Callable, optional): The partition method to use. Defaults to
             `partial(bipartition_tree, max_attempts=10000)`.
@@ -210,10 +210,10 @@ def _get_seed_chunks(
         pop_col (str): Node attribute key holding population data
         epsilon (float): How far (as a percentage of ``pop_target``) from ``pop_target`` the parts
             of the partition can be
-        node_repeats (int, optional): Parameter for :func:`~gerrychain.tree.bipartition_tree` to
+        node_repeats (int, optional): Parameter for `gerrychain.tree.bipartition_tree` to
             use. Defaults to 1.
         bipartition_tree_fn (Callable, optional): The method to use for bipartitioning the graph.
-            Defaults to :func:`~gerrychain.tree.bipartition_tree`
+            Defaults to `gerrychain.tree.bipartition_tree`
 
     Returns:
         List[List[int]]: New assignments for the nodes of ``graph``.
@@ -421,8 +421,8 @@ def _recursive_seed_part_inner(
         epsilon (float): How far (as a percentage of ``pop_target``) from ``pop_target`` the parts
             of the partition can be
         bipartition_tree_fn (Callable, optional): Function used to find balanced partitions at the
-            2-district level. Defaults to :func:`~gerrychain.tree.bipartition_tree`
-        node_repeats (int, optional): Parameter for :func:`~gerrychain.tree.bipartition_tree` to
+            2-district level. Defaults to `gerrychain.tree.bipartition_tree`
+        node_repeats (int, optional): Parameter for `gerrychain.tree.bipartition_tree` to
             use. Defaults to 1.
         n (Optional[int], optional): Either a positive integer (greater than 1) or None. If n is a
             positive integer, this function will recursively create a seed plan by either biting
@@ -529,7 +529,8 @@ def _recursive_seed_part_inner(
             one_sided_cut=True,
         )
         remaining_nodes -= nodes
-        # frm: Create a list with the set of nodes returned by bipartition_tree_fn() and then recurse
+        # frm: Create a list with the set of nodes returned by
+        # bipartition_tree_fn() and then recurse
         #       to get the rest of the sets of nodes for remaining districts.
         assignment = [nodes] + _recursive_seed_part_inner(
             graph.subgraph(remaining_nodes),
@@ -585,7 +586,8 @@ def _recursive_seed_part_inner(
     return translated_assignment
 
 
-# frm TODO: Refactoring:   recursicve_seed_part() is never called - not in this file and not in any other
+# frm TODO: Refactoring: recursive_seed_part() is never called, not in this
+#     file and not in any other
 #     GerryChain file. Is it intended to be used by end-users?
 #
 # It calculates an initial assignment dictionary - for use in creating a Partition object.
@@ -635,8 +637,8 @@ def recursive_seed_part(
         epsilon (float): How far (as a percentage of ``pop_target``) from ``pop_target`` the parts
             of the partition can be
         bipartition_tree_fn (Callable, optional): Function used to find balanced partitions at the
-            2-district level Defaults to :func:`~gerrychain.tree.bipartition_tree`
-        node_repeats (int, optional): Parameter for :func:`~gerrychain.tree.bipartition_tree` to
+            2-district level Defaults to `gerrychain.tree.bipartition_tree`
+        node_repeats (int, optional): Parameter for `gerrychain.tree.bipartition_tree` to
             use. Defaults to 1.
         n (Optional[int], optional): Either a positive integer (greater than 1) or None. If n is a
             positive integer, this function will recursively create a seed plan by either biting

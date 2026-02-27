@@ -37,7 +37,7 @@ def _new_cuts(partition: Partition) -> set[tuple[int, int]]:
     """Return set of edges that were not cut, but now are.
 
     Args:
-        partition (:class:`~gerrychain.partition.Partition`): A partition of a Graph
+        partition (Partition): A partition of a Graph
 
     Returns:
         Set[Tuple]: The set of edges that were not cut, but now are.
@@ -53,7 +53,7 @@ def _obsolete_cuts(partition: Partition) -> set[tuple[int, int]]:
     """Return set of edges that were cut, but now are not.
 
     Args:
-        partition (:class:`~gerrychain.partition.Partition`): A partition of a Graph
+        partition (Partition): A partition of a Graph
 
     Returns:
         Set[Tuple]: The set of edges that were cut, but now are not.
@@ -70,7 +70,7 @@ def initialize_cut_edges(partition: Partition) -> dict[int, set[tuple[int, int]]
     """A dictionary mapping each part of a partition to the set of cut edges in that part.
 
     Args:
-        partition (:class:`~gerrychain.partition.Partition`): A partition of a Graph
+        partition (Partition): A partition of a Graph
 
     Returns:
         Dict: A dictionary mapping each part of a partition to the set of edges in that part.
@@ -116,7 +116,7 @@ def cut_edges_by_part(
     in that part.
 
     Args:
-        partition (:class:`~gerrychain.partition.Partition`): A partition of a Graph
+        partition (Partition): A partition of a Graph
         previous (Set[Tuple]): The previous set of edges for a fixed part of the given partition.
         new_edges (Set[Tuple]): The set of edges that have flowed into the given part of the
             partition.
@@ -132,7 +132,7 @@ def cut_edges(partition: Partition) -> set[tuple[int, int]]:
     """Computes the set of edges for a given partition.
 
     Args:
-        partition (:class:`~gerrychain.partition.Partition`): A partition of a Graph
+        partition (Partition): A partition of a Graph
 
     Returns:
         Set[Tuple]: The set of edges that are cut by the given partition.

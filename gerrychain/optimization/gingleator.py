@@ -39,8 +39,8 @@ class Gingleator(SingleMetricOptimizer):
             constraints (Union[Iterable[Callable], Validator, Iterable[Bounds], Callable]): A
                 function with signature ``Partition -> bool`` determining whether the proposed next
                 state is valid (passes all binary constraints). Usually this is a
-                :class:`~gerrychain.constraints.Validator` class instance.
-            initial_state (Partition): Initial :class:`gerrychain.partition.Partition` class.
+                Validator class instance.
+            initial_state (Partition): Initial Partition class.
             minority_perc_col (Optional[str]): The name of the updater mapping of district ids to
                 the fraction of minority population within that district. If no updater is
                 specified, one is made according to the ``min_perc_column_name`` parameter.

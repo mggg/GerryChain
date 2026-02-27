@@ -18,7 +18,7 @@ def neighbor_flips(partition: Partition) -> set[tuple[int, int]]:
     """Return set of edges that were flipped in the given partition compared to its parent.
 
     Args:
-        partition (:class:`~gerrychain.partition.Partition`): A partition of a Graph
+        partition (Partition): A partition of a Graph
 
     Returns:
         Set[Tuple]: The set of edges that were flipped in the given partition.
@@ -41,9 +41,9 @@ def flows_from_changes(
     """Return per-part node flow updates between two partitions.
 
     Args:
-        old_partition (:class:`~gerrychain.partition.Partition`): A partition of a Graph
+        old_partition (Partition): A partition of a Graph
             representing the previous step.
-        new_partition (:class:`~gerrychain.partition.Partition`): A partition of a Graph
+        new_partition (Partition): A partition of a Graph
             representing the current step.
 
     Returns:
@@ -130,7 +130,7 @@ def compute_edge_flows(partition: Partition) -> dict[int, dict[str, set[tuple[in
     """Computes the flow of cut edges between a partition and its parent.
 
     Args:
-        partition (:class:`~gerrychain.partition.Partition`): A partition of a Graph
+        partition (Partition): A partition of a Graph
 
     Returns:
         Dict: A flow dictionary containing the flow from the parent of this partition to this

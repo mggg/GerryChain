@@ -12,11 +12,11 @@ class Assignment(Mapping):
     """
     An assignment of nodes into parts.
 
-    The goal of :class:`Assignment` is to provide an interface that mirrors a
+    The goal of Assignment is to provide an interface that mirrors a
     dictionary (what we have been using for assigning nodes to districts) while making it
     convenient/cheap to access the set of nodes in each part.
 
-    An :class:`Assignment` has a ``parts`` property that is a dictionary of the form
+    An Assignment has a ``parts`` property that is a dictionary of the form
     ``{part: <frozenset of nodes in part>}``.
     """
 
@@ -131,7 +131,7 @@ class Assignment(Mapping):
         """Convert to series.
 
         Returns:
-            pandas.Series: The assignment as a :class:`pandas.Series`.
+            pandas.Series: The assignment as a Series.
         """
         groups = [pandas.Series(data=part, index=nodes) for part, nodes in self.parts.items()]
         return pandas.concat(groups)
@@ -146,13 +146,13 @@ class Assignment(Mapping):
 
     @classmethod
     def from_dict(cls, assignment: dict) -> Assignment:
-        """Create an :class:`Assignment` from a dictionary.
+        """Create an Assignment from a dictionary.
 
         Args:
             assignment (Dict): dictionary mapping nodes to partition assignments
 
         Returns:
-            Assignment: A new instance of :class:`Assignment` with the same assignments as the
+            Assignment: A new instance of Assignment with the same assignments as the
                 passed-in dictionary.
         """
 
@@ -216,17 +216,17 @@ class Assignment(Mapping):
 def get_assignment(
     part_assignment: str | dict | Assignment, graph: Graph | None = None
 ) -> Assignment:
-    """Either extracts an :class:`Assignment` object from the input graph using the provided key or
-    attempts to convert part_assignment into an :class:`Assignment` object.
+    """Either extracts an Assignment object from the input graph using the provided key or
+    attempts to convert part_assignment into an Assignment object.
 
     Args:
-        part_assignment (str): A node attribute key, dictionary, or :class:`Assignment` object
+        part_assignment (str): A node attribute key, dictionary, or Assignment object
             corresponding to the desired assignment.
         graph (Optional[Graph], optional): The graph from which to extract the assignment. Default
             is None.
 
     Returns:
-        Assignment: An :class:`Assignment` object containing the assignment corresponding to the
+        Assignment: An Assignment object containing the assignment corresponding to the
             part_assignment input
 
     Raises:

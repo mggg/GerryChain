@@ -102,7 +102,7 @@ class Graph:
 
     @classmethod
     def from_networkx(cls, nx_graph: networkx.Graph) -> Graph:
-        """Create a :class:`Graph` from a NetworkX.Graph object.
+        """Create a Graph from a NetworkX.Graph object.
 
         This supports the use case of users creating a graph using NetworkX which is convenient -
         both for users of the previous implementation of a GerryChain object which was a subclass
@@ -139,7 +139,7 @@ class Graph:
 
     @classmethod
     def from_null_networkx(cls) -> Graph:
-        """Create a :class:`Graph` that has an empty embedded NetworkX Graph.
+        """Create a Graph that has an empty embedded NetworkX Graph.
 
         This was originally implemented as a way to encapsulate NetworkX dependencies in GerryChain
         code to this module (graph.py).
@@ -156,7 +156,7 @@ class Graph:
 
     @classmethod
     def from_rustworkx(cls, rx_graph: rustworkx.PyGraph) -> Graph:
-        """Create a :class:`Graph` from a RustworkX.PyGraph object.
+        """Create a Graph from a RustworkX.PyGraph object.
 
         There are three primary use cases for this routine: 1) converting an NX-based Graph to be
         an RX-based Graph, 2) creating a subgraph of an RX-based Graph, and 3) creating a Graph
@@ -584,9 +584,9 @@ class Graph:
 
     @classmethod
     def from_json(cls, json_file_name: str) -> Graph:
-        """Create a :class:`Graph` from a JSON file.
+        """Create a Graph from a JSON file.
 
-        This method creates a :class:`Graph` from a JSON file. It returns a GerryChain Graph object
+        This method creates a Graph from a JSON file. It returns a GerryChain Graph object
         with data from JSON file.
 
         Args:
@@ -647,11 +647,11 @@ class Graph:
         reproject: bool = False,
         ignore_errors: bool = False,
     ) -> Graph:
-        """Create a :class:`Graph` from a shapefile, GeoPackage, GeoJSON, or similar source.
+        """Create a Graph from a shapefile, GeoPackage, GeoJSON, or similar source.
 
-        This method reads any format that :mod:`geopandas` can load and builds a graph from it.
+        This method reads any format that `geopandas` can load and builds a graph from it.
 
-        See :meth:`from_geodataframe` for more details.
+        See `from_geodataframe` for more details.
 
         Args:
             filename (str): Path to the shapefile / GeoPackage / GeoJSON / etc.
@@ -696,7 +696,7 @@ class Graph:
         ignore_errors: bool = False,
         crs_override: str | int | None = None,
     ) -> Graph:
-        """Create the adjacency :class:`Graph` of geometries described by `dataframe`.
+        """Create the adjacency Graph of geometries described by `dataframe`.
 
         The areas of the polygons are included as node attributes (with key `area`). The shared
         perimeter of neighboring polygons are included as edge attributes (with key
@@ -713,7 +713,7 @@ class Graph:
         reference system. This option is for users who have a preferred CRS they would like to use.
 
         Args:
-            dataframe (:class:`geopandas.GeoDataFrame`): The GeoDateFrame to convert
+            dataframe (GeoDataFrame): The GeoDateFrame to convert
             adjacency (str, optional): The adjacency type to use ("rook" or "queen"). Default is
                 "rook".
             cols_to_add (Optional[list[str]], optional): The names of the columns that you want to
@@ -1078,7 +1078,7 @@ class Graph:
         """Add columns of a DataFrame to a graph as node attributes by matching the DataFrame's.
 
         Args:
-            df (:class:`pandas.DataFrame`): Dataframe containing given columns.
+            df (DataFrame): Dataframe containing given columns.
             columns (Optional[Iterable[str]], optional): list of dataframe column names to add.
                 Default is None.
 
@@ -1115,7 +1115,7 @@ class Graph:
         attribute equals the row's `right_index` value.
 
         Args:
-            dataframe (:class:`pandas.DataFrame`): DataFrame.
+            dataframe (DataFrame): DataFrame.
             columns (Optional[list[str]], optional): The columns whose data you wish to add to the
                 graph. If not provided, all columns are added. Default is None.
             left_index (Optional[str], optional): The node attribute used to match nodes to rows.
@@ -1508,13 +1508,16 @@ class Graph:
 
         # The code below was copied from GitHub and is under the 3-clause BSD license:
         #
-        #  https://github.com/networkx/networkx/blob/main/networkx/algorithms/traversal/breadth_first_search.py
+        #  https://github.com/networkx/networkx/blob/main/networkx/algorithms/
+        #      traversal/breadth_first_search.py
         #
-        #       Code was not modified - it worked as written for both rx.PyGraph and a graph.Graph object
+        #       Code was not modified. It worked as written for both rx.PyGraph
+        #       and a graph.Graph object
         #       with an RX graph embedded in it...
         #
-        #       The only changes was getting rid of the optional parameters in the NX function for
-        #       the neighbors function and the depth_limit - since the GerryChain code does not need them.
+        #       The only changes were removing optional parameters in the NX
+        #       function for neighbors and depth_limit, since GerryChain
+        #       does not need them.
 
         """Iterate over edges in a breadth-first search.
 
@@ -2228,8 +2231,8 @@ def add_boundary_perimeters(nx_graph: networkx.Graph, geometries: pd.Series) -> 
     get_nx_graph().
 
     Args:
-        graph (:class:`NetworkX.Graph`): NetworkX graph
-        geometries (:class:`pandas.Series`): :class:`geopandas.GeoSeries` containing geometry
+        graph (Graph): NetworkX graph
+        geometries (Series): GeoSeries containing geometry
             information.
 
     """
@@ -2285,7 +2288,7 @@ def remove_geometries(data: networkx.Graph) -> None:
 
     Args:
         data (networkx.Graph): an adjacency data object (returned by
-            :func:`networkx.readwrite.json_graph.adjacency_data`)
+            `networkx.readwrite.json_graph.adjacency_data`)
 
     """
     for node in data["nodes"]:
@@ -2307,7 +2310,7 @@ def convert_geometries_to_geojson(data: networkx.Graph) -> None:
 
     Args:
         data (networkx.Graph): an adjacency data object (returned by
-            :func:`networkx.readwrite.json_graph.adjacency_data`)
+            `networkx.readwrite.json_graph.adjacency_data`)
 
     """
     for node in data["nodes"]:
@@ -2316,17 +2319,17 @@ def convert_geometries_to_geojson(data: networkx.Graph) -> None:
             # as being a ``shapely`` geometry object
             if hasattr(node[key], "__geo_interface__"):
                 # The ``__geo_interface__`` property is essentially GeoJSON.
-                # This is what :func:`geopandas.GeoSeries.to_json` uses under
+                # This is what `geopandas.GeoSeries.to_json` uses under
                 # the hood.
                 node[key] = node[key].__geo_interface__
 
 
 class FrozenGraph:
     """
-    Represents an immutable graph to be partitioned. It is based off :class:`Graph`.
+    Represents an immutable graph to be partitioned. It is based off Graph.
 
     This speeds up chain runs and prevents having to deal with cache invalidation issues.
-    This class behaves slightly differently than :class:`Graph` or :class:`networkx.Graph`.
+    This class behaves slightly differently than Graph or Graph.
 
     Not intended to be a part of the public API.
 

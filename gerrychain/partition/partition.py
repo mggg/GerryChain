@@ -70,8 +70,8 @@ class Partition:
     lazily (on demand) and subsequently cached.
 
     Attributes:
-        graph (:class:`~gerrychain.Graph`): The underlying graph.
-        assignment (:class:`~gerrychain.assignment.Assignment`): Maps node IDs to district IDs.
+        graph (Graph): The underlying graph.
+        assignment (Assignment): Maps node IDs to district IDs.
         parts (Dict): Maps district IDs to the set of nodes in that district.
         subgraphs (Dict): Maps district IDs to the induced subgraph of that district.
     """
@@ -145,14 +145,14 @@ class Partition:
         partition created with a random assignment.
 
         Args:
-            graph (:class:`~gerrychain.Graph`): The graph to create the Partition from.
+            graph (Graph): The graph to create the Partition from.
             n_parts (int): The number of districts to divide the nodes into.
             epsilon (float): The maximum relative population deviation from the ideal
             pop_col (str): The column of the graph's node data that holds the population data.
             updaters (Optional[Dict[str, Callable]], optional): Dictionary of updaters
             use_default_updaters (bool, optional): If `False`, do not include default updaters.
             method (Callable, optional): The function to use to partition the graph into
-                ``n_parts``. Defaults to :func:`~gerrychain.tree.recursive_tree_part`.
+                ``n_parts``. Defaults to `gerrychain.tree.recursive_tree_part`.
 
         Returns:
             Partition: The partition created with a random assignment
@@ -311,7 +311,7 @@ class Partition:
         """Returns the new partition obtained by performing the given `flips` on this partition.
 
         This method returns the new partition obtained by performing the given `flips` on this
-        partition. It returns new :class:`Partition`.
+        partition. It returns new Partition.
 
         Args:
             flips (Dict): dictionary assigning nodes of the graph to their new districts
@@ -322,7 +322,7 @@ class Partition:
                 when we convert the underlying graph object).
 
         Returns:
-            Partition: the new :class:`Partition`
+            Partition: the new Partition
         """
 
         if flips_passed_in_use_original_nx_node_ids:
@@ -434,10 +434,10 @@ class Partition:
 
         Args:
             geometries (geopandas.GeoDataFrame or geopandas.GeoSeries): A
-                :class:`geopandas.GeoDataFrame` or :class:`geopandas.GeoSeries` holding the
-                geometries to use for plotting. Its :class:`~pandas.Index` should match the node
-                labels of the partition's underlying :class:`~gerrychain.Graph`.
-            `**kwargs` (Any): Additional arguments to pass to :meth:`geopandas.GeoDataFrame.plot`
+                GeoDataFrame or GeoSeries holding the
+                geometries to use for plotting. Its Index should match the node
+                labels of the partition's underlying Graph.
+            `**kwargs` (Any): Additional arguments to pass to `geopandas.GeoDataFrame.plot`
                 to adjust the plot.
 
         Returns:
@@ -479,7 +479,7 @@ class Partition:
         https://github.com/mggg-states
 
         Args:
-            graph (:class:`~gerrychain.Graph`): The graph to create the Partition from
+            graph (Graph): The graph to create the Partition from
             districtr_file (str): the path to the ``.json`` file exported from Districtr
             updaters (Optional[Dict[str, Callable]], optional): dictionary of updaters
 

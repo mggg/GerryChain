@@ -55,7 +55,7 @@ def epsilon_tree_bipartition(
         pop_col (str): Node attribute key holding population data.
         epsilon (float): How far (as a percentage of ``pop_target``) from ``pop_target`` the parts
             of the partition can be.
-        node_repeats (int, optional): Parameter for :func:`~gerrychain.tree.bipartition_tree` to
+        node_repeats (int, optional): Parameter for `gerrychain.tree.bipartition_tree` to
             use. Defaults to 1.
         bipartition_tree_fn (Callable, optional): The partition method to use. Defaults to
             `partial(bipartition_tree, max_attempts=10000)`.
@@ -138,14 +138,16 @@ def recom(
 
     Example usage:
 
-        from functools import partial from gerrychain import MarkovChain from gerrychain.proposals
-        import recom
+        from functools import partial
+        from gerrychain import MarkovChain
+        from gerrychain.proposals import recom
 
         # ...define constraints, accept, partition, total_steps here...
 
         # Ideal population: pop_target = sum(partition["population"].values()) / len(partition)
 
-        proposal = partial( recom, pop_col="POP10", pop_target=pop_target, epsilon=.05, node_repeats=10
+        proposal = partial(
+            recom, pop_col="POP10", pop_target=pop_target, epsilon=.05, node_repeats=10
         )
 
         chain = MarkovChain(proposal, constraints, accept, partition, total_steps)
@@ -161,7 +163,7 @@ def recom(
         region_surcharge (Optional[Dict], optional): The surcharge dictionary for the graph used
             for region-aware partitioning of the grid. Default is None.
         bipartition_tree_fn (Callable, optional): The method used for bipartitioning the tree.
-            Default is :func:`~gerrychain.tree.bipartition_tree`.
+            Default is `gerrychain.tree.bipartition_tree`.
 
     Returns:
         Partition: The new partition resulting from the ReCom algorithm.

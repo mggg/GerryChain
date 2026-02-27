@@ -76,7 +76,8 @@ class DataTally:
                 #
                 if math.isnan(add):
                     warnings.warn(
-                        f"ignoring nan encountered at node_id '{node_id}' for attribute '{self.alias}'"
+                        f"ignoring nan encountered at node_id '{node_id}' "
+                        f"for attribute '{self.alias}'"
                     )
                 else:
                     tally[part] += add
@@ -152,7 +153,7 @@ class Tally:
         """Compute initial part-level tallies for the configured field values.
 
         Args:
-            partition (:class:`~gerrychain.partition.Partition`): The partition to compute the
+            partition (Partition): The partition to compute the
                 tally for.
 
         Returns:
@@ -176,7 +177,7 @@ class Tally:
         """Compute the district-wide tally of data stored in the "field" attribute of nodes.
 
         Args:
-            partition (:class:`~gerrychain.partition.Partition`): The partition to update the tally
+            partition (Partition): The partition to update the tally
                 for.
 
         Returns:
@@ -205,7 +206,7 @@ def compute_out_flow(graph: Graph, fields: str | list[str], flow: dict[str, set[
     """Return sum of the "field" attribute of nodes in the "out" set of the flow.
 
     Args:
-        graph (:class:`~gerrychain.graph.Graph`): The graph that the partition is defined on.
+        graph (Graph): The graph that the partition is defined on.
         fields (Union[str, List[str]]): The list of node attributes that you want to tally. Or just
             a single attribute name as a string.
         flow (Dict): A dictionary containing the flow from the parent of this partition to this
@@ -222,7 +223,7 @@ def compute_in_flow(graph: Graph, fields: str | list[str], flow: dict[str, set[i
     """Return sum of the "field" attribute of nodes in the "in" set of the flow.
 
     Args:
-        graph (:class:`~gerrychain.graph.Graph`): The graph that the partition is defined on.
+        graph (Graph): The graph that the partition is defined on.
         fields (Union[str, List[str]]): The list of node attributes that you want to tally. Or just
             a single attribute name as a string.
         flow (Dict): A dictionary containing the flow from the parent of this partition to this

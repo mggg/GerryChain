@@ -587,7 +587,8 @@ def find_balanced_edge_cuts_memoization(
         # to examine thoroughly were not sufficiently complicated as to justify a
         # change in the implementation.
         #
-        # In addition, the published algorithm (Algorithm 6 here: https://mggg.org/uploads/ReCom.pdf)
+        # In addition, the published algorithm (Algorithm 6 here:
+        # https://mggg.org/uploads/ReCom.pdf)
         # samples uniformly # from the possible cut edges, so we should stick with that
         # until we have good reason to do otherwise.
         #
@@ -639,7 +640,7 @@ def _max_weight_choice(cut_edge_list: list[Cut]) -> Cut:
 
     This random weight is either assigned during the call to the minimum spanning tree algorithm
     (Kruskal's) algorithm or it is generated during the selection of the balanced edges (cf.
-    :meth:`find_balanced_edge_cuts_memoization` and :meth:`find_balanced_edge_cuts_contraction`).
+    `find_balanced_edge_cuts_memoization` and `find_balanced_edge_cuts_contraction`).
     This function returns the cut with the highest weight.
 
     In the case where a region aware chain is run, this will preferentially select for cuts that
@@ -716,7 +717,7 @@ def _region_preferred_max_weight_choice(
     """Selects a cut from a list of cuts based on the maximum weight, with a preference for
     cuts that span different regions.
 
-    This is similare to the :meth:`_max_weight_choice` function except that it will preferentially
+    This is similare to the `_max_weight_choice` function except that it will preferentially
     select one of the cuts that has the highest surcharge. So, if we have a weight dict of the form
     ``{region1: wt1, region2: wt2}`` , then this function first looks for a cut that is a cut edge
     for both ``region1`` and ``region2`` and then selects the one with the highest weight. If no
@@ -728,7 +729,7 @@ def _region_preferred_max_weight_choice(
     for a cut that is a cut edge for the region with the highest surcharge.
 
     For the case of 4 or more regions, the power set starts to get a bit large, so we default back
-    to the :meth:`_max_weight_choice` function and just select the cut with the highest weight,
+    to the `_max_weight_choice` function and just select the cut with the highest weight,
     which will still preferentially select for cuts that span the most regions that we care about.
 
     Args:
@@ -946,11 +947,11 @@ def _internal_bipartition_tree(
         spanning_tree (Optional[Graph], optional): The spanning tree for the algorithm to use (used
             when the algorithm chooses a new root and for testing).
         spanning_tree_fn (Callable, optional): The random spanning tree algorithm to use if a
-            spanning tree is not provided. Defaults to :func:`random_spanning_tree`.
+            spanning tree is not provided. Defaults to `random_spanning_tree`.
         region_surcharge (Optional[Dict], optional): A dictionary of surcharges for the spanning
             tree algorithm. Defaults to None.
         find_balanced_edge_cuts_fn (Callable, optional): The function to find balanced edge cuts.
-            Defaults to :func:`find_balanced_edge_cuts_memoization`.
+            Defaults to `find_balanced_edge_cuts_memoization`.
         one_sided_cut (bool, optional): Passed to the ``find_balanced_edge_cuts_fn``. Determines
             whether or not we are cutting off a single district when partitioning the tree. When
             set to False, we check if the node we are cutting and the remaining graph are both
@@ -958,7 +959,7 @@ def _internal_bipartition_tree(
             are cutting is within epsilon of the ideal population. Defaults to False.
         rootnode_choice_fn (Callable, optional): The function to make a random choice of root node
             for the population tree. Passed to ``find_balanced_edge_cuts_fn``. Can be substituted
-            for testing. Defaults to :func:`random.random()`.
+            for testing. Defaults to `random.random()`.
         max_attempts (Optional[int], optional): The maximum number of attempts that should be made
             to bipartition. Defaults to 10000.
         warn_attempts (int, optional): The number of attempts after which a warning is issued if a
@@ -967,7 +968,7 @@ def _internal_bipartition_tree(
             calling function to ask it to reselect the pair of nodes to try and recombine. Defaults
             to False.
         cut_choice_fn (Callable, optional): The function used to select the cut edge from the list
-            of possible balanced cuts. Defaults to :meth:`_region_preferred_max_weight_choice`.
+            of possible balanced cuts. Defaults to `_region_preferred_max_weight_choice`.
             Note that this function should gracefully handle the case when the edges in the list of
             possible balanced cuts do not have edge weights - in this case, it should default to
             just random.random().
@@ -991,7 +992,8 @@ def _internal_bipartition_tree(
 
     # Find possible edge cuts if they exist.
     #
-    # Note that _get_possible_edge_cuts_and_populated_graph() will raise and exception if max_attempts is exceeded.
+    # Note that _get_possible_edge_cuts_and_populated_graph() raises an
+    # exception if max_attempts is exceeded.
     #
     possible_cuts, populated_graph = _get_possible_edge_cuts_and_populated_graph(
         graph_to_split=subgraph_to_split,
@@ -1020,8 +1022,8 @@ def _internal_bipartition_tree(
 
     num_cuts = len(possible_cuts)
     if num_cuts != 0:
-        # frm: TODO: ???:  Is it an error to pass in a None value for region_surcharge,
-        #                  but to also pass a cut_choice_fn function that expects a region_surcharge?
+        # frm: TODO: ???: Is it an error to pass in a None value for
+        # region_surcharge, but also pass a cut_choice_fn that expects it?
 
         is_region_cut = (
             "region_surcharge" in signature(cut_choice_fn).parameters
@@ -1102,11 +1104,11 @@ def bipartition_tree(
         spanning_tree (Optional[Graph], optional): The spanning tree for the algorithm to use (used
             when the algorithm chooses a new root and for testing).
         spanning_tree_fn (Callable, optional): The random spanning tree algorithm to use if a
-            spanning tree is not provided. Defaults to :func:`random_spanning_tree`.
+            spanning tree is not provided. Defaults to `random_spanning_tree`.
         region_surcharge (Optional[Dict], optional): A dictionary of surcharges for the spanning
             tree algorithm. Defaults to None.
         find_balanced_edge_cuts_fn (Callable, optional): The function to find balanced edge cuts.
-            Defaults to :func:`find_balanced_edge_cuts_memoization`.
+            Defaults to `find_balanced_edge_cuts_memoization`.
         one_sided_cut (bool, optional): Passed to the ``find_balanced_edge_cuts_fn``. Determines
             whether or not we are cutting off a single district when partitioning the tree. When
             set to False, we check if the node we are cutting and the remaining graph are both
@@ -1114,7 +1116,7 @@ def bipartition_tree(
             are cutting is within epsilon of the ideal population. Defaults to False.
         rootnode_choice_fn (Callable, optional): The function to make a random choice of root node
             for the population tree. Passed to ``find_balanced_edge_cuts_fn``. Can be substituted
-            for testing. Defaults to :func:`random.random()`.
+            for testing. Defaults to `random.random()`.
         max_attempts (Optional[int], optional): The maximum number of attempts that should be made
             to bipartition. Defaults to 10000.
         warn_attempts (int, optional): The number of attempts after which a warning is issued if a
@@ -1123,7 +1125,7 @@ def bipartition_tree(
             calling function to ask it to reselect the pair of nodes to try and recombine. Defaults
             to False.
         cut_choice_fn (Callable, optional): The function used to select the cut edge from the list
-            of possible balanced cuts. Defaults to :meth:`_region_preferred_max_weight_choice`.
+            of possible balanced cuts. Defaults to `_region_preferred_max_weight_choice`.
             Note that this function should gracefully handle the case when the edges in the list of
             possible balanced cuts do not have edge weights - in this case, it should default to
             just random.random().
@@ -1268,7 +1270,8 @@ def _get_possible_edge_cuts_and_populated_graph(
     restarts = 0
     attempts = 0
 
-    # frm: TODO: Code: When would it make sense for max_attempts to be None?  Infinite loop potential...
+    # frm: TODO: Code: When would it make sense for max_attempts to be None?
+    # Infinite loop potential...
     #
     # Peter agreed (January 2026) - he said we should force it to be an int and put a defensive
     # check before this...
@@ -1379,7 +1382,7 @@ def bipartition_tree_random_with_num_cuts(
     max_attempts: int | None = 100000,
     cut_choice_fn: Callable = random.choice,
 ) -> tuple[int, set[Any]]:
-    """This is like :func:`bipartition_tree` except it always chooses a random balanced cut.
+    """This is like `bipartition_tree` except it always chooses a random balanced cut.
 
     This function finds a balanced 2 partition of a graph by drawing a spanning tree and finding an
     edge to cut that leaves at most an epsilon imbalance between the populations of the parts. If
@@ -1403,16 +1406,16 @@ def bipartition_tree_random_with_num_cuts(
         spanning_tree (Optional[Graph], optional): The spanning tree for the algorithm to use (used
             when the algorithm chooses a new root and for testing). Defaults to None.
         spanning_tree_fn (Callable, optional): The random spanning tree algorithm to use if a
-            spanning tree is not provided. Defaults to :func:`random_spanning_tree`.
+            spanning tree is not provided. Defaults to `random_spanning_tree`.
         find_balanced_edge_cuts_fn (Callable, optional): The algorithm used to find balanced cut
-            edges. Defaults to :func:`find_balanced_edge_cuts_memoization`.
+            edges. Defaults to `find_balanced_edge_cuts_memoization`.
         one_sided_cut (bool, optional): Passed to the ``find_balanced_edge_cuts_fn``. Determines
             whether or not we are cutting off a single district when partitioning the tree. When
             set to False, we check if the node we are cutting and the remaining graph are both
             within epsilon of the ideal population. When set to True, we only check if the node we
             are cutting is within epsilon of the ideal population. Defaults to False.
         rootnode_choice_fn (Callable, optional): The random choice function. Can be substituted for
-            testing. Defaults to :func:`random.choice`.
+            testing. Defaults to `random.choice`.
         max_attempts (Optional[int], optional): The max number of attempts that should be made to
             bipartition. Defaults to None.
         cut_choice_fn (Callable, optional): The function to use to select which cut to use if there
@@ -1471,10 +1474,14 @@ class PopulationBalanceError(Exception):
 
 # frm: Note to Peter - moved _get_seed_chunks() to partition/initial_partition_generators.py
 
-# frm: Note to Peter - moved get_max_prime_factor_less_than() to partition/initial_partition_generators.py
+# frm: Note to Peter - moved get_max_prime_factor_less_than() to
+# partition/initial_partition_generators.py
 
-# frm: Note to Peter - moved _recursive_seed_part_inner() to partition/initial_partition_generators.py
+# frm: Note to Peter - moved _recursive_seed_part_inner() to
+# partition/initial_partition_generators.py
 
-# frm: Note to Peter - moved _recursive_seed_part_inner() to partition/initial_partition_generators.py
+# frm: Note to Peter - moved _recursive_seed_part_inner() to
+# partition/initial_partition_generators.py
 
-# frm: Note to Peter - moved _recursive_seed_part_inner() to partition/initial_partition_generators.py
+# frm: Note to Peter - moved _recursive_seed_part_inner() to
+# partition/initial_partition_generators.py

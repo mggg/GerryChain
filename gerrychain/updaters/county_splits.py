@@ -14,7 +14,7 @@ A named tuple to store county split information.
 
 Args:
     split (int): The county split status. Makes use of
-        :class:`.CountySplit` enum to compute.
+        CountySplit enum to compute.
     nodes (List): The nodes that are contained in the county.
     contains (Set): The assignment IDs that are contained in the county.
 """
@@ -39,12 +39,12 @@ def county_splits(partition_name: str, county_field_name: str) -> Callable:
     """An updater for tracking the number of counties that are split in a partition.
 
     Args:
-        partition_name (str): Name that the :class:`.Partition` instance will store.
+        partition_name (str): Name that the Partition instance will store.
         county_field_name (str): Name of county ID field on the graph.
 
     Returns:
         Callable: The tracked data is a dictionary keyed on the county ID. The stored values are
-            tuples of the form `(split, nodes, seen)`. `split` is a :class:`.CountySplit` enum,
+            tuples of the form `(split, nodes, seen)`. `split` is a CountySplit enum,
             `nodes` is a list of node IDs, and `seen` is a list of assignment IDs that are
             contained in the county.
     """
@@ -61,7 +61,7 @@ def compute_county_splits(
     """Computes the number of counties that are split in a partition.
 
     Args:
-        partition (:class:`~gerrychain.partition.Partition`): The partition object to compute
+        partition (Partition): The partition object to compute
             county splits for.
         county_field (str): Name of county ID field on the graph.
         partition_field (str): Name of the attribute in the graph that stores the partition

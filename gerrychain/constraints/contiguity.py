@@ -103,7 +103,8 @@ def _are_reachable(graph: Graph, start_node: Any, avoid: Callable, targets: Any)
             if avoid(node_id, neighbor_node_id):
                 # If the current neighbor is to be avoided, skip it...
 
-                # frm: TODO: Refactoring: Just use: if not avoid(node_id, neighbor_node_id): instead of continue
+                # frm: TODO: Refactoring: Just use if not avoid(node_id,
+                # neighbor_node_id) instead of continue.
                 #
                 # For lots of reasons, it is best to avoid leaving a loop in multiple ways...
                 #
@@ -151,7 +152,7 @@ def single_flip_contiguous(partition: Partition) -> bool:
 
 
     Args:
-        partition (Partition): The proposed next :class:`~gerrychain.partition.Partition`
+        partition (Partition): The proposed next Partition
 
     Returns:
         bool: whether the partition is contiguous
@@ -213,7 +214,7 @@ def _affected_parts(partition: Partition) -> set[int]:
     """Checks which partitions were affected by the change of nodes.
 
     Args:
-        partition (Partition): The proposed next :class:`~gerrychain.partition.Partition`
+        partition (Partition): The proposed next Partition
 
     Returns:
         Set[int]: The set of IDs of all parts that gained or lost a node when compared to the
@@ -243,7 +244,7 @@ def contiguous(partition: Partition) -> bool:
     all components of the partition are contiguous.
 
     Args:
-        partition (Partition): The proposed next :class:`~gerrychain.partition.Partition`
+        partition (Partition): The proposed next Partition
 
     Returns:
         bool: Whether the partition is contiguous

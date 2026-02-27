@@ -60,7 +60,7 @@ class LocalitySplits:
             'naked_boundary', 'shannon_entropy', 'power_entropy',
             'symmetric_entropy', 'num_split_localities']```
         pent_alpha (float): A number between 0 and 1 which is passed as the
-            exponent to :meth:`~LocalitySplits.power_entropy`
+            exponent to `LocalitySplits.power_entropy`
         localities (List[str]): A list containing the unique locality identifiers
             (e.g. county names, municipality names, etc.) for the partition.
             This list is populated using the locality data stored on each of
@@ -101,7 +101,7 @@ class LocalitySplits:
                 'power_entropy', 'symmetric_entropy', 'num_split_localities']```. Default is
                 ["num_parts"].
             pent_alpha (float, optional): A number between 0 and 1 which is passed as the exponent
-                to :meth:`~LocalitySplits.power_entropy`. Default is 0.05.
+                to `LocalitySplits.power_entropy`. Default is 0.05.
         """
 
         self.name = name
@@ -245,7 +245,7 @@ class LocalitySplits:
         """Calculates the number of unique locality-district pairs.
 
         Args:
-            partition (:class:`~gerrychain.Partition`): The partition to be scored.
+            partition (Partition): The partition to be scored.
 
         Returns:
             int: The number of parts, i.e. the number of unique locality-district pairs.
@@ -262,7 +262,7 @@ class LocalitySplits:
 
 
         Args:
-            partition (:class:`~gerrychain.Partition`): The partition to be scored.
+            partition (Partition): The partition to be scored.
 
         Returns:
             int: Number of pieces, where each piece is formed by cutting the graph by both locality
@@ -295,7 +295,7 @@ class LocalitySplits:
         """Computes the number of cut edges inside localities.
 
         Args:
-            partition (:class:`~gerrychain.Partition`): The partition to be scored.
+            partition (Partition): The partition to be scored.
 
         Returns:
             int: The number of cut edges within a locality.
@@ -316,7 +316,7 @@ class LocalitySplits:
         """Computes the shannon entropy score of a district plan.
 
         Args:
-            partition (:class:`~gerrychain.Partition`): The partition to be scored.
+            partition (Partition): The partition to be scored.
 
         Returns:
             float: Shannon entropy score.
@@ -358,7 +358,7 @@ class LocalitySplits:
         """Computes the power entropy score of a district plan.
 
         Args:
-            partition (:class:`~gerrychain.Partition`): The partition to be scored.
+            partition (Partition): The partition to be scored.
 
         Returns:
             float: Power entropy score.
@@ -403,7 +403,7 @@ class LocalitySplits:
             This method is currently in progress and may not be fully functional.
 
         Args:
-            partition (:class:`~gerrychain.Partition`): The partition to be scored.
+            partition (Partition): The partition to be scored.
 
         Returns:
             float: The symmetric square root entropy score.
@@ -448,7 +448,7 @@ class LocalitySplits:
         """Calculates the number of localities touching 2 or more districts.
 
         Args:
-            partition (:class:`~gerrychain.Partition`): The partition to be scored.
+            partition (Partition): The partition to be scored.
 
         Returns:
             int: The number of split localities, i.e. the number of localities touching 2 or more

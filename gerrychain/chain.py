@@ -8,7 +8,7 @@ Key Components:
 
 - MarkovChain: The main class used for creating and iterating over Markov chain states.
 - Validator: A helper class for validating proposed states in the Markov chain. See
-  :class:`~gerrychain.constraints.Validator` for more details.
+  Validator for more details.
 
 
 Usage:
@@ -65,21 +65,23 @@ class MarkovChain:
             constraints (Union[Iterable[Callable], Validator, Iterable[Bounds], Callable]): A
                 function with signature ``Partition -> bool`` determining whether the proposed next
                 state is valid (passes all binary constraints). Usually this is a
-                :class:`~gerrychain.constraints.Validator` class instance.
+                Validator class instance.
             accept (Callable): Function accepting or rejecting the proposed state. In the most
                 basic use case, this always returns ``True``. But if the user wanted to use a
                 Metropolis-Hastings acceptance rule, this is where you would implement it.
-            initial_state (Partition): Initial :class:`gerrychain.partition.Partition` class.
+            initial_state (Partition): Initial Partition class.
             total_steps (int): Number of steps to run.
 
         Raises:
             ValueError: If the initial_state is not valid according to the constraints.
         """
 
-        # frm: TODO: Refactoring: Is it worth it to investigate whether the proposal function makes sense?
+        # frm: TODO: Refactoring: Is it worth it to investigate whether the
+        # proposal function makes sense?
         #
-        # I just feel a little odd about accepting a Callable with no checking that it does what it is supposed
-        # to do.  I know that this sounds like a broken record, but when a function parameter does the wrong
+        # I just feel a little odd about accepting a Callable with no checking
+        # that it does what it is supposed to do. I know this sounds like a
+        # broken record, but when a function parameter does the wrong
         # thing it can be hell to debug...
 
         if callable(constraints):

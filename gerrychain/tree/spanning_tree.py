@@ -93,12 +93,14 @@ node_ids for this function and all will be well...
 """
 
 
-# frm: TODO: Refactoring:  random_spanning_tree() and uniform_spanning_tree() should have same signature
+# frm: TODO: Refactoring: random_spanning_tree() and uniform_spanning_tree()
+# should have the same signature.
 #
-# These two functions are essentially instances of a generic spanning_tree_fn that is used as a
-# function parameter.  Because these two routines have different signatures in the current
-# codebase, the routines that take a spanning_tree_fn parameter need to inspect the actual
-# parameter's signature to see what to do, which is kind of exactly what a generic should NOT be.
+# These two functions are essentially instances of a generic spanning_tree_fn
+# used as a function parameter. Because these two routines have different
+# signatures in the current codebase, routines that take a spanning_tree_fn
+# parameter need to inspect the actual parameter signature to see what to do,
+# which is exactly what a generic should not require.
 #
 # So, I suggest that we modify the signatures of these two functions so that they have the
 # same signature, which would be:
@@ -344,7 +346,7 @@ def uniform_spanning_tree(graph: Graph, choice: Callable = random.choice) -> Gra
 
     Args:
         graph (Graph): Graph
-        choice (Callable, optional): :func:`random.choice`. Defaults to :func:`random.choice`.
+        choice (Callable, optional): `random.choice`. Defaults to `random.choice`.
 
     Returns:
         Graph: A spanning tree of the graph chosen uniformly at random.

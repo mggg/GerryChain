@@ -8,7 +8,7 @@ Dependencies:
 
 - math: For math.floor() function.
 - networkx: For graph operations with using the graph structure in
-    :class:`~gerrychain.graph.Graph`.
+    Graph.
 - typing: Used for type hints.
 """
 
@@ -34,7 +34,7 @@ from gerrychain.updaters import (
 
 class Grid(Partition):
     """
-    The :class:`Grid` class is a subclass of Partition.  It represents a grid graph
+    The Grid class is a subclass of Partition.  It represents a grid graph
     with some node data and some edge data and that has been partitioned into
     districts (parts).  It is a quick way to get a Partition that you can then
     experiment with.
@@ -45,7 +45,7 @@ class Grid(Partition):
     In a real GerryChain task, one would typically need to find data, clean that data
     (for instance to get rid of islands), make sure that the data you wanted
     for your analysis exists for every node (for instance, population), and then
-    create an initial assignment of nodes to districts (parts).  The :class:`Grid`
+    create an initial assignment of nodes to districts (parts).  The Grid
     class allows you to obtain a Partition object that has all of those tasks
     already done.
 
@@ -241,7 +241,7 @@ def _tag_boundary_nodes(nx_graph: networkx.Graph, dimensions: tuple[int, int]) -
     """Adds the boolean attribute ``boundary_node`` to each node in the graph.
 
     If the node is on the boundary of the grid, that node also gets the attribute
-    ``boundary_perim`` which is determined by the function :func:`_get_boundary_perim`.
+    ``boundary_perim`` which is determined by the function `_get_boundary_perim`.
 
     Args:
         graph (Graph): The graph to modify.

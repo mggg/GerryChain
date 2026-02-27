@@ -17,7 +17,7 @@ def _num_spanning_trees_in_district(partition: Partition, district: int) -> int:
     """Computes the number of spanning trees in a subgraph of the partition defined by a district.
 
     Args:
-        partition (:class:`gerrychain.Partition`): :class:`gerrychain.Partition`
+        partition (Partition): Partition
         district (int): A district label (part) in the partition.
 
     Returns:

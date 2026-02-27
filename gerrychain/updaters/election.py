@@ -19,10 +19,10 @@ class Election:
     to tabulate hypothetical elections. To do this manually with tallies, we would
     have to maintain tallies for each party, as well as the total number of votes,
     and then compute the electoral results and percentages from scratch every time.
-    To make this simpler, this class provides an :class:`ElectionUpdater` to manage
-    these tallies. The updater returns an :class:`ElectionResults` class giving
+    To make this simpler, this class provides an ElectionUpdater to manage
+    these tallies. The updater returns an ElectionResults class giving
     a convenient view of the election results, with methods like
-    :meth:`~ElectionResults.wins` or :meth:`~ElectionResults.percent` for common queries
+    `ElectionResults.wins` or `ElectionResults.percent` for common queries
     the user might make on election results.
 
     Example usage:
@@ -59,11 +59,11 @@ class Election:
         party_names_to_node_attribute_names (Dict[str, str]): A dictionary mapping party names to
         the
             node_attribute_names in the graph's node data that hold the vote totals for that party.
-        tallies (Dict[str, DataTally]): A dictionary mapping party names to :class:`DataTally`
+        tallies (Dict[str, DataTally]): A dictionary mapping party names to DataTally
         objects
             that manage the vote totals for that party.
-        updater (ElectionUpdater): An :class:`ElectionUpdater` object that manages the tallies
-            and returns an :class:`ElectionResults` object.
+        updater (ElectionUpdater): An ElectionUpdater object that manages the tallies
+            and returns an ElectionResults object.
         alias (str): The name that the election is registered under in the
             partition's dictionary of updaters.
     """
@@ -191,7 +191,12 @@ class Election:
         )
 
     def __repr__(self) -> str:
-        return f"Election(parties={str(self.parties)}, node_attribute_names={str(self.node_attribute_names)}, alias={str(self.alias)})"
+        return (
+            "Election("
+            f"parties={str(self.parties)}, "
+            f"node_attribute_names={str(self.node_attribute_names)}, "
+            f"alias={str(self.alias)})"
+        )
 
     def __call__(self, partition: Partition) -> ElectionResults:
         return self.updater(partition)
@@ -201,10 +206,10 @@ class ElectionUpdater:
     """
     The updater for computing the election results in each part of the partition after
     each step in the Markov chain. The actual results are returned to the user as
-    an :class:`ElectionResults` instance.
+    an ElectionResults instance.
 
     Attributes:
-        election (Election): The :class:`Election` object that this updater is associated with.
+        election (Election): The Election object that this updater is associated with.
     """
 
     def __init__(self, election: Election) -> None:
@@ -226,7 +231,7 @@ class ElectionUpdater:
         """Returns a dictionary mapping party names to the vote totals that party received in each.
 
         Args:
-            partition (:class:`Partition`): The partition whose parent we want to obtain the
+            partition (Partition): The partition whose parent we want to obtain the
                 previous vote totals from.
 
         Returns:
@@ -267,7 +272,7 @@ class ElectionResults:
     common questions you might have about an election (Who won? How many seats?, etc.).
 
     Attributes:
-        election (Election): The :class:`Election` object that these results are associated with.
+        election (Election): The Election object that these results are associated with.
         totals_for_party (Dict[str, Dict[int, float]]): A dictionary mapping party names to the
         total number of votes
             that party received in each part of the partition.
@@ -293,7 +298,7 @@ class ElectionResults:
         """Initialize a ElectionResults instance.
 
         Args:
-            election (Election): The :class:`Election` object that these results are associated
+            election (Election): The Election object that these results are associated
                 with.
             counts (Dict[str, Dict[int, float]]): A dictionary mapping party names to the total
                 number of votes that party received in each part of the partition.
@@ -332,7 +337,7 @@ class ElectionResults:
         return sum(self.won(party, region) for region in self.regions)
 
     def wins(self, party: str) -> int:
-        """An alias for :meth:`seats`.
+        """An alias for `seats`.
 
         Args:
             party (str): Party name
@@ -408,7 +413,7 @@ class ElectionResults:
         return tuple(self.totals_for_party[party][region] for region in self.regions)
 
     def votes(self, party: str) -> tuple:
-        """An alias for :meth:`counts`.
+        """An alias for `counts`.
 
         It returns a tuple of the total votes cast for ``party`` in each part of the partition.
 
@@ -447,7 +452,7 @@ class ElectionResults:
     def mean_median(self) -> float:
         """Computes the mean-median score for this ElectionResults object.
 
-        See: :func:`~gerrychain.metrics.partisan.mean_median`
+        See: `gerrychain.metrics.partisan.mean_median`
 
         Returns:
             float: The mean-median score for this election.
@@ -457,7 +462,7 @@ class ElectionResults:
     def mean_thirdian(self) -> float:
         """Computes the mean-thirdian score for this ElectionResults object.
 
-        See: :func:`~gerrychain.metrics.partisan.mean_thirdian`
+        See: `gerrychain.metrics.partisan.mean_thirdian`
 
         Returns:
             float: The mean-thirdian score for this election.
@@ -467,7 +472,7 @@ class ElectionResults:
     def efficiency_gap(self) -> float:
         """Computes the efficiency gap for this ElectionResults object.
 
-        See: :func:`~gerrychain.metrics.partisan.efficiency_gap`
+        See: `gerrychain.metrics.partisan.efficiency_gap`
 
         Returns:
             float: The efficiency gap for this election.
@@ -477,7 +482,7 @@ class ElectionResults:
     def partisan_bias(self) -> float:
         """Computes the partisan bias for this ElectionResults object.
 
-        See: :func:`~gerrychain.metrics.partisan.partisan_bias`
+        See: `gerrychain.metrics.partisan.partisan_bias`
 
         Returns:
             float: The partisan bias for this election.
@@ -487,7 +492,7 @@ class ElectionResults:
     def partisan_gini(self) -> float:
         """Computes the Gini score for this ElectionResults object.
 
-        See: :func:`~gerrychain.metrics.partisan.partisan_gini`
+        See: `gerrychain.metrics.partisan.partisan_gini`
 
         Returns:
             float: The partisan Gini score for this election.

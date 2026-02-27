@@ -47,7 +47,7 @@ class SingleMetricOptimizer:
             constraints (Union[Callable[[Partition], bool], List[Callable[[Partition], bool]]]): A
                 function, or lists of functions, determining whether the proposed next state is
                 valid (passes all binary constraints). Usually this is a
-                :class:`~gerrychain.constraints.Validator` class instance.
+                Validator class instance.
             initial_state (Partition): Initial state of the optimizer.
             optimization_metric (Callable[[Partition], Any]): The score function with which to
                 optimize over. This should have the signature: ``Partition -> 'a`` where 'a is
@@ -373,7 +373,7 @@ class SingleMetricOptimizer:
             burst_length (int): Number of steps to run within each burst.
             num_bursts (int): Number of bursts to perform.
             accept (Callable[[Partition], bool], optional): Function accepting or rejecting the
-                proposed state. Defaults to :func:`~gerrychain.accept.always_accept`.
+                proposed state. Defaults to `gerrychain.accept.always_accept`.
             with_progress_bar (bool, optional): Whether or not to draw tqdm progress bar. Defaults
                 to False.
 
@@ -497,7 +497,7 @@ class SingleMetricOptimizer:
             stuck_buffer (int): How many bursts of a given length with no improvement to allow
                 before increasing the burst length.
             accept (Callable[[Partition], bool], optional): Function accepting or rejecting the
-                proposed state. Defaults to :func:`~gerrychain.accept.always_accept`.
+                proposed state. Defaults to `gerrychain.accept.always_accept`.
             with_progress_bar (bool, optional): Whether or not to draw tqdm progress bar. Defaults
                 to False.
 

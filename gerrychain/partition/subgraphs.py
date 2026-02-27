@@ -5,7 +5,7 @@ from ..graph import Graph
 
 class SubgraphView:
     """
-    A view for accessing subgraphs of :class:`Graph` objects.
+    A view for accessing subgraphs of Graph objects.
 
     This class makes use of a subgraph cache to avoid recomputing subgraphs
     which can speed up computations when working with district assignments

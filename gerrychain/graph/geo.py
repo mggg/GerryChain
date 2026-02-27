@@ -61,7 +61,7 @@ def invalid_geometries(df: GeoDataFrame) -> list[int]:
     """Given a GeoDataFrame, returns a list of row indices with invalid geometries.
 
     Args:
-        df (:class:`geopandas.GeoDataFrame`): The GeoDataFrame to examine
+        df (GeoDataFrame): The GeoDataFrame to examine
 
     Returns:
         list of int: List of row indices with invalid geometries
@@ -78,10 +78,10 @@ def reprojected(df: GeoDataFrame) -> GeoDataFrame:
     """Returns a copy of `df`, projected into the CRS of a suitable UTM zone.
 
     Args:
-        df (:class:`geopandas.GeoDataFrame`): The GeoDataFrame to reproject
+        df (GeoDataFrame): The GeoDataFrame to reproject
 
     Returns:
-        :class:`geopandas.GeoDataFrame`: A copy of `df`, projected into the coordinate reference
+        GeoDataFrame: A copy of `df`, projected into the coordinate reference
             system of a suitable UTM zone.
     .. _`Universal Transverse Mercator`: https://en.wikipedia.org/wiki/UTM_coordinate_system
     """
