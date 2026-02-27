@@ -570,7 +570,11 @@ def test_reversible_recom_works_as_a_proposal(partition_with_pop):
     graph = partition_with_pop.graph
     ideal_pop = sum(graph.node_data(node)["pop"] for node in graph) / 2
     proposal = functools.partial(
-        reversible_recom, pop_col="pop", pop_target=ideal_pop, epsilon=0.10, M=1
+        reversible_recom,
+        pop_col="pop",
+        pop_target=ideal_pop,
+        epsilon=0.10,
+        max_balanced_edge_cuts=1,
     )
     constraints = [within_percent_of_ideal_population(partition_with_pop, 0.25, "pop")]
 

@@ -1,20 +1,27 @@
 """
 This module provides tools for working with graphs in the context of geographic data.
-It extends the functionality of the NetworkX library, adding support for spatial data structures,
-geographic projections, and serialization to and from JSON format.
+
+It defines a Graph class (similar in many ways to NetworkX.Graph) with standard
+graph functionality along with some GerryChain specific functionality.
+
+It defines a FrozenGraph class which makes a Graph immutable in order to speed
+up operations on the graph once the graph has been created (and no additional nodes
+or edges will be added to the graph).
+
+It also defines some utility functions to manage external data.
 
 This module is designed to be used in conjunction with geopandas, shapely, and pandas libraries,
 facilitating the integration of graph-based algorithms with geographic information systems (GIS).
 
 Note:
-This module relies on NetworkX, pandas, and geopandas, which should be installed and
+This module relies on NetworkX, RustworkX, pandas, and geopandas, which should be installed and
 imported as required.
 
-TODO: Documentation: Update top-level documentation for graph.py
 """
 
 import functools
 import json
+import random
 import warnings
 
 # frm: codereview note: removed type hints that are now baked into Python
@@ -34,10 +41,6 @@ from .adjacency import neighbors
 from .geo import GeometryError, invalid_geometries, reprojected
 
 
-# frm: TODO: Refactor: Move json_serialize() closer to its use.
-#
-# It should not be the first thing someone sees when looking at this code...
-#
 def json_serialize(input_object: Any) -> Optional[int]:
     """
     This function is used to handle one of the common issues that
@@ -368,7 +371,6 @@ class Graph:
         """
         return self._node_id_to_original_nx_node_id_map[internal_node_id]
 
-    # frm: TODO: Testing: Create a test for this routine
     def original_nx_node_ids_for_set(self, set_of_node_ids: set[Any]) -> Any:
         """
         Translate a set of node_ids to their "original" node_ids.
@@ -383,7 +385,6 @@ class Graph:
         new_set = {_node_id_to_original_nx_node_id_map[node_id] for node_id in set_of_node_ids}
         return new_set
 
-    # frm: TODO: Testing: Create a test for this routine
     def original_nx_node_ids_for_list(self, list_of_node_ids: list[Any]) -> list[Any]:
         """
         Translate a list of node_ids to their "original" node_ids.
@@ -656,7 +657,6 @@ class Graph:
 
         :rtype: None
         """
-        # frm TODO: Code: Implement graph.to_json for an RX based graph
         if not self.is_nx_graph():
             raise TypeError("Graph passed to 'to_json()' is not a networkx graph")
 
@@ -1209,13 +1209,7 @@ class Graph:
 
         column_dictionaries = df.to_dict()
 
-        # frm: TODO: Code: Implement graph.join() for RX
-        #
-        # This is low priority given that current suggested coding
-        # strategy of creating the graph using NX and then letting
-        # GerryChain convert it automatically to RX.  In this scenario
-        # any joins would happen to the NX-based graph only.
-
+        # In the future it might make sense to support this for RX...
         if not self.is_nx_graph():
             raise TypeError("Graph passed to join() is not a networkx graph")
         nx_graph = self._nx_graph
@@ -1586,6 +1580,24 @@ class Graph:
         for node_id in set_of_nodes:
             translated_set_of_nodes.add(self._node_id_to_parent_node_id_map[node_id])
         return translated_set_of_nodes
+
+    # frm: TODO: Performance: This code was obtained from the web - probably could be optimized...
+    def is_connected_bfs(self):
+
+        nodes = list(self.node_indices)
+
+        start_node = random.choice(nodes)
+        visited = {start_node}
+        queue = [start_node]
+
+        while queue:
+            current_node = queue.pop(0)
+            for neighbor in self.neighbors(current_node):
+                if neighbor not in visited:
+                    visited.add(neighbor)
+                    queue.append(neighbor)
+
+        return len(visited) == len(nodes)
 
     def _generic_bfs_edges(self, source) -> Generator[tuple[Any, Any], None, None]:
         """

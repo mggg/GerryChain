@@ -13,7 +13,7 @@ Dependencies:
 """
 
 import math
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Callable, Dict, Optional, Tuple
 
 import networkx
 
@@ -227,34 +227,6 @@ def _create_grid_nx_graph(dimensions: Tuple[int, ...], with_diagonals: bool) -> 
     _tag_boundary_nodes(nx_graph, dimensions)
 
     return Graph.from_networkx(nx_graph)
-
-
-# frm: TODO: Refactoring: give_constant_attribute() is never used - delete it?
-#
-# This routine is never used in GerryChain code, and its implementation is
-# trivial, so I am inclined to delete it - but perhaps it is used in legacy code?
-#
-# If we keep it, however, it should be moved to graph.py as it is a general purpose
-# graph utility not a Grid related function.
-#
-# Peter said (January 2026): Nah, let's get rid of it...
-
-
-def give_constant_attribute(graph: Graph, attribute: Any, value: Any) -> None:
-    """
-    Sets the specified attribute to the specified value for all nodes in the graph.
-
-    :param graph: The graph to modify.
-    :type graph: Graph
-    :param attribute: The attribute to set.
-    :type attribute: Any
-    :param value: The value to set the attribute to.
-    :type value: Any
-
-    :returns: None
-    """
-    for node_id in graph.node_indices:
-        graph.node_data(node_id)[attribute] = value
 
 
 def _tag_boundary_nodes(nx_graph: networkx.Graph, dimensions: Tuple[int, int]) -> None:

@@ -7,28 +7,6 @@ from ..graph import Graph
 from ..partition import Partition
 from .bounds import SelfConfiguringLowerBound
 
-# frm: TODO: Performance: Think about the efficiency of the routines in this module.
-#
-# Almost all of these involve traversing the entire graph, and I fear that callers
-# might make multiple calls.  Possible solutions are to 1) speed up these routines
-# somehow and 2) cache results so that at least we don't do the traversals over and over.
-
-# frm: TODO: Refactoring: Rethink what this module is all about.
-#
-# It seems like a grab bag for lots of different things - used in different places.
-#
-# What got me to write this comment was looking at the signature for def contiguous()
-# which operates on a partition, but lots of other routines here operate on graphs or
-# other things.  So, what is going on?
-#
-# Peter replied to this comment in a pull request:
-#
-#     So anything that is prefixed with an underscore in here should be a helper
-#     function and not a part of the public API. It looks like, other than
-#     is_connected_bfs (which should probably be marked "private" with an
-#     underscore) everything here is acting like an updater.
-#
-
 
 def _are_reachable(graph: Graph, start_node: Any, avoid: Callable, targets: Any) -> bool:
     """
@@ -68,31 +46,6 @@ def _are_reachable(graph: Graph, start_node: Any, avoid: Callable, targets: Any)
     seen[start_node] = 0
     push(fringe, (0, next(c), start_node))
 
-    # frm: Original Code:
-    #
-    # Note that the original code used an avoid() function that took three
-    # parameters.  That code had been copied from some other codebase and
-    # as a result it contained code that was not applicable to GerryChain
-    # uses - I forget the specifics, but the GerryChain code did not need
-    # to provide three parameters to the avoid function.
-    #
-    #     while not all(t in seen for t in targets) and fringe:
-    #         (d, _, v) = pop(fringe)
-    #         if v in dist:
-    #             continue  # already searched this node.
-    #         dist[v] = d
-    #         for u, e in G_succ[v].items():
-    #             if avoid(v, u, e):
-    #                 continue
-    #
-    #             vu_dist = dist[v] + 1
-    #             if u not in seen or vu_dist < seen[u]:
-    #                 seen[u] = vu_dist
-    #                 push(fringe, (vu_dist, next(c), u))
-    #
-    #     return all(t in seen for t in targets)
-    #
-
     # While we have not yet seen all of our targets and while there is
     # still some fringe (nodes that we have not yet processed)
     while not all(tgt in seen for tgt in targets) and fringe:
@@ -104,21 +57,14 @@ def _are_reachable(graph: Graph, start_node: Any, avoid: Callable, targets: Any)
         # Add all of the neighbors (children) of this node to the stack
         for neighbor_node_id in graph.neighbors(node_id):
 
-            if avoid(node_id, neighbor_node_id):
-                # If the current neighbor is to be avoided, skip it...
+            if not avoid(node_id, neighbor_node_id):
 
-                # frm: TODO: Refactoring: Just use: if not avoid(node_id, neighbor_node_id): instead of continue
-                #
-                # For lots of reasons, it is best to avoid leaving a loop in multiple ways...
-                #
-                continue
-
-            neighbor_distance = node_distances[node_id] + 1
-            # if this (neighbor) node has not ever been added to the stack or if
-            # we have found a shorter distance to the node, then add it to the stack.
-            if neighbor_node_id not in seen or neighbor_distance < seen[neighbor_node_id]:
-                seen[neighbor_node_id] = neighbor_distance
-                push(fringe, (neighbor_distance, next(c), neighbor_node_id))
+                neighbor_distance = node_distances[node_id] + 1
+                # if this (neighbor) node has not ever been added to the stack or if
+                # we have found a shorter distance to the node, then add it to the stack.
+                if neighbor_node_id not in seen or neighbor_distance < seen[neighbor_node_id]:
+                    seen[neighbor_node_id] = neighbor_distance
+                    push(fringe, (neighbor_distance, next(c), neighbor_node_id))
 
     # frm: TODO: Refactoring:  _are_reachable() computes values it never uses
     #
@@ -264,7 +210,8 @@ def contiguous(partition: Partition) -> bool:
     :rtype: bool
     """
 
-    return all(is_connected_bfs(partition.subgraphs[part]) for part in _affected_parts(partition))
+    # frm: Original code: return all(is_connected_bfs(partition.subgraphs[part]) for part in _affected_parts(partition))
+    return all(partition.subgraphs[part].is_connected_bfs() for part in _affected_parts(partition))
 
 
 def contiguous_bfs(partition: Partition) -> bool:
@@ -319,7 +266,8 @@ def number_of_contiguous_parts(partition: Partition) -> int:
     :rtype: int
     """
     parts = partition.assignment.parts
-    return sum(1 for part in parts if is_connected_bfs(partition.subgraphs[part]))
+    # frm: Original code: return sum(1 for part in parts if is_connected_bfs(partition.subgraphs[part]))
+    return sum(1 for part in parts if partition.subgraphs[part].is_connected_bfs())
 
 
 # Create an instance of SelfConfiguringLowerBound using the number_of_contiguous_parts function.
@@ -399,30 +347,3 @@ def _bfs(graph: Dict[int, list]) -> bool:
                 q += [neighbor]
 
     return num_nodes == len(visited)
-
-
-# frm: TODO: Testing:  Verify that is_connected_bfs() works - add a test or two...
-
-# frm: TODO: Refactoring:  Move this code into graph.py.  It is all about the Graph...
-
-
-# frm: TODO: Documentation: This code was obtained from the web - probably could be optimized...
-#       This code replaced calls on nx.is_connected()
-def is_connected_bfs(graph: Graph):
-    if not graph:
-        return True
-
-    nodes = list(graph.node_indices)
-
-    start_node = random.choice(nodes)
-    visited = {start_node}
-    queue = [start_node]
-
-    while queue:
-        current_node = queue.pop(0)
-        for neighbor in graph.neighbors(current_node):
-            if neighbor not in visited:
-                visited.add(neighbor)
-                queue.append(neighbor)
-
-    return len(visited) == len(nodes)

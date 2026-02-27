@@ -259,9 +259,23 @@ def recom(
     return partition.flip(flips)
 
 
-# frm: TODO: Refactoring: Change name and default value of M below.
+# frm: TODO: Documentation: Migration Guide:
 #
-# Peter said (January 2026):
+# Changed function signature: reversible_recom()
+#
+# The previous version has a parameter named 'M' which I changed to be
+# max_balanced_edge_cuts because that is what it is.  It had previously
+# had default value of 1, but Peter said that 1 was the worst possible
+# value and that we should force the user to specify the value (since it
+# depends on the size of a district). So I removed the default value and
+# then moved its position up one in the list of formal paramters because
+# the paramter above it had a default value, and Python complained...
+#
+# Note that it might be worth including a comment here referencing
+# the article/paper that Peter says describes the math here.
+#
+# Just to make sure we are all on the same page (before deleting this comment)
+# Here is what Peter said in January 2026 about the parameter formerly named: 'M':
 #
 # This comes from the paper in section 3.2:
 #
@@ -270,6 +284,7 @@ def recom(
 # But M is a terrible name for a parameter, and we should force the user to
 # provide this. 1 is actually the worst value that this could be since
 # this should be a global upper bound..
+#
 
 
 def reversible_recom(
@@ -277,8 +292,8 @@ def reversible_recom(
     pop_col: str,
     pop_target: Union[int, float],
     epsilon: float,
+    max_balanced_edge_cuts: int,
     find_balanced_edge_cuts_fn: Callable = find_balanced_edge_cuts_memoization,
-    M: int = 1,  # frm: TODO: Documentation: WTF does 'M' stand for?
     repeat_until_valid: bool = False,
     choice: Callable = random.choice,
 ) -> Partition:
@@ -303,8 +318,8 @@ def reversible_recom(
         find_balanced_edge_cuts_memoization.
     :type find_balanced_edge_cuts_fn: Callable, optional
         frm: it returns a list of Cuts - a named tuple defined in tree.py
-    :param M: The maximum number of balance edges. Default is 1.
-    :type M: int, optional
+    :param max_balanced_edge_cuts: The maximum number of balance edges. Default is 1.
+    :type max_balanced_edge_cuts: int, optional
     :param repeat_until_valid: Flag indicating whether to repeat until a valid partition is
         found. Default is False.
     :type repeat_until_valid: bool, optional
@@ -339,9 +354,10 @@ def reversible_recom(
 
     def bounded_find_balanced_edge_cuts_fn(*args, **kwargs):
         cuts = find_balanced_edge_cuts_fn(*args, **kwargs)
-        if len(cuts) > M:
+        if len(cuts) > max_balanced_edge_cuts:
             raise ReversibilityError(
-                f"Found {len(cuts)} balance edges, " f"but the upper bound is {M}."
+                f"Found {len(cuts)} balance edges, "
+                f"but the upper bound is {max_balanced_edge_cuts}."
             )
         return cuts
 
@@ -432,11 +448,11 @@ def reversible_recom(
     new_part = partition.flip(flips)
     seam_length = len(dist_pair_edges(new_part, *random_pair))
 
-    prob = num_possible_districts / (M * seam_length)
+    prob = num_possible_districts / (max_balanced_edge_cuts * seam_length)
     if prob > 1:
         raise ReversibilityError(
             f"Found {len(result) if result is not None else 0} balance edges, but "
-            f"the upper bound (with seam length 1) is {M}."
+            f"the upper bound (with seam length 1) is {max_balanced_edge_cuts}."
         )
     if random.random() < prob:
         return new_part
