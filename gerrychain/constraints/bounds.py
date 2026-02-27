@@ -14,7 +14,10 @@ class Bounds:
     """
 
     def __init__(self, func: Callable, bounds: Tuple[float, float]) -> None:
-        """
+        """Initialize a Bounds instance.
+
+        This initializer sets up `Bounds` with the provided arguments and validates required state.
+
         Args:
             func (Callable): Numeric validator function. Should return an iterable of values.
             bounds (Tuple[float, float]): Tuple of (lower, upper) numeric bounds.
@@ -46,7 +49,11 @@ class UpperBound:
     """
 
     def __init__(self, func: Callable, bound: float) -> None:
-        """
+        """Initialize a UpperBound instance.
+
+        This initializer sets up `UpperBound` with the provided arguments and validates required
+        state.
+
         Args:
             func (Callable): Numeric validator function. Should return a comparable value.
             bounds (float): Comparable upper bound.
@@ -76,7 +83,11 @@ class LowerBound:
     """
 
     def __init__(self, func: Callable, bound: float) -> None:
-        """
+        """Initialize a LowerBound instance.
+
+        This initializer sets up `LowerBound` with the provided arguments and validates required
+        state.
+
         Args:
             func (Callable): Numeric validator function. Should return a comparable value.
             bounds (float): Comparable lower bound.
@@ -109,7 +120,11 @@ class SelfConfiguringUpperBound:
     """
 
     def __init__(self, func: Callable) -> None:
-        """
+        """Initialize a SelfConfiguringUpperBound instance.
+
+        This initializer sets up `SelfConfiguringUpperBound` with the provided arguments and
+        validates required state.
+
         Args:
             func (Callable): Numeric validator function.
 
@@ -143,7 +158,11 @@ class SelfConfiguringLowerBound:
     """
 
     def __init__(self, func: Callable, epsilon: float = 0.05) -> None:
-        """
+        """Initialize a SelfConfiguringLowerBound instance.
+
+        This initializer sets up `SelfConfiguringLowerBound` with the provided arguments and
+        validates required state.
+
         Args:
             func (Callable): Numeric validator function.
             epsilon (float, optional): Initial population deviation allowable by the validator as a
@@ -181,12 +200,16 @@ class WithinPercentRangeOfBounds:
     """
 
     def __init__(self, func: Callable, percent: float) -> None:
-        """
+        """Initialize a WithinPercentRangeOfBounds instance.
+
+        This initializer sets up `WithinPercentRangeOfBounds` with the provided arguments and
+        validates required state.
+
         Args:
             func (Callable): Numeric validator function.
             percent (float): Percentage of the initial value to use as the bounds.
 
-        .. Warning::
+        Warning:
             The percentage is assumed to be in the range [0.0, 100.0].
         """
         self.func = func

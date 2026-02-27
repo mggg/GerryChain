@@ -63,11 +63,13 @@ def recursive_tree_part(
     node_repeats: int = 1,
     bipartition_tree_fn: Callable = partial(bipartition_tree, max_attempts=10000),
 ) -> Dict:
-    """
+    """Return new assignments for the nodes of ``graph``.
+
     Uses :func:`~gerrychain.tree.bipartition_tree` recursively to partition a tree into
-    ``len(parts)`` parts of population ``pop_target`` (within ``epsilon``). Can be used to
-    generate initial seed plans (partition assignments) or to implement ReCom-like "merge walk"
-    proposals.
+    ``len(parts)`` parts of population ``pop_target`` (within ``epsilon``).
+
+    Can be used to generate initial seed plans (partition assignments) or to implement ReCom-like
+    "merge walk" proposals.
 
     Args:
         graph (Graph): The graph to partition into ``len(parts)`` :math:`\varepsilon`-balanced
@@ -193,9 +195,10 @@ def _get_seed_chunks(
     node_repeats: int = 1,
     bipartition_tree_fn: Callable = partial(bipartition_tree, max_attempts=10000),
 ) -> List[List[int]]:
-    """
-    Helper function for recursive_seed_part. Partitions the graph into ``num_chunks`` chunks,
-    balanced within new_epsilon <= ``epsilon`` of a balanced target population.
+    """Helper function for recursive_seed_part.
+
+    Partitions the graph into ``num_chunks`` chunks, balanced within new_epsilon <= ``epsilon`` of
+    a balanced target population.
 
     It calls the bipartition_tree_fn function repeatedly to create parts (districts).
 
@@ -340,9 +343,10 @@ def _get_seed_chunks(
 # frm: only used in this file
 #       But maybe this is intended to be used externally...
 def get_max_prime_factor_less_than(n: int, ceil: int) -> Optional[int]:
-    """
-    Helper function for _recursive_seed_part_inner. Returns the largest prime factor of ``n``
-    less than ``ceil``, or None if all are greater than ceil.
+    """Helper function for _recursive_seed_part_inner.
+
+    Returns the largest prime factor of ``n`` less than ``ceil``, or None if all are greater than
+    ceil.
 
     Args:
         n (int): The number to find the largest prime factor for.
@@ -385,32 +389,29 @@ def _recursive_seed_part_inner(
     n: Optional[int] = None,
     ceil: Optional[int] = None,
 ) -> List[Set]:
-    """
-    Inner function for recursive_seed_part.
+    """Inner function for recursive_seed_part.
 
-    Returns a list of sets of nodes with ``num_dists`` districts balanced within
-    ``epsilon`` of ``pop_target``.
+    Returns a list of sets of nodes with ``num_dists`` districts balanced within ``epsilon`` of
+    ``pop_target``.
 
-    This list of sets of nodes is conceptually equivalent to an Assignment object.
-    Each set of nodes constitutes a district, but the district does not
-    have an ID, and there is nothing that associates these nodes
-    with a specific graph - that is implicit, depending on the graph
-    object passed in, so the caller is responsible for knowing that
-    the returned list of sets belongs to the graph passed in...
+    This list of sets of nodes is conceptually equivalent to an Assignment object. Each set of
+    nodes constitutes a district, but the district does not have an ID, and there is nothing that
+    associates these nodes with a specific graph - that is implicit, depending on the graph object
+    passed in, so the caller is responsible for knowing that the returned list of sets belongs to
+    the graph passed in...
 
     It splits the graph into num_chunks chunks, and then recursively splits each chunk into
-    ``num_dists``/num_chunks chunks.
-    The number num_chunks of chunks is chosen based on ``n`` and ``ceil`` as follows:
+    ``num_dists``/num_chunks chunks. The number num_chunks of chunks is chosen based on ``n`` and
+    ``ceil`` as follows:
 
-    - If ``n`` is None, and ``ceil`` is None, num_chunks is the largest prime factor
-      of ``num_dists``.
-    - If ``n`` is None and ``ceil`` is an integer at least 2, then num_chunks is the
-      largest prime factor of ``num_dists`` that is less than ``ceil``
-    - If ``n`` is a positive integer, num_chunks equals n.
+    - If ``n`` is None, and ``ceil`` is None, num_chunks is the largest prime factor of
+    ``num_dists``. - If ``n`` is None and ``ceil`` is an integer at least 2, then num_chunks is the
+    largest prime factor of ``num_dists`` that is less than ``ceil`` - If ``n`` is a positive
+    integer, num_chunks equals n.
 
-    Finally, if the number of chunks as chosen above does not divide ``num_dists``, then
-    this function bites off a single district from the graph and recursively partitions
-    the remaining graph into ``num_dists - 1`` districts.
+    Finally, if the number of chunks as chosen above does not divide ``num_dists``, then this
+    function bites off a single district from the graph and recursively partitions the remaining
+    graph into ``num_dists - 1`` districts.
 
     Args:
         graph (Graph): The underlying graph structure.
@@ -424,10 +425,10 @@ def _recursive_seed_part_inner(
         node_repeats (int, optional): Parameter for :func:`~gerrychain.tree.bipartition_tree` to
             use. Defaults to 1.
         n (Optional[int], optional): Either a positive integer (greater than 1) or None. If n is a
-            positive integer, this function will recursively create a seed plan by either biting off
-            districts from graph or dividing graph into n chunks and recursing into each of these.
-            If n is None, this function prime factors ``num_dists``=n_1*n_2*...*n_k (n_1 > n_2 > ...
-            n_k) and recursively partitions graph into n_1 chunks. Defaults to None.
+            positive integer, this function will recursively create a seed plan by either biting
+            off districts from graph or dividing graph into n chunks and recursing into each of
+            these. If n is None, this function prime factors ``num_dists``=n_1*n_2*...*n_k (n_1 >
+            n_2 > ... n_k) and recursively partitions graph into n_1 chunks. Defaults to None.
         ceil (Optional[int], optional): Either a positive integer (at least 2) or None. Relevant
             only if n is None. If ``ceil`` is a positive integer then finds the largest factor of
             ``num_dists`` less than or equal to ``ceil``, and recursively splits graph into that
@@ -621,8 +622,9 @@ def recursive_seed_part(
     n: Optional[int] = None,
     ceil: Optional[int] = None,
 ) -> Dict:
-    """
-    Returns an assignment dictionary with ``num_dists`` districts balanced within ``epsilon`` of
+    """Returns an assignment dictionary with ``num_dists`` districts balanced within ``epsilon``.
+
+    Returns an assignment dictionary with ``num_dists`` districts balanced within ``epsilon`` of.
     ``pop_target`` by recursively splitting graph using _recursive_seed_part_inner.
 
     Args:
@@ -637,10 +639,10 @@ def recursive_seed_part(
         node_repeats (int, optional): Parameter for :func:`~gerrychain.tree.bipartition_tree` to
             use. Defaults to 1.
         n (Optional[int], optional): Either a positive integer (greater than 1) or None. If n is a
-            positive integer, this function will recursively create a seed plan by either biting off
-            districts from graph or dividing graph into n chunks and recursing into each of these.
-            If n is None, this function prime factors ``num_dists``=n_1*n_2*...*n_k (n_1 > n_2 > ...
-            n_k) and recursively partitions graph into n_1 chunks. Defaults to None.
+            positive integer, this function will recursively create a seed plan by either biting
+            off districts from graph or dividing graph into n chunks and recursing into each of
+            these. If n is None, this function prime factors ``num_dists``=n_1*n_2*...*n_k (n_1 >
+            n_2 > ... n_k) and recursively partitions graph into n_1 chunks. Defaults to None.
         ceil (Optional[int], optional): Either a positive integer (at least 2) or None. Relevant
             only if n is None. If ``ceil`` is a positive integer then finds the largest factor of
             ``num_dists`` less than or equal to ``ceil``, and recursively splits graph into that

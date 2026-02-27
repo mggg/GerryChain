@@ -136,7 +136,8 @@ class _PopulatedGraph:
         ideal_pop: Union[int, float],
         epsilon: float,
     ) -> None:
-        """
+        """Initialize a _PopulatedGraph instance.
+
         Args:
             graph (Graph): The underlying graph structure.
             populations (Dict): A dictionary mapping nodes to their populations.
@@ -185,8 +186,7 @@ class _PopulatedGraph:
     # frm: only ever used inside this file
     #       But maybe this is intended to be used externally...
     def has_ideal_population(self, node, one_sided_cut: bool = False) -> bool:
-        """
-        Checks if a node has an ideal population within the graph up to epsilon.
+        """Checks if a merged node is within epsilon of the ideal population.
 
         Args:
             node (Any): The node to check.
@@ -281,8 +281,8 @@ Cut.subset.__doc__ = "The (frozen) subset of nodes on one side of the cut. Defau
 def find_balanced_edge_cuts_contraction(
     h: _PopulatedGraph, one_sided_cut: bool = False, rootnode_choice_fn: Callable = random.choice
 ) -> List[Cut]:
-    """
-    Find balanced edge cuts using contraction.
+    """Find balanced edge cuts using contraction.
+
 
     Args:
         h (_PopulatedGraph): The populated graph.
@@ -353,9 +353,7 @@ def find_balanced_edge_cuts_contraction(
 
 
 def _calc_pops(succ, root, h):
-    """
-    Calculates the population of each subtree in the graph
-    by traversing the graph using a depth-first search.
+    """Return A dictionary mapping nodes to their subtree populations.
 
     Args:
         succ (Dict): The successors of the graph.
@@ -400,9 +398,8 @@ def _calc_pops(succ, root, h):
 
 # frm: Only used in one function and only in this module...
 def _part_nodes(start, succ):
-    """
-    Partitions the nodes of a graph into two sets.
-    based on the start node and the successors of the graph.
+    """Partitions the nodes of a graph into two sets based on the start node and the
+    successors of the graph.
 
     Args:
         start (Any): The start node.
@@ -461,13 +458,12 @@ def _part_nodes(start, succ):
 def find_balanced_edge_cuts_memoization(
     h: _PopulatedGraph, one_sided_cut: bool = False, rootnode_choice_fn: Callable = random.choice
 ) -> List[Cut]:
-    """
-    Find balanced edge cuts using memoization.
+    """Find balanced edge cuts using memoization.
 
     This function takes a _PopulatedGraph object and a choice function as input and returns a list
-    of balanced edge cuts. A balanced edge cut is defined as a cut that divides the graph into
-    two subsets, such that the population of each subset is close to the ideal population
-    defined by the _PopulatedGraph object.
+    of balanced edge cuts. A balanced edge cut is defined as a cut that divides the graph into two
+    subsets, such that the population of each subset is close to the ideal population defined by
+    the _PopulatedGraph object.
 
     Args:
         h (_PopulatedGraph): The _PopulatedGraph object representing the graph.
@@ -567,7 +563,6 @@ def find_balanced_edge_cuts_memoization(
 
     # We are looking for a way to bisect the graph (one_sided_cut is False)
     for node, tree_pop in subtree_pops.items():
-
         # frm: TODO: Refactoring:  Why keep looping if you have found a solution?
         #
         # This is perhaps a nit, but it is technically possible to have more than one
@@ -647,26 +642,21 @@ class ReselectException(Exception):
 
 
 def _max_weight_choice(cut_edge_list: List[Cut]) -> Cut:
-    """
-    Each Cut object in the list is assigned a random weight.
-    This random weight is either assigned during the call to
-    the minimum spanning tree algorithm (Kruskal's) algorithm
-    or it is generated during the selection of the balanced edges
-    (cf. :meth:`find_balanced_edge_cuts_memoization` and
-    :meth:`find_balanced_edge_cuts_contraction`).
+    """Selects a cut from a list of cuts based on the maximum weight.
+
+    This random weight is either assigned during the call to the minimum spanning tree algorithm
+    (Kruskal's) algorithm or it is generated during the selection of the balanced edges (cf.
+    :meth:`find_balanced_edge_cuts_memoization` and :meth:`find_balanced_edge_cuts_contraction`).
     This function returns the cut with the highest weight.
 
-    In the case where a region aware chain is run, this will
-    preferentially select for cuts that span different regions, rather
-    than cuts that are interior to that region (the likelihood of this
-    is generally controlled by the ``region_surcharge`` parameter).
+    In the case where a region aware chain is run, this will preferentially select for cuts that
+    span different regions, rather than cuts that are interior to that region (the likelihood of
+    this is generally controlled by the ``region_surcharge`` parameter).
 
-    In any case where the surcharges are either not set or zero,
-    this is effectively the same as calling random.choice() on the
-    list of cuts. Under the above conditions, all of the weights
-    on the cuts are randomly generated on the interval [0,1], and
-    there is no outside force that might make the weight assigned
-    to a particular type of cut higher than another.
+    In any case where the surcharges are either not set or zero, this is effectively the same as
+    calling random.choice() on the list of cuts. Under the above conditions, all of the weights on
+    the cuts are randomly generated on the interval [0,1], and there is no outside force that might
+    make the weight assigned to a particular type of cut higher than another.
 
     Args:
         cut_edge_list (List[Cut]): A list of Cut objects. Each object has an edge, a weight, and a
@@ -697,14 +687,10 @@ def _max_weight_choice(cut_edge_list: List[Cut]) -> Cut:
 #                   don't yet know what it does or why...
 # Note that this is only ever used once...
 def _power_set_sorted_by_size_then_sum(region_surcharge_dict: Dict):
-    """
-    This function computes the power set of regions that are
-    listed in the region_surcharge_dict, and then sorts
-    that power set by size and then sum.
+    """Power set sorted by size then sum.
 
-    Note that a power set contains all possible subsets of
-    a given set, so for instance, the power set of
-    of elements of a given set
+    This function computes the power set of regions that are listed in the region_surcharge_dict,.
+    and then sorts that power set by size and then sum.
 
     Args:
         region_surcharge_dict (Dict): Description
@@ -734,28 +720,23 @@ def _region_preferred_max_weight_choice(
 ) -> Cut:
     # frm: ???:  There is no NX/RX dependency in this routine, but I do
     #               not yet understand what it does or why...
-    """
-    This function is used in the case of a region-aware chain. It
-    is similar to the as :meth:`_max_weight_choice` function except
-    that it will preferentially select one of the cuts that has the
-    highest surcharge. So, if we have a weight dict of the form
-    ``{region1: wt1, region2: wt2}`` , then this function first looks
-    for a cut that is a cut edge for both ``region1`` and ``region2``
-    and then selects the one with the highest weight. If no such cut
-    exists, then it will then look for a cut that is a cut edge for the
-    region with the highest surcharge (presumably the region that we care
-    more about not splitting).
+    """Selects a cut from a list of cuts based on the maximum weight, with a preference for
+    cuts that span different regions.
 
-    In the case of 3 regions, it will first look for a cut that is a
-    cut edge for all 3 regions, then for a cut that is a cut edge for
-    2 regions sorted by the highest total surcharge, and then for a cut
-    that is a cut edge for the region with the highest surcharge.
+    This is similare to the :meth:`_max_weight_choice` function except that it will preferentially
+    select one of the cuts that has the highest surcharge. So, if we have a weight dict of the form
+    ``{region1: wt1, region2: wt2}`` , then this function first looks for a cut that is a cut edge
+    for both ``region1`` and ``region2`` and then selects the one with the highest weight. If no
+    such cut exists, then it will then look for a cut that is a cut edge for the region with the
+    highest surcharge (presumably the region that we care more about not splitting).
 
-    For the case of 4 or more regions, the power set starts to get a bit
-    large, so we default back to the :meth:`_max_weight_choice` function
-    and just select the cut with the highest weight, which will still
-    preferentially select for cuts that span the most regions that we
-    care about.
+    In the case of 3 regions, it will first look for a cut that is a cut edge for all 3 regions,
+    then for a cut that is a cut edge for 2 regions sorted by the highest total surcharge, and then
+    for a cut that is a cut edge for the region with the highest surcharge.
+
+    For the case of 4 or more regions, the power set starts to get a bit large, so we default back
+    to the :meth:`_max_weight_choice` function and just select the cut with the highest weight,
+    which will still preferentially select for cuts that span the most regions that we care about.
 
     Args:
         populated_graph (_PopulatedGraph): The populated graph.
@@ -948,14 +929,18 @@ def _internal_bipartition_tree(
     repeat_until_valid: bool = True,  # frm: TODO: Have this NOT default...
     cut_choice_fn: Callable = _region_preferred_max_weight_choice,
 ) -> Union[Set[Any], None]:
-    """
-    This function finds a balanced 2 partition of a graph by drawing a
-    spanning tree and finding an edge to cut that leaves at most an epsilon
-    imbalance between the populations of the parts. If a root fails, new roots
-    are tried until node_repeats in which case a new tree is drawn.
+    """Find a population-balanced connected subset of nodes.
 
-    Builds up a connected subgraph with a connected complement whose population
-    is ``epsilon * pop_target`` away from ``pop_target``.
+    The returned subset induces a connected subgraph, and its complement forms the other part of
+    the partition.
+
+    This function finds a balanced 2 partition of a graph by drawing a spanning tree and finding an
+    edge to cut that leaves at most an epsilon imbalance between the populations of the parts.
+
+    If a root fails, new roots are tried until node_repeats in which case a new tree is drawn.
+
+    Builds up a connected subgraph with a connected complement whose population is ``epsilon *
+    pop_target`` away from ``pop_target``.
 
     Args:
         graph (Graph): The graph to partition.
@@ -974,10 +959,10 @@ def _internal_bipartition_tree(
         find_balanced_edge_cuts_fn (Callable, optional): The function to find balanced edge cuts.
             Defaults to :func:`find_balanced_edge_cuts_memoization`.
         one_sided_cut (bool, optional): Passed to the ``find_balanced_edge_cuts_fn``. Determines
-            whether or not we are cutting off a single district when partitioning the tree. When set
-            to False, we check if the node we are cutting and the remaining graph are both within
-            epsilon of the ideal population. When set to True, we only check if the node we are
-            cutting is within epsilon of the ideal population. Defaults to False.
+            whether or not we are cutting off a single district when partitioning the tree. When
+            set to False, we check if the node we are cutting and the remaining graph are both
+            within epsilon of the ideal population. When set to True, we only check if the node we
+            are cutting is within epsilon of the ideal population. Defaults to False.
         rootnode_choice_fn (Callable, optional): The function to make a random choice of root node
             for the population tree. Passed to ``find_balanced_edge_cuts_fn``. Can be substituted
             for testing. Defaults to :func:`random.random()`.
@@ -989,14 +974,14 @@ def _internal_bipartition_tree(
             calling function to ask it to reselect the pair of nodes to try and recombine. Defaults
             to False.
         cut_choice_fn (Callable, optional): The function used to select the cut edge from the list
-            of possible balanced cuts. Defaults to :meth:`_region_preferred_max_weight_choice`. Note
-            that this function should gracefully handle the case when the edges in the list of
+            of possible balanced cuts. Defaults to :meth:`_region_preferred_max_weight_choice`.
+            Note that this function should gracefully handle the case when the edges in the list of
             possible balanced cuts do not have edge weights - in this case, it should default to
             just random.random().
 
     Returns:
-        Set: A subset of nodes of ``graph`` (whose induced subgraph is connected). The other part of
-            the partition is the complement of this subset.
+        Set: A subset of nodes of ``graph`` (whose induced subgraph is connected). The other part
+            of the partition is the complement of this subset.
 
     Raises:
         BipartitionWarning: If a possible cut cannot be found after 1000 attempts.
@@ -1042,7 +1027,6 @@ def _internal_bipartition_tree(
 
     num_cuts = len(possible_cuts)
     if num_cuts != 0:
-
         # frm: TODO: ???:  Is it an error to pass in a None value for region_surcharge,
         #                  but to also pass a cut_choice_fn function that expects a region_surcharge?
 
@@ -1101,14 +1085,18 @@ def bipartition_tree(
     allow_pair_reselection: bool = False,
     cut_choice_fn: Callable = _region_preferred_max_weight_choice,
 ) -> Set:
-    """
-    This function finds a balanced 2 partition of a graph by drawing a
-    spanning tree and finding an edge to cut that leaves at most an epsilon
-    imbalance between the populations of the parts. If a root fails, new roots
-    are tried until node_repeats in which case a new tree is drawn.
+    """Find a population-balanced connected subset of nodes.
 
-    Builds up a connected subgraph with a connected complement whose population
-    is ``epsilon * pop_target`` away from ``pop_target``.
+    The returned subset induces a connected subgraph, and its complement forms the other part of
+    the partition.
+
+    This function finds a balanced 2 partition of a graph by drawing a spanning tree and finding an
+    edge to cut that leaves at most an epsilon imbalance between the populations of the parts.
+
+    If a root fails, new roots are tried until node_repeats in which case a new tree is drawn.
+
+    Builds up a connected subgraph with a connected complement whose population is ``epsilon *
+    pop_target`` away from ``pop_target``.
 
     Args:
         graph (Graph): The graph to partition.
@@ -1127,10 +1115,10 @@ def bipartition_tree(
         find_balanced_edge_cuts_fn (Callable, optional): The function to find balanced edge cuts.
             Defaults to :func:`find_balanced_edge_cuts_memoization`.
         one_sided_cut (bool, optional): Passed to the ``find_balanced_edge_cuts_fn``. Determines
-            whether or not we are cutting off a single district when partitioning the tree. When set
-            to False, we check if the node we are cutting and the remaining graph are both within
-            epsilon of the ideal population. When set to True, we only check if the node we are
-            cutting is within epsilon of the ideal population. Defaults to False.
+            whether or not we are cutting off a single district when partitioning the tree. When
+            set to False, we check if the node we are cutting and the remaining graph are both
+            within epsilon of the ideal population. When set to True, we only check if the node we
+            are cutting is within epsilon of the ideal population. Defaults to False.
         rootnode_choice_fn (Callable, optional): The function to make a random choice of root node
             for the population tree. Passed to ``find_balanced_edge_cuts_fn``. Can be substituted
             for testing. Defaults to :func:`random.random()`.
@@ -1142,14 +1130,14 @@ def bipartition_tree(
             calling function to ask it to reselect the pair of nodes to try and recombine. Defaults
             to False.
         cut_choice_fn (Callable, optional): The function used to select the cut edge from the list
-            of possible balanced cuts. Defaults to :meth:`_region_preferred_max_weight_choice`. Note
-            that this function should gracefully handle the case when the edges in the list of
+            of possible balanced cuts. Defaults to :meth:`_region_preferred_max_weight_choice`.
+            Note that this function should gracefully handle the case when the edges in the list of
             possible balanced cuts do not have edge weights - in this case, it should default to
             just random.random().
 
     Returns:
-        Set: A subset of nodes of ``graph`` (whose induced subgraph is connected). The other part of
-            the partition is the complement of this subset.
+        Set: A subset of nodes of ``graph`` (whose induced subgraph is connected). The other part
+            of the partition is the complement of this subset.
 
     Raises:
         BipartitionWarning: If a possible cut cannot be found after 1000 attempts.
@@ -1241,8 +1229,7 @@ def _get_possible_edge_cuts_and_populated_graph(
     max_attempts: Optional[int] = 100000,
     allow_pair_reselection: bool = False,
 ) -> tuple[List[Cut], _PopulatedGraph]:
-    """
-    Randomly bipartitions a tree into two subgraphs until a valid bipartition is found.
+    """Randomly bipartitions a tree into two subgraphs until a valid bipartition is found.
 
     Args:
         graph (Graph): The input graph.
@@ -1256,8 +1243,8 @@ def _get_possible_edge_cuts_and_populated_graph(
             valid bipartition is found. Defaults to True.
         spanning_tree (Optional[Graph], optional): The spanning tree to use for bipartitioning. If
             None, a random spanning tree will be generated. Defaults to None.
-        spanning_tree_fn (Callable, optional): The function to generate a spanning tree. Defaults to
-            random_spanning_tree.
+        spanning_tree_fn (Callable, optional): The function to generate a spanning tree. Defaults
+            to random_spanning_tree.
         find_balanced_edge_cuts_fn (Callable, optional): The function to find balanced edge cuts.
             Defaults to find_balanced_edge_cuts_memoization.
         rootnode_choice_fn (Callable, optional): The function to choose a random element from a
@@ -1399,17 +1386,14 @@ def bipartition_tree_random_with_num_cuts(
     max_attempts: Optional[int] = 100000,
     cut_choice_fn: Callable = random.choice,
 ) -> tuple[int, Set[Any]]:
-    """
-    This is like :func:`bipartition_tree` except it chooses a random balanced
-    cut, rather than the first cut it finds.
+    """This is like :func:`bipartition_tree` except it always chooses a random balanced cut.
 
-    This function finds a balanced 2 partition of a graph by drawing a
-    spanning tree and finding an edge to cut that leaves at most an epsilon
-    imbalance between the populations of the parts. If a root fails, new roots
-    are tried until node_repeats in which case a new tree is drawn.
+    This function finds a balanced 2 partition of a graph by drawing a spanning tree and finding an
+    edge to cut that leaves at most an epsilon imbalance between the populations of the parts. If
+    a root fails, new roots are tried until node_repeats in which case a new tree is drawn.
 
-    Builds up a connected subgraph with a connected complement whose population
-    is ``epsilon * pop_target`` away from ``pop_target``.
+    Builds up a connected subgraph with a connected complement whose population is ``epsilon *
+    pop_target`` away from ``pop_target``.
 
     Args:
         subgraph_to_split (Graph): The graph to partition.
@@ -1417,12 +1401,12 @@ def bipartition_tree_random_with_num_cuts(
         pop_target (Union[int, float]): The target population for the returned subset of nodes.
         epsilon (float): The allowable deviation from ``pop_target`` (as a percentage of
             ``pop_target``) for the subgraph's population.
-        node_repeats (int): A parameter for the algorithm: how many different choices of root to use
-            before drawing a new spanning tree. Defaults to 1.
-        repeat_until_valid (bool, optional): Determines whether to keep drawing spanning trees until
-            a tree with a balanced cut is found. If `True`, a set of nodes will always be returned;
-            if `False`, `None` will be returned if a valid spanning tree is not found on the first
-            try. Defaults to True.
+        node_repeats (int): A parameter for the algorithm: how many different choices of root to
+            use before drawing a new spanning tree. Defaults to 1.
+        repeat_until_valid (bool, optional): Determines whether to keep drawing spanning trees
+            until a tree with a balanced cut is found. If `True`, a set of nodes will always be
+            returned; if `False`, `None` will be returned if a valid spanning tree is not found on
+            the first try. Defaults to True.
         spanning_tree (Optional[Graph], optional): The spanning tree for the algorithm to use (used
             when the algorithm chooses a new root and for testing). Defaults to None.
         spanning_tree_fn (Callable, optional): The random spanning tree algorithm to use if a
@@ -1430,10 +1414,10 @@ def bipartition_tree_random_with_num_cuts(
         find_balanced_edge_cuts_fn (Callable, optional): The algorithm used to find balanced cut
             edges. Defaults to :func:`find_balanced_edge_cuts_memoization`.
         one_sided_cut (bool, optional): Passed to the ``find_balanced_edge_cuts_fn``. Determines
-            whether or not we are cutting off a single district when partitioning the tree. When set
-            to False, we check if the node we are cutting and the remaining graph are both within
-            epsilon of the ideal population. When set to True, we only check if the node we are
-            cutting is within epsilon of the ideal population. Defaults to False.
+            whether or not we are cutting off a single district when partitioning the tree. When
+            set to False, we check if the node we are cutting and the remaining graph are both
+            within epsilon of the ideal population. When set to True, we only check if the node we
+            are cutting is within epsilon of the ideal population. Defaults to False.
         rootnode_choice_fn (Callable, optional): The random choice function. Can be substituted for
             testing. Defaults to :func:`random.choice`.
         max_attempts (Optional[int], optional): The max number of attempts that should be made to

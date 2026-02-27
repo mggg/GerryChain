@@ -39,13 +39,13 @@ from .geo import GeometryError, invalid_geometries, reprojected
 # It should not be the first thing someone sees when looking at this code...
 #
 def json_serialize(input_object: Any) -> Optional[int]:
-    """
-    This function is used to handle one of the common issues that
-    appears when trying to convert a pandas dataframe into a JSON
-    serializable object. Specifically, it handles the issue of converting
-    the pandas int64 to a python int so that JSON can serialize it.
-    This is specifically used so that we can write graphs out to JSON
-    files.
+    """Return converted pandas object or None if input is not of type pd.Int64Dtype.
+
+    This function is used to handle one of the common issues that appears when trying to convert a
+    pandas dataframe into a JSON serializable object.
+
+    Specifically, it handles the issue of converting the pandas int64 to a python int so that JSON
+    can serialize it and so that we can write graphs out to JSON files.
 
     Args:
         input_object (Any (expected to be a pd.Int64Dtype)): The object to be converted
@@ -99,19 +99,16 @@ class Graph:
 
     @classmethod
     def from_networkx(cls, nx_graph: networkx.Graph) -> "Graph":
-        """
-        Create a :class:`Graph` from a NetworkX.Graph object
+        """Create a :class:`Graph` from a NetworkX.Graph object.
 
-        This supports the use case of users creating a graph using NetworkX
-        which is convenient - both for users of the previous implementation of
-        a GerryChain object which was a subclass of NetworkX.Graph and for
-        users more generally who are familiar with NetworkX.
+        This supports the use case of users creating a graph using NetworkX which is convenient -
+        both for users of the previous implementation of a GerryChain object which was a subclass
+        of NetworkX.Graph and for users more generally who are familiar with NetworkX.
 
-        Note that most users will not ever call this function directly,
-        because they can create a GerryChain Partition object directly
-        from a NetworkX graph, and the Partition initialization code
-        will use this function to convert the NetworkX graph to a
-        GerryChain Graph object.
+        Note that most users will not ever call this function directly, because they can create a
+        GerryChain Partition object directly from a NetworkX graph, and the Partition
+        initialization code will use this function to convert the NetworkX graph to a GerryChain
+        Graph object.
 
         Args:
             nx_graph (networkx.Graph): A NetworkX.Graph object with node and edge data to be
@@ -139,14 +136,13 @@ class Graph:
 
     @classmethod
     def from_null_networkx(cls) -> "Graph":
-        """
-        Create a :class:`Graph` that has an empty embedded NetworkX Graph
+        """Create a :class:`Graph` that has an empty embedded NetworkX Graph.
 
-        This was originally implemented as a way to encapsulate NetworkX
-        dependencies in GerryChain code to this module (graph.py).
+        This was originally implemented as a way to encapsulate NetworkX dependencies in GerryChain
+        code to this module (graph.py).
 
-        It supports the use case of a user who wants to build a graph from scratch
-        without reference to NetworkX.
+        It supports the use case of a user who wants to build a graph from scratch without
+        reference to NetworkX.
 
         Returns:
             Graph: A Graph object with no nodes
@@ -157,39 +153,29 @@ class Graph:
 
     @classmethod
     def from_rustworkx(cls, rx_graph: rustworkx.PyGraph) -> "Graph":
-        """
-        Create a :class:`Graph` from a RustworkX.PyGraph object
+        """Create a :class:`Graph` from a RustworkX.PyGraph object.
 
-        There are three primary use cases for this routine:
-        1) converting an NX-based Graph to be an RX-based
-        Graph, 2) creating a subgraph of an RX-based Graph, and
-        3) creating a Graph whose node_ids do not need to be
-        mapped to some previous graph's node_ids.
+        There are three primary use cases for this routine: 1) converting an NX-based Graph to be
+        an RX-based Graph, 2) creating a subgraph of an RX-based Graph, and 3) creating a Graph
+        whose node_ids do not need to be mapped to some previous graph's node_ids.
 
         In a little more detail:
 
-        1) A typical way to use GerryChain is to create a graph
-        using NetworkX functionality and to then rely on the
-        initialization code in the Partition class to create
-        an RX-based Graph object.  That initialization code
-        constructs a RustworkX PyGraph and then uses this
-        routine to create an RX-based Graph object, and it then
-        creates maps from the node_ids of the resulting RX-based
-        Graph back to the original NetworkX.Graph's node_ids.
+        1) A typical way to use GerryChain is to create a graph using NetworkX functionality and to
+        then rely on the initialization code in the Partition class to create an RX-based Graph
+        object. That initialization code constructs a RustworkX PyGraph and then uses this routine
+        to create an RX-based Graph object, and it then creates maps from the node_ids of the
+        resulting RX-based Graph back to the original NetworkX.Graph's node_ids.
 
-        2) When creating a subgraph of a RustworkX PyGraph
-        object, the node_ids of the subgraph are (in general)
-        different from those of the parent graph.  So we
-        create a mapping from the subgraph's node_ids to the
-        node_ids of the parent.  The subgraph() routine
-        creates a RustworkX PyGraph subgraph, then uses this
-        routine to create an RX-based Graph using that subgraph,
-        and it then creates the mapping of subgraph node_ids
-        to the parent (RX) graph's node_ids.
+        2) When creating a subgraph of a RustworkX PyGraph object, the node_ids of the subgraph are
+        (in general) different from those of the parent graph. So we create a mapping from the
+        subgraph's node_ids to the node_ids of the parent. The subgraph() routine creates a
+        RustworkX PyGraph subgraph, then uses this routine to create an RX-based Graph using that
+        subgraph, and it then creates the mapping of subgraph node_ids to the parent (RX) graph's
+        node_ids.
 
-        3) In those cases where no node_id mapping is needed
-        this routine provides a simple way to create an
-        RX-based GerryChain graph object.
+        3) In those cases where no node_id mapping is needed this routine provides a simple way to
+        create an RX-based GerryChain graph object.
 
         Args:
             rx_graph (rustworkx.PyGraph): a RustworkX PyGraph object
@@ -261,21 +247,19 @@ class Graph:
         return graph
 
     def to_networkx_graph(self) -> networkx.Graph:
-        """
-        Create a NetworkX.Graph object that has the same nodes, edges,
-        node_data, and edge_data as the GerryChain Graph object.
+        """Create a NetworkX.Graph object that has the same nodes, edges, node_data, and edge_data.
+        as the GerryChain Graph object.
 
-        The intended purpose of this routine is to allow a user to
-        run a MarkovChain - which uses an embedded RustworkX graph
-        and then extract an equivalent version of that graph with all
-        of its data as a NetworkX.Graph object - in order to use
-        NetworkX routines to access and manipulate the graph.
+        The intended purpose of this routine is to allow a user to run a MarkovChain - which uses
+        an embedded RustworkX graph and then extract an equivalent version of that graph with all
+        of its data as a NetworkX.Graph object - in order to use NetworkX routines to access and
+        manipulate the graph.
 
-        In short, this routine allows users to use NetworkX
-        functionality on a graph after running a MarkovChain.
+        In short, this routine allows users to use NetworkX functionality on a graph after running
+        a MarkovChain.
 
-        If the GerryChain graph object is NX-based, then this
-        routine merely returns the embedded NetworkX.Graph object.
+        If the GerryChain graph object is NX-based, then this routine merely returns the embedded
+        NetworkX.Graph object.
 
         Returns:
             networkx.Graph: A NetworkX.Graph object that is equivalent to the GerryChain Graph
@@ -356,8 +340,7 @@ class Graph:
     # a vague "Any"...
 
     def original_nx_node_id_for_internal_node_id(self, internal_node_id: Any) -> Any:
-        """
-        Translate a node_id to its "original" node_id.
+        """Translate a node_id to its "original" node_id.
 
         Args:
             internal_node_id (Any): A node_id to be translated
@@ -369,8 +352,7 @@ class Graph:
 
     # frm: TODO: Testing: Create a test for this routine
     def original_nx_node_ids_for_set(self, set_of_node_ids: set[Any]) -> Any:
-        """
-        Translate a set of node_ids to their "original" node_ids.
+        """Translate a set of node_ids to their "original" node_ids.
 
         Args:
             set_of_node_ids (set[Any]): A set of node_ids to be translated
@@ -384,8 +366,8 @@ class Graph:
 
     # frm: TODO: Testing: Create a test for this routine
     def original_nx_node_ids_for_list(self, list_of_node_ids: list[Any]) -> list[Any]:
-        """
-        Translate a list of node_ids to their "original" node_ids.
+        """Translate a list of node_ids to their "original" node_ids.
+
 
         Args:
             list_of_node_ids (list[Any]): A list of node_ids to be translated
@@ -399,15 +381,14 @@ class Graph:
         return new_list
 
     def internal_node_id_for_original_nx_node_id(self, original_nx_node_id: Any) -> Any:
-        """
-        Discover the "internal" node_id in the current GerryChain graph
-        that corresponds to the "original" node_id in the top-level
-        graph (presumably an NX-based graph object).
+        """Return corresponding "internal" node_id.
 
-        This was originally created to facilitate testing where it was
-        convenient to express the test success criteria in terms of
-        "original" node_ids, but the actual test needed to be made
-        using the "internal" (RX) node_ids.
+        Discover the "internal" node_id in the current GerryChain graph that corresponds to the
+        "original" node_id in the top-level graph (presumably an NX-based graph object).
+
+        This was originally created to facilitate testing where it was convenient to express the
+        test success criteria in terms of "original" node_ids, but the actual test needed to be
+        made using the "internal" (RX) node_ids.
 
         Args:
             original_nx_node_id (Any): The "original" node_id
@@ -437,12 +418,10 @@ class Graph:
         return orignal_node_id_to_internal_node_id_map[original_nx_node_id]
 
     def verify_graph_is_valid(self) -> bool:
-        """
-        Verify that the graph is valid.
+        """Verify that the graph is valid.
 
-        This may be overkill, but the idea is that at least in
-        development mode, it would be prudent to check periodically
-        to see that the graph data structure has not been corrupted.
+        This may be overkill, but the idea is that at least in development mode, it would be
+        prudent to check periodically to see that the graph data structure has not been corrupted.
 
         Returns:
             bool: True if the graph is deemed valid
@@ -478,12 +457,7 @@ class Graph:
     # frm: TODO: Refactoring:  Reorder these following routines in sensible order
 
     def is_nx_graph(self) -> bool:
-        """
-        Determine if the graph is NX-based
-
-        Returns:
-            bool:
-        """
+        """Determine if the graph is NX-based."""
         # frm: TODO: Performance:  Only check graph_is_valid() in production
         #
         # Find a clever way to only run this code in development.  Commenting it out for now...
@@ -491,8 +465,7 @@ class Graph:
         return self._nx_graph is not None
 
     def get_nx_graph(self) -> networkx.Graph:
-        """
-        Return the embedded NX graph object
+        """Return the embedded NX graph object.
 
         Returns:
             networkx.Graph:
@@ -502,8 +475,7 @@ class Graph:
         return self._nx_graph
 
     def get_rx_graph(self) -> rustworkx.PyGraph:
-        """
-        Return the embedded RX graph object
+        """Return the embedded RX graph object.
 
         Returns:
             rustworkx.PyGraph:
@@ -513,12 +485,7 @@ class Graph:
         return self._rx_graph
 
     def is_rx_graph(self) -> bool:
-        """
-        Determine if the graph is RX-based
-
-        Returns:
-            bool:
-        """
+        """Determine if the graph is RX-based."""
         # frm: TODO: Performance:  Only check graph_is_valid() in production
         #
         # Find a clever way to only run this code in development.  Commenting it out for now...
@@ -526,14 +493,11 @@ class Graph:
         return self._rx_graph is not None
 
     def convert_from_nx_to_rx(self) -> "Graph":
-        """
-        Convert an NX-based graph object to be an RX-based graph object.
+        """Convert an NX-based graph object to be an RX-based graph object.
 
-        The primary use case for this routine is support for users
-        constructing a graph using NetworkX functionality and then
-        converting that NetworkX graph to RustworkX when creating a
+        The primary use case for this routine is support for users constructing a graph using
+        NetworkX functionality and then converting that NetworkX graph to RustworkX when creating a
         Partition object.
-
 
         Returns:
             "Graph": An RX-based graph that is "the same" as the given NX-based graph
@@ -548,7 +512,6 @@ class Graph:
         #
         self.verify_graph_is_valid()
         if self.is_nx_graph():
-
             if self._is_a_subgraph:
                 # This routine is intended to be used in exactly one place - in converting
                 # an NX based Graph object to be RX based when creating a Partition object.
@@ -599,16 +562,13 @@ class Graph:
             )
 
     def get_nx_to_rx_node_id_map(self) -> dict[Any, Any]:
-        """
-        Return the dict that maps NX node_ids to RX node_ids
+        """Return the dict that maps NX node_ids to RX node_ids.
 
-        The primary use case for this routine is to support automatically
-        converting NX-based graph objects to be RX-based when creating a
-        Partition object.  The issue is that when you convert from NX to RX
-        the node_ids change and so you need to update the Partition object's
-        Assignment to use the new RX node_ids.  This routine is used
-        to translate those NX node_ids to the new RX node_ids when
-        initializing a Partition object.
+        The primary use case for this routine is to support automatically converting NX-based graph
+        objects to be RX-based when creating a Partition object. The issue is that when you convert
+        from NX to RX the node_ids change and so you need to update the Partition object's
+        Assignment to use the new RX node_ids. This routine is used to translate those NX node_ids
+        to the new RX node_ids when initializing a Partition object.
 
         Returns:
             dict[Any, Any]:
@@ -621,8 +581,10 @@ class Graph:
 
     @classmethod
     def from_json(cls, json_file_name: str) -> "Graph":
-        """
-        Create a :class:`Graph` from a JSON file
+        """Create a :class:`Graph` from a JSON file.
+
+        This method creates a :class:`Graph` from a JSON file. It returns a GerryChain Graph object
+        with data from JSON file.
 
         Args:
             json_file_name (str): JSON file
@@ -652,12 +614,12 @@ class Graph:
         return graph
 
     def to_json(self, json_file_name: str, include_geometries_as_geojson: bool = False) -> None:
-        """
-        Dump a GerryChain Graph object to disk as a JSON file
+        """Dump a GerryChain Graph object to disk as a JSON file.
 
         Args:
             json_file_name (str): name of JSON file to be created
-
+            include_geometries_as_geojson (bool, optional): Whether to include geometries in the
+                JSON file as GeoJSON. Default is False.
         """
         # frm TODO: Code: Implement graph.to_json for an RX based graph
         if not self.is_nx_graph():
@@ -682,10 +644,11 @@ class Graph:
         reproject: bool = False,
         ignore_errors: bool = False,
     ) -> "Graph":
-        """
-        Create a :class:`Graph` from a shapefile (or GeoPackage, or GeoJSON, or
-        any other library that :mod:`geopandas` can read. See :meth:`from_geodataframe`
-        for more details.
+        """Create a :class:`Graph` from a shapefile, GeoPackage, GeoJSON, or similar source.
+
+        This method reads any format that :mod:`geopandas` can load and builds a graph from it.
+
+        See :meth:`from_geodataframe` for more details.
 
         Args:
             filename (str): Path to the shapefile / GeoPackage / GeoJSON / etc.
@@ -693,24 +656,18 @@ class Graph:
                 "rook"
             cols_to_add (Optional[list[str]], optional): The names of the columns that you want to
                 add to the graph as node attributes. Default is None.
-            reproject (bool, optional): Whether to reproject to a UTM projection before creating the
-                graph. Default is False.
+            reproject (bool, optional): Whether to reproject to a UTM projection before creating
+                the graph. Default is False.
             ignore_errors (bool, optional): Whether to ignore all invalid geometries and try to
                 continue creating the graph. Default is False.
 
         Returns:
             Graph: The Graph object of the geometries from `filename`.
-        .. Warning::
 
+        Warning:
             This method requires the optional ``geopandas`` dependency.
-            So please install ``gerrychain`` with the ``geo`` extra
-            via the command:
-
-            .. code-block:: console
-
-                pip install gerrychain[geo]
-
-            or install ``geopandas`` separately.
+            Install ``gerrychain`` with the ``geo`` extra via
+            ``pip install gerrychain[geo]``, or install ``geopandas`` separately.
         """
 
         df = gp.read_file(filename)
@@ -736,23 +693,21 @@ class Graph:
         ignore_errors: bool = False,
         crs_override: Optional[Union[str, int]] = None,
     ) -> "Graph":
-        """
-        Create the adjacency :class:`Graph` of geometries described by `dataframe`.
-        The areas of the polygons are included as node attributes (with key `area`).
-        The shared perimeter of neighboring polygons are included as edge attributes
-        (with key `shared_perim`).
+        """Create the adjacency :class:`Graph` of geometries described by `dataframe`.
 
-        Nodes corresponding to polygons on the boundary of the union of all the geometries
-        (e.g., the state, if your dataframe describes VTDs) have a `boundary_node` attribute
-        (set to `True`) and a `boundary_perim` attribute with the length of this "exterior"
-        boundary.
+        The areas of the polygons are included as node attributes (with key `area`). The shared
+        perimeter of neighboring polygons are included as edge attributes (with key
+        `shared_perim`).
 
-        By default, areas and lengths are computed in a UTM projection suitable for the
-        geometries. This prevents the bizarro area and perimeter values that show up when
-        you accidentally do computations in Longitude-Latitude coordinates. If the user
-        specifies `reproject=False`, then the areas and lengths will be computed in the
-        GeoDataFrame's current coordinate reference system. This option is for users who
-        have a preferred CRS they would like to use.
+        Nodes corresponding to polygons on the boundary of the union of all the geometries (e.g.,
+        the state, if your dataframe describes VTDs) have a `boundary_node` attribute (set to
+        `True`) and a `boundary_perim` attribute with the length of this "exterior" boundary.
+
+        By default, areas and lengths are computed in a UTM projection suitable for the geometries.
+        This prevents the bizarro area and perimeter values that show up when you accidentally do
+        computations in Longitude-Latitude coordinates. If the user specifies `reproject=False`,
+        then the areas and lengths will be computed in the GeoDataFrame's current coordinate
+        reference system. This option is for users who have a preferred CRS they would like to use.
 
         Args:
             dataframe (:class:`geopandas.GeoDataFrame`): The GeoDateFrame to convert
@@ -760,8 +715,8 @@ class Graph:
                 "rook".
             cols_to_add (Optional[list[str]], optional): The names of the columns that you want to
                 add to the graph as node attributes. Default is None.
-            reproject (bool, optional): Whether to reproject to a UTM projection before creating the
-                graph. Default is ``False``.
+            reproject (bool, optional): Whether to reproject to a UTM projection before creating
+                the graph. Default is ``False``.
             ignore_errors (bool, optional): Whether to ignore all invalid geometries and attept to
                 create the graph anyway. Default is ``False``.
             crs_override (Optional[Union[str,int]], optional): Value to override the CRS of the
@@ -881,8 +836,7 @@ class Graph:
 
     @property
     def node_indices(self) -> set[Any]:
-        """
-        Return a set of the node_ids in the graph
+        """Return a set of the node_ids in the graph.
 
         Returns:
             set[Any]:
@@ -901,8 +855,7 @@ class Graph:
 
     @property
     def edge_indices(self) -> set[Any]:
-        """
-        Return a set of the edge_ids in the graph
+        """Return a set of the edge_ids in the graph.
 
         Returns:
             set[Any]:
@@ -922,14 +875,11 @@ class Graph:
             )
 
     def get_edge_from_edge_id(self, edge_id: Any) -> tuple[Any, Any]:
-        """
-        Return the edge (tuple of node_ids) corresponding to the
-        given edge_id
+        """Return the edge (tuple of node_ids) corresponding to the given edge_id.
 
-        Note that in NX, an edge_id is the same as an edge - it is
-        just a tuple of node_ids.  However, in RX, an edge_id is
-        an integer, so if you want to get the tuple of node_ids
-        you need to use the edge_id to get that tuple...
+        Note that in NX, an edge_id is the same as an edge - it is just a tuple of node_ids.
+        However, in RX, an edge_id is an integer, so if you want to get the tuple of node_ids you
+        need to use the edge_id to get that tuple...
 
         Args:
             edge_id (Any): The ID of the desired edge
@@ -960,16 +910,12 @@ class Graph:
     # the type annotations make more sense...
 
     def get_edge_id_from_edge(self, edge: tuple[Any, Any]) -> Any:
-        """
-        Get the edge_id that corresponds to the given edge.
+        """Get the edge_id that corresponds to the given edge.
 
-        In RX an edge_id is an integer that designates an edge (an edge is
-        a tuple of node_ids).  In NX, an edge_id IS the tuple of node_ids.
-        So, in general, to support both NX and RX, if you want to get access
-        to the edge data for an edge (tuple of node_ids), you need to
-        ask for the edge_id.
-
-        This functionality is needed, for instance, when
+        In RX an edge_id is an integer that designates an edge (an edge is a tuple of node_ids). In
+        NX, an edge_id IS the tuple of node_ids. So, in general, to support both NX and RX, if you
+        want to get access to the edge data for an edge (tuple of node_ids), you need to ask for
+        the edge_id.
 
         Args:
             edge (tuple[Any, Any]): A tuple of node_ids.
@@ -980,7 +926,6 @@ class Graph:
         self.verify_graph_is_valid()
 
         if self.is_rx_graph():
-
             # frm: TODO: Performance: Perhaps get_edge_id_from_edge() is too expensive...
             #
             # If this routine becomes a signficant performance issue, then perhaps
@@ -1018,33 +963,26 @@ class Graph:
 
     @property
     def nodes(self) -> list[Any]:
-        """
-        Return a list of all of the node_ids in the graph.
+        """Return a list of all of the node_ids in the graph.
 
-        This routine still exists because there is a lot of legacy
-        code that uses this syntax to iterate through all of the nodes
-        in a graph.
+        This routine still exists because there is a lot of legacy code that uses this syntax to
+        iterate through all of the nodes in a graph.
 
-        There is another routine, node_indices(), which does essentially
-        the same thing (it returns a set of node_ids, however, rather than
-        a list).
+        There is another routine, node_indices(), which does essentially the same thing (it returns
+        a set of node_ids, however, rather than a list).
 
-        Why have two routines that do the same thing?  The answer is that with
-        move to RX, it seemed appropriate to emphasize the distinction
-        between objects and the IDs for objects, hence the introduction of
-        node_indices() and edge_indices() routines.  This distinction is
-        critical for edges, but mostly not important for nodes.  In fact
-        this routine is implemented by just converting node_indices to a list.
-        So, it is essentially a style issue - when referring to nodes, we
-        are almost always really referring to node_ids, so why not use a
-        routine called node_indices()?
+        Why have two routines that do the same thing? The answer is that with move to RX, it seemed
+        appropriate to emphasize the distinction between objects and the IDs for objects, hence the
+        introduction of node_indices() and edge_indices() routines. This distinction is critical
+        for edges, but mostly not important for nodes. In fact this routine is implemented by just
+        converting node_indices to a list. So, it is essentially a style issue - when referring to
+        nodes, we are almost always really referring to node_ids, so why not use a routine called
+        node_indices()?
 
-        Note that there is a subtle point to be made about node names vs.
-        node_ids.  It was common before the transition to RX to create
-        nodes with IDs that were essentially names.  That is, the ID had
-        semantic weight.  This is not true with RX node_ids.  So, any
-        code that relies on the semantics of a node's ID (treating it
-        like a name) is suspect in the new RX world.
+        Note that there is a subtle point to be made about node names vs. node_ids. It was common
+        before the transition to RX to create nodes with IDs that were essentially names. That is,
+        the ID had semantic weight. This is not true with RX node_ids. So, any code that relies on
+        the semantics of a node's ID (treating it like a name) is suspect in the new RX world.
 
         Returns:
             list[Any]: A list of all of the node_ids in the graph
@@ -1075,9 +1013,7 @@ class Graph:
 
     @property
     def edges(self) -> set[tuple[Any, Any]]:
-        """
-        Return a set of all of the edges in the graph, where each
-        edge is a tuple of node_ids
+        """Return a set of all of the edges in the graph, where each edge is a tuple of node_ids.
 
         Returns:
             set[tuple[Any, Any]]::
@@ -1103,8 +1039,7 @@ class Graph:
             )
 
     def add_edge(self, node_id1: Any, node_id2: Any) -> None:
-        """
-        Add an edge to the graph from node_id1 to node_id2
+        """Add an edge to the graph from node_id1 to node_id2.
 
         Args:
             node_id1 (Any): The node_id for one of the nodes in the edge
@@ -1137,9 +1072,7 @@ class Graph:
             )
 
     def add_data(self, df: pd.DataFrame, columns: Optional[Iterable[str]] = None) -> None:
-        """
-        Add columns of a DataFrame to a graph as node attributes
-        by matching the DataFrame's index to node ids.
+        """Add columns of a DataFrame to a graph as node attributes by matching the DataFrame's.
 
         Args:
             df (:class:`pandas.DataFrame`): Dataframe containing given columns.
@@ -1173,18 +1106,19 @@ class Graph:
         left_index: Optional[str] = None,
         right_index: Optional[str] = None,
     ) -> None:
-        """
-        Add data from a dataframe to the graph, matching nodes to rows when
-        the node's `left_index` attribute equals the row's `right_index` value.
+        """Add data from a dataframe to the graph, matching nodes to rows when the node's.
+
+        Add data from a dataframe to the graph, matching nodes to rows when the node's `left_index`
+        attribute equals the row's `right_index` value.
 
         Args:
             dataframe (:class:`pandas.DataFrame`): DataFrame.
             columns (Optional[list[str]], optional): The columns whose data you wish to add to the
                 graph. If not provided, all columns are added. Default is None.
-            left_index (Optional[str], optional): The node attribute used to match nodes to rows. If
-                not provided, node IDs are used. Default is None.
-            right_index (Optional[str], optional): The DataFrame column name to use to match rows to
-                nodes. If not provided, the DataFrame's index is used. Default is None.
+            left_index (Optional[str], optional): The node attribute used to match nodes to rows.
+                If not provided, node IDs are used. Default is None.
+            right_index (Optional[str], optional): The DataFrame column name to use to match rows
+                to nodes. If not provided, the DataFrame's index is used. Default is None.
 
         """
         if right_index is not None:
@@ -1226,10 +1160,10 @@ class Graph:
 
     @property
     def islands(self) -> set[Any]:
-        """
-        Return a set of all node_ids that are not connected via an
-        edge to any other node in the graph - that is, nodes with
-        degree = 0
+        """Return A set of all node_ids for nodes of degree 0.
+
+        Return a set of all node_ids that are not connected via an edge to any other node in the
+        graph - that is, nodes with degree = 0
 
         Returns:
             set[Any]: A set of all node_ids for nodes of degree 0
@@ -1238,12 +1172,11 @@ class Graph:
         return set(node_id for node_id in self.node_indices if self.degree(node_id) == 0)
 
     def is_directed(self) -> bool:
-        """
-        Returns False, because GerryChain graphs are not directed.
+        """Returns False, because GerryChain graphs are not directed.
 
-        This is used by low level routines that can operate on both directed
-        and un-directed graphs, that is, it exists so that we can use
-        off-the-shelf code that needs to know if the graph is directed or not.
+        This is used by low level routines that can operate on both directed and un-directed
+        graphs, that is, it exists so that we can use off-the-shelf code that needs to know if the
+        graph is directed or not.
 
         Returns:
             bool: False
@@ -1259,27 +1192,22 @@ class Graph:
         return False
 
     def warn_for_islands(self) -> None:
-        """
-        Issue a warning if there are any islands in the graph - that is,
-        if there are any nodes in the graph that are not connected to any
-        other node (degree = 0)
+        """Issue a warning if there are any islands in the graph.
 
+        Raises:
+            Warning: If there are any islands in the graph, a warning is issued with the indices of
+                the islands.
         """
         islands = self.islands
         if len(self.islands) > 0:
             warnings.warn("Found islands (degree-0 nodes). Indices of islands: {}".format(islands))
 
     def issue_warnings(self) -> None:
-        """
-        Issue any warnings concerning the content or structure
-        of the graph.
-
-        """
+        """Issue any warnings concerning the content or structure of the graph."""
         self.warn_for_islands()
 
     def __len__(self) -> int:
-        """
-        Return the number of nodes in the graph
+        """Return the number of nodes in the graph.
 
         Returns:
             int:
@@ -1287,11 +1215,10 @@ class Graph:
         return len(self.node_indices)
 
     def __getattr__(self, __name: str) -> Any:
-        """
-        If the user requests the value of an attribute that is not defined for
-        a GerryChain graph object, the request is passed on to the embedded
-        graph object (NetworkX or RustworkX), calling that graph object's
-        __getattribute__() function.
+        """If the user requests the value of an attribute that is not defined for a GerryChain.
+
+        graph. object, the request is passed on to the embedded graph object (NetworkX or
+        RustworkX), calling that graph object's __getattribute__() function.
 
         Args:
             __name (str): The name of the attribute whose value is requested.
@@ -1368,8 +1295,7 @@ class Graph:
             )
 
     def __iter__(self) -> Iterable[Any]:
-        """
-        Yields the node_ids in the graph
+        """Yields the node_ids in the graph.
 
         Returns:
             Iterable[Any]: Returns the next node_id in the graph each time it is called.
@@ -1377,22 +1303,17 @@ class Graph:
         yield from self.node_indices
 
     def subgraph(self, nodes: Iterable[Any]) -> "Graph":
-        """
-        Create a subgraph that contains the given nodes.
+        """Create a subgraph that contains the given nodes.
 
-        Note that creating a subgraph of an RustworkX (RX) graph
-        renumbers the nodes, so that a node that had node_id: 4
-        in the parent graph might have node_id: 2 in the subgraph.
-        This is a HUGE difference from the NX world where the
-        node_ids in a subgraph do not change from those in the
-        parent graph.
+        Note that creating a subgraph of an RustworkX (RX) graph renumbers the nodes, so that a
+        node that had node_id: 4 in the parent graph might have node_id: 2 in the subgraph. This is
+        a HUGE difference from the NX world where the node_ids in a subgraph do not change from
+        those in the parent graph.
 
-        In order to make sense of the nodes in a subgraph in the
-        RX world, we need to maintain mappings from the node_ids
-        in the subgraph to the node_ids of the immediate parent
-        graph and to the "original" top-level graph that contains
-        all of the nodes.  You will notice the creation of those
-        maps in the code below.
+        In order to make sense of the nodes in a subgraph in the RX world, we need to maintain
+        mappings from the node_ids in the subgraph to the node_ids of the immediate parent graph
+        and to the "original" top-level graph that contains all of the nodes. You will notice the
+        creation of those maps in the code below.
 
         Args:
             nodes (Iterable[Any]): The nodes to be included in the subgraph
@@ -1518,22 +1439,20 @@ class Graph:
     # would provide a logical place to define WTF a flip is...
 
     def translate_subgraph_node_ids_for_flips(self, flips: dict[Any, int]) -> dict[Any, int]:
-        """
-        Translate the given flips so that the subgraph node_ids in the flips
-        have been translated to the appropriate node_ids in the
-        parent graph.
+        """Translate the given flips so that the subgraph node_ids in the flips correspond
+        to the appropriate node_ids in the parent graph.
 
         The flips parameter is a dict mapping node_ids to parts (districts).
 
-        This routine is used when a computation that creates flips is made
-        on a subgraph, but those flips want to be translated into the context
-        of the parent graph at the end of the computation.
+        This routine is used when a computation that creates flips is made on a subgraph, but those
+        flips want to be translated into the context of the parent graph at the end of the
+        computation.
 
         For more details, refer to the larger comment on subgraphs...
 
         Args:
-            flips (dict[Any, int]): A dict containing "flips" which associate a node with a new part
-                in a partition (a "part" is the same as a district in common parlance).
+            flips (dict[Any, int]): A dict containing "flips" which associate a node with a new
+                part in a partition (a "part" is the same as a district in common parlance).
 
         Returns:
             dict[Any, int]: A dict containing "flips" that have been translated to have node_ids
@@ -1548,13 +1467,11 @@ class Graph:
         return translated_flips
 
     def translate_subgraph_node_ids_for_set_of_nodes(self, set_of_nodes: set[Any]) -> set[Any]:
-        """
-        Translate the given set_of_nodes to have the appropriate
-        node_ids for the parent graph.
+        """Translate the given set_of_nodes to have the appropriate node_ids for the parent graph.
 
-        This routine is used when a computation that creates a set of nodes is made
-        on a subgraph, but those nodes want to be translated into the context
-        of the parent graph at the end of the computation.
+        This routine is used when a computation that creates a set of nodes is made on a subgraph,
+        but those nodes want to be translated into the context of the parent graph at the end of
+        the computation.
 
         For more details, refer to the larger comment on subgraphs...
 
@@ -1575,14 +1492,11 @@ class Graph:
         return translated_set_of_nodes
 
     def _generic_bfs_edges(self, source) -> Generator[tuple[Any, Any], None, None]:
-        """
-        Yields a tuple of node_ids: (parent_node_id, child_node_id) that is the
-        next parent/child pair in a breadth-first search of the graph, with
-        the root node specified by the "source" node_id.
+        """Yield parent/child pairs in a breadth first traversal of the graph starting at "source".
 
         Args:
-            source (Any): The node_id of the first "parent" node - the starting node for the breadth
-                first search
+            source (Any): The node_id of the first "parent" node - the starting node for the
+                breadth first search
 
         Returns:
             Generator[tuple[Any, Any], None, None]: The next parent/child pair in a depth first
@@ -1680,11 +1594,13 @@ class Graph:
     def generic_bfs_successors_generator(
         self, root_node_id: Any
     ) -> Generator[tuple[Any, list[Any]], None, None]:
-        """
-        Does a breadth-first traversal of the given graph, starting at the
-        node specified by "root_node_id", and yields (in breadth-first
-        order) a tuple consisting of each of the nodes traversed along
-        with the children of that node.
+        """Yield BFS ``(parent, children)`` pairs starting from ``root_node_id``.
+
+        Each yielded tuple contains a parent node and its children in breadth-first traversal order.
+
+        Does a breadth-first traversal of the given graph, starting at the node specified by
+        "root_node_id", and yields (in breadth-first order) a tuple consisting of each of the nodes
+        traversed along with the children of that node.
 
         Args:
             root_node_id (Any): The node_id for the node to use to start the BFS traversal
@@ -1713,10 +1629,13 @@ class Graph:
         yield (parent, children)
 
     def generic_bfs_successors(self, root_node_id: Any) -> dict[Any : list[Any]]:
-        """
-        Does a breadth-first traversal of the given graph, starting at the
-        node specified by "root_node_id", and returns a dict mapping parent
-        node_ids to a list of the node_ids for that node's children.
+        """Return the BFS successors mapping for ``root_node_id``.
+
+        The returned dictionary maps each parent node_id to a list of child node_ids.
+
+        Does a breadth-first traversal of the given graph, starting at the node specified by
+        "root_node_id", and returns a dict mapping parent node_ids to a list of the node_ids for
+        that node's children.
 
         Args:
             root_node_id (Any): The node_id for the node to use to start the BFS traversal
@@ -1728,10 +1647,11 @@ class Graph:
         return dict(self.generic_bfs_successors_generator(root_node_id))
 
     def generic_bfs_predecessors(self, root_node_id: Any) -> dict[Any, Any]:
-        """
-        Returns a dict mapping each node_id in the graph to its predecessor node_id
-        where the parent/child relationship is created by doing a breadth-first
-        traversal of the graph starting at the root_node_id.
+        """Return A dict mapping each node_id to the node_id of its parent node.
+
+        Returns a dict mapping each node_id in the graph to its predecessor node_id where the
+        parent/child relationship is created by doing a breadth-first traversal of the graph
+        starting at the root_node_id.
 
         Note that this works for both NX and RX based Graph objects.
 
@@ -1749,21 +1669,20 @@ class Graph:
         return dict(predecessors)
 
     def predecessors(self, root_node_id: Any) -> dict[Any:Any]:
-        """
-        Returns a dict mapping each node_id in the graph to its predecessor node_id
-        where the parent/child relationship is created by doing a breadth-first
-        traversal of the graph starting at the root_node_id.
+        """Return A dict mapping each node_id to the node_id of its parent node.
 
-        Note that the description above is exactly the same description as the
-        description for generic_bfs_predecessors().
+        Returns a dict mapping each node_id in the graph to its predecessor node_id where the
+        parent/child relationship is created by doing a breadth-first traversal of the graph
+        starting at the root_node_id.
 
-        The only difference between this routine and generic_bfs_predecessors() is
-        that this routine delegates to a built-in NetworkX routine in the case
-        when the embedded graph object is NX-based.  The assumption is that the
-        built-in NetworkX implementation is faster.
-
-        In the case of an RX-based graph, this code delegates to
+        Note that the description above is exactly the same description as the description for
         generic_bfs_predecessors().
+
+        The only difference between this routine and generic_bfs_predecessors() is that this
+        routine delegates to a built-in NetworkX routine in the case when the embedded graph object
+        is NX-based. The assumption is that the built-in NetworkX implementation is faster.
+
+        In the case of an RX-based graph, this code delegates to generic_bfs_predecessors().
 
         Args:
             root_node_id (Any): The node at the "root" of the breadth-first travesal
@@ -1830,18 +1749,18 @@ class Graph:
             )
 
     def successors(self, root_node_id: Any) -> dict[Any : list[Any]]:
-        """
-        Does a breadth-first traversal of the given graph, starting at the
-        node specified by "root_node_id", and returns a dict mapping parent
-        node_ids to a list of the node_ids for that node's children.
+        """Return list[Any]]: Returns a dict mapping each node to a list of its children.
 
-        Note that the above is the exact same description as the description
-        for generic_bfs_successors().  In fact, for NX-based graphs, this
-        routine just delegates to NetworkX for the result.
+        Does a breadth-first traversal of the given graph, starting at the node specified by
+        "root_node_id", and returns a dict mapping parent node_ids to a list of the node_ids for
+        that node's children.
 
-        The reason for the delegation to NetworkX is the presumption that
-        the NX version would be faster - which may or may not actually
-        be the case.
+        Note that the above is the exact same description as the description for
+        generic_bfs_successors(). In fact, for NX-based graphs, this routine just delegates to
+        NetworkX for the result.
+
+        The reason for the delegation to NetworkX is the presumption that the NX version would be
+        faster - which may or may not actually be the case.
 
         Args:
             root_node_id (Any): The node_id for the node at which to start the breadth-first
@@ -1863,8 +1782,10 @@ class Graph:
             )
 
     def minimum_spanning_tree_from_edge_weight(self, edge_weight_attribute_name: str) -> "Graph":
-        """
-        Computes and returns the minimum spanning tree give the edge weights.
+        """Computes and returns the minimum spanning tree give the edge weights.
+
+        This method computes and returns the minimum spanning tree give the edge weights. It
+        returns a Graph object containing the miniumum spanning tree given the edge weights.
 
         Args:
             edge_weight_attribute_nanme (str): The name of the edge attribute containing the weight
@@ -1898,10 +1819,10 @@ class Graph:
         return spanning_graph
 
     def neighbors(self, node_id: Any) -> list[Any]:
-        """
-        Return a list of the node_ids of the nodes that are neighbors of
-        the given node - that is, all of the nodes that are directly
-        connected to the given node by an edge.
+        """Return A list of neighbor node_ids.
+
+        Return a list of the node_ids of the nodes that are neighbors of the given node - that is,
+        all of the nodes that are directly connected to the given node by an edge.
 
         Args:
             node_id (Any): The ID of a node
@@ -1922,9 +1843,10 @@ class Graph:
             )
 
     def degree(self, node_id: Any) -> int:
-        """
-        Return the degree of the given node, that is, the number
-        of other nodes directly connected to the given node.
+        """Return the degree of the given node, that is, the number of other nodes directly.
+
+        This method returns the degree of the given node, that is, the number of other nodes
+        directly. It returns number of nodes directly connected to the given node.
 
         Args:
             node_id (Any): The ID of a node
@@ -1945,23 +1867,21 @@ class Graph:
             )
 
     def node_data(self, node_id: Any) -> dict[Any, Any]:
-        """
-        Return the data dictionary that contains the given node's data.
+        """Return the data dictionary that contains the given node's data.
 
-        As docmented elsewhere, in GerryChain code before the conversion
-        to RustworkX, users could access node data using the syntax:
+        As docmented elsewhere, in GerryChain code before the conversion to RustworkX, users could
+        access node data using the syntax:
 
-            graph.nodes[node_id][attribute_name]
+        graph.nodes[node_id][attribute_name]
 
-        This was because a GerryChain Graph object in that codebase was a
-        subclass of NetworkX.Graph, and NetworkX was clever and implemented
-        dict-like behavior for the syntax graph.nodes[]...
+        This was because a GerryChain Graph object in that codebase was a subclass of
+        NetworkX.Graph, and NetworkX was clever and implemented dict-like behavior for the syntax
+        graph.nodes[]...
 
-        This Python cleverness was not carried over to the RustworkX
-        implementation, so in the current GerryChain Graph implementation
-        users need to access node data using the syntax:
+        This Python cleverness was not carried over to the RustworkX implementation, so in the
+        current GerryChain Graph implementation users need to access node data using the syntax:
 
-            graph.node_data(node_id)[attribute_name]
+        graph.node_data(node_id)[attribute_name]
 
         Args:
             node_id (Any): The ID of a node
@@ -1988,13 +1908,11 @@ class Graph:
         return data_dict
 
     def edge_data(self, edge_id: Any) -> dict[Any, Any]:
-        """
-        Return the data dictionary that contains the data for the given edge.
+        """Return the data dictionary that contains the data for the given edge.
 
-        Note that in NetworkX an edge_id can be almost anything, for instance,
-        a string or even a tuple.  However, in RustworkX, an edge_id is
-        an integer.  This code handles both kinds of edge_ids - hence the
-        type, Any.
+        Note that in NetworkX an edge_id can be almost anything, for instance, a string or even a
+        tuple. However, in RustworkX, an edge_id is an integer. This code handles both kinds of
+        edge_ids - hence the type, Any.
 
         Args:
             edge_id (Any): The ID of the edge
@@ -2034,12 +1952,11 @@ class Graph:
     # encapsulate all NetworkX dependencies in one place - this module.
 
     def laplacian_matrix(self) -> scipy.sparse.csr_array:
-        """
-        Return a SciPy sparse array containing the Laplacian matrix for the given graph.
+        """Return a SciPy sparse array containing the Laplacian matrix for the given graph.
 
-        For more details on the Graph Laplacian matrix, please refer to
-        - https://fanchung.ucsd.edu/research/cb/ch1.pdf
-        - https://en.wikipedia.org/wiki/Laplacian_matrix
+        For more details on the Graph Laplacian matrix, please refer to -
+        https://fanchung.ucsd.edu/research/cb/ch1.pdf -
+        https://en.wikipedia.org/wiki/Laplacian_matrix
 
         Returns:
             scipy.sparse.csr_array: A SciPy sparse array containing the Laplacian matrix
@@ -2079,13 +1996,11 @@ class Graph:
         return laplacian_matrix
 
     def normalized_laplacian_matrix(self) -> scipy.sparse.dia_array:
-        """
-        Return a SciPy sparse array containing the normalized Laplacian
-        matrix for the given graph.
+        """Return a SciPy sparse array containing the normalized Laplacian matrix for the given.
 
-        For more details on the normalized Graph Laplacian matrix, please refer to
-        - https://fanchung.ucsd.edu/research/cb/ch1.pdf
-        - https://en.wikipedia.org/wiki/Laplacian_matrix#Laplacian_matrix_normalization_2
+        graph. For more details on the normalized Graph Laplacian matrix, please refer to -
+        https://fanchung.ucsd.edu/research/cb/ch1.pdf -
+        https://en.wikipedia.org/wiki/Laplacian_matrix#Laplacian_matrix_normalization_2
 
         Returns:
             scipy.sparse.dia_array: A SciPy sparse diagonal array containing the Laplacian matrix
@@ -2094,11 +2009,9 @@ class Graph:
         def create_scipy_sparse_array_from_rx_graph(
             rx_graph: rustworkx.PyGraph,
         ) -> scipy.sparse.coo_matrix:
-            """
-            Create a scippy.sparce.coo_matrix from the given RX graph.
+            """Create a scippy.sparce.coo_matrix from the given RX graph.
 
-            This is needed in the code below to compute the normalized laplacian
-            for the graph.
+            This is needed in the code below to compute the normalized laplacian for the graph.
 
             Args:
                 rx_graph (rustworkx.PyGraph): The RustworkX graph object from which to create the
@@ -2181,17 +2094,13 @@ class Graph:
         return laplacian_matrix
 
     def subgraphs_for_connected_components(self) -> list["Graph"]:
-        """
-        Create and return a list of subgraphs for each set of nodes
-        in the given graph that are connected.
+        """Create and return a list of subgraphs for each set of nodes in the given graph that are.
 
-        Note that a connected graph is one in which there is a path
-        from every node in the graph to every other node in the
-        graph.
+        connected. Note that a connected graph is one in which there is a path from every node in
+        the graph to every other node in the graph.
 
-        Note also that each of the subgraphs returned is a
-        maximal subgraph of connected components, meaning that there
-        is no other larger subgraph of connected components that
+        Note also that each of the subgraphs returned is a maximal subgraph of connected
+        components, meaning that there is no other larger subgraph of connected components that
         includes it as a subset.
 
         Returns:
@@ -2214,15 +2123,12 @@ class Graph:
         return subgraphs
 
     def num_connected_components(self) -> int:
-        """
-        Return the number of connected components.
+        """Return the number of connected components.
 
-        Note: A connected component is a maximal subgraph
-        where every vertex is reachable from every other vertex in
-        that same subgraph. In a graph that is not fully connected,
-        connected components are the separate, distinct "islands" of
-        connected nodes. Every node in a graph belongs to exactly
-        one connected component.
+        Note: A connected component is a maximal subgraph where every vertex is reachable from
+        every other vertex in that same subgraph. In a graph that is not fully connected, connected
+        components are the separate, distinct "islands" of connected nodes. Every node in a graph
+        belongs to exactly one connected component.
 
         Returns:
             int: The number of connected components
@@ -2255,9 +2161,10 @@ class Graph:
         return num_cc
 
     def is_a_tree(self) -> bool:
-        """
-        Return whether the current graph is a tree - meaning that
-        it is connected and that it has no cycles.
+        """Return whether the current graph is a tree - meaning that it is connected and that it.
+
+        This method returns whether the current graph is a tree - meaning that it is connected and
+        that it. It returns whether the current graph is a tree.
 
         Returns:
             bool: Whether the current graph is a tree
@@ -2297,26 +2204,25 @@ class Graph:
 
 
 def add_boundary_perimeters(nx_graph: networkx.Graph, geometries: pd.Series) -> None:
-    """
-    Computes the "boundary perimeter" which is a measure of how much of the node's
-    perimeter is on the external boundary of the graph.
+    """Computes the "boundary perimeter" which is a measure of how much of the node's perimeter is.
 
-    Conceptually this is easy - consider a geographical map of a state and then
-    consider all of the counties in the state.  Some of the counties will touch
-    other states (or perhaps the ocean or another country) while other counties
-    will only touch other counties in the state.  One can then ask how much of the
-    perimeter of each county touches something outside the state.  This is
-    exactly what a "boundary perimeter" denotes for a graph, except that instead
-    a county, the unit of interest is a node.
+    Computes the "boundary perimeter" which is a measure of how much of the node's perimeter is on
+    the external boundary of the graph.
 
-    Note that the graph passed in is a NetworkX.Graph object, which is a bit
-    odd, and which should probably be changed in the future to be a GerryChain
-    Graph object, but since this routine is useful for building a graph,
-    having it operate on a NetworkX graph seemed reasonable.
+    Conceptually this is easy - consider a geographical map of a state and then consider all of the
+    counties in the state. Some of the counties will touch other states (or perhaps the ocean or
+    another country) while other counties will only touch other counties in the state. One can then
+    ask how much of the perimeter of each county touches something outside the state. This is
+    exactly what a "boundary perimeter" denotes for a graph, except that instead a county, the unit
+    of interest is a node.
 
-    However, the fact that the graph passed in is a NetworkX.Graph object means
-    that one might need to reach down inside a GerryChain.Graph object to
-    get access to the embedded NetworkX.Graph via get_nx_graph().
+    Note that the graph passed in is a NetworkX.Graph object, which is a bit odd, and which should
+    probably be changed in the future to be a GerryChain Graph object, but since this routine is
+    useful for building a graph, having it operate on a NetworkX graph seemed reasonable.
+
+    However, the fact that the graph passed in is a NetworkX.Graph object means that one might need
+    to reach down inside a GerryChain.Graph object to get access to the embedded NetworkX.Graph via
+    get_nx_graph().
 
     Args:
         graph (:class:`NetworkX.Graph`): NetworkX graph
@@ -2338,7 +2244,7 @@ def add_boundary_perimeters(nx_graph: networkx.Graph, geometries: pd.Series) -> 
     # building the graph from a geodataframe.
 
     if not (isinstance(nx_graph, networkx.Graph)):
-        raise TypeError("Graph passed into add_boundary_perimeters() " "is not a networkx graph")
+        raise TypeError("Graph passed into add_boundary_perimeters() is not a networkx graph")
 
     prepared_boundary = prep(unary_union(geometries).boundary)
 
@@ -2356,7 +2262,10 @@ def add_boundary_perimeters(nx_graph: networkx.Graph, geometries: pd.Series) -> 
 
 
 def check_dataframe(df: pd.DataFrame) -> None:
-    """
+    """Check a dataframe for missing values.
+
+    This function scans each column and warns if any NA values are present.
+
     Raises:
         UserWarning: if the dataframe has any NA values.
     """
@@ -2366,11 +2275,10 @@ def check_dataframe(df: pd.DataFrame) -> None:
 
 
 def remove_geometries(data: networkx.Graph) -> None:
-    """
-    Remove geometry attributes from NetworkX adjacency data object,
-    because they are not serializable. Mutates the ``data`` object.
+    """Remove geometry attributes from NetworkX adjacency data because they are not serializable.
 
-    Does nothing if no geometry attributes are found.
+    Note:
+        Mutates the ``data`` object. Does nothing if no geometry attributes are found.
 
     Args:
         data (networkx.Graph): an adjacency data object (returned by
@@ -2389,11 +2297,10 @@ def remove_geometries(data: networkx.Graph) -> None:
 
 
 def convert_geometries_to_geojson(data: networkx.Graph) -> None:
-    """
-    Convert geometry attributes in a NetworkX adjacency data object
-    to GeoJSON, so that they can be serialized. Mutates the ``data`` object.
+    """Convert geometry attributes in a NetworkX adjacency data to GeoJSON for serialization.
 
-    Does nothing if no geometry attributes are found.
+    Note:
+        Mutates the ``data`` object and does nothing if no geometry attributes are found.
 
     Args:
         data (networkx.Graph): an adjacency data object (returned by
@@ -2439,8 +2346,7 @@ class FrozenGraph:
     __slots__ = ["graph", "size"]
 
     def __init__(self, graph: Graph) -> None:
-        """
-        Initialize a FrozenGraph from a Graph.
+        """Initialize a FrozenGraph from a Graph.
 
         Args:
             graph (Graph): The mutable Graph to be converted into an immutable graph
@@ -2467,8 +2373,7 @@ class FrozenGraph:
         self.size = len(self.graph.node_indices)
 
     def __len__(self) -> int:
-        """
-        Returns the number of nodes in the graph
+        """Returns the number of nodes in the graph.
 
         Returns:
             int: Number of nodes in the graph

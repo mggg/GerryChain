@@ -46,9 +46,7 @@ def epsilon_tree_bipartition(
     node_repeats: int = 1,
     bipartition_tree_fn: Callable = partial(bipartition_tree, max_attempts=10000),
 ) -> Dict:
-    """
-    Uses :func:`~gerrychain.tree.bipartition_tree` to partition a tree into
-    two parts of population ``pop_target`` (within ``epsilon``).
+    """Bipartition a tree into two :math:`\varepsilon`-balanced parts.
 
     Args:
         graph (Graph): The graph to partition into two :math:`\varepsilon`-balanced parts.
@@ -129,30 +127,25 @@ def recom(
     region_surcharge: Optional[Dict] = None,
     bipartition_tree_fn: Callable = bipartition_tree,
 ) -> Partition:
-    """
-    ReCom (short for ReCombination) is a Markov Chain Monte Carlo (MCMC) algorithm
-    used for redistricting. At each step of the algorithm, a pair of adjacent districts
-    is selected at random and merged into a single district. The region is then split
-    into two new districts by generating a spanning tree using the Kruskal/Karger
-    algorithm and cutting an edge at random. The edge is checked to ensure that it
-    separates the region into two new districts that are population balanced, and,
-    if not, a new edge is selected at random and the process is repeated.
+    """Return new partition resulting from the ReCom algorithm.
+
+    ReCom (short for ReCombination) is a Markov Chain Monte Carlo (MCMC) algorithm used for
+    redistricting. At each step of the algorithm, a pair of adjacent districts is selected at
+    random and merged into a single district. The region is then split into two new districts by
+    generating a spanning tree using the Kruskal/Karger algorithm and cutting an edge at random.
+    The edge is checked to ensure that it separates the region into two new districts that are
+    population balanced, and, if not, a new edge is selected at random and the process is repeated.
 
     Example usage:
 
-    .. code-block:: python
-
-        from functools import partial
-        from gerrychain import MarkovChain
-        from gerrychain.proposals import recom
+        from functools import partial from gerrychain import MarkovChain from gerrychain.proposals
+        import recom
 
         # ...define constraints, accept, partition, total_steps here...
 
-        # Ideal population:
-        pop_target = sum(partition["population"].values()) / len(partition)
+        # Ideal population: pop_target = sum(partition["population"].values()) / len(partition)
 
-        proposal = partial(
-            recom, pop_col="POP10", pop_target=pop_target, epsilon=.05, node_repeats=10
+        proposal = partial( recom, pop_col="POP10", pop_target=pop_target, epsilon=.05, node_repeats=10
         )
 
         chain = MarkovChain(proposal, constraints, accept, partition, total_steps)
@@ -163,10 +156,10 @@ def recom(
         pop_target (Union[int,float]): The target population for each district.
         epsilon (float): The epsilon value for population deviation as a percentage of the target
             population.
-        node_repeats (int, optional): The number of times to repeat the bipartitioning step. Default
-            is 1.
-        region_surcharge (Optional[Dict], optional): The surcharge dictionary for the graph used for
-            region-aware partitioning of the grid. Default is None.
+        node_repeats (int, optional): The number of times to repeat the bipartitioning step.
+            Default is 1.
+        region_surcharge (Optional[Dict], optional): The surcharge dictionary for the graph used
+            for region-aware partitioning of the grid. Default is None.
         bipartition_tree_fn (Callable, optional): The method used for bipartitioning the tree.
             Default is :func:`~gerrychain.tree.bipartition_tree`.
 
@@ -271,12 +264,11 @@ def reversible_recom(
     repeat_until_valid: bool = False,
     choice: Callable = random.choice,
 ) -> Partition:
-    """
-    Reversible ReCom algorithm for redistricting.
+    """Reversible ReCom algorithm for redistricting.
 
-    This function performs the reversible ReCom algorithm, which is a Markov Chain Monte
-    Carlo (MCMC) algorithm used for redistricting. For more information, see the paper
-    "Spanning Tree Methods for Sampling Graph Partitions" by Cannon, et al. (2022) at
+    This function performs the reversible ReCom algorithm, which is a Markov Chain Monte Carlo
+    (MCMC) algorithm used for redistricting. For more information, see the paper "Spanning Tree
+    Methods for Sampling Graph Partitions" by Cannon, et al. (2022) at
     https://arxiv.org/abs/2210.01401
 
     Args:
@@ -323,7 +315,7 @@ def reversible_recom(
         cuts = find_balanced_edge_cuts_fn(*args, **kwargs)
         if len(cuts) > M:
             raise ReversibilityError(
-                f"Found {len(cuts)} balance edges, " f"but the upper bound is {M}."
+                f"Found {len(cuts)} balance edges, but the upper bound is {M}."
             )
         return cuts
 
@@ -607,7 +599,8 @@ class ReCom:
         epsilon: float,
         bipartition_tree_fn: Callable = bipartition_tree,
     ):
-        """
+        """Initialize a ReCom instance.
+
         Args:
             pop_col (str): The name of the column in the partition that contains the population
                 data.

@@ -5,9 +5,7 @@ from .bounds import SelfConfiguringLowerBound, SelfConfiguringUpperBound
 
 
 def L1_reciprocal_polsby_popper(partition: Partition) -> float:
-    """
-    Returns the :math:`L^1` norm of the reciprocal Polsby-Popper scores
-    for the given partition
+    """Returns the :math:`L^1` norm of the reciprocal Polsby-Popper scores for the given partition.
 
     Args:
         partition (Partition): Partition representing a districting plan
@@ -19,9 +17,7 @@ def L1_reciprocal_polsby_popper(partition: Partition) -> float:
 
 
 def L1_polsby_popper(partition: Partition) -> float:
-    """
-    Returns the :math:`L^1` norm of the Polsby-Popper scores
-    for the given partition
+    """Returns the :math:`L^1` norm of the Polsby-Popper scores for the given partition.
 
     Args:
         partition (Partition): Partition representing a districting plan
@@ -33,9 +29,7 @@ def L1_polsby_popper(partition: Partition) -> float:
 
 
 def L2_polsby_popper(partition: Partition) -> float:
-    """
-    Returns the :math:`L^2` norm of the Polsby-Popper scores
-    for the given partition.
+    """Returns the :math:`L^2` norm of the Polsby-Popper scores for the given partition.
 
     Args:
         partition (Partition): Partition representing a districting plan
@@ -47,9 +41,7 @@ def L2_polsby_popper(partition: Partition) -> float:
 
 
 def L_minus_1_polsby_popper(partition):
-    """
-    Returns the :math:`L^{-1}` norm of the Polsby-Popper scores
-    for the given partition.
+    """Returns the :math:`L^{-1}` norm of the Polsby-Popper scores for the given partition.
 
     Args:
         partition (Partition): Partition representing a districting plan

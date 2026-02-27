@@ -31,12 +31,11 @@ from .bounds import SelfConfiguringLowerBound
 
 
 def _are_reachable(graph: Graph, start_node: Any, avoid: Callable, targets: Any) -> bool:
-    """
-    A modified version of NetworkX's function
-    `networkx.algorithms.shortest_paths.weighted._dijkstra_multisource()`
+    """A modified version of NetworkX's function
+    `networkx.algorithms.shortest_paths.weighted._dijkstra_multisource()`.
 
-    This function checks if the targets are reachable from the start_node node
-    while avoiding edges based on the avoid condition function.
+    This function checks if the targets are reachable from the start_node node while avoiding
+    edges based on the avoid condition function.
 
     Args:
         graph (Graph): Graph
@@ -100,7 +99,6 @@ def _are_reachable(graph: Graph, start_node: Any, avoid: Callable, targets: Any)
 
         # Add all of the neighbors (children) of this node to the stack
         for neighbor_node_id in graph.neighbors(node_id):
-
             if avoid(node_id, neighbor_node_id):
                 # If the current neighbor is to be avoided, skip it...
 
@@ -148,19 +146,14 @@ def _are_reachable(graph: Graph, start_node: Any, avoid: Callable, targets: Any)
 
 
 def single_flip_contiguous(partition: Partition) -> bool:
-    """
-    Check if swapping the given node from its old assignment disconnects the
-    old assignment class.
+    """Check if swapping the given node from its old assignment disconnects the old assignment.
+
 
     Args:
         partition (Partition): The proposed next :class:`~gerrychain.partition.Partition`
 
     Returns:
         bool: whether the partition is contiguous
-    We assume that `removed_node` belonged to an assignment class that formed a
-    connected subgraph. To see if its removal left the subgraph connected, we
-    check that the neighbors of the removed node are still connected through
-    the changed graph.
     """
     parent = partition.parent
     flips = partition.flips
@@ -171,12 +164,7 @@ def single_flip_contiguous(partition: Partition) -> bool:
     assignment = partition.assignment
 
     def _partition_edge_avoid(start_node: Any, end_node: Any):
-        """
-        Helper function used in the graph traversal to avoid edges that cross between different
-        districts (parts).
-
-        It is crucial for ensuring that the traversal only considers paths within
-        the same district (part).
+        """Helper function used in the graph traversal to avoid edges that cross districts (parts).
 
         Args:
             start_node (Any): The start node of the edge.
@@ -221,15 +209,14 @@ def single_flip_contiguous(partition: Partition) -> bool:
 
 
 def _affected_parts(partition: Partition) -> Set[int]:
-    """
-    Checks which partitions were affected by the change of nodes.
+    """Checks which partitions were affected by the change of nodes.
 
     Args:
         partition (Partition): The proposed next :class:`~gerrychain.partition.Partition`
 
     Returns:
-        Set[int]: The set of IDs of all parts that gained or lost a node when compared to the parent
-            partition.
+        Set[int]: The set of IDs of all parts that gained or lost a node when compared to the
+            parent partition.
     """
     flips = partition.flips
     parent = partition.parent
@@ -249,8 +236,10 @@ def _affected_parts(partition: Partition) -> Set[int]:
 
 
 def contiguous(partition: Partition) -> bool:
-    """
-    Check if the parts of a partition are connected
+    """Check if the parts of a partition are connected.
+
+    This function checks if the parts of a partition are connected. It returns whether the
+    all components of the partition are contiguous.
 
     Args:
         partition (Partition): The proposed next :class:`~gerrychain.partition.Partition`
@@ -263,9 +252,7 @@ def contiguous(partition: Partition) -> bool:
 
 
 def contiguous_bfs(partition: Partition) -> bool:
-    """
-    Checks that a given partition's parts are connected as graphs using a simple
-    breadth-first search.
+    """Checks that a given partition's parts are connected as graphs using BFS.
 
     Args:
         partition (Partition): Instance of Partition
@@ -306,7 +293,8 @@ def contiguous_bfs(partition: Partition) -> bool:
 
 
 def number_of_contiguous_parts(partition: Partition) -> int:
-    """
+    """Computes number of contiguous parts in the partition.
+
     Args:
         partition (Partition): Instance of Partition; contains connected components.
 
@@ -325,16 +313,14 @@ no_more_discontiguous = SelfConfiguringLowerBound(number_of_contiguous_parts)
 
 
 def contiguous_components(partition: Partition) -> Dict[int, list]:
-    """
-    Return the connected components of each of the subgraphs of the parts
-    of the partition.
+    """Determines the connected components of each of the subgraphs of the parts of the partition.
 
     Args:
         partition (Partition): Instance of Partition; contains connected components.
 
     Returns:
-        dict: dictionary mapping each part ID to a list holding the connected subgraphs of that part
-            of the partition
+        dict: dictionary mapping each part ID to a list holding the connected subgraphs of that
+            part of the partition
     """
 
     # frm: TODO: Documentation: Migration Guide:  NX vs RX Issues here:
@@ -364,9 +350,7 @@ def contiguous_components(partition: Partition) -> Dict[int, list]:
 
 
 def _bfs(graph: Dict[int, list]) -> bool:
-    """
-    Performs a breadth-first search on the provided graph and returns True or
-    False depending on whether the graph is connected.
+    """Performs BFS on the provided graph and returns if the graph is connected.
 
     Args:
         graph (Dict[int, list]): Dict-of-lists; an adjacency matrix.

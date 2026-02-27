@@ -6,8 +6,10 @@ from ..partition import Partition
 
 
 def propose_any_node_flip(partition: Partition) -> Partition:
-    """
-    Flip a random node (not necessarily on the boundary) to a random part
+    """Flip a random node (not necessarily on the boundary) to a random part.
+
+    This function flip a random node (not necessarily on the boundary) to a random part. It returns
+    a possible next `~gerrychain.Partition`.
 
     Args:
         partition (Partition): The current partition to propose a flip from.
@@ -23,8 +25,10 @@ def propose_any_node_flip(partition: Partition) -> Partition:
 
 
 def propose_flip_every_district(partition: Partition) -> Partition:
-    """
-    Proposes a random boundary flip for each district in the partition.
+    """Proposes a random boundary flip for each district in the partition.
+
+    This function proposes a random boundary flip for each district in the partition. It returns a
+    possible next `~gerrychain.Partition`.
 
     Args:
         partition (Partition): The current partition to propose the flips from.
@@ -47,8 +51,10 @@ def propose_flip_every_district(partition: Partition) -> Partition:
 
 
 def propose_chunk_flip(partition: Partition) -> Partition:
-    """
-    Chooses a random boundary node and proposes to flip it and all of its neighbors
+    """Chooses a random boundary node and proposes to flip it and all of its neighbors.
+
+    This function chooses a random boundary node and proposes to flip it and all of its neighbors.
+    It returns a possible next `~gerrychain.Partition`.
 
     Args:
         partition (Partition): The current partition to propose a flip from.
@@ -76,8 +82,10 @@ def propose_chunk_flip(partition: Partition) -> Partition:
 
 
 def propose_random_flip(partition: Partition) -> Partition:
-    """
-    Proposes a random boundary flip from the partition.
+    """Proposes a random boundary flip from the partition.
+
+    This function proposes a random boundary flip from the partition. It returns a possible next
+    `~gerrychain.Partition`.
 
     Args:
         partition (Partition): The current partition to propose a flip from.
@@ -95,12 +103,10 @@ def propose_random_flip(partition: Partition) -> Partition:
 
 
 def slow_reversible_propose_bi(partition: Partition) -> Partition:
-    """
-    Proposes a random boundary flip from the partition in a reversible fashion
-    for bipartitions by selecting a boundary node at random and uniformly picking
-    one of its neighboring parts. For k-partitions this is not uniform since there
-    might be multiple parts next to a single node.
+    """Proposes a random boundary flip from the partition in a reversible fashion.
 
+    Selects a boundary node at random and uniformly picking one of its neighboring parts.
+    For k-partitions this is not uniform since there might be multiple parts next to a single node.
     Temporary version until we make an updater for this set.
 
     Args:
@@ -130,11 +136,7 @@ flip = propose_random_flip
 
 
 def slow_reversible_propose(partition: Partition) -> Partition:
-    """
-    Proposes a random boundary flip from the partition in a reversible fasion
-    by selecting uniformly from the (node, flip) pairs.
-
-    Temporary version until we make an updater for this set.
+    """Proposes a random boundary flip from the partition in a reversible fashion
 
     Args:
         partition (Partition): The current partition to propose a flip from.

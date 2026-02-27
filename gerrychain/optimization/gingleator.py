@@ -32,7 +32,8 @@ class Gingleator(SingleMetricOptimizer):
         total_pop_col: str = "TOTPOP",
         min_perc_column_name: str = "_gingleator_auxiliary_helper_updater_min_perc_col",
     ):
-        """
+        """Initialize a Gingleator instance.
+
         Args:
             proposal (Callable): Function proposing the next state from the current state.
             constraints (Union[Iterable[Callable], Validator, Iterable[Bounds], Callable]): A
@@ -42,10 +43,10 @@ class Gingleator(SingleMetricOptimizer):
             initial_state (Partition): Initial :class:`gerrychain.partition.Partition` class.
             minority_perc_col (Optional[str]): The name of the updater mapping of district ids to
                 the fraction of minority population within that district. If no updater is
-                specified, one is made according to the ``min_perc_column_name`` parameter. Defaults
-                to None.
-            threshold (float, optional): Fraction beyond which to consider something a "Gingles" (or
-                opportunity) district. Defaults to 0.5.
+                specified, one is made according to the ``min_perc_column_name`` parameter.
+                Defaults to None.
+            threshold (float, optional): Fraction beyond which to consider something a "Gingles"
+                (or opportunity) district. Defaults to 0.5.
             score_function (Optional[Callable]): The function to use during optimization. Should
                 have the signature ``Partition * str (minority_perc_col) * float (threshold) -> 'a
                 where 'a is Comparable``. This class implements a few potential choices as class
@@ -91,13 +92,12 @@ class Gingleator(SingleMetricOptimizer):
     def num_opportunity_dists(
         cls, part: Partition, minority_perc_col: str, threshold: float
     ) -> int:
-        """
-        Given a partition, returns the number of opportunity districts.
+        """Given a partition, returns the number of opportunity districts.
 
         Args:
             part (Partition): Partition to score.
-            minority_perc_col (str): The name of the updater mapping of district ids to the fraction
-                of minority population within that district.
+            minority_perc_col (str): The name of the updater mapping of district ids to the
+                fraction of minority population within that district.
             threshold (float): Fraction beyond which to consider something a "Gingles" (or
                 opportunity) district.
 
@@ -111,14 +111,12 @@ class Gingleator(SingleMetricOptimizer):
     def reward_partial_dist(
         cls, part: Partition, minority_perc_col: str, threshold: float
     ) -> float:
-        """
-        Given a partition, returns the number of opportunity districts + the percentage of the next
-        highest district.
+        """Return Number of opportunity districts + the percentage of the next highest district.
 
         Args:
             part (Partition): Partition to score.
-            minority_perc_col (str): The name of the updater mapping of district ids to the fraction
-                of minority population within that district.
+            minority_perc_col (str): The name of the updater mapping of district ids to the
+                fraction of minority population within that district.
             threshold (float): Fraction beyond which to consider something a "Gingles" (or
                 opportunity) district.
 
@@ -132,15 +130,16 @@ class Gingleator(SingleMetricOptimizer):
 
     @classmethod
     def reward_next_highest_close(cls, part: Partition, minority_perc_col: str, threshold: float):
-        """
+        """Returns the number of opportunity districts + a scaled reward for the closest district.
+
         Given a partition, returns the number of opportunity districts, if no additional district
         is within 10% of reaching the threshold. If one is, the distance that district is from the
         threshold is scaled between 0 and 1 and added to the count of opportunity districts.
 
         Args:
             part (Partition): Partition to score.
-            minority_perc_col (str): The name of the updater mapping of district ids to the fraction
-                of minority population within that district.
+            minority_perc_col (str): The name of the updater mapping of district ids to the
+                fraction of minority population within that district.
             threshold (float): Fraction beyond which to consider something a "Gingles" (or
                 opportunity) district.
 
@@ -159,14 +158,13 @@ class Gingleator(SingleMetricOptimizer):
 
     @classmethod
     def penalize_maximum_over(cls, part: Partition, minority_perc_col: str, threshold: float):
-        """
-        Given a partition, returns the number of opportunity districts + (1 - the maximum excess)
-        scaled to between 0 and 1.
+        """Returns the number of opportunity districts + (1 - the maximum excess) scaled to
+        between 0 and 1.
 
         Args:
             part (Partition): Partition to score.
-            minority_perc_col (str): The name of the updater mapping of district ids to the fraction
-                of minority population within that district.
+            minority_perc_col (str): The name of the updater mapping of district ids to the
+                fraction of minority population within that district.
             threshold (float): Fraction beyond which to consider something a "Gingles" (or
                 opportunity) district.
 
@@ -183,14 +181,13 @@ class Gingleator(SingleMetricOptimizer):
 
     @classmethod
     def penalize_avg_over(cls, part: Partition, minority_perc_col: str, threshold: float):
-        """
-        Given a partition, returns the number of opportunity districts + (1 - the average excess)
-        scaled to between 0 and 1.
+        """Returns the number of opportunity districts + (1 - the average excess) scaled to
+        between 0 and 1.
 
         Args:
             part (Partition): Partition to score.
-            minority_perc_col (str): The name of the updater mapping of district ids to the fraction
-                of minority population within that district.
+            minority_perc_col (str): The name of the updater mapping of district ids to the
+                fraction of minority population within that district.
             threshold (float): Fraction beyond which to consider something a "Gingles" (or
                 opportunity) district.
 

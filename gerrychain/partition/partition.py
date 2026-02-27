@@ -96,7 +96,8 @@ class Partition:
         flips=None,
         use_default_updaters=True,
     ):
-        """
+        """Initialize a Partition instance.
+
         Args:
             graph (Any): Underlying graph.
             assignment (Any): Dictionary assigning nodes to districts.
@@ -135,8 +136,10 @@ class Partition:
         use_default_updaters: bool = True,
         method: Callable = recursive_tree_part,
     ) -> "Partition":
-        """
-        Create a Partition with a random assignment of nodes to districts.
+        """Create a Partition with a random assignment of nodes to districts.
+
+        This method creates a Partition with a random assignment of nodes to districts. It returns
+        partition created with a random assignment.
 
         Args:
             graph (:class:`~gerrychain.Graph`): The graph to create the Partition from.
@@ -191,7 +194,6 @@ class Partition:
 
         # if a Graph object, make sure it is based on an embedded RustworkX.PyGraph
         if isinstance(graph, Graph):
-
             # Performance Testing:  In order to compare the performance of
             # RustworkX vs NetworkX, we enable using an NX-based Graph in a partition
             # by setting the variable, test_performance_using_NX_graph, to be True.
@@ -213,7 +215,6 @@ class Partition:
                 print("=====================================================")
 
             elif graph.is_nx_graph():
-
                 # Get the assignment that would be appropriate for the NX-based graph
                 old_nx_assignment = get_assignment(assignment, graph)
 
@@ -296,9 +297,10 @@ class Partition:
         return len(self.parts)
 
     def flip(self, flips: Dict, flips_passed_in_use_original_nx_node_ids=False) -> "Partition":
-        """
-        Returns the new partition obtained by performing the given `flips`
-        on this partition.
+        """Returns the new partition obtained by performing the given `flips` on this partition.
+
+        This method returns the new partition obtained by performing the given `flips` on this
+        partition. It returns new :class:`Partition`.
 
         Args:
             flips (Dict): dictionary assigning nodes of the graph to their new districts
@@ -324,7 +326,11 @@ class Partition:
         return self.__class__(parent=self, flips=flips)
 
     def crosses_parts(self, edge: Tuple) -> bool:
-        """
+        """Return True if the edge crosses from one part of the partition to another.
+
+        This method returns True if the edge crosses from one part of the partition to another. It
+        returns true if the edge crosses from one part of the partition to another.
+
         Args:
             edge (Tuple): tuple of node IDs
 
@@ -334,9 +340,10 @@ class Partition:
         return self.assignment.mapping[edge[0]] != self.assignment.mapping[edge[1]]
 
     def __getitem__(self, key: str) -> Any:
-        """
-        Allows accessing the values of updaters computed for this
-        Partition instance.
+        """Allows accessing the values of updaters computed for this Partition instance.
+
+        This method allows accessing the values of updaters computed for this Partition instance.
+        It returns value of the updater.
 
         Args:
             key (str): Property to access.
@@ -409,16 +416,18 @@ class Partition:
         #           engine - presumably to define colors and other graph stuff.
         #
 
-        """
-        Plot the partition, using the provided geometries.
+        """Plot the partition, using the provided geometries.
+
+        This method plots the partition, using the provided geometries. It returns matplotlib axes
+        object. Which plots the Partition.
 
         Args:
             geometries (geopandas.GeoDataFrame or geopandas.GeoSeries): A
                 :class:`geopandas.GeoDataFrame` or :class:`geopandas.GeoSeries` holding the
                 geometries to use for plotting. Its :class:`~pandas.Index` should match the node
                 labels of the partition's underlying :class:`~gerrychain.Graph`.
-            `**kwargs` (Any): Additional arguments to pass to :meth:`geopandas.GeoDataFrame.plot` to
-                adjust the plot.
+            `**kwargs` (Any): Additional arguments to pass to :meth:`geopandas.GeoDataFrame.plot`
+                to adjust the plot.
 
         Returns:
             matplotlib.axes.Axes: The matplotlib axes object. Which plots the Partition.
@@ -446,17 +455,17 @@ class Partition:
         districtr_file: str,
         updaters: Optional[Dict[str, Callable]] = None,
     ) -> "Partition":
-        """
-        Create a Partition from a districting plan created with `Districtr`_,
-        a free and open-source web app created by MGGG for drawing districts.
+        """Return partition created from the Districtr file.
 
-        The provided ``graph`` should be created from the same shapefile as the
-        Districtr module used to draw the districting plan. These shapefiles may
-        be found in a repository in the `mggg-states`_ GitHub organization, or by
-        request from MGGG.
+        Create a Partition from a districting plan created with `Districtr`_, a free and
+        open-source web app created by MGGG for drawing districts.
 
-        .. _`Districtr`: https://mggg.org/Districtr
-        .. _`mggg-states`: https://github.com/mggg-states
+        The provided ``graph`` should be created from the same shapefile as the Districtr module
+        used to draw the districting plan. These shapefiles may be found in a repository in the
+        `mggg-states`_ GitHub organization, or by request from MGGG.
+
+        .. _`Districtr`: https://mggg.org/Districtr .. _`mggg-states`:
+        https://github.com/mggg-states
 
         Args:
             graph (:class:`~gerrychain.Graph`): The graph to create the Partition from

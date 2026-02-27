@@ -21,7 +21,8 @@ class SubgraphView:
     __slots__ = ["graph", "parts", "subgraphs_cache"]
 
     def __init__(self, graph: Graph, parts: List[List[Any]]) -> None:
-        """
+        """Initialize a SubgraphView instance.
+
         Args:
             graph (Graph): The parent graph from which subgraphs are derived.
             parts (List[List[Any]]): A list of lists of nodes corresponding the different parts of
@@ -33,7 +34,11 @@ class SubgraphView:
         self.subgraphs_cache = {}
 
     def __getitem__(self, part: int) -> Graph:
-        """
+        """Return the item for the given key.
+
+        This method returns the item for the given key. It returns subgraph of the parent graph
+        corresponding to the partition with id `part`.
+
         Args:
             part (int): The the id of the partition to return the subgraph for.
 
@@ -54,6 +59,5 @@ class SubgraphView:
 
     def __repr__(self) -> str:
         return (
-            f"<SubgraphView with {len(self.parts)}"
-            f" and {len(self.subgraphs_cache)} cached graphs>"
+            f"<SubgraphView with {len(self.parts)} and {len(self.subgraphs_cache)} cached graphs>"
         )

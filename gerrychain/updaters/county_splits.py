@@ -30,8 +30,7 @@ class CountySplit(Enum):
 
 
 def county_splits(partition_name: str, county_field_name: str) -> Callable:
-    """
-    Update that allows for the tracking of county splits.
+    """An updater for tracking the number of counties that are split in a partition.
 
     Args:
         partition_name (str): Name that the :class:`.Partition` instance will store.
@@ -40,8 +39,8 @@ def county_splits(partition_name: str, county_field_name: str) -> Callable:
     Returns:
         Callable: The tracked data is a dictionary keyed on the county ID. The stored values are
             tuples of the form `(split, nodes, seen)`. `split` is a :class:`.CountySplit` enum,
-            `nodes` is a list of node IDs, and `seen` is a list of assignment IDs that are contained
-            in the county.
+            `nodes` is a list of node IDs, and `seen` is a list of assignment IDs that are
+            contained in the county.
     """
 
     def _get_county_splits(partition):
@@ -53,30 +52,27 @@ def county_splits(partition_name: str, county_field_name: str) -> Callable:
 def compute_county_splits(
     partition, county_field: str, partition_field: str
 ) -> Dict[str, CountyInfo]:
-    """
-    Track nodes in counties and information about their splitting.
+    """Computes the number of counties that are split in a partition.
 
     Args:
-        partition (:class:`~gerrychain.partition.Partition`): The partition object to compute county
-            splits for.
+        partition (:class:`~gerrychain.partition.Partition`): The partition object to compute
+            county splits for.
         county_field (str): Name of county ID field on the graph.
         partition_field (str): Name of the attribute in the graph that stores the partition
-            information. The county split information will be computed with respect to this division
-            of the graph.
+            information. The county split information will be computed with respect to this
+            division of the graph.
 
     Returns:
-        Dict[str, CountyInfo]: A dict containing the information on how counties changed between the
-            parent and child partitions. If there is no parent partition, then only the OLD_SPLIT
-            and NOT_SPLIT values will be used.
+        Dict[str, CountyInfo]: A dict containing the information on how counties changed between
+            the parent and child partitions. If there is no parent partition, then only the
+            OLD_SPLIT and NOT_SPLIT values will be used.
     """
 
     # Create the initial county data containers.
     if not partition.parent:
-
         county_dict = dict()
 
         for node_id in partition.graph.node_indices:
-
             # First figure get current status of the county's information
             county = partition.graph.node_data(node_id)[county_field]
             if county in county_dict:
@@ -119,9 +115,7 @@ def compute_county_splits(
 
 
 def tally_region_splits(reg_attr_lst: List[str]) -> Callable:
-    """
-    A naive updater for tallying the number of times a region attribute is split.
-    for each region attribute in reg_attr_lst.
+    """A naive updater for tallying the number of times a region attribute is split.
 
     Args:
         reg_attr_lst (List[str]): A list of region names to tally splits for.
@@ -141,7 +135,13 @@ def tally_region_splits(reg_attr_lst: List[str]) -> Callable:
 
 
 def total_reg_splits(partition, reg_attr):
-    """Returns the total number of times that reg_attr is split in the partition."""
+    """Computes the total number of times that reg_attr is split in the partition.
+
+    Args:
+        partition (Partition): The partition object to compute region splits for.
+        reg_attr (str): The name of the region attribute to compute splits for. This should be a
+            node attribute on the graph.
+    """
     all_region_names = set(
         partition.graph.node_data(node_id)[reg_attr] for node_id in partition.graph.node_indices
     )

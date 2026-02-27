@@ -14,10 +14,10 @@ import numpy
 
 
 def mean_median(election_results) -> float:
-    """
-    Computes the Mean-Median score for the given ElectionResults.
-    A positive value indicates an advantage for the first party listed
-    in the Election's party_names_to_node_attribute_names dictionary.
+    """Computes the Mean-Median score for the given ElectionResults.
+
+    A positive value indicates an advantage for the first party listed in the Election's
+    party_names_to_node_attribute_names dictionary.
 
     Args:
         election_results (ElectionResults): An ElectionResults object
@@ -32,13 +32,13 @@ def mean_median(election_results) -> float:
 
 
 def mean_thirdian(election_results) -> float:
-    """
-    Computes the Mean-Median score for the given ElectionResults.
-    A positive value indicates an advantage for the first party listed
-    in the Election's party_names_to_node_attribute_names dictionary.
+    """Computes the Mean-Median score for the given ElectionResults.
 
-    The motivation for this score is that the minority party in many
-    states struggles to win even a third of the seats.
+    A positive value indicates an advantage for the first party listed in the Election's
+    party_names_to_node_attribute_names dictionary.
+
+    The motivation for this score is that the minority party in many states struggles to win even a
+    third of the seats.
 
     Args:
         election_results (ElectionResults): An ElectionResults object
@@ -56,10 +56,10 @@ def mean_thirdian(election_results) -> float:
 
 
 def efficiency_gap(election_results) -> float:
-    """
-    Computes the efficiency gap for the given ElectionResults.
-    A positive value indicates an advantage for the first party listed
-    in the Election's party_names_to_node_attribute_names dictionary.
+    """Computes the efficiency gap for the given ElectionResults.
+
+    A positive value indicates an advantage for the first party listed in the Election's
+    party_names_to_node_attribute_names dictionary.
 
     Args:
         election_results (ElectionResults): An ElectionResults object
@@ -75,8 +75,11 @@ def efficiency_gap(election_results) -> float:
 
 
 def wasted_votes(party1_votes: int, party2_votes: int) -> Tuple[int, int]:
-    """
-    Computes the wasted votes for each party in the given race.
+    """Computes the wasted votes for each party in the given race.
+
+    This function computes the wasted votes for each party in the given race. It returns a tuple of
+    the wasted votes for each party.
+
     Args:
         party1_votes (int): the number of votes party1 received in the race
         party2_votes (int): the number of votes party2 received in the race
@@ -95,11 +98,10 @@ def wasted_votes(party1_votes: int, party2_votes: int) -> Tuple[int, int]:
 
 
 def partisan_bias(election_results) -> float:
-    """
-    Computes the partisan bias for the given ElectionResults.
-    The partisan bias is defined as the number of districts with above-mean
-    vote share by the first party divided by the total number of districts,
-    minus 1/2.
+    """Computes the partisan bias for the given ElectionResults.
+
+    The partisan bias is defined as the number of districts with above-mean vote share by the first
+    party divided by the total number of districts, minus 1/2.
 
     Args:
         election_results (ElectionResults): An ElectionResults object
@@ -115,10 +117,10 @@ def partisan_bias(election_results) -> float:
 
 
 def partisan_gini(election_results) -> float:
-    """
-    Computes the partisan Gini score for the given ElectionResults.
-    The partisan Gini score is defined as the area between the seats-votes
-    curve and its reflection about (.5, .5).
+    """Computes the partisan Gini score for the given ElectionResults.
+
+    The partisan Gini score is defined as the area between the seats-votes curve and its reflection
+    about (.5, .5).
 
     For more information on the computation, see Definition 1 in:
     https://arxiv.org/pdf/2008.06930.pdf

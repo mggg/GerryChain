@@ -93,34 +93,20 @@ class Grid(Partition):
         parent: Optional["Grid"] = None,
         flips: Optional[Dict[Tuple[int, int], int]] = None,
     ) -> None:
-        """
-        If the updaters are not specified, the default updaters are used, which are as follows::
-
-            default_updaters = {
-                "cut_edges": cut_edges,
-                "population": Tally("population"),
-                "perimeter": perimeter,
-                "exterior_boundaries": exterior_boundaries,
-                "interior_boundaries": interior_boundaries,
-                "boundary_nodes": boundary_nodes,
-                "area": Tally("area", alias="area"),
-                "polsby_popper": polsby_popper,
-                "cut_edges_by_part": cut_edges_by_part,
-            }
-
+        """Initialize a Grid instance.
 
         Args:
-            dimensions (Tuple[int, int], optional): The grid dimensions (rows, columns), defaults to
-                None.
+            dimensions (Tuple[int, int], optional): The grid dimensions (rows, columns), defaults
+                to None.
             with_diagonals (bool, optional): If True, includes diagonal connections, defaults to
                 False.
             assignment (Dict, optional): Node-to-district assignments, defaults to None.
             updaters (Dict[str, Callable], optional): Custom updater functions, defaults to None.
             parent (Grid, optional): Parent Grid object for inheritance, defaults to None.
-            flips (Dict[Tuple[int, int], int], optional): Node flips for partition changes, defaults
-                to None. Note that flips are a dict of the form: {node_id: part}. In the case of a
-                Grid, a node_id is a tuple indicating its position in the grid, so for a Grid the
-                flips look like: {(row_node_id, col_node_id): part}
+            flips (Dict[Tuple[int, int], int], optional): Node flips for partition changes,
+                defaults to None. Note that flips are a dict of the form: {node_id: part}. In the
+                case of a Grid, a node_id is a tuple indicating its position in the grid, so for a
+                Grid the flips look like: {(row_node_id, col_node_id): part}
 
         Raises:
             Exception: If neither dimensions nor parent is provided.
@@ -161,10 +147,10 @@ class Grid(Partition):
         return "{} Grid\nPartitioned into {} part{}".format(dims, number_of_parts, s)
 
     def _as_list_of_lists(self):
-        """
-        Returns the grid as a list of lists (like a matrix), where the (i,j)th
-        entry is the assigned district of the node in position (i,j) on the
-        grid.
+        """Return List of lists representing the grid.
+
+        Returns the grid as a list of lists (like a matrix), where the (i,j)th entry is the
+        assigned district of the node in position (i,j) on the grid.
 
         Returns:
             List[List[int]]: List of lists representing the grid.
@@ -174,22 +160,18 @@ class Grid(Partition):
 
 
 def _create_grid_nx_graph(dimensions: Tuple[int, ...], with_diagonals: bool) -> Graph:
-    """
-    Creates a grid graph with the specified dimensions.
-    Optionally includes diagonal connections (edges) between nodes.
-
-    It sets the following data on nodes and edges:
+    """Creates a grid graph with the specified dimensions
 
     Node Data:
 
-    * "population" set to 1,
-    * "area" set to 1
-    * "boundary_node" set to True iff a boundary node - see _get_boundary_perim()
-    * "boundary_perim" set to perimeter touching the boundary - see _get_boundary_perim()
+        * "population" set to 1,
+        * "area" set to 1
+        * "boundary_node" set to True iff a boundary node - see _get_boundary_perim()
+        * "boundary_perim" set to perimeter touching the boundary - see _get_boundary_perim()
 
     Edge Data:
 
-    * "shared_perim" set to 1 except for diagonal edges (if any)
+        * "shared_perim" set to 1 except for diagonal edges (if any)
 
     Args:
         dimensions (Tuple[int, int]): The grid dimensions (rows, columns).
@@ -239,8 +221,10 @@ def _create_grid_nx_graph(dimensions: Tuple[int, ...], with_diagonals: bool) -> 
 
 
 def give_constant_attribute(graph: Graph, attribute: Any, value: Any) -> None:
-    """
-    Sets the specified attribute to the specified value for all nodes in the graph.
+    """Sets the specified attribute to the specified value for all nodes in the graph.
+
+    This function sets the specified attribute to the specified value for all nodes in the graph.
+    The arguments below control how the operation is performed.
 
     Args:
         graph (Graph): The graph to modify.
@@ -253,8 +237,8 @@ def give_constant_attribute(graph: Graph, attribute: Any, value: Any) -> None:
 
 
 def _tag_boundary_nodes(nx_graph: networkx.Graph, dimensions: Tuple[int, int]) -> None:
-    """
-    Adds the boolean attribute ``boundary_node`` to each node in the graph.
+    """Adds the boolean attribute ``boundary_node`` to each node in the graph.
+
     If the node is on the boundary of the grid, that node also gets the attribute
     ``boundary_perim`` which is determined by the function :func:`_get_boundary_perim`.
 
@@ -280,10 +264,7 @@ def _tag_boundary_nodes(nx_graph: networkx.Graph, dimensions: Tuple[int, int]) -
 
 
 def _get_boundary_perim(node_id: Tuple[int, int], dimensions: Tuple[int, int]) -> int:
-    """
-    Determines the boundary perimeter of a node on the grid.
-    The boundary perimeter is the number of sides of the node that
-    are on the boundary of the grid.
+    """Determines the boundary perimeter of a node on the grid.
 
     Args:
         node_id (Tuple[int, int]): The ID of the node to check. Note that the node_id is a tuple of
@@ -306,12 +287,11 @@ def _get_boundary_perim(node_id: Tuple[int, int], dimensions: Tuple[int, int]) -
 # frm: TODO: Refactoring:  color_half() is never used anywhere in GerryChain code.  Delete it?
 #
 def color_half(node: Tuple[int, int], threshold: int) -> int:
-    """
-    Assigns a color (as an integer) to a node based on its x-coordinate.
+    """Assigns a color (as an integer) to a node based on its x-coordinate.
 
-    This function is used to partition the grid into two parts based on a given threshold.
-    Nodes with an x-coordinate less than or equal to the threshold are assigned one color,
-    and nodes with an x-coordinate greater than the threshold are assigned another.
+    This function is used to partition the grid into two parts based on a given threshold. Nodes
+    with an x-coordinate less than or equal to the threshold are assigned one color, and nodes with
+    an x-coordinate greater than the threshold are assigned another.
 
     Args:
         node (Tuple[int, int]): The node to color, represented as a tuple of coordinates (x, y).
@@ -326,18 +306,16 @@ def color_half(node: Tuple[int, int], threshold: int) -> int:
 
 
 def _color_quadrants(node: Tuple[int, int], thresholds: Tuple[int, int]) -> int:
-    """
-    Assigns a color (as an integer) to a node based on its position relative to
-    specified threshold coordinates, effectively dividing the grid into four quadrants.
+    """Assigns a color (as an integer) to a node based to divide the grid into four quadrants.
 
-    The function uses two threshold values (one for each axis) to determine the color.
-    Each combination of being higher or lower than the threshold on each axis results
-    in a different color.
+    The function uses two threshold values (one for each axis) to determine the color. Each
+    combination of being higher or lower than the threshold on each axis results in a different
+    color.
 
     Args:
         node (Tuple[int, int]): The node to color, represented as a tuple of coordinates (x, y).
-        thresholds (Tuple[int, int]): A tuple of two integers representing the threshold coordinates
-            (x_threshold, y_threshold).
+        thresholds (Tuple[int, int]): A tuple of two integers representing the threshold
+            coordinates (x_threshold, y_threshold).
 
     Returns:
         int: An integer representing the color of the node, determined by its quadrant.

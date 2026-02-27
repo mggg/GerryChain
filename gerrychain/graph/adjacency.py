@@ -26,9 +26,7 @@ def neighbors(df: GeoDataFrame, adjacency: str) -> Dict:
 
 
 def str_tree(geometries):
-    """
-    Add ids to geometries and create a STR tree for spatial indexing.
-    Use this for all spatial operations!
+    """Creates a STR tree for spatial indexing. Useful for spatial operations.
 
     Args:
         geometries (shapely.geometry.BaseGeometry): A Shapely geometry object to construct the tree
@@ -47,12 +45,11 @@ def str_tree(geometries):
 
 
 def neighboring_geometries(geometries, tree=None):
-    """
-    Generator yielding tuples of the form (id, (ids of neighbors)).
+    """Generator yielding tuples of the form (id, (ids of neighbors)).
 
     Args:
-        geometries (shapely.geometry.BaseGeometry): A Shapeley geometry object to construct the tree
-            from
+        geometries (shapely.geometry.BaseGeometry): A Shapeley geometry object to construct the
+            tree from
         tree (shapely.strtree.STRtree, optional): A Sort-Tile-Recursive tree for spatial indexing.
             Default is None.
 
@@ -73,9 +70,10 @@ def neighboring_geometries(geometries, tree=None):
 
 
 def intersections_with_neighbors(geometries):
-    """
-    Generator yielding tuples of the form (id, {neighbor_id: intersection}).
-    The intersections may be empty!
+    """Generator yielding tuples of the form (id, {neighbor_id: intersection}).
+
+    Note:
+        The intersections may be empty!
 
     Args:
         geometries (shapely.geometry.BaseGeometry): A Shapeley geometry object.
@@ -89,7 +87,8 @@ def intersections_with_neighbors(geometries):
 
 
 def warn_for_overlaps(intersection_pairs):
-    """
+    """Return A generator yielding tuples of intersection pairs.
+
     Args:
         intersection_pairs (Iterable): An iterable of tuples of the form (id, {neighbor_id:
             intersection})
@@ -117,7 +116,8 @@ def warn_for_overlaps(intersection_pairs):
 
 
 def queen(geometries):
-    """
+    """Return queen adjacency dictionary for the given collection of polygons.
+
     Args:
         geometries (shapely.geometry.BaseGeometry): A Shapeley geometry object.
 
@@ -137,7 +137,8 @@ def queen(geometries):
 
 
 def rook(geometries):
-    """
+    """Return rook adjacency dictionary for the given collection of polygons.
+
     Args:
         geometries (shapely.geometry.BaseGeometry): A Shapeley geometry object.
 

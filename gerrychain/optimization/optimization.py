@@ -39,7 +39,8 @@ class SingleMetricOptimizer:
         maximize: bool = True,
         step_indexer: str = "step",
     ):
-        """
+        """Initialize a SingleMetricOptimizer instance.
+
         Args:
             proposal (Callable): Function proposing the next state from the current state.
             constraints (Union[Callable[[Partition], bool], List[Callable[[Partition], bool]]]): A
@@ -77,9 +78,7 @@ class SingleMetricOptimizer:
 
     @property
     def best_part(self) -> Partition:
-        """
-        Partition object corresponding to best scoring plan observed over the current (or most
-        recent) optimization run.
+        """Partition object corresponding to best scoring plan observed over the current run.
 
         Returns:
             Partition: Partition object with the best score.
@@ -88,9 +87,7 @@ class SingleMetricOptimizer:
 
     @property
     def best_score(self) -> Any:
-        """
-        Value of score metric corresponding to best scoring plan observed over the current (or most
-        recent) optimization run.
+        """Return Value of the best score observed over the current run.
 
         Returns:
             Any: Value of the best score.
@@ -99,8 +96,7 @@ class SingleMetricOptimizer:
 
     @property
     def score(self) -> Callable[[Partition], Any]:
-        """
-        The score function which is being optimized over.
+        """Return score function used for optimization.
 
         Returns:
             Callable[[Partition], Any]: The score function.
@@ -108,9 +104,7 @@ class SingleMetricOptimizer:
         return self._score
 
     def _is_improvement(self, new_score: float, old_score: float) -> bool:
-        """
-        Helper function defining improvement comparison between scores.  Scores can be any
-        comparable type.
+        """Helper function to determine whether a new score is an improvement over an old score.
 
         Args:
             new_score (float): Score of proposed partition.
@@ -125,8 +119,7 @@ class SingleMetricOptimizer:
             return new_score <= old_score
 
     def _tilted_acceptance_function(self, p: float) -> Callable[[Partition], bool]:
-        """
-        Function factory that binds and returns a tilted acceptance function.
+        """Function factory that binds and returns a tilted acceptance function.
 
         Args:
             p (float): The probability of accepting a worse score.
@@ -152,14 +145,13 @@ class SingleMetricOptimizer:
     def _simulated_annealing_acceptance_function(
         self, beta_function: Callable[[int], float], beta_magnitude: float
     ):
-        """
-        Function factory that binds and returns a simulated annealing acceptance function.
+        """Function factory that binds and returns a simulated annealing acceptance function.
 
         Args:
             beta_function (Callable[[int], float]): Function (f: t -> beta, where beta is in [0,1])
                 defining temperature over time. f(t) = 0 the chain is hot and every proposal is
-                accepted. At f(t) = 1 the chain is cold and worse proposal have a low probability of
-                being accepted relative to the magnitude of change in score.
+                accepted. At f(t) = 1 the chain is cold and worse proposal have a low probability
+                of being accepted relative to the magnitude of change in score.
             beta_magnitude (float): Scaling parameter for how much to weight changes in score.
 
         Returns:
@@ -181,10 +173,10 @@ class SingleMetricOptimizer:
     def jumpcycle_beta_function(
         cls, duration_hot: int, duration_cold: int
     ) -> Callable[[int], float]:
-        """
-        Class method that binds and return simple hot-cold cycle beta temperature function, where
-        the chain runs hot for some given duration and then cold for some duration, and repeats
-        that cycle.
+        """Return Beta function defining hot-cold cycle.
+
+        Return Beta function defining hot-cold cycle where the chain runs hot for some given
+        duration and then cold for some duration, and repeats that cycle.
 
         Args:
             duration_hot (int): Number of steps to run chain hot.
@@ -205,9 +197,9 @@ class SingleMetricOptimizer:
     def linearcycle_beta_function(
         cls, duration_hot: int, duration_cooldown: int, duration_cold: int
     ) -> Callable[[int], float]:
-        """
-        Class method that binds and returns a simple linear hot-cool cycle beta temperature
-        function, where the chain runs hot for some given duration, cools down linearly for some
+        """Return Beta function defining linear hot-cool cycle.
+
+        The linear hot-cool cycle runs hot for some given duration, cools down linearly for some
         duration, and then runs cold for some duration before warming up again and repeating.
 
         Args:
@@ -238,10 +230,11 @@ class SingleMetricOptimizer:
     def linear_jumpcycle_beta_function(
         cls, duration_hot: int, duration_cooldown, duration_cold: int
     ):
-        """
-        Class method that binds and returns a simple linear hot-cool cycle beta temperature
-        function, where the chain runs hot for some given duration, cools down linearly for some
-        duration, and then runs cold for some duration before jumping back to hot and repeating.
+        """Return Beta function defining linear jumpcycle hot-cool cycle.
+
+        The linear jumpcycle hot-cool function runs hot for some given duration, cools down
+        linearly for some duration, and then runs cold for some duration before jumping back to
+        hot and repeating.
 
         Args:
             duration_hot (int): Number of steps to run chain hot.
@@ -268,14 +261,15 @@ class SingleMetricOptimizer:
     def logitcycle_beta_function(
         cls, duration_hot: int, duration_cooldown: int, duration_cold: int
     ) -> Callable[[int], float]:
-        """
-        Class method that binds and returns a logit hot-cool cycle beta temperature function, where
-        the chain runs hot for some given duration, cools down according to the logit function
+        """Return the Logitcycle beta function.
+
+        The logit hot-cool function runs hot for some given duration, cools down according to the
+        logit function
 
         :math:`f(x) = (log(x/(1-x)) + 5)/10`
 
-        for some duration, and then runs cold for some duration before warming up again
-        using the :math:`1-f(x)` and repeating.
+        for some duration, and then runs cold for some duration before warming up again using the
+        :math:`1-f(x)` and repeating.
 
         Args:
             duration_hot (int): Number of steps to run chain hot.
@@ -321,9 +315,10 @@ class SingleMetricOptimizer:
     def logit_jumpcycle_beta_function(
         cls, duration_hot: int, duration_cooldown: int, duration_cold: int
     ) -> Callable[[int], float]:
-        """
-        Class method that binds and returns a logit hot-cool cycle beta temperature function, where
-        the chain runs hot for some given duration, cools down according to the logit function
+        """Returns the logit jumpcycle beta function.
+
+        The logit jumpcycle hot-cool function hot for some given duration, cools down according to
+        the logit function
 
         :math:`f(x) = (log(x/(1-x)) + 5)/10`
 
@@ -368,10 +363,10 @@ class SingleMetricOptimizer:
         accept: Callable[[Partition], bool] = always_accept,
         with_progress_bar: bool = False,
     ):
-        """
-        Performs a short burst run using the instance's score function. Each burst starts at the
-        best performing plan of the previous burst. If there's a tie, the later observed one is
-        selected.
+        """Performs a short burst run using the instance's score function.
+
+        Each burst starts at the best performing plan of the previous burst. If there's a tie, the
+        later observed one is selected.
 
         Args:
             burst_length (int): Number of steps to run within each burst.
@@ -415,15 +410,14 @@ class SingleMetricOptimizer:
         beta_magnitude: float = 1,
         with_progress_bar: bool = False,
     ):
-        """
-        Performs simulated annealing with respect to the class instance's score function.
+        """Performs simulated annealing with respect to the class instance's score function.
 
         Args:
             num_steps (int): Number of steps to run for.
             beta_function (Callable[[int], float]): Function (f: t -> beta, where beta is in [0,1])
                 defining temperature over time. f(t) = 0 the chain is hot and every proposal is
-                accepted. At f(t) = 1 the chain is cold and worse proposal have a low probability of
-                being accepted relative to the magnitude of change in score.
+                accepted. At f(t) = 1 the chain is cold and worse proposal have a low probability
+                of being accepted relative to the magnitude of change in score.
             beta_magnitude (float, optional): Scaling parameter for how much to weight changes in
                 score. Defaults to 1.
             with_progress_bar (bool, optional): Whether or not to draw tqdm progress bar. Defaults
@@ -459,11 +453,12 @@ class SingleMetricOptimizer:
         p: float,
         with_progress_bar: bool = False,
     ):
-        """
-        Performs a short burst run using the instance's score function. Each burst starts at the
-        best performing plan of the previous burst. If there's a tie, the later observed one is
-        selected. Within each burst a tilted acceptance function is used where better scoring plans
-        are always accepted and worse scoring plans are accepted with probability `p`.
+        """Performs a short burst run using the instance's score function.
+
+        Each burst starts at the best performing plan of the previous burst. If there's a tie, the
+        later observed one is selected. Within each burst a tilted acceptance function is used
+        where better scoring plans are always accepted and worse scoring plans are accepted with
+        probability `p`.
 
         Args:
             burst_length (int): Number of steps to run within each burst.
@@ -490,10 +485,11 @@ class SingleMetricOptimizer:
         accept: Callable[[Partition], bool] = always_accept,
         with_progress_bar: bool = False,
     ):
-        """
-        Performs a short burst where the burst length is allowed to increase as it gets harder to
-        find high scoring plans. The initial burst length is set to 2, and it is doubled each time
-        there is no improvement over the passed number (`stuck_buffer`) of runs.
+        """Performs a short burst where the burst length is allowed to increase dynamically.
+
+        The burst length starts at some initial value and increases (doubles) each time there is no
+        improvement over the passed number (`stuck_buffer`) of runs. This allows the chain to
+        escape local optima and explore more widely.
 
         Args:
             num_steps (int): Number of steps to run for.
@@ -545,10 +541,10 @@ class SingleMetricOptimizer:
                 burst_length *= 2
 
     def tilted_run(self, num_steps: int, p: float, with_progress_bar: bool = False):
-        """
-        Performs a tilted run. A chain where the acceptance function always accepts better plans
-        and accepts worse plans with some probability `p`.
+        """Performs a tilted run.
 
+        A chain where the acceptance function always accepts better plans and accepts worse plans
+        with some probability `p`.
 
         Args:
             num_steps (int): Number of steps to run for.

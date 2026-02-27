@@ -5,8 +5,7 @@ from typing import Dict
 
 
 def compute_polsby_popper(area: float, perimeter: float) -> float:
-    """
-    Computes the Polsby-Popper score for a single district.
+    """Computes the Polsby-Popper score for a single district.
 
     Args:
         area (float): The area of the district
@@ -24,8 +23,10 @@ def compute_polsby_popper(area: float, perimeter: float) -> float:
 # Partition type hint left out due to circular import
 # def polsby_popper(partition: Partition) -> Dict[int, float]:
 def polsby_popper(partition) -> Dict[int, float]:
-    """
-    Computes Polsby-Popper compactness scores for each district in the partition.
+    """Computes Polsby-Popper compactness scores for each district in the partition.
+
+    This function computes Polsby-Popper compactness scores for each district in the partition. It
+    returns a dictionary mapping each district ID to its Polsby-Popper score.
 
     Args:
         partition (Partition): The partition to compute scores for

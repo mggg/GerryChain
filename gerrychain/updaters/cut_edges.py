@@ -5,7 +5,8 @@ from .flows import neighbor_flips, on_edge_flow
 
 
 def _put_edges_into_parts(cut_edges: List, assignment: Dict) -> Dict:
-    """
+    """Return A dictionary mapping each part of a partition to the set of cut_edges in that part.
+
     Args:
         cut_edges (List): A list of cut_edges in a graph which are to be separated into their
             respective parts within the partition according to the given assignment.
@@ -24,7 +25,8 @@ def _put_edges_into_parts(cut_edges: List, assignment: Dict) -> Dict:
 
 
 def _new_cuts(partition) -> Set[Tuple]:
-    """
+    """Return set of edges that were not cut, but now are.
+
     Args:
         partition (:class:`~gerrychain.partition.Partition`): A partition of a Graph
 
@@ -39,7 +41,8 @@ def _new_cuts(partition) -> Set[Tuple]:
 
 
 def _obsolete_cuts(partition) -> Set[Tuple]:
-    """
+    """Return set of edges that were cut, but now are not.
+
     Args:
         partition (:class:`~gerrychain.partition.Partition`): A partition of a Graph
 
@@ -55,7 +58,8 @@ def _obsolete_cuts(partition) -> Set[Tuple]:
 
 
 def initialize_cut_edges(partition):
-    """
+    """A dictionary mapping each part of a partition to the set of cut edges in that part.
+
     Args:
         partition (:class:`~gerrychain.partition.Partition`): A partition of a Graph
 
@@ -96,8 +100,8 @@ def cut_edges_by_part(
     # This only operates on cut-edges and not on all of the
     # edges in a partition.  A "cut-edge" is an edge that spans two districts.
     #
-    """
-    Updater function that responds to the flow of edges between different partitions.
+    """Updater that returns a dictionary mapping each part of a partition to the set of cut edges
+    in that part.
 
     Args:
         partition (:class:`~gerrychain.partition.Partition`): A partition of a Graph
@@ -113,7 +117,8 @@ def cut_edges_by_part(
 
 
 def cut_edges(partition):
-    """
+    """Computes the set of edges for a given partition.
+
     Args:
         partition (:class:`~gerrychain.partition.Partition`): A partition of a Graph
 

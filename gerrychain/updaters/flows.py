@@ -9,7 +9,8 @@ from typing import Callable, Dict, Set, Tuple
 
 @functools.lru_cache(maxsize=2)
 def neighbor_flips(partition) -> Set[Tuple]:
-    """
+    """Return set of edges that were flipped in the given partition compared to its parent.
+
     Args:
         partition (:class:`~gerrychain.partition.Partition`): A partition of a Graph
 
@@ -29,7 +30,8 @@ def create_flow():
 
 @functools.lru_cache(maxsize=2)
 def flows_from_changes(old_partition, new_partition) -> Dict:
-    """
+    """Return per-part node flow updates between two partitions.
+
     Args:
         old_partition (:class:`~gerrychain.partition.Partition`): A partition of a Graph
             representing the previous step.
@@ -58,23 +60,25 @@ def flows_from_changes(old_partition, new_partition) -> Dict:
 
 
 def on_flow(initializer: Callable, alias: str) -> Callable:
-    """
-    Use this decorator to create an updater that responds to flows of nodes
-    between parts of the partition.
+    """A decorator that responds to flows of nodes between parts of the partition.
+
+    Use this decorator to create an updater that responds to flows of nodes between parts of the
+    partition.
 
     Decorate a function that takes:
-    - The partition
-    - The previous value of the updater on a fixed part P_i
-    - The new nodes that are just joining P_i at this step
-    - The old nodes that are just leaving P_i at this step
+        - The partition
+        - The previous value of the updater on a fixed part P_i
+        - The new nodes that are just joining P_i at this step
+        - The old nodes that are just leaving P_i at this step
+
     and returns:
-    - The new value of the updater for the fixed part P_i.
+        - The new value of the updater for the fixed part P_i.
 
-    This will create an updater whose values are dictionaries of the
-    form `{part: <value of the given function on the part>}`.
+    This will create an updater whose values are dictionaries of the form `{part: <value of the
+    given function on the part>}`.
 
-    The initializer, by contrast, should take the entire partition and
-    return the entire `{part: <value>}` dictionary.
+    The initializer, by contrast, should take the entire partition and return the entire `{part:
+    <value>}` dictionary.
 
     Example:
 
@@ -115,7 +119,8 @@ def on_flow(initializer: Callable, alias: str) -> Callable:
 
 
 def compute_edge_flows(partition) -> Dict:
-    """
+    """Computes the flow of cut edges between a partition and its parent.
+
     Args:
         partition (:class:`~gerrychain.partition.Partition`): A partition of a Graph
 
@@ -186,23 +191,25 @@ def compute_edge_flows(partition) -> Dict:
 
 
 def on_edge_flow(initializer: Callable, alias: str) -> Callable:
-    """
-    Use this decorator to create an updater that responds to flows of cut
-    edges between parts of the partition.
+    """A decorator that responds to flows of cut edges between parts of the partition.
+
+    Use this decorator to create an updater that responds to flows of cut edges between parts of
+    the partition.
 
     Decorate a function that takes:
-    - The partition
-    - The previous value of the updater for a fixed part P_i
-    - The new cut edges that are just joining P_i at this step
-    - The old cut edges that are just leaving P_i at this step
+        - The partition
+        - The previous value of the updater for a fixed part P_i
+        - The new cut edges that are just joining P_i at this step
+        - The old cut edges that are just leaving P_i at this step
+
     and returns:
-    - The new value of the updater for the fixed part P_i.
+        - The new value of the updater for the fixed part P_i.
 
-    This will create an updater whose values are dictionaries of the
-    form `{part: <value of the given function on the part>}`.
+    This will create an updater whose values are dictionaries of the form `{part: <value of the
+    given function on the part>}`.
 
-    The initializer, by contrast, should take the entire partition and
-    return the entire `{part: <value>}` dictionary.
+    The initializer, by contrast, should take the entire partition and return the entire `{part:
+    <value>}` dictionary.
 
     Example:
 

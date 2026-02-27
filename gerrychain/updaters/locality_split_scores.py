@@ -88,16 +88,18 @@ class LocalitySplits:
         scores_to_compute: List[str] = ["num_parts"],
         pent_alpha: float = 0.05,
     ):
-        """
+        """Initialize a LocalitySplits instance.
+
         Args:
             name (str): The name of the updater (e.g. "countysplits")
-            col_id (str): The name of the column containing the locality attribute (i.e. county ids,
-                municipality names, etc.)
+            col_id (str): The name of the column containing the locality attribute (i.e. county
+                ids, municipality names, etc.)
             pop_col (str): The name of the column containing population counts.
             scores_to_compute (List[str], optional): A list/tuple/set of strings naming the score
                 functions to compute at each step. This should be some subcollection of
-                ```['num_parts', 'num_pieces', 'naked_boundary', 'shannon_entropy', 'power_entropy',
-                'symmetric_entropy', 'num_split_localities']```. Default is ["num_parts"].
+                ```['num_parts', 'num_pieces', 'naked_boundary', 'shannon_entropy',
+                'power_entropy', 'symmetric_entropy', 'num_split_localities']```. Default is
+                ["num_parts"].
             pent_alpha (float, optional): A number between 0 and 1 which is passed as the exponent
                 to :meth:`~LocalitySplits.power_entropy`. Default is 0.05.
         """
@@ -162,7 +164,6 @@ class LocalitySplits:
                 self.locality_splits_inv[k2][k] = v2
 
         if self.allowed_pieces == {}:
-
             allowed_pieces = {}
 
             totpop = 0
@@ -241,8 +242,7 @@ class LocalitySplits:
         return self.scores
 
     def num_parts(self, partition) -> int:
-        """
-        Calculates the number of unique locality-district pairs.
+        """Calculates the number of unique locality-district pairs.
 
         Args:
             partition (:class:`~gerrychain.Partition`): The partition to be scored.
@@ -257,8 +257,9 @@ class LocalitySplits:
         return counter
 
     def num_pieces(self, partition) -> int:
-        """
-        Calculates the number of pieces.
+        """Calculates the number of pieces formed by cutting the graph by both locality and
+        district boundaries.
+
 
         Args:
             partition (:class:`~gerrychain.Partition`): The partition to be scored.
@@ -291,9 +292,7 @@ class LocalitySplits:
         return pieces
 
     def naked_boundary(self, partition) -> int:
-        """
-        Computes the number of cut edges inside localities (i.e. the
-            number of cut edges with both endpoints in the same locality).
+        """Computes the number of cut edges inside localities.
 
         Args:
             partition (:class:`~gerrychain.Partition`): The partition to be scored.
@@ -314,8 +313,7 @@ class LocalitySplits:
         return cut_edges_within
 
     def shannon_entropy(self, partition) -> float:
-        """
-        Computes the shannon entropy score of a district plan.
+        """Computes the shannon entropy score of a district plan.
 
         Args:
             partition (:class:`~gerrychain.Partition`): The partition to be scored.
@@ -357,8 +355,7 @@ class LocalitySplits:
         return entropy
 
     def power_entropy(self, partition) -> float:
-        """
-        Computes the power entropy score of a district plan.
+        """Computes the power entropy score of a district plan.
 
         Args:
             partition (:class:`~gerrychain.Partition`): The partition to be scored.
@@ -400,12 +397,10 @@ class LocalitySplits:
         return entropy
 
     def symmetric_entropy(self, partition) -> float:  # IN PROGRESS
-        """
-        Calculates the symmetric entropy score.
+        """Calculates the symmetric entropy score
 
-        Warning::
-
-            This function is previously marked incomplete.
+        Warning:
+            This method is currently in progress and may not be fully functional.
 
         Args:
             partition (:class:`~gerrychain.Partition`): The partition to be scored.
@@ -450,8 +445,7 @@ class LocalitySplits:
         return score
 
     def num_split_localities(self, partition) -> int:
-        """
-        Calculates the number of localities touching 2 or more districts.
+        """Calculates the number of localities touching 2 or more districts.
 
         Args:
             partition (:class:`~gerrychain.Partition`): The partition to be scored.

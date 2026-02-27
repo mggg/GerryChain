@@ -14,17 +14,25 @@ from gerrychain.vendor.utm import from_latlon
 
 
 def utm_of_point(point):
-    """
-    Given a point, return the Universal Transverse Mercator zone number
-    for that point.
+    """Given a point, return the Universal Transverse Mercator zone number for that point.
+
+    Args:
+        point (shapely.geometry.Point): A Shapely Point geometry object representing a geographic
+            location.
+
+    Returns:
+        int: The Universal Transverse Mercator zone number for the given point.
     """
     return from_latlon(point.y, point.x)[2]
 
 
 def identify_utm_zone(df: GeoDataFrame) -> int:
-    """
-    Given a GeoDataFrame, identify the Universal Transverse Mercator zone
-    number for the centroid of the geometries in the dataframe.
+    """Given a GeoDataFrame, identify the UTM zone number for that GeoDataFrame.
+
+    Note:
+        This function uses the centroid of the geometries in the GeoDataFrame to determine the UTM
+        zone.
+
     """
     wgs_df = df.to_crs("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
     utm_counts = Counter(utm_of_point(point) for point in wgs_df["geometry"].centroid)
@@ -35,9 +43,7 @@ def identify_utm_zone(df: GeoDataFrame) -> int:
 
 # Explicit type hint intentionally omitted here because of import issues.
 def explain_validity(geo) -> str:
-    """
-    Given a geometry that is shapely interpretable, explain the validity.
-    Light wrapper around shapely's explain_validity.
+    """Given a geometry that is shapely interpretable, call Shapely's explain_validity function.
 
     Args:
         geo (shapely.geometry.BaseGeometry): Shapely geometry object
@@ -51,9 +57,7 @@ def explain_validity(geo) -> str:
 
 
 def invalid_geometries(df):
-    """
-    Given a GeoDataFrame, returns a list of row indices
-    with invalid geometries.
+    """Given a GeoDataFrame, returns a list of row indices with invalid geometries.
 
     Args:
         df (:class:`geopandas.GeoDataFrame`): The GeoDataFrame to examine
@@ -70,9 +74,7 @@ def invalid_geometries(df):
 
 
 def reprojected(df):
-    """
-    Returns a copy of `df`, projected into the coordinate reference system of a suitable
-        `Universal Transverse Mercator`_ zone.
+    """Returns a copy of `df`, projected into the CRS of a suitable UTM zone.
 
     Args:
         df (:class:`geopandas.GeoDataFrame`): The GeoDataFrame to reproject

@@ -32,7 +32,8 @@ class DataTally:
     __slots__ = ["data", "alias", "_call"]
 
     def __init__(self, data: Union[Dict, pandas.Series, str], alias: str) -> None:
-        """
+        """Initialize a DataTally instance.
+
         Args:
             data (Union[Dict, pandas.Series, str]): A Dict or Series indexed by the graph's nodes,
                 or the string key for a node attribute containing the Tally's data.
@@ -52,7 +53,6 @@ class DataTally:
             # form: {node_id: data_value}
 
             if isinstance(self.data, str):
-
                 # if the "data" passed in was a string, then replace its value with
                 # a dict of {node_id: attribute_value of the node}
                 graph = partition.graph
@@ -112,10 +112,11 @@ class Tally:
         alias: Optional[str] = None,
         dtype: Type = int,
     ) -> None:
-        """
+        """Initialize a Tally instance.
+
         Args:
-            fields (Union[str, List[str]]): The list of node attributes that you want to tally. Or a
-                just a single attribute name as a string.
+            fields (Union[str, List[str]]): The list of node attributes that you want to tally. Or
+                a just a single attribute name as a string.
             alias (Optional[str], optional): The aliased name of this Tally (meaning, the key
                 corresponding to this Tally in the Partition's updaters dictionary). Default is
                 None.
@@ -137,17 +138,15 @@ class Tally:
         return self._update_tally(partition)
 
     def _initialize_tally(self, partition) -> Dict:
-        """
-        Compute the initial district-wide tally of data stored in the "field"
-        attribute of nodes.
+        """Compute initial part-level tallies for the configured field values.
 
         Args:
-            partition (:class:`~gerrychain.partition.Partition`): The partition to compute the tally
-                for.
+            partition (:class:`~gerrychain.partition.Partition`): The partition to compute the
+                tally for.
 
         Returns:
-            Dict: A dictionary keyed by the parts of the partition, with values being the sum of the
-                "field" attribute of nodes in that part.
+            Dict: A dictionary keyed by the parts of the partition, with values being the sum of
+                the "field" attribute of nodes in that part.
         """
         tally = collections.defaultdict(self.dtype)
         for node, part in partition.assignment.items():
@@ -163,9 +162,7 @@ class Tally:
         return dict(tally)
 
     def _update_tally(self, partition):
-        """
-        Compute the district-wide tally of data stored in the "field" attribute
-        of nodes, given proposed changes.
+        """Compute the district-wide tally of data stored in the "field" attribute of nodes.
 
         Args:
             partition (:class:`~gerrychain.partition.Partition`): The partition to update the tally
@@ -194,7 +191,8 @@ class Tally:
 
 
 def compute_out_flow(graph, fields: Union[str, List[str]], flow: Dict) -> int:
-    """
+    """Return sum of the "field" attribute of nodes in the "out" set of the flow.
+
     Args:
         graph (:class:`~gerrychain.graph.Graph`): The graph that the partition is defined on.
         fields (Union[str, List[str]]): The list of node attributes that you want to tally. Or just
@@ -210,7 +208,8 @@ def compute_out_flow(graph, fields: Union[str, List[str]], flow: Dict) -> int:
 
 
 def compute_in_flow(graph, fields: Union[str, List[str]], flow: Dict) -> int:
-    """
+    """Return sum of the "field" attribute of nodes in the "in" set of the flow.
+
     Args:
         graph (:class:`~gerrychain.graph.Graph`): The graph that the partition is defined on.
         fields (Union[str, List[str]]): The list of node attributes that you want to tally. Or just

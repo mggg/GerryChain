@@ -6,7 +6,8 @@ from .flows import on_flow
 
 
 def boundary_nodes(partition, alias: str = "boundary_nodes") -> Set:
-    """
+    """Return set of nodes in the partition that are on the boundary.
+
     Args:
         partition (:class:`~gerrychain.partition.Partition`): A partition of a Graph
         alias (str, optional): The name of the attribute that the boundary nodes are stored under.
@@ -32,7 +33,8 @@ def boundary_nodes(partition, alias: str = "boundary_nodes") -> Set:
 
 
 def initialize_exterior_boundaries_as_a_set(partition) -> Dict[int, Set]:
-    """
+    """Return exterior boundary nodes for each part in the partition.
+
     Args:
         partition (:class:`~gerrychain.partition.Partition`): A partition of a Graph
 
@@ -49,8 +51,7 @@ def initialize_exterior_boundaries_as_a_set(partition) -> Dict[int, Set]:
 
 @on_flow(initialize_exterior_boundaries_as_a_set, alias="exterior_boundaries_as_a_set")
 def exterior_boundaries_as_a_set(partition, previous: Set, inflow: Set, outflow: Set) -> Set:
-    """
-    Updater function that responds to the flow of nodes between different partitions.
+    """Updater function that responds to the flow of nodes between different partitions.
 
     Args:
         partition (:class:`~gerrychain.partition.Partition`): A partition of a Graph
@@ -77,7 +78,8 @@ def exterior_boundaries_as_a_set(partition, previous: Set, inflow: Set, outflow:
 
 
 def initialize_exterior_boundaries(partition) -> Dict[int, float]:
-    """
+    """Return A dictionary mapping each part of a partition to the total perimeter of the boundary.
+
     Args:
         partition (:class:`~gerrychain.partition.Partition`): A partition of a Graph
 
@@ -95,8 +97,7 @@ def initialize_exterior_boundaries(partition) -> Dict[int, float]:
 
 @on_flow(initialize_exterior_boundaries, alias="exterior_boundaries")
 def exterior_boundaries(partition, previous: Set, inflow: Set, outflow: Set) -> Dict:
-    """
-    Updater function that responds to the flow of nodes between different partitions.
+    """Computes the total perimeter of the boundary nodes in each part of the partition.
 
     Args:
         partition (:class:`~gerrychain.partition.Partition`): A partition of a Graph
@@ -119,7 +120,8 @@ def exterior_boundaries(partition, previous: Set, inflow: Set, outflow: Set) -> 
 
 
 def initialize_interior_boundaries(partition):
-    """
+    """Return A dictionary mapping each part of a partition to the total perimeter the given part.
+
     Args:
         partition (:class:`~gerrychain.partition.Partition`): A partition of a Graph
 
@@ -158,8 +160,7 @@ def initialize_interior_boundaries(partition):
 
 @on_edge_flow(initialize_interior_boundaries, alias="interior_boundaries")
 def interior_boundaries(partition, previous: Set, new_edges: Set, old_edges: Set) -> Dict:
-    """
-    Updater function that responds to the flow of nodes between different partitions.
+    """Computes the total perimeter of the shared boundary between different parts of the partition.
 
     Args:
         partition (:class:`~gerrychain.partition.Partition`): A partition of a Graph
@@ -184,7 +185,12 @@ def interior_boundaries(partition, previous: Set, new_edges: Set, old_edges: Set
 
 
 def flips(partition) -> Dict:
-    """
+    """Return flips that were made to get from the parent partition to the given partition.
+
+    This function returns flips that were made to get from the parent partition to the given
+    partition. It returns flips that were made to get from the parent partition to the given
+    partition.
+
     Args:
         partition (:class:`~gerrychain.partition.Partition`): A partition of a Graph
 
@@ -196,13 +202,12 @@ def flips(partition) -> Dict:
 
 
 def perimeter_of_part(partition, part: int) -> float:
-    """
-    Totals up the perimeter of the part in the partition.
+    """Totals up the perimeter of the part in the partition.
 
     .. Warning::
 
-        Requires that 'boundary_perim' be a node attribute, 'shared_perim' be an edge
-        attribute, 'cut_edges' be an updater, and 'exterior_boundaries' be an updater.
+        Requires that 'boundary_perim' be a node attribute, 'shared_perim' be an edge attribute,
+        'cut_edges' be an updater, and 'exterior_boundaries' be an updater.
 
     Args:
         partition (:class:`~gerrychain.partition.Partition`): A partition of a Graph
@@ -221,7 +226,8 @@ def perimeter_of_part(partition, part: int) -> float:
 
 
 def perimeter(partition) -> Dict[int, float]:
-    """
+    """Computes the perimeter of each part in the partition.
+
     Args:
         partition (:class:`~gerrychain.partition.Partition`): A partition of a Graph
 
