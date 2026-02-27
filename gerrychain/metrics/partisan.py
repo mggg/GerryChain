@@ -19,11 +19,11 @@ def mean_median(election_results) -> float:
     A positive value indicates an advantage for the first party listed
     in the Election's party_names_to_node_attribute_names dictionary.
 
-    :param election_results: An ElectionResults object
-    :type election_results: ElectionResults
+    Args:
+        election_results (ElectionResults): An ElectionResults object
 
-    :returns: The Mean-Median score for the given ElectionResults
-    :rtype: float
+    Returns:
+        float: The Mean-Median score for the given ElectionResults
     """
     first_party = election_results.election.parties[0]
     data = election_results.percents(first_party)
@@ -40,11 +40,11 @@ def mean_thirdian(election_results) -> float:
     The motivation for this score is that the minority party in many
     states struggles to win even a third of the seats.
 
-    :param election_results: An ElectionResults object
-    :type election_results: ElectionResults
+    Args:
+        election_results (ElectionResults): An ElectionResults object
 
-    :returns: The Mean-Thirdian score for the given ElectionResults
-    :rtype: float
+    Returns:
+        float: The Mean-Thirdian score for the given ElectionResults
     """
     first_party = election_results.election.parties[0]
     data = election_results.percents(first_party)
@@ -61,11 +61,11 @@ def efficiency_gap(election_results) -> float:
     A positive value indicates an advantage for the first party listed
     in the Election's party_names_to_node_attribute_names dictionary.
 
-    :param election_results: An ElectionResults object
-    :type election_results: ElectionResults
+    Args:
+        election_results (ElectionResults): An ElectionResults object
 
-    :returns: The efficiency gap for the given ElectionResults
-    :rtype: float
+    Returns:
+        float: The efficiency gap for the given ElectionResults
     """
     party1, party2 = [election_results.counts(party) for party in election_results.election.parties]
     wasted_votes_by_part = map(wasted_votes, party1, party2)
@@ -77,13 +77,12 @@ def efficiency_gap(election_results) -> float:
 def wasted_votes(party1_votes: int, party2_votes: int) -> Tuple[int, int]:
     """
     Computes the wasted votes for each party in the given race.
-    :param party1_votes: the number of votes party1 received in the race
-    :type party1_votes: int
-    :param party2_votes: the number of votes party2 received in the race
-    :type party2_votes: int
+    Args:
+        party1_votes (int): the number of votes party1 received in the race
+        party2_votes (int): the number of votes party2 received in the race
 
-    :returns: a tuple of the wasted votes for each party
-    :rtype: Tuple[int, int]
+    Returns:
+        Tuple[int, int]: a tuple of the wasted votes for each party
     """
     total_votes = party1_votes + party2_votes
     if party1_votes > party2_votes:
@@ -102,11 +101,11 @@ def partisan_bias(election_results) -> float:
     vote share by the first party divided by the total number of districts,
     minus 1/2.
 
-    :param election_results: An ElectionResults object
-    :type election_results: ElectionResults
+    Args:
+        election_results (ElectionResults): An ElectionResults object
 
-    :returns: The partisan bias for the given ElectionResults
-    :rtype: float
+    Returns:
+        float: The partisan bias for the given ElectionResults
     """
     first_party = election_results.election.parties[0]
     party_shares = numpy.array(election_results.percents(first_party))
@@ -124,11 +123,11 @@ def partisan_gini(election_results) -> float:
     For more information on the computation, see Definition 1 in:
     https://arxiv.org/pdf/2008.06930.pdf
 
-    :param election_results: An ElectionResults object
-    :type election_results: ElectionResults
+    Args:
+        election_results (ElectionResults): An ElectionResults object
 
-    :returns: The partisan Gini score for the given ElectionResults
-    :rtype: float
+    Returns:
+        float: The partisan Gini score for the given ElectionResults
     """
     # For two parties, the Gini score is symmetric--it does not vary by party.
     party = election_results.election.parties[0]

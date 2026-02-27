@@ -66,28 +66,24 @@ def recursive_tree_part(
     """
     Uses :func:`~gerrychain.tree.bipartition_tree` recursively to partition a tree into
     ``len(parts)`` parts of population ``pop_target`` (within ``epsilon``). Can be used to
-    generate initial seed plans (partition assignments) or to implement ReCom-like "merge walk" proposals.
+    generate initial seed plans (partition assignments) or to implement ReCom-like "merge walk"
+    proposals.
 
-    :param graph: The graph to partition into ``len(parts)`` :math:`\varepsilon`-balanced parts.
-    :type graph: Graph
-    :param parts: Iterable of part (district) labels (like ``[0,1,2]`` or ``range(4)``).
-    :type parts: Sequence
-    :param pop_target: Target population for each part of the partition.
-    :type pop_target: Union[float, int]
-    :param pop_col: Node attribute key holding population data.
-    :type pop_col: str
-    :param epsilon: How far (as a percentage of ``pop_target``) from ``pop_target`` the parts
-        of the partition can be.
-    :type epsilon: float
-    :param node_repeats: Parameter for :func:`~gerrychain.tree.bipartition_tree` to use.
-        Defaluts to 1.
-    :type node_repeats: int, optional
-    :param bipartition_tree_fn: The partition method to use. Defaults to
-        `partial(bipartition_tree, max_attempts=10000)`.
-    :type bipartition_tree_fn: Callable, optional
+    Args:
+        graph (Graph): The graph to partition into ``len(parts)`` :math:`\varepsilon`-balanced
+            parts.
+        parts (Sequence): Iterable of part (district) labels (like ``[0,1,2]`` or ``range(4)``).
+        pop_target (Union[float, int]): Target population for each part of the partition.
+        pop_col (str): Node attribute key holding population data.
+        epsilon (float): How far (as a percentage of ``pop_target``) from ``pop_target`` the parts
+            of the partition can be.
+        node_repeats (int, optional): Parameter for :func:`~gerrychain.tree.bipartition_tree` to
+            use. Defaluts to 1.
+        bipartition_tree_fn (Callable, optional): The partition method to use. Defaults to
+            `partial(bipartition_tree, max_attempts=10000)`.
 
-    :returns: New assignments for the nodes of ``graph``.
-    :rtype: dict
+    Returns:
+        dict: New assignments for the nodes of ``graph``.
     """
 
     flips = {}
@@ -203,28 +199,21 @@ def _get_seed_chunks(
 
     It calls the bipartition_tree_fn function repeatedly to create parts (districts).
 
-    :param graph: The graph
-    :type graph: Graph
-    :param num_chunks: The number of chunks to partition the graph into
-    :type num_chunks: int
-    :param num_dists: The number of districts
-    :type num_dists: int
-    :param pop_target: The target population of the districts (not of the chunks)
-    :type pop_target: Union[int, float]
-    :param pop_col: Node attribute key holding population data
-    :type pop_col: str
-    :param epsilon: How far (as a percentage of ``pop_target``) from ``pop_target`` the parts
-        of the partition can be
-    :type epsilon: float
-    :param node_repeats: Parameter for :func:`~gerrychain.tree.bipartition_tree`
-        to use. Defaults to 1.
-    :type node_repeats: int, optional
-    :param bipartition_tree_fn: The method to use for bipartitioning the graph.
-        Defaults to :func:`~gerrychain.tree.bipartition_tree`
-    :type bipartition_tree_fn: Callable, optional
+    Args:
+        graph (Graph): The graph
+        num_chunks (int): The number of chunks to partition the graph into
+        num_dists (int): The number of districts
+        pop_target (Union[int, float]): The target population of the districts (not of the chunks)
+        pop_col (str): Node attribute key holding population data
+        epsilon (float): How far (as a percentage of ``pop_target``) from ``pop_target`` the parts
+            of the partition can be
+        node_repeats (int, optional): Parameter for :func:`~gerrychain.tree.bipartition_tree` to
+            use. Defaults to 1.
+        bipartition_tree_fn (Callable, optional): The method to use for bipartitioning the graph.
+            Defaults to :func:`~gerrychain.tree.bipartition_tree`
 
-    :returns: New assignments for the nodes of ``graph``.
-    :rtype: List[List[int]]
+    Returns:
+        List[List[int]]: New assignments for the nodes of ``graph``.
     """
 
     if num_dists % num_chunks != 0:
@@ -355,14 +344,13 @@ def get_max_prime_factor_less_than(n: int, ceil: int) -> Optional[int]:
     Helper function for _recursive_seed_part_inner. Returns the largest prime factor of ``n``
     less than ``ceil``, or None if all are greater than ceil.
 
-    :param n: The number to find the largest prime factor for.
-    :type n: int
-    :param ceil: The upper limit for the largest prime factor.
-    :type ceil: int
+    Args:
+        n (int): The number to find the largest prime factor for.
+        ceil (int): The upper limit for the largest prime factor.
 
-    :returns: The largest prime factor of ``n`` less than ``ceil``, or None if all are greater
-        than ceil.
-    :rtype: Optional[int]
+    Returns:
+        Optional[int]: The largest prime factor of ``n`` less than ``ceil``, or None if all are
+            greater than ceil.
     """
     if n <= 1 or ceil <= 1:
         return None
@@ -424,37 +412,29 @@ def _recursive_seed_part_inner(
     this function bites off a single district from the graph and recursively partitions
     the remaining graph into ``num_dists - 1`` districts.
 
-    :param graph: The underlying graph structure.
-    :type graph: Graph
-    :param num_dists: number of districts to partition the graph into
-    :type num_dists: int
-    :param pop_target: Target population for each part of the partition
-    :type pop_target: Union[float, int]
-    :param pop_col: Node attribute key holding population data
-    :type pop_col: str
-    :param epsilon: How far (as a percentage of ``pop_target``) from ``pop_target`` the parts
-        of the partition can be
-    :type epsilon: float
-    :param bipartition_tree_fn: Function used to find balanced partitions at the 2-district level.
-        Defaults to :func:`~gerrychain.tree.bipartition_tree`
-    :type bipartition_tree_fn: Callable, optional
-    :param node_repeats: Parameter for :func:`~gerrychain.tree.bipartition_tree` to use.
-        Defaults to 1.
-    :type node_repeats: int, optional
-    :param n: Either a positive integer (greater than 1) or None. If n is a positive integer,
-        this function will recursively create a seed plan by either biting off districts from
-        graph or dividing graph into n chunks and recursing into each of these. If n is None,
-        this function prime factors ``num_dists``=n_1*n_2*...*n_k (n_1 > n_2 > ... n_k) and
-        recursively partitions graph into n_1 chunks. Defaults to None.
-    :type n: Optional[int], optional
-    :param ceil: Either a positive integer (at least 2) or None. Relevant only if n is None.
-        If ``ceil`` is a positive integer then finds the largest factor of ``num_dists`` less
-        than or equal to ``ceil``, and recursively splits graph into that number of chunks, or
-        bites off a district if that number is 1. Defaults to None.
-    :type ceil: Optional[int], optional
+    Args:
+        graph (Graph): The underlying graph structure.
+        num_dists (int): number of districts to partition the graph into
+        pop_target (Union[float, int]): Target population for each part of the partition
+        pop_col (str): Node attribute key holding population data
+        epsilon (float): How far (as a percentage of ``pop_target``) from ``pop_target`` the parts
+            of the partition can be
+        bipartition_tree_fn (Callable, optional): Function used to find balanced partitions at the
+            2-district level. Defaults to :func:`~gerrychain.tree.bipartition_tree`
+        node_repeats (int, optional): Parameter for :func:`~gerrychain.tree.bipartition_tree` to
+            use. Defaults to 1.
+        n (Optional[int], optional): Either a positive integer (greater than 1) or None. If n is a
+            positive integer, this function will recursively create a seed plan by either biting off
+            districts from graph or dividing graph into n chunks and recursing into each of these.
+            If n is None, this function prime factors ``num_dists``=n_1*n_2*...*n_k (n_1 > n_2 > ...
+            n_k) and recursively partitions graph into n_1 chunks. Defaults to None.
+        ceil (Optional[int], optional): Either a positive integer (at least 2) or None. Relevant
+            only if n is None. If ``ceil`` is a positive integer then finds the largest factor of
+            ``num_dists`` less than or equal to ``ceil``, and recursively splits graph into that
+            number of chunks, or bites off a district if that number is 1. Defaults to None.
 
-    :returns: New assignments for the nodes of ``graph``.
-    :rtype: List of sets, each set is a district
+    Returns:
+        List of sets, each set is a district: New assignments for the nodes of ``graph``.
     """
 
     # Chooses num_chunks
@@ -645,37 +625,29 @@ def recursive_seed_part(
     Returns an assignment dictionary with ``num_dists`` districts balanced within ``epsilon`` of
     ``pop_target`` by recursively splitting graph using _recursive_seed_part_inner.
 
-    :param graph: The graph
-    :type graph: Graph
-    :param parts: Iterable of part labels (like ``[0,1,2]`` or ``range(4)``
-    :type parts: Sequence
-    :param pop_target: Target population for each part of the partition
-    :type pop_target: Union[float, int]
-    :param pop_col: Node attribute key holding population data
-    :type pop_col: str
-    :param epsilon: How far (as a percentage of ``pop_target``) from ``pop_target`` the parts
-        of the partition can be
-    :type epsilon: float
-    :param bipartition_tree_fn: Function used to find balanced partitions at the 2-district level
-        Defaults to :func:`~gerrychain.tree.bipartition_tree`
-    :type bipartition_tree_fn: Callable, optional
-    :param node_repeats: Parameter for :func:`~gerrychain.tree.bipartition_tree` to use.
-        Defaults to 1.
-    :type node_repeats: int, optional
-    :param n: Either a positive integer (greater than 1) or None. If n is a positive integer,
-        this function will recursively create a seed plan by either biting off districts from graph
-        or dividing graph into n chunks and recursing into each of these. If n is None, this
-        function prime factors ``num_dists``=n_1*n_2*...*n_k (n_1 > n_2 > ... n_k) and recursively
-        partitions graph into n_1 chunks. Defaults to None.
-    :type n: Optional[int], optional
-    :param ceil: Either a positive integer (at least 2) or None. Relevant only if n is None. If
-        ``ceil`` is a positive integer then finds the largest factor of ``num_dists`` less than or
-        equal to ``ceil``, and recursively splits graph into that number of chunks, or bites off a
-        district if that number is 1. Defaults to None.
-    :type ceil: Optional[int], optional
+    Args:
+        graph (Graph): The graph
+        parts (Sequence): Iterable of part labels (like ``[0,1,2]`` or ``range(4)``
+        pop_target (Union[float, int]): Target population for each part of the partition
+        pop_col (str): Node attribute key holding population data
+        epsilon (float): How far (as a percentage of ``pop_target``) from ``pop_target`` the parts
+            of the partition can be
+        bipartition_tree_fn (Callable, optional): Function used to find balanced partitions at the
+            2-district level Defaults to :func:`~gerrychain.tree.bipartition_tree`
+        node_repeats (int, optional): Parameter for :func:`~gerrychain.tree.bipartition_tree` to
+            use. Defaults to 1.
+        n (Optional[int], optional): Either a positive integer (greater than 1) or None. If n is a
+            positive integer, this function will recursively create a seed plan by either biting off
+            districts from graph or dividing graph into n chunks and recursing into each of these.
+            If n is None, this function prime factors ``num_dists``=n_1*n_2*...*n_k (n_1 > n_2 > ...
+            n_k) and recursively partitions graph into n_1 chunks. Defaults to None.
+        ceil (Optional[int], optional): Either a positive integer (at least 2) or None. Relevant
+            only if n is None. If ``ceil`` is a positive integer then finds the largest factor of
+            ``num_dists`` less than or equal to ``ceil``, and recursively splits graph into that
+            number of chunks, or bites off a district if that number is 1. Defaults to None.
 
-    :returns: New assignments for the nodes of ``graph``.
-    :rtype: dict
+    Returns:
+        dict: New assignments for the nodes of ``graph``.
     """
 
     # frm: Note: It is not strictly necessary to use a subgraph in the call below on

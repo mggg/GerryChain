@@ -15,14 +15,12 @@ def _num_spanning_trees_in_district(partition, district: int) -> int:
 
     Uses Kirchoff's theorem to compute the number of spanning trees.
 
-    :param partition: :class:`gerrychain.Partition`
-    :type partition: :class:`gerrychain.Partition`
-    :param district: A district label (part) in the partition.
-    :type district: int
+    Args:
+        partition (:class:`gerrychain.Partition`): :class:`gerrychain.Partition`
+        district (int): A district label (part) in the partition.
 
-    :returns: The number of spanning trees in the subgraph of the
-        partition corresponding to district
-    :rtype: int
+    Returns:
+        int: The number of spanning trees in the subgraph of the partition corresponding to district
     """
     laplacian = partition.graph.laplacian_matrix()
     L = numpy.delete(numpy.delete(laplacian.todense(), 0, 0), 1, 1)
@@ -31,7 +29,7 @@ def _num_spanning_trees_in_district(partition, district: int) -> int:
 
 def num_spanning_trees(partition) -> Dict[int, int]:
     """
-    :returns: The number of spanning trees in each part (district) of a partition.
-    :rtype: Dict[int, int]
+    Returns:
+        Dict[int, int]: The number of spanning trees in each part (district) of a partition.
     """
     return {part: _num_spanning_trees_in_district(partition, part) for part in partition.parts}

@@ -23,18 +23,15 @@ class Assignment(Mapping):
 
     def __init__(self, parts: Dict, mapping: Optional[Dict] = None, validate: bool = True) -> None:
         """
-        :param parts: Dictionary mapping partition assignments frozensets of nodes.
-        :type parts: Dict
-        :param mapping: Dictionary mapping nodes to partition assignments.
-            Default is None.
-        :type mapping: Optional[Dict], optional
-        :param validate: Whether to validate the assignment. Default is True.
-        :type validate: bool, optional
+        Args:
+            parts (Dict): Dictionary mapping partition assignments frozensets of nodes.
+            mapping (Optional[Dict], optional): Dictionary mapping nodes to partition assignments.
+                Default is None.
+            validate (bool, optional): Whether to validate the assignment. Default is True.
 
-        :returns: None
-
-        :raises ValueError: if the keys of ``parts`` are not unique
-        :raises TypeError: if the values of ``parts`` are not frozensets
+        Raises:
+            ValueError: if the keys of ``parts`` are not unique
+            TypeError: if the values of ``parts`` are not frozensets
         """
 
         if validate:
@@ -110,11 +107,10 @@ class Assignment(Mapping):
         Update some parts of the assignment. Does not check that every node is
         still assigned to a part.
 
-        :param new_parts: dictionary mapping (some) parts to their new sets or
-            frozensets of nodes
-        :type new_parts: Dict
+        Args:
+            new_parts (Dict): dictionary mapping (some) parts to their new sets or frozensets of
+                nodes
 
-        :returns: None
         """
         for part, nodes in new_parts.items():
             self.parts[part] = frozenset(nodes)
@@ -124,16 +120,16 @@ class Assignment(Mapping):
 
     def to_series(self) -> pandas.Series:
         """
-        :returns: The assignment as a :class:`pandas.Series`.
-        :rtype: pandas.Series
+        Returns:
+            pandas.Series: The assignment as a :class:`pandas.Series`.
         """
         groups = [pandas.Series(data=part, index=nodes) for part, nodes in self.parts.items()]
         return pandas.concat(groups)
 
     def to_dict(self) -> Dict:
         """
-        :returns: The assignment as a ``{node: part}`` dictionary.
-        :rtype: Dict
+        Returns:
+            Dict: The assignment as a ``{node: part}`` dictionary.
         """
         return self.mapping
 
@@ -145,12 +141,12 @@ class Assignment(Mapping):
 
         This also works for :class:`pandas.Series`.
 
-        :param assignment: dictionary mapping nodes to partition assignments
-        :type assignment: Dict
+        Args:
+            assignment (Dict): dictionary mapping nodes to partition assignments
 
-        :returns: A new instance of :class:`Assignment` with the same assignments as the
-            passed-in dictionary.
-        :rtype: Assignment
+        Returns:
+            Assignment: A new instance of :class:`Assignment` with the same assignments as the
+                passed-in dictionary.
         """
 
         # frm: TODO: Refactoring:  Clean up from_dict().
@@ -218,20 +214,20 @@ def get_assignment(
     using the provided key or attempts to convert part_assignment into
     an :class:`Assignment` object.
 
-    :param part_assignment: A node attribute key, dictionary, or
-        :class:`Assignment` object corresponding to the desired assignment.
-    :type part_assignment: str
-    :param graph: The graph from which to extract the assignment.
-        Default is None.
-    :type graph: Optional[Graph], optional
+    Args:
+        part_assignment (str): A node attribute key, dictionary, or :class:`Assignment` object
+            corresponding to the desired assignment.
+        graph (Optional[Graph], optional): The graph from which to extract the assignment. Default
+            is None.
 
-    :returns: An :class:`Assignment` object containing the assignment
-        corresponding to the part_assignment input
-    :rtype: Assignment
+    Returns:
+        Assignment: An :class:`Assignment` object containing the assignment corresponding to the
+            part_assignment input
 
-    :raises TypeError: If the part_assignment is a string and the graph
-        is not provided.
-    :raises TypeError: If the part_assignment is not a string or dictionary.
+    Raises:
+        TypeError: If the part_assignment is a string and the graph
+            is not provided.
+        TypeError: If the part_assignment is not a string or dictionary.
     """
 
     # frm: TODO: Refactoring:  Think about whether to split this into two functions.  AT
@@ -264,17 +260,15 @@ def level_sets(mapping: Dict, container: Type[Set] = set) -> DefaultDict:
     Inverts a dictionary. ``{key: value}`` becomes
     ``{value: <container of keys that map to value>}``.
 
-    :param mapping: A dictionary to invert. Keys and values can be of any type.
-    :type mapping: Dict
-    :param container: A container type used to collect keys that map to the same value.
-        By default, the container type is ``set``.
-    :type container: Type[Set], optional
+    Args:
+        mapping (Dict): A dictionary to invert. Keys and values can be of any type.
+        container (Type[Set], optional): A container type used to collect keys that map to the same
+            value. By default, the container type is ``set``.
 
-    :return: A dictionary where each key is a value from the original dictionary,
-        and the corresponding value is a container (by default, a set) of keys from
-        the original dictionary that mapped to this value.
-    :rtype: DefaultDict
-
+    Returns:
+        DefaultDict: A dictionary where each key is a value from the original dictionary, and the
+            corresponding value is a container (by default, a set) of keys from the original
+            dictionary that mapped to this value.
     Example usage::
 
     .. code_block:: python

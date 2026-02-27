@@ -66,14 +66,11 @@ class Partition:
     because creating a subgraph is expensive - so subgraphs are created
     lazily (on demand) and subsequently cached.
 
-    :ivar graph: The underlying graph.
-    :type graph: :class:`~gerrychain.Graph`
-    :ivar assignment: Maps node IDs to district IDs.
-    :type assignment: :class:`~gerrychain.assignment.Assignment`
-    :ivar parts: Maps district IDs to the set of nodes in that district.
-    :type parts: Dict
-    :ivar subgraphs: Maps district IDs to the induced subgraph of that district.
-    :type subgraphs: Dict
+    Attributes:
+        graph (:class:`~gerrychain.Graph`): The underlying graph.
+        assignment (:class:`~gerrychain.assignment.Assignment`): Maps node IDs to district IDs.
+        parts (Dict): Maps district IDs to the set of nodes in that district.
+        subgraphs (Dict): Maps district IDs to the induced subgraph of that district.
     """
 
     __slots__ = (
@@ -100,12 +97,12 @@ class Partition:
         use_default_updaters=True,
     ):
         """
-        :param graph: Underlying graph.
-        :param assignment: Dictionary assigning nodes to districts.
-        :param updaters: Dictionary of functions to track data about the partition.
-            The keys are stored as attributes on the partition class,
-            which the functions compute.
-        :param use_default_updaters: If `False`, do not include default updaters.
+        Args:
+            graph (Any): Underlying graph.
+            assignment (Any): Dictionary assigning nodes to districts.
+            updaters (Any): Dictionary of functions to track data about the partition. The keys are
+                stored as attributes on the partition class, which the functions compute.
+            use_default_updaters (Any): If `False`, do not include default updaters.
         """
 
         if parent is None:
@@ -141,25 +138,18 @@ class Partition:
         """
         Create a Partition with a random assignment of nodes to districts.
 
-        :param graph: The graph to create the Partition from.
-        :type graph: :class:`~gerrychain.Graph`
-        :param n_parts: The number of districts to divide the nodes into.
-        :type n_parts: int
-        :param epsilon: The maximum relative population deviation from the ideal
-        :type epsilon: float
-            population. Should be in [0,1].
-        :param pop_col: The column of the graph's node data that holds the population data.
-        :type pop_col: str
-        :param updaters: Dictionary of updaters
-        :type updaters: Optional[Dict[str, Callable]], optional
-        :param use_default_updaters: If `False`, do not include default updaters.
-        :type use_default_updaters: bool, optional
-        :param method: The function to use to partition the graph into ``n_parts``. Defaults to
-            :func:`~gerrychain.tree.recursive_tree_part`.
-        :type method: Callable, optional
+        Args:
+            graph (:class:`~gerrychain.Graph`): The graph to create the Partition from.
+            n_parts (int): The number of districts to divide the nodes into.
+            epsilon (float): The maximum relative population deviation from the ideal
+            pop_col (str): The column of the graph's node data that holds the population data.
+            updaters (Optional[Dict[str, Callable]], optional): Dictionary of updaters
+            use_default_updaters (bool, optional): If `False`, do not include default updaters.
+            method (Callable, optional): The function to use to partition the graph into
+                ``n_parts``. Defaults to :func:`~gerrychain.tree.recursive_tree_part`.
 
-        :returns: The partition created with a random assignment
-        :rtype: Partition
+        Returns:
+            Partition: The partition created with a random assignment
         """
 
         total_pop = sum(graph.node_data(n)[pop_col] for n in graph)
@@ -310,16 +300,16 @@ class Partition:
         Returns the new partition obtained by performing the given `flips`
         on this partition.
 
-        :param flips: dictionary assigning nodes of the graph to their new districts
-        :type flips: Dict
-        :param flips_passed_in_use_original_nx_node_ids: Denotes whether the node_ids in
-            the flips are original NX node_ids or whether they are internal RX node_ids.
-            The only time this is set to True is for testing when the test wants to
-            provide explicit flips using NX node_ids (because the test cannot know what
-            node_ids RX will choose when we convert the underlying graph object).
-        :type flips_passed_in_use_original_nx_node_ids: bool
-        :returns: the new :class:`Partition`
-        :rtype: Partition
+        Args:
+            flips (Dict): dictionary assigning nodes of the graph to their new districts
+            flips_passed_in_use_original_nx_node_ids (bool): Denotes whether the node_ids in the
+                flips are original NX node_ids or whether they are internal RX node_ids. The only
+                time this is set to True is for testing when the test wants to provide explicit
+                flips using NX node_ids (because the test cannot know what node_ids RX will choose
+                when we convert the underlying graph object).
+
+        Returns:
+            Partition: the new :class:`Partition`
         """
 
         if flips_passed_in_use_original_nx_node_ids:
@@ -335,11 +325,11 @@ class Partition:
 
     def crosses_parts(self, edge: Tuple) -> bool:
         """
-        :param edge: tuple of node IDs
-        :type edge: Tuple
+        Args:
+            edge (Tuple): tuple of node IDs
 
-        :returns: True if the edge crosses from one part of the partition to another
-        :rtype: bool
+        Returns:
+            bool: True if the edge crosses from one part of the partition to another
         """
         return self.assignment.mapping[edge[0]] != self.assignment.mapping[edge[1]]
 
@@ -348,11 +338,11 @@ class Partition:
         Allows accessing the values of updaters computed for this
         Partition instance.
 
-        :param key: Property to access.
-        :type key: str
+        Args:
+            key (str): Property to access.
 
-        :returns: The value of the updater.
-        :rtype: Any
+        Returns:
+            Any: The value of the updater.
         """
         # Cleverness Alert:  Delayed evaluation of updater functions...
         #
@@ -422,15 +412,16 @@ class Partition:
         """
         Plot the partition, using the provided geometries.
 
-        :param geometries: A :class:`geopandas.GeoDataFrame` or :class:`geopandas.GeoSeries`
-            holding the geometries to use for plotting. Its :class:`~pandas.Index` should match
-            the node labels of the partition's underlying :class:`~gerrychain.Graph`.
-        :type geometries: geopandas.GeoDataFrame or geopandas.GeoSeries
-        :param `**kwargs`: Additional arguments to pass to :meth:`geopandas.GeoDataFrame.plot`
-            to adjust the plot.
+        Args:
+            geometries (geopandas.GeoDataFrame or geopandas.GeoSeries): A
+                :class:`geopandas.GeoDataFrame` or :class:`geopandas.GeoSeries` holding the
+                geometries to use for plotting. Its :class:`~pandas.Index` should match the node
+                labels of the partition's underlying :class:`~gerrychain.Graph`.
+            `**kwargs` (Any): Additional arguments to pass to :meth:`geopandas.GeoDataFrame.plot` to
+                adjust the plot.
 
-        :returns: The matplotlib axes object. Which plots the Partition.
-        :rtype: matplotlib.axes.Axes
+        Returns:
+            matplotlib.axes.Axes: The matplotlib axes object. Which plots the Partition.
         """
         import geopandas
 
@@ -467,15 +458,13 @@ class Partition:
         .. _`Districtr`: https://mggg.org/Districtr
         .. _`mggg-states`: https://github.com/mggg-states
 
-        :param graph: The graph to create the Partition from
-        :type graph: :class:`~gerrychain.Graph`
-        :param districtr_file: the path to the ``.json`` file exported from Districtr
-        :type districtr_file: str
-        :param updaters: dictionary of updaters
-        :type updaters: Optional[Dict[str, Callable]], optional
+        Args:
+            graph (:class:`~gerrychain.Graph`): The graph to create the Partition from
+            districtr_file (str): the path to the ``.json`` file exported from Districtr
+            updaters (Optional[Dict[str, Callable]], optional): dictionary of updaters
 
-        :returns: The partition created from the Districtr file
-        :rtype: Partition
+        Returns:
+            Partition: The partition created from the Districtr file
         """
         with open(districtr_file) as f:
             districtr_plan = json.load(f)

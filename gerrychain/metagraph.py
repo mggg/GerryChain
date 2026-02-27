@@ -31,10 +31,11 @@ def all_cut_edge_flips(partition: Partition) -> Iterator[Dict]:
     could move the boundary between districts by moving a single
     node.
 
-    :param partition: The partition object.
-    :type partition: Partition
-    :returns: An iterator that yields dictionaries representing the flipped edges.
-    :rtype: Iterator[Dict]
+    Args:
+        partition (Partition): The partition object.
+
+    Returns:
+        Iterator[Dict]: An iterator that yields dictionaries representing the flipped edges.
     """
 
     for edge, index in product(partition.cut_edges, (0, 1)):
@@ -51,14 +52,14 @@ def all_valid_states_one_flip_away(
     that is reachable from the given partition by a single flip under the
     prescribed constraints.)
 
-    :param partition: The initial partition.
-    :type partition: Partition
-    :param constraints: Constraints to determine the validity of a partition.
-                        It can be a single callable or an iterable of callables.
-    :type constraints: Union[Iterable[Callable], Callable]
-    :returns: An iterator that yields all valid partitions that differ from the
-             given partition by one flip.
-    :rtype: Iterator[Partition]
+    Args:
+        partition (Partition): The initial partition.
+        constraints (Union[Iterable[Callable], Callable]): Constraints to determine the validity of
+            a partition. It can be a single callable or an iterable of callables.
+
+    Returns:
+        Iterator[Partition]: An iterator that yields all valid partitions that differ from the given
+            partition by one flip.
     """
     if callable(constraints):
         is_valid = constraints
@@ -78,13 +79,13 @@ def all_valid_flips(
     Generate all valid flips for a given partition subject
     to the prescribed constraints.
 
-    :param partition: The initial partition.
-    :type partition: Partition
-    :param constraints: The constraints to be satisfied. Can be a single
-        constraint or an iterable of constraints.
-    :type constraints: Union[Iterable[Callable], Callable]
-    :returns: An iterator that yields dictionaries representing valid flips.
-    :rtype: Iterator[Dict]
+    Args:
+        partition (Partition): The initial partition.
+        constraints (Union[Iterable[Callable], Callable]): The constraints to be satisfied. Can be a
+            single constraint or an iterable of constraints.
+
+    Returns:
+        Iterator[Dict]: An iterator that yields dictionaries representing valid flips.
     """
     for state in all_valid_states_one_flip_away(partition, constraints):
         yield state.flips
@@ -97,12 +98,12 @@ def metagraph_degree(partition: Partition, constraints: Union[Iterable[Callable]
     the state given by partition in a single flip subject to the prescribed
     constraints.
 
-    :param partition: The partition object representing the current state.
-    :type partition: Partition
-    :param constraints: The constraints to be applied to the partition.
-                        It can be a single constraint or an iterable of constraints.
-    :type constraints: Union[Iterable[Callable], Callable]
-    :returns: The degree of the partition node in the metagraph.
-    :rtype: int
+    Args:
+        partition (Partition): The partition object representing the current state.
+        constraints (Union[Iterable[Callable], Callable]): The constraints to be applied to the
+            partition. It can be a single constraint or an iterable of constraints.
+
+    Returns:
+        int: The degree of the partition node in the metagraph.
     """
     return len(list(all_valid_states_one_flip_away(partition, constraints)))

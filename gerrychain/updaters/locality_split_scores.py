@@ -49,45 +49,35 @@ class LocalitySplits:
         # at each step of the chain has the name of the score
         # and its value at that step
 
-    :ivar name: The name of the updater (e.g. "countysplits")
-    :type name: str
-    :ivar col_id: The name of the column containing the locality
-        attribute (i.e. county ids, municipality names, etc.)
-    :type col_id: str
-    :ivar pop_col: The name of the column containing population counts.
-    :type pop_col: str
-    :ivar scores_to_compute: A list/tuple/set of strings naming the
-        score functions to compute at each step. This will generally be
-        some subcollection of ```['num_parts', 'num_pieces',
-        'naked_boundary', 'shannon_entropy', 'power_entropy',
-        'symmetric_entropy', 'num_split_localities']```
-    :type scores_to_compute: List[str]
-    :ivar pent_alpha: A number between 0 and 1 which is passed as the
-        exponent to :meth:`~LocalitySplits.power_entropy`
-    :type pent_alpha: float
-    :ivar localities: A list containing the unique locality identifiers
-        (e.g. county names, municipality names, etc.) for the partition.
-        This list is populated using the locality data stored on each of
-        the nodes in the graph.
-    :type localities: List[str]
-    :ivar localitydict: A dictionary mapping node IDs to locality IDs.
-        This is used to quickly look up the locality of a given node.
-    :type localitydict: Dict[str, str]
-    :ivar locality_splits: A dictionary mapping district IDs to a counter
-        of localities in that district. That is to say, this tells us
-        how many nodes in each district are of the given locality type.
-    :type locality_splits: Dict[int, Counter[str]]
-    :ivar locality_splits_inv: The inverted dictionary of locality_splits
-    :type locality_splits_inv: Dict[str, Dict[int, int]]
-    :ivar allowed_pieces: A dictionary that maps each locality to the
-        minimum number of districts that locality must touch. This is
-        computed using the ideal district population. NOT CURRENTLY USED.
-    :type allowed_pieces: Dict[str, int]
-    :ivar scores: A dictionary initialized with the key values from the
-        initializer's scores_to_compute parameter. The initial values are
-        set to none and are updated in each call to store the compted
-        score value for each metric of interest.
-    :type scores: Dict[str, Any]
+    Attributes:
+        name (str): The name of the updater (e.g. "countysplits")
+        col_id (str): The name of the column containing the locality
+            attribute (i.e. county ids, municipality names, etc.)
+        pop_col (str): The name of the column containing population counts.
+        scores_to_compute (List[str]): A list/tuple/set of strings naming the
+            score functions to compute at each step. This will generally be
+            some subcollection of ```['num_parts', 'num_pieces',
+            'naked_boundary', 'shannon_entropy', 'power_entropy',
+            'symmetric_entropy', 'num_split_localities']```
+        pent_alpha (float): A number between 0 and 1 which is passed as the
+            exponent to :meth:`~LocalitySplits.power_entropy`
+        localities (List[str]): A list containing the unique locality identifiers
+            (e.g. county names, municipality names, etc.) for the partition.
+            This list is populated using the locality data stored on each of
+            the nodes in the graph.
+        localitydict (Dict[str, str]): A dictionary mapping node IDs to locality IDs.
+            This is used to quickly look up the locality of a given node.
+        locality_splits (Dict[int, Counter[str]]): A dictionary mapping district IDs to a counter
+            of localities in that district. That is to say, this tells us
+            how many nodes in each district are of the given locality type.
+        locality_splits_inv (Dict[str, Dict[int, int]]): The inverted dictionary of locality_splits
+        allowed_pieces (Dict[str, int]): A dictionary that maps each locality to the
+            minimum number of districts that locality must touch. This is
+            computed using the ideal district population. NOT CURRENTLY USED.
+        scores (Dict[str, Any]): A dictionary initialized with the key values from the
+            initializer's scores_to_compute parameter. The initial values are
+            set to none and are updated in each call to store the compted
+            score value for each metric of interest.
     """
 
     def __init__(
@@ -99,24 +89,17 @@ class LocalitySplits:
         pent_alpha: float = 0.05,
     ):
         """
-        :param name: The name of the updater (e.g. "countysplits")
-        :type name: str
-        :param col_id: The name of the column containing the locality
-            attribute (i.e. county ids, municipality names, etc.)
-        :type col_id: str
-        :param pop_col: The name of the column containing population counts.
-        :type pop_col: str
-        :param scores_to_compute: A list/tuple/set of strings naming the
-            score functions to compute at each step. This should be
-            some subcollection of ```['num_parts', 'num_pieces',
-            'naked_boundary', 'shannon_entropy', 'power_entropy',
-            'symmetric_entropy', 'num_split_localities']```.
-            Default is ["num_parts"].
-        :type scores_to_compute: List[str], optional
-        :param pent_alpha: A number between 0 and 1 which is
-            passed as the exponent to :meth:`~LocalitySplits.power_entropy`.
-            Default is 0.05.
-        :type pent_alpha: float, optional
+        Args:
+            name (str): The name of the updater (e.g. "countysplits")
+            col_id (str): The name of the column containing the locality attribute (i.e. county ids,
+                municipality names, etc.)
+            pop_col (str): The name of the column containing population counts.
+            scores_to_compute (List[str], optional): A list/tuple/set of strings naming the score
+                functions to compute at each step. This should be some subcollection of
+                ```['num_parts', 'num_pieces', 'naked_boundary', 'shannon_entropy', 'power_entropy',
+                'symmetric_entropy', 'num_split_localities']```. Default is ["num_parts"].
+            pent_alpha (float, optional): A number between 0 and 1 which is passed as the exponent
+                to :meth:`~LocalitySplits.power_entropy`. Default is 0.05.
         """
 
         self.name = name
@@ -261,12 +244,11 @@ class LocalitySplits:
         """
         Calculates the number of unique locality-district pairs.
 
-        :param partition: The partition to be scored.
-        :type partition: :class:`~gerrychain.Partition`
+        Args:
+            partition (:class:`~gerrychain.Partition`): The partition to be scored.
 
-        :returns: The number of parts, i.e. the number of unique
-           locality-district pairs.
-        :rtype: int
+        Returns:
+            int: The number of parts, i.e. the number of unique locality-district pairs.
         """
 
         counter = 0
@@ -278,12 +260,12 @@ class LocalitySplits:
         """
         Calculates the number of pieces.
 
-        :param partition: The partition to be scored.
-        :type partition: :class:`~gerrychain.Partition`
+        Args:
+            partition (:class:`~gerrychain.Partition`): The partition to be scored.
 
-        :returns: Number of pieces, where each piece is formed by
-            cutting the graph by both locality and district boundaries.
-        :rtype: int
+        Returns:
+            int: Number of pieces, where each piece is formed by cutting the graph by both locality
+                and district boundaries.
         """
         locality_intersections = {}
 
@@ -313,11 +295,11 @@ class LocalitySplits:
         Computes the number of cut edges inside localities (i.e. the
             number of cut edges with both endpoints in the same locality).
 
-        :param partition: The partition to be scored.
-        :type partition: :class:`~gerrychain.Partition`
+        Args:
+            partition (:class:`~gerrychain.Partition`): The partition to be scored.
 
-        :returns: The number of cut edges within a locality.
-        :rtype: int
+        Returns:
+            int: The number of cut edges within a locality.
         """
 
         cut_edges_within = 0
@@ -335,11 +317,11 @@ class LocalitySplits:
         """
         Computes the shannon entropy score of a district plan.
 
-        :param partition: The partition to be scored.
-        :type partition: :class:`~gerrychain.Partition`
+        Args:
+            partition (:class:`~gerrychain.Partition`): The partition to be scored.
 
-        :returns: Shannon entropy score.
-        :rtype: float
+        Returns:
+            float: Shannon entropy score.
         """
 
         total_vtds = 0
@@ -378,11 +360,11 @@ class LocalitySplits:
         """
         Computes the power entropy score of a district plan.
 
-        :param partition: The partition to be scored.
-        :type partition: :class:`~gerrychain.Partition`
+        Args:
+            partition (:class:`~gerrychain.Partition`): The partition to be scored.
 
-        :returns: Power entropy score.
-        :rtype: float
+        Returns:
+            float: Power entropy score.
         """
 
         total_vtds = 0  # count the total number of vtds in state
@@ -425,11 +407,11 @@ class LocalitySplits:
 
             This function is previously marked incomplete.
 
-        :param partition: The partition to be scored.
-        :type partition: :class:`~gerrychain.Partition`
+        Args:
+            partition (:class:`~gerrychain.Partition`): The partition to be scored.
 
-        :returns: The symmetric square root entropy score.
-        :rtype: float
+        Returns:
+            float: The symmetric square root entropy score.
         """
 
         district_dict = dict(partition.parts)
@@ -471,12 +453,12 @@ class LocalitySplits:
         """
         Calculates the number of localities touching 2 or more districts.
 
-        :param partition: The partition to be scored.
-        :type partition: :class:`~gerrychain.Partition`
+        Args:
+            partition (:class:`~gerrychain.Partition`): The partition to be scored.
 
-        :returns: The number of split localities, i.e. the number of localities
-            touching 2 or more districts.
-        :rtype: int
+        Returns:
+            int: The number of split localities, i.e. the number of localities touching 2 or more
+                districts.
         """
 
         total_splits = 0

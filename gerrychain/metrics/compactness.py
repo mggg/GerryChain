@@ -8,13 +8,12 @@ def compute_polsby_popper(area: float, perimeter: float) -> float:
     """
     Computes the Polsby-Popper score for a single district.
 
-    :param area: The area of the district
-    :type area: float
-    :param perimeter: The perimeter of the district
-    :type perimeter: float
+    Args:
+        area (float): The area of the district
+        perimeter (float): The perimeter of the district
 
-    :returns: The Polsby-Popper score for the district
-    :rtype: float
+    Returns:
+        float: The Polsby-Popper score for the district
     """
     try:
         return 4 * math.pi * area / perimeter**2
@@ -28,11 +27,11 @@ def polsby_popper(partition) -> Dict[int, float]:
     """
     Computes Polsby-Popper compactness scores for each district in the partition.
 
-    :param partition: The partition to compute scores for
-    :type partition: Partition
+    Args:
+        partition (Partition): The partition to compute scores for
 
-    :returns: A dictionary mapping each district ID to its Polsby-Popper score
-    :rtype: Dict[int, float]
+    Returns:
+        Dict[int, float]: A dictionary mapping each district ID to its Polsby-Popper score
     """
     return {
         part: compute_polsby_popper(partition["area"][part], partition["perimeter"][part])

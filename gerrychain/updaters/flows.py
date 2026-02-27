@@ -10,11 +10,11 @@ from typing import Callable, Dict, Set, Tuple
 @functools.lru_cache(maxsize=2)
 def neighbor_flips(partition) -> Set[Tuple]:
     """
-    :param partition: A partition of a Graph
-    :type partition: :class:`~gerrychain.partition.Partition`
+    Args:
+        partition (:class:`~gerrychain.partition.Partition`): A partition of a Graph
 
-    :returns: The set of edges that were flipped in the given partition.
-    :rtype: Set[Tuple]
+    Returns:
+        Set[Tuple]: The set of edges that were flipped in the given partition.
     """
     return {
         tuple(sorted((node, neighbor)))
@@ -30,15 +30,16 @@ def create_flow():
 @functools.lru_cache(maxsize=2)
 def flows_from_changes(old_partition, new_partition) -> Dict:
     """
-    :param old_partition: A partition of a Graph representing the previous step.
-    :type old_partition: :class:`~gerrychain.partition.Partition`
-    :param new_partition: A partition of a Graph representing the current step.
-    :type new_partition: :class:`~gerrychain.partition.Partition`
+    Args:
+        old_partition (:class:`~gerrychain.partition.Partition`): A partition of a Graph
+            representing the previous step.
+        new_partition (:class:`~gerrychain.partition.Partition`): A partition of a Graph
+            representing the current step.
 
-    :returns: A dictionary mapping each node that changed assignment between
-        the previous and current partitions to a dictionary of the form
-        `{'in': <set of nodes that flowed in>, 'out': <set of nodes that flowed out>}`.
-    :rtype: Dict
+    Returns:
+        Dict: A dictionary mapping each node that changed assignment between the previous and
+            current partitions to a dictionary of the form `{'in': <set of nodes that flowed in>,
+            'out': <set of nodes that flowed out>}`.
     """
 
     # frm: TODO: Code: ???:  Grok why there is a test for:  source != target
@@ -83,15 +84,13 @@ def on_flow(initializer: Callable, alias: str) -> Callable:
         def my_updater(partition, previous, new_nodes, old_nodes):
             # return new value for the part
 
-    :param initializer: A function that takes the partition and returns a
-        dictionary of the form `{part: <value>}`.
-    :type initializer: Callable
-    :param alias: The name of the updater to be created.
-    :type alias: str
+    Args:
+        initializer (Callable): A function that takes the partition and returns a dictionary of the
+            form `{part: <value>}`.
+        alias (str): The name of the updater to be created.
 
-    :returns: A decorator that takes a function as input and returns a
-        wrapped function.
-    :rtype: Callable
+    Returns:
+        Callable: A decorator that takes a function as input and returns a wrapped function.
     """
 
     def decorator(function):
@@ -117,13 +116,13 @@ def on_flow(initializer: Callable, alias: str) -> Callable:
 
 def compute_edge_flows(partition) -> Dict:
     """
-    :param partition: A partition of a Graph
-    :type partition: :class:`~gerrychain.partition.Partition`
+    Args:
+        partition (:class:`~gerrychain.partition.Partition`): A partition of a Graph
 
-    :returns: A flow dictionary containing the flow from the parent of this partition
-        to this partition. This dictionary is of the form
-        `{part: {'in': <set of edges that flowed in>, 'out': <set of edges that flowed out>}}`.
-    :rtype: Dict
+    Returns:
+        Dict: A flow dictionary containing the flow from the parent of this partition to this
+            partition. This dictionary is of the form `{part: {'in': <set of edges that flowed in>,
+            'out': <set of edges that flowed out>}}`.
     """
     edge_flows = collections.defaultdict(create_flow)
     assignment = partition.assignment
@@ -213,15 +212,13 @@ def on_edge_flow(initializer: Callable, alias: str) -> Callable:
         def my_updater(partition, previous, new_edges, old_edges):
             # return new value of the part
 
-    :param initializer: A function that takes the partition and returns a
-        dictionary of the form `{part: <value>}`.
-    :type initializer: Callable
-    :param alias: The name of the updater to be created.
-    :type alias: str
+    Args:
+        initializer (Callable): A function that takes the partition and returns a dictionary of the
+            form `{part: <value>}`.
+        alias (str): The name of the updater to be created.
 
-    :returns: A decorator that takes a function as input and returns a
-        wrapped function.
-    :rtype: Callable
+    Returns:
+        Callable: A decorator that takes a function as input and returns a wrapped function.
     """
 
     def decorator(f):

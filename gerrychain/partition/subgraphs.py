@@ -11,26 +11,22 @@ class SubgraphView:
     which can speed up computations when working with district assignments
     within a partition class.
 
-    :ivar graph: The parent graph from which subgraphs are derived.
-    :type graph: Graph
-    :ivar parts: A list-of-lists dictionary (so a dict with key values indicated by
-        the list index) mapping keys to subsets of nodes in the graph.
-    :type parts: List[List[Any]]
-    :ivar subgraphs_cache: Cache to store subgraph views for quick access.
-    :type subgraphs_cache: Dict
+    Attributes:
+        graph (Graph): The parent graph from which subgraphs are derived.
+        parts (List[List[Any]]): A list-of-lists dictionary (so a dict with key values indicated by
+            the list index) mapping keys to subsets of nodes in the graph.
+        subgraphs_cache (Dict): Cache to store subgraph views for quick access.
     """
 
     __slots__ = ["graph", "parts", "subgraphs_cache"]
 
     def __init__(self, graph: Graph, parts: List[List[Any]]) -> None:
         """
-        :param graph: The parent graph from which subgraphs are derived.
-        :type graph: Graph
-        :param parts: A list of lists of nodes corresponding the different
-            parts of the partition of the graph.
-        :type parts: List[List[Any]]
+        Args:
+            graph (Graph): The parent graph from which subgraphs are derived.
+            parts (List[List[Any]]): A list of lists of nodes corresponding the different parts of
+                the partition of the graph.
 
-        :returns: None
         """
         self.graph = graph
         self.parts = parts
@@ -38,12 +34,11 @@ class SubgraphView:
 
     def __getitem__(self, part: int) -> Graph:
         """
-        :param part: The the id of the partition to return the subgraph for.
-        :type part: int
+        Args:
+            part (int): The the id of the partition to return the subgraph for.
 
-        :returns: The subgraph of the parent graph corresponding to the
-            partition with id `part`.
-        :rtype: Graph
+        Returns:
+            Graph: The subgraph of the parent graph corresponding to the partition with id `part`.
         """
         if part not in self.subgraphs_cache:
             self.subgraphs_cache[part] = self.graph.subgraph(self.parts[part])

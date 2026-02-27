@@ -9,11 +9,11 @@ def propose_any_node_flip(partition: Partition) -> Partition:
     """
     Flip a random node (not necessarily on the boundary) to a random part
 
-    :param partition: The current partition to propose a flip from.
-    :type partition: Partition
+    Args:
+        partition (Partition): The current partition to propose a flip from.
 
-    :returns: A possible next `~gerrychain.Partition`
-    :rtype: Partition
+    Returns:
+        Partition: A possible next `~gerrychain.Partition`
     """
 
     node = random.choice(tuple(partition.graph))
@@ -26,11 +26,11 @@ def propose_flip_every_district(partition: Partition) -> Partition:
     """
     Proposes a random boundary flip for each district in the partition.
 
-    :param partition: The current partition to propose the flips from.
-    :type partition: Partition
+    Args:
+        partition (Partition): The current partition to propose the flips from.
 
-    :returns: A possible next `~gerrychain.Partition`
-    :rtype: Partition
+    Returns:
+        Partition: A possible next `~gerrychain.Partition`
     """
     flips = dict()
 
@@ -50,11 +50,11 @@ def propose_chunk_flip(partition: Partition) -> Partition:
     """
     Chooses a random boundary node and proposes to flip it and all of its neighbors
 
-    :param partition: The current partition to propose a flip from.
-    :type partition: Partition
+    Args:
+        partition (Partition): The current partition to propose a flip from.
 
-    :returns: A possible next `~gerrychain.Partition`
-    :rtype: Partition
+    Returns:
+        Partition: A possible next `~gerrychain.Partition`
     """
     flips = dict()
 
@@ -79,11 +79,11 @@ def propose_random_flip(partition: Partition) -> Partition:
     """
     Proposes a random boundary flip from the partition.
 
-    :param partition: The current partition to propose a flip from.
-    :type partition: Partition
+    Args:
+        partition (Partition): The current partition to propose a flip from.
 
-    :returns: A possible next `~gerrychain.Partition`
-    :rtype: Partition
+    Returns:
+        Partition: A possible next `~gerrychain.Partition`
     """
     if len(partition["cut_edges"]) == 0:
         return partition
@@ -103,11 +103,11 @@ def slow_reversible_propose_bi(partition: Partition) -> Partition:
 
     Temporary version until we make an updater for this set.
 
-    :param partition: The current partition to propose a flip from.
-    :type partition: Partition
+    Args:
+        partition (Partition): The current partition to propose a flip from.
 
-    :returns: A possible next `~gerrychain.Partition`
-    :rtype: Partition
+    Returns:
+        Partition: A possible next `~gerrychain.Partition`
     """
 
     b_nodes = {edge[0] for edge in partition["cut_edges"]}.union(
@@ -136,11 +136,11 @@ def slow_reversible_propose(partition: Partition) -> Partition:
 
     Temporary version until we make an updater for this set.
 
-    :param partition: The current partition to propose a flip from.
-    :type partition: Partition
+    Args:
+        partition (Partition): The current partition to propose a flip from.
 
-    :returns: A possible next `~gerrychain.Partition`
-    :rtype: Partition
+    Returns:
+        Partition: A possible next `~gerrychain.Partition`
     """
 
     b_nodes = {(x[0], partition.assignment.mapping[x[1]]) for x in partition["cut_edges"]}.union(

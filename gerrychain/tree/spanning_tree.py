@@ -186,14 +186,13 @@ def random_spanning_tree(graph: Graph, region_surcharge: Optional[Dict] = None) 
     will be heavier than any other edge that has not had a surcharge applied to
     it.
 
-    :param graph: The input graph to build the spanning tree from.
-    :type graph: Graph
-    :param region_surcharge: Dictionary of surcharges to add to the random
-        weights used in region-aware variants.
-    :type region_surcharge: Optional[Dict], optional
+    Args:
+        graph (Graph): The input graph to build the spanning tree from.
+        region_surcharge (Optional[Dict], optional): Dictionary of surcharges to add to the random
+            weights used in region-aware variants.
 
-    :returns: The maximal spanning tree represented as a GerryChain Graph.
-    :rtype: Graph
+    Returns:
+        Graph: The maximal spanning tree represented as a GerryChain Graph.
     """
 
     # frm: TODO: Documentation:  What values make sense for region surcharge?
@@ -352,13 +351,12 @@ def uniform_spanning_tree(graph: Graph, choice: Callable = random.choice) -> Gra
 
     Rinse and repeat until all nodes have been added to the tree.
 
-    :param graph: Graph
-    :type graph: Graph
-    :param choice: :func:`random.choice`. Defaults to :func:`random.choice`.
-    :type choice: Callable, optional
+    Args:
+        graph (Graph): Graph
+        choice (Callable, optional): :func:`random.choice`. Defaults to :func:`random.choice`.
 
-    :returns: A spanning tree of the graph chosen uniformly at random.
-    :rtype: Graph
+    Returns:
+        Graph: A spanning tree of the graph chosen uniformly at random.
     """
 
     # Pick a starting point at random

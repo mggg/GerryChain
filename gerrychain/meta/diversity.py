@@ -13,13 +13,10 @@ class DiversityStats:
     """
     Lightweight stats object that reports the diversity of a given chain.
 
-    :ivar unique_plans: The number of unique plans seen so far.
-    :type unique_plans: int
-    :ivar unique_districts: The number of unique districts seen so far.
-    :type unique_districts: int
-    :ivar steps_taken: The number of steps taken so far.
-    :type steps_taken: int
-
+    Attributes:
+        unique_plans (int): The number of unique plans seen so far.
+        unique_districts (int): The number of unique districts seen so far.
+        steps_taken (int): The number of steps taken so far.
     Example usage::
 
         DiversityStats(unique_plans=44162, unique_districts=82992, steps_taken=100000)
@@ -50,11 +47,11 @@ def collect_diversity_stats(
             print(stats)
             # normal chain stuff here
 
-    :param chain: A chain object to collect stats on.
-    :type chain: Iterable[Partition]
+    Args:
+        chain (Iterable[Partition]): A chain object to collect stats on.
 
-    :returns: An iterable of `(partition, DiversityStat)`.
-    :rtype: Iterable[Tuple[Partition, DiversityStats]]
+    Returns:
+        Iterable[Tuple[Partition, DiversityStats]]: An iterable of `(partition, DiversityStat)`.
     """
     seen_plans = {}
     seen_districts = {}

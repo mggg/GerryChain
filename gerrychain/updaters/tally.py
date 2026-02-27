@@ -13,11 +13,10 @@ class DataTally:
     An updater for tallying numerical data that is not necessarily stored as
     node attributes
 
-    :ivar data: A Dict or Series indexed by the graph's nodes,
-        or the string key for a node attribute containing the Tally's data.
-    :type data: Union[Dict, pandas.Series, str]
-    :ivar alias: The name of the tally in the Partition's `updaters` dictionary
-    :type alias: str
+    Attributes:
+        data (Union[Dict, pandas.Series, str]): A Dict or Series indexed by the graph's nodes,
+            or the string key for a node attribute containing the Tally's data.
+        alias (str): The name of the tally in the Partition's `updaters` dictionary
     """
 
     # frm: * TODO: Code:  Check to see if DataTally used for data that is NOT attribute of a node
@@ -34,13 +33,11 @@ class DataTally:
 
     def __init__(self, data: Union[Dict, pandas.Series, str], alias: str) -> None:
         """
-        :param data: A Dict or Series indexed by the graph's nodes,
-            or the string key for a node attribute containing the Tally's data.
-        :type data: Union[Dict, pandas.Series, str]
-        :param alias: The name of the tally in the Partition's `updaters` dictionary
-        :type alias: str
+        Args:
+            data (Union[Dict, pandas.Series, str]): A Dict or Series indexed by the graph's nodes,
+                or the string key for a node attribute containing the Tally's data.
+            alias (str): The name of the tally in the Partition's `updaters` dictionary
 
-        :returns: None
         """
         self.data = data
         self.alias = alias
@@ -98,14 +95,13 @@ class Tally:
     """
     An updater for keeping a tally of one or more node attributes.
 
-    :ivar fields: The list of node attributes that you want to tally. Or just a
-        single attribute name as a string.
-    :type fields: Union[str, List[str]]
-    :ivar alias: The aliased name of this Tally (meaning, the key corresponding to
-        this Tally in the Partition's updaters dictionary)
-    :type alias: Optional[str]
-    :ivar dtype: The type (int, float, etc.) that you want the tally to have
-    :type dtype: Any
+    Attributes:
+        fields (Union[str, List[str]]): The list of node attributes that you want to tally. Or just
+        a
+            single attribute name as a string.
+        alias (Optional[str]): The aliased name of this Tally (meaning, the key corresponding to
+            this Tally in the Partition's updaters dictionary)
+        dtype (Any): The type (int, float, etc.) that you want the tally to have
     """
 
     __slots__ = ["fields", "alias", "dtype"]
@@ -117,18 +113,15 @@ class Tally:
         dtype: Type = int,
     ) -> None:
         """
-        :param fields: The list of node attributes that you want to tally. Or a just a
-            single attribute name as a string.
-        :type fields: Union[str, List[str]]
-        :param alias: The aliased name of this Tally (meaning, the key corresponding to
-            this Tally in the Partition's updaters dictionary).
-            Default is None.
-        :type alias: Optional[str], optional
-        :param dtype: The type (int, float, etc.) that you want the tally to have.
-            Default is int.
-        :type dtype: Any, optional
+        Args:
+            fields (Union[str, List[str]]): The list of node attributes that you want to tally. Or a
+                just a single attribute name as a string.
+            alias (Optional[str], optional): The aliased name of this Tally (meaning, the key
+                corresponding to this Tally in the Partition's updaters dictionary). Default is
+                None.
+            dtype (Any, optional): The type (int, float, etc.) that you want the tally to have.
+                Default is int.
 
-        :returns: None
         """
         if not isinstance(fields, list):
             fields = [fields]
@@ -148,12 +141,13 @@ class Tally:
         Compute the initial district-wide tally of data stored in the "field"
         attribute of nodes.
 
-        :param partition: The partition to compute the tally for.
-        :type partition: :class:`~gerrychain.partition.Partition`
+        Args:
+            partition (:class:`~gerrychain.partition.Partition`): The partition to compute the tally
+                for.
 
-        :returns: A dictionary keyed by the parts of the partition, with values
-            being the sum of the "field" attribute of nodes in that part.
-        :rtype: Dict
+        Returns:
+            Dict: A dictionary keyed by the parts of the partition, with values being the sum of the
+                "field" attribute of nodes in that part.
         """
         tally = collections.defaultdict(self.dtype)
         for node, part in partition.assignment.items():
@@ -173,12 +167,13 @@ class Tally:
         Compute the district-wide tally of data stored in the "field" attribute
         of nodes, given proposed changes.
 
-        :param partition: The partition to update the tally for.
-        :type partition: :class:`~gerrychain.partition.Partition`
+        Args:
+            partition (:class:`~gerrychain.partition.Partition`): The partition to update the tally
+                for.
 
-        :returns: A dictionary keyed by the parts of the partition, with
-            the updated tallies of the "field" attribute of nodes in each part.
-        :rtype: Dict
+        Returns:
+            Dict: A dictionary keyed by the parts of the partition, with the updated tallies of the
+                "field" attribute of nodes in each part.
         """
         parent = partition.parent
 
@@ -200,35 +195,31 @@ class Tally:
 
 def compute_out_flow(graph, fields: Union[str, List[str]], flow: Dict) -> int:
     """
-    :param graph: The graph that the partition is defined on.
-    :type graph: :class:`~gerrychain.graph.Graph`
-    :param fields: The list of node attributes that you want to tally. Or just a
-        single attribute name as a string.
-    :type fields: Union[str, List[str]]
-    :param flow: A dictionary containing the flow from the parent of this partition
-        to this partition. This dictionary is of the form
-        `{part: {'in': <set of nodes that flowed in>, 'out': <set of nodes that flowed out>}}`.
-    :type flow: Dict
+    Args:
+        graph (:class:`~gerrychain.graph.Graph`): The graph that the partition is defined on.
+        fields (Union[str, List[str]]): The list of node attributes that you want to tally. Or just
+            a single attribute name as a string.
+        flow (Dict): A dictionary containing the flow from the parent of this partition to this
+            partition. This dictionary is of the form `{part: {'in': <set of nodes that flowed in>,
+            'out': <set of nodes that flowed out>}}`.
 
-    :returns: The sum of the "field" attribute of nodes in the "out" set of the flow.
-    :rtype: int
+    Returns:
+        int: The sum of the "field" attribute of nodes in the "out" set of the flow.
     """
     return sum(graph.node_data(node)[field] for node in flow["out"] for field in fields)
 
 
 def compute_in_flow(graph, fields: Union[str, List[str]], flow: Dict) -> int:
     """
-    :param graph: The graph that the partition is defined on.
-    :type graph: :class:`~gerrychain.graph.Graph`
-    :param fields: The list of node attributes that you want to tally. Or just a
-        single attribute name as a string.
-    :type fields: Union[str, List[str]]
-    :param flow: A dictionary containing the flow from the parent of this partition
-        to this partition. This dictionary is of the form
-        `{part: {'in': <set of nodes that flowed in>, 'out': <set of nodes that flowed out>}}`.
-    :type flow: Dict
+    Args:
+        graph (:class:`~gerrychain.graph.Graph`): The graph that the partition is defined on.
+        fields (Union[str, List[str]]): The list of node attributes that you want to tally. Or just
+            a single attribute name as a string.
+        flow (Dict): A dictionary containing the flow from the parent of this partition to this
+            partition. This dictionary is of the form `{part: {'in': <set of nodes that flowed in>,
+            'out': <set of nodes that flowed out>}}`.
 
-    :returns: The sum of the "field" attribute of nodes in the "in" set of the flow.
-    :rtype: int
+    Returns:
+        int: The sum of the "field" attribute of nodes in the "in" set of the flow.
     """
     return sum(graph.node_data(node)[field] for node in flow["in"] for field in fields)

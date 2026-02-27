@@ -45,25 +45,22 @@ class Election:
         # vote distribution:
         partition["2008_Sen"].wins("Republican")
 
-    :ivar name: The name of the election. (e.g. "2008 Presidential")
-    :type name: str
-    :ivar parties: A list of the names of the parties in the election.
-    :type parties: List[str]
-    :ivar node_attribute_names: A list of the node_attribute_names in the graph's node data that
-        hold the vote totals for each party.
-    :type node_attribute_names: List[str]
-    :ivar party_names_to_node_attribute_names: A dictionary mapping party names to the
-        node_attribute_names in the graph's node data that hold the vote totals for that party.
-    :type party_names_to_node_attribute_names: Dict[str, str]
-    :ivar tallies: A dictionary mapping party names to :class:`DataTally` objects
-        that manage the vote totals for that party.
-    :type tallies: Dict[str, DataTally]
-    :ivar updater: An :class:`ElectionUpdater` object that manages the tallies
-        and returns an :class:`ElectionResults` object.
-    :type updater: ElectionUpdater
-    :ivar alias: The name that the election is registered under in the
-        partition's dictionary of updaters.
-    :type alias: str
+    Attributes:
+        name (str): The name of the election. (e.g. "2008 Presidential")
+        parties (List[str]): A list of the names of the parties in the election.
+        node_attribute_names (List[str]): A list of the node_attribute_names in the graph's node
+        data that
+            hold the vote totals for each party.
+        party_names_to_node_attribute_names (Dict[str, str]): A dictionary mapping party names to
+        the
+            node_attribute_names in the graph's node data that hold the vote totals for that party.
+        tallies (Dict[str, DataTally]): A dictionary mapping party names to :class:`DataTally`
+        objects
+            that manage the vote totals for that party.
+        updater (ElectionUpdater): An :class:`ElectionUpdater` object that manages the tallies
+            and returns an :class:`ElectionResults` object.
+        alias (str): The name that the election is registered under in the
+            partition's dictionary of updaters.
     """
 
     def __init__(
@@ -73,25 +70,22 @@ class Election:
         alias: Optional[str] = None,
     ) -> None:
         """
-        :param name: The name of the election. (e.g. "2008 Presidential")
-        :type name: str
-        :param party_names_to_node_attribute_names: A mapping from the name of a
-            party to the name of an attribute of a node that contains the
-            vote totals for that party.  This parameter can be either a list or
-            a dict.  If a list, then the name of the party and the name of the
-            node attribute are the same, for instance: ["Dem", "Rep"] would
-            indicate that the "Dem" party vote totals are stored in the "Dem"
-            node attribute.  If a list, then there are two possibilities.
+        Args:
+            name (str): The name of the election. (e.g. "2008 Presidential")
+            party_names_to_node_attribute_names (Union[Dict, List]): A mapping from the name of a
+                party to the name of an attribute of a node that contains the vote totals for that
+                party. This parameter can be either a list or a dict. If a list, then the name of
+                the party and the name of the node attribute are the same, for instance: ["Dem",
+                "Rep"] would indicate that the "Dem" party vote totals are stored in the "Dem" node
+                attribute. If a list, then there are two possibilities.
 
-        A dictionary matching party names to their
-            data node_attribute_names, either as actual node_attribute_names (list-like, indexed
-            by nodes) or as string keys for the node attributes that hold the party's vote totals.
-            Or, a list of strings which will serve as both the party names and the node attribute
-            keys.
-        :type party_names_to_node_attribute_names: Union[Dict, List]
-        :param alias: Alias that the election is registered under
-            in the Partition's dictionary of updaters.
-        :type alias: Optional[str], optional
+                A dictionary matching party names to their data node_attribute_names, either as
+                actual node_attribute_names (list-like, indexed by nodes) or as string keys for the
+                node attributes that hold the party's vote totals. Or, a list of strings which will
+                serve as both the party names and the node attribute keys.
+            alias (Optional[str], optional): Alias that the election is registered under in the
+                Partition's dictionary of updaters.
+
         """
 
         self.name = name
@@ -205,8 +199,8 @@ class ElectionUpdater:
     each step in the Markov chain. The actual results are returned to the user as
     an :class:`ElectionResults` instance.
 
-    :ivar election: The :class:`Election` object that this updater is associated with.
-    :type election: Election
+    Attributes:
+        election (Election): The :class:`Election` object that this updater is associated with.
     """
 
     def __init__(self, election: Election) -> None:
@@ -226,13 +220,13 @@ class ElectionUpdater:
 
     def get_previous_values(self, partition) -> Dict[str, Dict[int, float]]:
         """
-        :param partition: The partition whose parent we want to obtain the
-            previous vote totals from.
-        :type partition: :class:`Partition`
+        Args:
+            partition (:class:`Partition`): The partition whose parent we want to obtain the
+                previous vote totals from.
 
-        :returns: A dictionary mapping party names to the vote totals that
-            party received in each part of the parent of the current partition.
-        :rtype: Dict[str, Dict[int, float]]
+        Returns:
+            Dict[str, Dict[int, float]]: A dictionary mapping party names to the vote totals that
+                party received in each part of the parent of the current partition.
         """
         parent = partition.parent
         if parent is None:
@@ -248,15 +242,14 @@ class ElectionUpdater:
 #
 def get_percents(counts: Dict, totals: Dict) -> Dict:
     """
-    :param counts: A dictionary mapping each part in a partition to the
-        count of the number of votes that a party received in that part.
-    :type counts: Dict
-    :param totals: A dictionary mapping each part in a partition to the
-        total number of votes cast in that part.
-    :type totals: Dict
+    Args:
+        counts (Dict): A dictionary mapping each part in a partition to the count of the number of
+            votes that a party received in that part.
+        totals (Dict): A dictionary mapping each part in a partition to the total number of votes
+            cast in that part.
 
-    :returns: A dictionary mapping each part in a partition to the percentage
-    :rtype: Dict
+    Returns:
+        Dict: A dictionary mapping each part in a partition to the percentage
     """
     return {part: counts[part] / totals[part] if totals[part] > 0 else math.nan for part in totals}
 
@@ -266,20 +259,17 @@ class ElectionResults:
     Represents the results of an election. Provides helpful methods to answer
     common questions you might have about an election (Who won? How many seats?, etc.).
 
-    :ivar election: The :class:`Election` object that these results are associated with.
-    :type election: Election
-    :ivar totals_for_party: A dictionary mapping party names to the total number of votes
-        that party received in each part of the partition.
-    :type totals_for_party: Dict[str, Dict[int, float]]
-    :ivar regions: A list of regions that we would like the results for.
-    :type regions: List[int]
-    :ivar totals: A dictionary mapping each part of the partition to the total number
-        of votes cast in that part.
-    :type totals: Dict[int, int]
-    :ivar percents_for_party: A dictionary mapping party names to the percentage of votes
-        that party received in each part of the partition.
-    :type percents_for_party: Dict[str, Dict[int, float]]
-
+    Attributes:
+        election (Election): The :class:`Election` object that these results are associated with.
+        totals_for_party (Dict[str, Dict[int, float]]): A dictionary mapping party names to the
+        total number of votes
+            that party received in each part of the partition.
+        regions (List[int]): A list of regions that we would like the results for.
+        totals (Dict[int, int]): A dictionary mapping each part of the partition to the total number
+            of votes cast in that part.
+        percents_for_party (Dict[str, Dict[int, float]]): A dictionary mapping party names to the
+        percentage of votes
+            that party received in each part of the partition.
     .. note::
 
         The variable "regions" is generally called "parts" in other sections of the
@@ -294,16 +284,14 @@ class ElectionResults:
         regions: List[int],
     ) -> None:
         """
-        :param election: The :class:`Election` object that these results are associated with.
-        :type election: Election
-        :counts: A dictionary mapping party names to the total number of votes that party
-            received in each part of the partition.
-        :type counts: Dict[str, Dict[int, float]]
-        :param regions: A list of regions that we would like to consider (e.g. congressional
-            districts).
-        :type regions: List[int]
+        Args:
+            election (Election): The :class:`Election` object that these results are associated
+                with.
+            counts (Dict[str, Dict[int, float]]): A dictionary mapping party names to the total
+                number of votes that party received in each part of the partition.
+            regions (List[int]): A list of regions that we would like to consider (e.g.
+                congressional districts).
 
-        :returns: None
         """
         self.election = election
         self.totals_for_party = counts
@@ -328,11 +316,11 @@ class ElectionResults:
 
     def seats(self, party: str) -> int:
         """
-        :param party: Party name
-        :type party: str
+        Args:
+            party (str): Party name
 
-        :returns: The number of seats that ``party`` won.
-        :rtype: int
+        Returns:
+            int: The number of seats that ``party`` won.
         """
         return sum(self.won(party, region) for region in self.regions)
 
@@ -340,25 +328,24 @@ class ElectionResults:
         """
         An alias for :meth:`seats`.
 
-        :param party: Party name
-        :type party: str
+        Args:
+            party (str): Party name
 
-        :returns: The number of seats that ``party`` won.
-        :rtype: int
+        Returns:
+            int: The number of seats that ``party`` won.
         """
         return self.seats(party)
 
     def percent(self, party: str, region: Optional[int] = None) -> float:
         """
-        :param party: Party ID.
-        :type party: str
-        :param region: ID of the part of the partition whose votes we want to tally.
-        :type region: Optional[int], optional
+        Args:
+            party (str): Party ID.
+            region (Optional[int], optional): ID of the part of the partition whose votes we want to
+                tally.
 
-        :returns: The percentage of the vote that ``party`` received in a given region
-            (part of the partition). If ``region`` is omitted, returns the overall vote
-            share of ``party``.
-        :rtype: float
+        Returns:
+            float: The percentage of the vote that ``party`` received in a given region (part of the
+                partition). If ``region`` is omitted, returns the overall vote share of ``party``.
         """
         if region is not None:
             return self.percents_for_party[party][region]
@@ -366,26 +353,25 @@ class ElectionResults:
 
     def percents(self, party: str) -> Tuple:
         """
-        :param party: Party ID
-        :type party: str
+        Args:
+            party (str): Party ID
 
-        :returns: The tuple of the percentage of votes that ``party`` received
-            in each part of the partition
-        :rtype: Tuple
+        Returns:
+            Tuple: The tuple of the percentage of votes that ``party`` received in each part of the
+                partition
         """
         return tuple(self.percents_for_party[party][region] for region in self.regions)
 
     def count(self, party: str, region: Optional[str] = None) -> int:
         """
-        :param party: Party ID.
-        :type party: str
-        :param region: ID of the part of the partition whose votes we want to tally.
-        :type region: Optional[int], optional
+        Args:
+            party (str): Party ID.
+            region (Optional[int], optional): ID of the part of the partition whose votes we want to
+                tally.
 
-        :returns: The total number of votes that ``party`` received in a given region
-            (part of the partition). If ``region`` is omitted, returns the overall vote
-            total of ``party``.
-        :rtype: int
+        Returns:
+            int: The total number of votes that ``party`` received in a given region (part of the
+                partition). If ``region`` is omitted, returns the overall vote total of ``party``.
         """
         if region is not None:
             return self.totals_for_party[party][region]
@@ -393,12 +379,11 @@ class ElectionResults:
 
     def counts(self, party: str) -> Tuple:
         """
-        :param party: Party ID
-        :type party: str
+        Args:
+            party (str): Party ID
 
-        :returns: tuple of the total votes cast for ``party`` in each part of
-            the partition
-        :rtype: Tuple
+        Returns:
+            Tuple: tuple of the total votes cast for ``party`` in each part of the partition
         """
         return tuple(self.totals_for_party[party][region] for region in self.regions)
 
@@ -406,24 +391,22 @@ class ElectionResults:
         """
         An alias for :meth:`counts`.
 
-        :param party: Party ID
-        :type party: str
+        Args:
+            party (str): Party ID
 
-        :returns: tuple of the total votes cast for ``party`` in each part of
-            the partition
-        :rtype: Tuple
+        Returns:
+            Tuple: tuple of the total votes cast for ``party`` in each part of the partition
         """
         return self.counts(party)
 
     def won(self, party: str, region: str) -> bool:
         """
-        :param party: Party ID
-        :type party: str
-        :param region: ID of the part of the partition whose votes we want to tally.
-        :type region: str
+        Args:
+            party (str): Party ID
+            region (str): ID of the part of the partition whose votes we want to tally.
 
-        :returns: Answer to "Did ``party`` win the region in part ``region``?"
-        :rtype: bool
+        Returns:
+            bool: Answer to "Did ``party`` win the region in part ``region``?"
         """
         return all(
             self.totals_for_party[party][region] > self.totals_for_party[opponent][region]
@@ -433,8 +416,8 @@ class ElectionResults:
 
     def total_votes(self) -> int:
         """
-        :returns: The total number of votes cast in the election.
-        :rtype: int
+        Returns:
+            int: The total number of votes cast in the election.
         """
         return sum(self.totals.values())
 
@@ -444,8 +427,8 @@ class ElectionResults:
 
         See: :func:`~gerrychain.metrics.partisan.mean_median`
 
-        :returns: The mean-median score for this election.
-        :rtype: float
+        Returns:
+            float: The mean-median score for this election.
         """
         return pm.mean_median(self)
 
@@ -455,8 +438,8 @@ class ElectionResults:
 
         See: :func:`~gerrychain.metrics.partisan.mean_thirdian`
 
-        :returns: The mean-thirdian score for this election.
-        :rtype: float
+        Returns:
+            float: The mean-thirdian score for this election.
         """
         return pm.mean_thirdian(self)
 
@@ -466,8 +449,8 @@ class ElectionResults:
 
         See: :func:`~gerrychain.metrics.partisan.efficiency_gap`
 
-        :returns: The efficiency gap for this election.
-        :rtype: float
+        Returns:
+            float: The efficiency gap for this election.
         """
         return pm.efficiency_gap(self)
 
@@ -477,8 +460,8 @@ class ElectionResults:
 
         See: :func:`~gerrychain.metrics.partisan.partisan_bias`
 
-        :returns: The partisan bias for this election.
-        :rtype: float
+        Returns:
+            float: The partisan bias for this election.
         """
         return pm.partisan_bias(self)
 
@@ -488,24 +471,21 @@ class ElectionResults:
 
         See: :func:`~gerrychain.metrics.partisan.partisan_gini`
 
-        :returns: The partisan Gini score for this election.
-        :rtype: float
+        Returns:
+            float: The partisan Gini score for this election.
         """
         return pm.partisan_gini(self)
 
 
 def format_part_results(percents_for_party: Dict[str, Dict[int, float]], part: int) -> str:
     """
-    :param percents_for_party: A dictionary mapping party names to a dict
-        containing the percentage of votes that party received in each part
-        of the partition.
-    :type percents_for_party: Dict[str, Dict[int, float]]
-    :param part: The part of the partition whose results we want to format.
-    :type part: int
+    Args:
+        percents_for_party (Dict[str, Dict[int, float]]): A dictionary mapping party names to a dict
+            containing the percentage of votes that party received in each part of the partition.
+        part (int): The part of the partition whose results we want to format.
 
-    :returns: A formatted string containing the results for the given part
-        of the partition.
-    :rtype: str
+    Returns:
+        str: A formatted string containing the results for the given part of the partition.
     """
     heading = "{part}:\n".format(part=str(part))
     body = "\n".join(

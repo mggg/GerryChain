@@ -57,24 +57,20 @@ class MarkovChain:
         total_steps: int,
     ) -> None:
         """
-        :param proposal: Function proposing the next state from the current state.
-        :type proposal: Callable
-        :param constraints: A function with signature ``Partition -> bool`` determining whether
-            the proposed next state is valid (passes all binary constraints). Usually
-            this is a :class:`~gerrychain.constraints.Validator` class instance.
-        :type constraints: Union[Iterable[Callable], Validator, Iterable[Bounds], Callable]
-        :param accept: Function accepting or rejecting the proposed state. In the most basic
-            use case, this always returns ``True``. But if the user wanted to use a
-            Metropolis-Hastings acceptance rule, this is where you would implement it.
-        :type accept: Callable
-        :param initial_state: Initial :class:`gerrychain.partition.Partition` class.
-        :type initial_state: Partition
-        :param total_steps: Number of steps to run.
-        :type total_steps: int
+        Args:
+            proposal (Callable): Function proposing the next state from the current state.
+            constraints (Union[Iterable[Callable], Validator, Iterable[Bounds], Callable]): A
+                function with signature ``Partition -> bool`` determining whether the proposed next
+                state is valid (passes all binary constraints). Usually this is a
+                :class:`~gerrychain.constraints.Validator` class instance.
+            accept (Callable): Function accepting or rejecting the proposed state. In the most basic
+                use case, this always returns ``True``. But if the user wanted to use a
+                Metropolis-Hastings acceptance rule, this is where you would implement it.
+            initial_state (Partition): Initial :class:`gerrychain.partition.Partition` class.
+            total_steps (int): Number of steps to run.
 
-        :returns: None
-
-        :raises ValueError: If the initial_state is not valid according to the constraints.
+        Raises:
+            ValueError: If the initial_state is not valid according to the constraints.
         """
 
         # frm: TODO: Refactoring: Is it worth it to investigate whether the proposal function makes sense?
@@ -113,8 +109,8 @@ class MarkovChain:
         Read_only alias for the is_valid property.
         Returns the constraints of the Markov chain.
 
-        :returns: The constraints of the Markov chain.
-        :rtype: String
+        Returns:
+            String: The constraints of the Markov chain.
         """
         return self.is_valid
 
@@ -129,12 +125,12 @@ class MarkovChain:
         being imposed on the Markov chain, and raises a ValueError if the
         initial state is not valid and lists the failed constraints.
 
-        :param constraints: The new constraints to be imposed on the Markov chain.
-        :type constraints: Union[Iterable[Callable], Validator, Iterable[Bounds], Callable]
+        Args:
+            constraints (Union[Iterable[Callable], Validator, Iterable[Bounds], Callable]): The new
+                constraints to be imposed on the Markov chain.
 
-        :returns: None
-
-        :raises ValueError: If the initial_state is not valid according to the new constraints.
+        Raises:
+            ValueError: If the initial_state is not valid according to the new constraints.
         """
 
         if callable(constraints):
@@ -163,8 +159,8 @@ class MarkovChain:
         This method is called when an iterator is required for a container. It sets the
         counter to 0 and resets the state to the initial state.
 
-        :returns: Returns itself as an iterator object.
-        :rtype: MarkovChain
+        Returns:
+            MarkovChain: Returns itself as an iterator object.
         """
         self.counter = 0
         self.state = self.initial_state
@@ -180,10 +176,11 @@ class MarkovChain:
         acceptance function. If the total number of steps has been
         reached, it raises a StopIteration exception.
 
-        :returns: The next state of the Markov chain.
-        :rtype: Optional[Partition]
+        Returns:
+            Optional[Partition]: The next state of the Markov chain.
 
-        :raises StopIteration: If the total number of steps has been reached.
+        Raises:
+            StopIteration: If the total number of steps has been reached.
         """
         if self.counter == 0:
             self.counter += 1
@@ -206,8 +203,8 @@ class MarkovChain:
         """
         Returns the total number of steps in the Markov chain.
 
-        :returns: The total number of steps in the Markov chain.
-        :rtype: int
+        Returns:
+            int: The total number of steps in the Markov chain.
         """
         return self.total_steps
 
@@ -221,7 +218,8 @@ class MarkovChain:
         Useful for long-running Markov chains where you want to keep track
         of the progress. Requires the `tqdm` package to be installed.
 
-        :returns: A tqdm-wrapped Markov chain.
+        Returns:
+            Any: A tqdm-wrapped Markov chain.
         """
         from tqdm.auto import tqdm
 

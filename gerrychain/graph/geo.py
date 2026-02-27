@@ -39,11 +39,11 @@ def explain_validity(geo) -> str:
     Given a geometry that is shapely interpretable, explain the validity.
     Light wrapper around shapely's explain_validity.
 
-    :param geo: Shapely geometry object
-    :type geo: shapely.geometry.BaseGeometry
+    Args:
+        geo (shapely.geometry.BaseGeometry): Shapely geometry object
 
-    :returns: Explanation for the validity of the geometry
-    :rtype: str
+    Returns:
+        str: Explanation for the validity of the geometry
     """
     import shapely.validation
 
@@ -55,11 +55,11 @@ def invalid_geometries(df):
     Given a GeoDataFrame, returns a list of row indices
     with invalid geometries.
 
-    :param df: The GeoDataFrame to examine
-    :type df: :class:`geopandas.GeoDataFrame`
+    Args:
+        df (:class:`geopandas.GeoDataFrame`): The GeoDataFrame to examine
 
-    :returns: List of row indices with invalid geometries
-    :rtype: list of int
+    Returns:
+        list of int: List of row indices with invalid geometries
     """
     invalid = []
     for idx, row in df.iterrows():
@@ -74,13 +74,12 @@ def reprojected(df):
     Returns a copy of `df`, projected into the coordinate reference system of a suitable
         `Universal Transverse Mercator`_ zone.
 
-    :param df: The GeoDataFrame to reproject
-    :type df: :class:`geopandas.GeoDataFrame`
+    Args:
+        df (:class:`geopandas.GeoDataFrame`): The GeoDataFrame to reproject
 
-    :returns: A copy of `df`, projected into the coordinate reference system of a suitable
-        UTM zone.
-    :rtype: :class:`geopandas.GeoDataFrame`
-
+    Returns:
+        :class:`geopandas.GeoDataFrame`: A copy of `df`, projected into the coordinate reference
+            system of a suitable UTM zone.
     .. _`Universal Transverse Mercator`: https://en.wikipedia.org/wiki/UTM_coordinate_system
     """
     utm = identify_utm_zone(df)

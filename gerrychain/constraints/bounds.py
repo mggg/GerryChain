@@ -15,10 +15,10 @@ class Bounds:
 
     def __init__(self, func: Callable, bounds: Tuple[float, float]) -> None:
         """
-        :param func: Numeric validator function. Should return an iterable of values.
-        :type func: Callable
-        :param bounds: Tuple of (lower, upper) numeric bounds.
-        :type bounds: Tuple[float, float]
+        Args:
+            func (Callable): Numeric validator function. Should return an iterable of values.
+            bounds (Tuple[float, float]): Tuple of (lower, upper) numeric bounds.
+
         """
         self.func = func
         self.bounds = bounds
@@ -47,10 +47,10 @@ class UpperBound:
 
     def __init__(self, func: Callable, bound: float) -> None:
         """
-        :param func: Numeric validator function. Should return a comparable value.
-        :type func: Callable
-        :param bounds: Comparable upper bound.
-        :type bounds: float
+        Args:
+            func (Callable): Numeric validator function. Should return a comparable value.
+            bounds (float): Comparable upper bound.
+
         """
         self.func = func
         self.bound = bound
@@ -77,10 +77,10 @@ class LowerBound:
 
     def __init__(self, func: Callable, bound: float) -> None:
         """
-        :param func: Numeric validator function. Should return a comparable value.
-        :type func: Callable
-        :param bounds: Comparable lower bound.
-        :type bounds: float
+        Args:
+            func (Callable): Numeric validator function. Should return a comparable value.
+            bounds (float): Comparable lower bound.
+
         """
         self.func = func
         self.bound = bound
@@ -110,8 +110,9 @@ class SelfConfiguringUpperBound:
 
     def __init__(self, func: Callable) -> None:
         """
-        :param func: Numeric validator function.
-        :type func: Callable
+        Args:
+            func (Callable): Numeric validator function.
+
         """
         self.func = func
         self.bound = None
@@ -143,11 +144,11 @@ class SelfConfiguringLowerBound:
 
     def __init__(self, func: Callable, epsilon: float = 0.05) -> None:
         """
-        :param func: Numeric validator function.
-        :type func: Callable
-        :param epsilon: Initial population deviation allowable by the validator
-            as a percentage of the ideal population. Defaults to 0.05.
-        :type epsilon: float, optional
+        Args:
+            func (Callable): Numeric validator function.
+            epsilon (float, optional): Initial population deviation allowable by the validator as a
+                percentage of the ideal population. Defaults to 0.05.
+
         """
         self.func = func
         self.bound = None
@@ -181,12 +182,9 @@ class WithinPercentRangeOfBounds:
 
     def __init__(self, func: Callable, percent: float) -> None:
         """
-        :param func: Numeric validator function.
-        :type func: Callable
-        :param percent: Percentage of the initial value to use as the bounds.
-        :type percent: float
-
-        :returns: None
+        Args:
+            func (Callable): Numeric validator function.
+            percent (float): Percentage of the initial value to use as the bounds.
 
         .. Warning::
             The percentage is assumed to be in the range [0.0, 100.0].

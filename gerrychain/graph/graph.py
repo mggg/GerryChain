@@ -47,12 +47,11 @@ def json_serialize(input_object: Any) -> Optional[int]:
     This is specifically used so that we can write graphs out to JSON
     files.
 
-    :param input_object: The object to be converted
-    :type input_object: Any (expected to be a pd.Int64Dtype)
+    Args:
+        input_object (Any (expected to be a pd.Int64Dtype)): The object to be converted
 
-    :returns: The converted pandas object or None if input is not of type
-        pd.Int64Dtype
-    :rtype: Optional[int]
+    Returns:
+        Optional[int]: The converted pandas object or None if input is not of type pd.Int64Dtype
     """
     if pd.api.types.is_integer_dtype(input_object):  # handle int64
         return int(input_object)
@@ -114,12 +113,12 @@ class Graph:
         will use this function to convert the NetworkX graph to a
         GerryChain Graph object.
 
-        :param nx_graph: A NetworkX.Graph object with node and edge data
-            to be converted into a GerryChain Graph object.
-        :type nx_graph: networkx.Graph
+        Args:
+            nx_graph (networkx.Graph): A NetworkX.Graph object with node and edge data to be
+                converted into a GerryChain Graph object.
 
-        :returns: A Graph object embedding the given NetworkX Graph
-        :rtype: Graph
+        Returns:
+            Graph: A Graph object embedding the given NetworkX Graph
         """
         graph = cls()
         graph._nx_graph = nx_graph
@@ -149,8 +148,8 @@ class Graph:
         It supports the use case of a user who wants to build a graph from scratch
         without reference to NetworkX.
 
-        :returns: A Graph object with no nodes
-        :rtype: Graph
+        Returns:
+            Graph: A Graph object with no nodes
         """
 
         nx_graph = networkx.Graph()
@@ -192,11 +191,11 @@ class Graph:
         this routine provides a simple way to create an
         RX-based GerryChain graph object.
 
-        :param rx_graph: a RustworkX PyGraph object
-        :type rx_graph: rustworkx.PyGraph
+        Args:
+            rx_graph (rustworkx.PyGraph): a RustworkX PyGraph object
 
-        :returns: a GerryChain Graph object with an embedded RustworkX.PyGraph object
-        :rtype: "Graph"
+        Returns:
+            "Graph": a GerryChain Graph object with an embedded RustworkX.PyGraph object
         """
 
         # Ensure that the RX graph has node and edge data dictionaries
@@ -278,9 +277,9 @@ class Graph:
         If the GerryChain graph object is NX-based, then this
         routine merely returns the embedded NetworkX.Graph object.
 
-        :returns: A NetworkX.Graph object that is equivalent to the
-            GerryChain Graph object (nodes, edges, node_data, edge_data)
-        :rtype: networkx.Graph
+        Returns:
+            networkx.Graph: A NetworkX.Graph object that is equivalent to the GerryChain Graph
+                object (nodes, edges, node_data, edge_data)
         """
         if self.is_nx_graph():
             return self.get_nx_graph()
@@ -360,11 +359,11 @@ class Graph:
         """
         Translate a node_id to its "original" node_id.
 
-        :param internal_node_id: A node_id to be translated
-        :type internal_node_id: Any
+        Args:
+            internal_node_id (Any): A node_id to be translated
 
-        :returns: A translated node_id
-        :rtype: Any
+        Returns:
+            Any: A translated node_id
         """
         return self._node_id_to_original_nx_node_id_map[internal_node_id]
 
@@ -373,11 +372,11 @@ class Graph:
         """
         Translate a set of node_ids to their "original" node_ids.
 
-        :param set_of_node_ids: A set of node_ids to be translated
-        :type set_of_node_ids: set[Any]
+        Args:
+            set_of_node_ids (set[Any]): A set of node_ids to be translated
 
-        :returns: A set of translated node_ids
-        :rtype: set[Any]
+        Returns:
+            set[Any]: A set of translated node_ids
         """
         _node_id_to_original_nx_node_id_map = self._node_id_to_original_nx_node_id_map
         new_set = {_node_id_to_original_nx_node_id_map[node_id] for node_id in set_of_node_ids}
@@ -388,11 +387,11 @@ class Graph:
         """
         Translate a list of node_ids to their "original" node_ids.
 
-        :param list_of_node_ids: A list of node_ids to be translated
-        :type list_of_node_ids: list[Any]
+        Args:
+            list_of_node_ids (list[Any]): A list of node_ids to be translated
 
-        :returns: A list of translated node_ids
-        :rtype: list[Any]
+        Returns:
+            list[Any]: A list of translated node_ids
         """
         # Utility routine to quickly translate a set of node_ids to their original node_ids
         _node_id_to_original_nx_node_id_map = self._node_id_to_original_nx_node_id_map
@@ -410,11 +409,11 @@ class Graph:
         "original" node_ids, but the actual test needed to be made
         using the "internal" (RX) node_ids.
 
-        :param original_nx_node_id: The "original" node_id
-        :type original_nx_node_id: Any
+        Args:
+            original_nx_node_id (Any): The "original" node_id
 
-        :returns: The corresponding "internal" node_id
-        :rtype: Any
+        Returns:
+            Any: The corresponding "internal" node_id
         """
         # Note: TODO: Performance: This code is inefficient but it is not a priority to fix now...
         #
@@ -445,8 +444,8 @@ class Graph:
         development mode, it would be prudent to check periodically
         to see that the graph data structure has not been corrupted.
 
-        :returns: True if the graph is deemed valid
-        :rtype: bool
+        Returns:
+            bool: True if the graph is deemed valid
         """
 
         # frm: TODO: Performance:  Only check verify_graph_is_valid() in development.
@@ -482,7 +481,8 @@ class Graph:
         """
         Determine if the graph is NX-based
 
-        :rtype: bool
+        Returns:
+            bool:
         """
         # frm: TODO: Performance:  Only check graph_is_valid() in production
         #
@@ -494,7 +494,8 @@ class Graph:
         """
         Return the embedded NX graph object
 
-        :rtype: networkx.Graph
+        Returns:
+            networkx.Graph:
         """
         if not self.is_nx_graph():
             raise TypeError("Graph passed to 'get_nx_graph()' must be a networkx graph")
@@ -504,7 +505,8 @@ class Graph:
         """
         Return the embedded RX graph object
 
-        :rtype: rustworkx.PyGraph
+        Returns:
+            rustworkx.PyGraph:
         """
         if not self.is_rx_graph():
             raise TypeError("Graph passed to 'get_rx_graph()' must be a rustworkx graph")
@@ -514,7 +516,8 @@ class Graph:
         """
         Determine if the graph is RX-based
 
-        :rtype: bool
+        Returns:
+            bool:
         """
         # frm: TODO: Performance:  Only check graph_is_valid() in production
         #
@@ -532,8 +535,8 @@ class Graph:
         Partition object.
 
 
-        :returns: An RX-based graph that is "the same" as the given NX-based graph
-        :rtype: "Graph"
+        Returns:
+            "Graph": An RX-based graph that is "the same" as the given NX-based graph
         """
 
         # Note that in both cases in the if-stmt below, the nodes are not copied.
@@ -607,7 +610,8 @@ class Graph:
         to translate those NX node_ids to the new RX node_ids when
         initializing a Partition object.
 
-        :rtype: dict[Any, Any]
+        Returns:
+            dict[Any, Any]:
         """
         # Simple getter method
         if not self.is_rx_graph():
@@ -620,11 +624,11 @@ class Graph:
         """
         Create a :class:`Graph` from a JSON file
 
-        :param json_file_name: JSON file
-        :type json_file_name: str
+        Args:
+            json_file_name (str): JSON file
 
-        :returns: A GerryChain Graph object with data from JSON file
-        :rtype: "Graph"
+        Returns:
+            "Graph": A GerryChain Graph object with data from JSON file
         """
 
         # frm: TODO: Documentation: more detail on contents of JSON file needed above in docstrings
@@ -651,10 +655,9 @@ class Graph:
         """
         Dump a GerryChain Graph object to disk as a JSON file
 
-        :param json_file_name: name of JSON file to be created
-        :type json_file_name: str
+        Args:
+            json_file_name (str): name of JSON file to be created
 
-        :rtype: None
         """
         # frm TODO: Code: Implement graph.to_json for an RX based graph
         if not self.is_nx_graph():
@@ -684,23 +687,19 @@ class Graph:
         any other library that :mod:`geopandas` can read. See :meth:`from_geodataframe`
         for more details.
 
-        :param filename: Path to the shapefile / GeoPackage / GeoJSON / etc.
-        :type filename: str
-        :param adjacency: The adjacency type to use ("rook" or "queen"). Default is "rook"
-        :type adjacency: str, optional
-        :param cols_to_add: The names of the columns that you want to
-            add to the graph as node attributes. Default is None.
-        :type cols_to_add: Optional[list[str]], optional
-        :param reproject: Whether to reproject to a UTM projection before
-            creating the graph. Default is False.
-        :type reproject: bool, optional
-        :param ignore_errors: Whether to ignore all invalid geometries and try to continue
-            creating the graph. Default is False.
-        :type ignore_errors: bool, optional
+        Args:
+            filename (str): Path to the shapefile / GeoPackage / GeoJSON / etc.
+            adjacency (str, optional): The adjacency type to use ("rook" or "queen"). Default is
+                "rook"
+            cols_to_add (Optional[list[str]], optional): The names of the columns that you want to
+                add to the graph as node attributes. Default is None.
+            reproject (bool, optional): Whether to reproject to a UTM projection before creating the
+                graph. Default is False.
+            ignore_errors (bool, optional): Whether to ignore all invalid geometries and try to
+                continue creating the graph. Default is False.
 
-        :returns: The Graph object of the geometries from `filename`.
-        :rtype: Graph
-
+        Returns:
+            Graph: The Graph object of the geometries from `filename`.
         .. Warning::
 
             This method requires the optional ``geopandas`` dependency.
@@ -755,27 +754,22 @@ class Graph:
         GeoDataFrame's current coordinate reference system. This option is for users who
         have a preferred CRS they would like to use.
 
-        :param dataframe: The GeoDateFrame to convert
-        :type dataframe: :class:`geopandas.GeoDataFrame`
-        :param adjacency: The adjacency type to use ("rook" or "queen").
-            Default is "rook".
-        :type adjacency: str, optional
-        :param cols_to_add: The names of the columns that you want to
-            add to the graph as node attributes. Default is None.
-        :type cols_to_add: Optional[list[str]], optional
-        :param reproject: Whether to reproject to a UTM projection before
-            creating the graph. Default is ``False``.
-        :type reproject: bool, optional
-        :param ignore_errors: Whether to ignore all invalid geometries and
-            attept to create the graph anyway. Default is ``False``.
-        :type ignore_errors: bool, optional
-        :param crs_override: Value to override the CRS of the GeoDataFrame.
-            Default is None.
-        :type crs_override: Optional[Union[str,int]], optional
+        Args:
+            dataframe (:class:`geopandas.GeoDataFrame`): The GeoDateFrame to convert
+            adjacency (str, optional): The adjacency type to use ("rook" or "queen"). Default is
+                "rook".
+            cols_to_add (Optional[list[str]], optional): The names of the columns that you want to
+                add to the graph as node attributes. Default is None.
+            reproject (bool, optional): Whether to reproject to a UTM projection before creating the
+                graph. Default is ``False``.
+            ignore_errors (bool, optional): Whether to ignore all invalid geometries and attept to
+                create the graph anyway. Default is ``False``.
+            crs_override (Optional[Union[str,int]], optional): Value to override the CRS of the
+                GeoDataFrame. Default is None.
 
-        :returns: The adjacency graph of the geometries from `dataframe`.  Note that the
-            returned Graph object has an embedded NetworkX graph (not a RustworkX graph).
-        :rtype: Graph
+        Returns:
+            Graph: The adjacency graph of the geometries from `dataframe`. Note that the returned
+                Graph object has an embedded NetworkX graph (not a RustworkX graph).
         """
         # Validate geometries before reprojection
         if not ignore_errors:
@@ -890,7 +884,8 @@ class Graph:
         """
         Return a set of the node_ids in the graph
 
-        :rtype: set[Any]
+        Returns:
+            set[Any]:
         """
         self.verify_graph_is_valid()
 
@@ -909,7 +904,8 @@ class Graph:
         """
         Return a set of the edge_ids in the graph
 
-        :rtype: set[Any]
+        Returns:
+            set[Any]:
         """
         self.verify_graph_is_valid()
 
@@ -935,11 +931,11 @@ class Graph:
         an integer, so if you want to get the tuple of node_ids
         you need to use the edge_id to get that tuple...
 
-        :param edge_id: The ID of the desired edge
-        :type edge_id: Any
+        Args:
+            edge_id (Any): The ID of the desired edge
 
-        :returns: An edge, namely a tuple of node_ids
-        :rtype: tuple[Any, Any]
+        Returns:
+            tuple[Any, Any]: An edge, namely a tuple of node_ids
         """
 
         self.verify_graph_is_valid()
@@ -975,11 +971,11 @@ class Graph:
 
         This functionality is needed, for instance, when
 
-        :param edge: A tuple of node_ids.
-        :type edge: tuple[Any, Any]
+        Args:
+            edge (tuple[Any, Any]): A tuple of node_ids.
 
-        :returns: The ID associated with the given edge
-        :rtype: Any
+        Returns:
+            Any: The ID associated with the given edge
         """
         self.verify_graph_is_valid()
 
@@ -1050,8 +1046,8 @@ class Graph:
         code that relies on the semantics of a node's ID (treating it
         like a name) is suspect in the new RX world.
 
-        :returns: A list of all of the node_ids in the graph
-        :rtype: list[Any]
+        Returns:
+            list[Any]: A list of all of the node_ids in the graph
         """
 
         # frm: TODO: Refactoring: Think about whether to do away entirely with graph.nodes
@@ -1083,7 +1079,8 @@ class Graph:
         Return a set of all of the edges in the graph, where each
         edge is a tuple of node_ids
 
-        :rtype: set[tuple[Any, Any]]:
+        Returns:
+            set[tuple[Any, Any]]::
         """
         # Return a set of edge tuples
 
@@ -1109,12 +1106,10 @@ class Graph:
         """
         Add an edge to the graph from node_id1 to node_id2
 
-        :param node_id1: The node_id for one of the nodes in the edge
-        :type node_id1: Any
-        :param node_id2: The node_id for one of the nodes in the edge
-        :type node_id2: Any
+        Args:
+            node_id1 (Any): The node_id for one of the nodes in the edge
+            node_id2 (Any): The node_id for one of the nodes in the edge
 
-        :rtype: None
         """
 
         # frm: TODO: Code: add_edge(): Check that nodes exist and that they have data dicts.
@@ -1146,12 +1141,11 @@ class Graph:
         Add columns of a DataFrame to a graph as node attributes
         by matching the DataFrame's index to node ids.
 
-        :param df: Dataframe containing given columns.
-        :type df: :class:`pandas.DataFrame`
-        :param columns: list of dataframe column names to add. Default is None.
-        :type columns: Optional[Iterable[str]], optional
+        Args:
+            df (:class:`pandas.DataFrame`): Dataframe containing given columns.
+            columns (Optional[Iterable[str]], optional): list of dataframe column names to add.
+                Default is None.
 
-        :returns: None
         """
 
         if not (self.is_nx_graph()):
@@ -1183,19 +1177,15 @@ class Graph:
         Add data from a dataframe to the graph, matching nodes to rows when
         the node's `left_index` attribute equals the row's `right_index` value.
 
-        :param dataframe: DataFrame.
-        :type dataframe: :class:`pandas.DataFrame`
-        :columns: The columns whose data you wish to add to the graph.
-            If not provided, all columns are added. Default is None.
-        :type columns: Optional[list[str]], optional
-        :left_index: The node attribute used to match nodes to rows.
-            If not provided, node IDs are used. Default is None.
-        :type left_index: Optional[str], optional
-        :right_index: The DataFrame column name to use to match rows
-            to nodes. If not provided, the DataFrame's index is used. Default is None.
-        :type right_index: Optional[str], optional
+        Args:
+            dataframe (:class:`pandas.DataFrame`): DataFrame.
+            columns (Optional[list[str]], optional): The columns whose data you wish to add to the
+                graph. If not provided, all columns are added. Default is None.
+            left_index (Optional[str], optional): The node attribute used to match nodes to rows. If
+                not provided, node IDs are used. Default is None.
+            right_index (Optional[str], optional): The DataFrame column name to use to match rows to
+                nodes. If not provided, the DataFrame's index is used. Default is None.
 
-        :returns: None
         """
         if right_index is not None:
             df = dataframe.set_index(right_index)
@@ -1241,8 +1231,8 @@ class Graph:
         edge to any other node in the graph - that is, nodes with
         degree = 0
 
-        :returns: A set of all node_ids for nodes of degree 0
-        :rtype: set[Any]
+        Returns:
+            set[Any]: A set of all node_ids for nodes of degree 0
         """
         # Return all nodes of degree 0 (those not connected in an edge to another node)
         return set(node_id for node_id in self.node_indices if self.degree(node_id) == 0)
@@ -1255,8 +1245,8 @@ class Graph:
         and un-directed graphs, that is, it exists so that we can use
         off-the-shelf code that needs to know if the graph is directed or not.
 
-        :return: False
-        :rtype: bool
+        Returns:
+            bool: False
         """
         # frm * TODO: Code:   Delete this code: graph.is_directed() once convinced it is safe to
         # do so...
@@ -1274,7 +1264,6 @@ class Graph:
         if there are any nodes in the graph that are not connected to any
         other node (degree = 0)
 
-        :rtype: None
         """
         islands = self.islands
         if len(self.islands) > 0:
@@ -1285,7 +1274,6 @@ class Graph:
         Issue any warnings concerning the content or structure
         of the graph.
 
-        :rtype: None
         """
         self.warn_for_islands()
 
@@ -1293,7 +1281,8 @@ class Graph:
         """
         Return the number of nodes in the graph
 
-        :rtype: int
+        Returns:
+            int:
         """
         return len(self.node_indices)
 
@@ -1304,12 +1293,11 @@ class Graph:
         graph object (NetworkX or RustworkX), calling that graph object's
         __getattribute__() function.
 
-        :param __name: The name of the attribute whose value is requested.
-        :type <param_name>: str
+        Args:
+            __name (str): The name of the attribute whose value is requested.
 
-        :returns: Whatever the embedded graph object returns from its
-            __getattribute__() function.
-        :rtype: Any
+        Returns:
+            Any: Whatever the embedded graph object returns from its __getattribute__() function.
         """
         # frm: TODO: Code: Get rid of _getattr_ eventually - it is very dangerous...
 
@@ -1383,8 +1371,8 @@ class Graph:
         """
         Yields the node_ids in the graph
 
-        :returns: Returns the next node_id in the graph each time it is called.
-        :rtype: Iterable[Any]
+        Returns:
+            Iterable[Any]: Returns the next node_id in the graph each time it is called.
         """
         yield from self.node_indices
 
@@ -1406,11 +1394,11 @@ class Graph:
         all of the nodes.  You will notice the creation of those
         maps in the code below.
 
-        :param nodes: The nodes to be included in the subgraph
-        :type nodes: Iterable[Any]
+        Args:
+            nodes (Iterable[Any]): The nodes to be included in the subgraph
 
-        :returns: A subgraph containing the given nodes.
-        :rtype: "Graph"
+        Returns:
+            "Graph": A subgraph containing the given nodes.
         """
 
         """
@@ -1543,14 +1531,13 @@ class Graph:
 
         For more details, refer to the larger comment on subgraphs...
 
-        :param flips: A dict containing "flips" which associate a node with
-            a new part in a partition (a "part" is the same as a district in
-            common parlance).
-        :type flips: dict[Any, int]
+        Args:
+            flips (dict[Any, int]): A dict containing "flips" which associate a node with a new part
+                in a partition (a "part" is the same as a district in common parlance).
 
-        :returns: A dict containing "flips" that have been translated to have
-            node_ids appropriate for the parent graph
-        :rtype: dict[Any, int]
+        Returns:
+            dict[Any, int]: A dict containing "flips" that have been translated to have node_ids
+                appropriate for the parent graph
         """
 
         translated_flips = {}
@@ -1571,12 +1558,12 @@ class Graph:
 
         For more details, refer to the larger comment on subgraphs...
 
-        :param set_of_nodes: A set of node_ids in a subgraph
-        :type set_of_nodes: set[Any]
+        Args:
+            set_of_nodes (set[Any]): A set of node_ids in a subgraph
 
-        :returns: A set of node_ids that have been translated to have
-            the node_ids appropriate for the parent graph
-        :rtype: set[Any]
+        Returns:
+            set[Any]: A set of node_ids that have been translated to have the node_ids appropriate
+                for the parent graph
         """
         # This routine replaces the node_ids of the subgraph with the node_ids
         # for the same node in the parent graph.  This routine is used to
@@ -1593,13 +1580,13 @@ class Graph:
         next parent/child pair in a breadth-first search of the graph, with
         the root node specified by the "source" node_id.
 
-        :param source: The node_id of the first "parent" node - the starting
-            node for the breadth first search
-        :type source: Any
+        Args:
+            source (Any): The node_id of the first "parent" node - the starting node for the breadth
+                first search
 
-        :returns: The next parent/child pair in a depth first traversal of the
-            given graph, starting at the "source" node
-        :rtype: Generator[tuple[Any, Any], None, None]
+        Returns:
+            Generator[tuple[Any, Any], None, None]: The next parent/child pair in a depth first
+                traversal of the given graph, starting at the "source" node
         """
 
         # The code below was copied from GitHub and is under the 3-clause BSD license:
@@ -1618,33 +1605,24 @@ class Graph:
         neighbors of newly visited nodes specified by the `neighbors`
         function.
 
-        Parameters
-        ----------
-        G : RustworkX.PyGraph object (not a NetworkX graph)
+        Args:
+            G (RustworkX.PyGraph): RustworkX.PyGraph object (not a NetworkX graph).
+            source (node): Starting node for the breadth-first search; this function
+                iterates over only those edges in the component reachable from
+                this node.
+            neighbors (function): A function that takes a newly visited node of the
+                graph as input and returns an *iterator* (not just a list) of nodes
+                that are neighbors of that node with custom ordering. If not
+                specified, this is just the ``G.neighbors`` method, but in general it
+                can be any function that returns an iterator over some or all of the
+                neighbors of a given node, in any order.
+            depth_limit (int, optional): Specify the maximum search depth.
+                Defaults to ``len(G)``.
 
-        source : node
-            Starting node for the breadth-first search; this function
-            iterates over only those edges in the component reachable from
-            this node.
+        Yields:
+            edge: Edges in the breadth-first search starting from `source`.
 
-        neighbors : function
-            A function that takes a newly visited node of the graph as input
-            and returns an *iterator* (not just a list) of nodes that are
-            neighbors of that node with custom ordering. If not specified, this is
-            just the ``G.neighbors`` method, but in general it can be any function
-            that returns an iterator over some or all of the neighbors of a
-            given node, in any order.
-
-        depth_limit : int, optional(default=len(G))
-            Specify the maximum search depth.
-
-        Yields
-        ------
-        edge
-            Edges in the breadth-first search starting from `source`.
-
-        Examples
-        --------
+        Examples:
         >>> G = nx.path_graph(7)
         >>> list(nx.generic_bfs_edges(G, source=0))
         [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, 6)]
@@ -1666,8 +1644,7 @@ class Graph:
         >>> list(nx.generic_bfs_edges(G, source=0, neighbors=odd_first))
         [(0, 1), (0, 3), (0, 5), (0, 2), (0, 4)]
 
-        Notes
-        -----
+        Notes:
         This implementation is from `PADS`_, which was in the public domain
         when it was first accessed in July, 2004.  The modifications
         to allow depth limits are based on the Wikipedia article
@@ -1709,13 +1686,12 @@ class Graph:
         order) a tuple consisting of each of the nodes traversed along
         with the children of that node.
 
-        :param root_node_id: The node_id for the node to use to start
-            the BFS traversal
-        :type root_node_id: Any
+        Args:
+            root_node_id (Any): The node_id for the node to use to start the BFS traversal
 
-        :returns: Yields tuple (parent, children) of graph in breadth-first
-            order, with the first parent specified by the "root_node_id"
-        :rtype: Generator[tuple[Any, list[Any]], None, None]:
+        Returns:
+            Generator[tuple[Any, list[Any]], None, None]:: Yields tuple (parent, children) of graph
+                in breadth-first order, with the first parent specified by the "root_node_id"
         """
         # frm: Generate in sequence a tuple for the parent (node_id) and
         #       the children of that node (list of node_ids).
@@ -1742,14 +1718,12 @@ class Graph:
         node specified by "root_node_id", and returns a dict mapping parent
         node_ids to a list of the node_ids for that node's children.
 
-        :param root_node_id: The node_id for the node to use to start
-            the BFS traversal
-        :type root_node_id: Any
+        Args:
+            root_node_id (Any): The node_id for the node to use to start the BFS traversal
 
-        :returns: A dict mapping parent node_ids to a list of the node_ids
-            for that node's children.
-
-        :rtype: dict[Any: list[Any]]
+        Returns:
+            dict[Any: list[Any]]: A dict mapping parent node_ids to a list of the node_ids for that
+                node's children.
         """
         return dict(self.generic_bfs_successors_generator(root_node_id))
 
@@ -1761,11 +1735,11 @@ class Graph:
 
         Note that this works for both NX and RX based Graph objects.
 
-        :param root_node_id: The node at the "root" of the breadth-first travesal
-        :type <param_name>: Any
+        Args:
+            root_node_id (Any): The node at the "root" of the breadth-first travesal
 
-        :returns: A dict mapping each node_id to the node_id of its parent node.
-        :rtype: dict[Any, Any]
+        Returns:
+            dict[Any, Any]: A dict mapping each node_id to the node_id of its parent node.
         """
         # frm Note:  We had do implement our own, because the built-in RX version only worked
         #               for directed graphs.
@@ -1791,11 +1765,11 @@ class Graph:
         In the case of an RX-based graph, this code delegates to
         generic_bfs_predecessors().
 
-        :param root_node_id: The node at the "root" of the breadth-first travesal
-        :type: root_node_id: Any
+        Args:
+            root_node_id (Any): The node at the "root" of the breadth-first travesal
 
-        :returns: A dict mapping each node_id to the node_id of its parent node.
-        :rtype: dict[Any, Any]
+        Returns:
+            dict[Any, Any]: A dict mapping each node_id to the node_id of its parent node.
         """
 
         """
@@ -1869,12 +1843,12 @@ class Graph:
         the NX version would be faster - which may or may not actually
         be the case.
 
-        :param root_node_id: The node_id for the node at which to start the
-            breadth-first traversal of the graph.
-        :type root_node_id: Any
+        Args:
+            root_node_id (Any): The node_id for the node at which to start the breadth-first
+                traversal of the graph.
 
-        :returns: Returns a dict mapping each node to a list of its children
-        :rtype: dict[Any: list[Any]]
+        Returns:
+            dict[Any: list[Any]]: Returns a dict mapping each node to a list of its children
         """
         self.verify_graph_is_valid()
 
@@ -1892,12 +1866,12 @@ class Graph:
         """
         Computes and returns the minimum spanning tree give the edge weights.
 
-        :param edge_weight_attribute_nanme: The name of the edge
-            attribute containing the weight of the edge
-        :type edge_weight_attribute_nanme: str
+        Args:
+            edge_weight_attribute_nanme (str): The name of the edge attribute containing the weight
+                of the edge
 
-        :returns: A Graph object containing the miniumum spanning tree given the edge weights.
-        :rtype: Graph
+        Returns:
+            Graph: A Graph object containing the miniumum spanning tree given the edge weights.
         """
 
         # Note that the RX version of this function is MUCH faster than the NX version.
@@ -1929,11 +1903,11 @@ class Graph:
         the given node - that is, all of the nodes that are directly
         connected to the given node by an edge.
 
-        :param node_id: The ID of a node
-        :type node_id: Any
+        Args:
+            node_id (Any): The ID of a node
 
-        :returns: A list of neighbor node_ids
-        :rtype: list[Any]
+        Returns:
+            list[Any]: A list of neighbor node_ids
         """
         self.verify_graph_is_valid()
 
@@ -1952,11 +1926,11 @@ class Graph:
         Return the degree of the given node, that is, the number
         of other nodes directly connected to the given node.
 
-        :param node_id: The ID of a node
-        :type node_id: Any
+        Args:
+            node_id (Any): The ID of a node
 
-        :returns: Number of nodes directly connected to the given node
-        :rtype: int
+        Returns:
+            int: Number of nodes directly connected to the given node
         """
         self.verify_graph_is_valid()
 
@@ -1989,11 +1963,11 @@ class Graph:
 
             graph.node_data(node_id)[attribute_name]
 
-        :param node_id: The ID of a node
-        :type node_id: Any
+        Args:
+            node_id (Any): The ID of a node
 
-        :returns: Data dictionary containing the given node's data.
-        :rtype: dict[Any, Any]
+        Returns:
+            dict[Any, Any]: Data dictionary containing the given node's data.
         """
 
         self.verify_graph_is_valid()
@@ -2022,11 +1996,11 @@ class Graph:
         an integer.  This code handles both kinds of edge_ids - hence the
         type, Any.
 
-        :param edge_id: The ID of the edge
-        :type edge_id: Any
+        Args:
+            edge_id (Any): The ID of the edge
 
-        :returns: The data dictionary for the given edge's data
-        :rtype: dict[Any, Any]
+        Returns:
+            dict[Any, Any]: The data dictionary for the given edge's data
         """
 
         self.verify_graph_is_valid()
@@ -2067,8 +2041,8 @@ class Graph:
         - https://fanchung.ucsd.edu/research/cb/ch1.pdf
         - https://en.wikipedia.org/wiki/Laplacian_matrix
 
-        :returns: A SciPy sparse array containing the Laplacian matrix
-        :rtype: scipy.sparse.csr_array
+        Returns:
+            scipy.sparse.csr_array: A SciPy sparse array containing the Laplacian matrix
         """
         # A local "gc" (as in GerryChain) version of the laplacian matrix
 
@@ -2113,8 +2087,8 @@ class Graph:
         - https://fanchung.ucsd.edu/research/cb/ch1.pdf
         - https://en.wikipedia.org/wiki/Laplacian_matrix#Laplacian_matrix_normalization_2
 
-        :returns: A SciPy sparse diagonal array containing the Laplacian matrix
-        :rtype: scipy.sparse.dia_array
+        Returns:
+            scipy.sparse.dia_array: A SciPy sparse diagonal array containing the Laplacian matrix
         """
 
         def create_scipy_sparse_array_from_rx_graph(
@@ -2126,11 +2100,12 @@ class Graph:
             This is needed in the code below to compute the normalized laplacian
             for the graph.
 
-            :param rx_graph: The RustworkX graph object from which to create the sparse array.
-            :type rx_graph: rustworkx.PyGraph
+            Args:
+                rx_graph (rustworkx.PyGraph): The RustworkX graph object from which to create the
+                    sparse array.
 
-            :returns: A SciPy sparse matrix
-            :rtype: scipy.sparse.coo_matrix
+            Returns:
+                scipy.sparse.coo_matrix: A SciPy sparse matrix
             """
             num_nodes = rx_graph.num_nodes()
 
@@ -2219,9 +2194,9 @@ class Graph:
         is no other larger subgraph of connected components that
         includes it as a subset.
 
-        :returns: A list of "maximal" subgraphs each of which
-            contains nodes that are connected.
-        :rtype: list["Graph"]
+        Returns:
+            list["Graph"]: A list of "maximal" subgraphs each of which contains nodes that are
+                connected.
         """
 
         if self.is_rx_graph():
@@ -2249,8 +2224,8 @@ class Graph:
         connected nodes. Every node in a graph belongs to exactly
         one connected component.
 
-        :returns: The number of connected components
-        :rtype: int
+        Returns:
+            int: The number of connected components
         """
 
         # frm: TODO: Performance:  num_connected_components(): do both NX and RX have builtins
@@ -2284,8 +2259,8 @@ class Graph:
         Return whether the current graph is a tree - meaning that
         it is connected and that it has no cycles.
 
-        :returns: Whether the current graph is a tree
-        :rtype: bool
+        Returns:
+            bool: Whether the current graph is a tree
         """
 
         # Note: is_a_tree() is only called in a test (test_tree.py)
@@ -2343,14 +2318,11 @@ def add_boundary_perimeters(nx_graph: networkx.Graph, geometries: pd.Series) -> 
     that one might need to reach down inside a GerryChain.Graph object to
     get access to the embedded NetworkX.Graph via get_nx_graph().
 
-    :param graph: NetworkX graph
-    :type graph: :class:`NetworkX.Graph`
-    :param geometries: :class:`geopandas.GeoSeries` containing geometry information.
-    :type geometries: :class:`pandas.Series`
+    Args:
+        graph (:class:`NetworkX.Graph`): NetworkX graph
+        geometries (:class:`pandas.Series`): :class:`geopandas.GeoSeries` containing geometry
+            information.
 
-    :returns: The updated graph via side effects - that is, the returned value is None,
-        but the graph has been updated with new data.
-    :rtype: None
     """
 
     # frm: TODO: Refactoring: add_boundary_perimeters(): OK to require NetworkX.Graph as parameter?
@@ -2385,9 +2357,8 @@ def add_boundary_perimeters(nx_graph: networkx.Graph, geometries: pd.Series) -> 
 
 def check_dataframe(df: pd.DataFrame) -> None:
     """
-    :returns: None
-
-    :raises: UserWarning if the dataframe has any NA values.
+    Raises:
+        UserWarning: if the dataframe has any NA values.
     """
     for column in df.columns:
         if sum(df[column].isna()) > 0:
@@ -2401,11 +2372,10 @@ def remove_geometries(data: networkx.Graph) -> None:
 
     Does nothing if no geometry attributes are found.
 
-    :param data: an adjacency data object (returned by
-        :func:`networkx.readwrite.json_graph.adjacency_data`)
-    :type data: networkx.Graph
+    Args:
+        data (networkx.Graph): an adjacency data object (returned by
+            :func:`networkx.readwrite.json_graph.adjacency_data`)
 
-    :returns: None
     """
     for node in data["nodes"]:
         bad_keys = []
@@ -2425,11 +2395,10 @@ def convert_geometries_to_geojson(data: networkx.Graph) -> None:
 
     Does nothing if no geometry attributes are found.
 
-    :param data: an adjacency data object (returned by
-        :func:`networkx.readwrite.json_graph.adjacency_data`)
-    :type data: networkx.Graph
+    Args:
+        data (networkx.Graph): an adjacency data object (returned by
+            :func:`networkx.readwrite.json_graph.adjacency_data`)
 
-    :returns: None
     """
     for node in data["nodes"]:
         for key in node:
@@ -2451,14 +2420,11 @@ class FrozenGraph:
 
     Not intended to be a part of the public API.
 
-    :ivar graph: The underlying graph.
-    :type graph: Graph
-    :ivar size: The number of nodes in the graph.
-    :type size: int
-
-    Note
-    ----
-    The class uses `__slots__` for improved memory efficiency.
+    Attributes:
+        graph (Graph): The underlying graph.
+        size (int): The number of nodes in the graph.
+    Note:
+        The class uses `__slots__` for improved memory efficiency.
     """
 
     # frm: TODO: Code: Rename the internal data member, "graph", to be something else.
@@ -2476,10 +2442,9 @@ class FrozenGraph:
         """
         Initialize a FrozenGraph from a Graph.
 
-        :param graph: The mutable Graph to be converted into an immutable graph
-        :type graph: Graph
+        Args:
+            graph (Graph): The mutable Graph to be converted into an immutable graph
 
-        :returns: None
         """
 
         # frm: Original code follows:
@@ -2505,8 +2470,8 @@ class FrozenGraph:
         """
         Returns the number of nodes in the graph
 
-        :returns: Number of nodes in the graph
-        :rtype: int
+        Returns:
+            int: Number of nodes in the graph
         """
         return self.size
 

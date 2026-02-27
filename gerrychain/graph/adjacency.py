@@ -30,11 +30,12 @@ def str_tree(geometries):
     Add ids to geometries and create a STR tree for spatial indexing.
     Use this for all spatial operations!
 
-    :param geometries: A Shapely geometry object to construct the tree from.
-    :type geometries: shapely.geometry.BaseGeometry
+    Args:
+        geometries (shapely.geometry.BaseGeometry): A Shapely geometry object to construct the tree
+            from.
 
-    :returns: A Sort-Tile-Recursive tree for spatial indexing.
-    :rtype: shapely.strtree.STRtree
+    Returns:
+        shapely.strtree.STRtree: A Sort-Tile-Recursive tree for spatial indexing.
     """
     from shapely.strtree import STRtree
 
@@ -49,13 +50,14 @@ def neighboring_geometries(geometries, tree=None):
     """
     Generator yielding tuples of the form (id, (ids of neighbors)).
 
-    :param geometries: A Shapeley geometry object to construct the tree from
-    :type geometries: shapely.geometry.BaseGeometry
-    :param tree: A Sort-Tile-Recursive tree for spatial indexing. Default is None.
-    :type tree: shapely.strtree.STRtree, optional
+    Args:
+        geometries (shapely.geometry.BaseGeometry): A Shapeley geometry object to construct the tree
+            from
+        tree (shapely.strtree.STRtree, optional): A Sort-Tile-Recursive tree for spatial indexing.
+            Default is None.
 
-    :returns: A generator yielding tuples of the form (id, (ids of neighbors))
-    :rtype: Generator
+    Returns:
+        Generator: A generator yielding tuples of the form (id, (ids of neighbors))
     """
     if tree is None:
         tree = str_tree(geometries)
@@ -75,11 +77,11 @@ def intersections_with_neighbors(geometries):
     Generator yielding tuples of the form (id, {neighbor_id: intersection}).
     The intersections may be empty!
 
-    :param geometries: A Shapeley geometry object.
-    :type geometries: shapely.geometry.BaseGeometry
+    Args:
+        geometries (shapely.geometry.BaseGeometry): A Shapeley geometry object.
 
-    :returns: A generator yielding tuples of the form (id, {neighbor_id: intersection})
-    :rtype: Generator
+    Returns:
+        Generator: A generator yielding tuples of the form (id, {neighbor_id: intersection})
     """
     for i, neighbors in neighboring_geometries(geometries):
         intersections = {j: geometries[i].intersection(geometries[j]) for j in neighbors}
@@ -88,14 +90,15 @@ def intersections_with_neighbors(geometries):
 
 def warn_for_overlaps(intersection_pairs):
     """
-    :param intersection_pairs: An iterable of tuples of
-        the form (id, {neighbor_id: intersection})
-    :type intersection_pairs: Iterable
+    Args:
+        intersection_pairs (Iterable): An iterable of tuples of the form (id, {neighbor_id:
+            intersection})
 
-    :returns: A generator yielding tuples of intersection pairs
-    :rtype: Generator
+    Returns:
+        Generator: A generator yielding tuples of intersection pairs
 
-    :raises: UserWarning if there are overlaps among the given polygons
+    Raises:
+        UserWarning: if there are overlaps among the given polygons
     """
     overlaps = set()
     for i, intersections in intersection_pairs:
@@ -115,11 +118,11 @@ def warn_for_overlaps(intersection_pairs):
 
 def queen(geometries):
     """
-    :param geometries: A Shapeley geometry object.
-    :type geometries: shapely.geometry.BaseGeometry
+    Args:
+        geometries (shapely.geometry.BaseGeometry): A Shapeley geometry object.
 
-    :returns: The queen adjacency dictionary for the given collection of polygons.
-    :rtype: Dict
+    Returns:
+        Dict: The queen adjacency dictionary for the given collection of polygons.
     """
     intersection_pairs = warn_for_overlaps(intersections_with_neighbors(geometries))
 
@@ -135,11 +138,11 @@ def queen(geometries):
 
 def rook(geometries):
     """
-    :param geometries: A Shapeley geometry object.
-    :type geometries: shapely.geometry.BaseGeometry
+    Args:
+        geometries (shapely.geometry.BaseGeometry): A Shapeley geometry object.
 
-    :returns: The rook adjacency dictionary for the given collection of polygons.
-    :rtype: Dict
+    Returns:
+        Dict: The rook adjacency dictionary for the given collection of polygons.
     """
     return {
         i: {j: data for j, data in neighbors.items() if data["shared_perim"] > 0}

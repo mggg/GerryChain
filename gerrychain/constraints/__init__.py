@@ -21,8 +21,10 @@ Binary constraint functions
 =================================================================================================
 :meth:`no_worse_L1_reciprocal_polsby_popper`            Lower bounded L1-reciprocal Polsby-Popper
 :meth:`no_worse_L_minus_1_reciprocal_polsby_popper`     Lower bounded L(-1)-reciprocal Polsby-Popper
-:meth:`contiguous`                                      Districts are contiguous (with NetworkX methods)
-:meth:`single_flip_contiguous`                          Districts are contiguous (optimized for ``propose_random_flip`` proposal)
+:meth:`contiguous`                                      Districts are contiguous (with NetworkX
+methods)
+:meth:`single_flip_contiguous`                          Districts are contiguous (optimized for
+``propose_random_flip`` proposal)
 :meth:`no_vanishing_districts`                          No districts may be completely consumed
 =================================================== =============================================
 
