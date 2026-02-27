@@ -1,4 +1,4 @@
-from typing import Callable, Tuple
+from collections.abc import Callable
 
 from ..partition import Partition
 
@@ -13,27 +13,30 @@ class Bounds:
 
     """
 
-    def __init__(self, func: Callable, bounds: Tuple[float, float]) -> None:
-        """
-        :param func: Numeric validator function. Should return an iterable of values.
-        :type func: Callable
-        :param bounds: Tuple of (lower, upper) numeric bounds.
-        :type bounds: Tuple[float, float]
+    def __init__(self, func: Callable, bounds: tuple[float, float]) -> None:
+        """Initialize a Bounds instance.
+
+        This initializer sets up `Bounds` with the provided arguments and validates required state.
+
+        Args:
+            func (Callable): Numeric validator function. Should return an iterable of values.
+            bounds (Tuple[float, float]): Tuple of (lower, upper) numeric bounds.
+
         """
         self.func = func
         self.bounds = bounds
 
-    def __call__(self, *args, **kwargs) -> bool:
+    def __call__(self, *args: object, **kwargs: object) -> bool:
         lower, upper = self.bounds
         values = self.func(*args, **kwargs)
         return lower <= min(values) and max(values) <= upper
 
     @property
     def __name__(self) -> str:
-        return "Bounds({},{})".format(self.func.__name__, str(self.bounds))
+        return f"Bounds({self.func.__name__},{str(self.bounds)})"
 
     def __repr__(self) -> str:
-        return "<{}>".format(self.__name__)
+        return f"<{self.__name__}>"
 
 
 class UpperBound:
@@ -46,24 +49,28 @@ class UpperBound:
     """
 
     def __init__(self, func: Callable, bound: float) -> None:
-        """
-        :param func: Numeric validator function. Should return a comparable value.
-        :type func: Callable
-        :param bounds: Comparable upper bound.
-        :type bounds: float
+        """Initialize a UpperBound instance.
+
+        This initializer sets up `UpperBound` with the provided arguments and validates required
+        state.
+
+        Args:
+            func (Callable): Numeric validator function. Should return a comparable value.
+            bounds (float): Comparable upper bound.
+
         """
         self.func = func
         self.bound = bound
 
-    def __call__(self, *args, **kwargs) -> bool:
+    def __call__(self, *args: object, **kwargs: object) -> bool:
         return self.func(*args, **kwargs) <= self.bound
 
     @property
     def __name__(self) -> str:
-        return "UpperBound({} >= {})".format(self.func.__name__, self.bound)
+        return f"UpperBound({self.func.__name__} >= {self.bound})"
 
     def __repr__(self) -> str:
-        return "<{}>".format(self.__name__)
+        return f"<{self.__name__}>"
 
 
 class LowerBound:
@@ -76,24 +83,28 @@ class LowerBound:
     """
 
     def __init__(self, func: Callable, bound: float) -> None:
-        """
-        :param func: Numeric validator function. Should return a comparable value.
-        :type func: Callable
-        :param bounds: Comparable lower bound.
-        :type bounds: float
+        """Initialize a LowerBound instance.
+
+        This initializer sets up `LowerBound` with the provided arguments and validates required
+        state.
+
+        Args:
+            func (Callable): Numeric validator function. Should return a comparable value.
+            bounds (float): Comparable lower bound.
+
         """
         self.func = func
         self.bound = bound
 
-    def __call__(self, *args, **kwargs) -> bool:
+    def __call__(self, *args: object, **kwargs: object) -> bool:
         return self.func(*args, **kwargs) >= self.bound
 
     @property
     def __name__(self) -> str:
-        return "LowerBound({} <= {})".format(self.func.__name__, self.bound)
+        return f"LowerBound({self.func.__name__} <= {self.bound})"
 
     def __repr__(self) -> str:
-        return "<{}>".format(self.__name__)
+        return f"<{self.__name__}>"
 
 
 class SelfConfiguringUpperBound:
@@ -109,9 +120,14 @@ class SelfConfiguringUpperBound:
     """
 
     def __init__(self, func: Callable) -> None:
-        """
-        :param func: Numeric validator function.
-        :type func: Callable
+        """Initialize a SelfConfiguringUpperBound instance.
+
+        This initializer sets up `SelfConfiguringUpperBound` with the provided arguments and
+        validates required state.
+
+        Args:
+            func (Callable): Numeric validator function.
+
         """
         self.func = func
         self.bound = None
@@ -123,10 +139,10 @@ class SelfConfiguringUpperBound:
 
     @property
     def __name__(self) -> str:
-        return "SelfConfiguringUpperBound({})".format(self.func.__name__)
+        return f"SelfConfiguringUpperBound({self.func.__name__})"
 
     def __repr__(self) -> str:
-        return "<{}>".format(self.__name__)
+        return f"<{self.__name__}>"
 
 
 class SelfConfiguringLowerBound:
@@ -142,12 +158,16 @@ class SelfConfiguringLowerBound:
     """
 
     def __init__(self, func: Callable, epsilon: float = 0.05) -> None:
-        """
-        :param func: Numeric validator function.
-        :type func: Callable
-        :param epsilon: Initial population deviation allowable by the validator
-            as a percentage of the ideal population. Defaults to 0.05.
-        :type epsilon: float, optional
+        """Initialize a SelfConfiguringLowerBound instance.
+
+        This initializer sets up `SelfConfiguringLowerBound` with the provided arguments and
+        validates required state.
+
+        Args:
+            func (Callable): Numeric validator function.
+            epsilon (float, optional): Initial population deviation allowable by the validator as a
+                percentage of the ideal population. Defaults to 0.05.
+
         """
         self.func = func
         self.bound = None
@@ -160,10 +180,10 @@ class SelfConfiguringLowerBound:
 
     @property
     def __name__(self) -> str:
-        return "SelfConfiguringLowerBound({})".format(self.func.__name__)
+        return f"SelfConfiguringLowerBound({self.func.__name__})"
 
     def __repr__(self) -> str:
-        return "<{}>".format(self.__name__)
+        return f"<{self.__name__}>"
 
 
 class WithinPercentRangeOfBounds:
@@ -180,15 +200,16 @@ class WithinPercentRangeOfBounds:
     """
 
     def __init__(self, func: Callable, percent: float) -> None:
-        """
-        :param func: Numeric validator function.
-        :type func: Callable
-        :param percent: Percentage of the initial value to use as the bounds.
-        :type percent: float
+        """Initialize a WithinPercentRangeOfBounds instance.
 
-        :returns: None
+        This initializer sets up `WithinPercentRangeOfBounds` with the provided arguments and
+        validates required state.
 
-        .. Warning::
+        Args:
+            func (Callable): Numeric validator function.
+            percent (float): Percentage of the initial value to use as the bounds.
+
+        Warning:
             The percentage is assumed to be in the range [0.0, 100.0].
         """
         self.func = func
@@ -206,7 +227,7 @@ class WithinPercentRangeOfBounds:
 
     @property
     def __name__(self) -> str:
-        return "WithinPercentRangeOfBounds({})".format(self.func.__name__)
+        return f"WithinPercentRangeOfBounds({self.func.__name__})"
 
     def __repr__(self) -> str:
-        return "<{}>".format(self.__name__)
+        return f"<{self.__name__}>"

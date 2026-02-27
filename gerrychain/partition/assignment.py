@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 from collections import defaultdict
-from collections.abc import Mapping
-from typing import DefaultDict, Dict, Optional, Set, Type, Union
+from collections.abc import Hashable, Iterator, Mapping
 
 import pandas
 
@@ -11,30 +12,28 @@ class Assignment(Mapping):
     """
     An assignment of nodes into parts.
 
-    The goal of :class:`Assignment` is to provide an interface that mirrors a
+    The goal of Assignment is to provide an interface that mirrors a
     dictionary (what we have been using for assigning nodes to districts) while making it
     convenient/cheap to access the set of nodes in each part.
 
-    An :class:`Assignment` has a ``parts`` property that is a dictionary of the form
+    An Assignment has a ``parts`` property that is a dictionary of the form
     ``{part: <frozenset of nodes in part>}``.
     """
 
     __slots__ = ["parts", "mapping"]
 
-    def __init__(self, parts: Dict, mapping: Optional[Dict] = None, validate: bool = True) -> None:
-        """
-        :param parts: Dictionary mapping partition assignments frozensets of nodes.
-        :type parts: Dict
-        :param mapping: Dictionary mapping nodes to partition assignments.
-            Default is None.
-        :type mapping: Optional[Dict], optional
-        :param validate: Whether to validate the assignment. Default is True.
-        :type validate: bool, optional
+    def __init__(self, parts: dict, mapping: dict | None = None, validate: bool = True) -> None:
+        """Initialize a Assignment instance.
 
-        :returns: None
+        Args:
+            parts (Dict): Dictionary mapping partition assignments frozensets of nodes.
+            mapping (Optional[Dict], optional): Dictionary mapping nodes to partition assignments.
+                Default is None.
+            validate (bool, optional): Whether to validate the assignment. Default is True.
 
-        :raises ValueError: if the keys of ``parts`` are not unique
-        :raises TypeError: if the values of ``parts`` are not frozensets
+        Raises:
+            ValueError: if the keys of ``parts`` are not unique
+            TypeError: if the values of ``parts`` are not frozensets
         """
 
         if validate:
@@ -54,28 +53,39 @@ class Assignment(Mapping):
         else:
             self.mapping = mapping
 
-    def __repr__(self):
-        return "<Assignment [{} keys, {} parts]>".format(len(self), len(self.parts))
+    def __repr__(self) -> str:
+        return f"<Assignment [{len(self)} keys, {len(self.parts)} parts]>"
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Hashable]:
         return self.keys()
 
-    def __len__(self):
+    def __len__(self) -> int:
         return sum(len(keys) for keys in self.parts.values())
 
-    def __getitem__(self, node):
+    def __getitem__(self, node: Hashable) -> Hashable:
         return self.mapping[node]
 
-    def copy(self):
-        """
-        Returns a copy of the assignment.
+    def copy(self) -> Assignment:
+        """Returns a copy of the assignment.
+
         Does not duplicate the frozensets of nodes, just the parts dictionary.
+
+        Returns:
+            Assignment: A copy of the assignment.
         """
         return Assignment(self.parts.copy(), self.mapping.copy(), validate=False)
 
-    def update_flows(self, flows):
-        """
-        Update the assignment for some nodes using the given flows.
+    def update_flows(self, flows: dict[Hashable, dict[str, set[Hashable]]]) -> None:
+        """Update the assignment for some nodes using the given flows.
+
+        This method updates the assignment for some nodes using the given flows. The arguments
+        below describe the relevant inputs and behavior.
+
+
+        Args:
+            flows (Dict): A dictionary mapping partition assignments to dictionaries with "in" and
+                "out" keys, where the value of "in" is a set of nodes flowing into the partition
+                and the value of "out" is a set of nodes flowing out of the partition.
         """
         # frm: Update the assignment of nodes to partitions by adding
         #       all of the new nodes and removing all of the old nodes
@@ -93,28 +103,23 @@ class Assignment(Mapping):
             for node in flow["in"]:
                 self.mapping[node] = part
 
-    def items(self):
-        """
-        Iterate over ``(node, part)`` tuples, where ``node`` is assigned to ``part``.
-        """
+    def items(self) -> Iterator[tuple[Hashable, Hashable]]:
+        """Iterate over ``(node, part)`` tuples, where ``node`` is assigned to ``part``."""
         yield from self.mapping.items()
 
-    def keys(self):
+    def keys(self) -> Iterator[Hashable]:
         yield from self.mapping.keys()
 
-    def values(self):
+    def values(self) -> Iterator[Hashable]:
         yield from self.mapping.values()
 
-    def update_parts(self, new_parts: Dict) -> None:
-        """
-        Update some parts of the assignment. Does not check that every node is
-        still assigned to a part.
+    def update_parts(self, new_parts: dict) -> None:
+        """Update some parts of the assignment.
 
-        :param new_parts: dictionary mapping (some) parts to their new sets or
-            frozensets of nodes
-        :type new_parts: Dict
+        Args:
+            new_parts (Dict): dictionary mapping (some) parts to their new sets or frozensets of
+                nodes
 
-        :returns: None
         """
         for part, nodes in new_parts.items():
             self.parts[part] = frozenset(nodes)
@@ -123,34 +128,32 @@ class Assignment(Mapping):
                 self.mapping[node] = part
 
     def to_series(self) -> pandas.Series:
-        """
-        :returns: The assignment as a :class:`pandas.Series`.
-        :rtype: pandas.Series
+        """Convert to series.
+
+        Returns:
+            pandas.Series: The assignment as a Series.
         """
         groups = [pandas.Series(data=part, index=nodes) for part, nodes in self.parts.items()]
         return pandas.concat(groups)
 
-    def to_dict(self) -> Dict:
-        """
-        :returns: The assignment as a ``{node: part}`` dictionary.
-        :rtype: Dict
+    def to_dict(self) -> dict:
+        """Convert to dict.
+
+        Returns:
+            Dict: The assignment as a ``{node: part}`` dictionary.
         """
         return self.mapping
 
     @classmethod
-    def from_dict(cls, assignment: Dict) -> "Assignment":
-        """
-        Create an :class:`Assignment` from a dictionary. This is probably the method you want
-        to use to create a new assignment.
+    def from_dict(cls, assignment: dict) -> Assignment:
+        """Create an Assignment from a dictionary.
 
-        This also works for :class:`pandas.Series`.
+        Args:
+            assignment (Dict): dictionary mapping nodes to partition assignments
 
-        :param assignment: dictionary mapping nodes to partition assignments
-        :type assignment: Dict
-
-        :returns: A new instance of :class:`Assignment` with the same assignments as the
-            passed-in dictionary.
-        :rtype: Assignment
+        Returns:
+            Assignment: A new instance of Assignment with the same assignments as the
+                passed-in dictionary.
         """
 
         # frm: TODO: Refactoring:  Clean up from_dict().
@@ -171,20 +174,20 @@ class Assignment(Mapping):
         return cls(parts)
 
     def new_assignment_convert_old_node_ids_to_new_node_ids(
-        self, node_id_mapping: Dict
-    ) -> "Assignment":
-        """
+        self, node_id_mapping: dict
+    ) -> Assignment:
+        """Create a new Assignment object from the one passed in, where the node_ids are changed.
+
         Create a new Assignment object from the one passed in, where the node_ids are changed
         according to the node_id_mapping from old node_ids to new node_ids.
 
         This routine was motivated by the fact that node_ids are changed when converting from an
-        NetworkX based graph to a RustworkX based graph.  An Assignment based on the node_ids in
-        the NetworkX based graph would need to be changed to use the new node_ids - the new
-        Asignment would be semantically equivalent - just converted to use the new node_ids in
-        the RX based graph.
+        NetworkX based graph to a RustworkX based graph. An Assignment based on the node_ids in the
+        NetworkX based graph would need to be changed to use the new node_ids - the new Asignment
+        would be semantically equivalent - just converted to use the new node_ids in the RX based
+        graph.
 
-        The node_id_mapping is of the form {old_node_id: new_node_id}
-        """
+        The node_id_mapping is of the form {old_node_id: new_node_id}"""
 
         # Dict of the form: {node_id: part_id}
         old_assignment_mapping = self.mapping
@@ -211,27 +214,25 @@ class Assignment(Mapping):
 
 
 def get_assignment(
-    part_assignment: Union[str, Dict, Assignment], graph: Optional[Graph] = None
+    part_assignment: str | dict | Assignment, graph: Graph | None = None
 ) -> Assignment:
-    """
-    Either extracts an :class:`Assignment` object from the input graph
-    using the provided key or attempts to convert part_assignment into
-    an :class:`Assignment` object.
+    """Either extracts an Assignment object from the input graph using the provided key or
+    attempts to convert part_assignment into an Assignment object.
 
-    :param part_assignment: A node attribute key, dictionary, or
-        :class:`Assignment` object corresponding to the desired assignment.
-    :type part_assignment: str
-    :param graph: The graph from which to extract the assignment.
-        Default is None.
-    :type graph: Optional[Graph], optional
+    Args:
+        part_assignment (str): A node attribute key, dictionary, or Assignment object
+            corresponding to the desired assignment.
+        graph (Optional[Graph], optional): The graph from which to extract the assignment. Default
+            is None.
 
-    :returns: An :class:`Assignment` object containing the assignment
-        corresponding to the part_assignment input
-    :rtype: Assignment
+    Returns:
+        Assignment: An Assignment object containing the assignment corresponding to the
+            part_assignment input
 
-    :raises TypeError: If the part_assignment is a string and the graph
-        is not provided.
-    :raises TypeError: If the part_assignment is not a string or dictionary.
+    Raises:
+        TypeError: If the part_assignment is a string and the graph
+            is not provided.
+        TypeError: If the part_assignment is not a string or dictionary.
     """
 
     # frm: TODO: Refactoring:  Think about whether to split this into two functions.  AT
@@ -259,22 +260,20 @@ def get_assignment(
         raise TypeError("Assignment must be a dict or a node attribute key")
 
 
-def level_sets(mapping: Dict, container: Type[Set] = set) -> DefaultDict:
-    """
-    Inverts a dictionary. ``{key: value}`` becomes
-    ``{value: <container of keys that map to value>}``.
+def level_sets(mapping: dict, container: type[set] = set) -> defaultdict:
+    """Inverts a dictionary.
 
-    :param mapping: A dictionary to invert. Keys and values can be of any type.
-    :type mapping: Dict
-    :param container: A container type used to collect keys that map to the same value.
-        By default, the container type is ``set``.
-    :type container: Type[Set], optional
+    ``{key: value}`` becomes ``{value: <container of keys that map to value>}``.
 
-    :return: A dictionary where each key is a value from the original dictionary,
-        and the corresponding value is a container (by default, a set) of keys from
-        the original dictionary that mapped to this value.
-    :rtype: DefaultDict
+    Args:
+        mapping (Dict): A dictionary to invert. Keys and values can be of any type.
+        container (Type[Set], optional): A container type used to collect keys that map to the same
+            value. By default, the container type is ``set``.
 
+    Returns:
+        DefaultDict: A dictionary where each key is a value from the original dictionary, and the
+            corresponding value is a container (by default, a set) of keys from the original
+            dictionary that mapped to this value.
     Example usage::
 
     .. code_block:: python
@@ -282,7 +281,7 @@ def level_sets(mapping: Dict, container: Type[Set] = set) -> DefaultDict:
         >>> level_sets({'a': 1, 'b': 1, 'c': 2})
         defaultdict(<class 'set'>, {1: {'a', 'b'}, 2: {'c'}})
     """
-    sets: Dict = defaultdict(container)
+    sets: dict = defaultdict(container)
     for source, target in mapping.items():
         sets[target].add(source)
     return sets

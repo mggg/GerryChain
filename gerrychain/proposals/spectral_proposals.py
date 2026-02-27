@@ -9,23 +9,16 @@ from ..partition import Partition
 
 # frm: only ever used in this file - but maybe it is used externally?
 def spectral_cut(subgraph: Graph, part_labels: Dict, weight_type: str, lap_type: str) -> Dict:
-    """
-    Spectral cut function.
+    """Spectral cut function.
 
-    Uses the signs of the elements in the Fiedler vector of a subgraph to
-    partition into two components.
+    Args:
+        subgraph (Graph): The subgraph to be partitioned.
+        part_labels (Dict): The current partition of the subgraph.
+        weight_type (str): The type of weight to be used in the Laplacian.
+        lap_type (str): The type of Laplacian to be used.
 
-    :param subgraph: The subgraph to be partitioned.
-    :type subgraph: Graph
-    :param part_labels: The current partition of the subgraph.
-    :type part_labels: Dict
-    :param weight_type: The type of weight to be used in the Laplacian.
-    :type weight_type: str
-    :param lap_type: The type of Laplacian to be used.
-    :type lap_type: str
-
-    :returns: A dictionary assigning nodes of the subgraph to their new districts.
-    :rtype: Dict
+    Returns:
+        Dict: A dictionary assigning nodes of the subgraph to their new districts.
     """
 
     # This routine operates on subgraphs, which is important because the node_ids
@@ -98,33 +91,28 @@ def spectral_recom(
 ) -> Partition:
     """Spectral ReCom proposal.
 
-    Uses spectral clustering to bipartition a subgraph of the original graph
-    formed by merging the nodes corresponding to two adjacent districts.
+    Uses spectral clustering to bipartition a subgraph of the original graph formed by merging the
+    nodes corresponding to two adjacent districts.
 
     Example usage::
 
-        from functools import partial
-        from gerrychain import MarkovChain
-        from gerrychain.proposals import recom
+        from functools import partial from gerrychain import MarkovChain from gerrychain.proposals
+        import recom
 
         # ...define constraints, accept, partition, total_steps here...
 
-
-        proposal = partial(
-            spectral_recom, weight_type=None, lap_type="normalized"
-        )
+        proposal = partial( spectral_recom, weight_type=None, lap_type="normalized" )
 
         chain = MarkovChain(proposal, constraints, accept, partition, total_steps)
 
-    :param partition: The initial partition.
-    :type partition: Partition
-    :param weight_type: The type of weight to be used in the Laplacian. Default is None.
-    :type weight_type: Optional[str], optional
-    :param lap_type: The type of Laplacian to be used. Default is "normalized".
-    :type lap_type: str, optional
+    Args:
+        partition (Partition): The initial partition.
+        weight_type (Optional[str], optional): The type of weight to be used in the Laplacian.
+            Default is None.
+        lap_type (str, optional): The type of Laplacian to be used. Default is "normalized".
 
-    :returns: The new partition resulting from the spectral ReCom algorithm.
-    :rtype: Partition
+    Returns:
+        Partition: The new partition resulting from the spectral ReCom algorithm.
     """
 
     # Select two adjacent parts (districts) at random by first selecting

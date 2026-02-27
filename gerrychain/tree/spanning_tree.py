@@ -93,12 +93,14 @@ node_ids for this function and all will be well...
 """
 
 
-# frm: TODO: Refactoring:  random_spanning_tree() and uniform_spanning_tree() should have same signature
+# frm: TODO: Refactoring: random_spanning_tree() and uniform_spanning_tree()
+# should have the same signature.
 #
-# These two functions are essentially instances of a generic spanning_tree_fn that is used as a
-# function parameter.  Because these two routines have different signatures in the current
-# codebase, the routines that take a spanning_tree_fn parameter need to inspect the actual
-# parameter's signature to see what to do, which is kind of exactly what a generic should NOT be.
+# These two functions are essentially instances of a generic spanning_tree_fn
+# used as a function parameter. Because these two routines have different
+# signatures in the current codebase, routines that take a spanning_tree_fn
+# parameter need to inspect the actual parameter signature to see what to do,
+# which is exactly what a generic should not require.
 #
 # So, I suggest that we modify the signatures of these two functions so that they have the
 # same signature, which would be:
@@ -156,44 +158,39 @@ node_ids for this function and all will be well...
 
 
 def random_spanning_tree(graph: Graph, region_surcharge: Optional[Dict] = None) -> Graph:
-    """
-    Builds a minimum spanning tree chosen by Kruskal's method using random weights.
+    """Builds a minimum spanning tree chosen by Kruskal's method using random weights.
 
-    The region_surcharge parameter allows the caller to bias the selection of
-    edges by increasing the weights of some edges.  For example, if you specify
-    a region surcharge for "county", then all edges whose nodes do NOT have the
-    same non-null value for "county" will have a surcharge added to that edge.
-    This will have the effect of biasing the algorithm to preferentially select
+    The region_surcharge parameter allows the caller to bias the selection of edges by increasing
+    the weights of some edges. For example, if you specify a region surcharge for "county", then
+    all edges whose nodes do NOT have the same non-null value for "county" will have a surcharge
+    added to that edge. This will have the effect of biasing the algorithm to preferentially select
     nodes that belong to the same county.
 
-    Kruskal's method chooses the edges with the lowest weight first, so edges
-    with high weights will be selected last - with the highest weights not chosen
-    at all (once all the nodes are in the tree, the algorithm stops adding edges).
+    Kruskal's method chooses the edges with the lowest weight first, so edges with high weights
+    will be selected last - with the highest weights not chosen at all (once all the nodes are in
+    the tree, the algorithm stops adding edges).
 
-    If no region_surcharges are provided, then the algorithm just randomly
-    specifies the weights of all edges before generating an MST which is
-    essentially a random spanning_tree generator.  In this case, the caller
-    could have instead used the uniform_spanning_tree() function.  The performance
-    difference between uniform_spanning_tree() and random_spanning_tree()
-    depends on the structure of the graph.
+    If no region_surcharges are provided, then the algorithm just randomly specifies the weights of
+    all edges before generating an MST which is essentially a random spanning_tree generator. In
+    this case, the caller could have instead used the uniform_spanning_tree() function. The
+    performance difference between uniform_spanning_tree() and random_spanning_tree() depends on
+    the structure of the graph.
 
-    In short, if you want to bias the selection of districts to keep some nodes
-    together, you want to use this routine, random_spanning_tree().
+    In short, if you want to bias the selection of districts to keep some nodes together, you want
+    to use this routine, random_spanning_tree().
 
-    Note that the random weights applied to edges have values between 0 and 1
-    so the additional weights supplied in the region_surcharge should be sized
-    appropriately.  If the region_surcharge weight is greater than 1, then it
-    will be heavier than any other edge that has not had a surcharge applied to
-    it.
+    Note that the random weights applied to edges have values between 0 and 1 so the additional
+    weights supplied in the region_surcharge should be sized appropriately. If the region_surcharge
+    weight is greater than 1, then it will be heavier than any other edge that has not had a
+    surcharge applied to it.
 
-    :param graph: The input graph to build the spanning tree from.
-    :type graph: Graph
-    :param region_surcharge: Dictionary of surcharges to add to the random
-        weights used in region-aware variants.
-    :type region_surcharge: Optional[Dict], optional
+    Args:
+        graph (Graph): The input graph to build the spanning tree from.
+        region_surcharge (Optional[Dict], optional): Dictionary of surcharges to add to the random
+            weights used in region-aware variants.
 
-    :returns: The maximal spanning tree represented as a GerryChain Graph.
-    :rtype: Graph
+    Returns:
+        Graph: The maximal spanning tree represented as a GerryChain Graph.
     """
 
     # frm: TODO: Documentation:  What values make sense for region surcharge?
@@ -325,40 +322,34 @@ def random_spanning_tree(graph: Graph, region_surcharge: Optional[Dict] = None) 
 
 
 def uniform_spanning_tree(graph: Graph, choice: Callable = random.choice) -> Graph:
-    """
-    Builds a spanning tree chosen uniformly from the space of all
-    spanning trees of the graph. Uses Wilson's algorithm.
+    """Builds a spanning tree chosen uniformly from the space of all spanning trees of the graph.
 
-    If interested, there is a nice animated description of Wilson's
+    Uses Wilson's algorithm. If interested, there is a nice animated description of Wilson's
     algorithm here:
 
-        https://weblog.jamisbuck.org/2011/1/20/maze-generation-wilson-s-algorithm
+    https://weblog.jamisbuck.org/2011/1/20/maze-generation-wilson-s-algorithm
 
     A brief description of Wilson's Alorithm follows:
 
-    Pick a node at random for the root node of the spanning tree.  Then
-    pick any other node and do a random walk until you end up at the root
-    node, but as you go remember the last move you made at each node - which
-    will overwrite any previous move.  When you end up at the root node, go
-    back to the starting node and follow the path left behind, which will
-    cleverly contain no cycles because the paths for any cycles were
-    overwritten.
+    Pick a node at random for the root node of the spanning tree. Then pick any other node and do a
+    random walk until you end up at the root node, but as you go remember the last move you made at
+    each node - which will overwrite any previous move. When you end up at the root node, go back
+    to the starting node and follow the path left behind, which will cleverly contain no cycles
+    because the paths for any cycles were overwritten.
 
-    Add the nodes in the path (remembering child and parent) to the list
-    of nodes you have added to the tree.  Then pick another node at random
-    that is not already in the tree and do another random walk, ending
-    when you fall on a node already in the tree.  Then add the nodes for
-    that random walk to the tree.
+    Add the nodes in the path (remembering child and parent) to the list of nodes you have added to
+    the tree. Then pick another node at random that is not already in the tree and do another
+    random walk, ending when you fall on a node already in the tree. Then add the nodes for that
+    random walk to the tree.
 
     Rinse and repeat until all nodes have been added to the tree.
 
-    :param graph: Graph
-    :type graph: Graph
-    :param choice: :func:`random.choice`. Defaults to :func:`random.choice`.
-    :type choice: Callable, optional
+    Args:
+        graph (Graph): Graph
+        choice (Callable, optional): `random.choice`. Defaults to `random.choice`.
 
-    :returns: A spanning tree of the graph chosen uniformly at random.
-    :rtype: Graph
+    Returns:
+        Graph: A spanning tree of the graph chosen uniformly at random.
     """
 
     # Pick a starting point at random
