@@ -13,7 +13,7 @@ def setup():
 
     grid = Grid((4, 4), with_diagonals=False)
 
-    flipped_grid = grid.flip({(2, 1): 3}, use_original_nx_node_ids=True)
+    flipped_grid = grid.flip({(2, 1): 3}, flips_passed_in_use_original_nx_node_ids=True)
 
     return grid, flipped_grid
 

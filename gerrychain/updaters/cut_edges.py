@@ -62,23 +62,23 @@ def initialize_cut_edges(partition):
     :param partition: A partition of a Graph
     :type partition: :class:`~gerrychain.partition.Partition`
 
-    frm: TODO: Documentation  This description should be updated.  Cut_edges are edges that touch
-                two different parts (districts).  They are the internal boundaries
-                between parts (districts).  This routine finds all of the cut_edges
-                in the graph and then creates a dict that stores all of the cut_edges
-                for each part (district).  This dict becomes the value of
-                partition["cut_edges"].
-
-                Peter agreed:
-                    Ah, you are correct. It maps parts to cut edges, not just any edges in the
-                    partition
-
-
-
     :returns: A dictionary mapping each part of a partition to the set of edges
         in that part.
     :rtype: Dict
     """
+    # frm: TODO: Documentation  This description should be updated.
+    #
+    # Cut_edges are edges that touch
+    #  two different parts (districts).  They are the internal boundaries
+    #  between parts (districts).  This routine finds all of the cut_edges
+    #  in the graph and then creates a dict that stores all of the cut_edges
+    #  for each part (district).  This dict becomes the value of partition["cut_edges"].
+    #
+    #  Peter agreed:
+    #
+    #  Ah, you are correct. It maps parts to cut edges, not just any edges in the
+    #  partition
+
     # Compute the set of edges that are "cut_edges" - that is, edges that go from
     # one part (district) to another.
     cut_edges = {

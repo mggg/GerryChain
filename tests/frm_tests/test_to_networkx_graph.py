@@ -122,7 +122,7 @@ def test_to_networkx_graph_works():
 
     flips = {"A": 1, "B": 1, "C": 1}
     # Create a new partition based on these flips - using "original" node_ids
-    new_partition = partition.flip(flips, use_original_nx_node_ids=True)
+    new_partition = partition.flip(flips, flips_passed_in_use_original_nx_node_ids=True)
 
     # Get the NX graph after doing the flips.
     extracted_nx_graph = new_partition.graph.to_networkx_graph()

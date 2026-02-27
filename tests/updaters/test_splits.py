@@ -45,7 +45,7 @@ class TestComputeCountySplits:
 
         assert set(result.keys()) == {"a", "b", "c"}
 
-        after_a_flip = partition.flip({3: 1}, use_original_nx_node_ids=True)
+        after_a_flip = partition.flip({3: 1}, flips_passed_in_use_original_nx_node_ids=True)
         second_result = after_a_flip["splits"]
 
         assert set(second_result.keys()) == {"a", "b", "c"}
@@ -63,7 +63,7 @@ class TestComputeCountySplits:
     def test_new_split(self, partition):
         # Do a flip, using the node_ids of the original assignment (rather than the
         # node_ids used internally in the RX-based graph)
-        after_a_flip = partition.flip({3: 1}, use_original_nx_node_ids=True)
+        after_a_flip = partition.flip({3: 1}, flips_passed_in_use_original_nx_node_ids=True)
         result = after_a_flip["splits"]
 
         # County b is now split, but a and c are not
@@ -82,7 +82,7 @@ class TestComputeCountySplits:
     def test_old_split(self, split_partition):
         # Do a flip, using the node_ids of the original assignment (rather than the
         # node_ids used internally in the RX-based graph)
-        after_a_flip = split_partition.flip({4: 1}, use_original_nx_node_ids=True)
+        after_a_flip = split_partition.flip({4: 1}, flips_passed_in_use_original_nx_node_ids=True)
         result = after_a_flip["splits"]
 
         # County b becomes more split
@@ -95,11 +95,11 @@ class TestComputeCountySplits:
         "previous partition, which is not the intuitive behavior."
     )
     def test_initial_split_that_disappears_and_comes_back(self, split_partition):
-        no_splits = split_partition.flip({3: 2}, use_original_nx_node_ids=True)
+        no_splits = split_partition.flip({3: 2}, flips_passed_in_use_original_nx_node_ids=True)
         result = no_splits["splits"]
         assert all(info.split == CountySplit.NOT_SPLIT for info in result.values())
 
-        split_comes_back = no_splits.flip({3: 1}, use_original_nx_node_ids=True)
+        split_comes_back = no_splits.flip({3: 1}, flips_passed_in_use_original_nx_node_ids=True)
         new_result = split_comes_back["splits"]
         assert new_result["a"].split == CountySplit.NOT_SPLIT
         assert new_result["b"].split == CountySplit.OLD_SPLIT

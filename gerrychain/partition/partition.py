@@ -11,12 +11,12 @@ import networkx
 
 from gerrychain.graph.graph import FrozenGraph, Graph
 
-from ..tree import recursive_tree_part
 from ..updaters import compute_edge_flows, cut_edges, flows_from_changes
 from .assignment import get_assignment
+from .initial_partition_generators import recursive_tree_part
 from .subgraphs import SubgraphView
 
-# frm TODO: Documentation:     Add documentation about how this all works.  For instance,
+# frm * TODO: Documentation:     Add documentation about how this all works.  For instance,
 #               what is computationally expensive and how does a FrozenGraph
 #               help?  Why do we need both assignments and parts?
 #
@@ -32,9 +32,39 @@ from .subgraphs import SubgraphView
 
 class Partition:
     """
-    Partition represents a partition of the nodes of the graph. It will perform
-    the first layer of computations at each step in the Markov chain - basic
-    aggregations and calculations that we want to optimize.
+    The Partition class represents a partition of the nodes of the
+    graph into districts (parts).  Every iteration of MarkovChain
+    creates a new Partition object from the previous Partition object
+    by performing the set of flips (changes in association of a node
+    to a district (perhaps confusingly called a "part").
+
+    Perhaps the primary class attribute is "assignment" which
+    stores the set of nodes in each district ("part").
+
+    Note that the "parts" class attribute is actually a function
+    that returns the "parts" of the assignment class attribute.
+
+    A Partition object also provides access (via __getitem__()) to
+    the values computed by updater functions (see comment on updaters
+    in the file updaters/flows.py).
+
+    Note that by default the constructor for a Partition object will
+    convert the underlying graph in a Graph object from NetworkX to
+    RustworkX - because RustworkX is so much faster than NetworkX.
+    This is done in the _first_time() function below.
+
+    It is perhaps worth noting that when we convert the underlying
+    graph object from NX to RX, we create a mapping dict
+    that records the "original" NX node_ids and the new RX
+    node_ids.  It is stored as a class attribute of the
+    new Graph object: Graph.nx_to_rx_node_id_map.  We use this
+    mapping to update the "assignment" class to use the new
+    RX node_ids.
+
+    Lastly the "subgraphs" class attribute stores a subgraph for each
+    district ("part").  Note that this is done for efficiency reasons
+    because creating a subgraph is expensive - so subgraphs are created
+    lazily (on demand) and subsequently cached.
 
     :ivar graph: The underlying graph.
     :type graph: :class:`~gerrychain.Graph`
@@ -88,12 +118,12 @@ class Partition:
 
         self._cache = dict()
 
-        # frm:   SubgraphView provides cached access to subgraphs for each of the
-        #       partition's districts.  It is important that we asign subgraphs AFTER
-        #       we have established what nodes belong to which parts (districts).  In
-        #       the case when the parent is None, the assignments are explicitly provided,
-        #       and in the case when there is a parent, the _from_parent() logic processes
-        #       the flips to update the assignments.
+        # SubgraphView provides cached access to subgraphs for each of the
+        # partition's districts.  It is important that we asign subgraphs AFTER
+        # we have established what nodes belong to which parts (districts).  In
+        # the case when the parent is None, the assignments are explicitly provided,
+        # and in the case when there is a parent, the _from_parent() logic processes
+        # the flips to update the assignments.
 
         self.subgraphs = SubgraphView(self.graph, self.parts)
 
@@ -131,7 +161,6 @@ class Partition:
         :returns: The partition created with a random assignment
         :rtype: Partition
         """
-        # frm: TODO: BUG:  The param, flips, is never used in this routine...
 
         total_pop = sum(graph.node_data(n)[pop_col] for n in graph)
         ideal_pop = total_pop / n_parts
@@ -165,10 +194,6 @@ class Partition:
         # convert to RX - both for legacy compatibility, but also because NX provides
         # a really nice and easy way to create graphs.
         #
-        # TODO: Documentation: update the documentation
-        # to describe the use case of creating a graph using NX.  That documentation
-        # should also describe how to post-process results of a MarkovChain run
-        # but I haven't figured that out yet...
 
         # If a NX.Graph, create a Graph object based on NX
         if isinstance(graph, networkx.Graph):
@@ -176,13 +201,21 @@ class Partition:
 
         # if a Graph object, make sure it is based on an embedded RustworkX.PyGraph
         if isinstance(graph, Graph):
-            # frm: TODO: Performance: Remove this short-term hack to do performance testing
+
+            # Performance Testing:  In order to compare the performance of
+            # RustworkX vs NetworkX, we enable using an NX-based Graph in a partition
+            # by setting the variable, test_performance_using_NX_graph, to be True.
+            # This allows us to run a test with NX and then again with RX in order
+            # to compare the results.
             #
-            # This "test_performance_using_NX_graph" hack just forces the partition
-            # to NOT convert the NX graph to be RX based.  This allows me to
-            # compare RX performance to NX performance with the same code - so that
-            # whatever is different is crystal clear.
+            # RustworkX is much faster, so the default value is False.
+            #
+            # Peter said (January 2026): It might be worth changing this to a global
+            # variable that we can set easily. I'll want to remove it once we get
+            # to release 2.0.0, but it could be useful in the meantime..
+            #
             test_performance_using_NX_graph = False
+
             if (graph.is_nx_graph()) and test_performance_using_NX_graph:
                 self.assignment = get_assignment(assignment, graph)
                 print("=====================================================")
@@ -272,33 +305,24 @@ class Partition:
     def __len__(self):
         return len(self.parts)
 
-    def flip(self, flips: Dict, use_original_nx_node_ids=False) -> "Partition":
+    def flip(self, flips: Dict, flips_passed_in_use_original_nx_node_ids=False) -> "Partition":
         """
         Returns the new partition obtained by performing the given `flips`
         on this partition.
 
         :param flips: dictionary assigning nodes of the graph to their new districts
+        :type flips: Dict
+        :param flips_passed_in_use_original_nx_node_ids: Denotes whether the node_ids in
+            the flips are original NX node_ids or whether they are internal RX node_ids.
+            The only time this is set to True is for testing when the test wants to
+            provide explicit flips using NX node_ids (because the test cannot know what
+            node_ids RX will choose when we convert the underlying graph object).
+        :type flips_passed_in_use_original_nx_node_ids: bool
         :returns: the new :class:`Partition`
         :rtype: Partition
         """
 
-        # frm: TODO: Documentation: Change comments above to document new optional parameter,
-        # use_original_nx_node_ids.
-        #
-        # This is a new issue that arises from the fact that node_ids in RX are different from
-        # those in the original NX graph.  In the pre-RX code, we did not need to distinguish
-        # between calls to flip() that were internal code used when doing a MarkovChain versus
-        # user code for instance in tests.  However, in the new RX world, the internal code uses
-        # RX node_ids and the tests want to use "original" NX node_ids.  Hence the new parameter.
-
-        # If the caller identified flips in terms of "original" node_ids (typically node_ids
-        # associated with an NX-based graph before creating a Partition object), then translate
-        # those original node_ids into the appropriate internal RX-based node_ids.
-        #
-        # Note that original node_ids in flips are typically used in tests
-        #
-
-        if use_original_nx_node_ids:
+        if flips_passed_in_use_original_nx_node_ids:
             new_flips = {}
             for original_nx_node_id, part in flips.items():
                 internal_node_id = self.graph.internal_node_id_for_original_nx_node_id(
@@ -330,13 +354,13 @@ class Partition:
         :returns: The value of the updater.
         :rtype: Any
         """
-        # frm: Cleverness Alert:  Delayed evaluation of updater functions...
+        # Cleverness Alert:  Delayed evaluation of updater functions...
         #
-        #   The code immediately below executes the appropriate updater function
-        #   if it has not already been executed and then caches the results.
-        #   This makes sense - why compute something if nobody ever wants it,
-        #   but it took me a while to figure out why the constructor did not
-        #   explicitly call the updaters.
+        # The code immediately below executes the appropriate updater function
+        # if it has not already been executed and then caches the results.
+        # This makes sense - why compute something if nobody ever wants it,
+        # but it took me a while to figure out why the constructor did not
+        # explicitly call the updaters.
         #
 
         if key not in self._cache:
@@ -354,7 +378,7 @@ class Partition:
         return self._cache[key]
 
     def __getattr__(self, key):
-        # frm TODO: Refactor:  Not sure it makes sense to allow two ways to accomplish the same
+        # frm * TODO: Refactor:  Not sure it makes sense to allow two ways to accomplish the same
         # thing...
         #
         # The code below allows Partition users to get the results of updaters by just

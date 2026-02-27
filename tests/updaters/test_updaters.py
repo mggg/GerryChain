@@ -86,7 +86,7 @@ def test_Partition_can_update_stats():
     # Flip node with original node_id of 1 to be in part (district) 2
     flip = {1: 2}
 
-    new_partition = partition.flip(flip, use_original_nx_node_ids=True)
+    new_partition = partition.flip(flip, flips_passed_in_use_original_nx_node_ids=True)
 
     assert new_partition["total_stat"][2] == 9
 

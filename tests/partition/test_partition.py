@@ -79,7 +79,7 @@ def test_geographic_partition_can_be_instantiated(example_geographic_partition):
 def test_Partition_parts_is_a_dictionary_of_parts_to_nodes(example_partition):
     partition = example_partition
     flip = {1: 2}
-    new_partition = partition.flip(flip, use_original_nx_node_ids=True)
+    new_partition = partition.flip(flip, flips_passed_in_use_original_nx_node_ids=True)
     assert all(isinstance(nodes, frozenset) for nodes in new_partition.parts.values())
     assert all(isinstance(nodes, frozenset) for nodes in partition.parts.values())
 

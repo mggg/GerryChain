@@ -296,6 +296,14 @@ def test_subgraph(four_by_five_graph_rx):
     in the gerrychain codebase is on RX based Graph objects.
     """
 
+    # frm: TODO: Testing: Peter suggested adding a "fuzzed" version of this.
+    #
+    # Here is what he said:
+    #
+    # We should probably add a fuzzed version of this where we do a random
+    # connected graph on 1000 nodes and then take random subgraphs of random
+    # size (say with between 100 and 200 nodes) and then repeat a few times.
+
     # Create a subgraph for an arbitrary set of nodes:
     subgraph_node_ids = [2, 4, 5, 8, 11, 13]
     parent_graph_rx = four_by_five_graph_rx  # make the code below clearer
@@ -524,7 +532,7 @@ def test_graph_has_cycle():
 
 def test_generic_bfs_edges(four_by_five_graph_nx, four_by_five_graph_rx):
     #
-    # The routine, generic_bfs_edges() returns an ordered list of
+    # The routine, _generic_bfs_edges() returns an ordered list of
     # edges from a breadth-first traversal of a graph, starting
     # at the given node.
     #
@@ -549,7 +557,7 @@ def test_generic_bfs_edges(four_by_five_graph_nx, four_by_five_graph_rx):
     #
 
     #
-    bfs_edges_nx_0 = set(four_by_five_graph_nx.generic_bfs_edges(0))
+    bfs_edges_nx_0 = set(four_by_five_graph_nx._generic_bfs_edges(0))
     expected_set_of_edges = {
         (0, 5),
         (0, 1),
@@ -564,10 +572,10 @@ def test_generic_bfs_edges(four_by_five_graph_nx, four_by_five_graph_rx):
     # debugging:
     assert bfs_edges_nx_0 == expected_set_of_edges
 
-    # Check that generic_bfs_edges() does not produce a cycle
+    # Check that _generic_bfs_edges() does not produce a cycle
     the_graph_has_a_cycle = graph_has_cycle(bfs_edges_nx_0)
     assert not the_graph_has_a_cycle
-    bfs_edges_nx_12 = set(four_by_five_graph_nx.generic_bfs_edges(12))
+    bfs_edges_nx_12 = set(four_by_five_graph_nx._generic_bfs_edges(12))
     the_graph_has_a_cycle = graph_has_cycle(bfs_edges_nx_12)
     assert not the_graph_has_a_cycle
 
@@ -683,6 +691,14 @@ TODO: Code: ???
     NX node_ids that are tuples, and that test passes, so I think
     we are OK, but there are no tests specifically targeting this
     issue that I know of.
+
+    Peter's response in Dec 2025:
+
+    I think that we don't really need to worry about the aliasing
+    problem here. Once they get passed to a recom method, we treat
+    graphs as immutable, read-only structures. So long as a user
+    doesn't try to do something silly in an acceptance function
+    or in an updater, things should be fine.
 
 =============================================================
 """

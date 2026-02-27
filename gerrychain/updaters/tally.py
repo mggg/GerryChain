@@ -20,7 +20,7 @@ class DataTally:
     :type alias: str
     """
 
-    # frm: TODO: Code:  Check to see if DataTally used for data that is NOT attribute of a node
+    # frm: * TODO: Code:  Check to see if DataTally used for data that is NOT attribute of a node
     #
     # The comment above indicates that you can use a DataTally for data that is not stored
     # as an attribute of a node.  Check to see if it is ever actually used that way.  If so,
