@@ -102,49 +102,6 @@ def twelve_by_twelve_with_pop_rx(twelve_by_twelve_with_pop_nx):
 
 # ---------------------------------------------------------------------
 
-# frm: TODO: Refactoring: Remove code using bipartition_tree_random()
-#
-# biparition_tree_random() was deleted in January 2026 as part of a refactoring of tree.py
-#
-# It was functionally identical to bipartition_tree() except for the parameter lists.
-# These two tests appear in this file with bipartition_tree() instead of bipartition_tree_random()
-#
-#
-#     def do_test_bipartition_tree_random_returns_a_subset_of_nodes(graph):
-#         ideal_pop = sum(graph.node_data(node)["pop"] for node in graph) / 2
-#         result = bipartition_tree_random(graph, "pop", ideal_pop, 0.25, 10)
-#         assert isinstance(result, frozenset)
-#         assert all(node in graph.nodes for node in result)
-#
-#
-#     def test_bipartition_tree_random_returns_a_subset_of_nodes(graph_with_pop_nx, graph_with_pop_rx):
-#         # Test both NX-based and RX-based Graph objects
-#         do_test_bipartition_tree_random_returns_a_subset_of_nodes(graph_with_pop_nx)
-#         do_test_bipartition_tree_random_returns_a_subset_of_nodes(graph_with_pop_rx)
-#
-#
-# ---------------------------------------------------------------------
-#
-#
-#     def do_test_bipartition_tree_random_returns_within_epsilon_of_target_pop(graph):
-#         ideal_pop = sum(graph.node_data(node)["pop"] for node in graph) / 2
-#         epsilon = 0.25
-#         result = bipartition_tree_random(graph, "pop", ideal_pop, epsilon, 10)
-#
-#         part_pop = sum(graph.node_data(node)["pop"] for node in result)
-#         assert abs(part_pop - ideal_pop) / ideal_pop < epsilon
-#
-#
-#     def test_bipartition_tree_random_returns_within_epsilon_of_target_pop(
-#         graph_with_pop_nx, graph_with_pop_rx
-#     ):
-#         # Test both NX-based and RX-based Graph objects
-#         do_test_bipartition_tree_random_returns_within_epsilon_of_target_pop(graph_with_pop_nx)
-#         do_test_bipartition_tree_random_returns_within_epsilon_of_target_pop(graph_with_pop_rx)
-
-
-# ---------------------------------------------------------------------
-
 
 def do_test_bipartition_tree_returns_a_subset_of_nodes(graph):
     ideal_pop = sum(graph.node_data(node)["pop"] for node in graph) / 2

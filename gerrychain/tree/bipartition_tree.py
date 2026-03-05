@@ -192,22 +192,6 @@ class _PopulatedGraph:
             bool: True if the node has an ideal population within the graph up to epsilon.
         """
 
-        # frm: TODO: Refactoring: Create a helper function for this
-        #
-        # This logic is repeated several times in this file.  Consider
-        # refactoring the code so that the logic lives in exactly
-        # one place.
-        #
-        # When thinking about refactoring, consider whether it makes
-        # sense to toggle what this routine does by the "one_sided_cut"
-        # parameter.  Why not have two separate routines with
-        # similar but distinguishing names.  I need to be absolutely
-        # clear about what the two cases are all about, but my current
-        # hypothesis is that when one_sided_cut == False, we are looking
-        # for the edge which when cut produces two districts of
-        # approximately equal size - so a bisect rather than a find all
-        # meaning...
-
         if one_sided_cut:
             return abs(self.population[node] - self.ideal_pop) < self.epsilon * self.ideal_pop
 
@@ -257,18 +241,6 @@ Cut.subset.__doc__ = "The (frozen) subset of nodes on one side of the cut. Defau
 #        tree, {node: 1 for node in tree}, len(tree) / 2, 0.5
 #    )
 #    cuts = find_balanced_edge_cuts_contraction(populated_tree)
-
-# frm: TODO: Refactoring: params are find_balanced_edge_cuts_fn but routines are balanced_edge_...
-#
-# Another nit, but it would be nice if the parameter names were balanced_edge_fn (with a 'd'),
-# but that is probably not possible given legacy code.
-#
-# Ask Peter to confirm that we should not change the name of either the param or the functions...
-#
-# Peter said (January 2026): I am fine with changing the name of that parameter.
-# Python has good error messages for when things have the wrong name:
-# and if users pass this as a positional argument, then it won't matter that the
-# parameter name changed.
 
 
 def find_balanced_edge_cuts_contraction(
@@ -389,10 +361,9 @@ def _calc_pops(succ: dict[Any, list[Any]], root: Any, h: _PopulatedGraph) -> dic
     return subtree_pops
 
 
-# frm: Only used in one function and only in this module...
-def _part_nodes(start: Any, succ: dict[Any, list[Any]]) -> set[Any]:
-    """Partitions the nodes of a graph into two sets based on the start node and the
-    successors of the graph.
+def _nodes_in_subtree(start: Any, succ: dict[Any, list[Any]]) -> set[Any]:
+    """
+    Collects the nodes in a subtree that are rooted in the "start" node.
 
     Args:
         start (Any): The start node.
@@ -423,10 +394,6 @@ def _part_nodes(start: Any, succ: dict[Any, list[Any]]) -> set[Any]:
     are in the subtree, and this is what this routine does.  It
     merely starts at the root of the subtree (start) and goes down
     the subtree, adding each node to a set.
-
-    frm: TODO:  Documentation: Rename this to be more descriptive - perhaps ]
-                     something like: _nodes_in_subtree() or
-                     _nodes_for_cut()
 
     frm: TODO:  Documentation: Add the above explanation for what a Cut is and how
                 we find them by converting the graph to a DAG and
@@ -523,7 +490,7 @@ def find_balanced_edge_cuts_memoization(
                         weight=h.graph.edge_data(h.graph.get_edge_id_from_edge(e)).get(
                             "random_weight", wt
                         ),
-                        subset=frozenset(_part_nodes(node, succ)),
+                        subset=frozenset(_nodes_in_subtree(node, succ)),
                     )
                 )
             elif abs((total_pop - tree_pop) - h.ideal_pop) <= h.ideal_pop * h.epsilon:
@@ -537,7 +504,7 @@ def find_balanced_edge_cuts_memoization(
                         weight=h.graph.edge_data(h.graph.get_edge_id_from_edge(e)).get(
                             "random_weight", wt
                         ),
-                        subset=frozenset(set(h.graph.node_indices) - _part_nodes(node, succ)),
+                        subset=frozenset(set(h.graph.node_indices) - _nodes_in_subtree(node, succ)),
                     )
                 )
 
@@ -608,7 +575,7 @@ def find_balanced_edge_cuts_memoization(
                     weight=h.graph.edge_data(h.graph.get_edge_id_from_edge(e)).get(
                         "random_weight", wt
                     ),
-                    subset=frozenset(set(h.graph.node_indices) - _part_nodes(node, succ)),
+                    subset=frozenset(set(h.graph.node_indices) - _nodes_in_subtree(node, succ)),
                 )
             )
     return cuts
@@ -675,11 +642,6 @@ def _max_weight_choice(cut_edge_list: list[Cut]) -> Cut:
     return max(cut_edge_list, key=lambda cut: cut.weight)
 
 
-# frm: TODO:  Documentation: document what _power_set_sorted_by_size_then_sum() does
-#
-#  Figure out what this does.  There is no NX/RX issue here, I just
-#                   don't yet know what it does or why...
-# Note that this is only ever used once...
 def _power_set_sorted_by_size_then_sum(region_surcharge_dict: dict) -> list[tuple[Any, ...]]:
     """Power set sorted by size then sum.
 
@@ -710,7 +672,7 @@ def _power_set_sorted_by_size_then_sum(region_surcharge_dict: dict) -> list[tupl
 # are not modifying the object in the function, and the speed of
 # this randomized selection will not suffer for it.
 def _region_preferred_max_weight_choice(
-    populated_graph: _PopulatedGraph, region_surcharge: dict, cut_edge_list: list[Cut]
+    cut_edge_list: list[Cut], populated_graph: _PopulatedGraph, region_surcharge: dict
 ) -> Cut:
     # frm: ???:  There is no NX/RX dependency in this routine, but I do
     #               not yet understand what it does or why...
@@ -917,7 +879,7 @@ def _internal_bipartition_tree(
     find_balanced_edge_cuts_fn: Callable = find_balanced_edge_cuts_memoization,
     one_sided_cut: bool = False,
     rootnode_choice_fn: Callable = random.choice,
-    max_attempts: int | None = 100000,
+    max_attempts: int = 100000,
     warn_attempts: int = 1000,
     allow_pair_reselection: bool = False,
     repeat_until_valid: bool = True,  # frm: TODO: Have this NOT default...
@@ -960,8 +922,8 @@ def _internal_bipartition_tree(
         rootnode_choice_fn (Callable, optional): The function to make a random choice of root node
             for the population tree. Passed to ``find_balanced_edge_cuts_fn``. Can be substituted
             for testing. Defaults to `random.random()`.
-        max_attempts (Optional[int], optional): The maximum number of attempts that should be made
-            to bipartition. Defaults to 10000.
+        max_attempts (int): The maximum number of attempts that should be made
+            to bipartition. Defaults to 100,000.
         warn_attempts (int, optional): The number of attempts after which a warning is issued if a
             balanced cut cannot be found. Defaults to 1000.
         allow_pair_reselection (bool, optional): Whether we would like to return an error to the
@@ -1022,16 +984,20 @@ def _internal_bipartition_tree(
 
     num_cuts = len(possible_cuts)
     if num_cuts != 0:
-        # frm: TODO: ???: Is it an error to pass in a None value for
-        # region_surcharge, but also pass a cut_choice_fn that expects it?
 
-        is_region_cut = (
+        # Note: There are two different function signatures for cut_choice_fn().
+        #
+        # One just takes the set of possible cuts, but the other takes
+        # two additional parameters, region_surcharge, and populated_graph,
+        # so we need to see which cut_choice_fn() we are dealing with.
+        #
+        if (
             "region_surcharge" in signature(cut_choice_fn).parameters
             and "populated_graph" in signature(cut_choice_fn).parameters
-        )
-
-        if is_region_cut:
-            chosen_cut = cut_choice_fn(populated_graph, region_surcharge, possible_cuts)
+        ):
+            chosen_cut = cut_choice_fn(
+                possible_cuts, populated_graph=populated_graph, region_surcharge=region_surcharge
+            )
         else:
             chosen_cut = cut_choice_fn(possible_cuts)
 
@@ -1270,13 +1236,7 @@ def _get_possible_edge_cuts_and_populated_graph(
     restarts = 0
     attempts = 0
 
-    # frm: TODO: Code: When would it make sense for max_attempts to be None?
-    # Infinite loop potential...
-    #
-    # Peter agreed (January 2026) - he said we should force it to be an int and put a defensive
-    # check before this...
-
-    while max_attempts is None or attempts < max_attempts:
+    while attempts < max_attempts:
         if restarts == node_repeats:
             spanning_tree = spanning_tree_fn(graph_to_split)
             restarts = 0
@@ -1379,7 +1339,7 @@ def bipartition_tree_random_with_num_cuts(
     find_balanced_edge_cuts_fn: Callable = find_balanced_edge_cuts_memoization,
     one_sided_cut: bool = False,
     rootnode_choice_fn: Callable = random.choice,
-    max_attempts: int | None = 100000,
+    max_attempts: int = 100000,
     cut_choice_fn: Callable = random.choice,
 ) -> tuple[int, set[Any]]:
     """This is like `bipartition_tree` except it always chooses a random balanced cut.
@@ -1416,8 +1376,8 @@ def bipartition_tree_random_with_num_cuts(
             are cutting is within epsilon of the ideal population. Defaults to False.
         rootnode_choice_fn (Callable, optional): The random choice function. Can be substituted for
             testing. Defaults to `random.choice`.
-        max_attempts (Optional[int], optional): The max number of attempts that should be made to
-            bipartition. Defaults to None.
+        max_attempts (int): The max number of attempts that should be made to
+            bipartition. Defaults to 100,000.
         cut_choice_fn (Callable, optional): The function to use to select which cut to use if there
             are more than one. It defaults to random.choice()
 
@@ -1456,32 +1416,3 @@ class BalanceError(Exception):
 
 class PopulationBalanceError(Exception):
     """Raised when the population of a district is outside the acceptable epsilon range."""
-
-
-# frm: TODO: Delete these notes to Peter after next PR:
-
-# Note to Peter:  param name, "method", has been changed everywhere to "bipartition_tree_fn"
-#
-# I have added a note to the rx_release_notes.md file that we should warn users about this
-# change.
-
-# frm: Note to Peter:  I moved the defintion of epsilon_tree_bipartition() to tree_proposals.py
-#
-# I also had to import the two exceptions BalanceError and PopulationBalanceError into
-# tree_proposals.py.  I felt funny about doing so, but it didn't seem terrible...
-
-# frm: Note to Peter - moved recursive_seed_part() to partition/initial_partition_generators.py
-
-# frm: Note to Peter - moved _get_seed_chunks() to partition/initial_partition_generators.py
-
-# frm: Note to Peter - moved get_max_prime_factor_less_than() to
-# partition/initial_partition_generators.py
-
-# frm: Note to Peter - moved _recursive_seed_part_inner() to
-# partition/initial_partition_generators.py
-
-# frm: Note to Peter - moved _recursive_seed_part_inner() to
-# partition/initial_partition_generators.py
-
-# frm: Note to Peter - moved _recursive_seed_part_inner() to
-# partition/initial_partition_generators.py

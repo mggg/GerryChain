@@ -196,7 +196,6 @@ def contiguous(partition: Partition) -> bool:
         bool: Whether the partition is contiguous
     """
 
-    # frm: Original code: return all(is_connected_bfs(partition.subgraphs[part]) for part in _affected_parts(partition))
     return all(partition.subgraphs[part].is_connected_bfs() for part in _affected_parts(partition))
 
 
@@ -251,7 +250,6 @@ def number_of_contiguous_parts(partition: Partition) -> int:
         int: Number of contiguous parts in the partition.
     """
     parts = partition.assignment.parts
-    # frm: Original code: return sum(1 for part in parts if is_connected_bfs(partition.subgraphs[part]))
     return sum(1 for part in parts if partition.subgraphs[part].is_connected_bfs())
 
 

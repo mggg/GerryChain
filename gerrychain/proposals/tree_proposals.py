@@ -1,7 +1,6 @@
 import random
 from collections.abc import Callable, Hashable, Sequence
 from functools import partial
-from inspect import signature
 
 from gerrychain.partition import Partition
 
@@ -173,9 +172,13 @@ def recom(
     n_parts = len(partition)
     tot_pairs = n_parts * (n_parts - 1) / 2  # n choose 2
 
-    # Try to add the region aware in if the bipartition_tree_fn accepts the surcharge dictionary
-    if "region_surcharge" in signature(bipartition_tree_fn).parameters:
-        bipartition_tree_fn = partial(bipartition_tree_fn, region_surcharge=region_surcharge)
+    # frm: Note to Peter: Removed test for region_surcharge in the signatuare of bipartition_tree_fn
+    #
+    # After the recent restructuring of bipartition_tree.py, all bipartition_tree functions
+    # have a region_surcharge parameter, so no need to test for it now...
+
+    # Bind the region_aware parameter to the bipartition_tree_fn
+    bipartition_tree_fn = partial(bipartition_tree_fn, region_surcharge=region_surcharge)
 
     # frm: TODO: Refactoring:  Should we sanity check region_surcharge usage?
     #

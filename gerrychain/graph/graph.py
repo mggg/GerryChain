@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import functools
 import json
+import random
 import warnings
 from collections.abc import Generator, Iterable
 
@@ -457,8 +458,6 @@ class Graph:
     # Not all of the calls on these routines are needed in production - some are just
     # sanity checking.  Find a way to NOT run this code when in production.
 
-    # frm: TODO: Refactoring:  Reorder these following routines in sensible order
-
     def is_nx_graph(self) -> bool:
         """Determine if the graph is NX-based."""
         # frm: TODO: Performance:  Only check graph_is_valid() in production
@@ -781,24 +780,8 @@ class Graph:
 
         nx_graph.geometry = df.geometry
 
-        # frm: TODO: Refactoring: Rethink the name of add_boundary_perimeters
-        #
-        # It acts on an nx_graph which seems wrong with the given name.
-        # Maybe it should be: add_boundary_perimeters_to_nx_graph()
-        #
-        # Need to check in with Peter to see if this is considered
-        # part of the external API.
-
-        # frm: TODO: Refactoring: Create an nx_utilities module
-        #
-        # It raises the question of whether there should be an nx_utilities
-        # module for stuff designed to only work on nx_graph objects.
-        #
-        # Note that Peter said: "I like this idea"
-        #
-
         # Add "exterior" perimeters to the boundary nodes
-        add_boundary_perimeters(nx_graph, df.geometry)
+        _add_boundary_perimeters_to_nx_graph(nx_graph, df.geometry)
 
         # Add area data to the nodes
         areas = df.geometry.area.to_dict()
@@ -991,14 +974,10 @@ class Graph:
             list[Any]: A list of all of the node_ids in the graph
         """
 
-        # frm: TODO: Refactoring: Think about whether to do away entirely with graph.nodes
+        # Note: graph.nodes() continues to exist because it was used often in legacy code.
         #
         # All this routine does now is to coerce the set of nodes obtained by node_indices()
-        # to be a list (which I think is unnecessary).  So, why have it at all?  Why not just
-        # tell legacy users via an exception that it no longer exists?
-        #
-        # On the other hand, it maybe does no harm to allow legacy users to indulge in
-        # what appears to be a very common idiom in legacy code...
+        # to be a list.
 
         self.verify_graph_is_valid()
 
@@ -1044,29 +1023,35 @@ class Graph:
     def add_edge(self, node_id1: Any, node_id2: Any) -> None:
         """Add an edge to the graph from node_id1 to node_id2.
 
+        Note that both nodes need to already be members of the graph
+
         Args:
             node_id1 (Any): The node_id for one of the nodes in the edge
             node_id2 (Any): The node_id for one of the nodes in the edge
 
         """
 
-        # frm: TODO: Code: add_edge(): Check that nodes exist and that they have data dicts.
+        # Note: the add_edge() routine is not used in the GerryChain codebase.
         #
-        # This checking should probably be limited to development mode, but
-        # the issue is that an RX node need not have a data value that is
-        # a dict, but GerryChain code depends on having a data dict.  So,
-        # it makes sense to test and make sure that the nodes exist and
-        # have a data dict...
-
-        # frm: TODO: Code: add_edge(): Do we need to check to make sure the edge does not already
-        # exist?
+        # Given the current approach of creating an NX Graph and then converting
+        # it to RX, this routine seems to not have much value - the only time one
+        # would be adding edges is when creating a graph, and that would
+        # almost certainly be done entirely in NX.
 
         self.verify_graph_is_valid()
 
         if self.is_rx_graph():
+            node1_exists = self._rx_graph.has_node(node_id1)
+            node2_exists = self._rx_graph.has_node(node_id2)
+            if (not node1_exists) or (not node2_exists):
+                raise Exception("add_edge(): both nodes in the edge must already exist")
             # empty dict tells RX the edge data will be a dict
             self._rx_graph.add_edge(node_id1, node_id2, {})
         elif self.is_nx_graph():
+            node1_exists = self._nx_graph.has_node(node_id1)
+            node2_exists = self._nx_graph.has_node(node_id2)
+            if (not node1_exists) or (not node2_exists):
+                raise Exception("add_edge(): both nodes in the edge must already exist")
             self._nx_graph.add_edge(node_id1, node_id2)
         else:
             raise TypeError(
@@ -1942,11 +1927,6 @@ class Graph:
 
         return data_dict
 
-    # frm: TODO: Refactoring: Encapsulate ALL NX dependencies in this file.
-
-    # frm: TODO: Refactoring:   Move routines so that the ones that do NOT mirror NetworkX
-    #                           come at the end, after a comment to that effect.
-
     # Note:  The two laplacian functions: laplacian_matrix() and
     # normalized_laplacian_matrix() are part of the Graph class primarily to
     # encapsulate all NetworkX dependencies in one place - this module.
@@ -2093,6 +2073,26 @@ class Graph:
 
         return laplacian_matrix
 
+    # frm: TODO: Documentation: This code was obtained from the web - probably could be optimized...
+    #
+    # This code replaced calls on nx.is_connected()
+    def is_connected_bfs(self):
+
+        node_ids = list(self.node_indices)
+
+        start_node = random.choice(node_ids)
+        visited = {start_node}
+        queue = [start_node]
+
+        while queue:
+            current_node = queue.pop(0)
+            for neighbor in self.neighbors(current_node):
+                if neighbor not in visited:
+                    visited.add(neighbor)
+                    queue.append(neighbor)
+
+        return len(visited) == len(node_ids)
+
     def subgraphs_for_connected_components(self) -> list[Graph]:
         """Create and return a list of subgraphs for each set of nodes in the given graph that are.
 
@@ -2203,7 +2203,7 @@ class Graph:
             )
 
 
-def add_boundary_perimeters(nx_graph: networkx.Graph, geometries: pd.Series) -> None:
+def _add_boundary_perimeters_to_nx_graph(nx_graph: networkx.Graph, geometries: pd.Series) -> None:
     """Computes the "boundary perimeter" which is a measure of how much of the node's perimeter is.
 
     Computes the "boundary perimeter" which is a measure of how much of the node's perimeter is on
@@ -2231,20 +2231,10 @@ def add_boundary_perimeters(nx_graph: networkx.Graph, geometries: pd.Series) -> 
 
     """
 
-    # frm: TODO: Refactoring: add_boundary_perimeters(): OK to require NetworkX.Graph as parameter?
-    #
-    # Think about whether it is reasonable to require this to work on an NetworkX.Graph
-    # object.  Also determine whether this should be part of the external API.  If not,
-    # then there is no harm in leaving it with a NetworkX.Graph parameter.  If we decide
-    # that is it NOT part of the external API, then we should rename it to have a
-    # leading underscore.
-    #
-    # Peter said (January 2026): I don't think that users need this as part of the
-    # external API. The only place I see this getting called is in the process of
-    # building the graph from a geodataframe.
-
     if not (isinstance(nx_graph, networkx.Graph)):
-        raise TypeError("Graph passed into add_boundary_perimeters() is not a networkx graph")
+        raise TypeError(
+            "Graph passed into _add_boundary_perimeters_to_nx_graph() is not a networkx graph"
+        )
 
     prepared_boundary = prep(unary_union(geometries).boundary)
 
@@ -2334,14 +2324,16 @@ class FrozenGraph:
         The class uses `__slots__` for improved memory efficiency.
     """
 
-    # frm: TODO: Code: Rename the internal data member, "graph", to be something else.
-    #               The reason is that a NetworkX.Graph object already has an internal
-    #               data member named, "graph", which is just a dict for the data
-    #               associated with the Networkx.Graph object.
+    # Note: NetworkX has a way to "freeze" a graph so that calls to add nodes
+    # or edges will fail, but RustworkX does not have a similar mechanism, so
+    # we cannot actually "freeze" an RX-based Graph (which is what we will typically
+    # have after creating a Partition object).
     #
-    #               So to avoid confusion, naming the frozen graph something like
-    #               _frozen_graph would make it easier for a future reader of the
-    #               code to avoid confusion...
+    # This means that we cannot prevent a user from going under the covers and
+    # changing an RX-based graph, but there are no functions defined for the
+    # GerryChain Graph object to add nodes, so it seems reasonable to just assume
+    # that the graph will not be modified.
+    #
 
     __slots__ = ["graph", "size"]
 
@@ -2353,24 +2345,24 @@ class FrozenGraph:
 
         """
 
-        # frm: Original code follows:
-        #
-        #   self.graph = networkx.classes.function.freeze(graph)
-        #
-        #   # frm: frozen is just a function that raises an exception if called...
-        #   self.graph.join = frozen
-        #   self.graph.add_data = frozen
-        #
-        #   self.size = len(self.graph)
-
-        # frm TODO: Code: Add logic to FrozenGraph so that it is indeed "frozen" (for both NX
-        # and RX)
-        #
-        # I think this just means redefining those methods that change the graph
-        # to return an error / exception if called.
-
         self.graph = graph
-        self.size = len(self.graph.node_indices)
+
+        all_node_ids = self.graph.node_indices
+        self.size = len(all_node_ids)
+
+        # Validate that the node_id maps contain mappings for all nodes in the graph.
+        #
+        # This is pure defensive coding - it should never happen, but better safe...
+        #
+        if not all_node_ids.issubset(self.graph._node_id_to_parent_node_id_map.keys()):
+            raise Exception(
+                "FrozenGraph.__init__(): _node_id_to_parent_node_id_map does not contain all nodes"
+            )
+        if not all_node_ids.issubset(self.graph._node_id_to_original_nx_node_id_map.keys()):
+
+            raise Exception(
+                "FrozenGraph.__init__(): _node_id_to_original_nx_node_id_map does not contain all nodes"
+            )
 
     def __len__(self) -> int:
         """Returns the number of nodes in the graph.

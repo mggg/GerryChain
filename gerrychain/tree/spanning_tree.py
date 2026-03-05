@@ -7,8 +7,6 @@ from typing import (
 
 from ..graph import Graph
 
-# frm: TODO: Documentation: Update the high level description for spanning_tree.py below
-
 """
 This module provides two implementation of spanning tree functions:
 uniform_spanning_tree() and random_spanning_tree().
@@ -382,6 +380,16 @@ def uniform_spanning_tree(graph: Graph, choice: Callable = random.choice) -> Gra
 
     for node_id in tree_nodes:
         if parent_node_id[node_id] is not None:
-            G.add_edge(node_id, parent_node_id[node_id])
+            # Add the nodes and the edge to the spanning_tree
+            nx_graph = G.get_nx_graph()
+            nx_graph.add_edge(node_id, parent_node_id[node_id])
+
+    # frm: TODO: Refactoring: BUG?  uniform_spanning_tree() should returned graph be NX or RX?
+    #
+    # This code returns an NX-based Graph which seems odd, but maybe it doesn't make too much
+    # of a difference, since it is only a spanning tree...
+    #
+    # Note that this is not an issue for random_spanning_tree() - because we delegate creating
+    # the spanning tree to NX or RX in that case.
 
     return G

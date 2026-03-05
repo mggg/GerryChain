@@ -14,7 +14,6 @@ from typing import (
 from ..graph import Graph
 from ..tree import BalanceError, PopulationBalanceError, bipartition_tree
 
-# frm: TODO: Update docstrings below
 """
 This module provides routines to create initial assignments for a Partition object.
 

@@ -234,14 +234,6 @@ def get_assignment(
             is not provided.
         TypeError: If the part_assignment is not a string or dictionary.
     """
-
-    # frm: TODO: Refactoring:  Think about whether to split this into two functions.  AT
-    #               present, it does different things based on whether
-    #               the "part_assignment" parameter is a string, a dict,
-    #               or an assignment.  Probably not worth the trouble (possible
-    #               legacy issues), but I just can't get used to the Python habit
-    #               of weak typing...
-
     if isinstance(part_assignment, str):
         # Extract an assignment using the named node attribute
         if graph is None:
