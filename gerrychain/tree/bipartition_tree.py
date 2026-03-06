@@ -290,8 +290,7 @@ def find_balanced_edge_cuts_contraction(
         if h.has_ideal_population(leaf, one_sided_cut=one_sided_cut):
             # frm: If the population of the subtree rooted in this node is the correct
             #       size, then add it to the cut list.  Note that if one_sided_cut == False,
-            #       then the cut means the cut bisects the partition (frm: ??? need to verify
-            #       this).
+            #       then the cut means the cut bisects the graph of the spanning tree.
             e = (leaf, pred[leaf])
             cuts.append(
                 Cut(
@@ -1322,11 +1321,6 @@ def _get_possible_edge_cuts_and_populated_graph(
     raise RuntimeError(f"Could not find a possible cut after {max_attempts} attempts.")
 
 
-# frm: TODO: Refactoring: Verify with Peter that this is NOT part of the external API.
-#
-# It is used for reversible_recom() where repeat_until_valid is set to False, so that
-# it stops after one attempt to find balanced edge_cuts.
-#
 def bipartition_tree_random_with_num_cuts(
     subgraph_to_split: Graph,
     pop_col: str,
@@ -1379,12 +1373,16 @@ def bipartition_tree_random_with_num_cuts(
         max_attempts (int): The max number of attempts that should be made to
             bipartition. Defaults to 100,000.
         cut_choice_fn (Callable, optional): The function to use to select which cut to use if there
-            are more than one. It defaults to random.choice()
+            are more than one. It defaults to random.choice(
 
     Returns:
         tuple[int, Set[Any]]: A subset of nodes of ``graph`` (whose induced subgraph is connected)
             or None if a valid spanning tree is not found.
     """
+
+    # Note: This routine is only used in one place in the GerryChain code.
+    #
+    # It is called in tree_proposals.py: reversible_recom().
 
     num_cuts, node_ids = _internal_bipartition_tree(
         subgraph_to_split=subgraph_to_split,

@@ -28,6 +28,30 @@ def _are_reachable(graph: Graph, start_node: Any, avoid: Callable, targets: Any)
         bool: True if all of the targets are reachable from the start_node node under the avoid
             condition, False otherwise.
     """
+
+    # Note: This routine computes some values that it does not return, such as node_distances
+    # and a counter, "c".
+    #
+    # I believe that this is done as an optimization, to keep the algorithm focused on nodes
+    # that are "close" to the start_node.  The routine, heappush(), implements a min-heap
+    # where the value that has the lowest value is always at the top of the stack.  Given
+    # that our stack elements are tuples of the form, (distance to root, count, node_id),
+    # the elements at the top of the stack will be those that are closest, and then after
+    # that those that we saw first in the algorithm.  This should in most cases keep the
+    # algorithm from straying far away from the start_node.
+    #
+    # This makes sense because we are trying to determine if removing the start_node
+    # would cause the district to be discontiguous, which can only happen if the
+    # start_node is the only path from two of its neighbors, so we want to keep the
+    # search close to the start_node.
+    #
+    # Also, the loop termination condition:
+    #
+    #     not all(tgt in seen for tgt in targets)
+    #
+    # looks expensive, but it is not, because the targets are just the "old"
+    # neighbors of the start_node, and hence will be a small number.
+
     push = heappush
     pop = heappop
     node_distances = {}  # dictionary of final distances
@@ -62,33 +86,6 @@ def _are_reachable(graph: Graph, start_node: Any, avoid: Callable, targets: Any)
                 if neighbor_node_id not in seen or neighbor_distance < seen[neighbor_node_id]:
                     seen[neighbor_node_id] = neighbor_distance
                     push(fringe, (neighbor_distance, next(c), neighbor_node_id))
-
-    # frm: TODO: Refactoring:  _are_reachable() computes values it never uses
-    #
-    # It computes distances and counts but never uses them.  These must be
-    # relics of code copied from somewhere else where it had more uses...
-    #
-    # The variable, "node_distances", stores 1) the fact that a node has been processed
-    # and 2) what the distance is for that node from the start_node, but the distance
-    # is never used.  In fact, the distance could be anything and the code would work.
-    #
-    # Similarly, the variable, "seen", stores 1) the fact that a node has been added
-    # to the stack at some point in time and 2) the distance to the node from the start_node
-    # but the distance is never used.  As with node_distances the value could be anything.
-    #
-    # The if statement that checks to see if we should add a node to the stack checks
-    # to see if the distance for the current path is less than a previously calculated
-    # distance, and if so, adds it to the stack - presumably so that at the end we have
-    # recorded the shortest distance to each reachable node, but since we never make
-    # any use of those distances, this test is not useful.
-    #
-    # *sigh*
-    #
-    # Peter said (January 2026): Yeah, it looks like this is a modified version of
-    # multisource Dijkstra. All that really needs to be done here is make sure that
-    # there is some path between all the nodes that doesn't cross partition
-    # boundaries. It doesn't need to be the shortest path (which is what
-    # Dijkstra computes).
 
     return all(tgt in seen for tgt in targets)
 
