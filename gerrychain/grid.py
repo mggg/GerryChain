@@ -121,6 +121,8 @@ class Grid(Partition):
 
             if not assignment:
                 thresholds = tuple(math.floor(n / 2) for n in self.dimensions)
+                # frm: TODO: Debugging: Remove print stmt
+                print("grid.__init__(): thresholds: {thresholds}")
                 assignment = {
                     node_id: _color_quadrants(node_id, thresholds)  # type: ignore
                     for node_id in graph.node_indices
@@ -295,7 +297,9 @@ def _color_quadrants(node: tuple[int, int], thresholds: tuple[int, int]) -> int:
     Returns:
         int: An integer representing the color of the node, determined by its quadrant.
     """
+
     x, y = node
     x_color = 0 if x < thresholds[0] else 1
     y_color = 0 if y < thresholds[1] else 2
+
     return x_color + y_color

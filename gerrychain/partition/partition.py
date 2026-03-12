@@ -386,29 +386,10 @@ class Partition:
         return self._cache[key]
 
     def __getattr__(self, key: str) -> object:
-        # frm * TODO: Refactor:  Not sure it makes sense to allow two ways to accomplish the same
-        # thing...
-        #
-        # The code below allows Partition users to get the results of updaters by just
-        # doing:  partition.<updater_name>  which is the same as doing: partition["<updater_name>"]
-        # It is clever, but perhaps too clever.  Why provide two ways to do the same thing?
-        #
-        # It is also odd on a more general level - this approach means that the attributes of a
-        # Partition are the same as the names of the updaters and return the results of running
-        # the updater functions.  I guess this makes sense, but there is no documentation (that I
-        # am aware of) that makes this clear.
-        #
-        # Peter's comment in PR:
-        #
-        # This is actually on my list of things that I would prefer removed. When I first
-        # started working with this codebase, I found the fact that you could just do
-        # partition.name_of_my_updater really confusing, and, from a Python perspective,
-        # I think that the more intuitive interface is keyword access like in a dictionary.
-        # I haven't scoured the codebase for instances of ".attr" yet, but this is one of
-        # the things that I am 100% okay with getting rid of. Almost all of the people
-        # that I have seen work with this package use the partition["attr"] paradigm anyway.
-        #
-        return self[key]
+        raise Exception(
+            "The Partition object no longer supports <partition>.<updater> to "
+            "access updater results.  Instead use <partition>['updater-name']"
+        )
 
     def keys(self) -> KeysView[str]:
         return self.updaters.keys()

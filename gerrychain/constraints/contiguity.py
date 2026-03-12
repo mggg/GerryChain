@@ -206,7 +206,9 @@ def contiguous_bfs(partition: Partition) -> bool:
         bool: Whether the parts of this partition are connected
     """
 
-    # frm: TODO: Refactoring:  Figure out why this routine, contiguous_bfs() exists.
+    # frm: TODO: Refactoring:  Peter: Can I just delete contiguous_bfs()?
+    #
+    # Figure out why this routine, contiguous_bfs() exists.
     #
     # It is mentioned in __init__.py so maybe it is used externally in legacy code.
     #

@@ -241,11 +241,46 @@ class Graph:
         #
         # It is responsibility of callers to reset the maps if that is appropriate...
 
+        # frm: TODO: Debugging: Remove print stmts
+        #
+        # checking to see if node_data is preserved...
+
+        #        print("from_rustworkx(): checking to see if node data is preserved")
+        #        for node_id in graph.node_indices:
+        #            if "__networkx_node__" in graph.node_data(node_id):
+        #                orig_nx_node_id = graph.node_data(node_id)["__networkx_node__"]
+        #                print(f"from_rustworkx: node_id: {node_id}, original NX node is: {orig_nx_node_id}")
+        #            else:
+        #                print(f"from_rustworkx: node_id: {node_id} has no original NX node_id")
+
         graph._node_id_to_parent_node_id_map = {node_id: node_id for node_id in graph.node_indices}
 
-        graph._node_id_to_original_nx_node_id_map = {
-            node_id: node_id for node_id in graph.node_indices
-        }
+        """ frm: TODO: Debugging: Delete this comment
+         - need to decide if I should check to see if there is already node_data
+        for the original nx node id, in the case when we create an RX spanning tree...
+            That is - we sometimes use this function for graphs that we create internally
+            that may already have node data that we want to preserve...
+        """
+
+        # Retain original NX node_ids if they exist.
+        #
+        # When we create a spanning tree, we create a Graph from an RX graph, but in that case
+        # we have node_data from the "real" graph, so we should preserve the mapping
+        # from internal RX node_ids to the original NX node_ids.
+        #
+        # So, check one node to see if it has an original NX node_id, and if so create
+        # the map using that data, otherwise just create an identity map.
+        #
+        node_data_for_rx_node_id_0 = rx_graph.get_node_data(0)
+        if "__networkx_node__" in node_data_for_rx_node_id_0:
+            graph._node_id_to_original_nx_node_id_map = {
+                node_id: graph.node_data(node_id)["__networkx_node__"]
+                for node_id in graph.node_indices
+            }
+        else:
+            graph._node_id_to_original_nx_node_id_map = {
+                node_id: node_id for node_id in graph.node_indices
+            }
 
         # only set when an NX based graph is converted to be an RX based graph
         graph.nx_to_rx_node_id_map = None
@@ -339,11 +374,25 @@ class Graph:
 
         return nx_graph
 
-    # frm: TODO: Refactoring: Create a defined type name "node_id" to use instead of "Any"
+    # frm: TODO: Refactoring: Peter: What you think about "cosmetic" type definitions?
     #
-    # This is purely cosmetic, but it would provide an opportunity to add a comment that
-    # talked about NX node_ids vs. RX node_ids and hence why the type for a node_id is
-    # a vague "Any"...
+    # There are several places where the code has type-hints of "Any" or "int".  I would like for
+    # purely stylistic reasons to substitute more informative terms.  For instance, node_ids
+    # can be integers or tuples or strings, so they are currently "typed" as "Any", but we
+    # could define a "node_id_type" that was just syntactic sugar for "Any" and make the
+    # function signatures make more sense.
+    #
+    # These definitions would also provide a convenient and logical place to talk about
+    # the specifics of each "type" - NX vs. RX, districts as part of partitions, etc.
+    #
+    # Specific cases:
+    #
+    #     node_id_type for "Any"
+    #     edge_id_type for "Any"
+    #     edge_type for "tuple[node_id_type, node_id_type]".
+    #     district_id_type for "int"
+    #     flip_dict_type for dict[node_id_type, district_id_type])
+    #
 
     def original_nx_node_id_for_internal_node_id(self, internal_node_id: Any) -> Any:
         """Translate a node_id to its "original" node_id.
@@ -889,12 +938,6 @@ class Graph:
                 "a networkx-based graph nor a rustworkx-based graph"
             )
 
-    # frm: TODO: Refactoring: Create abstract "edge" and "edge_id" type names
-    #
-    # As with node_id, this is cosmetic but it will provide a nice place to
-    # put a comment about the difference between NX and RX and it will make
-    # the type annotations make more sense...
-
     def get_edge_id_from_edge(self, edge: tuple[Any, Any]) -> Any:
         """Get the edge_id that corresponds to the given edge.
 
@@ -1415,11 +1458,6 @@ class Graph:
 
         return new_subgraph
 
-    # frm: TODO: Refactoring: Create abstract type name for "Flip" and "Flip_Dict".
-    #
-    # This is cosmetic, but it would (IMHO) make the code easier to understand, and it
-    # would provide a logical place to define WTF a flip is...
-
     def translate_subgraph_node_ids_for_flips(self, flips: dict[Any, int]) -> dict[Any, int]:
         """Translate the given flips so that the subgraph node_ids in the flips correspond
         to the appropriate node_ids in the parent graph.
@@ -1797,6 +1835,18 @@ class Graph:
                 return edge_data[edge_weight_attribute_name]
 
             spanning_tree = rustworkx.minimum_spanning_tree(rx_graph, get_weight)
+
+            # frm: TODO: Debugging: Remove print stmts
+            #
+            #            print(f"minimum_spanning_tree_from_edge_weight: node_ids and original_nx_node_ids follow:")
+            #            for rx_node_id in spanning_tree.node_indexes():
+            #                node_data = rx_graph.get_node_data(rx_node_id);
+            #                if "__networkx_node__" in node_data:
+            #                    orig_nx_node_id = node_data["__networkx_node__"]
+            #                    print(f"     node_id: {rx_node_id}, original NX node is: {orig_nx_node_id}")
+            #                else:
+            #                    print(f"     node_id: {rx_node_id} has no original NX node_id")
+
             spanning_graph = Graph.from_rustworkx(spanning_tree)
         else:
             raise Exception("random_spanning_tree - bad kind of graph object")

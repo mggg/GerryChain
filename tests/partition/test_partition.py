@@ -64,8 +64,9 @@ def example_geographic_partition():
     graph = Graph.from_networkx(networkx.complete_graph(3))
     assignment = {0: 1, 1: 1, 2: 2}
     for node in graph.nodes:
-        graph.node_data(node)["boundary_node"] = False
+        graph.node_data(node)["boundary_node"] = True
         graph.node_data(node)["area"] = 1
+        graph.node_data(node)["boundary_perim"] = 2
     for edge in graph.edges:
         graph.edge_data(edge)["shared_perim"] = 1
     return GeographicPartition(graph, assignment, None, None, None)
@@ -114,7 +115,7 @@ def test_Partition_caches_subgraphs(example_partition):
 
 
 def test_partition_implements_getattr_for_updater_access(example_partition):
-    assert example_partition.cut_edges
+    assert example_partition["cut_edges"]
 
 
 def test_can_be_created_from_a_districtr_file(graph, districtr_plan_file):
@@ -213,10 +214,10 @@ def test_geographic_partition_has_keys(example_geographic_partition):
 
 
 def test_geographic_partition_has_default_updaters(example_geographic_partition):
-    assert hasattr(example_geographic_partition, "perimeter")
-    assert hasattr(example_geographic_partition, "exterior_boundaries")
-    assert hasattr(example_geographic_partition, "interior_boundaries")
-    assert hasattr(example_geographic_partition, "boundary_nodes")
-    assert hasattr(example_geographic_partition, "cut_edges")
-    assert hasattr(example_geographic_partition, "area")
-    assert hasattr(example_geographic_partition, "cut_edges_by_part")
+    assert example_geographic_partition["perimeter"]
+    assert example_geographic_partition["exterior_boundaries"]
+    assert example_geographic_partition["interior_boundaries"]
+    assert example_geographic_partition["boundary_nodes"]
+    assert example_geographic_partition["cut_edges"]
+    assert example_geographic_partition["area"]
+    assert example_geographic_partition["cut_edges_by_part"]

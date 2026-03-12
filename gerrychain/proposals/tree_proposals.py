@@ -62,6 +62,15 @@ def epsilon_tree_bipartition(
     Returns:
         dict: New assignments for the nodes of ``graph``.
     """
+
+    # frm: TODO: Debugging - remove print stmts
+    #    print("epsilon_tree_bipartition() node_id sanity check...")
+    #    for node_id in subgraph_to_split.node_indices:
+    #        original_nx_node_id = subgraph_to_split.original_nx_node_id_for_internal_node_id(node_id)
+    #        print(
+    #            f"    epsilon_tree_bipartition(): nodes in merged districts: rx_node_id: {node_id}, nx_node_id: {original_nx_node_id}"
+    #        )
+
     if len(parts) != 2:
         raise ValueError(
             "This function only supports bipartitioning. Please ensure that there"
@@ -180,43 +189,107 @@ def recom(
     # Bind the region_aware parameter to the bipartition_tree_fn
     bipartition_tree_fn = partial(bipartition_tree_fn, region_surcharge=region_surcharge)
 
-    # frm: TODO: Refactoring:  Should we sanity check region_surcharge usage?
+    # Try to find a pair of districts that can be merged and then split into
+    # new districts that are OK, given the criteria for OK.
     #
-    # If the caller passed in a non-None value for region_surcharge, then presumably
-    # he/she should have also passed in a function for the "bipartition_tree_fn" parameter that
-    # accepts a region_surcharge parameter.
+    # Pick a pair of adjacent districts at random, see if they can be split, and if
+    # not pick another pair, until all pairs have been tried.
     #
-    # Peter said (January 2026): A lot of our users are not coders, so they
-    # do silly things. I'm open to changing this to have it just fail if the
-    # bipartition_tree_fn does not have the corresponding parameter, but we should have
-    # a defensive pattern here.
-    #
-
     while len(bad_district_pairs) < tot_pairs:
-        # frm: TODO: Documentation: Confirm that this comment is accurate:
+
+        # frm: TODO: Refactoring: Peter: BUG? loop termination condition seems wrong (see below)
         #
-        #  In no particular order, try to merge and then split pairs of districts
-        #  that have a cut_edge - meaning that they are adjacent, until you either
-        #  find one that can be split, or you have tried all possible pairs
-        #  of adjacent districts...
+        # We want to randomly pick from the set of pairs of districts that touch each
+        # other, but what we actually do is randomly pick a cut_edge and then determine
+        # what districts it "cuts".
         #
+        # This is actually not random - pairs of districts that touch each other in more
+        # places will be picked more often.  And because it is randomly selecting edges
+        # it will repeat itself - picking the same two regions to try to merge over and
+        # over (although it quickly finds out that it has done so before trying to
+        # bipartition by checking bad_district_pairs).
+        #
+        # But what is more concerning is that we are only picking pairs of districts
+        # that touch each other, and the loop termination condition is that the set
+        # of bad_district_pairs is not less than the number of possible n-choose-2 pairs.
+        # The problem is that the n-choose-2 pairs includes pairs of districts that
+        # do not touch each other, and the code below will NEVER look at those
+        # pairs, so if there is even one pair of districts that does not touch each
+        # other, the loop termination condition will always be True, and the loop
+        # might never terminate.
+        #
+        # The nice thing about this code (the way it is) is that it finds a pair of
+        # districts that touch each other very efficiently, and in the real world,
+        # it is likely that there is a way to bipartition the merged districts
+        # in a new way.  So, it is efficient - it just seems to have a deadly flaw...
+        #
+        # What makes sense to me is something like this:
+        #
+        #     district_pairs_that_touch_each_other = ...clever code to do this...
+        #
+        #     while district_pairs_that_touch_each_other:
+        #         current_pair = random.choice(district_pairs_that_touch_each_other)
+        #         ...see if we can bipartition the merged districts...
+        #         if (...bipartition succeeded...):
+        #             break
+        #         else:
+        #             district_pairs_that_touch_each_other.remove(current_pair)
+        #
+        # This incurs a cost to compute the set of district pairs that touch each other
+        # but it is otherwise efficient, and we only have to do that computation once...
+
         try:
+
+            # frm: TODO: Debugging: Remove print stmts and code
+            #
+            # Print out the parts in the assignment and the nodes in the parts and total # nodes in each part
+            #
+            # Print out when we assign a pair of parts to bad pairs
+            #
+            # Print out when we catch an exception
+            #
+            # .
+
             # frm: TODO: Refactoring:  see if there is some way to avoid a while True loop...
+            #
+            # If we adopt the suggested code above about pairs that touch each other, then
+            # the while True loop goes away...
+            #
             while True:
                 edge = random.choice(tuple(partition["cut_edges"]))
                 # Need to sort the tuple so that the order is consistent
                 # in the bad_district_pairs set
+
                 parts_to_merge = [
                     partition.assignment.mapping[edge[0]],
                     partition.assignment.mapping[edge[1]],
                 ]
                 parts_to_merge.sort()
 
+                # frm: TODO: Debugging: remove print stmts
+                print(f"recom(): parts_to_merge: {parts_to_merge}")
+                part_1 = parts_to_merge[0]
+                part_2 = parts_to_merge[1]
+                len_1 = len(partition.parts[part_1])
+                len_2 = len(partition.parts[part_2])
+                print(f"recom(): number of nodes in part[0]: {len_1}")
+                print(f"recom(): number of nodes in part[1]: {len_2}")
+                print(f"recom(): bad_district_pairs: {bad_district_pairs}")
+
                 if tuple(parts_to_merge) not in bad_district_pairs:
                     break
 
             # frm: Note that the vertical bar operator merges the two sets into one set.
             subgraph_nodes = partition.parts[parts_to_merge[0]] | partition.parts[parts_to_merge[1]]
+
+            # frm: TODO: Debugging: Remove print stmts
+
+            #            print("recom() node_id sanity check...")
+            #            for node_id in subgraph_nodes:
+            #                original_nx_node_id = partition.graph.graph.original_nx_node_id_for_internal_node_id(node_id)
+            #                print(
+            #                  f"    recom(): nodes in merged districts: rx_node_id: {node_id}, nx_node_id: {original_nx_node_id}"
+            #                )
 
             flips = epsilon_tree_bipartition(
                 partition.graph.subgraph(subgraph_nodes),
@@ -282,7 +355,7 @@ def reversible_recom(
     max_balanced_edge_cuts: int,
     find_balanced_edge_cuts_fn: Callable = find_balanced_edge_cuts_memoization,
     repeat_until_valid: bool = False,
-    choice: Callable = random.choice,
+    choice: Callable = random.choice,  # frm: TODO: Refactoring: Peter - this param is never used...
 ) -> Partition:
     """Reversible ReCom algorithm for redistricting.
 
@@ -322,7 +395,7 @@ def reversible_recom(
             )
         )
 
-    # frm: TODO: Refactoring: Get rid of *args and **kwargs in _bounded_find_balanced_edge_cuts_fn()
+    # frm: TODO: Refactoring: Peter: Get rid of *args and **kwargs in _bounded_find_balanced_edge_cuts_fn()
     #
     # This is a bit complicated...
     #

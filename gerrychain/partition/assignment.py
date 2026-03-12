@@ -145,33 +145,50 @@ class Assignment(Mapping):
         return self.mapping
 
     @classmethod
-    def from_dict(cls, assignment: dict) -> Assignment:
+    def from_dict(cls, nodes_to_parts: dict) -> Assignment:
         """Create an Assignment from a dictionary.
 
         Args:
-            assignment (Dict): dictionary mapping nodes to partition assignments
+            nodes_to_parts (Dict): dictionary mapping nodes to partition assignments
 
         Returns:
             Assignment: A new instance of Assignment with the same assignments as the
                 passed-in dictionary.
         """
 
-        # frm: TODO: Refactoring:  Clean up from_dict().
-        #
-        # A couple of things:
-        #  * It uses a routine, level_sets(), which is only ever used here, so
-        #    why bother having a separate routine.  All it does is convert a dict
-        #    mapping node_ids to parts into a dict mapping parts into sets of
-        #    node_ids.  Why not just have that code here inline?
-        #
-        #  * Also, the constructor for Assignment explicitly allows for the caller
-        #    to pass in a "mapping" of node_id to part, which we have right here.
-        #    Why don't we pass it in and save having to recompute it?
-        #
+        parts = {part: frozenset(keys) for part, keys in level_sets(nodes_to_parts).items()}
 
-        parts = {part: frozenset(keys) for part, keys in level_sets(assignment).items()}
+        # frm: TODO: Refactoring: Peter: from_dict() has issues with pandas series instead of a dict...
+        #
+        # I looked at this code and realized that the constructor for an Assignment
+        # allows for passing in a dict mapping nodes to parts, which is what we
+        # have in-hand in the nodes_to_parts parameter.  However, when I passed
+        # nodes_to_parts to the Assignment constructor, I ended up with test failures
+        # because the tests passed in a pandas series for nodes_to_parts instead
+        # of an actual dict.
+        #
+        #     def test_assignment_can_be_instantiated_from_series(self):
+        #         series = pandas.Series([1, 2, 1, 2], index=[1, 2, 3, 4])
+        #         assignment = Assignment.from_dict(series)
+        #         assert assignment == {1: 1, 2: 2, 3: 1, 4: 2}
+        #
+        # There is a pandas function that converts a series to a dict, so I could just
+        # change the test (test_assignment.py) to do this conversion before passing
+        # it in, but perhaps there is a good reason (legacy?) for allowing nodes_to_parts
+        # to be a pandas series.  If so, then we could just change the type hint to
+        # allow pandas series and do the conversion inside from_dict() before passing
+        # it on to the Assignment constructor.
+        #
+        # Note that if we left the code as-is, it all works because the Assignment
+        # constructor just rebuilds the nodes_to_parts dict if one is not supplied...
+        #
+        # What would you prefer?
 
-        return cls(parts)
+        return cls(
+            parts
+            # ,               # Commented out because __init__() croaks if the nodes_to_parts
+            # nodes_to_parts  # is a pandas series instead of a dict...
+        )
 
     def new_assignment_convert_old_node_ids_to_new_node_ids(
         self, node_id_mapping: dict

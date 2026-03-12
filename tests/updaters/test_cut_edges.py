@@ -146,6 +146,13 @@ def test_implementation_of_cut_edges_matches_naive_method(three_by_three_grid):
     assert edge_set_equal(result, naive_cut_edges)
 
 
+# Note: pytest.mark.parameterize() will cause a test that
+# uses the given params to be executed once for each
+# set of param values listed in the array.  So, in this
+# case, any test with params "proposal", "number_of_steps"
+# will be executed twice - once with "propose_random_flip"
+# and once with recom().
+#
 @pytest.mark.parametrize(
     "proposal,number_of_steps",
     [

@@ -360,6 +360,28 @@ def _calc_pops(succ: dict[Any, list[Any]], root: Any, h: _PopulatedGraph) -> dic
     return subtree_pops
 
 
+# frm: TODO: Debugging: Delete (or else put in a dbg_utilities.py file):
+#
+def print_tree(tree, root_node_id, indent="", last=True):
+    """
+    Recursively prints a tree structure from a dictionary using characters.
+    """
+    # Use Unicode characters for better visual representation
+    # '└─ ' for last child, '├─ ' for other children, '│  ' for vertical line
+    if last:
+        connector = "└─ "
+        next_indent = indent + "   "
+    else:
+        connector = "├─ "
+        next_indent = indent + "│  "
+    print(f"{indent}{connector}{root_node_id}")
+    if root_node_id in tree:
+        children = tree[root_node_id]
+        for i, child_node_id in enumerate(children):
+            is_last = i == len(children) - 1
+            print_tree(tree, child_node_id, next_indent, is_last)
+
+
 def _nodes_in_subtree(start: Any, succ: dict[Any, list[Any]]) -> set[Any]:
     """
     Collects the nodes in a subtree that are rooted in the "start" node.
@@ -465,12 +487,43 @@ def find_balanced_edge_cuts_memoization(
     root = rootnode_choice_fn(
         [node_id for node_id in h.graph.node_indices if h.degree(node_id) > 1]
     )
+
+    # frm: TODO: Debugging: Remove print stmts
+    nx_root_node_id = h.graph.original_nx_node_id_for_internal_node_id(root)
+    #    print(f"find_balanced_edge_cuts_memoization(): RX root node_id is: {root}")
+    #    print(f"find_balanced_edge_cuts_memoization(): nx_root_node_id is: {nx_root_node_id}")
+    grid_root_node_id = nx_root_node_id[0] * 10 + nx_root_node_id[1]
+    #    print(f"find_balanced_edge_cuts_memoization(): computed RX root node_id is: {grid_root_node_id}")
+
     pred = h.graph.predecessors(root)
     succ = h.graph.successors(root)
     total_pop = h.tot_pop
 
+    # frm: TODO: Debugging: remove print stmts
+    # Start of debugging code
+    #
+    grid_node_id_succ = {}
+    for rx_node_id, rx_children_ids in succ.items():
+        nx_node_id = h.graph.original_nx_node_id_for_internal_node_id(rx_node_id)
+        grid_node_id = (nx_node_id[0] * 10) + nx_node_id[1]
+        grid_children_ids = []
+        for rx_child_node_id in rx_children_ids:
+            nx_child_node_id = h.graph.original_nx_node_id_for_internal_node_id(rx_child_node_id)
+            grid_child_node_id = nx_child_node_id[0] * 10 + nx_child_node_id[1]
+            grid_children_ids.append(grid_child_node_id)
+        grid_node_id_succ[grid_node_id] = grid_children_ids
+
+    print("fbecm(): Grid node_id succ is:")
+    print_tree(grid_node_id_succ, grid_root_node_id)
+    #
+    # End of debugging code
+
     # Calculate the population of each subtree in the "succ" tree
     subtree_pops = _calc_pops(succ, root, h)
+
+    #    print("")
+    #    print(f"fbecm(): subtree_pops() - using internal RX node_ids: {subtree_pops}")
+    #    print("")
 
     cuts = []
 
@@ -509,7 +562,9 @@ def find_balanced_edge_cuts_memoization(
 
         return cuts
 
-    # frm: TODO: Refactoring: Change this code to make its two use cases clearer:
+    # frm: TODO: Refactoring: Restructure function so there is not a return stmt in the middle of the function
+    #
+    # Change this code to make its two use cases clearer:
     #
     # One use case is bisecting the graph (one_sided_cut is False).  The
     # other use case is to peel off one part (district) with the appropriate
@@ -520,22 +575,62 @@ def find_balanced_edge_cuts_memoization(
     # we keep the existing function signature but immediately split the code
     # into calls on two separate routines - one for each use case.
 
+    # frm: TODO: Debugging: Remove print stmts below:
+    # Start of debugging code
+    # `
+    #
+    max_pop = h.ideal_pop + h.ideal_pop * h.epsilon
+    min_pop = h.ideal_pop - h.ideal_pop * h.epsilon
+    print("")
+    print(f"fbecm(): max population: {max_pop}, min_population: {min_pop}")
+    print("")
+    #    print("fbecm(): nodes and subtree populations follow:")
+    #
+    #
+    #
+    #    # Sort in descending order by value
+    #    sorted_subtree_pops = dict(sorted(subtree_pops.items(), key=lambda item: item[1], reverse=True))
+    #    for node, tree_pop in sorted_subtree_pops.items():
+    #        nx_node_id = h.graph.original_nx_node_id_for_internal_node_id(node)
+    #        grid_node_id = nx_node_id[0]*10 + nx_node_id[1]
+    #        print(f"  RX node_id: {node}, grid node_id: {grid_node_id} subtree population: {tree_pop}")
+    #
+    # End of debugging code
+
     # We are looking for a way to bisect the graph (one_sided_cut is False)
     for node, tree_pop in subtree_pops.items():
-        # frm: TODO: Refactoring:  Why keep looping if you have found a solution?
+        # frm: TODO: Documention:  Why keep looping if you have found a solution?
         #
-        # This is perhaps a nit, but it is technically possible to have more than one
-        # edge that, if cut, would result in two almost equal sized districts.  One example
-        # is a root node that itself has zero population and two child nodes each of which
-        # has in its subtree half of the population.  In this case cutting either of the
-        # edges to the root's children would work - hence more than one solution.
+        # As Peter says in his comments below, there is a reason why we want to find
+        # all of the possible edge cuts.  I think it would make sense to document
+        # why (basically edit what Peter said).
         #
-        # However, I do not think that any code in GerryChain cares about this in the
-        # case when it wants two equal sized districts from one graph.  So, we could
-        # be a little more efficient by just returning after finding the first (and
-        # probably the only) solution.
+        # There is another documentation issue which is related but which does not
+        # belong here in the code, namely a discussion of how the choice of epsilon
+        # (which controls how close a district's population must be to the ideal
+        # population), affects the performance of the algorithm.  I have to admit
+        # that I do not understand this myself after days of head scratching, which
+        # is why I think we need better documentation for users.
         #
-        # Ask Peter what he thinks...
+        # I stumbled across this issue in debugging why a test case for recom()
+        # failed after not finding a solution in 100,000 tries.  The problem was
+        # that the spanning trees in tbose 100,000 tries failed to split the
+        # subgraph into two districts that each had an appropriate population.
+        # One would have an appropriate population on the smaller side, but
+        # the remaining nodes would have a population that added up to more
+        # than the acceptable population.
+        #
+        # The point is that it is almost certainly not obvious to most users how
+        # the algorithm works and how epsilon affects it.  In particular, if the
+        # algorithm fails, the only advice given is a warning message:
+        #
+        #     Failed to find a balanced cut after 1000 attempts.
+        #     If possible, consider enabling pair reselection within your
+        #     MarkovChain proposal method to allow the algorithm to select
+        #     a different pair of districts for recombination..
+        #
+        # which is actually good advice, but it does not help the user understand
+        # why the find_balanced_edge_cuts_fn() failed.
         #
         # Peter said (January 2026):
         #
@@ -562,12 +657,36 @@ def find_balanced_edge_cuts_memoization(
         # recom: it is a part of the formula that determines the acceptance probability
         # when doing approximate balance.
 
+        if ((tree_pop <= max_pop) and (tree_pop >= min_pop)) and not (
+            (abs(tree_pop - h.ideal_pop) <= h.ideal_pop * h.epsilon)
+            and (abs((total_pop - tree_pop) - h.ideal_pop) <= h.ideal_pop * h.epsilon)
+        ):
+            error_nx_node_id = h.graph.original_nx_node_id_for_internal_node_id(node)
+            error_grid_node_id = error_nx_node_id[0] * 10 + error_nx_node_id[1]
+            print("  ...error: tree_pop in bounds, but condition failed")
+            print(f"      grid node_id: {error_grid_node_id}")
+            print(f"      tree_pop: {tree_pop}")
+            print(f"      total_pop: {total_pop}")
+            print(f"      h.ideal_pop: {h.ideal_pop}")
+            print(f"      abs(tree_pop - h.ideal_pop): {abs(tree_pop - h.ideal_pop)} ")
+            print(f"      abs(total_pop - tree_pop): {abs(total_pop - tree_pop)}")
+
         if (abs(tree_pop - h.ideal_pop) <= h.ideal_pop * h.epsilon) and (
             abs((total_pop - tree_pop) - h.ideal_pop) <= h.ideal_pop * h.epsilon
         ):
             e = (node, pred[node])
             wt = random.random()
             # frm: TODO: Performance: Think if code below can be made faster...
+            # frm: TODO: Debugging: Remove this code...
+            cut_node_1 = e[0]
+            cut_node_2 = e[1]
+            cut_nx_node_1 = h.graph.original_nx_node_id_for_internal_node_id(cut_node_1)
+            cut_nx_node_2 = h.graph.original_nx_node_id_for_internal_node_id(cut_node_2)
+            cut_grid_node_1 = cut_nx_node_1[0] * 10 + cut_nx_node_1[1]
+            cut_grid_node_2 = cut_nx_node_2[0] * 10 + cut_nx_node_2[1]
+            print(
+                f"find_balanced_edge_cuts_memoization(): adding cut: tree_pop: {tree_pop}, edge: {cut_grid_node_1}, {cut_grid_node_2}"
+            )
             cuts.append(
                 Cut(
                     edge=e,
@@ -762,110 +881,6 @@ def _region_preferred_max_weight_choice(
     return _max_weight_choice(cut_edge_list)
 
 
-# frm TODO: Refactoring:  How to prevent users writing custom code from getting screwed by RX...
-#
-# I am actually not sure if this is a real concern or not, but the issue is whether
-# custom code that expects the graph object to be NX will get screwed up now that by default
-# the embedded graph object in RX-based.
-#
-# The most obvious way custom code could screw up is by not dealing with subgraphs properly.
-# It would be really nice to have some clever way to detect code that assumed it was dealing
-# with NX and issue a warning, but I am not that clever...
-#
-# In most cases, the user will do something NX based that will trigger an error - such as
-# accessing node or edge data using graph.nodes[node_id] instead of graph.node_data(node_id),
-# so maybe this is not a huge issue...
-#
-# Peter wrote a comment in a PR that is applicable here, so I will include it for future
-# reference:
-#
-#     Peter's comments from PR:
-#
-#     Users do sometimes write custom spanning tree and cut edge functions. My
-#     recommendation would be to make this simple for now. Have a list of "RX_compatible"
-#     functions and then have the MarkovChain class do some coersion to store an
-#     appropriate graph and partition object at initialization. We always expect
-#     the workflow to be something like
-#
-#         Graph -> Partition -> MarkovChain
-#
-#     But we do copy operations in each step, so I wouldn't expect any weird
-#     side-effects from pushing the determination of what graph type to use
-#     off onto the MarkovChain class
-#
-# I think I am now comfortable with leaving this as-is.  My logic is that if a
-# user has written custom code then he/she will almost certainly use some NX
-# idiom (like graph.nodes[node_id][attribute_name]) which will blow up, so
-# he/she will be alerted that something is not right, and then look for help
-# which the RX Migration Guide should provide.
-#
-# Peter - what do you think?
-#
-# Peter said (January 2026): I think that this is fine. The sort of people
-# that are mucking about with custom functions are also the sort of people
-# that have time to devote to figuring out how to deal with the changes.
-#
-# And if they don't want to deal with RX, they can just pin to an old
-# version of GerryChain or poke me for help
-
-# frm: TODO: Refactoring:
-#
-#      Peter: Is the above correct?  Is there, in fact, no reason
-#             to provide uniform_spanning_tree()?
-#
-#      Peter replied: (January 2026): Uniform spanning trees sample
-#      uniformly from the space of possible spanning trees, and minimum
-#      spanning trees do NOT. So, you might modify things depending on
-#      your target distribution.
-#
-#          => Add a comment saying that unless you have a very good
-#             reason to prefer uniform_spanning_tree() then you should
-#             probably just default to random_spanning_tree(), and then
-#             list the reasons Peter has given in this and other comments.
-#
-#             For instance, he said this: MOST users want the minimum
-#             spanning tree version. Some very specific researchers
-#             (including my lab) want access to the uniform spanning
-#             tree function for math reasons.
-#
-#      In any event, I would still like to unify the function signatures
-#      of the two spanning_tree functions and then insert a test
-#      in uniform_spanning_tree() that issues a warning if the
-#      region_surcharge passed in was not None.
-#
-#   one_sided_cut
-#
-#      I found the term "one_sided_cut" unintuitive, and I had to refresh my
-#      memory every time I read the code to remember whether True meant carving
-#      off a district or whether True meant split the graph into two "equal"
-#      districts.
-#
-#      But, mostly, I would like to change the code in bipartition_tree() to make
-#      it crystal clear to the user that it does two quite different things
-#      depending on the value of this parameter.
-#
-#      I suggest creating two helper functions - one that "carves" away a district
-#      and another that splits the graph into two "equal" districts.  This would
-#      make it clear to a reader of the code what is going on.  Something like:
-#
-#          # setup variables needed by both helper functions
-#          ...
-#
-#          if one_sided_cut:
-#              carve_out_district(...)
-#          else
-#              split_into_two(...)
-#
-#       => Peter said (January 2026): Ah, I have wanted to do exactly this for a while.
-#
-#          The "one_sided_cut" thing was a hack that fixed a mathematical inaccuracy
-#          in a previous version of GerryChain. As with most poor design choices,
-#          this one was born of time pressure, and, since it was very, very unlikely
-#          to be used by anyone that was not a developer in the lab, it has been left
-#          in for far too long..
-#
-
-
 def _internal_bipartition_tree(
     subgraph_to_split: Graph,
     pop_col: str,
@@ -943,8 +958,26 @@ def _internal_bipartition_tree(
         RuntimeError: If a possible cut cannot be found after the maximum number of attempts
             given by ``max_attempts``.
     """
-    if "region_surcharge" in signature(spanning_tree_fn).parameters:
-        spanning_tree_fn = partial(spanning_tree_fn, region_surcharge=region_surcharge)
+
+    # Create a new empty dict now, instead of having a default value for the
+    # paramter which would instantiate once instead of for every function invocation.
+    if region_surcharge is None:
+        region_surcharge = {}
+
+    # Note: at present (March 2026), the code that actually calls the
+    # spanning_tree_fn() only passes in a single parameter - the graph
+    # object.  So, we need to bind in any additional parameters using
+    # a partial().
+    #
+    # We do not bother to bind in the choice_fn value which is
+    # a paramter to spanning tree functions, however, which is a bit
+    # odd, but to do so, we would need to know what to use for the
+    # choice_fn, and that value was not passed in, so we don't actually
+    # know what to set it to.  The choice_fn() parameter defaults to
+    # random.choice(), so it is OK to not bind it in, but it is
+    # odd to have no way to ever pass in a value for the choice_fn().
+    #
+    spanning_tree_fn = partial(spanning_tree_fn, region_surcharge=region_surcharge)
 
     if "one_sided_cut" in signature(find_balanced_edge_cuts_fn).parameters:
         find_balanced_edge_cuts_fn = partial(
@@ -972,7 +1005,9 @@ def _internal_bipartition_tree(
         allow_pair_reselection=allow_pair_reselection,
     )
 
-    # frm: TODO: Refactoring:  Think about whether we should pass warn_attempts to
+    # frm: TODO: Refactoring: Peter:  Should we add logging in this release?
+    #
+    # Think about whether we should pass warn_attempts to
     # other calls on _get_possible_edge_cuts_and_populated_graph()
     #
     # Peter said (January 2026): Honestly, we should just change a bunch of
@@ -1138,34 +1173,6 @@ def bipartition_tree(
 
     return node_ids
 
-    # frm: TODO: Refactoring:  Again - we should NOT be changing semantics based
-    #                   on the names in signatures...
-    # Better approach is to have all of the poosible paramters exist
-    # in ALL of the versions of the cut_choice_fn() functions and to
-    # have them default to None if not used by one of the functions.
-    # Then this code could just pass in the values to the
-    # cut_choice_fn function, and it could make sense of what to do.
-    #
-    # This makes it clear what the overall and comprehensive purpose
-    # of cut_choice_fn functions are.  This centralizes the knowlege
-    # of what a cut_choice_fn() function is supposed to do - or at least
-    # it prompts the programmer to document that a param in the
-    # general scheme does not apply in a given instance.
-    #
-    # I realize that this is perhaps not "pythonic" - in that it
-    # forces the programmer to document overall behavior instead
-    # of just finding a convenient way to sneak in something new.
-    # However, when code gets complicated, sneaky/clever code
-    # is just not worth it - better to have each change be a little
-    # more painful (needing to change the function signature for
-    # all instances of a generic function to add new functionality
-    # that is only needed by one new instance).  This provides
-    # a natural place (in comments of the generic function instances)
-    # to describe what is going on - and it alerts programmers
-    # that a given generic function has perhaps many different
-    # instances - but that they all share the same high level
-    # responsibility.
-
 
 def _get_possible_edge_cuts_and_populated_graph(
     #
@@ -1240,42 +1247,43 @@ def _get_possible_edge_cuts_and_populated_graph(
             spanning_tree = spanning_tree_fn(graph_to_split)
             restarts = 0
         h = _PopulatedGraph(spanning_tree, populations, pop_target, epsilon)
+
+        # frm: TODO: Debugging: Remove this code...
+        # Start of debugging code...
+        print("_get_possible_edge_cuts_and_populated_graph(): calling find_balanced_edge_cuts_fn()")
+        dbg_node_ids = graph_to_split.node_indices
+        dbg_nx_node_ids = sorted(list(graph_to_split.original_nx_node_ids_for_set(dbg_node_ids)))
+        dbg_grid_node_ids = [(row * 10) + col for (row, col) in dbg_nx_node_ids]
+        rows = []
+        for i in range(10):
+            new_row = [
+                row_node_id
+                for row_node_id in dbg_grid_node_ids
+                if (((row_node_id // 10) >= (i)) and ((row_node_id // 10) < (i + 1)))
+            ]
+            rows.append(new_row)
+        print("    nodes in merged subgraph follow (grid node_ids):")
+        #        print(f"    {dbg_grid_node_ids}")
+        print("    rows...")
+        for i in range(10):
+            if len(rows[i]) == 0:
+                print("")
+            else:
+                first_elem = rows[i][0]
+                first_col = first_elem % 10
+                num_spaces = first_col * 4
+                print("    ", end="")
+                print(f"{' '*num_spaces}", end="")
+                for elem in rows[i]:
+                    print(f"{elem:0{2}d}, ", end="")
+                print("")
+            # print(rows[i])
+        print("")
+        # End of debugging code...
+
         possible_cuts = find_balanced_edge_cuts_fn(
             h, rootnode_choice_fn=rootnode_choice_fn
         )  # a list of cuts
-
-        # frm: TODO: Refactoring: change name of repeat_until_valid and think a bit...
-        #
-        # There is only one tine in the GerryCode codebase where "repeat_until_valid" is set
-        # to False, and that is in reversible_recom().  What I think is really going on is
-        # that in reversible_recom() and ONLY in reversible_recom(), we want to try once to
-        # get the cuts but to fail if we don't get it on the first try.  I do not understand
-        # the logic of reversible_recom() well enough to know if this is 100% accurate, but
-        # the point remains that what repeat_until_valid really means is "only_try_one_time".
-        #
-        # I would also argue against the boolean logic here - needlessly complex.  What
-        # would make more sense to me is:
-        #
-        #     if (not repeat_until_valid):
-        #         return possible_cuts
-        #     elif len(possible_cuts) != 0:
-        #         return possible_cuts
-        #
-        # or if you change the name of repeat_until_valid:
-        #
-        #     only_try_one_time = not repeat_until_valid   # clarify what param means...
-        #     if (only_try_one_time):
-        #         return possible_cuts    # return even if possible_cuts is None
-        #     elif len(possible_cuts) != 0:
-        #         return possible_cuts
-        #
-        # I realize that repeat_until_valid could be interpreted as do_not_return_None, but that
-        # was not my initial understanding - I thought it meant "keep iterating forever".  My
-        # initial reaction was "uh oh - infinite loop danger".
-        #
-        # So, not quite sure what the right name is for this param, but it took me a while to
-        # convince myself that the code made sense.
-        #
 
         # In the case of reversible_recom, we are OK returning None.
         if not repeat_until_valid:
@@ -1285,6 +1293,10 @@ def _get_possible_edge_cuts_and_populated_graph(
         num_cuts = len(possible_cuts)
         if num_cuts != 0:
             return (possible_cuts, h)
+        else:
+            print("")
+            print("find_balanced_edge_cuts_memoization failed to find any cuts")
+            print("")
 
         # Don't forget to change the documentation if you change this number
         if attempts == warn_attempts and not allow_pair_reselection:
@@ -1298,19 +1310,6 @@ def _get_possible_edge_cuts_and_populated_graph(
 
         restarts += 1
         attempts += 1
-
-    # frm: TODO: Refactoring:  raise ReselectException seems evil...
-    #
-    # I was taught that raising exceptions should be for bad things, not for
-    # clever logic for "normal" situations.  In this case, raising this exception
-    # allows recom() - and only recom() to detect that this pair of districts
-    # didn't work out so it should try a different pair.
-    #
-    # Why not just return None - doing that would signal that no bipartition
-    # was found which is exactly what this exception signals.  It just seenms
-    # odd to have a function use an exception as the way to return a result-code.
-    #
-    # Am I being old-fashioned?  Is this the new Pythonic way of doing things?
 
     if allow_pair_reselection:
         raise ReselectException(
