@@ -121,8 +121,6 @@ class Grid(Partition):
 
             if not assignment:
                 thresholds = tuple(math.floor(n / 2) for n in self.dimensions)
-                # frm: TODO: Debugging: Remove print stmt
-                print("grid.__init__(): thresholds: {thresholds}")
                 assignment = {
                     node_id: _color_quadrants(node_id, thresholds)  # type: ignore
                     for node_id in graph.node_indices
@@ -276,7 +274,7 @@ def color_half(node: tuple[int, int], threshold: int) -> int:
             less than or equal to the threshold, and 1 otherwise.
     """
 
-    # TODO: Note that this routine, color_half, is never used in the GerryChain code.  If it is
+    # Note that this routine, color_half, is never used in the GerryChain code.  If it is
     # not part of the external API, then it should be deleted.
     x = node[0]
     return 0 if x <= threshold else 1

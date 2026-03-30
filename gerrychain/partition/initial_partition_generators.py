@@ -237,8 +237,6 @@ def _get_seed_chunks(
     for node in graph.node_indices:
         chunk_pop += graph.node_data(node)[pop_col]
 
-    # frm: TODO: Refactoring:  See if there is a better way to structure this instead of a while
-    # True loop...
     while True:
         epsilon = abs(epsilon)
 
@@ -522,7 +520,6 @@ def _recursive_seed_part_inner(
         )
 
     # split graph into num_chunks chunks, and recurse into each chunk
-    # frm: * TODO: Documentation: Add documentation for why a subgraph in call below
     elif num_dists % num_chunks == 0:
         chunks = _get_seed_chunks(
             graph.subgraph(graph.node_indices),  # needs to be a subgraph

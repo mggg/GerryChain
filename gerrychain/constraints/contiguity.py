@@ -270,23 +270,6 @@ def contiguous_components(partition: Partition) -> dict[int, list]:
             part of the partition
     """
 
-    # frm: TODO: Documentation: Migration Guide:  NX vs RX Issues here:
-    #
-    # The call on subgraph() below is perhaps problematic because it will renumber
-    # node_ids...
-    #
-    # The issue is not that the code is incorrect (with RX there is really no other
-    # option), but rather that any legacy code will be unprepared to deal with the fact
-    # that the subgraphs returned are (I think) three node translations away from the
-    # original NX-Graph object's node_ids.
-    #
-    # Translations:
-    #
-    #    1) From NX to RX when partition was created
-    #    2) From top-level RX graph to the partition's subgraphs for each part (district)
-    #    3) From each part's subgraph to the subgraphs of contiguous_components...
-    #
-
     connected_components_in_each_partition = {}
     for part, subgraph in partition.subgraphs.items():
         # create a subgraph for each set of connected nodes in the part's nodes

@@ -360,28 +360,6 @@ def _calc_pops(succ: dict[Any, list[Any]], root: Any, h: _PopulatedGraph) -> dic
     return subtree_pops
 
 
-# frm: TODO: Debugging: Delete (or else put in a dbg_utilities.py file):
-#
-def print_tree(tree, root_node_id, indent="", last=True):
-    """
-    Recursively prints a tree structure from a dictionary using characters.
-    """
-    # Use Unicode characters for better visual representation
-    # '└─ ' for last child, '├─ ' for other children, '│  ' for vertical line
-    if last:
-        connector = "└─ "
-        next_indent = indent + "   "
-    else:
-        connector = "├─ "
-        next_indent = indent + "│  "
-    print(f"{indent}{connector}{root_node_id}")
-    if root_node_id in tree:
-        children = tree[root_node_id]
-        for i, child_node_id in enumerate(children):
-            is_last = i == len(children) - 1
-            print_tree(tree, child_node_id, next_indent, is_last)
-
-
 def _nodes_in_subtree(start: Any, succ: dict[Any, list[Any]]) -> set[Any]:
     """
     Collects the nodes in a subtree that are rooted in the "start" node.
@@ -488,35 +466,9 @@ def find_balanced_edge_cuts_memoization(
         [node_id for node_id in h.graph.node_indices if h.degree(node_id) > 1]
     )
 
-    # frm: TODO: Debugging: Remove print stmts
-    nx_root_node_id = h.graph.original_nx_node_id_for_internal_node_id(root)
-    #    print(f"find_balanced_edge_cuts_memoization(): RX root node_id is: {root}")
-    #    print(f"find_balanced_edge_cuts_memoization(): nx_root_node_id is: {nx_root_node_id}")
-    grid_root_node_id = nx_root_node_id[0] * 10 + nx_root_node_id[1]
-    #    print(f"find_balanced_edge_cuts_memoization(): computed RX root node_id is: {grid_root_node_id}")
-
     pred = h.graph.predecessors(root)
     succ = h.graph.successors(root)
     total_pop = h.tot_pop
-
-    # frm: TODO: Debugging: remove print stmts
-    # Start of debugging code
-    #
-    grid_node_id_succ = {}
-    for rx_node_id, rx_children_ids in succ.items():
-        nx_node_id = h.graph.original_nx_node_id_for_internal_node_id(rx_node_id)
-        grid_node_id = (nx_node_id[0] * 10) + nx_node_id[1]
-        grid_children_ids = []
-        for rx_child_node_id in rx_children_ids:
-            nx_child_node_id = h.graph.original_nx_node_id_for_internal_node_id(rx_child_node_id)
-            grid_child_node_id = nx_child_node_id[0] * 10 + nx_child_node_id[1]
-            grid_children_ids.append(grid_child_node_id)
-        grid_node_id_succ[grid_node_id] = grid_children_ids
-
-    print("fbecm(): Grid node_id succ is:")
-    print_tree(grid_node_id_succ, grid_root_node_id)
-    #
-    # End of debugging code
 
     # Calculate the population of each subtree in the "succ" tree
     subtree_pops = _calc_pops(succ, root, h)
@@ -561,41 +513,6 @@ def find_balanced_edge_cuts_memoization(
                 )
 
         return cuts
-
-    # frm: TODO: Refactoring: Restructure function so there is not a return stmt in the middle of the function
-    #
-    # Change this code to make its two use cases clearer:
-    #
-    # One use case is bisecting the graph (one_sided_cut is False).  The
-    # other use case is to peel off one part (district) with the appropriate
-    # population.
-    #
-    # Not quite clear yet exactly how to do this, but a return stmt in the middle
-    # of the routine (above) is a clear sign that something is odd.  Perhaps
-    # we keep the existing function signature but immediately split the code
-    # into calls on two separate routines - one for each use case.
-
-    # frm: TODO: Debugging: Remove print stmts below:
-    # Start of debugging code
-    # `
-    #
-    max_pop = h.ideal_pop + h.ideal_pop * h.epsilon
-    min_pop = h.ideal_pop - h.ideal_pop * h.epsilon
-    print("")
-    print(f"fbecm(): max population: {max_pop}, min_population: {min_pop}")
-    print("")
-    #    print("fbecm(): nodes and subtree populations follow:")
-    #
-    #
-    #
-    #    # Sort in descending order by value
-    #    sorted_subtree_pops = dict(sorted(subtree_pops.items(), key=lambda item: item[1], reverse=True))
-    #    for node, tree_pop in sorted_subtree_pops.items():
-    #        nx_node_id = h.graph.original_nx_node_id_for_internal_node_id(node)
-    #        grid_node_id = nx_node_id[0]*10 + nx_node_id[1]
-    #        print(f"  RX node_id: {node}, grid node_id: {grid_node_id} subtree population: {tree_pop}")
-    #
-    # End of debugging code
 
     # We are looking for a way to bisect the graph (one_sided_cut is False)
     for node, tree_pop in subtree_pops.items():
@@ -657,36 +574,12 @@ def find_balanced_edge_cuts_memoization(
         # recom: it is a part of the formula that determines the acceptance probability
         # when doing approximate balance.
 
-        if ((tree_pop <= max_pop) and (tree_pop >= min_pop)) and not (
-            (abs(tree_pop - h.ideal_pop) <= h.ideal_pop * h.epsilon)
-            and (abs((total_pop - tree_pop) - h.ideal_pop) <= h.ideal_pop * h.epsilon)
-        ):
-            error_nx_node_id = h.graph.original_nx_node_id_for_internal_node_id(node)
-            error_grid_node_id = error_nx_node_id[0] * 10 + error_nx_node_id[1]
-            print("  ...error: tree_pop in bounds, but condition failed")
-            print(f"      grid node_id: {error_grid_node_id}")
-            print(f"      tree_pop: {tree_pop}")
-            print(f"      total_pop: {total_pop}")
-            print(f"      h.ideal_pop: {h.ideal_pop}")
-            print(f"      abs(tree_pop - h.ideal_pop): {abs(tree_pop - h.ideal_pop)} ")
-            print(f"      abs(total_pop - tree_pop): {abs(total_pop - tree_pop)}")
-
         if (abs(tree_pop - h.ideal_pop) <= h.ideal_pop * h.epsilon) and (
             abs((total_pop - tree_pop) - h.ideal_pop) <= h.ideal_pop * h.epsilon
         ):
             e = (node, pred[node])
             wt = random.random()
             # frm: TODO: Performance: Think if code below can be made faster...
-            # frm: TODO: Debugging: Remove this code...
-            cut_node_1 = e[0]
-            cut_node_2 = e[1]
-            cut_nx_node_1 = h.graph.original_nx_node_id_for_internal_node_id(cut_node_1)
-            cut_nx_node_2 = h.graph.original_nx_node_id_for_internal_node_id(cut_node_2)
-            cut_grid_node_1 = cut_nx_node_1[0] * 10 + cut_nx_node_1[1]
-            cut_grid_node_2 = cut_nx_node_2[0] * 10 + cut_nx_node_2[1]
-            print(
-                f"find_balanced_edge_cuts_memoization(): adding cut: tree_pop: {tree_pop}, edge: {cut_grid_node_1}, {cut_grid_node_2}"
-            )
             cuts.append(
                 Cut(
                     edge=e,
@@ -1058,7 +951,6 @@ def _internal_bipartition_tree(
             empty_set = set()
             return 0, empty_set
         else:
-            # frm: TODO: Refactoring: Clean this up...
             raise Exception("This should never happen...")
 
 
@@ -1248,39 +1140,6 @@ def _get_possible_edge_cuts_and_populated_graph(
             restarts = 0
         h = _PopulatedGraph(spanning_tree, populations, pop_target, epsilon)
 
-        # frm: TODO: Debugging: Remove this code...
-        # Start of debugging code...
-        print("_get_possible_edge_cuts_and_populated_graph(): calling find_balanced_edge_cuts_fn()")
-        dbg_node_ids = graph_to_split.node_indices
-        dbg_nx_node_ids = sorted(list(graph_to_split.original_nx_node_ids_for_set(dbg_node_ids)))
-        dbg_grid_node_ids = [(row * 10) + col for (row, col) in dbg_nx_node_ids]
-        rows = []
-        for i in range(10):
-            new_row = [
-                row_node_id
-                for row_node_id in dbg_grid_node_ids
-                if (((row_node_id // 10) >= (i)) and ((row_node_id // 10) < (i + 1)))
-            ]
-            rows.append(new_row)
-        print("    nodes in merged subgraph follow (grid node_ids):")
-        #        print(f"    {dbg_grid_node_ids}")
-        print("    rows...")
-        for i in range(10):
-            if len(rows[i]) == 0:
-                print("")
-            else:
-                first_elem = rows[i][0]
-                first_col = first_elem % 10
-                num_spaces = first_col * 4
-                print("    ", end="")
-                print(f"{' '*num_spaces}", end="")
-                for elem in rows[i]:
-                    print(f"{elem:0{2}d}, ", end="")
-                print("")
-            # print(rows[i])
-        print("")
-        # End of debugging code...
-
         possible_cuts = find_balanced_edge_cuts_fn(
             h, rootnode_choice_fn=rootnode_choice_fn
         )  # a list of cuts
@@ -1404,7 +1263,7 @@ def bipartition_tree_random_with_num_cuts(
 
     return num_cuts, node_ids
 
-    # frm: TODO: Refactoring: Should it be an error if warn_attempts > max_attempts?
+    # frm: TODO: Refactoring: Peter: Should it be an error if warn_attempts > max_attempts?
 
 
 class BalanceError(Exception):

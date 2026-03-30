@@ -63,14 +63,6 @@ def epsilon_tree_bipartition(
         dict: New assignments for the nodes of ``graph``.
     """
 
-    # frm: TODO: Debugging - remove print stmts
-    #    print("epsilon_tree_bipartition() node_id sanity check...")
-    #    for node_id in subgraph_to_split.node_indices:
-    #        original_nx_node_id = subgraph_to_split.original_nx_node_id_for_internal_node_id(node_id)
-    #        print(
-    #            f"    epsilon_tree_bipartition(): nodes in merged districts: rx_node_id: {node_id}, nx_node_id: {original_nx_node_id}"
-    #        )
-
     if len(parts) != 2:
         raise ValueError(
             "This function only supports bipartitioning. Please ensure that there"
@@ -237,24 +229,12 @@ def recom(
         #
         # This incurs a cost to compute the set of district pairs that touch each other
         # but it is otherwise efficient, and we only have to do that computation once...
+        #
+        # Also, note that if we adopt the suggested code above about pairs that touch
+        # each other, then the while True loop below goes away...
 
         try:
 
-            # frm: TODO: Debugging: Remove print stmts and code
-            #
-            # Print out the parts in the assignment and the nodes in the parts and total # nodes in each part
-            #
-            # Print out when we assign a pair of parts to bad pairs
-            #
-            # Print out when we catch an exception
-            #
-            # .
-
-            # frm: TODO: Refactoring:  see if there is some way to avoid a while True loop...
-            #
-            # If we adopt the suggested code above about pairs that touch each other, then
-            # the while True loop goes away...
-            #
             while True:
                 edge = random.choice(tuple(partition["cut_edges"]))
                 # Need to sort the tuple so that the order is consistent
@@ -266,30 +246,11 @@ def recom(
                 ]
                 parts_to_merge.sort()
 
-                # frm: TODO: Debugging: remove print stmts
-                print(f"recom(): parts_to_merge: {parts_to_merge}")
-                part_1 = parts_to_merge[0]
-                part_2 = parts_to_merge[1]
-                len_1 = len(partition.parts[part_1])
-                len_2 = len(partition.parts[part_2])
-                print(f"recom(): number of nodes in part[0]: {len_1}")
-                print(f"recom(): number of nodes in part[1]: {len_2}")
-                print(f"recom(): bad_district_pairs: {bad_district_pairs}")
-
                 if tuple(parts_to_merge) not in bad_district_pairs:
                     break
 
             # frm: Note that the vertical bar operator merges the two sets into one set.
             subgraph_nodes = partition.parts[parts_to_merge[0]] | partition.parts[parts_to_merge[1]]
-
-            # frm: TODO: Debugging: Remove print stmts
-
-            #            print("recom() node_id sanity check...")
-            #            for node_id in subgraph_nodes:
-            #                original_nx_node_id = partition.graph.graph.original_nx_node_id_for_internal_node_id(node_id)
-            #                print(
-            #                  f"    recom(): nodes in merged districts: rx_node_id: {node_id}, nx_node_id: {original_nx_node_id}"
-            #                )
 
             flips = epsilon_tree_bipartition(
                 partition.graph.subgraph(subgraph_nodes),
@@ -317,34 +278,6 @@ def recom(
         )
 
     return partition.flip(flips)
-
-
-# frm: TODO: Documentation: Migration Guide:
-#
-# Changed function signature: reversible_recom()
-#
-# The previous version has a parameter named 'M' which I changed to be
-# max_balanced_edge_cuts because that is what it is.  It had previously
-# had default value of 1, but Peter said that 1 was the worst possible
-# value and that we should force the user to specify the value (since it
-# depends on the size of a district). So I removed the default value and
-# then moved its position up one in the list of formal paramters because
-# the paramter above it had a default value, and Python complained...
-#
-# Note that it might be worth including a comment here referencing
-# the article/paper that Peter says describes the math here.
-#
-# Just to make sure we are all on the same page (before deleting this comment)
-# Here is what Peter said in January 2026 about the parameter formerly named: 'M':
-#
-# This comes from the paper in section 3.2:
-#
-# https://mggg.org/rrc
-#
-# But M is a terrible name for a parameter, and we should force the user to
-# provide this. 1 is actually the worst value that this could be since
-# this should be a global upper bound..
-#
 
 
 def reversible_recom(

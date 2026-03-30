@@ -8,10 +8,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ..partition.partition import Partition
 
-# frm: * TODO: Documentation: This file needs documentation / comments!!!
-#
-# Peter agrees...
-
 
 @functools.lru_cache(maxsize=2)
 def neighbor_flips(partition: Partition) -> set[tuple[int, int]]:

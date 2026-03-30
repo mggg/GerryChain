@@ -6,8 +6,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ..partition.partition import Partition
 
-# frm: TODO: Documentation: Add import of Partition just to be clear...
-
 
 def compute_polsby_popper(area: float, perimeter: float) -> float:
     """Computes the Polsby-Popper score for a single district.

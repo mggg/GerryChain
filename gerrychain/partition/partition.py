@@ -19,19 +19,6 @@ from .assignment import Assignment, get_assignment
 from .initial_partition_generators import recursive_tree_part
 from .subgraphs import SubgraphView
 
-# frm * TODO: Documentation:     Add documentation about how this all works.  For instance,
-#               what is computationally expensive and how does a FrozenGraph
-#               help?  Why do we need both assignments and parts?
-#
-#               Since a Partition is intimately tied up with how the Markov Chain
-#               does its magic, it would make sense to talk about that a bit...
-#
-#               For instance, is there any reason to use a Partition object
-#               except in a Markov Chain?  I suppose they are useful for post
-#               Markov Chain analysis - but if so, then it would be nice to
-#               know what functionality is tuned for the Markov Chain and what
-#               functionality / data is tuned for post Markov Chain analysis.
-
 
 class Partition:
     """

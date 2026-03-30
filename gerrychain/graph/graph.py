@@ -241,25 +241,13 @@ class Graph:
         #
         # It is responsibility of callers to reset the maps if that is appropriate...
 
-        # frm: TODO: Debugging: Remove print stmts
-        #
-        # checking to see if node_data is preserved...
-
-        #        print("from_rustworkx(): checking to see if node data is preserved")
-        #        for node_id in graph.node_indices:
-        #            if "__networkx_node__" in graph.node_data(node_id):
-        #                orig_nx_node_id = graph.node_data(node_id)["__networkx_node__"]
-        #                print(f"from_rustworkx: node_id: {node_id}, original NX node is: {orig_nx_node_id}")
-        #            else:
-        #                print(f"from_rustworkx: node_id: {node_id} has no original NX node_id")
-
         graph._node_id_to_parent_node_id_map = {node_id: node_id for node_id in graph.node_indices}
 
         """ frm: TODO: Debugging: Delete this comment
          - need to decide if I should check to see if there is already node_data
-        for the original nx node id, in the case when we create an RX spanning tree...
-            That is - we sometimes use this function for graphs that we create internally
-            that may already have node data that we want to preserve...
+           for the original nx node id, in the case when we create an RX spanning tree...
+           That is - we sometimes use this function for graphs that we create internally
+           that may already have node data that we want to preserve...
         """
 
         # Retain original NX node_ids if they exist.
@@ -643,10 +631,6 @@ class Graph:
         Returns:
             "Graph": A GerryChain Graph object with data from JSON file
         """
-
-        # frm: TODO: Documentation: more detail on contents of JSON file needed above in docstrings
-        #
-        # Peter agreed - January 2026
 
         # Note that this returns an NX-based Graph object.  At some point in
         # the future, if we embrace an all RX world, it will make sense to
@@ -1836,17 +1820,6 @@ class Graph:
 
             spanning_tree = rustworkx.minimum_spanning_tree(rx_graph, get_weight)
 
-            # frm: TODO: Debugging: Remove print stmts
-            #
-            #            print(f"minimum_spanning_tree_from_edge_weight: node_ids and original_nx_node_ids follow:")
-            #            for rx_node_id in spanning_tree.node_indexes():
-            #                node_data = rx_graph.get_node_data(rx_node_id);
-            #                if "__networkx_node__" in node_data:
-            #                    orig_nx_node_id = node_data["__networkx_node__"]
-            #                    print(f"     node_id: {rx_node_id}, original NX node is: {orig_nx_node_id}")
-            #                else:
-            #                    print(f"     node_id: {rx_node_id} has no original NX node_id")
-
             spanning_graph = Graph.from_rustworkx(spanning_tree)
         else:
             raise Exception("random_spanning_tree - bad kind of graph object")
@@ -2123,10 +2096,11 @@ class Graph:
 
         return laplacian_matrix
 
-    # frm: TODO: Documentation: This code was obtained from the web - probably could be optimized...
-    #
     # This code replaced calls on nx.is_connected()
     def is_connected_bfs(self):
+        """
+        Checks if an undirected graph is connected using BFS.
+        """
 
         node_ids = list(self.node_indices)
 

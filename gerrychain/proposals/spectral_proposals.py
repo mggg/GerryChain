@@ -40,13 +40,15 @@ def spectral_cut(subgraph: Graph, part_labels: Dict, weight_type: str, lap_type:
     else:
         laplacian_matrix = (subgraph.laplacian_matrix()).todense()
 
-    # frm TODO: Documentation: Add a better explanation for why eigenvectors are useful
-    #           for determining flips.  Perhaps just a URL to an article
-    #           somewhere...
+    # frm TODO: Documentation: Peter: Any ideas for helpful documentation here?
+    #
+    # Add a better explanation for why eigenvectors are useful
+    # for determining flips.  Perhaps just a URL to an article
+    # somewhere...
     #
     # I have added comments to describe the nuts and bolts of what is happening,
     # but the overall rationale for this code is missing - and it should be here...
-
+    #
     # LA.eigh(laplacian_matrix) call invokes the eigh() function from
     # the Numpy LinAlg module which:
     #
@@ -56,6 +58,7 @@ def spectral_cut(subgraph: Graph, part_labels: Dict, weight_type: str, lap_type:
     # In our case we have a symmetric matrix, so it returns two
     # objects - a 1-D numpy array containing the eigenvalues (which we don't
     # care about) and a 2-D numpy square matrix of the eigenvectors.
+
     _, numpy_eigen_vectors = LA.eigh(laplacian_matrix)
 
     # Extract an eigenvector as a numpy array
