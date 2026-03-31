@@ -206,7 +206,7 @@ def contiguous_bfs(partition: Partition) -> bool:
         bool: Whether the parts of this partition are connected
     """
 
-    # frm: TODO: Refactoring:  Peter: Can I just delete contiguous_bfs()?
+    # frm: TODO: Refactoring: Peter: Can I just delete contiguous_bfs()?
     #
     # Figure out why this routine, contiguous_bfs() exists.
     #
@@ -308,3 +308,10 @@ def _bfs(graph: dict[int, list]) -> bool:
                 q += [neighbor]
 
     return num_nodes == len(visited)
+
+
+# TODO: Delete this comment after code review:
+#
+# Note to Peter - I moved this routine to graph.py:
+#
+#     def is_connected_bfs(graph: Graph):
