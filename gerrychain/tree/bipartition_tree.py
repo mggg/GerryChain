@@ -473,10 +473,6 @@ def find_balanced_edge_cuts_memoization(
     # Calculate the population of each subtree in the "succ" tree
     subtree_pops = _calc_pops(succ, root, h)
 
-    #    print("")
-    #    print(f"fbecm(): subtree_pops() - using internal RX node_ids: {subtree_pops}")
-    #    print("")
-
     cuts = []
 
     if one_sided_cut:
@@ -1090,14 +1086,16 @@ def _get_possible_edge_cuts_and_populated_graph(
 ) -> tuple[list[Cut], _PopulatedGraph]:
     """Randomly bipartitions a tree into two subgraphs until a valid bipartition is found.
 
+    frm: TODO: Documentation: Peter: Please review the changes I have made to the docstrings...
+
     Args:
         graph (Graph): The input graph.
         pop_col (str): The name of the column in the graph nodes that contains the population data.
         pop_target (Union[int, float]): The target population for each subgraph.
         epsilon (float): The allowed deviation from the target population as a percentage of
             pop_target.
-        node_repeats (int, optional): The number of times to repeat the bipartitioning process.
-            Defaults to 1.
+        node_repeats (int, optional): The number of times to try to find balanced edge cuts with
+            a given spanning tree before creating a new spanning tree.  Defaults to 1.
         repeat_until_valid (bool, optional): Whether to repeat the bipartitioning process until a
             valid bipartition is found. Defaults to True.
         spanning_tree (Optional[Graph], optional): The spanning tree to use for bipartitioning. If
@@ -1109,7 +1107,7 @@ def _get_possible_edge_cuts_and_populated_graph(
         rootnode_choice_fn (Callable, optional): The function to choose a random element from a
             list. Defaults to random.choice.
         max_attempts (Optional[int], optional): The maximum number of attempts to find a valid
-            bipartition. If None, there is no limit. Defaults to None.
+            bipartition. If None, there is no limit. Defaults to 100000.
 
     Returns:
         tuple[List[tuple[Hashable, Hashable]], _PopulatedGraph]: A tuple with a list of possible
@@ -1130,16 +1128,40 @@ def _get_possible_edge_cuts_and_populated_graph(
     possible_cuts = []
     if spanning_tree is None:
         spanning_tree = spanning_tree_fn(graph_to_split)
-
-    restarts = 0
-    attempts = 0
-
-    while attempts < max_attempts:
-        if restarts == node_repeats:
-            spanning_tree = spanning_tree_fn(graph_to_split)
-            restarts = 0
         h = _PopulatedGraph(spanning_tree, populations, pop_target, epsilon)
 
+    # Give parameters and variables descritptive names to make logic clearer
+    #
+    # node_repeats specifies the number of extra tries, so we need to add
+    # one to this value to get the total number of times to try a given
+    # spanning tree
+    num_times_to_use_given_spanning_tree = node_repeats + 1
+    num_times_current_spanning_tree_has_been_tried = 0
+
+    attempts = 0
+
+    # frm: TODO: Refactoring: Logic Bug:  if max_attempts is None this gets stupid...
+    #
+    # The docstring says that if max_attempts is set to None, then there is no limit and
+    # the algorithm will continue until it finds a solution.  This is dangerous, but
+    # the code below will just not work.  Python will give a type error for comparing
+    # an integer to None.
+    #
+    # So, there is a refactoring exercise to be done - all references / uses of max_attempts
+    # should be reevaluated to see if they make sense.  A quick scan shows that the default
+    # values for max_attempts are different.  So - work to be done...
+
+    while attempts < max_attempts:
+
+        # Try to find balanced edge cuts - note that the find_balanced_edge_cuts_fn()
+        # typically permutes the spanning tree by selecting a root node for the tree
+        # at random, which means that each successive call using the same graph
+        # will effectively use a different spanning tree.  Stated differently, the
+        # spanning_tree variable is in fact a graph, from which a spanning tree can
+        # be created by picking a root node.  This is just an explanation for why it
+        # makes sense to repeatedly call the same function expecting different results
+        # each time...
+        #
         possible_cuts = find_balanced_edge_cuts_fn(
             h, rootnode_choice_fn=rootnode_choice_fn
         )  # a list of cuts
@@ -1152,10 +1174,6 @@ def _get_possible_edge_cuts_and_populated_graph(
         num_cuts = len(possible_cuts)
         if num_cuts != 0:
             return (possible_cuts, h)
-        else:
-            print("")
-            print("find_balanced_edge_cuts_memoization failed to find any cuts")
-            print("")
 
         # Don't forget to change the documentation if you change this number
         if attempts == warn_attempts and not allow_pair_reselection:
@@ -1167,8 +1185,21 @@ def _get_possible_edge_cuts_and_populated_graph(
                 BipartitionWarning,
             )
 
-        restarts += 1
+        # Record that we have tried to find a solution with the current
+        # spanning tree, and then see if we should continue with the
+        # current spanning tree or create a new spanning tree.
+        #
+        num_times_current_spanning_tree_has_been_tried += 1
+        if num_times_current_spanning_tree_has_been_tried == num_times_to_use_given_spanning_tree:
+            spanning_tree = spanning_tree_fn(graph_to_split)
+            h = _PopulatedGraph(spanning_tree, populations, pop_target, epsilon)
+            num_times_current_spanning_tree_has_been_tried = 0
+
         attempts += 1
+
+        # Sanity check to catch possible future bug (a bug we were bitten by in the past)
+        if num_times_current_spanning_tree_has_been_tried > num_times_to_use_given_spanning_tree:
+            raise Exception("_get_possible_edge_cuts_and_populated_graph: Should never happen...")
 
     if allow_pair_reselection:
         raise ReselectException(
