@@ -14,6 +14,11 @@ from ..tree import (  # epsilon_tree_bipartition,
     find_balanced_edge_cuts_memoization,
     uniform_spanning_tree,
 )
+from ..tree.bipartition_tree import (
+    FindBalancedEdgeCutsFn,
+    _Cut,
+    _PopulatedGraph,
+)
 
 
 # frm: only used in this file
@@ -281,7 +286,7 @@ def reversible_recom(
     pop_target: int | float,
     epsilon: float,
     max_balanced_edge_cuts: int,
-    find_balanced_edge_cuts_fn: Callable = find_balanced_edge_cuts_memoization,
+    find_balanced_edge_cuts_fn: FindBalancedEdgeCutsFn = find_balanced_edge_cuts_memoization,
     repeat_until_valid: bool = False,
 ) -> Partition:
     """Reversible ReCom algorithm for redistricting.
@@ -302,6 +307,7 @@ def reversible_recom(
         M (int, optional): The maximum number of balance edges. Default is 1.
         repeat_until_valid (bool, optional): Flag indicating whether to repeat until a valid
             partition is found. Default is False.
+            random.choice.
 
     Returns:
         Partition: The new partition resulting from the reversible ReCom algorithm.
@@ -381,8 +387,16 @@ def reversible_recom(
     #
     # Peter - please help...
 
-    def _bounded_find_balanced_edge_cuts_fn(*args: object, **kwargs: object) -> list:
-        cuts = find_balanced_edge_cuts_fn(*args, **kwargs)
+    def _bounded_find_balanced_edge_cuts_fn(
+        h: _PopulatedGraph,
+        one_sided_cut: bool = False,
+        rootnode_choice_fn: Callable = random.choice,
+    ) -> list[_Cut]:
+        cuts = find_balanced_edge_cuts_fn(
+            h,
+            one_sided_cut=one_sided_cut,
+            rootnode_choice_fn=rootnode_choice_fn,
+        )
         if len(cuts) > max_balanced_edge_cuts:
             raise ReversibilityError(
                 f"Found {len(cuts)} balance edges, but the upper bound is {max_balanced_edge_cuts}."

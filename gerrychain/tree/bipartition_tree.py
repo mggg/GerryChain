@@ -5,7 +5,7 @@ from collections import deque, namedtuple
 from collections.abc import Callable
 from functools import partial
 from inspect import signature
-from typing import Any
+from typing import Any, Protocol
 
 from ..graph import Graph
 from .spanning_tree import random_spanning_tree
@@ -236,6 +236,17 @@ _Cut.__doc__ = "Represents a cut in a graph."
 _Cut.edge.__doc__ = "The edge where the cut is made. Defaults to None."
 _Cut.weight.__doc__ = "The weight assigned to the edge (if any). Defaults to None."
 _Cut.subset.__doc__ = "The (frozen) subset of nodes on one side of the cut. Defaults to None."
+
+
+# Define an interface for find_balanced_edge_cut functions
+#
+class FindBalancedEdgeCutsFn(Protocol):
+    def __call__(
+        self,
+        h: _PopulatedGraph,
+        one_sided_cut: bool = False,
+        rootnode_choice_fn: Callable = random.choice,
+    ) -> list[_Cut]: ...
 
 
 def find_balanced_edge_cuts_contraction(
