@@ -173,11 +173,6 @@ def recom(
     n_parts = len(partition)
     tot_pairs = n_parts * (n_parts - 1) / 2  # n choose 2
 
-    # frm: Note to Peter: Removed test for region_surcharge in the signatuare of bipartition_tree_fn
-    #
-    # After the recent restructuring of bipartition_tree.py, all bipartition_tree functions
-    # have a region_surcharge parameter, so no need to test for it now...
-
     # Bind the region_aware parameter to the bipartition_tree_fn
     bipartition_tree_fn = partial(bipartition_tree_fn, region_surcharge=region_surcharge)
 
@@ -288,7 +283,6 @@ def reversible_recom(
     max_balanced_edge_cuts: int,
     find_balanced_edge_cuts_fn: Callable = find_balanced_edge_cuts_memoization,
     repeat_until_valid: bool = False,
-    choice: Callable = random.choice,  # frm: TODO: Refactoring: Peter - this param is never used...
 ) -> Partition:
     """Reversible ReCom algorithm for redistricting.
 
@@ -308,8 +302,6 @@ def reversible_recom(
         M (int, optional): The maximum number of balance edges. Default is 1.
         repeat_until_valid (bool, optional): Flag indicating whether to repeat until a valid
             partition is found. Default is False.
-        choice (Callable, optional): The choice function for selecting a random element. Default is
-            random.choice.
 
     Returns:
         Partition: The new partition resulting from the reversible ReCom algorithm.

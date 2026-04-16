@@ -1,6 +1,5 @@
 import random
 from typing import (
-    Callable,
     Dict,
     Optional,
 )
@@ -90,50 +89,8 @@ In short, I am assuming that we can ignore the fact that RX subgraphs have diffe
 node_ids for this function and all will be well...
 """
 
-# frm: TODO: Refactoring: Peter: Question about random_spanning_tree() and uniform_spanning_tree()
-#
-# I have modified the code in this file so that random_spanning_tree() and
-# uniform_spanning_tree() have the same function signature.  This means
-# that each function is passed an argument that it does not need - uniform_spanning_tree()
-# does not need a "region_surcharge", and random_spanning_tree() does not use
-# the "choice" paramter (it just explicitly uses random.random()).
-#
-# This seems odd, but I did it because my sense of good programming style
-# made me want to have all "generic" functions share the same function signature.
-#
-# However, in sleuthing to make sure my changes made sense I discovered that the
-# only two calls on spanning_tree_fn() pass in a single parameter, the graph.
-# In the old codebase, we tested the spanning_tree_fn to see if its signature
-# contained "region_surcharge" and if so, we created a partial function for
-# the spanning_tree_fn() that bound in the region_surcharge and allowed for
-# the following call (in a separate routine) to only have to pass in the
-# single graph paramter.
-#
-# This all made sense, but what did NOT make sense was that the code never bound
-# in a value for the "choice" function parameter, which meant that the
-# value of the "choice" function paramter always defaulted to random.random().
-# So, we have the following situation:
-#
-#     uniform_spanning_tree() uses its "choice" paramter which always
-#     defaults to random.random() to pick the start_node while
-#     random_spanning_tree() just ignores its "choice" parameter.
-#
-# So, there are two options:
-#
-#     1) Leave it the way it is, because someone might want to use
-#        uniform_spanning_tree() for some other reason that as
-#        a tool for bipartition-ing, and they might want to use
-#        a different way to pick a start_node, or
-#
-#     2) Remove the "choice" paramter from spanning tree functions
-#        because the GerryChain codebase never uses it.
-#
-# What do you want to do?
 
-
-def random_spanning_tree(
-    graph: Graph, choice: Callable = random.choice, region_surcharge: Optional[Dict] = None
-) -> Graph:
+def random_spanning_tree(graph: Graph, region_surcharge: Optional[Dict] = None) -> Graph:
     """Builds a minimum spanning tree chosen by Kruskal's method using random weights.
 
     The region_surcharge parameter allows the caller to bias the selection of edges by increasing
@@ -162,9 +119,6 @@ def random_spanning_tree(
 
     Args:
         graph (Graph): The input graph to build the spanning tree from.
-        choice (Callable, optional): `random.choice`. Defaults to `random.choice`.  Note that
-            the value of this parameter is not used by this function.  It exists in the function
-            signature so that all spanning tree functions can share the same function signature.
         region_surcharge (Optional[Dict], optional): Dictionary of surcharges to add to the random
             weights used in region-aware variants.
 
@@ -226,7 +180,8 @@ def random_spanning_tree(
 
 
 def uniform_spanning_tree(
-    graph: Graph, choice: Callable = random.choice, region_surcharge: dict = {}
+    graph: Graph,
+    region_surcharge: dict = None,  # accepted for API compatibility, but unused
 ) -> Graph:
     """Builds a spanning tree chosen uniformly from the space of all spanning trees of the graph.
 
@@ -252,7 +207,6 @@ def uniform_spanning_tree(
 
     Args:
         graph (Graph): Graph
-        choice (Callable, optional): `random.choice`. Defaults to `random.choice`.
         region_surcharge (Optional[Dict], optional): Not used in this function.  It exists
             in the function signature so that all spanning tree functions will share the
             same signature.
@@ -264,15 +218,8 @@ def uniform_spanning_tree(
     if region_surcharge:
         raise ValueError("uniform_spanning_tree() region_surcharge paramter should be empty")
 
-    # Note: This routine has a "choice" parameter which defaults to random.choice().
-    # However, the caller never passes in a value for this parameter, so the "choice"
-    # function will always use the default value of random.choice().
-    #
-    # So, the only reason to include the "choice" parameter is to support users who
-    # want to use the function for some other purpose than bipartitioning.
-
     # Pick a starting point at random
-    root_id = choice(list(graph.node_indices))
+    root_id = random.choice(list(graph.node_indices))
 
     # Initiallize the tree to contain the root_node (with no parent)
     tree_nodes = set([root_id])
@@ -286,7 +233,7 @@ def uniform_spanning_tree(
         # taken effectively removes cycles from the path.
         u = node_id
         while u not in tree_nodes:
-            parent_node_id[u] = choice(list(graph.neighbors(u)))
+            parent_node_id[u] = random.choice(list(graph.neighbors(u)))
             u = parent_node_id[u]
 
         # Record the "direct" path (the one with no cycles)

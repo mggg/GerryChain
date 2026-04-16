@@ -532,10 +532,7 @@ def find_balanced_edge_cuts_memoization(
         # the algorithm works and how epsilon affects it.  In particular, if the
         # algorithm fails, the only advice given is a warning message:
         #
-        #     Failed to find a balanced cut after 1000 attempts.
-        #     If possible, consider enabling pair reselection within your
-        #     MarkovChain proposal method to allow the algorithm to select
-        #     a different pair of districts for recombination..
+        #     Failed to find a balanced cut after 1000 attempts....
         #
         # which is actually good advice, but it does not help the user understand
         # why the find_balanced_edge_cuts_fn() failed.
@@ -889,17 +886,6 @@ def _internal_bipartition_tree(
         allow_pair_reselection=allow_pair_reselection,
     )
 
-    # frm: TODO: Refactoring: Peter:  Should we add logging in this release?
-    #
-    # Think about whether we should pass warn_attempts to
-    # other calls on _get_possible_edge_cuts_and_populated_graph()
-    #
-    # Peter said (January 2026): Honestly, we should just change a bunch of
-    # these warnings into logging statements and tell users to modify the log level
-    # if they want to figure out what went wrong.
-    #
-    # Logging is another thing on the list, but the refactor is more important to do first
-
     num_cuts = len(possible_cuts)
     if num_cuts != 0:
 
@@ -1076,7 +1062,7 @@ def _get_possible_edge_cuts_and_populated_graph(
     rootnode_choice_fn: Callable = random.choice,
     repeat_until_valid: bool = True,
     warn_attempts: int = 1000,
-    max_attempts: int | None = 100000,
+    max_attempts: int = 100000,
     allow_pair_reselection: bool = False,
 ) -> tuple[list[_Cut], _PopulatedGraph]:
     """Randomly bipartitions a tree into two subgraphs until a valid bipartition is found.
@@ -1101,8 +1087,8 @@ def _get_possible_edge_cuts_and_populated_graph(
             Defaults to find_balanced_edge_cuts_memoization.
         rootnode_choice_fn (Callable, optional): The function to choose a random element from a
             list. Defaults to random.choice.
-        max_attempts (Optional[int], optional): The maximum number of attempts to find a valid
-            bipartition. If None, there is no limit. Defaults to 100000.
+        max_attempts (int, optional): The maximum number of attempts to find a valid
+            bipartition.  Defaults to 100000.
 
     Returns:
         tuple[List[tuple[Hashable, Hashable]], _PopulatedGraph]: A tuple with a list of possible
@@ -1136,16 +1122,9 @@ def _get_possible_edge_cuts_and_populated_graph(
 
     attempts = 0
 
-    # frm: TODO: Refactoring: Logic Bug:  if max_attempts is None this gets stupid...
+    # frm: TODO: Refactoring: What should the default be for max_attempts?
     #
-    # The docstring says that if max_attempts is set to None, then there is no limit and
-    # the algorithm will continue until it finds a solution.  This is dangerous, but
-    # the code below will just not work.  Python will give a type error for comparing
-    # an integer to None.
-    #
-    # So, there is a refactoring exercise to be done - all references / uses of max_attempts
-    # should be reevaluated to see if they make sense.  A quick scan shows that the default
-    # values for max_attempts are different.  So - work to be done...
+    # A quick scan shows that the default values for max_attempts are different.
 
     while attempts < max_attempts:
 
@@ -1176,6 +1155,11 @@ def _get_possible_edge_cuts_and_populated_graph(
         if attempts == warn_attempts and not allow_pair_reselection:
             warnings.warn(
                 f"\nFailed to find a balanced cut after {warn_attempts} attempts.\n"
+                "This can happen if there are relatively few ways to split a graph\n"
+                "into 2 pieces with appropriate population balance (+/- epsilon)\n"
+                "for example, if there is a choke-point in the middle of the \n"
+                "merged districts.\n"
+                "\n"
                 "If possible, consider enabling pair reselection within your\n"
                 "MarkovChain proposal method to allow the algorithm to select\n"
                 "a different pair of districts for recombination.",
@@ -1294,8 +1278,6 @@ def bipartition_tree_random_with_num_cuts(
     )
 
     return num_cuts, node_ids
-
-    # frm: TODO: Refactoring: Peter: Should it be an error if warn_attempts > max_attempts?
 
 
 class BalanceError(Exception):

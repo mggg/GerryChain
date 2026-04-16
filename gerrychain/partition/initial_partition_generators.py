@@ -602,7 +602,8 @@ def recursive_seed_part(
         dict: New assignments for the nodes of ``graph``.
     """
 
-    # Note: recursive_seed_part() is never used in the GerryCode codebase.
+    # Note: recursive_seed_part() is never used in the GerryCode codebase, but it is
+    # part of the public API.
 
     # frm: Note: It is not strictly necessary to use a subgraph in the call below on
     #               _recursive_seed_part_inner(), because the top-level graph has
