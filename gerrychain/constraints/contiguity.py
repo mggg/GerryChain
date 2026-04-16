@@ -196,47 +196,9 @@ def contiguous(partition: Partition) -> bool:
     return all(partition.subgraphs[part].is_connected_bfs() for part in _affected_parts(partition))
 
 
-def contiguous_bfs(partition: Partition) -> bool:
-    """Checks that a given partition's parts are connected as graphs using BFS.
-
-    Args:
-        partition (Partition): Instance of Partition
-
-    Returns:
-        bool: Whether the parts of this partition are connected
-    """
-
-    # frm: TODO: Refactoring: Peter: Can I just delete contiguous_bfs()?
-    #
-    # Figure out why this routine, contiguous_bfs() exists.
-    #
-    # It is mentioned in __init__.py so maybe it is used externally in legacy code.
-    #
-    # However, I have changed the code so that it just calls contiguous() and all
-    # of the tests pass, so I am going to assume that my comment below is accurate,
-    # that is, I am assuming that this function does not need to exist independently
-    # except for legacy purposes.  Stated differently, if someone can verify that
-    # this routine is NOT needed for legacy purposes, then we can just delete it.
-    #
-    # It seems to be exactly the same conceptually as contiguous().  It looks
-    # at the "affected" parts - those that have changed node
-    # assignments from parent, and sees if those parts are
-    # contiguous.
-    #
-    # frm: Original Code:
-    #
-    #    parts_to_check = _affected_parts(partition)
-    #
-    #    # Generates a subgraph for each district and perform a BFS on it
-    #    # to check connectedness.
-    #    for part in parts_to_check:
-    #        adj = nx.to_dict_of_lists(partition.subgraphs[part])
-    #        if _bfs(adj) is False:
-    #            return False
-    #
-    #    return True
-
-    return contiguous(partition)
+# frm: TODO: Refactoring: Delete this - it is obsolete...
+def contigous_bfs(partition) -> bool:
+    raise ("contiguous_bfs() is obsolete")
 
 
 def number_of_contiguous_parts(partition: Partition) -> int:
@@ -308,10 +270,3 @@ def _bfs(graph: dict[int, list]) -> bool:
                 q += [neighbor]
 
     return num_nodes == len(visited)
-
-
-# TODO: Delete this comment after code review:
-#
-# Note to Peter - I moved this routine to graph.py:
-#
-#     def is_connected_bfs(graph: Graph):

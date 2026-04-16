@@ -459,7 +459,26 @@ def test_single_metric_tilted_runs_attains_min_quickly_with_p_eq_0p1(
 def test_single_metric_sb_finds_hard_max(four_by_five_grid_for_opt):
     random.seed(2024)
 
+    # frm: TODO: Debugging: Delete this debugging code:
+    # start of debugging code
+
+    # See if somehow changing the seed will change the result...
+    random.seed(2025)
+    # end of debugging code
+
     def opt_fn(partition):
+        # frm: TODO: Debugging: Delete this debugging code:
+        # start of debugging code
+        print("opt_fn() called...")
+        num_10_values = 0
+        for k, v in partition["opt_value_sum"].items():
+            print(f"  partition: {k} has opt_value_sum: {v}")
+            if v == 10:
+                num_10_values += 1
+        print(f"    number of 10 opt_values is: {num_10_values}")
+
+        # end of debugging code
+
         mx = 10
         count = sum(1 for x in partition["opt_value_sum"].values() if x == mx)
         return count
@@ -502,6 +521,9 @@ def test_single_metric_sb_finds_hard_max(four_by_five_grid_for_opt):
         )
     ):
         max_scores_sb[i] = optimizer.best_score
+
+    # frm: TODO: Debugging: Remove this code
+    print(f"test_single_metric_sb_finds_hard_max(): max_scores_sb: {max_scores_sb}")
 
     assert np.max(max_scores_sb) == 2
 

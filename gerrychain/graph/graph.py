@@ -1001,7 +1001,7 @@ class Graph:
             list[Any]: A list of all of the node_ids in the graph
         """
 
-        # Note: graph.nodes() continues to exist because it was used often in legacy code.
+        # Note: graph.nodes continues to exist because it was used often in legacy code.
         #
         # All this routine does now is to coerce the set of nodes obtained by node_indices()
         # to be a list.
@@ -1060,10 +1060,8 @@ class Graph:
 
         # Note: the add_edge() routine is not used in the GerryChain codebase.
         #
-        # Given the current approach of creating an NX Graph and then converting
-        # it to RX, this routine seems to not have much value - the only time one
-        # would be adding edges is when creating a graph, and that would
-        # almost certainly be done entirely in NX.
+        # It remains for legacy reasons, and because users may find it convenient
+        # to operate on a gerrychain Graph instead of an NX graph.
 
         self.verify_graph_is_valid()
 

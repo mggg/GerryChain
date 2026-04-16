@@ -83,10 +83,3 @@ def cut_edge_accept(partition: Partition) -> bool:
     #
     bound = parent_partition_compactness_proxy / current_partition_compactness_proxy
     return random.random() < bound
-
-    # TODO: Original code - delete after code review:
-    #
-    #     if partition.parent is not None:
-    #         bound = min(1, len(partition.parent["cut_edges"]) / len(partition["cut_edges"]))
-    #
-    #     return random.random() < bound

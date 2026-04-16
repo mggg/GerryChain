@@ -212,40 +212,35 @@ class _PopulatedGraph:
         )
 
 
-# frm: ???: Is a Cut used anywhere outside this file?
-
-# Definition of Cut namedtuple
-# Tuple that is used in the find_balanced_edge_cuts function
-Cut = namedtuple("Cut", "edge weight subset")
-Cut.__new__.__defaults__ = (None, None, None)
-Cut.__doc__ = "Represents a cut in a graph."
-Cut.edge.__doc__ = "The edge where the cut is made. Defaults to None."
-Cut.weight.__doc__ = "The weight assigned to the edge (if any). Defaults to None."
-Cut.subset.__doc__ = "The (frozen) subset of nodes on one side of the cut. Defaults to None."
-
-# frm: TODO:  Documentation:  Document what Cut objects are used for
+# Define a _Cut object to describe a set of nodes that could form a district.
 #
-# Not sure how this is used, and so I do not know whether it needs
-#               to translate node_ids to the parent_node_id context.  I am assuming not...
+# A little background:
 #
-# Here is an example of how it is used (in test_tree.py):
+# GerryChain uses spanning trees to find parts / districts that have the
+# appropriate population.  The general approach is to create a spanning
+# tree from a graph of nodes and to then walk the tree looking for an
+# edge that has on one side or the other a set of nodes that has the
+# appropriate population for a part / district.  When such an edge is
+# found, the code creates a "_Cut" object to record: 1) the edge in
+# the spanning tree, 2) the "weight" of the edge, and 3) the set of
+# nodes that could form a part / district.
 #
-#        bipartition_tree_fn=partial(
-#            bipartition_tree,
-#            max_attempts=10000,
-#            find_balanced_edge_cuts_fn=find_balanced_edge_cuts_contraction,
+# The "weight" is used to choose which _Cut (if more than one is found)
+# to use to create a part / district.
 #
-# and another in the same test file:
+# Note that a _Cut object is only ever used inside this file.
 #
-#    populated_tree = _PopulatedGraph(
-#        tree, {node: 1 for node in tree}, len(tree) / 2, 0.5
-#    )
-#    cuts = find_balanced_edge_cuts_contraction(populated_tree)
+_Cut = namedtuple("_Cut", "edge weight subset")
+_Cut.__new__.__defaults__ = (None, None, None)
+_Cut.__doc__ = "Represents a cut in a graph."
+_Cut.edge.__doc__ = "The edge where the cut is made. Defaults to None."
+_Cut.weight.__doc__ = "The weight assigned to the edge (if any). Defaults to None."
+_Cut.subset.__doc__ = "The (frozen) subset of nodes on one side of the cut. Defaults to None."
 
 
 def find_balanced_edge_cuts_contraction(
     h: _PopulatedGraph, one_sided_cut: bool = False, rootnode_choice_fn: Callable = random.choice
-) -> list[Cut]:
+) -> list[_Cut]:
     """Find balanced edge cuts using contraction.
 
 
@@ -258,7 +253,7 @@ def find_balanced_edge_cuts_contraction(
         rootnode_choice_fn (Callable, optional): The function used to select the root node_id
 
     Returns:
-        List[Cut]: A list of balanced edge cuts.
+        List[_Cut]: A list of balanced edge cuts.
     """
 
     root = rootnode_choice_fn(
@@ -293,7 +288,7 @@ def find_balanced_edge_cuts_contraction(
             #       then the cut means the cut bisects the graph of the spanning tree.
             e = (leaf, pred[leaf])
             cuts.append(
-                Cut(
+                _Cut(
                     edge=e,
                     weight=h.graph.edge_data(h.graph.get_edge_id_from_edge(e)).get(
                         "random_weight", random.random()
@@ -373,7 +368,7 @@ def _nodes_in_subtree(start: Any, succ: dict[Any, list[Any]]) -> set[Any]:
     """
 
     """
-    frm: Compute the nodes in a subtree defined by a Cut.
+    frm: Compute the nodes in a subtree defined by a _Cut.
 
     This routine computes the set of nodes in a subtree rooted in the
     node identified by "start" in the tree defined by "succ".
@@ -383,18 +378,18 @@ def _nodes_in_subtree(start: Any, succ: dict[Any, list[Any]]) -> set[Any]:
     code used in a couple of places so that the logic in the code is
     in one place instead of several.
 
-    To be specific, Cuts are always relative to a specific tree for
+    To be specific, _Cuts are always relative to a specific tree for
     a partition.  This tree is a "spanning tree" that converts the
-    graph into a DAG.  Cuts are then computed by finding subtrees
+    graph into a DAG.  _Cuts are then computed by finding subtrees
     of that DAG that have the appropriate population (this could
     presumably be modified to include other factors).
 
-    When a Cut is created, we want to collect all of the nodes that
+    When a _Cut is created, we want to collect all of the nodes that
     are in the subtree, and this is what this routine does.  It
     merely starts at the root of the subtree (start) and goes down
     the subtree, adding each node to a set.
 
-    frm: TODO:  Documentation: Add the above explanation for what a Cut is and how
+    frm: TODO:  Documentation: Add the above explanation for what a _Cut is and how
                 we find them by converting the graph to a DAG and
                 then looking for subtrees to a block header at the
                 top of this file.  It will give the reader some
@@ -416,7 +411,7 @@ def _nodes_in_subtree(start: Any, succ: dict[Any, list[Any]]) -> set[Any]:
 # frm: used externally by tree_proposals.py
 def find_balanced_edge_cuts_memoization(
     h: _PopulatedGraph, one_sided_cut: bool = False, rootnode_choice_fn: Callable = random.choice
-) -> list[Cut]:
+) -> list[_Cut]:
     """Find balanced edge cuts using memoization.
 
     This function takes a _PopulatedGraph object and a choice function as input and returns a list
@@ -434,7 +429,7 @@ def find_balanced_edge_cuts_memoization(
             node_id.
 
     Returns:
-        List[Cut]: A list of balanced edge cuts.
+        List[_Cut]: A list of balanced edge cuts.
     """
 
     """
@@ -485,7 +480,7 @@ def find_balanced_edge_cuts_memoization(
                 # frm: Add the cut - set its weight if it does not already have one
                 #       and remember all of the nodes in the subtree in the frozenset
                 cuts.append(
-                    Cut(
+                    _Cut(
                         edge=e,
                         weight=h.graph.edge_data(h.graph.get_edge_id_from_edge(e)).get(
                             "random_weight", wt
@@ -499,7 +494,7 @@ def find_balanced_edge_cuts_memoization(
                 e = (node, pred[node])
                 wt = random.random()
                 cuts.append(
-                    Cut(
+                    _Cut(
                         edge=e,
                         weight=h.graph.edge_data(h.graph.get_edge_id_from_edge(e)).get(
                             "random_weight", wt
@@ -577,7 +572,7 @@ def find_balanced_edge_cuts_memoization(
             wt = random.random()
             # frm: TODO: Performance: Think if code below can be made faster...
             cuts.append(
-                Cut(
+                _Cut(
                     edge=e,
                     weight=h.graph.edge_data(h.graph.get_edge_id_from_edge(e)).get(
                         "random_weight", wt
@@ -609,7 +604,7 @@ class ReselectException(Exception):
     pass
 
 
-def _max_weight_choice(cut_edge_list: list[Cut]) -> Cut:
+def _max_weight_choice(cut_edge_list: list[_Cut]) -> _Cut:
     """Selects a cut from a list of cuts based on the maximum weight.
 
     This random weight is either assigned during the call to the minimum spanning tree algorithm
@@ -627,15 +622,15 @@ def _max_weight_choice(cut_edge_list: list[Cut]) -> Cut:
     make the weight assigned to a particular type of cut higher than another.
 
     Args:
-        cut_edge_list (List[Cut]): A list of Cut objects. Each object has an edge, a weight, and a
+        cut_edge_list (List[_Cut]): A list of _Cut objects. Each object has an edge, a weight, and a
             subset attribute.
 
     Returns:
-        Cut: The cut with the highest random weight.
+        _Cut: The cut with the highest random weight.
     """
 
     # Just in case, default to random choice
-    if not isinstance(cut_edge_list[0], Cut) or cut_edge_list[0].weight is None:
+    if not isinstance(cut_edge_list[0], _Cut) or cut_edge_list[0].weight is None:
         return random.choice(cut_edge_list)
 
     # frm: ???:  this strikes me as possibly expensive.  Computing the
@@ -679,8 +674,8 @@ def _power_set_sorted_by_size_then_sum(region_surcharge_dict: dict) -> list[tupl
 # are not modifying the object in the function, and the speed of
 # this randomized selection will not suffer for it.
 def _region_preferred_max_weight_choice(
-    cut_edge_list: list[Cut], populated_graph: _PopulatedGraph, region_surcharge: dict
-) -> Cut:
+    cut_edge_list: list[_Cut], populated_graph: _PopulatedGraph, region_surcharge: dict
+) -> _Cut:
     # frm: ???:  There is no NX/RX dependency in this routine, but I do
     #               not yet understand what it does or why...
     """Selects a cut from a list of cuts based on the maximum weight, with a preference for
@@ -704,18 +699,18 @@ def _region_preferred_max_weight_choice(
     Args:
         populated_graph (_PopulatedGraph): The populated graph.
         region_surcharge (Dict): A dictionary of surcharges for the spanning tree algorithm.
-        cut_edge_list (List[Cut]): A list of Cut objects. Each object has an edge, a weight, and a
+        cut_edge_list (List[_Cut]): A list of _Cut objects. Each object has an edge, a weight, and a
             subset attribute.
 
     Returns:
-        Cut: A random Cut from the set of possible Cuts with the highest surcharge.
+        _Cut: A random _Cut from the set of possible _Cuts with the highest surcharge.
     """
 
     # Check to see if the list of possible edge_cuts is one
     # with edge weights.  If not, then just select an edge at random.
     if (
         not isinstance(region_surcharge, dict)
-        or not isinstance(cut_edge_list[0], Cut)
+        or not isinstance(cut_edge_list[0], _Cut)
         or cut_edge_list[0].weight is None
     ):
         return random.choice(cut_edge_list)
@@ -1083,7 +1078,7 @@ def _get_possible_edge_cuts_and_populated_graph(
     warn_attempts: int = 1000,
     max_attempts: int | None = 100000,
     allow_pair_reselection: bool = False,
-) -> tuple[list[Cut], _PopulatedGraph]:
+) -> tuple[list[_Cut], _PopulatedGraph]:
     """Randomly bipartitions a tree into two subgraphs until a valid bipartition is found.
 
     frm: TODO: Documentation: Peter: Please review the changes I have made to the docstrings...
@@ -1128,7 +1123,8 @@ def _get_possible_edge_cuts_and_populated_graph(
     possible_cuts = []
     if spanning_tree is None:
         spanning_tree = spanning_tree_fn(graph_to_split)
-        h = _PopulatedGraph(spanning_tree, populations, pop_target, epsilon)
+
+    h = _PopulatedGraph(spanning_tree, populations, pop_target, epsilon)
 
     # Give parameters and variables descritptive names to make logic clearer
     #
@@ -1162,6 +1158,7 @@ def _get_possible_edge_cuts_and_populated_graph(
         # makes sense to repeatedly call the same function expecting different results
         # each time...
         #
+
         possible_cuts = find_balanced_edge_cuts_fn(
             h, rootnode_choice_fn=rootnode_choice_fn
         )  # a list of cuts
@@ -1192,8 +1189,12 @@ def _get_possible_edge_cuts_and_populated_graph(
         num_times_current_spanning_tree_has_been_tried += 1
         if num_times_current_spanning_tree_has_been_tried == num_times_to_use_given_spanning_tree:
             spanning_tree = spanning_tree_fn(graph_to_split)
-            h = _PopulatedGraph(spanning_tree, populations, pop_target, epsilon)
             num_times_current_spanning_tree_has_been_tried = 0
+
+        # Regenerate the _PopulatedGraph because the find_balanced_edge_fn() is
+        # destructive - it can change the internals of a _PopulatedGraph.
+        #
+        h = _PopulatedGraph(spanning_tree, populations, pop_target, epsilon)
 
         attempts += 1
 

@@ -11,6 +11,14 @@ from ..partition import Partition
 def spectral_cut(subgraph: Graph, part_labels: Dict, weight_type: str, lap_type: str) -> Dict:
     """Spectral cut function.
 
+    Original templates and work from Daryl DeFord:
+
+        https://github.com/drdeford/GerryChain-Templates
+
+    New preprint on the subject:
+
+        https://arxiv.org/html/2506.13982v1
+
     Args:
         subgraph (Graph): The subgraph to be partitioned.
         part_labels (Dict): The current partition of the subgraph.
@@ -40,14 +48,7 @@ def spectral_cut(subgraph: Graph, part_labels: Dict, weight_type: str, lap_type:
     else:
         laplacian_matrix = (subgraph.laplacian_matrix()).todense()
 
-    # frm TODO: Documentation: Peter: Any ideas for helpful documentation here?
-    #
-    # Add a better explanation for why eigenvectors are useful
-    # for determining flips.  Perhaps just a URL to an article
-    # somewhere...
-    #
-    # I have added comments to describe the nuts and bolts of what is happening,
-    # but the overall rationale for this code is missing - and it should be here...
+    # Note:
     #
     # LA.eigh(laplacian_matrix) call invokes the eigh() function from
     # the Numpy LinAlg module which:
