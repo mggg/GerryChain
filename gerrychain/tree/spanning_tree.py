@@ -244,20 +244,19 @@ def uniform_spanning_tree(
             tree_nodes.add(u)
             u = parent_node_id[u]
 
-    G = Graph.from_null_networkx()
+    graph_of_spanning_tree = Graph.from_null_networkx()
+    nx_graph = graph_of_spanning_tree.get_nx_graph()
 
     for node_id in tree_nodes:
         if parent_node_id[node_id] is not None:
             # Add the nodes and the edge to the spanning_tree
-            nx_graph = G.get_nx_graph()
             nx_graph.add_edge(node_id, parent_node_id[node_id])
 
-    # frm: TODO: Refactoring: BUG?  uniform_spanning_tree() should returned graph be NX or RX?
+    # Return a graph that is the same "kind" of graph as the graph passed in.
+    # The current graph_of_spanning_tree is an NX-based graph, so convert it to
+    # be RX-based if the graph passed in was RX-based.
     #
-    # This code returns an NX-based Graph which seems odd, but maybe it doesn't make too much
-    # of a difference, since it is only a spanning tree...
-    #
-    # Note that this is not an issue for random_spanning_tree() - because we delegate creating
-    # the spanning tree to NX or RX in that case.
+    if graph.is_rx_graph():
+        graph_of_spanning_tree = graph_of_spanning_tree.convert_from_nx_to_rx()
 
-    return G
+    return graph_of_spanning_tree

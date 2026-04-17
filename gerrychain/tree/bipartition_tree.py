@@ -856,19 +856,6 @@ def _internal_bipartition_tree(
     if region_surcharge is None:
         region_surcharge = {}
 
-    # Note: at present (March 2026), the code that actually calls the
-    # spanning_tree_fn() only passes in a single parameter - the graph
-    # object.  So, we need to bind in any additional parameters using
-    # a partial().
-    #
-    # We do not bother to bind in the choice_fn value which is
-    # a paramter to spanning tree functions, however, which is a bit
-    # odd, but to do so, we would need to know what to use for the
-    # choice_fn, and that value was not passed in, so we don't actually
-    # know what to set it to.  The choice_fn() parameter defaults to
-    # random.choice(), so it is OK to not bind it in, but it is
-    # odd to have no way to ever pass in a value for the choice_fn().
-    #
     spanning_tree_fn = partial(spanning_tree_fn, region_surcharge=region_surcharge)
 
     if "one_sided_cut" in signature(find_balanced_edge_cuts_fn).parameters:

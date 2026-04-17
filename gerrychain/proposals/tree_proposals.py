@@ -326,67 +326,6 @@ def reversible_recom(
             )
         )
 
-    # frm: TODO: Refactoring: Peter: Get rid of *args and **kwargs in _bounded_find_balanced_edge_cuts_fn()
-    #
-    # This is a bit complicated...
-    #
-    # There are two find_balanced_edge_cuts_fn() functions defined in the GerryChain codebase,
-    # and they have the same signatures:
-    #
-    #            def find_balanced_edge_cuts_contraction(
-    #              h: _PopulatedGraph,
-    #              one_sided_cut: bool = False,
-    #              rootnode_choice_fn: Callable = random.choice
-    #            ) -> list[Cut]:
-    #
-    #            def find_balanced_edge_cuts_memoization(
-    #              h: _PopulatedGraph,
-    #              one_sided_cut: bool = False,
-    #              rootnode_choice_fn: Callable = random.choice
-    #            ) -> list[Cut]:
-    #
-    # So, we don't need *args, and **kwargs because the signtures of the functions
-    # differ.  We could just use the exact same signature as the two functions for
-    # _bounded_find_balanced_edge_cuts_fn().
-    #
-    #            def _bounded_find_balanced_edge_cuts_fn(
-    #              h: _PopulatedGraph,
-    #              one_sided_cut: bool = False,
-    #              rootnode_choice_fn: Callable = random.choice
-    #            ) -> list:
-    #
-    # But maybe there are legacy users out there that have defined their own
-    # find_balanced_edge_cuts functions that do not take "one_sided_cut" as
-    # a parameter.  This seems possible given that there is code in
-    # bipartition_tree.py: _internal_bipartition_tree() that queries whether
-    # the find_balanced_edge_cuts_fn() takes a "one_sided_cut" parameter,
-    # and if so, binds it into a partial function.  This would imply that
-    # there is at least one find_balanced_edge_cuts_fun that does not
-    # have a one_sided_cut parameter.
-    #
-    #        if "one_sided_cut" in signature(find_balanced_edge_cuts_fn).parameters:
-    #            find_balanced_edge_cuts_fn = partial(
-    #                find_balanced_edge_cuts_fn, one_sided_cut=one_sided_cut
-    #            )
-    #
-    # And the single actual call on find_balanced_edge_fn() is in
-    # bipartition_tree.py: _get_possible_edge_cuts_and_populated_graph().
-    #
-    #            possible_cuts = find_balanced_edge_cuts_fn(
-    #                h, rootnode_choice_fn=rootnode_choice_fn
-    #            )  # a list of cuts
-    #
-    # which does not explicitly reference "one_sided_cut" paramter (because it was
-    # previously bound when creating the partial function).
-    #
-    # Sooooo... The question is whether there is legacy code out there that assumes
-    # that a find_balanced_edge_cuts_fn need not have a "one_sided_cut" parameter.
-    # If so, then we can leave the code as-is, but perhaps with comments, but if
-    # not then we can get rid of the (*args, **kwargs) and the partial function and
-    # just use the same params everywhere - including "one_sided_cut".
-    #
-    # Peter - please help...
-
     def _bounded_find_balanced_edge_cuts_fn(
         h: _PopulatedGraph,
         one_sided_cut: bool = False,
