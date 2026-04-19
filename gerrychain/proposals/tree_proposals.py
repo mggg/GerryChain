@@ -48,7 +48,7 @@ def epsilon_tree_bipartition(
     pop_col: str,
     epsilon: float,
     node_repeats: int = 1,
-    bipartition_tree_fn: Callable = partial(bipartition_tree, max_attempts=10000),
+    bipartition_tree_fn: Callable = partial(bipartition_tree, max_attempts=100000),
 ) -> dict:
     """Bipartition a tree into two :math:`\varepsilon`-balanced parts.
 
@@ -62,7 +62,7 @@ def epsilon_tree_bipartition(
         node_repeats (int, optional): Parameter for `gerrychain.tree.bipartition_tree` to
             use. Defaults to 1.
         bipartition_tree_fn (Callable, optional): The partition method to use. Defaults to
-            `partial(bipartition_tree, max_attempts=10000)`.
+            `partial(bipartition_tree, max_attempts=100000)`.
 
     Returns:
         dict: New assignments for the nodes of ``graph``.

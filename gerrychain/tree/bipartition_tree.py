@@ -1098,6 +1098,12 @@ def _get_possible_edge_cuts_and_populated_graph(
             attempts.
     """
 
+    # frm: TODO: Debugging: Remove this code
+    # start of debugging
+    print("\n###")
+    print("_get_possible...(): entering...")
+    # end of debugging
+
     # dict of node_id: population for the nodes in the subgraph
     populations = {
         node_id: graph_to_split.node_data(node_id)[pop_col]
@@ -1119,10 +1125,6 @@ def _get_possible_edge_cuts_and_populated_graph(
     num_times_current_spanning_tree_has_been_tried = 0
 
     attempts = 0
-
-    # frm: TODO: Refactoring: What should the default be for max_attempts?
-    #
-    # A quick scan shows that the default values for max_attempts are different.
 
     while attempts < max_attempts:
 
@@ -1170,8 +1172,19 @@ def _get_possible_edge_cuts_and_populated_graph(
         #
         num_times_current_spanning_tree_has_been_tried += 1
         if num_times_current_spanning_tree_has_been_tried == num_times_to_use_given_spanning_tree:
+
+            # frm: TODO: Debugging: Remove this code
+            # start of debugging
+            print("_get_possible...(): creating a new spanning tree")
+            # end of debugging
+
             spanning_tree = spanning_tree_fn(graph_to_split)
             num_times_current_spanning_tree_has_been_tried = 0
+
+        # frm: TODO: Debugging: Remove this code
+        # start of debugging
+        print("_get_possible...(): regenerating _PopulatedGraph from spanning tree")
+        # end of debugging
 
         # Regenerate the _PopulatedGraph because the find_balanced_edge_fn() is
         # destructive - it can change the internals of a _PopulatedGraph.

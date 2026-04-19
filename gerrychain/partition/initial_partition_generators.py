@@ -60,7 +60,7 @@ def recursive_tree_part(
     pop_col: str,
     epsilon: float,
     node_repeats: int = 1,
-    bipartition_tree_fn: Callable = partial(bipartition_tree, max_attempts=10000),
+    bipartition_tree_fn: Callable = partial(bipartition_tree, max_attempts=100000),
 ) -> Dict:
     """Return new assignments for the nodes of ``graph``.
 
@@ -81,7 +81,7 @@ def recursive_tree_part(
         node_repeats (int, optional): Parameter for `gerrychain.tree.bipartition_tree` to
             use. Defaluts to 1.
         bipartition_tree_fn (Callable, optional): The partition method to use. Defaults to
-            `partial(bipartition_tree, max_attempts=10000)`.
+            `partial(bipartition_tree, max_attempts=100000)`.
 
     Returns:
         dict: New assignments for the nodes of ``graph``.
@@ -192,7 +192,7 @@ def _get_seed_chunks(
     pop_col: str,
     epsilon: float,
     node_repeats: int = 1,
-    bipartition_tree_fn: Callable = partial(bipartition_tree, max_attempts=10000),
+    bipartition_tree_fn: Callable = partial(bipartition_tree, max_attempts=100000),
 ) -> List[List[int]]:
     """Helper function for recursive_seed_part.
 
@@ -381,7 +381,7 @@ def _recursive_seed_part_inner(
     pop_target: Union[float, int],
     pop_col: str,
     epsilon: float,
-    bipartition_tree_fn: Callable = partial(bipartition_tree, max_attempts=10000),
+    bipartition_tree_fn: Callable = partial(bipartition_tree, max_attempts=100000),
     node_repeats: int = 1,
     n: Optional[int] = None,
     ceil: Optional[int] = None,
@@ -567,7 +567,7 @@ def recursive_seed_part(
     pop_target: Union[float, int],
     pop_col: str,
     epsilon: float,
-    bipartition_tree_fn: Callable = partial(bipartition_tree, max_attempts=10000),
+    bipartition_tree_fn: Callable = partial(bipartition_tree, max_attempts=100000),
     node_repeats: int = 1,
     n: Optional[int] = None,
     ceil: Optional[int] = None,
