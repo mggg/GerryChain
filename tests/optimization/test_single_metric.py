@@ -458,36 +458,40 @@ def test_single_metric_tilted_runs_attains_min_quickly_with_p_eq_0p1(
 
 def test_single_metric_sb_finds_hard_max(four_by_five_grid_for_opt):
 
-    # frm: TODO: Refactoring: Peter: Figure out why this test is so fragile
+    # This test is fragile.
     #
-    # This test fails often if a different value for the random seed is set.
+    # It fails for other random seed values.
+    #
     # For instance, the test passes for seeds: 2023, 2025, and 5000, but it
     # fails for seeds: 4, 5, 2024.  Note that before RustworkX work, the
     # seed had been set to 2024 and the test passed.
     #
-    # The debugging output shows that the code is creating new spanning trees
-    # so one would expect that in the many many spanning trees generated that
-    # at least one of them would result in finding two districts of 10
-    # opt_values, so something seems fishy here, but I (Fred) cannot put my
-    # finger on it...
+    # Peter commented that he is not concerned because it is actually
+    # very hard to "find" the solution.  He says that of the 501 possible
+    # partitions, only one has two partitions with the max opt_value.
     #
-    # Peter - does this also make you feel a bit squirmy?
+    # However, it still seems odd that when the test passes, it finds
+    # a solution many times - one would think that if it failed for some
+    # seed values then when it succeeded it would only find a solution
+    # a very few times, but in fact, when it succeeds it finds 20+
+    # solutions.`
     #
+    # Peter's comment from April 2026:
+    #
+    # It would probably be better to just remove or replace our
+    # "finds_hard_max" tests all together (and all the tests of
+    # a similar flavor). For now, we could just replace this test
+    # with a better statistical version where we run short_bursts
+    # from the same initial state with 10 different seeds at 10,000
+    # steps each and assert that at least 6 (this number wold need
+    # to be investigated) out of 10 find score=2. This acknowledges
+    # the probabilistic nature of the algorithm, avoids betting on a
+    # single seed, and should still catch a broken optimizer.
+    #
+
     random.seed(2025)
 
     def opt_fn(partition):
-        # frm: TODO: Debugging: Delete this debugging code:
-        # start of debugging code
-        print("opt_fn() called...")
-        num_10_values = 0
-        for k, v in partition["opt_value_sum"].items():
-            print(f"  partition: {k} has opt_value_sum: {v}")
-            if v == 10:
-                num_10_values += 1
-        print(f"    number of 10 opt_values is: {num_10_values}")
-
-        # end of debugging code
-
         mx = 10
         count = sum(1 for x in partition["opt_value_sum"].values() if x == mx)
         return count
@@ -530,9 +534,6 @@ def test_single_metric_sb_finds_hard_max(four_by_five_grid_for_opt):
         )
     ):
         max_scores_sb[i] = optimizer.best_score
-
-    # frm: TODO: Debugging: Remove this code
-    print(f"test_single_metric_sb_finds_hard_max(): max_scores_sb: {max_scores_sb}")
 
     assert np.max(max_scores_sb) == 2
 

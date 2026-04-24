@@ -1073,8 +1073,9 @@ def _get_possible_edge_cuts_and_populated_graph(
         pop_target (Union[int, float]): The target population for each subgraph.
         epsilon (float): The allowed deviation from the target population as a percentage of
             pop_target.
-        node_repeats (int, optional): The number of times to try to find balanced edge cuts with
-            a given spanning tree before creating a new spanning tree.  Defaults to 1.
+        node_repeats (int, optional): The number of extra times to try to find balanced edge cuts with
+            a given spanning tree before creating a new spanning tree, so if node_repeats
+            is set to 1, then each spanning tree will be used twice (one extra time).  Defaults to 1.
         repeat_until_valid (bool, optional): Whether to repeat the bipartitioning process until a
             valid bipartition is found. Defaults to True.
         spanning_tree (Optional[Graph], optional): The spanning tree to use for bipartitioning. If
@@ -1097,12 +1098,6 @@ def _get_possible_edge_cuts_and_populated_graph(
         RuntimeError: If a valid bipartition cannot be found after the specified number of
             attempts.
     """
-
-    # frm: TODO: Debugging: Remove this code
-    # start of debugging
-    print("\n###")
-    print("_get_possible...(): entering...")
-    # end of debugging
 
     # dict of node_id: population for the nodes in the subgraph
     populations = {
@@ -1173,18 +1168,8 @@ def _get_possible_edge_cuts_and_populated_graph(
         num_times_current_spanning_tree_has_been_tried += 1
         if num_times_current_spanning_tree_has_been_tried == num_times_to_use_given_spanning_tree:
 
-            # frm: TODO: Debugging: Remove this code
-            # start of debugging
-            print("_get_possible...(): creating a new spanning tree")
-            # end of debugging
-
             spanning_tree = spanning_tree_fn(graph_to_split)
             num_times_current_spanning_tree_has_been_tried = 0
-
-        # frm: TODO: Debugging: Remove this code
-        # start of debugging
-        print("_get_possible...(): regenerating _PopulatedGraph from spanning tree")
-        # end of debugging
 
         # Regenerate the _PopulatedGraph because the find_balanced_edge_fn() is
         # destructive - it can change the internals of a _PopulatedGraph.

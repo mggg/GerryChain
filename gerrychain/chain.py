@@ -52,7 +52,7 @@ class MarkovChain:
 
     def __init__(
         self,
-        proposal: Callable,
+        proposal: Callable[[Partition], Partition],
         constraints: Iterable[Callable] | Validator | Iterable[Bounds] | Callable,
         accept: Callable,
         initial_state: Partition,

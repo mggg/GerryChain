@@ -454,8 +454,6 @@ def graph_has_cycle(set_of_edges):
             new_edge = (new_node_id_map[edge[0]], new_node_id_map[edge[1]])
             new_set_of_edges.add(new_edge)
 
-        # debugging:
-
         # create an empty adjacency matrix
         #
         adj_matrix = create_empty_adjacency_matrix(num_nodes)
@@ -569,7 +567,6 @@ def test_generic_bfs_edges(four_by_five_graph_nx, four_by_five_graph_rx):
         (3, 4),
         (4, 9),
     }
-    # debugging:
     assert bfs_edges_nx_0 == expected_set_of_edges
 
     # Check that _generic_bfs_edges() does not produce a cycle
