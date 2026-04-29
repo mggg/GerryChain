@@ -3,10 +3,6 @@ import math
 from collections import Counter, defaultdict
 from typing import List
 
-# frm TODO: Refactoring: Remove dependence on NetworkX.
-#           The only use is:
-#                pieces += nx.number_connected_components(subgraph)
-
 # frm: TODO: Performance: Do performance testing and improve performance of these routines.
 #
 # Peter made the comment in a PR that we should make this code more efficient:
@@ -130,22 +126,6 @@ class LocalitySplits:
 
     def __call__(self, partition):
 
-        # frm: TODO: Refactoring:   LocalitySplits: Figure out how this is intended to be used...
-        #
-        # Not quite sure why it is better to have a "__call()__" method instead of a
-        # get_scores(self) method, but whatever...
-        #
-        # This routine indeed just computes the requested scores (specified in the constructor).
-        # It stashed those scores as a data member in the class and returns them to the caller as
-        # well.
-        #
-        # This all seems kind of misguided to me - and there is no instance of this being used in
-        # the gerrychain code except in a test, so I am not sure how it is intended to be used.
-        #
-        # Probably need to look at some user code that Peter sent me to see if anyone actually uses
-        # this and if so, how...
-        #
-
         if self.localities == []:
             self.localitydict = {}
             for node_id in partition.graph.node_indices:
@@ -168,27 +148,19 @@ class LocalitySplits:
 
             totpop = 0
             for node_id in partition.graph.node_indices:
-                # frm: TODO: Refactoring:  Once you have a partition, you cannot change the
-                #      total population in the Partition, so why don't we cache the total
-                #      population as a data member in Partition?
-                #
-                # Peter agreed that this would be a good thing to do
+                # Note: It would be nice to cache the total population for the partition's
+                # graph since it cannot be changed, but to do so we would need to know the
+                # attribute in the partition's graph that stored population, and we don't
+                # seem to have both the graph and the population attribute name at the
+                # same time...  .
 
                 totpop += partition.graph.node_data(node_id)[self.pop_col]
-
-            # frm: TODO: Refactoring:  Ditto with num_districts - isn't this a constant once you
-            #      create a Partition?
-            #
-            # Peter agreed that this would be a good thing to do.
 
             num_districts = len(partition.assignment.parts.keys())
 
             # Compute the total population for each locality and then the number of
             # "allowed pieces"
             for _ in self.localities:
-                # frm: TODO: Refactoring:    The code below just calculates the total population
-                #      for a set of nodes. This sounds like a good candidate for a utility
-                #      function.  See if this logic is repeated elsewhere...
 
                 # Compute the population associated with each location
                 the_graph = partition.graph
@@ -203,8 +175,6 @@ class LocalitySplits:
                     else:
                         locality_population[locality_name] += locality_pop
 
-                # frm: TODO: Refactoring:  Peter commented (in PR) that this is another thing that
-                #               could be cached so we didn't recompute it over and over...
                 ideal_population_per_district = totpop / num_districts
 
                 # Compute the number of "allowed pieces" for each locality

@@ -52,7 +52,7 @@ class MarkovChain:
 
     def __init__(
         self,
-        proposal: Callable,
+        proposal: Callable[[Partition], Partition],
         constraints: Iterable[Callable] | Validator | Iterable[Bounds] | Callable,
         accept: Callable,
         initial_state: Partition,
@@ -75,14 +75,6 @@ class MarkovChain:
         Raises:
             ValueError: If the initial_state is not valid according to the constraints.
         """
-
-        # frm: TODO: Refactoring: Is it worth it to investigate whether the
-        # proposal function makes sense?
-        #
-        # I just feel a little odd about accepting a Callable with no checking
-        # that it does what it is supposed to do. I know this sounds like a
-        # broken record, but when a function parameter does the wrong
-        # thing it can be hell to debug...
 
         if callable(constraints):
             is_valid = Validator([constraints])

@@ -125,9 +125,6 @@ def graph_with_random_data_factory(three_by_three_grid):
     return factory
 
 
-# frm: TODO: Refactoring:  This routine is only ever used immediately above in def factory(columns).
-#               Is it part of the external API?  If not, then it should be moved inside
-#               the graph_with_random_data_factory() routine
 def attach_random_data(graph, columns):
     for node in graph.nodes:
         for col in columns:

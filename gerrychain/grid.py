@@ -14,7 +14,7 @@ Dependencies:
 
 import math
 from collections.abc import Callable
-from typing import Any, Optional
+from typing import Optional
 
 import networkx
 
@@ -210,33 +210,6 @@ def _create_grid_nx_graph(dimensions: tuple[int, ...], with_diagonals: bool) -> 
     return Graph.from_networkx(nx_graph)
 
 
-# frm: TODO: Refactoring: give_constant_attribute() is never used - delete it?
-#
-# This routine is never used in GerryChain code, and its implementation is
-# trivial, so I am inclined to delete it - but perhaps it is used in legacy code?
-#
-# If we keep it, however, it should be moved to graph.py as it is a general purpose
-# graph utility not a Grid related function.
-#
-# Peter said (January 2026): Nah, let's get rid of it...
-
-
-def give_constant_attribute(graph: Graph, attribute: Any, value: Any) -> None:
-    """Sets the specified attribute to the specified value for all nodes in the graph.
-
-    This function sets the specified attribute to the specified value for all nodes in the graph.
-    The arguments below control how the operation is performed.
-
-    Args:
-        graph (Graph): The graph to modify.
-        attribute (Any): The attribute to set.
-        value (Any): The value to set the attribute to.
-
-    """
-    for node_id in graph.node_indices:
-        graph.node_data(node_id)[attribute] = value
-
-
 def _tag_boundary_nodes(nx_graph: networkx.Graph, dimensions: tuple[int, int]) -> None:
     """Adds the boolean attribute ``boundary_node`` to each node in the graph.
 
@@ -285,8 +258,6 @@ def _get_boundary_perim(node_id: tuple[int, int], dimensions: tuple[int, int]) -
         return 0
 
 
-# frm: TODO: Refactoring:  color_half() is never used anywhere in GerryChain code.  Delete it?
-#
 def color_half(node: tuple[int, int], threshold: int) -> int:
     """Assigns a color (as an integer) to a node based on its x-coordinate.
 
@@ -302,6 +273,9 @@ def color_half(node: tuple[int, int], threshold: int) -> int:
         int: An integer representing the color of the node. Returns 0 for nodes with x-coordinate
             less than or equal to the threshold, and 1 otherwise.
     """
+
+    # Note that this routine, color_half, is never used in the GerryChain code.  If it is
+    # not part of the external API, then it should be deleted.
     x = node[0]
     return 0 if x <= threshold else 1
 
@@ -321,7 +295,9 @@ def _color_quadrants(node: tuple[int, int], thresholds: tuple[int, int]) -> int:
     Returns:
         int: An integer representing the color of the node, determined by its quadrant.
     """
+
     x, y = node
     x_color = 0 if x < thresholds[0] else 1
     y_color = 0 if y < thresholds[1] else 2
+
     return x_color + y_color

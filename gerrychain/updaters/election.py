@@ -122,45 +122,6 @@ class Election:
                 "Election expects party_names_to_node_attribute_names to be a dict or list"
             )
 
-        # frm: TODO: Documentation: Migration: Using node_ids to vote tally maps...
-        #
-        # The question is whether the discussion below should be included in the
-        # Migration Guide to the RX version of GerryChain.  I think perhaps not
-        # since the feature that we removed is only really useful for testing, but
-        # perhaps there is a user out there that depends on it.
-        #
-        # Peter said (January 2026): I say that we leave the discussion out of
-        # the migration guide and I'll just deal with the one user's email if
-        # they ever materialize.
-        #
-        # Once we have made the Migration Guide decision, this should just become
-        # a comment that lives in the code for historical purposes until someone
-        # decides that this bit of history is no longer interesting...
-        #
-        # A DataTally used to support a first parameter that was either a string
-        # or a dict.
-        #
-        # The idea was that in most cases, the values to be tallied would be present
-        # as the values of attributes associated with nodes, so it made sense to just
-        # provide the name of the attribute (a string) to identify what to tally.
-        #
-        # However, the code also supported providing an explicit mapping from node_id
-        # to the value to be tallied (a dict).  This was useful for testing because
-        # it allowed for tallying values without having to implement an updater that
-        # would be based on a node's attribute.  It provided a way to map values that
-        # were not part of the graph to vote totals.
-        #
-        # The problem was that when we started using RX for the embedded graph for
-        # partitions, the node_ids were no longer the same as the ones the user
-        # specified when creating the (NX) graph.  This complicated the logic of
-        # having an explicit mapping from node_id to a value to be tallied - to
-        # make this work the code would have needed to translate the node_ids into
-        # the internal RX node_ids.
-        #
-        # The decision was made (Fred and Peter) that this extra complexity was not
-        # worth the trouble, so we now disallow passing in an explicit mapping (dict).
-        #
-
         for party in self.parties:
             if isinstance(self.party_names_to_node_attribute_names[party], dict):
                 raise Exception(
@@ -246,10 +207,6 @@ class ElectionUpdater:
         return previous_totals_for_party
 
 
-# frm: TODO: Refactoring:  This routine, get_percents(), is only ever used inside ElectionResults.
-#
-#               Why is it not defined as an internal function inside ElectionResults?
-#
 def get_percents(counts: dict, totals: dict) -> dict:
     """Returns a dictionary mapping each part in a partition to the percentage of votes that a
     party received in that part.

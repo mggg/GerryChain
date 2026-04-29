@@ -145,33 +145,27 @@ class Assignment(Mapping):
         return self.mapping
 
     @classmethod
-    def from_dict(cls, assignment: dict) -> Assignment:
+    def from_dict(cls, nodes_to_parts: dict | pandas.Series) -> Assignment:
         """Create an Assignment from a dictionary.
 
         Args:
-            assignment (Dict): dictionary mapping nodes to partition assignments
+            nodes_to_parts (Dict): dictionary mapping nodes to partition assignments
 
         Returns:
             Assignment: A new instance of Assignment with the same assignments as the
                 passed-in dictionary.
         """
 
-        # frm: TODO: Refactoring:  Clean up from_dict().
-        #
-        # A couple of things:
-        #  * It uses a routine, level_sets(), which is only ever used here, so
-        #    why bother having a separate routine.  All it does is convert a dict
-        #    mapping node_ids to parts into a dict mapping parts into sets of
-        #    node_ids.  Why not just have that code here inline?
-        #
-        #  * Also, the constructor for Assignment explicitly allows for the caller
-        #    to pass in a "mapping" of node_id to part, which we have right here.
-        #    Why don't we pass it in and save having to recompute it?
-        #
+        parts = {part: frozenset(keys) for part, keys in level_sets(nodes_to_parts).items()}
 
-        parts = {part: frozenset(keys) for part, keys in level_sets(assignment).items()}
+        # If a pandas.Series was passed in then convert it to be a dict
+        if isinstance(nodes_to_parts, pandas.Series):
+            nodes_to_parts = nodes_to_parts.to_dict()
 
-        return cls(parts)
+        return cls(
+            parts,  # Commented out because __init__() croaks if the nodes_to_parts
+            nodes_to_parts,  # is a pandas series instead of a dict...
+        )
 
     def new_assignment_convert_old_node_ids_to_new_node_ids(
         self, node_id_mapping: dict
@@ -234,14 +228,6 @@ def get_assignment(
             is not provided.
         TypeError: If the part_assignment is not a string or dictionary.
     """
-
-    # frm: TODO: Refactoring:  Think about whether to split this into two functions.  AT
-    #               present, it does different things based on whether
-    #               the "part_assignment" parameter is a string, a dict,
-    #               or an assignment.  Probably not worth the trouble (possible
-    #               legacy issues), but I just can't get used to the Python habit
-    #               of weak typing...
-
     if isinstance(part_assignment, str):
         # Extract an assignment using the named node attribute
         if graph is None:

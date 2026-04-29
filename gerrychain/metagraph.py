@@ -33,7 +33,7 @@ def all_cut_edge_flips(partition: Partition) -> Iterator[Dict]:
         Iterator[Dict]: An iterator that yields dictionaries representing the flipped edges.
     """
 
-    for edge, index in product(partition.cut_edges, (0, 1)):
+    for edge, index in product(partition["cut_edges"], (0, 1)):
         yield {edge[index]: partition.assignment.mapping[edge[1 - index]]}
 
 

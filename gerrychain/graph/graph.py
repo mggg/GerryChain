@@ -1,22 +1,29 @@
 """
 This module provides tools for working with graphs in the context of geographic data.
-It extends the functionality of the NetworkX library, adding support for spatial data structures,
-geographic projections, and serialization to and from JSON format.
+
+It defines a Graph class (similar in many ways to NetworkX.Graph) with standard
+graph functionality along with some GerryChain specific functionality.
+
+It defines a FrozenGraph class which makes a Graph immutable in order to speed
+up operations on the graph once the graph has been created (and no additional nodes
+or edges will be added to the graph).
+
+It also defines some utility functions to manage external data.
 
 This module is designed to be used in conjunction with geopandas, shapely, and pandas libraries,
 facilitating the integration of graph-based algorithms with geographic information systems (GIS).
 
 Note:
-This module relies on NetworkX, pandas, and geopandas, which should be installed and
+This module relies on NetworkX, RustworkX, pandas, and geopandas, which should be installed and
 imported as required.
 
-TODO: Documentation: Update top-level documentation for graph.py
 """
 
 from __future__ import annotations
 
 import functools
 import json
+import random
 import warnings
 from collections.abc import Generator, Iterable
 
@@ -37,10 +44,6 @@ from .adjacency import neighbors
 from .geo import GeometryError, invalid_geometries, reprojected
 
 
-# frm: TODO: Refactor: Move json_serialize() closer to its use.
-#
-# It should not be the first thing someone sees when looking at this code...
-#
 def json_serialize(input_object: Any) -> int | None:
     """Return converted pandas object or None if input is not of type pd.Int64Dtype.
 
@@ -240,9 +243,32 @@ class Graph:
 
         graph._node_id_to_parent_node_id_map = {node_id: node_id for node_id in graph.node_indices}
 
-        graph._node_id_to_original_nx_node_id_map = {
-            node_id: node_id for node_id in graph.node_indices
-        }
+        """ frm: TODO: Debugging: Delete this comment
+         - need to decide if I should check to see if there is already node_data
+           for the original nx node id, in the case when we create an RX spanning tree...
+           That is - we sometimes use this function for graphs that we create internally
+           that may already have node data that we want to preserve...
+        """
+
+        # Retain original NX node_ids if they exist.
+        #
+        # When we create a spanning tree, we create a Graph from an RX graph, but in that case
+        # we have node_data from the "real" graph, so we should preserve the mapping
+        # from internal RX node_ids to the original NX node_ids.
+        #
+        # So, check one node to see if it has an original NX node_id, and if so create
+        # the map using that data, otherwise just create an identity map.
+        #
+        node_data_for_rx_node_id_0 = rx_graph.get_node_data(0)
+        if "__networkx_node__" in node_data_for_rx_node_id_0:
+            graph._node_id_to_original_nx_node_id_map = {
+                node_id: graph.node_data(node_id)["__networkx_node__"]
+                for node_id in graph.node_indices
+            }
+        else:
+            graph._node_id_to_original_nx_node_id_map = {
+                node_id: node_id for node_id in graph.node_indices
+            }
 
         # only set when an NX based graph is converted to be an RX based graph
         graph.nx_to_rx_node_id_map = None
@@ -336,11 +362,25 @@ class Graph:
 
         return nx_graph
 
-    # frm: TODO: Refactoring: Create a defined type name "node_id" to use instead of "Any"
+    # frm: TODO: Refactoring: Peter: What you think about "cosmetic" type definitions?
     #
-    # This is purely cosmetic, but it would provide an opportunity to add a comment that
-    # talked about NX node_ids vs. RX node_ids and hence why the type for a node_id is
-    # a vague "Any"...
+    # There are several places where the code has type-hints of "Any" or "int".  I would like for
+    # purely stylistic reasons to substitute more informative terms.  For instance, node_ids
+    # can be integers or tuples or strings, so they are currently "typed" as "Any", but we
+    # could define a "node_id_type" that was just syntactic sugar for "Any" and make the
+    # function signatures make more sense.
+    #
+    # These definitions would also provide a convenient and logical place to talk about
+    # the specifics of each "type" - NX vs. RX, districts as part of partitions, etc.
+    #
+    # Specific cases:
+    #
+    #     node_id_type for "Any"
+    #     edge_id_type for "Any"
+    #     edge_type for "tuple[node_id_type, node_id_type]".
+    #     district_id_type for "int"
+    #     flip_dict_type for dict[node_id_type, district_id_type])
+    #
 
     def original_nx_node_id_for_internal_node_id(self, internal_node_id: Any) -> Any:
         """Translate a node_id to its "original" node_id.
@@ -353,7 +393,6 @@ class Graph:
         """
         return self._node_id_to_original_nx_node_id_map[internal_node_id]
 
-    # frm: TODO: Testing: Create a test for this routine
     def original_nx_node_ids_for_set(self, set_of_node_ids: set[Any]) -> Any:
         """Translate a set of node_ids to their "original" node_ids.
 
@@ -367,7 +406,6 @@ class Graph:
         new_set = {_node_id_to_original_nx_node_id_map[node_id] for node_id in set_of_node_ids}
         return new_set
 
-    # frm: TODO: Testing: Create a test for this routine
     def original_nx_node_ids_for_list(self, list_of_node_ids: list[Any]) -> list[Any]:
         """Translate a list of node_ids to their "original" node_ids.
 
@@ -456,8 +494,6 @@ class Graph:
     #
     # Not all of the calls on these routines are needed in production - some are just
     # sanity checking.  Find a way to NOT run this code when in production.
-
-    # frm: TODO: Refactoring:  Reorder these following routines in sensible order
 
     def is_nx_graph(self) -> bool:
         """Determine if the graph is NX-based."""
@@ -595,10 +631,6 @@ class Graph:
         Returns:
             "Graph": A GerryChain Graph object with data from JSON file
         """
-
-        # frm: TODO: Documentation: more detail on contents of JSON file needed above in docstrings
-        #
-        # Peter agreed - January 2026
 
         # Note that this returns an NX-based Graph object.  At some point in
         # the future, if we embrace an all RX world, it will make sense to
@@ -781,24 +813,8 @@ class Graph:
 
         nx_graph.geometry = df.geometry
 
-        # frm: TODO: Refactoring: Rethink the name of add_boundary_perimeters
-        #
-        # It acts on an nx_graph which seems wrong with the given name.
-        # Maybe it should be: add_boundary_perimeters_to_nx_graph()
-        #
-        # Need to check in with Peter to see if this is considered
-        # part of the external API.
-
-        # frm: TODO: Refactoring: Create an nx_utilities module
-        #
-        # It raises the question of whether there should be an nx_utilities
-        # module for stuff designed to only work on nx_graph objects.
-        #
-        # Note that Peter said: "I like this idea"
-        #
-
         # Add "exterior" perimeters to the boundary nodes
-        add_boundary_perimeters(nx_graph, df.geometry)
+        _add_boundary_perimeters_to_nx_graph(nx_graph, df.geometry)
 
         # Add area data to the nodes
         areas = df.geometry.area.to_dict()
@@ -906,12 +922,6 @@ class Graph:
                 "a networkx-based graph nor a rustworkx-based graph"
             )
 
-    # frm: TODO: Refactoring: Create abstract "edge" and "edge_id" type names
-    #
-    # As with node_id, this is cosmetic but it will provide a nice place to
-    # put a comment about the difference between NX and RX and it will make
-    # the type annotations make more sense...
-
     def get_edge_id_from_edge(self, edge: tuple[Any, Any]) -> Any:
         """Get the edge_id that corresponds to the given edge.
 
@@ -991,14 +1001,10 @@ class Graph:
             list[Any]: A list of all of the node_ids in the graph
         """
 
-        # frm: TODO: Refactoring: Think about whether to do away entirely with graph.nodes
+        # Note: graph.nodes continues to exist because it was used often in legacy code.
         #
         # All this routine does now is to coerce the set of nodes obtained by node_indices()
-        # to be a list (which I think is unnecessary).  So, why have it at all?  Why not just
-        # tell legacy users via an exception that it no longer exists?
-        #
-        # On the other hand, it maybe does no harm to allow legacy users to indulge in
-        # what appears to be a very common idiom in legacy code...
+        # to be a list.
 
         self.verify_graph_is_valid()
 
@@ -1044,29 +1050,33 @@ class Graph:
     def add_edge(self, node_id1: Any, node_id2: Any) -> None:
         """Add an edge to the graph from node_id1 to node_id2.
 
+        Note that both nodes need to already be members of the graph
+
         Args:
             node_id1 (Any): The node_id for one of the nodes in the edge
             node_id2 (Any): The node_id for one of the nodes in the edge
 
         """
 
-        # frm: TODO: Code: add_edge(): Check that nodes exist and that they have data dicts.
+        # Note: the add_edge() routine is not used in the GerryChain codebase.
         #
-        # This checking should probably be limited to development mode, but
-        # the issue is that an RX node need not have a data value that is
-        # a dict, but GerryChain code depends on having a data dict.  So,
-        # it makes sense to test and make sure that the nodes exist and
-        # have a data dict...
-
-        # frm: TODO: Code: add_edge(): Do we need to check to make sure the edge does not already
-        # exist?
+        # It remains for legacy reasons, and because users may find it convenient
+        # to operate on a gerrychain Graph instead of an NX graph.
 
         self.verify_graph_is_valid()
 
         if self.is_rx_graph():
+            node1_exists = self._rx_graph.has_node(node_id1)
+            node2_exists = self._rx_graph.has_node(node_id2)
+            if (not node1_exists) or (not node2_exists):
+                raise Exception("add_edge(): both nodes in the edge must already exist")
             # empty dict tells RX the edge data will be a dict
             self._rx_graph.add_edge(node_id1, node_id2, {})
         elif self.is_nx_graph():
+            node1_exists = self._nx_graph.has_node(node_id1)
+            node2_exists = self._nx_graph.has_node(node_id2)
+            if (not node1_exists) or (not node2_exists):
+                raise Exception("add_edge(): both nodes in the edge must already exist")
             self._nx_graph.add_edge(node_id1, node_id2)
         else:
             raise TypeError(
@@ -1136,13 +1146,7 @@ class Graph:
 
         column_dictionaries = df.to_dict()
 
-        # frm: TODO: Code: Implement graph.join() for RX
-        #
-        # This is low priority given that current suggested coding
-        # strategy of creating the graph using NX and then letting
-        # GerryChain convert it automatically to RX.  In this scenario
-        # any joins would happen to the NX-based graph only.
-
+        # In the future it might make sense to support this for RX...
         if not self.is_nx_graph():
             raise TypeError("Graph passed to join() is not a networkx graph")
         nx_graph = self._nx_graph
@@ -1435,11 +1439,6 @@ class Graph:
         new_subgraph._node_id_to_original_nx_node_id_map = _node_id_to_original_nx_node_id_map
 
         return new_subgraph
-
-    # frm: TODO: Refactoring: Create abstract type name for "Flip" and "Flip_Dict".
-    #
-    # This is cosmetic, but it would (IMHO) make the code easier to understand, and it
-    # would provide a logical place to define WTF a flip is...
 
     def translate_subgraph_node_ids_for_flips(self, flips: dict[Any, int]) -> dict[Any, int]:
         """Translate the given flips so that the subgraph node_ids in the flips correspond
@@ -1818,6 +1817,7 @@ class Graph:
                 return edge_data[edge_weight_attribute_name]
 
             spanning_tree = rustworkx.minimum_spanning_tree(rx_graph, get_weight)
+
             spanning_graph = Graph.from_rustworkx(spanning_tree)
         else:
             raise Exception("random_spanning_tree - bad kind of graph object")
@@ -1947,11 +1947,6 @@ class Graph:
             raise TypeError("graph.edge(): data for edge is not a dict")
 
         return data_dict
-
-    # frm: TODO: Refactoring: Encapsulate ALL NX dependencies in this file.
-
-    # frm: TODO: Refactoring:   Move routines so that the ones that do NOT mirror NetworkX
-    #                           come at the end, after a comment to that effect.
 
     # Note:  The two laplacian functions: laplacian_matrix() and
     # normalized_laplacian_matrix() are part of the Graph class primarily to
@@ -2099,6 +2094,27 @@ class Graph:
 
         return laplacian_matrix
 
+    # This code replaced calls on nx.is_connected()
+    def is_connected_bfs(self):
+        """
+        Checks if an undirected graph is connected using BFS.
+        """
+
+        node_ids = list(self.node_indices)
+
+        start_node = random.choice(node_ids)
+        visited = {start_node}
+        queue = [start_node]
+
+        while queue:
+            current_node = queue.pop(0)
+            for neighbor in self.neighbors(current_node):
+                if neighbor not in visited:
+                    visited.add(neighbor)
+                    queue.append(neighbor)
+
+        return len(visited) == len(node_ids)
+
     def subgraphs_for_connected_components(self) -> list[Graph]:
         """Create and return a list of subgraphs for each set of nodes in the given graph that are.
 
@@ -2209,7 +2225,7 @@ class Graph:
             )
 
 
-def add_boundary_perimeters(nx_graph: networkx.Graph, geometries: pd.Series) -> None:
+def _add_boundary_perimeters_to_nx_graph(nx_graph: networkx.Graph, geometries: pd.Series) -> None:
     """Computes the "boundary perimeter" which is a measure of how much of the node's perimeter is.
 
     Computes the "boundary perimeter" which is a measure of how much of the node's perimeter is on
@@ -2237,20 +2253,10 @@ def add_boundary_perimeters(nx_graph: networkx.Graph, geometries: pd.Series) -> 
 
     """
 
-    # frm: TODO: Refactoring: add_boundary_perimeters(): OK to require NetworkX.Graph as parameter?
-    #
-    # Think about whether it is reasonable to require this to work on an NetworkX.Graph
-    # object.  Also determine whether this should be part of the external API.  If not,
-    # then there is no harm in leaving it with a NetworkX.Graph parameter.  If we decide
-    # that is it NOT part of the external API, then we should rename it to have a
-    # leading underscore.
-    #
-    # Peter said (January 2026): I don't think that users need this as part of the
-    # external API. The only place I see this getting called is in the process of
-    # building the graph from a geodataframe.
-
     if not (isinstance(nx_graph, networkx.Graph)):
-        raise TypeError("Graph passed into add_boundary_perimeters() is not a networkx graph")
+        raise TypeError(
+            "Graph passed into _add_boundary_perimeters_to_nx_graph() is not a networkx graph"
+        )
 
     prepared_boundary = prep(unary_union(geometries).boundary)
 
@@ -2340,14 +2346,16 @@ class FrozenGraph:
         The class uses `__slots__` for improved memory efficiency.
     """
 
-    # frm: TODO: Code: Rename the internal data member, "graph", to be something else.
-    #               The reason is that a NetworkX.Graph object already has an internal
-    #               data member named, "graph", which is just a dict for the data
-    #               associated with the Networkx.Graph object.
+    # Note: NetworkX has a way to "freeze" a graph so that calls to add nodes
+    # or edges will fail, but RustworkX does not have a similar mechanism, so
+    # we cannot actually "freeze" an RX-based Graph (which is what we will typically
+    # have after creating a Partition object).
     #
-    #               So to avoid confusion, naming the frozen graph something like
-    #               _frozen_graph would make it easier for a future reader of the
-    #               code to avoid confusion...
+    # This means that we cannot prevent a user from going under the covers and
+    # changing an RX-based graph, but there are no functions defined for the
+    # GerryChain Graph object to add nodes, so it seems reasonable to just assume
+    # that the graph will not be modified.
+    #
 
     __slots__ = ["graph", "size"]
 
@@ -2359,24 +2367,24 @@ class FrozenGraph:
 
         """
 
-        # frm: Original code follows:
-        #
-        #   self.graph = networkx.classes.function.freeze(graph)
-        #
-        #   # frm: frozen is just a function that raises an exception if called...
-        #   self.graph.join = frozen
-        #   self.graph.add_data = frozen
-        #
-        #   self.size = len(self.graph)
-
-        # frm TODO: Code: Add logic to FrozenGraph so that it is indeed "frozen" (for both NX
-        # and RX)
-        #
-        # I think this just means redefining those methods that change the graph
-        # to return an error / exception if called.
-
         self.graph = graph
-        self.size = len(self.graph.node_indices)
+
+        all_node_ids = self.graph.node_indices
+        self.size = len(all_node_ids)
+
+        # Validate that the node_id maps contain mappings for all nodes in the graph.
+        #
+        # This is pure defensive coding - it should never happen, but better safe...
+        #
+        if not all_node_ids.issubset(self.graph._node_id_to_parent_node_id_map.keys()):
+            raise Exception(
+                "FrozenGraph.__init__(): _node_id_to_parent_node_id_map does not contain all nodes"
+            )
+        if not all_node_ids.issubset(self.graph._node_id_to_original_nx_node_id_map.keys()):
+
+            raise Exception(
+                "FrozenGraph.__init__(): _node_id_to_original_nx_node_id_map does not contain all nodes"
+            )
 
     def __len__(self) -> int:
         """Returns the number of nodes in the graph.

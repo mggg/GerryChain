@@ -213,7 +213,9 @@ def test_region_aware_muni_warning():
         # tree is hard, so we should get a warning
         run_chain_dual(
             seed=2,
-            steps=1000,
+            # frm: TODO: Debugging: reset to original code:
+            # original code:         steps=1000,
+            steps=10000,
             surcharges={"muni": 2.0, "county": 2.0},
             warn_attempts=2,
         )

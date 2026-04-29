@@ -1,13 +1,10 @@
 import random
 from typing import (
-    Callable,
     Dict,
     Optional,
 )
 
 from ..graph import Graph
-
-# frm: TODO: Documentation: Update the high level description for spanning_tree.py below
 
 """
 This module provides two implementation of spanning tree functions:
@@ -93,70 +90,6 @@ node_ids for this function and all will be well...
 """
 
 
-# frm: TODO: Refactoring: random_spanning_tree() and uniform_spanning_tree()
-# should have the same signature.
-#
-# These two functions are essentially instances of a generic spanning_tree_fn
-# used as a function parameter. Because these two routines have different
-# signatures in the current codebase, routines that take a spanning_tree_fn
-# parameter need to inspect the actual parameter signature to see what to do,
-# which is exactly what a generic should not require.
-#
-# So, I suggest that we modify the signatures of these two functions so that they have the
-# same signature, which would be:
-#
-#     <fname>(
-#       graph: Graph,
-#       choice: Callable = random.choice,
-#       region_surcharge: dict = {}
-#     )
-#
-# The uniform_spanning_tree() function could just ignore the "region_surcharge" parameter -
-# or maybe issue a warning if that parameter were not an empty dict.  Similarly, the
-# random_spanning_tree() function could just ignore the "choice" parameter - or maybe
-# issue a warning it it were anything other than random.choice.
-#
-# Ask Peter if he agrees.
-
-
-# frm: TODO: Documentation: Ask Peter for better description of region surcharge
-#
-# I have to admit that I am a bit confused about how region surcharge works.
-#
-# It has the effect of retaining the edges of nodes that are in the "same region".
-# There is no guarantee where these nodes will end up in the tree, however,
-# because the root of the tree that is eventually chosen in the find_balanced_edge_fn
-# is typically randomly selected.  This seems to just have the effect of keeping
-# nodes that are in the same region close to each other in the tree.  Stated
-# differently, if an edge for nodes in the same region was NOT included, then
-# then the two nodes could end up farther apart in the spanning tree, and hence
-# more likely to be put in separate districts.
-#
-# What has me puzzled, however, is that the nature of GerryChain graphs is that
-# because nodes represent geographic areas, nodes that are in the "same region"
-# are already "close" to each other geographically and hence close to each
-# other in the graph.  So the effect of a region surcharge is probably
-# pretty small - since nodes in the same region are already typically close
-# to each other in the spanning tree.
-#
-# The choice of the root of the spanning tree seems to be pretty important.
-# If the root is in a region that has a surchage then all of the nodes in
-# the shared region will be at the top of the tree.  This would seem to
-# increase the liklihood that those nodes would be put in the same district.
-# Actually, what you really want is a way to have all of the nodes in the
-# same region be grouped together in a subtree at the BOTTOM of the
-# spanning tree, because the find_balanced_edge_cuts functions all go
-# bottom up.
-#
-# In short, I find that I do not really grok why region surcharge works,
-# how effective it really is, and why there is not a better solution to
-# keeping regions together...
-#
-# Another issue is how users should think about the weights used for
-# a region surcharge.  This is especially interesting when there are
-# more than one "region" being surcharged - for instance "muni" and "water".
-
-
 def random_spanning_tree(graph: Graph, region_surcharge: Optional[Dict] = None) -> Graph:
     """Builds a minimum spanning tree chosen by Kruskal's method using random weights.
 
@@ -193,59 +126,9 @@ def random_spanning_tree(graph: Graph, region_surcharge: Optional[Dict] = None) 
         Graph: The maximal spanning tree represented as a GerryChain Graph.
     """
 
-    # frm: TODO: Documentation:  What values make sense for region surcharge?
-    #
-    # We should make clear what the issues are for different values of
-    # region_surcharge.  The random values are between 0-1, so any region
-    # surcharge value greater than 1 will dominate.  What happens if the
-    # user provides several region surcharge values for different
-    # node attributes?  I do not know, and I presume users won't know.
-    #
-    # Note that the documentation currently existing sometimes says that
-    # region surcharge values should be between 0-1 and then it has
-    # example code where the values are 1 or greater than 1...
-
-    # frm: TODO: Refactoring: What is up with region_surcharge being unset?  The region_surcharge
-    #               is only ever accessed in this routine in the for-loop below to
-    #               increase the weight on the edge - setting it to be an empty dict
-    #               just prevents the code below from blowing up.  Why not just put
-    #               a test for the surcharge for-loop alone:
-    #
-    #                    if not region_surcharge is None:
-    #                        for key, value in region_surcharge.items():
-    #                            ...
-    #
-    # Peter's comments from PR:
-    #
-    # peterrrock2 last week
-    # This is one of mine. I added the region surcharge stuff in an afternoon,
-    # so I probably did this to prevent the more than 3 levels of indentation
-    # and to make the reasoning easier to track as I was adding the feature.
-    #
-    # Collaborator
-    # Author
-    # @peterrrock2 peterrrock2 last week
-    # Also, I imagine that I originally wanted the function modification to look like
-    #
-    #    def random_spanning_tree(
-    #         graph: Graph,
-    #         region_surcharge: dict = dict()
-    #     ) -> Graph:
-    #
-    # but doing this sort of thing is generally a bad idea in python since the
-    # dict() is instantiated at import time and then all future calls to the
-    # function reference the same dict when the surcharge is unset. Not a problem
-    # for this function, but the accepted best-practice is to change the above to
-    #
-    #     def random_spanning_tree(
-    #         graph: Graph,
-    #         region_surcharge: Optional[Dict] = None
-    #     ) -> Graph:
-    #         if region_surcharge is None:
-    #             region_surcharge = dict()
-    #
-    # since this doesn't reuse the reference.
-
+    # Create an empty dict now instead of as a default parameter to avoid
+    # having a single dict instantiated at program start time that is
+    # reused for all calls.
     if region_surcharge is None:
         region_surcharge = dict()
 
@@ -275,31 +158,6 @@ def random_spanning_tree(graph: Graph, region_surcharge: Optional[Dict] = None) 
         #
         for key, value in region_surcharge.items():
             # We surcharge edges that are in different regions and those that are not in any region
-
-            # frm: TODO: BUG?  Why do we surcharge when either node is not in the region?
-            #
-            # In the paper that Peter sent me titled, Models of Random Spanning Trees, it states:
-            #
-            #     When users desire to make it more likely that two nodes are placed in
-            #     different pieces of a partition, they can add a positive “surcharge”
-            #     to the weight on the edge between those nodes. When a collection of
-            #     contiguous nodes makes up a region that users prefer to keep in the
-            #     same piece, the same idea can be used to surcharge the boundary edges
-            #     of the region. This has the effect that minimum spanning tree is more
-            #     likely to restrict to a tree on the designated region; in the
-            #     bipartition step, that means the region will be kept whole or split
-            #     at most once.
-            #
-            # But the code below surcharges both when the nodes are in different regions
-            # AND when either of the nodes is not in a region at all.  From what the
-            # article says, we should not surcharge when BOTH nodes are not in a region
-            # at all.
-            #
-            # ...confused...
-            #
-            # Ask Peter...
-            #
-
             node_id1 = edge[0]
             node_id2 = edge[1]
             node_id1_region = graph.node_data(node_id1)[key]
@@ -321,7 +179,10 @@ def random_spanning_tree(graph: Graph, region_surcharge: Optional[Dict] = None) 
     return minimum_spanning_tree
 
 
-def uniform_spanning_tree(graph: Graph, choice: Callable = random.choice) -> Graph:
+def uniform_spanning_tree(
+    graph: Graph,
+    region_surcharge: dict = None,  # accepted for API compatibility, but unused
+) -> Graph:
     """Builds a spanning tree chosen uniformly from the space of all spanning trees of the graph.
 
     Uses Wilson's algorithm. If interested, there is a nice animated description of Wilson's
@@ -346,14 +207,19 @@ def uniform_spanning_tree(graph: Graph, choice: Callable = random.choice) -> Gra
 
     Args:
         graph (Graph): Graph
-        choice (Callable, optional): `random.choice`. Defaults to `random.choice`.
+        region_surcharge (Optional[Dict], optional): Not used in this function.  It exists
+            in the function signature so that all spanning tree functions will share the
+            same signature.
 
     Returns:
         Graph: A spanning tree of the graph chosen uniformly at random.
     """
 
+    if region_surcharge:
+        raise ValueError("uniform_spanning_tree() region_surcharge paramter should be empty")
+
     # Pick a starting point at random
-    root_id = choice(list(graph.node_indices))
+    root_id = random.choice(list(graph.node_indices))
 
     # Initiallize the tree to contain the root_node (with no parent)
     tree_nodes = set([root_id])
@@ -367,7 +233,7 @@ def uniform_spanning_tree(graph: Graph, choice: Callable = random.choice) -> Gra
         # taken effectively removes cycles from the path.
         u = node_id
         while u not in tree_nodes:
-            parent_node_id[u] = choice(list(graph.neighbors(u)))
+            parent_node_id[u] = random.choice(list(graph.neighbors(u)))
             u = parent_node_id[u]
 
         # Record the "direct" path (the one with no cycles)
@@ -378,10 +244,19 @@ def uniform_spanning_tree(graph: Graph, choice: Callable = random.choice) -> Gra
             tree_nodes.add(u)
             u = parent_node_id[u]
 
-    G = Graph.from_null_networkx()
+    graph_of_spanning_tree = Graph.from_null_networkx()
+    nx_graph = graph_of_spanning_tree.get_nx_graph()
 
     for node_id in tree_nodes:
         if parent_node_id[node_id] is not None:
-            G.add_edge(node_id, parent_node_id[node_id])
+            # Add the nodes and the edge to the spanning_tree
+            nx_graph.add_edge(node_id, parent_node_id[node_id])
 
-    return G
+    # Return a graph that is the same "kind" of graph as the graph passed in.
+    # The current graph_of_spanning_tree is an NX-based graph, so convert it to
+    # be RX-based if the graph passed in was RX-based.
+    #
+    if graph.is_rx_graph():
+        graph_of_spanning_tree = graph_of_spanning_tree.convert_from_nx_to_rx()
+
+    return graph_of_spanning_tree

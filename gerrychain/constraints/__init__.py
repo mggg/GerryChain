@@ -56,7 +56,6 @@ from .compactness import (
 )
 from .contiguity import (
     contiguous,
-    contiguous_bfs,
     no_more_discontiguous,
     single_flip_contiguous,
 )
@@ -82,7 +81,6 @@ __all__ = [
     "no_worse_L1_reciprocal_polsby_popper",
     "no_worse_L_minus_1_polsby_popper",
     "contiguous",
-    "contiguous_bfs",
     "no_more_discontiguous",
     "single_flip_contiguous",
     "Validator",

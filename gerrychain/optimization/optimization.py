@@ -478,7 +478,6 @@ class SingleMetricOptimizer:
             with_progress_bar=with_progress_bar,
         )
 
-    # TODO: Refactoring:  Maybe add a max_time variable so we don't run forever.
     def variable_length_short_bursts(
         self,
         num_steps: int,

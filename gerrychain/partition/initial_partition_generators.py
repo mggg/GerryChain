@@ -14,7 +14,6 @@ from typing import (
 from ..graph import Graph
 from ..tree import BalanceError, PopulationBalanceError, bipartition_tree
 
-# frm: TODO: Update docstrings below
 """
 This module provides routines to create initial assignments for a Partition object.
 
@@ -61,7 +60,7 @@ def recursive_tree_part(
     pop_col: str,
     epsilon: float,
     node_repeats: int = 1,
-    bipartition_tree_fn: Callable = partial(bipartition_tree, max_attempts=10000),
+    bipartition_tree_fn: Callable = partial(bipartition_tree, max_attempts=100000),
 ) -> Dict:
     """Return new assignments for the nodes of ``graph``.
 
@@ -82,7 +81,7 @@ def recursive_tree_part(
         node_repeats (int, optional): Parameter for `gerrychain.tree.bipartition_tree` to
             use. Defaluts to 1.
         bipartition_tree_fn (Callable, optional): The partition method to use. Defaults to
-            `partial(bipartition_tree, max_attempts=10000)`.
+            `partial(bipartition_tree, max_attempts=100000)`.
 
     Returns:
         dict: New assignments for the nodes of ``graph``.
@@ -193,7 +192,7 @@ def _get_seed_chunks(
     pop_col: str,
     epsilon: float,
     node_repeats: int = 1,
-    bipartition_tree_fn: Callable = partial(bipartition_tree, max_attempts=10000),
+    bipartition_tree_fn: Callable = partial(bipartition_tree, max_attempts=100000),
 ) -> List[List[int]]:
     """Helper function for recursive_seed_part.
 
@@ -238,8 +237,6 @@ def _get_seed_chunks(
     for node in graph.node_indices:
         chunk_pop += graph.node_data(node)[pop_col]
 
-    # frm: TODO: Refactoring:  See if there is a better way to structure this instead of a while
-    # True loop...
     while True:
         epsilon = abs(epsilon)
 
@@ -384,7 +381,7 @@ def _recursive_seed_part_inner(
     pop_target: Union[float, int],
     pop_col: str,
     epsilon: float,
-    bipartition_tree_fn: Callable = partial(bipartition_tree, max_attempts=10000),
+    bipartition_tree_fn: Callable = partial(bipartition_tree, max_attempts=100000),
     node_repeats: int = 1,
     n: Optional[int] = None,
     ceil: Optional[int] = None,
@@ -476,27 +473,6 @@ def _recursive_seed_part_inner(
             one_sided_cut=False,  # flag to say we want to bisect graph
         )
 
-        # frm: TODO: Refactoring:  the name "one_sided_cut" seems unnecessarily opaque.
-        #
-        # First find out if it a term of art that means something to the GerryChain user
-        # community.  I asked Google what it was, and Google said that it was not a term-of-art
-        # for graph theory...
-        #
-        # In GerryChain "one_sided_cut" it means (if set to True) that the bipartition_tree()
-        # algorithm should just carve off a single district from the nodes in the graph.  If
-        # set to False it means the graph should be split into exactly two districts.
-        #
-        # There are two issues here: 1) I dislike the name and am inclined to change it, but
-        # I am afraid that doing so will piss off legacy users - need Peter's input (but probably
-        # not worth the risk of pissing someone off) and 2) whether for understandability it
-        # would make sense to create a partial function that binds the value of "one_sided_cut"
-        # just to provide a clearer name - something like: carve_out_one_district() .
-        #
-        # One more thing - I think it would be good practice to NEVER let one_sided_cut
-        # default.  If only for documentation purposes, this parameter should always be explicitly
-        # set and named, because carving off a district is very different from splitting
-        # a graph into two districts.
-
         nodes_for_one_district = set(nodes)
         nodes_for_the_other_district = set(graph.node_indices) - nodes_for_one_district
 
@@ -544,7 +520,6 @@ def _recursive_seed_part_inner(
         )
 
     # split graph into num_chunks chunks, and recurse into each chunk
-    # frm: * TODO: Documentation: Add documentation for why a subgraph in call below
     elif num_dists % num_chunks == 0:
         chunks = _get_seed_chunks(
             graph.subgraph(graph.node_indices),  # needs to be a subgraph
@@ -586,40 +561,13 @@ def _recursive_seed_part_inner(
     return translated_assignment
 
 
-# frm TODO: Refactoring: recursive_seed_part() is never called, not in this
-#     file and not in any other
-#     GerryChain file. Is it intended to be used by end-users?
-#
-# It calculates an initial assignment dictionary - for use in creating a Partition object.
-#
-# Are there other uses as well?  The comment for recursive_tree_part() implied that there
-# might be other uses for creating an initial assigment-like dict...
-#
-# In January 2026, Peter said: I am unsure of what was in the mind of the creator of this
-# function, but I have only ever seen it used for making initial partitions of a graph.
-#
-# He also said that it was OK to move stuff into other files:
-#
-# Moving recursive_seed_part, recursive_seed_part, and epsilon_tree_bipartition makes
-# sense to me. My only organizational note is that I would like the recursive functions
-# placed in something like "partition/initial_paritition_generators.py" rather than
-# in "parition/partition.py" since they have been used for things outside of making
-# a Partition object before, and we have some more algorithms that we might add to
-# the mix later this year (also, I would like to try and move this repository to
-# the "one thought per file" paradigm whenever we get the chance during this refactor).
-# The epsilon_tree_bipartition is fine to go in "proposals/tree_proposals.py", however.
-#
-# And: Note to self: we will need to make sure to add this to the top of the release notes..
-#
-
-
 def recursive_seed_part(
     graph: Graph,
     parts: Sequence,
     pop_target: Union[float, int],
     pop_col: str,
     epsilon: float,
-    bipartition_tree_fn: Callable = partial(bipartition_tree, max_attempts=10000),
+    bipartition_tree_fn: Callable = partial(bipartition_tree, max_attempts=100000),
     node_repeats: int = 1,
     n: Optional[int] = None,
     ceil: Optional[int] = None,
@@ -653,6 +601,9 @@ def recursive_seed_part(
     Returns:
         dict: New assignments for the nodes of ``graph``.
     """
+
+    # Note: recursive_seed_part() is never used in the GerryCode codebase, but it is
+    # part of the public API.
 
     # frm: Note: It is not strictly necessary to use a subgraph in the call below on
     #               _recursive_seed_part_inner(), because the top-level graph has
