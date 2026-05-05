@@ -30,6 +30,7 @@ from collections.abc import Callable, Iterable
 
 from gerrychain.constraints import Bounds, Validator
 from gerrychain.partition import Partition
+from gerrychain.proposals import ProposalFn
 
 
 class MarkovChain:
@@ -52,7 +53,8 @@ class MarkovChain:
 
     def __init__(
         self,
-        proposal: Callable[[Partition], Partition],
+        # proposal: Callable[[Partition], Partition],
+        proposal: ProposalFn,
         constraints: Iterable[Callable] | Validator | Iterable[Bounds] | Callable,
         accept: Callable,
         initial_state: Partition,
