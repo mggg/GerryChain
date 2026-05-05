@@ -240,6 +240,11 @@ _Cut.subset.__doc__ = "The (frozen) subset of nodes on one side of the cut. Defa
 
 # Define an interface for find_balanced_edge_cut functions
 #
+# frm: TODO: Documentation: Add documentation for find_balanced_edge_cut_fn()
+#
+# The whole point is to make it clear to the user that this is a thing, so tell
+# them what kind of thing it is - and what the params are for...
+#
 class FindBalancedEdgeCutsFn(Protocol):
     def __call__(
         self,

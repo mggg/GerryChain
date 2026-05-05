@@ -342,7 +342,6 @@ file: gerrychain/constraints/contiguity.py
       
       def contiguous_bfs(partition):  
 
-
     * Impact on users:
         * Changes to internal functions will not have an impact on users.
         * Any use of contiguous_bfs() will cause an exception.

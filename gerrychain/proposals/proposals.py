@@ -1,8 +1,23 @@
 import random
+from typing import Protocol
 
-# from typing import TypeVar
 # Partition = TypeVar("Partition")
 from ..partition import Partition
+
+# from typing import TypeVar
+
+
+# Define a name for a Proposal function.
+#
+# This is just syntactic sugar, but it at least provides a place
+# to talk about what a Proposal is...
+#
+# frm: TODO: Documentation: Describe what a ProposalFn is
+#
+# Describe some of the ways to create a ProposalFn
+#
+class ProposalFn(Protocol):
+    def __call__(self, x: Partition) -> Partition: ...
 
 
 def propose_any_node_flip(partition: Partition) -> Partition:
