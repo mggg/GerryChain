@@ -196,8 +196,8 @@ def contiguous(partition: Partition) -> bool:
     return all(partition.subgraphs[part].is_connected_bfs() for part in _affected_parts(partition))
 
 
-# frm: TODO: Refactoring: Delete this - it is obsolete...
-def contigous_bfs(partition) -> bool:
+# TODO: Delete this - it is obsolete...
+def contiguous_bfs(partition) -> bool:
     raise ("contiguous_bfs() is obsolete")
 
 

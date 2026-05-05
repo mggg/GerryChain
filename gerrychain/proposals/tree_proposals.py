@@ -237,6 +237,8 @@ def recom(
     return partition.flip(flips)
 
 
+# Code before rewrite in April 2026 (to fix bug in loop termination condition)
+#
 # def recom(
 #     partition: Partition,
 #     pop_col: str,

@@ -362,26 +362,6 @@ class Graph:
 
         return nx_graph
 
-    # frm: TODO: Refactoring: Peter: What you think about "cosmetic" type definitions?
-    #
-    # There are several places where the code has type-hints of "Any" or "int".  I would like for
-    # purely stylistic reasons to substitute more informative terms.  For instance, node_ids
-    # can be integers or tuples or strings, so they are currently "typed" as "Any", but we
-    # could define a "node_id_type" that was just syntactic sugar for "Any" and make the
-    # function signatures make more sense.
-    #
-    # These definitions would also provide a convenient and logical place to talk about
-    # the specifics of each "type" - NX vs. RX, districts as part of partitions, etc.
-    #
-    # Specific cases:
-    #
-    #     node_id_type for "Any"
-    #     edge_id_type for "Any"
-    #     edge_type for "tuple[node_id_type, node_id_type]".
-    #     district_id_type for "int"
-    #     flip_dict_type for dict[node_id_type, district_id_type])
-    #
-
     def original_nx_node_id_for_internal_node_id(self, internal_node_id: Any) -> Any:
         """Translate a node_id to its "original" node_id.
 
@@ -1029,10 +1009,6 @@ class Graph:
         """
         # Return a set of edge tuples
 
-        # frm: TODO: Code: ???: Should edges return a list instead of a set?
-        #
-        # Peter said he thought users would expect a list - but why?
-
         self.verify_graph_is_valid()
 
         if self.is_rx_graph():
@@ -1188,13 +1164,6 @@ class Graph:
         Returns:
             bool: False
         """
-        # frm * TODO: Code:   Delete this code: graph.is_directed() once convinced it is safe to
-        # do so...
-        #
-        # Not quite sure what the problem is, but when I changed this to raise an
-        # exception, that is what it did.  It appeared that it was being called from
-        # RX code, which makes no sense.  So, there is some sleuthing to be done...
-        #
 
         return False
 
@@ -1233,29 +1202,13 @@ class Graph:
         Returns:
             Any: Whatever the embedded graph object returns from its __getattribute__() function.
         """
-        # frm: TODO: Code: Get rid of _getattr_ eventually - it is very dangerous...
 
-        # frm: Interesting bug lurking if __name is "nx_graph".  This occurs when legacy code
-        #       uses the default constructor, Graph(), and then references a built-in NX
-        #       Graph method, such as my_graph.add_edges().  In this case the built-in NX
-        #       Graph method is not defined, so __getattr__() is called to try to figure out
-        #       what it could be.  This triggers the call below to self.is_nx_graph(), which
-        #       references self._nx_graph (which is undefined/None) which triggers another
-        #       call to __getattr__() which is BAD...
+        # Avoid an infinite loop that can happen if a user happens to use the default
+        # constructor for a Graph.  In that case the Graph object will have no
+        # attributes, and that is bad, because the code for is_rx_traph() below
+        # checks for the _rx_graph attribute which will end up calling __getattr__()
+        # and we loop forever...
         #
-        #       I think the solution is to not rely on testing whether nx_graph and rx_graph
-        #       are None - but rather to have explicit is_nx_or_rx_graph data member which
-        #       is set to one of "NX", "RX", "not_set".
-        #
-        #       For now, I am just going to return None if __name is "_nx_graph" or "_rx_graph".
-        #
-        # Peter's comments from PR:
-        #
-        # Oh interesting; good catch! The flag approach seems like a good solution to me.
-        # It's very, very rare to use the default constructor, so I don't imagine that
-        # people will really run into this.
-
-        # frm: TODO: Code: Fix this hack (in __getattr__) - see comment above...
         if (__name == "_nx_graph") or (__name == "_rx_graph"):
             return None
 
@@ -1272,22 +1225,6 @@ class Graph:
             )
 
     def __getitem__(self, __name: str) -> Any:
-        # frm: TODO: Code: Does any of the code actually use __getitem__ ?
-        #
-        #           It is a clever Python way to use square bracket
-        #           notation to access something (anything) you want.
-        #
-        #           In this case, it returns the NetworkX AtlasView
-        #           of neighboring nodes - looks like a dictionary
-        #           with a key of the neighbor node_id and a value
-        #           with the neighboring node's data (another dict).
-        #
-        #           I am guessing that it is only ever used to get
-        #           a list of the neighbor node_ids, in which case
-        #           it is functionally equivalent to self.neighbors().
-        #
-        #           *sigh*
-        #
         self.verify_graph_is_valid()
 
         if self.is_rx_graph():
@@ -1963,17 +1900,6 @@ class Graph:
             scipy.sparse.csr_array: A SciPy sparse array containing the Laplacian matrix
         """
         # A local "gc" (as in GerryChain) version of the laplacian matrix
-
-        # frm: TODO: Code: laplacian_matrix(): should NX and RX return same type (float vs. int)?
-        #
-        #               The NX version returns a matrix of integer values while the
-        #               RX version returns a matrix of floating point values.  I
-        #               think the reason is that the RX.adjacency_matrix() call
-        #               returns an array of floats.
-        #
-        #               Since the laplacian matrix is used for further numeric
-        #               processing, I don't think this matters, but I should
-        #               check to be 100% certain.
 
         if self.is_rx_graph():
             rx_graph = self._rx_graph

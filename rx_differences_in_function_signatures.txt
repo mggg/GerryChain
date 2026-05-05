@@ -1,9 +1,11 @@
 This document contains differences in function signatures introduced
 by the work to use RustworkX for GerryChain.
 
-??? => Note that this analysis does not take into account any changes to
-       parameter default values - whether they have gone from required
-       to optional or whether the default value has changed...
+=> Note that this analysis does not take into account any changes to
+   parameter default values - whether they have gone from required
+   to optional or whether the default value has changed...
+
+   It also does not take into account changes to class definitions.
 
 =====================================
 The following files had no changes to function signatures:
@@ -220,14 +222,6 @@ file: gerrychain/tree/bipartition_tree.py
            reimplemented to share code rather than replicate it.  The new parameter has
            a default value that allows existing code to continue to work.
 
-
-    def __call__(self, h, one_sided_cut, rootnode_choice_fn):
-
-    ??? what's up with __call__()?
-
-    * Impact on users:
-        * ???
-
 =====================================
 file: gerrychain/tree/spanning_tree.py
 
@@ -334,8 +328,19 @@ file: gerrychain/constraints/contiguity.py
             OLD =>
               def partition_edge_avoid(start_node, end_node, edge_attrs):
 
-  def contiguous_bfs(partition):  => This is obsolete - it just raises an exception
-  ??? why did this get deleted and what was it used for in old days?
+    * Function(s) deleted from the RX codebase
+      
+      => Note: in the old codebase, contiguous_bfs() had exactly the same 
+               semantics as contiguous() - the difference was in how they
+               were implemented.  The function, contiguous() used 
+               a builtin NetworkX routine, is_connected(), while the 
+               function, contiguous_bfs() mostly does not use NetworkX.
+               To reduce the use of NetworkX and also to reduce redundancy
+               the contiguous_bfs() function has been deleted from 
+               the new codebase in preference for contiguous() which
+               has been reimplemented with no dependence on NetworkX.
+      
+      def contiguous_bfs(partition):  
 
 
     * Impact on users:
@@ -608,20 +613,6 @@ file: gerrychain/updaters/election.py
           parties_to_columns, 
           alias
         ):
-
-  def _initialize_self(self, partition):   => This appears to be new in the RX code, but it is never called
-  ??? what is up with this?
-      This function is never called, and so it should just be deleted.
-      It looks like someone (perhaps me) thought it would be
-      more self descriptive to use this instead of having the 
-      logic inline.  If you look at the code, immediately above
-      the def _initialize_self() there is a line that has 
-      exactly what is in the body of the function.  
-
-      Note also that the second param, "partition" is never 
-      referenced.  Probably best to just move comments from
-      the function to the inline code and then delete the
-      function...
 
     * Impact on users:
         * If a user uses the named parameter, "parties_to_columns"
