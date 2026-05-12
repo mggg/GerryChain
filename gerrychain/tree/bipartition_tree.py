@@ -523,60 +523,6 @@ def find_balanced_edge_cuts_memoization(
 
     # We are looking for a way to bisect the graph (one_sided_cut is False)
     for node, tree_pop in subtree_pops.items():
-        # frm: TODO: Documention:  Why keep looping if you have found a solution?
-        #
-        # As Peter says in his comments below, there is a reason why we want to find
-        # all of the possible edge cuts.  I think it would make sense to document
-        # why (basically edit what Peter said).
-        #
-        # There is another documentation issue which is related but which does not
-        # belong here in the code, namely a discussion of how the choice of epsilon
-        # (which controls how close a district's population must be to the ideal
-        # population), affects the performance of the algorithm.  I have to admit
-        # that I do not understand this myself after days of head scratching, which
-        # is why I think we need better documentation for users.
-        #
-        # I stumbled across this issue in debugging why a test case for recom()
-        # failed after not finding a solution in 100,000 tries.  The problem was
-        # that the spanning trees in tbose 100,000 tries failed to split the
-        # subgraph into two districts that each had an appropriate population.
-        # One would have an appropriate population on the smaller side, but
-        # the remaining nodes would have a population that added up to more
-        # than the acceptable population.
-        #
-        # The point is that it is almost certainly not obvious to most users how
-        # the algorithm works and how epsilon affects it.  In particular, if the
-        # algorithm fails, the only advice given is a warning message:
-        #
-        #     Failed to find a balanced cut after 1000 attempts....
-        #
-        # which is actually good advice, but it does not help the user understand
-        # why the find_balanced_edge_cuts_fn() failed.
-        #
-        # Peter said (January 2026):
-        #
-        # Ah, I have had this thought before, and I asked a student to look into it.
-        # It is not unreasonable to be concerned that there might be topological
-        # constraints in the graph that make some balanced edges "easier" to find
-        # compared to others (the populations on the nodes make things really tricky
-        # from a theory standpoint). If that is true, then picking the first edge
-        # that you find can change the distribution that you are sampling from. I
-        # conjecture that in regular (non-reversible) recom chains, the number of
-        # spanning trees where such a distinction appears is sufficiently small
-        # as to not bias the algorithm so long as the graph is not intentionally
-        # made bad, but I am unaware of any proof. What work the student did seems
-        # to lend credence to this conjecture as well, but the graphs they were able
-        # to examine thoroughly were not sufficiently complicated as to justify a
-        # change in the implementation.
-        #
-        # In addition, the published algorithm (Algorithm 6 here:
-        # https://mggg.org/uploads/ReCom.pdf)
-        # samples uniformly # from the possible cut edges, so we should stick with that
-        # until we have good reason to do otherwise.
-        #
-        # Also, the number of possible balance cut edges DOES matter for reversible
-        # recom: it is a part of the formula that determines the acceptance probability
-        # when doing approximate balance.
 
         if (abs(tree_pop - h.ideal_pop) <= h.ideal_pop * h.epsilon) and (
             abs((total_pop - tree_pop) - h.ideal_pop) <= h.ideal_pop * h.epsilon

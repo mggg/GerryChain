@@ -1,23 +1,74 @@
+"""
+This module defines a ProposalFn - which is just a function that
+takes a Partition object as a parameter and returns a new Partition
+object as a result.
+
+It also defines several such functions.
+
+Note that a ProposalFn is used by the MarkovChain class as the
+way it generates the next Parition object on each iteration.
+
+The fact that a ProposalFn takes a single argument means that
+any additional information to be used by a ProposalFn needs to
+be bound using a "partial" function definition.  For instance,
+the recom() function needs to know which bipartition function
+to use, and so the appropriate bipartition function is bound
+using a "partial" function in order to create a ProposalFn
+that only takes the Partition object as its single parameter.
+
+Convenience routines are often provided to do this "partial"
+function binding.
+"""
+
+# frm: TODO: Documentation: Peter - are you OK with the comments above?
+
 import random
 from typing import Protocol
 
-# Partition = TypeVar("Partition")
 from ..partition import Partition
-
-# from typing import TypeVar
 
 
 # Define a name for a Proposal function.
 #
-# This is just syntactic sugar, but it at least provides a place
-# to talk about what a Proposal is...
-#
-# frm: TODO: Documentation: Describe what a ProposalFn is
-#
-# Describe some of the ways to create a ProposalFn
+# This is just syntactic sugar, but it provides a way to
+# document that an argument to a function should be one
+# that takes a partition object as a param and returns
+# a new partition.
 #
 class ProposalFn(Protocol):
     def __call__(self, x: Partition) -> Partition: ...
+
+
+# frm: TODO: Refactoring: Peter: Should we use ProposalFn more broadly?
+#
+# Peter made the point that many GerryChain users do not really understand
+# what a partial function is, and hence it might be nice to provide some
+# utility functions in the ReCom class to allow them to just use a pre-partialed
+# proposal function.
+#
+# In the same spirit, I am inclined to 1) specify that the parameter for
+# the proposal in MarkovChain be a ProposalFn (DONE), but 2) to also
+# create an idiom generally that a user should call a generate_xxx_proposal()
+# function to get a proposal.  This would allow us to identify when a function
+# is intended to be used as a proposal.
+#
+# So, for example, instead of just defining propose_any_node_flip() we would
+# also define a generate_any_node_flip_proposal() with the following definition:
+#
+#     def generate_any_node_flip_proposal() -> ProposalFn:
+#         return propose_any_node_flip
+#
+# and then users would get used to saying:
+#
+#     my_proposal = generate_any_node_flip_proposal()
+#
+#     chain = MarkovChain(
+#       my_proposal,
+#       ...
+#       )
+#
+# So, the question for Peter is whether this sounds like a good idea or just
+# a bunch of syntactic sugar "hot air".
 
 
 def propose_any_node_flip(partition: Partition) -> Partition:
