@@ -6,17 +6,17 @@ returns a new Partition, and is used by the MarkovChain to generate
 the next Partition at each step of the chain.
 
 Because a ProposalFn must accept only a single Partition argument, any
-additional information to be used by a ProposalFn needs to be bound 
-ahead of time. This is often done by partially applying the proposal 
-function with functools.partial, or by using a helper function that returns 
+additional information to be used by a ProposalFn needs to be bound
+ahead of time. This is often done by partially applying the proposal
+function with functools.partial, or by using a helper function that returns
 a closure capturing the additional parameters.
 
-For instance, the recom() function needs to know which bipartition function 
+For instance, the recom() function needs to know which bipartition function
 to use, and so the appropriate bipartition function is bound in advance through
 one of the aformentioned methods and the returned a ProposalFn will have the
 expected single-argument signature.
 
-Since using the paritial function or creating an appropriate closure can be 
+Since using the paritial function or creating an appropriate closure can be
 unintuitive, convenience functions are often provided to perform this binding.
 """
 
@@ -37,38 +37,6 @@ from ..partition import Partition
 #
 class ProposalFn(Protocol):
     def __call__(self, x: Partition) -> Partition: ...
-
-
-# frm: TODO: Refactoring: Peter: Should we use ProposalFn more broadly?
-#
-# Peter made the point that many GerryChain users do not really understand
-# what a partial function is, and hence it might be nice to provide some
-# utility functions in the ReCom class to allow them to just use a pre-partialed
-# proposal function.
-#
-# In the same spirit, I am inclined to 1) specify that the parameter for
-# the proposal in MarkovChain be a ProposalFn (DONE), but 2) to also
-# create an idiom generally that a user should call a generate_xxx_proposal()
-# function to get a proposal.  This would allow us to identify when a function
-# is intended to be used as a proposal.
-#
-# So, for example, instead of just defining propose_any_node_flip() we would
-# also define a generate_any_node_flip_proposal() with the following definition:
-#
-#     def generate_any_node_flip_proposal() -> ProposalFn:
-#         return propose_any_node_flip
-#
-# and then users would get used to saying:
-#
-#     my_proposal = generate_any_node_flip_proposal()
-#
-#     chain = MarkovChain(
-#       my_proposal,
-#       ...
-#       )
-#
-# So, the question for Peter is whether this sounds like a good idea or just
-# a bunch of syntactic sugar "hot air".
 
 
 def propose_any_node_flip(partition: Partition) -> Partition:
