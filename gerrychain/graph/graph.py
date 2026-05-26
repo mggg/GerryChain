@@ -1205,7 +1205,7 @@ class Graph:
 
         # Avoid an infinite loop that can happen if a user happens to use the default
         # constructor for a Graph.  In that case the Graph object will have no
-        # attributes, and that is bad, because the code for is_rx_traph() below
+        # attributes, and that is bad, because the code for is_rx_graph() below
         # checks for the _rx_graph attribute which will end up calling __getattr__()
         # and we loop forever...
         #

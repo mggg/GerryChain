@@ -1,23 +1,23 @@
 """
-This module defines a ProposalFn - which is just a function that
-takes a Partition object as a parameter and returns a new Partition
-object as a result.
+This module defines proposal functions for use with MarkovChain.
 
-It also defines several such functions.
+A ProposalFn is a function that takes a Partition as its only argument and
+returns a new Partition, and is used by the MarkovChain to generate
+the next Partition at each step of the chain.
 
-Note that a ProposalFn is used by the MarkovChain class as the
-way it generates the next Parition object on each iteration.
+Because a ProposalFn must accept only a single Partition argument, any
+additional information to be used by a ProposalFn needs to be bound 
+ahead of time. This is often done by partially applying the proposal 
+function with functools.partial, or by using a helper function that returns 
+a closure capturing the additional parameters.
 
-The fact that a ProposalFn takes a single argument means that
-any additional information to be used by a ProposalFn needs to
-be bound using a "partial" function definition.  For instance,
-the recom() function needs to know which bipartition function
-to use, and so the appropriate bipartition function is bound
-using a "partial" function in order to create a ProposalFn
-that only takes the Partition object as its single parameter.
+For instance, the recom() function needs to know which bipartition function 
+to use, and so the appropriate bipartition function is bound in advance through
+one of the aformentioned methods and the returned a ProposalFn will have the
+expected single-argument signature.
 
-Convenience routines are often provided to do this "partial"
-function binding.
+Since using the paritial function or creating an appropriate closure can be 
+unintuitive, convenience functions are often provided to perform this binding.
 """
 
 # frm: TODO: Documentation: Peter - are you OK with the comments above?
