@@ -1,4 +1,4 @@
-import functools
+# import functools
 import random
 from functools import partial
 
@@ -15,7 +15,10 @@ from gerrychain.partition import (
     recursive_tree_part,
 )
 from gerrychain.partition.initial_partition_generators import get_max_prime_factor_less_than
-from gerrychain.proposals import recom, reversible_recom
+from gerrychain.proposals import (  # recom,; reversible_recom,
+    build_recom_proposal,
+    build_reversible_recom_proposal,
+)
 from gerrychain.tree import (
     bipartition_tree,
     find_balanced_edge_cuts_contraction,
@@ -511,12 +514,21 @@ def test_bipartition_tree_returns_a_tree(graph_with_pop_nx, graph_with_pop_rx):
 def test_recom_works_as_a_proposal(partition_with_pop):
     graph = partition_with_pop.graph
     ideal_pop = sum(graph.node_data(node)["pop"] for node in graph) / 2
-    proposal = functools.partial(
-        recom, pop_col="pop", pop_target=ideal_pop, epsilon=0.25, node_repeats=5
+    # OLD version using explicit partial()...
+    # proposal = functools.partial(
+    #     recom,
+    #     pop_col="pop",
+    #     pop_target=ideal_pop,
+    #     epsilon=0.25,
+    #     node_repeats=5
+    # )
+    #
+    my_proposal = build_recom_proposal(
+        pop_col="pop", pop_target=ideal_pop, epsilon=0.25, node_repeats=5
     )
     constraints = [contiguous]
 
-    chain = MarkovChain(proposal, constraints, lambda x: True, partition_with_pop, 100)
+    chain = MarkovChain(my_proposal, constraints, lambda x: True, partition_with_pop, 100)
 
     for state in chain:
         assert contiguous(state)
@@ -526,8 +538,17 @@ def test_reversible_recom_works_as_a_proposal(partition_with_pop):
     random.seed(2018)
     graph = partition_with_pop.graph
     ideal_pop = sum(graph.node_data(node)["pop"] for node in graph) / 2
-    proposal = functools.partial(
-        reversible_recom,
+
+    # OLD version using explicit partial()...
+    #    proposal = functools.partial(
+    #        reversible_recom,
+    #        pop_col="pop",
+    #        pop_target=ideal_pop,
+    #        epsilon=0.10,
+    #        max_balanced_edge_cuts=1,
+    #    )
+    #
+    my_proposal = build_reversible_recom_proposal(
         pop_col="pop",
         pop_target=ideal_pop,
         epsilon=0.10,
@@ -580,7 +601,7 @@ def test_reversible_recom_works_as_a_proposal(partition_with_pop):
     #     figure out WTF was going on...
     #
 
-    chain = MarkovChain(proposal, constraints, lambda x: True, partition_with_pop, 100)
+    chain = MarkovChain(my_proposal, constraints, lambda x: True, partition_with_pop, 100)
 
     for state in chain:
         assert contiguous(state)

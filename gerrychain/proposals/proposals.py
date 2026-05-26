@@ -90,6 +90,11 @@ def propose_any_node_flip(partition: Partition) -> Partition:
     return partition.flip({node: newpart})
 
 
+# Define a ProposalFn version to make purpose of the function clear
+def build_propose_any_node_flip_proposal() -> ProposalFn:
+    return propose_any_node_flip
+
+
 def propose_flip_every_district(partition: Partition) -> Partition:
     """Proposes a random boundary flip for each district in the partition.
 
@@ -114,6 +119,11 @@ def propose_flip_every_district(partition: Partition) -> Partition:
         flips.update(flip)
 
     return partition.flip(flips)
+
+
+# Define a ProposalFn version to make purpose of the function clear
+def build_propose_flip_every_district_proposal() -> ProposalFn:
+    return propose_flip_every_district
 
 
 def propose_chunk_flip(partition: Partition) -> Partition:
@@ -147,6 +157,11 @@ def propose_chunk_flip(partition: Partition) -> Partition:
     return partition.flip(flips)
 
 
+# Define a ProposalFn version to make purpose of the function clear
+def build_propose_chunk_flip_proposal() -> ProposalFn:
+    return propose_chunk_flip
+
+
 def propose_random_flip(partition: Partition) -> Partition:
     """Proposes a random boundary flip from the partition.
 
@@ -166,6 +181,11 @@ def propose_random_flip(partition: Partition) -> Partition:
     flipped_node, other_node = edge[index], edge[1 - index]
     flip = {flipped_node: partition.assignment.mapping[other_node]}
     return partition.flip(flip)
+
+
+# Define a ProposalFn version to make purpose of the function clear
+def build_propose_random_flip_proposal() -> ProposalFn:
+    return propose_random_flip
 
 
 def slow_reversible_propose_bi(partition: Partition) -> Partition:
@@ -201,6 +221,11 @@ def slow_reversible_propose_bi(partition: Partition) -> Partition:
 flip = propose_random_flip
 
 
+# Define a ProposalFn version to make purpose of the function clear
+def build_slow_reversible_propose_bi_proposal() -> ProposalFn:
+    return slow_reversible_propose_bi
+
+
 def slow_reversible_propose(partition: Partition) -> Partition:
     """Proposes a random boundary flip from the partition in a reversible fashion
 
@@ -217,3 +242,8 @@ def slow_reversible_propose(partition: Partition) -> Partition:
 
     flip = random.choice(list(b_nodes))
     return partition.flip({flip[0]: flip[1]})
+
+
+# Define a ProposalFn version to make purpose of the function clear
+def build_slow_reversible_propose_proposal() -> ProposalFn:
+    return slow_reversible_propose

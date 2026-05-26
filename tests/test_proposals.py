@@ -25,6 +25,13 @@ def partition(graph):
         proposals.slow_reversible_propose,
         proposals.slow_reversible_propose_bi,
         proposals.spectral_recom,
+        proposals.build_propose_any_node_flip_proposal(),
+        proposals.build_propose_flip_every_district_proposal(),
+        proposals.build_propose_chunk_flip_proposal(),
+        proposals.build_propose_random_flip_proposal(),
+        proposals.build_slow_reversible_propose_proposal(),
+        proposals.build_slow_reversible_propose_bi_proposal(),
+        proposals.build_spectral_recom_proposal(),
     ],
 )
 def test_proposal_returns_a_partition(proposal, partition):

@@ -1,10 +1,12 @@
 import random
+from functools import partial
 from typing import Dict, Optional
 
 from numpy import linalg as LA
 
 from ..graph import Graph
 from ..partition import Partition
+from ..proposals import ProposalFn
 
 
 # frm: only ever used in this file - but maybe it is used externally?
@@ -136,3 +138,12 @@ def spectral_recom(
     )
 
     return partition.flip(flips)
+
+
+# Define a ProposalFn version to make purpose of the function clear
+def build_spectral_recom_proposal(
+    weight_type: Optional[str] = None,
+    lap_type: str = "normalized",
+) -> ProposalFn:
+    proposal_fn = partial(spectral_recom, weight_type=weight_type, lap_type=lap_type)
+    return proposal_fn

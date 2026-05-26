@@ -19,6 +19,7 @@ from ..tree.bipartition_tree import (
     _Cut,
     _PopulatedGraph,
 )
+from .proposals import ProposalFn
 
 
 # frm: only used in this file
@@ -237,6 +238,27 @@ def recom(
     return partition.flip(flips)
 
 
+# Define a ProposalFn version to make purpose of the function clear
+def build_recom_proposal(
+    pop_col: str,
+    pop_target: int | float,
+    epsilon: float,
+    node_repeats: int = 1,
+    region_surcharge: dict | None = None,
+    bipartition_tree_fn: Callable = bipartition_tree,
+) -> ProposalFn:
+    proposal_fn = partial(
+        recom,
+        pop_col=pop_col,
+        pop_target=pop_target,
+        epsilon=epsilon,
+        node_repeats=node_repeats,
+        region_surcharge=region_surcharge,
+        bipartition_tree_fn=bipartition_tree_fn,
+    )
+    return proposal_fn
+
+
 def reversible_recom(
     partition: Partition,
     pop_col: str,
@@ -385,6 +407,27 @@ def reversible_recom(
         return new_part
 
     return partition  # self-loop
+
+
+# Define a ProposalFn version to make purpose of the function clear
+def build_reversible_recom_proposal(
+    pop_col: str,
+    pop_target: int | float,
+    epsilon: float,
+    max_balanced_edge_cuts: int,
+    find_balanced_edge_cuts_fn: FindBalancedEdgeCutsFn = find_balanced_edge_cuts_memoization,
+    repeat_until_valid: bool = False,
+) -> ProposalFn:
+    proposal_fn = partial(
+        reversible_recom,
+        pop_col=pop_col,
+        pop_target=pop_target,
+        epsilon=epsilon,
+        max_balanced_edge_cuts=max_balanced_edge_cuts,
+        find_balanced_edge_cuts_fn=find_balanced_edge_cuts_fn,
+        repeat_until_valid=repeat_until_valid,
+    )
+    return proposal_fn
 
 
 # frm TODO: Refactoring:  Finish making class ReCom useful...
