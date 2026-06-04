@@ -135,16 +135,6 @@ class Election:
 
         self.updater = ElectionUpdater(self)
 
-    def _initialize_self(self, partition: Partition) -> None:
-
-        # Create DataTally objects for each party in the election.
-        self.tallies = {
-            # For each party, create a DataTally using the string for the node
-            # attribute where that party's vote totals can be found.
-            party: DataTally(self.party_names_to_node_attribute_names[party], party)
-            for party in self.parties
-        }
-
     def __str__(self) -> str:
         return (
             f"Election '{self.name}' with vote totals for parties {self.parties} "

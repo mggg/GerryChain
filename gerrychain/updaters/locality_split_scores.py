@@ -3,14 +3,6 @@ import math
 from collections import Counter, defaultdict
 from typing import List
 
-# frm: TODO: Performance: Do performance testing and improve performance of these routines.
-#
-# Peter made the comment in a PR that we should make this code more efficient:
-#
-# A note on this file: A ton of the code in here is inefficient. This was
-# made 6 years ago and hasn't really been touched since then other than
-# when I was doing an overhaul on many of the doc strings
-
 
 class LocalitySplits:
     """

@@ -19,6 +19,7 @@ from ..tree.bipartition_tree import (
     _Cut,
     _PopulatedGraph,
 )
+from .proposals import ProposalFn
 
 
 # frm: only used in this file
@@ -237,161 +238,25 @@ def recom(
     return partition.flip(flips)
 
 
-# def recom(
-#     partition: Partition,
-#     pop_col: str,
-#     pop_target: int | float,
-#     epsilon: float,
-#     node_repeats: int = 1,
-#     region_surcharge: dict | None = None,
-#     bipartition_tree_fn: Callable = bipartition_tree,
-# ) -> Partition:
-#     """Return new partition resulting from the ReCom algorithm.
-#
-#     ReCom (short for ReCombination) is a Markov Chain Monte Carlo (MCMC) algorithm used for
-#     redistricting. At each step of the algorithm, a pair of adjacent districts is selected at
-#     random and merged into a single district. The region is then split into two new districts by
-#     generating a spanning tree using the Kruskal/Karger algorithm and cutting an edge at random.
-#     The edge is checked to ensure that it separates the region into two new districts that are
-#     population balanced, and, if not, a new edge is selected at random and the process is repeated.
-#
-#     Example usage:
-#
-#         from functools import partial
-#         from gerrychain import MarkovChain
-#         from gerrychain.proposals import recom
-#
-#         # ...define constraints, accept, partition, total_steps here...
-#
-#         # Ideal population: pop_target = sum(partition["population"].values()) / len(partition)
-#
-#         proposal = partial(
-#             recom, pop_col="POP10", pop_target=pop_target, epsilon=.05, node_repeats=10
-#         )
-#
-#         chain = MarkovChain(proposal, constraints, accept, partition, total_steps)
-#
-#     Args:
-#         partition (Partition): The initial partition.
-#         pop_col (str): The name of the population column.
-#         pop_target (Union[int,float]): The target population for each district.
-#         epsilon (float): The epsilon value for population deviation as a percentage of the target
-#             population.
-#         node_repeats (int, optional): The number of times to repeat the bipartitioning step.
-#             Default is 1.
-#         region_surcharge (Optional[Dict], optional): The surcharge dictionary for the graph used
-#             for region-aware partitioning of the grid. Default is None.
-#         bipartition_tree_fn (Callable, optional): The method used for bipartitioning the tree.
-#             Default is `gerrychain.tree.bipartition_tree`.
-#
-#     Returns:
-#         Partition: The new partition resulting from the ReCom algorithm.
-#     """
-#
-#     bad_district_pairs = set()
-#     n_parts = len(partition)
-#     tot_pairs = n_parts * (n_parts - 1) / 2  # n choose 2
-#
-#     # Bind the region_aware parameter to the bipartition_tree_fn
-#     bipartition_tree_fn = partial(bipartition_tree_fn, region_surcharge=region_surcharge)
-#
-#     # Try to find a pair of districts that can be merged and then split into
-#     # new districts that are OK, given the criteria for OK.
-#     #
-#     # Pick a pair of adjacent districts at random, see if they can be split, and if
-#     # not pick another pair, until all pairs have been tried.
-#     #
-#     while len(bad_district_pairs) < tot_pairs:
-#
-#         # frm: TODO: Refactoring: Peter: BUG? loop termination condition seems wrong (see below)
-#         #
-#         # We want to randomly pick from the set of pairs of districts that touch each
-#         # other, but what we actually do is randomly pick a cut_edge and then determine
-#         # what districts it "cuts".
-#         #
-#         # This is actually not random - pairs of districts that touch each other in more
-#         # places will be picked more often.  And because it is randomly selecting edges
-#         # it will repeat itself - picking the same two regions to try to merge over and
-#         # over (although it quickly finds out that it has done so before trying to
-#         # bipartition by checking bad_district_pairs).
-#         #
-#         # But what is more concerning is that we are only picking pairs of districts
-#         # that touch each other, and the loop termination condition is that the set
-#         # of bad_district_pairs is not less than the number of possible n-choose-2 pairs.
-#         # The problem is that the n-choose-2 pairs includes pairs of districts that
-#         # do not touch each other, and the code below will NEVER look at those
-#         # pairs, so if there is even one pair of districts that does not touch each
-#         # other, the loop termination condition will always be True, and the loop
-#         # might never terminate.
-#         #
-#         # The nice thing about this code (the way it is) is that it finds a pair of
-#         # districts that touch each other very efficiently, and in the real world,
-#         # it is likely that there is a way to bipartition the merged districts
-#         # in a new way.  So, it is efficient - it just seems to have a deadly flaw...
-#         #
-#         # What makes sense to me is something like this:
-#         #
-#         #     district_pairs_that_touch_each_other = ...clever code to do this...
-#         #
-#         #     while district_pairs_that_touch_each_other:
-#         #         current_pair = random.choice(district_pairs_that_touch_each_other)
-#         #         ...see if we can bipartition the merged districts...
-#         #         if (...bipartition succeeded...):
-#         #             break
-#         #         else:
-#         #             district_pairs_that_touch_each_other.remove(current_pair)
-#         #
-#         # This incurs a cost to compute the set of district pairs that touch each other
-#         # but it is otherwise efficient, and we only have to do that computation once...
-#         #
-#         # Also, note that if we adopt the suggested code above about pairs that touch
-#         # each other, then the while True loop below goes away...
-#
-#         try:
-#
-#             while True:
-#                 edge = random.choice(tuple(partition["cut_edges"]))
-#                 # Need to sort the tuple so that the order is consistent
-#                 # in the bad_district_pairs set
-#
-#                 parts_to_merge = [
-#                     partition.assignment.mapping[edge[0]],
-#                     partition.assignment.mapping[edge[1]],
-#                 ]
-#                 parts_to_merge.sort()
-#
-#                 if tuple(parts_to_merge) not in bad_district_pairs:
-#                     break
-#
-#             # frm: Note that the vertical bar operator merges the two sets into one set.
-#             subgraph_nodes = partition.parts[parts_to_merge[0]] | partition.parts[parts_to_merge[1]]
-#
-#             flips = epsilon_tree_bipartition(
-#                 partition.graph.subgraph(subgraph_nodes),
-#                 parts_to_merge,
-#                 pop_col=pop_col,
-#                 pop_target=pop_target,
-#                 epsilon=epsilon,
-#                 node_repeats=node_repeats,
-#                 bipartition_tree_fn=bipartition_tree_fn,
-#             )
-#             break
-#
-#         except Exception as e:
-#             if isinstance(e, ReselectException):
-#                 # frm: Add this pair to list of pairs that did not work...
-#                 bad_district_pairs.add(tuple(parts_to_merge))
-#                 continue
-#             else:
-#                 raise
-#
-#     if len(bad_district_pairs) == tot_pairs:
-#         raise MetagraphError(
-#             f"Bipartitioning failed for all {tot_pairs} district pairs."
-#             f"Consider rerunning the chain with a different random seed."
-#         )
-#
-#     return partition.flip(flips)
+# Define a ProposalFn version to make purpose of the function clear
+def build_recom_proposal(
+    pop_col: str,
+    pop_target: int | float,
+    epsilon: float,
+    node_repeats: int = 1,
+    region_surcharge: dict | None = None,
+    bipartition_tree_fn: Callable = bipartition_tree,
+) -> ProposalFn:
+    proposal_fn = partial(
+        recom,
+        pop_col=pop_col,
+        pop_target=pop_target,
+        epsilon=epsilon,
+        node_repeats=node_repeats,
+        region_surcharge=region_surcharge,
+        bipartition_tree_fn=bipartition_tree_fn,
+    )
+    return proposal_fn
 
 
 def reversible_recom(
@@ -481,21 +346,10 @@ def reversible_recom(
     if random_pair[0] == random_pair[1] or not pair_edges:
         return partition  # self-loop: no adjacency
 
-    # frm: TODO: Code: ???:  Grok why it is OK to return the partition unchanged as the next step.
-    #
-    # This runs the risk of running an entire chain without ever changing the partition.
-    # I assume that the logic is that there is deliberate randomness introduced each time,
-    # so eventually, if it is possible, the chain will get started, but it seems like there
-    # should be some kind of check to see if it doesn't ever get started, so that the
-    # user can have a clue about what is going on...
-    #
-    # Peter said (in December 2025): The long and the short of why we have all of
-    # these weird conditions here is because Reversible ReCom targets the spanning
-    # tree distribution. By modifying how the acceptance of partituclar partitioning
+    # Note that Reversible ReCom targets the spanning tree distribution.
+    # By modifying how the acceptance of partituclar partitioning
     # schemes is handled, we are able to sample exactly from that distribution
     # rather than an approximation of it like we do in regular ReCom.
-    #
-    # So maybe this is really just a documentation issue now...
 
     edge = random.choice(list(pair_edges))
     parts_to_merge = (
@@ -553,6 +407,27 @@ def reversible_recom(
         return new_part
 
     return partition  # self-loop
+
+
+# Define a ProposalFn version to make purpose of the function clear
+def build_reversible_recom_proposal(
+    pop_col: str,
+    pop_target: int | float,
+    epsilon: float,
+    max_balanced_edge_cuts: int,
+    find_balanced_edge_cuts_fn: FindBalancedEdgeCutsFn = find_balanced_edge_cuts_memoization,
+    repeat_until_valid: bool = False,
+) -> ProposalFn:
+    proposal_fn = partial(
+        reversible_recom,
+        pop_col=pop_col,
+        pop_target=pop_target,
+        epsilon=epsilon,
+        max_balanced_edge_cuts=max_balanced_edge_cuts,
+        find_balanced_edge_cuts_fn=find_balanced_edge_cuts_fn,
+        repeat_until_valid=repeat_until_valid,
+    )
+    return proposal_fn
 
 
 # frm TODO: Refactoring:  Finish making class ReCom useful...
@@ -718,6 +593,44 @@ def reversible_recom(
 #     )
 #
 # Peter: Is this what you had in mind?
+#
+# New question for Peter:  Should we use the ProposalFn definition here?
+#
+# This is really just making the point that if you are OK with my
+# ProposalFn definition, then it should be used in the ReCom class,
+# something like this:
+#
+#         @classmethod
+#         def generate_std_recom_proposal(
+#             partition: Partition,
+#             pop_col: str,
+#             pop_target: Union[int, float],
+#             epsilon: float,
+#             node_repeats: int = 1,
+#             region_surcharge: Optional[Dict] = None,
+#             bipartition_tree_fn: Callable = bipartition_tree,
+#         ) -> ProposalFn:
+#             new_proposal = partial(
+#                 recom,
+#                 pop_col = pop_col,
+#                 pop_target = pop_target,
+#                 epsilon = epsilon,
+#                 node_repeats = node_repeats,
+#                 region_surcharge =  region_surcharge,
+#                 bipartition_tree_fn = bipartition_tree_fn,
+#             )
+#             return new_proposal
+
+
+# and then a user could just do:
+#
+#     my_proposal = ReCom.generate_std_recom_proposal(
+#         pop_col="TOTPOP",
+#         pop_target=ideal_population,
+#         epsilon=0.01,
+#         node_repeats=2
+#     )
+#
 #
 # ===========================================
 #

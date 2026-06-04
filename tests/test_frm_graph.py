@@ -296,14 +296,6 @@ def test_subgraph(four_by_five_graph_rx):
     in the gerrychain codebase is on RX based Graph objects.
     """
 
-    # frm: TODO: Testing: Peter suggested adding a "fuzzed" version of this.
-    #
-    # Here is what he said:
-    #
-    # We should probably add a fuzzed version of this where we do a random
-    # connected graph on 1000 nodes and then take random subgraphs of random
-    # size (say with between 100 and 200 nodes) and then repeat a few times.
-
     # Create a subgraph for an arbitrary set of nodes:
     subgraph_node_ids = [2, 4, 5, 8, 11, 13]
     parent_graph_rx = four_by_five_graph_rx  # make the code below clearer
@@ -658,44 +650,3 @@ def test_normalized_laplacian_matrix():
     # we should add a test for it...
     #
     assert True
-
-
-"""
-=============================================================
-
-TODO: Code: ???
-
-  * Aliasing concerns:
-
-    It occurs to me that the RX node_data is aliased with the NX node_data.
-    That is, the data dictionaries in the NX Graph are just retained
-    when the NX Graph is converted to be an RX Graph - so if you change
-    the data in the RX Graph, the NX Graph from which we created the RX
-    graph will also be changed.
-
-    I believe that this is also true for subgraphs for both NX and RX,
-    meaning that the node_data in the subgraph is the exact same
-    data dictionary in the parent graph and the subgraph.
-
-    I am not sure if this is a problem or not, but it is something
-    to be tested / thought about...
-
-  * NX allows node_ids to be almost anything - they can be integers,
-    strings, even tuples.  I think that they just need to be hashable.
-
-    I don't know if we need to test that non-integer NX node_ids
-    don't cause a problem.  There are tests elsewhere that have
-    NX node_ids that are tuples, and that test passes, so I think
-    we are OK, but there are no tests specifically targeting this
-    issue that I know of.
-
-    Peter's response in Dec 2025:
-
-    I think that we don't really need to worry about the aliasing
-    problem here. Once they get passed to a recom method, we treat
-    graphs as immutable, read-only structures. So long as a user
-    doesn't try to do something silly in an acceptance function
-    or in an updater, things should be fine.
-
-=============================================================
-"""

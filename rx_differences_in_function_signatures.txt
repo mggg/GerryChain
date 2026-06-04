@@ -1,9 +1,27 @@
 This document contains differences in function signatures introduced
 by the work to use RustworkX for GerryChain.
 
-??? => Note that this analysis does not take into account any changes to
-       parameter default values - whether they have gone from required
-       to optional or whether the default value has changed...
+=> Note that this analysis does not take into account any changes to
+   parameter default values - whether they have gone from required
+   to optional or whether the default value has changed...
+
+   It also does not take into account changes to class definitions.
+
+=====================================
+Kinds of changes:
+    * New file(s) added to RX codebase
+    * File(s) deleted from RX codebase
+    * New function(s) added to RX codebase
+    * Function(s) deleted from the RX codebase
+    * Function(s) moved from one file to another 
+    * Document internal function by changing name to have initial underscore
+    * Function name change
+    * Parameter name change
+    * New parameter
+    * Reordering of parameter(s)
+    * Addition of paremter(s)
+    * Deletion of paramter(s)
+    * Get rid of *args, **kwargs...
 
 =====================================
 The following files had no changes to function signatures:
@@ -45,32 +63,33 @@ file: gerrychain/optimization/__init__.py
 file: gerrychain/graph/geo.py
 file: gerrychain/optimization/optimization.py
 
+=====================================
+file: gerrychain/tree.py
 
-
-
-Kinds of changes:
-    * New file(s) added to RX codebase
     * File(s) deleted from RX codebase
-    * New function(s) added to RX codebase
-    * Function(s) deleted from the RX codebase
-    * Function(s) moved from one file to another 
-    * Document internal function by changing name to have initial underscore
-    * Function name change
-    * Parameter name change
-    * New parameter
-    * Reordering of parameter(s)
-    * Addition of paremter(s)
-    * Deletion of paramter(s)
-    * Get rid of *args, **kwargs...
 
+      => The file, tree.py, has been removed and its contents have been 
+         moved to one of two new files under a new directory, "tree".
+         Note that users can (and should) continute to import tree, so
+         there should be no impact on legacy code from moving functions 
+         to new files.
 
-
+         The reason for moving functions to two files is to make it 
+         easier to understand what is going on.  Functions that are
+         about splitting off districts from a graph (bipartition-ing)
+         were kept together in a new file, bipartition_tree.py, while
+         functions that were about creating spanning trees were 
+         put in their own file, spanning_tree.py.
 
 =====================================
 file: gerrychain/tree/bipartition_tree.py
 
-    ??? Did any functions get moved from this file somewhere else?
+    * New file(s) added to RX codebase
 
+      => This file is new to the RX codebase.  It contains functions
+         previously found in tree.py.  In particular, it contains
+         those functions in tree.py that were concerned with splitting
+         off districts from a graph (bipartition-ing).
 
     * Document internal function by changing name to have initial underscore
 
@@ -125,11 +144,14 @@ file: gerrychain/tree/bipartition_tree.py
                 cut_edge_list
               ):
 
-            => Note: ??? why was the order changed?
-
     * New function(s) added to RX codebase
 
-        * ??? => Why did we create new functions (and why did we remove others)?
+        * The rather substantial changes to the bipartition_xxx() 
+          functions was motivated by the desire to reduce repeated 
+          code.  Instead of having replicated code in the several
+          different ways to bipartition a graph, we now have most
+          of the code centralized in functions that are shared  
+          by the different bipartition functions.
 
         def _internal_bipartition_tree(
           subgraph_to_split, 
@@ -220,20 +242,8 @@ file: gerrychain/tree/bipartition_tree.py
            reimplemented to share code rather than replicate it.  The new parameter has
            a default value that allows existing code to continue to work.
 
-
-    def __call__(self, h, one_sided_cut, rootnode_choice_fn):
-
-    ??? what's up with __call__()?
-
-    * Impact on users:
-        * ???
-
 =====================================
 file: gerrychain/tree/spanning_tree.py
-
-??? => Record all function that were moved from one place to another
-
-??? => Think about how best to document what was done, why it was done, and effect on the user...
 
     * New file(s) added to RX codebase
 
@@ -245,6 +255,9 @@ file: gerrychain/tree/spanning_tree.py
          and instead there is a directory, tree, with python 
          files, but with an __init__.py file that defines the
          same interface for "tree" as in the old codebase.
+
+         This file, spanning_tree.py, contains functions that 
+         create spanning trees.
 
     * Function(s) moved from one file to another 
       => moved from tree.py to tree/spanning_tree.py
@@ -261,10 +274,18 @@ file: gerrychain/tree/spanning_tree.py
           NEW => def uniform_spanning_tree(graph, region_surcharge):
           OLD => def uniform_spanning_tree(graph, choice):
 
-        * Note: ??? describe why we unified signatures...
+        * Note: The rationale for changing the parameters was to unify
+                the function signatures for the two different ways of
+                creating a spanning tree, which makes using the 
+                spanning tree functions as parameters more straight-forward.
+                Previously, one had to create a partial function to 
+                bind the different parameters.
 
     * Impact on users:
-        * ???
+        * There should be minimal to no impact on users as the changes
+          are to internal code.  However, if a user directly called a 
+          spanning tree function, then they would need to make sure that
+          they used the correct parameters.
 
 =====================================
 file: gerrychain/grid.py
@@ -334,9 +355,19 @@ file: gerrychain/constraints/contiguity.py
             OLD =>
               def partition_edge_avoid(start_node, end_node, edge_attrs):
 
-  def contiguous_bfs(partition):  => This is obsolete - it just raises an exception
-  ??? why did this get deleted and what was it used for in old days?
-
+    * Function(s) deleted from the RX codebase
+      
+      => Note: in the old codebase, contiguous_bfs() had exactly the same 
+               semantics as contiguous() - the difference was in how they
+               were implemented.  The function, contiguous() used 
+               a builtin NetworkX routine, is_connected(), while the 
+               function, contiguous_bfs() mostly does not use NetworkX.
+               To reduce the use of NetworkX and also to reduce redundancy
+               the contiguous_bfs() function has been deleted from 
+               the new codebase in preference for contiguous() which
+               has been reimplemented with no dependence on NetworkX.
+      
+      def contiguous_bfs(partition):  
 
     * Impact on users:
         * Changes to internal functions will not have an impact on users.
@@ -585,6 +616,37 @@ file: gerrychain/graph/graph.py
         * ??? add impacts on users from changes to graph.py code
         * If any user used one of these then they will need to replace
           the code with graph.node_data(<node>)[<attr>]
+        
+        
+    * Impact on users:
+
+        * While there have been substantial changes to graph.py, most 
+          users will feel very little impact on legacy code.
+
+            * In the new code, to get node data / edge data, users will
+              need to change:
+                  graph.nodes[node_id][attribute_name] 
+                  graph.edges[edge_id][attribute_name]
+                to be:
+                  graph.node_data(node_id)[attribute_name]
+                  graph.edge_data(edge_id)[attribute_name]
+            
+            * Since a GerryChain Graph is no longer a subclass of a 
+              NetworkX Graph, users may find it easier to explicitly create
+              a NetworkX Graph and let the code that creates a Partition
+              convert the NetworkX Graph to be a GerryChain Graph (under 
+              the covers).
+
+            * When done running MarkovChain, users may find it convenient
+              to convert the internal RustworkX-based graph to be a 
+              NetworkX based graph using the new routine:
+
+                to_networkx_graph()
+
+              to use NetworkX related functionality (such as built-in
+              support for plotting)
+
+            * For more information, please refer to the migration guide.
 
 =====================================
 file: gerrychain/updaters/election.py
@@ -608,20 +670,6 @@ file: gerrychain/updaters/election.py
           parties_to_columns, 
           alias
         ):
-
-  def _initialize_self(self, partition):   => This appears to be new in the RX code, but it is never called
-  ??? what is up with this?
-      This function is never called, and so it should just be deleted.
-      It looks like someone (perhaps me) thought it would be
-      more self descriptive to use this instead of having the 
-      logic inline.  If you look at the code, immediately above
-      the def _initialize_self() there is a line that has 
-      exactly what is in the body of the function.  
-
-      Note also that the second param, "partition" is never 
-      referenced.  Probably best to just move comments from
-      the function to the inline code and then delete the
-      function...
 
     * Impact on users:
         * If a user uses the named parameter, "parties_to_columns"
@@ -856,7 +904,8 @@ file: gerrychain/proposals/tree_proposals.py
          value.  In the old code it had a default value of 1.  Without a default 
          value it had to be moved up above the parameters with default values.
 
-         ??? Note that I do not remember why I got rid of the default value of 1...
+         The former default value of 1 did not make sense, and no other default value
+         seemed reasonable.
   
     * Document internal function by changing name to have initial underscore
     * Get rid of *args, **kwargs...
