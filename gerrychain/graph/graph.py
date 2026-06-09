@@ -2293,7 +2293,6 @@ class FrozenGraph:
                 "FrozenGraph.__init__(): _node_id_to_parent_node_id_map does not contain all nodes"
             )
         if not all_node_ids.issubset(self.graph._node_id_to_original_nx_node_id_map.keys()):
-
             raise Exception(
                 "FrozenGraph.__init__(): _node_id_to_original_nx_node_id_map does not contain all nodes"
             )
@@ -2306,12 +2305,13 @@ class FrozenGraph:
         """
         return self.size
 
-    def __getattribute__(self, __name: str) -> Any:
-        try:
-            return object.__getattribute__(self, __name)
-        except AttributeError:
-            # delegate getting the attribute to the graph data member
-            return self.graph.__getattribute__(__name)
+    def __getattr__(self, __name: str) -> Any:
+        # 'graph' is a slot; fetch it via object.__getattribute__ so that an
+        # as-yet-unset 'graph' (e.g. during __init__) raises AttributeError here
+        # instead of recursing back into __getattr__.
+        if __name == "graph":
+            raise AttributeError(__name)
+        return getattr(object.__getattribute__(self, "graph"), __name)
 
     def __getitem__(self, __name: str) -> Any:
         return self.graph[__name]
