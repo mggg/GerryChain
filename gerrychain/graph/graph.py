@@ -840,11 +840,9 @@ class Graph:
         Returns:
             set[Any]:
         """
-        self.verify_graph_is_valid()
-
-        if self.is_rx_graph():
+        if self._rx_graph is not None:
             return set(self._rx_graph.node_indices())
-        elif self.is_nx_graph():
+        elif self._nx_graph is not None:
             return set(self._nx_graph.nodes)
         else:
             raise TypeError(
@@ -859,12 +857,10 @@ class Graph:
         Returns:
             set[Any]:
         """
-        self.verify_graph_is_valid()
-
-        if self.is_rx_graph():
+        if self._rx_graph is not None:
             # A set of edge_ids for the edges
             return set(self._rx_graph.edge_indices())
-        elif self.is_nx_graph():
+        elif self._nx_graph is not None:
             # A set of edge_ids (tuples) extracted from the graph's EdgeView
             return set(self._nx_graph.edges)
         else:
@@ -887,9 +883,7 @@ class Graph:
             tuple[Any, Any]: An edge, namely a tuple of node_ids
         """
 
-        self.verify_graph_is_valid()
-
-        if self.is_rx_graph():
+        if self._rx_graph is not None:
             # In RX, we need to go get the edge tuple
             endpoints = self._rx_graph.get_edge_endpoints_by_index(edge_id)
             return (endpoints[0], endpoints[1])
@@ -1773,11 +1767,9 @@ class Graph:
         Returns:
             list[Any]: A list of neighbor node_ids
         """
-        self.verify_graph_is_valid()
-
-        if self.is_rx_graph():
+        if self._rx_graph is not None:
             return list(self._rx_graph.neighbors(node_id))
-        elif self.is_nx_graph():
+        elif self._nx_graph is not None:
             return list(self._nx_graph.neighbors(node_id))
         else:
             raise TypeError(
@@ -1797,11 +1789,9 @@ class Graph:
         Returns:
             int: Number of nodes directly connected to the given node
         """
-        self.verify_graph_is_valid()
-
-        if self.is_rx_graph():
+        if self._rx_graph is not None:
             return self._rx_graph.degree(node_id)
-        elif self.is_nx_graph():
+        elif self._nx_graph is not None:
             return self._nx_graph.degree(node_id)
         else:
             raise TypeError(
@@ -1833,22 +1823,20 @@ class Graph:
             dict[Any, Any]: Data dictionary containing the given node's data.
         """
 
-        self.verify_graph_is_valid()
-
-        if self.is_rx_graph():
-            data_dict = self._rx_graph[node_id]
-        elif self.is_nx_graph():
-            data_dict = self._nx_graph.nodes[node_id]
+        if self._rx_graph is not None:
+            return self._rx_graph[node_id]
+        elif self._nx_graph is not None:
+            return self._nx_graph.nodes[node_id]
         else:
             raise TypeError(
                 "Graph passed to 'node_data()' is neither "
                 "a networkx-based graph nor a rustworkx-based graph"
             )
 
-        if not isinstance(data_dict, dict):
-            raise TypeError("graph.node_data(): data for node is not a dict")
-
-        return data_dict
+        # if not isinstance(data_dict, dict):
+        #     raise TypeError("graph.node_data(): data for node is not a dict")
+        #
+        # return data_dict
 
     def edge_data(self, edge_id: Any) -> dict[Any, Any]:
         """Return the data dictionary that contains the data for the given edge.
@@ -1864,26 +1852,24 @@ class Graph:
             dict[Any, Any]: The data dictionary for the given edge's data
         """
 
-        self.verify_graph_is_valid()
-
-        if self.is_rx_graph():
-            data_dict = self._rx_graph.get_edge_data_by_index(edge_id)
-        elif self.is_nx_graph():
-            data_dict = self._nx_graph.edges[edge_id]
+        if self._rx_graph is not None:
+            return self._rx_graph.get_edge_data_by_index(edge_id)
+        elif self._nx_graph is not None:
+            return self._nx_graph.edges[edge_id]
         else:
             raise TypeError(
                 "Graph passed to 'edge_data()' is neither "
                 "a networkx-based graph nor a rustworkx-based graph"
             )
 
-        # Sanity check - RX edges do not need to have a data dict for node data
+        # # Sanity check - RX edges do not need to have a data dict for node data
+        # #
+        # # A GerryChain Graph object should always be constructed with a data dict
+        # # for edge data, but it doesn't hurt to check.
+        # if not isinstance(data_dict, dict):
+        #     raise TypeError("graph.edge(): data for edge is not a dict")
         #
-        # A GerryChain Graph object should always be constructed with a data dict
-        # for edge data, but it doesn't hurt to check.
-        if not isinstance(data_dict, dict):
-            raise TypeError("graph.edge(): data for edge is not a dict")
-
-        return data_dict
+        # return data_dict
 
     # Note:  The two laplacian functions: laplacian_matrix() and
     # normalized_laplacian_matrix() are part of the Graph class primarily to
