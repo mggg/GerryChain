@@ -40,8 +40,13 @@ from networkx.readwrite import json_graph
 from shapely.ops import unary_union
 from shapely.prepared import prep
 
+from .._config import runtime_checks_enabled
 from .adjacency import neighbors
 from .geo import GeometryError, invalid_geometries, reprojected
+
+
+class GraphValidationError(Exception):
+    """Raised when a Graph fails an integrity check (see ``verify_graph_is_valid``)."""
 
 
 def json_serialize(input_object: Any) -> int | None:
@@ -138,6 +143,7 @@ class Graph:
         graph.nx_to_rx_node_id_map = (
             None  # only set when an NX based graph is converted to be an RX based graph
         )
+        graph.verify_graph_is_valid()
         return graph
 
     @classmethod
@@ -272,6 +278,8 @@ class Graph:
 
         # only set when an NX based graph is converted to be an RX based graph
         graph.nx_to_rx_node_id_map = None
+
+        graph.verify_graph_is_valid(thorough=False)
 
         return graph
 
@@ -438,37 +446,78 @@ class Graph:
         }
         return orignal_node_id_to_internal_node_id_map[original_nx_node_id]
 
-    def verify_graph_is_valid(self) -> bool:
-        """Verify that the graph is valid.
+    def verify_graph_is_valid(self, thorough: bool | None = None) -> bool:
+        """Verify that the graph is internally consistent.
 
-        This may be overkill, but the idea is that at least in development mode, it would be
-        prudent to check periodically to see that the graph data structure has not been corrupted.
+        Two levels of checking are performed:
+
+        * An always-on, O(1) structural invariant: a Graph must embed exactly one backing graph -
+          either NetworkX or RustworkX, never both or neither. This runs automatically at every
+          construction boundary and costs nothing measurable, so it is never gated.
+
+        * An opt-in, O(nodes + edges) thorough audit (see ``_verify_graph_thoroughly``). This is
+          expensive enough to matter inside a chain, so it is off by default and controlled by the
+          global runtime-checks switch
+          (``gerrychain.set_runtime_checks`` / ``gerrychain.runtime_checks``).
+          The test suite enables it.
+
+        Args:
+            thorough (Optional[bool]): Whether to run the expensive audit. If ``None`` (default),
+                follows the global runtime-checks setting. Pass ``True`` to force it on or ``False``
+                to force it off (e.g. on hot construction paths that build many short-lived
+                subgraphs).
 
         Returns:
-            bool: True if the graph is deemed valid
+            bool: ``True`` if the graph is valid.
+
+        Raises:
+            GraphValidationError: If the graph fails a check.
         """
 
-        # frm: TODO: Performance:  Only check verify_graph_is_valid() in development.
-        #
-        # For now, in order to assess performance differences between NX and RX
-        # I will just return True...
+        nx_set = getattr(self, "_nx_graph", None) is not None
+        rx_set = getattr(self, "_rx_graph", None) is not None
+        if nx_set == rx_set:  # both set, or neither set
+            raise GraphValidationError(
+                "Graph is not properly configured: it must embed exactly one backing "
+                f"graph (networkx set: {nx_set}, rustworkx set: {rx_set})."
+            )
+
+        if thorough is None:
+            thorough = runtime_checks_enabled()
+        if thorough:
+            self._verify_graph_thoroughly()
+
         return True
 
-        # Sanity check - this is where to add additional sanity checks in the future.
+    def _verify_graph_thoroughly(self) -> None:
+        """Run an expensive O(nodes + edges) structural audit of the backing graph.
 
-        # frm: TODO: Code: Enhance verify_graph_is_valid to do more...
+        Verifies that every node and edge carries a ``dict`` data payload, which the rest of
+        GerryChain relies on. This is the kind of check that is wasteful to run on every chain
+        step, so it only runs when runtime checks are enabled (see ``verify_graph_is_valid``).
 
-        # frm: TODO: Performance:  verify_graph_is_valid() is expensive - called a lot
-        #
-        # Come up with a way to run this in "debug mode" - that is, while in development/testing
-        # but not in production.  It actually accounted for 5% of runtime...
-
-        # Checks that there is one and only one graph
-        if not (
-            (self._nx_graph is not None and self._rx_graph is None)
-            or (self._nx_graph is None and self._rx_graph is not None)
-        ):
-            raise Exception("Graph.verify_graph_is_valid(): graph not properly configured")
+        Raises:
+            GraphValidationError: If a node or edge does not carry a dict payload.
+        """
+        if self._rx_graph is not None:
+            rx_graph = self._rx_graph
+            for node_id in rx_graph.node_indices():
+                if not isinstance(rx_graph[node_id], dict):
+                    raise GraphValidationError(
+                        f"Node {node_id} does not carry a dict data payload."
+                    )
+            for edge_id in rx_graph.edge_indices():
+                if not isinstance(rx_graph.get_edge_data_by_index(edge_id), dict):
+                    raise GraphValidationError(
+                        f"Edge {edge_id} does not carry a dict data payload."
+                    )
+        else:
+            nx_graph = self._nx_graph
+            for node_id, data in nx_graph.nodes(data=True):
+                if not isinstance(data, dict):
+                    raise GraphValidationError(
+                        f"Node {node_id} does not carry a dict data payload."
+                    )
 
     # frm: TODO: Performance:  is_nx_graph() and is_rx_graph() are expensive.
     #
@@ -910,7 +959,6 @@ class Graph:
         Returns:
             Any: The ID associated with the given edge
         """
-        self.verify_graph_is_valid()
 
         if self.is_rx_graph():
             # frm: TODO: Performance: Perhaps get_edge_id_from_edge() is too expensive...
@@ -980,8 +1028,6 @@ class Graph:
         # All this routine does now is to coerce the set of nodes obtained by node_indices()
         # to be a list.
 
-        self.verify_graph_is_valid()
-
         if self.is_rx_graph():
             # A list of integer node_ids
             return list(self._rx_graph.node_indices())
@@ -1002,8 +1048,6 @@ class Graph:
             set[tuple[Any, Any]]::
         """
         # Return a set of edge tuples
-
-        self.verify_graph_is_valid()
 
         if self.is_rx_graph():
             # A set of tuples for the edges
@@ -1032,8 +1076,6 @@ class Graph:
         #
         # It remains for legacy reasons, and because users may find it convenient
         # to operate on a gerrychain Graph instead of an NX graph.
-
-        self.verify_graph_is_valid()
 
         if self.is_rx_graph():
             node1_exists = self._rx_graph.has_node(node_id1)
@@ -1219,8 +1261,6 @@ class Graph:
             )
 
     def __getitem__(self, __name: str) -> Any:
-        self.verify_graph_is_valid()
-
         if self.is_rx_graph():
             # frm TODO: Code: Decide if __getitem__() should work for RX
             raise TypeError("Graph._getitem__() is not defined for a rustworkx graph")
@@ -1300,8 +1340,6 @@ class Graph:
         determine if assumptions about a parameter always being a subgraph is accurate.  It also
         helps to educate future readers of the code that subgraphs are "interesting"...
         """
-
-        self.verify_graph_is_valid()
 
         new_subgraph = None
 
@@ -1672,8 +1710,6 @@ class Graph:
               version is significantly better than the generic one.
         """
 
-        self.verify_graph_is_valid()
-
         if self.is_rx_graph():
             return self.generic_bfs_predecessors(root_node_id)
         elif self.is_nx_graph():
@@ -1705,8 +1741,6 @@ class Graph:
         Returns:
             dict[Any: list[Any]]: Returns a dict mapping each node to a list of its children
         """
-        self.verify_graph_is_valid()
-
         if self.is_rx_graph():
             return self.generic_bfs_successors(root_node_id)
         elif self.is_nx_graph():

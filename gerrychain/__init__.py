@@ -1,6 +1,7 @@
 import warnings
 from modulefinder import Module
 
+from ._config import runtime_checks, runtime_checks_enabled, set_runtime_checks
 from .chain import MarkovChain
 from .graph import Graph
 from .partition import GeographicPartition, Partition
@@ -16,4 +17,7 @@ __all__ = [
     "GeographicPartition",
     "MarkovChain",
     "Election",
+    "set_runtime_checks",
+    "runtime_checks",
+    "runtime_checks_enabled",
 ]

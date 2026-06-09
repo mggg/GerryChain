@@ -3,10 +3,24 @@ import random
 import networkx as nx
 import pytest
 
-from gerrychain import Graph, Partition
+from gerrychain import Graph, Partition, set_runtime_checks
 from gerrychain.updaters import cut_edges
 
 random.seed(2018)
+
+
+@pytest.fixture(autouse=True)
+def _enable_runtime_checks():
+    """Run the whole suite with GerryChain's thorough integrity checks enabled.
+
+    These checks are off by default in production for performance; turning them on
+    here means CI exercises the validation paths on every test.
+    """
+    set_runtime_checks(True)
+    try:
+        yield
+    finally:
+        set_runtime_checks(False)
 
 
 @pytest.fixture

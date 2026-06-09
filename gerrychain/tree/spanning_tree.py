@@ -182,8 +182,6 @@ def random_spanning_tree(graph: Graph, region_surcharge: Optional[Dict] = None) 
 
             graph.edge_data(edge_id)["random_weight"] = weight
 
-    graph.verify_graph_is_valid()
-
     minimum_spanning_tree = graph.minimum_spanning_tree_from_edge_weight(
         edge_weight_attribute_name="random_weight"
     )
