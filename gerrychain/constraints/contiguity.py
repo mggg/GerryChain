@@ -77,9 +77,7 @@ def _are_reachable(graph: Graph, start_node: Any, avoid: Callable, targets: Any)
 
         # Add all of the neighbors (children) of this node to the stack
         for neighbor_node_id in graph.neighbors(node_id):
-
             if not avoid(node_id, neighbor_node_id):
-
                 neighbor_distance = node_distances[node_id] + 1
                 # if this (neighbor) node has not ever been added to the stack or if
                 # we have found a shorter distance to the node, then add it to the stack.
@@ -193,7 +191,7 @@ def contiguous(partition: Partition) -> bool:
         bool: Whether the partition is contiguous
     """
 
-    return all(partition.subgraphs[part].is_connected_bfs() for part in _affected_parts(partition))
+    return all(partition.subgraphs[part].is_connected() for part in _affected_parts(partition))
 
 
 # TODO: Delete this - it is obsolete...
@@ -211,7 +209,7 @@ def number_of_contiguous_parts(partition: Partition) -> int:
         int: Number of contiguous parts in the partition.
     """
     parts = partition.assignment.parts
-    return sum(1 for part in parts if partition.subgraphs[part].is_connected_bfs())
+    return sum(1 for part in parts if partition.subgraphs[part].is_connected())
 
 
 # Create an instance of SelfConfiguringLowerBound using the number_of_contiguous_parts function.

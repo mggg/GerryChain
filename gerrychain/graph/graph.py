@@ -23,7 +23,6 @@ from __future__ import annotations
 
 import functools
 import json
-import random
 import warnings
 from collections.abc import Generator, Iterable
 
@@ -2065,26 +2064,33 @@ class Graph:
 
         return laplacian_matrix
 
-    # This code replaced calls on nx.is_connected()
-    def is_connected_bfs(self):
+    def is_connected(self):
+        """Return whether the (undirected) graph is connected.
+
+        Delegates to the backend's native connectivity routine - ``rustworkx.is_connected`` for an
+        RX graph, ``networkx.is_connected`` for an NX graph - which are faster than hand-rolled
+        Python traversal.
+
+        A graph with 0 or 1 nodes is treated as trivially connected. This also guards the
+        backend calls, both of which raise on an empty graph (rustworkx ``NullGraph`` /
+        networkx ``NetworkXPointlessConcept``).
+
+        Returns:
+            bool: True if the graph is connected (or has at most one node).
         """
-        Checks if an undirected graph is connected using BFS.
-        """
-
-        node_ids = list(self.node_indices)
-
-        start_node = random.choice(node_ids)
-        visited = {start_node}
-        queue = [start_node]
-
-        while queue:
-            current_node = queue.pop(0)
-            for neighbor in self.neighbors(current_node):
-                if neighbor not in visited:
-                    visited.add(neighbor)
-                    queue.append(neighbor)
-
-        return len(visited) == len(node_ids)
+        if self._rx_graph is not None:
+            if self._rx_graph.num_nodes() <= 1:
+                return True
+            return rustworkx.is_connected(self._rx_graph)
+        elif self._nx_graph is not None:
+            if self._nx_graph.number_of_nodes() <= 1:
+                return True
+            return networkx.is_connected(self._nx_graph)
+        else:
+            raise TypeError(
+                "Graph passed to 'is_connected()' is neither a networkx-based graph nor a "
+                "rustworkx-based graph."
+            )
 
     def subgraphs_for_connected_components(self) -> list[Graph]:
         """Create and return a list of subgraphs for each set of nodes in the given graph that are.
