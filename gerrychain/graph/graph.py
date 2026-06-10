@@ -24,7 +24,7 @@ from __future__ import annotations
 import functools
 import json
 import warnings
-from collections.abc import Generator, Iterable
+from collections.abc import Generator, Iterable, Sequence
 
 # frm: codereview note: removed type hints that are now baked into Python
 from typing import Any
@@ -1813,21 +1813,28 @@ class Graph:
 
         return spanning_graph
 
-    def neighbors(self, node_id: Any) -> list[Any]:
-        """Return A list of neighbor node_ids.
+    def neighbors(self, node_id: Any) -> Sequence[Any]:
+        """Return a sequence of neighbor node_ids.
 
-        Return a list of the node_ids of the nodes that are neighbors of the given node - that is,
-        all of the nodes that are directly connected to the given node by an edge.
+        Return a sequence of the node_ids of the nodes that are neighbors of the given node - that
+        is, all of the nodes that are directly connected to the given node by an edge.
+
+        The result supports iteration (repeatedly), ``len()``, and indexing, but it is not
+        guaranteed to be a ``list``: for an RX graph it is the ``rustworkx.NodeIndices``
+        sequence returned by the backend, which avoids copying the neighbors into a fresh
+        list on every call. Callers that need list methods should wrap it in ``list()``.
 
         Args:
             node_id (Any): The ID of a node
 
         Returns:
-            list[Any]: A list of neighbor node_ids
+            Sequence[Any]: A sequence of neighbor node_ids
         """
         if self._rx_graph is not None:
-            return list(self._rx_graph.neighbors(node_id))
+            return self._rx_graph.neighbors(node_id)
         elif self._nx_graph is not None:
+            # NX returns a single-pass iterator, so it must be materialized here;
+            # callers (and the FrozenGraph.neighbors lru_cache) expect a re-iterable result.
             return list(self._nx_graph.neighbors(node_id))
         else:
             raise TypeError(
@@ -2427,7 +2434,7 @@ class FrozenGraph:
         yield from self.node_indices
 
     @functools.lru_cache(16384)
-    def neighbors(self, n: Any) -> tuple[Any, ...]:
+    def neighbors(self, n: Any) -> Sequence[Any]:
         return self.graph.neighbors(n)
 
     @property
