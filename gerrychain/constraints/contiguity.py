@@ -1,7 +1,5 @@
 import random
-from collections.abc import Callable
-from heapq import heappop, heappush
-from itertools import count
+from collections import deque
 from typing import Any
 
 from ..graph import Graph
@@ -9,83 +7,44 @@ from ..partition import Partition
 from .bounds import SelfConfiguringLowerBound
 
 
-def _are_reachable(graph: Graph, start_node: Any, avoid: Callable, targets: Any) -> bool:
-    """A modified version of NetworkX's function
-    `networkx.algorithms.shortest_paths.weighted._dijkstra_multisource()`.
+def _are_reachable(
+    graph: Graph, start_node: Any, mapping: dict[Any, int], part: int, targets: Any
+) -> bool:
+    """Check if the targets are reachable from the start_node without leaving the given district.
 
-    This function checks if the targets are reachable from the start_node node while avoiding
-    edges based on the avoid condition function.
+    The search starts inside ``part`` and only ever steps to neighbors that are also in ``part``,
+    which is equivalent to (but much cheaper than) calling an avoid-this-edge predicate on every
+    edge: one dict lookup per neighbor instead of a Python function call plus two lookups.
 
     Args:
         graph (Graph): Graph
-        start_node (int): The starting node
-        avoid (Callable): The function that determines if an edge should be avoided. It should take
-            two parameters: the node_ids that define the edge. It should return True if the edge
-            should be avoided, False otherwise.
+        start_node (int): The starting node; must be in ``part``
+        mapping (dict[Any, int]): The node_id -> part assignment mapping
+        part (int): The part (district) the search is confined to
         targets (Any): The target nodes that we would like to reach
 
     Returns:
-        bool: True if all of the targets are reachable from the start_node node under the avoid
-            condition, False otherwise.
+        bool: True if all of the targets are reachable from the start_node node
+            without leaving ``part``, False otherwise.
     """
+    # Track the targets not yet reached in a set so the loop condition is O(1)
+    # per iteration; the search stops as soon as the last target is reached.
+    unseen_targets = set(targets)
+    unseen_targets.discard(start_node)
 
-    # Note: This routine computes some values that it does not return, such as node_distances
-    # and a counter, "c".
-    #
-    # I believe that this is done as an optimization, to keep the algorithm focused on nodes
-    # that are "close" to the start_node.  The routine, heappush(), implements a min-heap
-    # where the value that has the lowest value is always at the top of the stack.  Given
-    # that our stack elements are tuples of the form, (distance to root, count, node_id),
-    # the elements at the top of the stack will be those that are closest, and then after
-    # that those that we saw first in the algorithm.  This should in most cases keep the
-    # algorithm from straying far away from the start_node.
-    #
-    # This makes sense because we are trying to determine if removing the start_node
-    # would cause the district to be discontiguous, which can only happen if the
-    # start_node is the only path from two of its neighbors, so we want to keep the
-    # search close to the start_node.
-    #
-    # Also, the loop termination condition:
-    #
-    #     not all(tgt in seen for tgt in targets)
-    #
-    # looks expensive, but it is not, because the targets are just the "old"
-    # neighbors of the start_node, and hence will be a small number.
+    seen = {start_node}
+    queue = deque((start_node,))
+    neighbors = graph.neighbors
 
-    push = heappush
-    pop = heappop
-    node_distances = {}  # dictionary of final distances
-    seen = {}  # dictionary of node_id to node_distance for nodes not yet
+    while unseen_targets and queue:
+        node_id = queue.popleft()
+        for neighbor_node_id in neighbors(node_id):
+            if neighbor_node_id not in seen and mapping[neighbor_node_id] == part:
+                seen.add(neighbor_node_id)
+                unseen_targets.discard(neighbor_node_id)
+                queue.append(neighbor_node_id)
 
-    # use the count c to avoid comparing nodes (may not be able to)
-    c = count()
-
-    # fringe is heapq with 3-tuples (distance,c,node) where distance is
-    # the number of edges from the start_node to the current node.
-    fringe = []
-
-    seen[start_node] = 0
-    push(fringe, (0, next(c), start_node))
-
-    # While we have not yet seen all of our targets and while there is
-    # still some fringe (nodes that we have not yet processed)
-    while not all(tgt in seen for tgt in targets) and fringe:
-        (distance, _, node_id) = pop(fringe)
-        if node_id in node_distances:
-            continue  # already searched this node.
-        node_distances[node_id] = distance
-
-        # Add all of the neighbors (children) of this node to the stack
-        for neighbor_node_id in graph.neighbors(node_id):
-            if not avoid(node_id, neighbor_node_id):
-                neighbor_distance = node_distances[node_id] + 1
-                # if this (neighbor) node has not ever been added to the stack or if
-                # we have found a shorter distance to the node, then add it to the stack.
-                if neighbor_node_id not in seen or neighbor_distance < seen[neighbor_node_id]:
-                    seen[neighbor_node_id] = neighbor_distance
-                    push(fringe, (neighbor_distance, next(c), neighbor_node_id))
-
-    return all(tgt in seen for tgt in targets)
+    return not unseen_targets
 
 
 def single_flip_contiguous(partition: Partition) -> bool:
