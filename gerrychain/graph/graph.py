@@ -102,11 +102,19 @@ class Graph:
     creates a Partition object.
     """
 
-    # Note: This class cannot have a constructor - because there is code that assumes
-    #       that it can use the default constructor to create instances of it.
-    #       That code is buried deep in non GerryChain code, so I don't really understand
-    #       what it is doing, but the assignment of nx_graph and rx_graph class attributes/members
-    #       needs to happen in the "from_xxx()" routines.
+    # Note: This class deliberately has no __init__. Some non-GerryChain code (e.g.
+    #       rustworkx's networkx_converter) constructs Graph instances via the default
+    #       constructor, ``cls()``, and the ``from_*`` classmethods rely on that too -
+    #       they do ``graph = cls()`` and then populate the backing graph.
+    #
+    #       Instead of a constructor we give the two backing-graph fields class-level
+    #       defaults of None. This guarantees ``self._nx_graph`` / ``self._rx_graph``
+    #       always resolve (even on a bare ``Graph()``), so ``is_nx_graph()`` /
+    #       ``is_rx_graph()`` can test them directly without ever triggering attribute
+    #       fallback. A bare, unconfigured Graph therefore has both set to None, which
+    #       ``verify_graph_is_valid()`` reports as a clear error.
+    _nx_graph = None
+    _rx_graph = None
 
     @classmethod
     def from_networkx(cls, nx_graph: networkx.Graph) -> Graph:
@@ -1227,37 +1235,43 @@ class Graph:
         return len(self.node_indices)
 
     def __getattr__(self, __name: str) -> Any:
-        """If the user requests the value of an attribute that is not defined for a GerryChain.
+        """Delegate unknown attributes to the embedded backing graph.
 
-        graph. object, the request is passed on to the embedded graph object (NetworkX or
-        RustworkX), calling that graph object's __getattribute__() function.
+        Accesses that Graph itself does not define are forwarded to the embedded NetworkX or
+        RustworkX graph. This keeps backend conveniences reachable - e.g. ``graph.geometry``
+        (stored on the NX graph) or ``graph.graph["crs"]`` (the NX graph-level attribute dict).
+
+        Two safety rules apply:
+
+        * Dunder / introspection names are never delegated. Forwarding names like
+          ``__deepcopy__`` / ``__getstate__`` / ``__test__`` to the backing graph would leak
+          copy/pickle/introspection probes into it; we raise AttributeError so the normal Python
+          machinery handles them.
+        * Because ``_nx_graph`` / ``_rx_graph`` have class-level None defaults, reading them here
+          can never fall back into ``__getattr__`` - so the infinite-recursion hazard that used to
+          require a special-case guard is gone by construction.
 
         Args:
-            __name (str): The name of the attribute whose value is requested.
+            __name (str): The attribute being requested.
 
         Returns:
-            Any: Whatever the embedded graph object returns from its __getattribute__() function.
+            Any: The attribute value from the embedded graph.
+
+        Raises:
+            AttributeError: If the name is a dunder, or no backing graph is configured,
+                or the backing graph has no such attribute.
         """
+        if __name.startswith("__") and __name.endswith("__"):
+            raise AttributeError(__name)
 
-        # Avoid an infinite loop that can happen if a user happens to use the default
-        # constructor for a Graph.  In that case the Graph object will have no
-        # attributes, and that is bad, because the code for is_rx_graph() below
-        # checks for the _rx_graph attribute which will end up calling __getattr__()
-        # and we loop forever...
-        #
-        if (__name == "_nx_graph") or (__name == "_rx_graph"):
-            return None
-
-        # If attribute doesn't exist on this object, try
-        # its underlying graph object...
-        if self.is_rx_graph():
-            return object.__getattribute__(self._rx_graph, __name)
-        elif self.is_nx_graph():
-            return object.__getattribute__(self._nx_graph, __name)
+        if self._rx_graph is not None:
+            return getattr(self._rx_graph, __name)
+        elif self._nx_graph is not None:
+            return getattr(self._nx_graph, __name)
         else:
-            raise TypeError(
-                "Graph passed to '__gettattr__()' is neither "
-                "a networkx-based graph nor a rustworkx-based graph"
+            raise AttributeError(
+                f"'Graph' object has no attribute {__name!r} (the Graph is not "
+                "configured with a backing NetworkX or RustworkX graph)"
             )
 
     def __getitem__(self, __name: str) -> Any:
@@ -2303,7 +2317,10 @@ class FrozenGraph:
     # that the graph will not be modified.
     #
 
-    __slots__ = ["graph", "size"]
+    # Note: __slots__ means FrozenGraph instances have no __dict__, so we cannot use
+    # functools.cached_property (which caches into the instance __dict__). The cached
+    # node_indices / edge_indices values are stored in dedicated slots instead.
+    __slots__ = ["graph", "size", "_node_indices", "_edge_indices"]
 
     def __init__(self, graph: Graph) -> None:
         """Initialize a FrozenGraph from a Graph.
@@ -2314,6 +2331,8 @@ class FrozenGraph:
         """
 
         self.graph = graph
+        self._node_indices = None
+        self._edge_indices = None
 
         all_node_ids = self.graph.node_indices
         self.size = len(all_node_ids)
@@ -2340,6 +2359,11 @@ class FrozenGraph:
         return self.size
 
     def __getattr__(self, __name: str) -> Any:
+        # Don't delegate dunder/introspection names (e.g. __deepcopy__, __getstate__,
+        # __test__) to the wrapped graph - that would leak copy/pickle/introspection
+        # probes into it. Let normal Python fallback handle them by raising here.
+        if __name.startswith("__") and __name.endswith("__"):
+            raise AttributeError(__name)
         # 'graph' is a slot; fetch it via object.__getattribute__ so that an
         # as-yet-unset 'graph' (e.g. during __init__) raises AttributeError here
         # instead of recursing back into __getattr__.
@@ -2357,13 +2381,18 @@ class FrozenGraph:
     def neighbors(self, n: Any) -> tuple[Any, ...]:
         return self.graph.neighbors(n)
 
-    @functools.cached_property
+    @property
     def node_indices(self) -> Iterable[Any]:
-        return self.graph.node_indices
+        # Cached into a slot (see __slots__ note) since the graph is immutable.
+        if self._node_indices is None:
+            self._node_indices = self.graph.node_indices
+        return self._node_indices
 
-    @functools.cached_property
+    @property
     def edge_indices(self) -> Iterable[Any]:
-        return self.graph.edge_indices
+        if self._edge_indices is None:
+            self._edge_indices = self.graph.edge_indices
+        return self._edge_indices
 
     @functools.lru_cache(16384)
     def degree(self, n: Any) -> int:
