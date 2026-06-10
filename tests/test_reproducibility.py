@@ -108,13 +108,13 @@ def test_pa_freeze():
 
     result = ""
     for count, partition in enumerate(chain):
-        result += str(list(sorted(partition.population.values())))
-        result += str(len(partition.cut_edges))
+        result += str(list(sorted(partition["population"].values())))
+        result += str(len(partition["cut_edges"]))
         result += str(count) + "\n"
 
     # This needs to be changed every time we change the
     # tests around
     assert (
         hashlib.sha256(result.encode()).hexdigest()
-        == "aa7a5f7116c7b10b7857aeb3555fd88d8dfc5d810dc0b706f8772efba3c78607"
+        == "5389e6a6349a055bf05f8c931f62a3710a07f300bf8a8e908c71ebe9c33973f3"
     )

@@ -128,6 +128,59 @@ def four_by_five_grid_for_opt():
 
 
 @pytest.fixture
+def four_by_five_grid_nx():
+    # A raw networkx 4x5 grid with a "nx_node_id" attribute (an effective stable
+    # original id) and two connected components (rows 0-1 and rows 2-3). Lives in
+    # conftest so it is shared across test modules.
+    #
+    # nx_node_id:        MVAP (all 2):
+    #  0  1  2  3  4
+    #  5  6  7  8  9
+    # 10 11 12 13 14
+    # 15 16 17 18 19
+    nx_graph = nx.Graph()
+    nx_graph.add_nodes_from(
+        [(node_id, {"population": 10, "nx_node_id": node_id, "MVAP": 2}) for node_id in range(20)]
+    )
+    nx_graph.add_edges_from(
+        [
+            (0, 1),
+            (0, 5),
+            (1, 2),
+            (1, 6),
+            (2, 3),
+            (2, 7),
+            (3, 4),
+            (3, 8),
+            (4, 9),
+            (5, 6),
+            # (5, 10),   # omitted edges split the grid into two components
+            (6, 7),
+            # (6, 11),
+            (7, 8),
+            # (7, 12),
+            (8, 9),
+            # (8, 13),
+            # (9, 14),
+            (10, 11),
+            (10, 15),
+            (11, 12),
+            (11, 16),
+            (12, 13),
+            (12, 17),
+            (13, 14),
+            (13, 18),
+            (14, 19),
+            (15, 16),
+            (16, 17),
+            (17, 18),
+            (18, 19),
+        ]
+    )
+    return nx_graph
+
+
+@pytest.fixture
 def graph_with_random_data_factory(three_by_three_grid):
 
     def factory(columns):
