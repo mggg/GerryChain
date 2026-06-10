@@ -2092,6 +2092,38 @@ class Graph:
                 "rustworkx-based graph."
             )
 
+    def is_node_set_connected(self, nodes: Iterable[Any]) -> bool:
+        """Return whether the given set of nodes induces a connected subgraph of this graph.
+
+        This is a fast path for connectivity checks. It hands the node set straight to the
+        backend's subgraph constructor and runs the native connectivity routine on the result,
+        skipping the ``Graph`` wrapper and the node-id translation maps that ``subgraph()``
+        builds - none of which are needed to answer a yes/no connectivity question.
+
+        A set of 0 or 1 nodes is treated as trivially connected, mirroring ``is_connected()``.
+
+        Args:
+            nodes (Iterable[Any]): The node_ids of the nodes to check.
+
+        Returns:
+            bool: True if the nodes induce a connected subgraph (or there are at most one
+                of them).
+        """
+        if not isinstance(nodes, list):
+            nodes = list(nodes)
+        if len(nodes) <= 1:
+            return True
+
+        if self._rx_graph is not None:
+            return rustworkx.is_connected(self._rx_graph.subgraph(nodes))
+        elif self._nx_graph is not None:
+            return networkx.is_connected(self._nx_graph.subgraph(nodes))
+        else:
+            raise TypeError(
+                "Graph passed to 'is_node_set_connected()' is neither "
+                "a networkx-based graph nor a rustworkx-based graph"
+            )
+
     def subgraphs_for_connected_components(self) -> list[Graph]:
         """Create and return a list of subgraphs for each set of nodes in the given graph that are.
 

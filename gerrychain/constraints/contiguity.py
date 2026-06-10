@@ -63,30 +63,14 @@ def single_flip_contiguous(partition: Partition) -> bool:
         return contiguous(partition)
 
     graph = partition.graph
-    assignment = partition.assignment
-
-    def _partition_edge_avoid(start_node: Any, end_node: Any) -> bool:
-        """Helper function used in the graph traversal to avoid edges that cross districts (parts).
-
-        Args:
-            start_node (Any): The start node of the edge.
-            end_node (Any): The end node of the edge.
-
-        Returns:
-            bool: True if the edge should be avoided (i.e., if it crosses from one district to
-                another), False otherwise.
-        """
-
-        # Return True if both the start_node and end_node are in the same district (part).
-        return assignment.mapping[start_node] != assignment.mapping[end_node]
+    mapping = partition.assignment.mapping
+    parent_mapping = parent.assignment.mapping
 
     for changed_node in flips:
-        old_assignment = partition.parent.assignment.mapping[changed_node]
+        old_assignment = parent_mapping[changed_node]
 
         old_neighbors = [
-            node
-            for node in graph.neighbors(changed_node)
-            if assignment.mapping[node] == old_assignment
+            node for node in graph.neighbors(changed_node) if mapping[node] == old_assignment
         ]
 
         # Under our assumptions, if there are no old neighbors, then the
@@ -97,10 +81,13 @@ def single_flip_contiguous(partition: Partition) -> bool:
 
         start_neighbor = random.choice(old_neighbors)
 
-        # Check if all old neighbors in the same assignment are still reachable.
-        # The "_partition_edge_avoid" function will prevent searching across
-        # a district (part) boundary
-        connected = _are_reachable(graph, start_neighbor, _partition_edge_avoid, old_neighbors)
+        # A single old neighbor is trivially reachable from itself.
+        if len(old_neighbors) == 1:
+            continue
+
+        # Check if all old neighbors in the same assignment are still reachable
+        # without the search leaving the old district.
+        connected = _are_reachable(graph, start_neighbor, mapping, old_assignment, old_neighbors)
 
         if not connected:
             return False
@@ -149,13 +136,12 @@ def contiguous(partition: Partition) -> bool:
     Returns:
         bool: Whether the partition is contiguous
     """
-
-    return all(partition.subgraphs[part].is_connected() for part in _affected_parts(partition))
-
-
-# TODO: Delete this - it is obsolete...
-def contiguous_bfs(partition) -> bool:
-    raise ("contiguous_bfs() is obsolete")
+    # Check connectivity of each part's node set directly rather than going through
+    # partition.subgraphs[part]: building a full Graph subgraph wrapper costs several
+    # Python passes over the part's nodes, none of which a yes/no check needs.
+    graph = partition.graph
+    parts = partition.parts
+    return all(graph.is_node_set_connected(parts[part]) for part in _affected_parts(partition))
 
 
 def number_of_contiguous_parts(partition: Partition) -> int:
@@ -167,8 +153,9 @@ def number_of_contiguous_parts(partition: Partition) -> int:
     Returns:
         int: Number of contiguous parts in the partition.
     """
+    graph = partition.graph
     parts = partition.assignment.parts
-    return sum(1 for part in parts if partition.subgraphs[part].is_connected())
+    return sum(1 for part in parts if graph.is_node_set_connected(parts[part]))
 
 
 # Create an instance of SelfConfiguringLowerBound using the number_of_contiguous_parts function.
@@ -196,34 +183,3 @@ def contiguous_components(partition: Partition) -> dict[int, list]:
         connected_components_in_each_partition[part] = list_of_connected_subgraphs
 
     return connected_components_in_each_partition
-
-
-def _bfs(graph: dict[int, list]) -> bool:
-    """Performs BFS on the provided graph and returns if the graph is connected.
-
-    Args:
-        graph (Dict[int, list]): Dict-of-lists; an adjacency matrix.
-
-    Returns:
-        bool: is this graph connected?
-    """
-    q = [next(iter(graph))]
-    visited = set()
-    num_nodes = len(graph)
-
-    # Check if the district has a single vertex. If it does, then simply return
-    # `True`, as it's trivially connected.
-    if num_nodes <= 1:
-        return True
-
-    # bfs!
-    while len(q) > 0:
-        current = q.pop(0)
-        neighbors = graph[current]
-
-        for neighbor in neighbors:
-            if neighbor not in visited:
-                visited.add(neighbor)
-                q += [neighbor]
-
-    return num_nodes == len(visited)
