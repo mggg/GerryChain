@@ -136,6 +136,12 @@ class Graph:
         Returns:
             Graph: A Graph object embedding the given NetworkX Graph
         """
+        if nx_graph.is_directed():
+            raise GraphValidationError(
+                "GerryChain Graph objects must be undirected; "
+                "Graph.from_networkx() received a directed graph."
+            )
+
         graph = cls()
         graph._nx_graph = nx_graph
         graph._rx_graph = None
@@ -203,6 +209,11 @@ class Graph:
         Returns:
             "Graph": a GerryChain Graph object with an embedded RustworkX.PyGraph object
         """
+        if not isinstance(rx_graph, rustworkx.PyGraph):
+            raise GraphValidationError(
+                "GerryChain Graph objects must be undirected; "
+                "Graph.from_rustworkx() requires a rustworkx.PyGraph."
+            )
 
         # Ensure that the RX graph has node and edge data dictionaries
         #
