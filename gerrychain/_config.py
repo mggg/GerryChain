@@ -13,8 +13,10 @@ Two kinds of validation exist in GerryChain:
   a dict data payload") that are wasteful to run during a long chain. These are gated behind the
   runtime-checks switch below.
 
-Modelled after ``numpy.seterr`` / ``numpy.errstate`` and ``torch.autograd.set_detect_anomaly`` - a
-global switch with a context manager, defaulting to off, that a user (read: maintainer) flips on
+Modelled after ``torch.autograd.set_detect_anomaly`` / ``torch.autograd.detect_anomaly`` and the
+``numpy.seterr`` / ``numpy.errstate`` pairing - a global switch plus a context manager that
+restores the previous setting on exit. Like PyTorch's anomaly detection, it defaults to off
+because the checks are too expensive for hot paths, and a user (read: maintainer) flips it on
 when something looks wrong.
 
 Example::
