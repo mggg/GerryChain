@@ -1,3 +1,50 @@
+"""Incremental "flow"-based updaters for partitions produced by a Markov chain.
+
+GerryChain explores district plans with a Markov chain meaning each step starts from the current
+``Partition`` and produces a child ``Partition`` that differs from it by only a handful of node
+reassignments ("flips"). Most quantities we track about a partition (cut edges, perimeters,
+boundary nodes, tallies, ...) are exposed as *updater* - functions ``updater(partition)`` whose
+results are computed on demand and cached on the partition (see ``Partition.__getitem__``).
+
+Since ReCom steps only modify two districts at a time, for many updaters (e.g. total population),
+it is possible to compute the new value for the child partition by starting from the parent's
+value and adjusting it using only the nodes that changed assignment. For example, if you know the
+population of each part in the parent partition, and you know which nodes joined and left each part,
+you can compute the new population of each part by adding the population of the nodes that joined
+and subtracting the population of the nodes that left. This is much faster than looping through
+all the nodes in the changed parts and summing their populations from scratch. The list of
+nodes that joined and left each part is what we call the "flow" of nodes into and out of each part,
+and the machinery for computing and responding to that flow is what this module provides.
+
+
+There are two notions of "flow":
+
+* **Node flow** (:func:`flows_from_changes`): for each part, the set of nodes that joined it
+  (``"in"``) and the set that left it (``"out"``) relative to the parent partition. This is exposed
+  as ``partition.flows``.
+* **Cut-edge flow** (:func:`compute_edge_flows`): for each part, the cut edges that became - or
+  stopped being - incident to that part. This is exposed as ``partition.edge_flows``.
+
+Two decorators turn an incremental update rule into a full updater:
+
+* :func:`on_flow` drives an updater from node flow.
+* :func:`on_edge_flow` drives an updater from cut-edge flow.
+
+In both cases you supply two pieces:
+
+* an **initializer**, which computes the whole ``{part: value}`` dictionary from scratch. It is used
+  for the *root* partition of a chain (the one whose ``partition.parent is None``), where there is
+  no parent to diff against.
+* an **update rule** (the decorated function), which is called once per changed part on every
+  later step and returns the new value for that part, given the parent's value for that part plus
+  the in/out flow for that part.
+
+So the lifecycle of a flow-based updater is: compute everything once at the root via the
+initializer, then on each subsequent step copy the parent's result and patch only the parts that
+actually changed. This is what the docstrings below mean by "initialize" (root) vs. the incremental
+"post-initialization" update (every later step).
+"""
+
 from __future__ import annotations
 
 import collections
@@ -84,6 +131,28 @@ def on_flow(initializer: Callable, alias: str) -> Callable:
     The initializer, by contrast, should take the entire partition and return the entire `{part:
     <value>}` dictionary.
 
+    How it works (initialize vs. incremental update):
+        The updater this decorator produces behaves differently depending on whether the partition
+        is the root of the chain or a later step:
+
+        * **Initialize (root partition).** When ``partition.parent is None`` there is no previous
+          step to diff against, so the updater simply calls ``initializer(partition)`` and returns
+          the whole ``{part: value}`` dictionary computed from scratch.
+        * **Incremental update (every later step).** Otherwise the updater takes the parent's
+          cached ``{part: value}`` dictionary (``partition.parent[alias]``), copies it, and then -
+          for each part that had any node flow this step - replaces that part's entry with the
+          result of calling the decorated function with ``(partition, previous_value_for_part,
+          flow["in"], flow["out"])``. Parts with no flow keep the parent's value unchanged, so only
+          the handful of parts touched by this step's flips are recomputed.
+
+        This is why the decorated function only needs to describe how a *single* part's value
+        changes given the nodes flowing in and out of it, while the initializer must be able to
+        compute every part's value directly.
+
+    Note:
+        The ``alias`` must match the name the updater is registered under on the partition, because
+        the incremental path looks the parent's value up via ``partition.parent[alias]``.
+
     Example:
 
     .. code-block:: python
@@ -94,11 +163,12 @@ def on_flow(initializer: Callable, alias: str) -> Callable:
 
     Args:
         initializer (Callable): A function that takes the partition and returns a dictionary of the
-            form `{part: <value>}`.
-        alias (str): The name of the updater to be created.
+            form `{part: <value>}`. Used to compute the value from scratch for the root partition.
+        alias (str): The name of the updater to be created (and the key it is registered under).
 
     Returns:
-        Callable: A decorator that takes a function as input and returns a wrapped function.
+        Callable: A decorator that takes a single-part update function as input and returns a full
+        updater function ``updater(partition)``.
     """
 
     def decorator(function: Callable[..., object]) -> Callable:
@@ -215,6 +285,23 @@ def on_edge_flow(initializer: Callable, alias: str) -> Callable:
     The initializer, by contrast, should take the entire partition and return the entire `{part:
     <value>}` dictionary.
 
+    How it works (initialize vs. incremental update):
+        This is the cut-edge analogue of :func:`on_flow`; the only difference is that it is driven
+        by ``partition.edge_flows`` (cut edges joining/leaving each part) instead of
+        ``partition.flows`` (nodes joining/leaving each part).
+
+        * **Initialize (root partition).** When the partition has no parent, the updater calls
+          ``initializer(partition)`` and returns the whole ``{part: value}`` dictionary computed
+          from scratch.
+        * **Incremental update (every later step).** Otherwise it copies the parent's cached
+          ``{part: value}`` dictionary and, for each part with cut-edge flow this step, replaces
+          that part's entry with the result of calling the decorated function with
+          ``(partition, previous_value_for_part, new_edges=flow["in"], old_edges=flow["out"])``.
+
+    Note:
+        The ``alias`` must match the name the updater is registered under, because the incremental
+        path looks the parent's value up via ``partition.parent[alias]``.
+
     Example:
 
     .. code-block:: python
@@ -225,11 +312,12 @@ def on_edge_flow(initializer: Callable, alias: str) -> Callable:
 
     Args:
         initializer (Callable): A function that takes the partition and returns a dictionary of the
-            form `{part: <value>}`.
-        alias (str): The name of the updater to be created.
+            form `{part: <value>}`. Used to compute the value from scratch for the root partition.
+        alias (str): The name of the updater to be created (and the key it is registered under).
 
     Returns:
-        Callable: A decorator that takes a function as input and returns a wrapped function.
+        Callable: A decorator that takes a single-part update function as input and returns a full
+        updater function ``updater(partition)``.
     """
 
     def decorator(f: Callable[..., object]) -> Callable:
