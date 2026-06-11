@@ -90,40 +90,99 @@ node_ids for this function and all will be well...
 """
 
 
-def random_spanning_tree(graph: Graph, region_surcharge: Optional[Dict] = None) -> Graph:
+def random_spanning_tree(
+    graph: Graph,
+    region_surcharge: Optional[Dict] = None,
+    treat_unassigned_as_single_region: bool = False,
+) -> Graph:
     """Builds a minimum spanning tree chosen by Kruskal's method using random weights.
-
-    The region_surcharge parameter allows the caller to bias the selection of edges by increasing
-    the weights of some edges. For example, if you specify a region surcharge for "county", then
-    all edges whose nodes do NOT have the same non-null value for "county" will have a surcharge
-    added to that edge. This will have the effect of biasing the algorithm to preferentially select
-    nodes that belong to the same county.
 
     Kruskal's method chooses the edges with the lowest weight first, so edges with high weights
     will be selected last - with the highest weights not chosen at all (once all the nodes are in
-    the tree, the algorithm stops adding edges).
+    the tree, the algorithm stops adding edges). If no ``region_surcharge`` is provided, every edge
+    just gets a plain random weight, so the result is an ordinary random spanning tree.
 
-    If no region_surcharges are provided, then the algorithm just randomly specifies the weights of
-    all edges before generating an MST which is essentially a random spanning_tree generator. In
-    this case, the caller could have instead used the uniform_spanning_tree() function. The
-    performance difference between uniform_spanning_tree() and random_spanning_tree() depends on
-    the structure of the graph.
+    Region surcharge (keeping regions together):
+        The ``region_surcharge`` parameter lets you bias the spanning tree - and therefore the
+        districts eventually cut from it - so that a chosen kind of region (a county, municipality,
+        precinct, or any other group of nodes that share a node attribute) tends to be kept whole.
 
-    In short, if you want to bias the selection of districts to keep some nodes together, you want
-    to use this routine, random_spanning_tree().
+        Surcharges are passed as a dict mapping a node-attribute name to a numeric surcharge, e.g.
+        ``{"county": 0.5}``. For each edge, the surcharge for an attribute is added to that edge's
+        random weight when the edge crosses a boundary for that attribute - that is, when the two
+        endpoints do NOT share the same non-null value of the attribute. So edges *inside* a region
+        keep their plain random weight, while edges on the *boundary* of a region are made heavier.
 
-    Note that the random weights applied to edges have values between 0 and 1 so the additional
-    weights supplied in the region_surcharge should be sized appropriately. If the region_surcharge
-    weight is greater than 1, then it will be heavier than any other edge that has not had a
-    surcharge applied to it.
+        Since this function builds a *minimum* spanning tree, making the boundary edges heavier
+        biases the MST toward connecting each region through its cheap interior edges. Therefore,
+        the region tends to appear as a single connected subtree of the spanning tree, and
+        because the bipartition step cuts exactly one edge, a connected region tends to be kept
+        whole. In the extreme case, if the surcharge is large enough to dominate the random weights,
+        then the region will be split at most once.
+
+        Choosing surcharge values: the random weights are drawn uniformly from ``[0, 1)``, so the
+        surcharge should be sized relative to that range. A surcharge well below 1 is a *soft* bias
+        that competes with the random weights (regions are kept together more often, but not always);
+        a surcharge of 1 or more *dominates* the random weights, so boundary edges are effectively
+        always chosen last and the bias is strong. Larger values mean a stronger preference to keep
+        the region whole.
+
+        Multiple region types: ``region_surcharge`` may contain several attributes (for example
+        ``{"county": 0.5, "muni": 0.5}``). The surcharges are independent and *additive per edge*:
+        an edge that crosses both a county boundary and a municipality boundary receives both
+        surcharges. This lets you weight different kinds of region differently, but be aware that
+        with several attributes the surcharges can stack, so keep the combined magnitudes in mind.
+
+        Nodes with no region value (selectable via ``treat_unassigned_as_single_region``): an edge
+        is surcharged whenever its endpoints do not share the same non-null attribute value. This
+        always includes an edge between a region node and a region-less node (e.g. a node in no
+        county). The one case you get to choose is an edge between *two* region-less nodes (both
+        values ``None``), which decides how the "unassigned" territory for that attribute is treated:
+
+        * **Region-less nodes individually splittable** (``treat_unassigned_as_single_region=False``,
+          the default): edges among region-less nodes are also surcharged, so the unassigned area
+          gets no "keep whole" bias and may be divided freely among districts. This is usually the
+          right behavior when region-less nodes are scattered (water, unincorporated areas, etc.),
+          where forcing them to stay together would make little sense.
+        * **Unassigned area kept whole** (``treat_unassigned_as_single_region=True``): edges between
+          two region-less nodes are left cheap (since they share the value ``None``), so all
+          region-less nodes are treated like one additional region and biased to stay whole.
+
+        The flag is applied per attribute, so for a given attribute its region-less nodes are
+        treated consistently. It has no effect unless some nodes actually lack a value for a
+        surcharged attribute.
 
     Args:
         graph (Graph): The input graph to build the spanning tree from.
-        region_surcharge (Optional[Dict], optional): Dictionary of surcharges to add to the random
-            weights used in region-aware variants.
+        region_surcharge (Optional[Dict], optional): Dictionary mapping a node-attribute name to the
+            numeric surcharge added to the random weight of edges that cross a boundary for that
+            attribute. Defaults to None (no surcharge - an ordinary random spanning tree).
+        treat_unassigned_as_single_region (bool, optional): How to treat edges between two nodes that
+            both have no value for a surcharged attribute. When False (default), such edges are
+            surcharged, so the region-less ("unassigned") area may be split freely. When True, such
+            edges are not surcharged, so the region-less area is biased to be kept whole, like any
+            other region. Has no effect when ``region_surcharge`` is empty or every node has a value.
 
     Returns:
-        Graph: The maximal spanning tree represented as a GerryChain Graph.
+        Graph: The minimum spanning tree represented as a GerryChain Graph.
+
+    Example:
+        Draw a region-aware spanning tree of the bundled "Gerrymandria" example graph, biased to
+        keep each county connected (and therefore split across as few districts as possible)::
+
+            from gerrychain.examples import gerrymandria
+            from gerrychain.tree import random_spanning_tree
+
+            graph = gerrymandria()  # 8x8 graph with node attributes "county" and "water_dist"
+
+            # A surcharge >= 1 dominates the [0, 1) random weights, strongly preferring to keep
+            # whole counties together in the spanning tree. We also add a small surcharge for
+            # water district boundaries to also indicate a preference to keep water together,
+            # but the county surcharge is the main driver of the bias.
+            tree = random_spanning_tree(graph, region_surcharge={"county": 2.0, "water_dist": 0.1})
+
+        A spanning tree always has ``len(graph.nodes) - 1`` edges; with no ``region_surcharge`` you
+        get an ordinary random spanning tree instead.
     """
 
     # Create an empty dict now instead of as a default parameter to avoid
@@ -156,28 +215,17 @@ def random_spanning_tree(graph: Graph, region_surcharge: Optional[Dict] = None) 
             edge = graph.get_edge_from_edge_id(edge_id)
             weight = random.random()
 
-            # If there are any entries in the region_surcharge dict, then add
-            # additional weight to the edge if the nodes in the edge are not
-            # in the same "region", that is:
-            #
-            #    * if one of the nodes is NOT in a region (for instance in the
-            #      case of a "municipality" region defined by the key "muni",
-            #      the node was not in any municpality and hence there was no
-            #      node_data for the atrribute, "muni")
-            #
-            #    * or if the nodes were in different "regions"
-            #
             for key, value in region_surcharge.items():
-                # We surcharge edges that are in different regions and those that are not in any region
                 node_id1 = edge[0]
                 node_id2 = edge[1]
                 node_id1_region = graph.node_data(node_id1)[key]
                 node_id2_region = graph.node_data(node_id2)[key]
-                if (
-                    node_id1_region != node_id2_region
-                    or node_id1_region is None
-                    or node_id2_region is None
-                ):
+                if node_id1_region != node_id2_region:
+                    # different regions, or exactly one endpoint is region-less: a boundary edge
+                    weight += value
+                elif node_id1_region is None and not treat_unassigned_as_single_region:
+                    # both endpoints are region-less: surcharge unless keeping the unassigned
+                    # area whole
                     weight += value
 
             graph.edge_data(edge_id)["random_weight"] = weight
@@ -235,7 +283,6 @@ def uniform_spanning_tree(
     parent_node_id = {root_id: None}
 
     for node_id in graph.node_indices:
-
         # Random walk (perhaps with cycles) that records the
         # last path taken before hitting a node already in
         # tree_nodes.  Note that recording the last path
