@@ -70,7 +70,7 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 TOP_DIR = SCRIPT_DIR.parent
 RESULT_MARKER = "@@RESULT "
-DEFAULT_JSON = SCRIPT_DIR / "graphs" / "hard_graph.json"
+DEFAULT_GRAPH = SCRIPT_DIR / "graphs" / "hard_graph.json"
 MAX_NUMPY_SEED = 2**32 - 1
 
 
@@ -104,7 +104,7 @@ def _init_pool_worker(args: argparse.Namespace) -> None:
 
     from gerrychain import Graph
 
-    _WORKER_STATE = (Graph.from_json(args.json), args, False)
+    _WORKER_STATE = (Graph.from_json(args.graph), args, False)
 
 
 def _run_one_seed(seed: int) -> dict:
@@ -227,9 +227,9 @@ def cmd_run(args: argparse.Namespace) -> None:
         print("note: --progress only applies to a single sequential seed; ignoring", flush=True)
         progress = False
 
-    graph = Graph.from_json(args.json)
+    graph = Graph.from_json(args.graph)
     print(
-        f"graph={Path(args.json).name} nodes={len(graph.nodes)} "
+        f"graph={Path(args.graph).name} nodes={len(graph.nodes)} "
         f"parts={args.parts} epsilon={args.epsilon} "
         f"steps={args.steps} pop_col={args.pop_col} "
         f"seeds={seeds[0]}..{seeds[-1]} repeats={args.repeats} jobs={jobs}",
@@ -294,7 +294,7 @@ def cmd_run(args: argparse.Namespace) -> None:
     result = {
         "version": version,
         "module_file": gerrychain.__file__,
-        "graph": str(Path(args.json).resolve()),
+        "graph": str(Path(args.graph).resolve()),
         "steps": args.steps,
         "seeds": seeds,
         "repeats": args.repeats,
@@ -363,8 +363,8 @@ def cmd_compare(args: argparse.Namespace) -> None:
     script = str(Path(__file__).resolve())
     worker_args = [
         "run",
-        "--json",
-        str(Path(args.json).resolve()),
+        "--graph",
+        str(Path(args.graph).resolve()),
         "--parts",
         str(args.parts),
         "--epsilon",
@@ -415,7 +415,7 @@ def cmd_compare(args: argparse.Namespace) -> None:
     baseline = next((r for _, r in results if r is not None), None)
     width = max((len(label) for label, _ in results), default=0)
     print(
-        f"\n==== summary: graph={Path(args.json).name}, "
+        f"\n==== summary: graph={Path(args.graph).name}, "
         f"{args.num_seeds} seed(s) x {args.repeats} repeat(s) from seed {base_seed}, "
         f"{args.steps} steps, parts={args.parts}, epsilon={args.epsilon}, "
         f"jobs={args.jobs} ===="
@@ -444,9 +444,9 @@ def cmd_compare(args: argparse.Namespace) -> None:
 
 def add_benchmark_options(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
-        "--json",
-        default=str(DEFAULT_JSON),
-        help=f"dual graph JSON to run on (default: {DEFAULT_JSON})",
+        "--graph",
+        default=str(DEFAULT_GRAPH),
+        help=f"dual graph JSON to run on (default: {DEFAULT_GRAPH})",
     )
     parser.add_argument("--pop-col", default="TOTPOP", help="population column (default: TOTPOP)")
     parser.add_argument(
