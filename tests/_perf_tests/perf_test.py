@@ -6,15 +6,16 @@ import cProfile
 import random
 from functools import partial
 
-from gerrychain import Graph, MarkovChain, Partition, accept, updaters
+from gerrychain import MarkovChain, Partition, accept, updaters
 from gerrychain.constraints import contiguous
+from gerrychain.examples import gerrymandria
 from gerrychain.proposals import recom
 
 
 def main():
 
     random.seed(2024)
-    graph = Graph.from_json("./gerrymandria.json")
+    graph = gerrymandria()
 
     my_updaters = {
         "population": updaters.Tally("TOTPOP"),
