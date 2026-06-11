@@ -16,8 +16,8 @@ from gerrychain.partition import (
 )
 from gerrychain.partition.initial_partition_generators import get_max_prime_factor_less_than
 from gerrychain.proposals import (  # recom,; reversible_recom,
-    build_recom_proposal,
-    build_reversible_recom_proposal,
+    build_recom_proposal_fn,
+    build_reversible_recom_proposal_fn,
 )
 from gerrychain.tree import (
     bipartition_tree,
@@ -523,7 +523,7 @@ def test_recom_works_as_a_proposal(partition_with_pop):
     #     node_repeats=5
     # )
     #
-    my_proposal = build_recom_proposal(
+    my_proposal = build_recom_proposal_fn(
         pop_col="pop", pop_target=ideal_pop, epsilon=0.25, node_repeats=5
     )
     constraints = [contiguous]
@@ -548,7 +548,7 @@ def test_reversible_recom_works_as_a_proposal(partition_with_pop):
     #        max_balanced_edge_cuts=1,
     #    )
     #
-    my_proposal = build_reversible_recom_proposal(
+    my_proposal = build_reversible_recom_proposal_fn(
         pop_col="pop",
         pop_target=ideal_pop,
         epsilon=0.10,

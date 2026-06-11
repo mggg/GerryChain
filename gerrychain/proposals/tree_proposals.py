@@ -239,7 +239,7 @@ def recom(
 
 
 # Define a ProposalFn version to make purpose of the function clear
-def build_recom_proposal(
+def build_recom_proposal_fn(
     pop_col: str,
     pop_target: int | float,
     epsilon: float,
@@ -410,7 +410,7 @@ def reversible_recom(
 
 
 # Define a ProposalFn version to make purpose of the function clear
-def build_reversible_recom_proposal(
+def build_reversible_recom_proposal_fn(
     pop_col: str,
     pop_target: int | float,
     epsilon: float,
