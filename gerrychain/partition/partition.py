@@ -338,16 +338,18 @@ class Partition:
         return self.assignment.mapping[edge[0]] != self.assignment.mapping[edge[1]]
 
     def __getitem__(self, key: str) -> Any:
-        """Allows accessing the values of updaters computed for this Partition instance.
+        """Access the value of one of this Partition's updaters by name.
 
-        This method allows accessing the values of updaters computed for this Partition instance.
-        It returns value of the updater.
+        The ``[]`` interface indexes **updaters**, not nodes: ``key`` is an updater name (e.g.
+        ``"cut_edges"``), and the return value is that updater's computed result (lazily evaluated
+        and cached). For the node-to-part assignment itself, use :attr:`assignment`; see
+        :meth:`keys` for more on this distinction.
 
         Args:
-            key (str): Property to access.
+            key (str): The name of the updater to access.
 
         Returns:
-            Any: The value of the updater.
+            Any: The value of the named updater.
         """
         # Cleverness Alert:  Delayed evaluation of updater functions...
         #
@@ -379,6 +381,20 @@ class Partition:
         )
 
     def keys(self) -> KeysView[str]:
+        """Return the names of this partition's updaters.
+
+        Important: a Partition's mapping/``[]`` interface is over its **updaters**, not its nodes.
+        So ``partition["population"]`` evaluates the ``"population"`` updater, and ``keys()``
+        returns the updater names (e.g. ``["cut_edges", "population", ...]``) - not node_ids or
+        part_ids. This often surprises people who think of a Partition as a node-to-district map.
+
+        The actual node-to-part data lives in :attr:`assignment` (``partition.assignment``, a
+        node_id -> part_id mapping), and the inverse part-to-nodes view is :attr:`parts`
+        (``partition.parts``).
+
+        Returns:
+            KeysView[str]: A view of the updater names available on this partition.
+        """
         return self.updaters.keys()
 
     @property
