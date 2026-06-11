@@ -667,16 +667,75 @@ class Graph:
 
     @classmethod
     def from_json(cls, json_file_name: str) -> Graph:
-        """Create a Graph from a JSON file.
+        """Create a :class:`Graph` from a JSON file in NetworkX "adjacency" format.
 
-        This method creates a Graph from a JSON file. It returns a GerryChain Graph object
-        with data from JSON file.
+        This is the standard way to load a dual graph that has already been built and saved to disk;
+        it is the inverse of :meth:`to_json`. To build a graph from geospatial data instead (a
+        shapefile or a GeoDataFrame), use :meth:`from_file` or :meth:`from_geodataframe`.
+
+        Expected file format:
+            The file must contain a single JSON object in the node-link "adjacency" format produced
+            by ``networkx.readwrite.json_graph.adjacency_data`` - which is exactly what
+            :meth:`to_json` writes, so a file written by ``to_json`` round-trips back through
+            ``from_json``. The top-level object has these keys:
+
+            * ``"directed"`` / ``"multigraph"``: booleans. GerryChain graphs are undirected and not
+              multigraphs, so both are normally ``false``.
+            * ``"graph"``: graph-level attributes as a list of ``[key, value]`` pairs (often empty,
+              ``[]``); e.g. a coordinate reference system might live here.
+            * ``"nodes"``: a list of node objects. Each has an ``"id"`` plus any number of arbitrary
+              attributes (population, district, county, geometry, ...).
+            * ``"adjacency"``: a list parallel to ``"nodes"``. ``adjacency[i]`` is the list of edges
+              incident to node ``i``; each edge object has the neighbor's ``"id"`` plus any edge
+              attributes (e.g. ``"shared_perim"``).
+
+            A minimal two-node example::
+
+                {
+                  "directed": false, "multigraph": false, "graph": [],
+                  "nodes": [{"pop": 5, "id": 0}, {"pop": 3, "id": 1}],
+                  "adjacency": [[{"id": 1}], [{"id": 0}]]
+                }
+
+            Node and edge attributes are preserved and become accessible as
+            ``graph.node_data(node_id)[attr]`` and ``graph.edge_data(edge_id)[attr]``. Anything you
+            intend to use later (a population column for ``pop_col``, a ``region_surcharge``
+            attribute, an election column, ...) must already be present as a node attribute here.
+
+        Backend:
+            The returned ``Graph`` is **NetworkX-backed**, which is convenient for inspection and
+            editing. When you later wrap it in a :class:`~gerrychain.Partition`, GerryChain converts
+            it to the faster RustworkX backend automatically. Node ids are taken verbatim from the
+            ``"id"`` fields; note that the RustworkX conversion reassigns node ids to a contiguous
+            integer range, so do not rely on a node's id carrying semantic meaning.
+
+        Side effect (data warnings):
+            After loading, this calls :meth:`issue_warnings`, which warns about "islands" - degree-0
+            nodes. An island usually indicates a problem with the dual graph (a unit with no recorded
+            adjacencies) and will break contiguity-based proposals, so the warning is worth heeding.
 
         Args:
-            json_file_name (str): JSON file
+            json_file_name (str): Path to the JSON file to read. This is an ordinary filesystem
+                path; the file is opened and parsed directly.
 
         Returns:
-            "Graph": A GerryChain Graph object with data from JSON file
+            Graph: A NetworkX-backed GerryChain ``Graph`` containing the nodes, edges, and attributes
+            described by the file.
+
+        Raises:
+            FileNotFoundError: If ``json_file_name`` does not exist.
+            json.JSONDecodeError: If the file does not contain valid JSON.
+            KeyError: If the JSON is valid but is not in the expected adjacency format.
+
+        Example:
+            >>> from gerrychain import Graph
+            >>> graph = Graph.from_json("./my_state.json")  # doctest: +SKIP
+
+            If you just want a graph to experiment with, GerryChain bundles a ready-made example,
+            which needs no file at all::
+
+                from gerrychain.examples import gerrymandria
+                graph = gerrymandria()
         """
 
         # Note that this returns an NX-based Graph object.  At some point in
@@ -696,12 +755,58 @@ class Graph:
         return graph
 
     def to_json(self, json_file_name: str, include_geometries_as_geojson: bool = False) -> None:
-        """Dump a GerryChain Graph object to disk as a JSON file.
+        """Write this :class:`Graph` to disk as a JSON file in NetworkX "adjacency" format.
+
+        This is the inverse of :meth:`from_json`: it serializes the graph - every node and edge,
+        with all of their attributes - to the node-link "adjacency" format produced by
+        ``networkx.readwrite.json_graph.adjacency_data``, so a file written here can be read back
+        with :meth:`from_json`. See :meth:`from_json` for a description of the on-disk structure.
+
+        Backend requirement (NetworkX only):
+            ``to_json`` currently only works on a **NetworkX-backed** graph and raises ``TypeError``
+            otherwise. This matters in practice because wrapping a graph in a
+            :class:`~gerrychain.Partition` converts it to the RustworkX backend, so the graph
+            reached via ``partition.graph`` cannot be serialized directly - keep a reference to the
+            original NetworkX ``Graph`` (e.g. the one returned by
+            :meth:`from_json` / :meth:`from_file`) if you need to write it out. (Serializing an
+            RX-backed graph is a planned enhancement.)
+
+        Geometries:
+            Graphs built from geospatial data (:meth:`from_file` / :meth:`from_geodataframe`) carry
+            a ``shapely`` geometry object on each node, which is not JSON-serializable. The
+            ``include_geometries_as_geojson`` flag decides what happens to those geometry attributes
+            (it has no effect on graphs that have no geometry):
+
+            * ``False`` (default): geometry attributes are **dropped** from the output. The file is
+              smaller, but the geometry is not saved, so a round-trip through :meth:`from_json` will
+              not recover it.
+            * ``True``: each geometry is **converted to GeoJSON** (its ``__geo_interface__``) and
+              written into the file, preserving it. Note that reading the file back returns those
+              attributes as GeoJSON dicts, not as ``shapely`` objects.
+
+        Non-JSON-native values:
+            Attribute values that the standard JSON encoder cannot handle are passed through
+            :func:`json_serialize`, which converts pandas / numpy integer values to plain Python
+            ``int`` (a common result of building a graph from a GeoDataFrame).
 
         Args:
-            json_file_name (str): name of JSON file to be created
-            include_geometries_as_geojson (bool, optional): Whether to include geometries in the
-                JSON file as GeoJSON. Default is False.
+            json_file_name (str): Path of the JSON file to write. An existing file is overwritten.
+            include_geometries_as_geojson (bool, optional): Whether to write node geometries to the
+                file as GeoJSON (``True``) or strip them out (``False``, the default). See
+                "Geometries" above.
+
+        Returns:
+            None: The graph is written to ``json_file_name``.
+
+        Raises:
+            TypeError: If this graph is not NetworkX-backed (e.g. an RX-backed graph, such as the
+                one inside a Partition).
+            OSError: If the file cannot be opened or written.
+
+        Example:
+            >>> from gerrychain import Graph
+            >>> graph = Graph.from_json("./my_state.json")  # doctest: +SKIP
+            >>> graph.to_json("./my_state_copy.json")       # doctest: +SKIP
         """
         # frm TODO: Code: Implement graph.to_json for an RX based graph
         if not self.is_nx_graph():
