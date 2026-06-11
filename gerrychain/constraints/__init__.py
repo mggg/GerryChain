@@ -19,7 +19,7 @@ WithinPercentRangeOfBounds   Percentage bounds for numeric constraints
 =================================================== =============================================
 Binary constraint functions
 =================================================================================================
-`no_worse_L1_reciprocal_polsby_popper`            Lower bounded L1-reciprocal Polsby-Popper
+`no_worse_L_1_reciprocal_polsby_popper`           Lower bounded L1-reciprocal Polsby-Popper
 `no_worse_L_minus_1_reciprocal_polsby_popper`     Lower bounded L(-1)-reciprocal Polsby-Popper
 `contiguous`                                      Districts are contiguous (with NetworkX
 methods)
@@ -47,11 +47,11 @@ from .bounds import (
     WithinPercentRangeOfBounds,
 )
 from .compactness import (
-    L1_polsby_popper,
-    L1_reciprocal_polsby_popper,
     L2_polsby_popper,
+    L_1_polsby_popper,
+    L_1_reciprocal_polsby_popper,
     L_minus_1_polsby_popper,
-    no_worse_L1_reciprocal_polsby_popper,
+    no_worse_L_1_reciprocal_polsby_popper,
     no_worse_L_minus_1_polsby_popper,
 )
 from .contiguity import (
@@ -74,11 +74,11 @@ __all__ = [
     "SelfConfiguringUpperBound",
     "UpperBound",
     "WithinPercentRangeOfBounds",
-    "L1_polsby_popper",
-    "L1_reciprocal_polsby_popper",
+    "L_1_polsby_popper",
+    "L_1_reciprocal_polsby_popper",
     "L2_polsby_popper",
     "L_minus_1_polsby_popper",
-    "no_worse_L1_reciprocal_polsby_popper",
+    "no_worse_L_1_reciprocal_polsby_popper",
     "no_worse_L_minus_1_polsby_popper",
     "contiguous",
     "no_more_discontiguous",
