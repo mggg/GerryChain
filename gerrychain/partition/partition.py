@@ -1,3 +1,63 @@
+"""The :class:`Partition` - an assignment of graph nodes to districts, plus cached updaters.
+
+A :class:`Partition` is GerryChain's central data structure. It represents a single districting
+plan: an assignment of every node of a :class:`~gerrychain.Graph` to a *part* - one district of the
+plan. (In code these are called *parts*, short for "part of a partition".) It also carries a set
+of *updaters* - named functions that compute derived quantities about the plan (cut edges, district
+populations, perimeters, election results, ...) on demand.
+
+A Partition is also the *state* of GerryChain's Markov chain. Each step of a chain takes the current
+Partition and produces a new child Partition that differs by only a small set of node reassignments
+("flips"); see :meth:`Partition.flip` and the ``parent`` attribute. Most of the design of this class
+is shaped by that use case, so the following choices are worth understanding.
+
+Assignment vs. parts (why keep both?):
+    The same plan can be viewed two ways, and different code wants different views:
+
+    * ``assignment`` (an :class:`~gerrychain.partition.assignment.Assignment`) is the
+      node -> part map. It is the source of truth and is cheap to update flip-by-flip.
+    * ``parts`` is the inverse, part -> set-of-nodes, view. Many updaters and the recombination
+      proposals need to iterate the nodes of a part, for which the inverse view is far more
+      convenient and efficient than scanning the entire assignment.
+
+    Keeping both means neither direction of lookup has to be recomputed from the other on every use;
+    the ``Assignment`` object keeps the two consistent as flips are applied.
+
+FrozenGraph:
+    The underlying graph does not change over the course of a chain - only the assignment of nodes
+    to districts does. The graph is therefore wrapped in a
+    :class:`~gerrychain.graph.graph.FrozenGraph`, an immutable view created once and shared by every
+    Partition in the chain. Freezing the graph buys two things:
+
+    * it lets per-graph results be cached safely (e.g. ``FrozenGraph.neighbors`` /
+      ``FrozenGraph.degree`` are memoized), since the graph can never change under the cache; and
+    * it removes a class of cache-invalidation bugs that a shared, mutable graph could cause if it
+      were edited mid-chain.
+
+    The expensive operations a Partition tries to avoid or amortize are: converting a NetworkX graph
+    to RustworkX, constructing per-district subgraphs (done lazily and cached via ``SubgraphView``),
+    and recomputing updaters.
+
+Updaters:
+    Updater values are computed lazily and cached the first time they are requested via
+    ``partition[name]`` (see :meth:`__getitem__`). Many updaters are additionally *incremental*
+    meaning that they start from the parent partition's cached value and patch only what changed,
+    using the node/edge "flows" between parent and child. See :mod:`gerrychain.updaters.flows`.
+
+Inside vs. outside a Markov chain:
+    A Partition is most useful as chain state, but it is also handy for post-hoc analysis of a fixed
+    plan (computing its cut edges, population deviation, partisan metrics, etc.). The distinguishing
+    feature is the ``parent``: a chain produces a lineage of partitions, each with a parent, which
+    is exactly what the incremental/flow updaters exploit. A standalone Partition built directly
+    from a graph and an assignment has ``parent is None``; its flow-based updaters then simply fall
+    back to computing everything from scratch (their "initializer" path). The same updaters
+    therefore work in both settings.
+
+Note that the mapping / ``[]`` interface of a Partition is over its *updaters*
+(``partition["cut_edges"]``), not its nodes; the node -> part data lives in
+``partition.assignment``. See :meth:`keys`.
+"""
+
 from __future__ import annotations
 
 import json
