@@ -7,7 +7,7 @@ random.seed(2018)
 
 
 @pytest.mark.skipif(
-    True or os.environ.get("PYTHONHASHSEED", 1) != "0",
+    os.environ.get("PYTHONHASHSEED", 1) != "0",
     reason="Need to fix the PYTHONHASHSEED for reproducibility. The expected flips "
     "for this test will change as we make changes to the library, so we only need "
     "to update it and make sure it consistently passes when we are about to make "
@@ -23,9 +23,13 @@ def test_repeatable(three_by_three_grid):
         updaters,
     )
 
+    # Seed here (not just at module level) so the trajectory does not depend on
+    # which other tests consumed the global RNG stream first.
+    random.seed(2018)
+
     partition = Partition(
         three_by_three_grid,
-        {0: 1, 1: 1, 2: 1, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2, 9: 2},
+        {0: 1, 1: 1, 2: 1, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2},
         {"cut_edges": updaters.cut_edges},
     )
     chain = MarkovChain(
@@ -35,28 +39,30 @@ def test_repeatable(three_by_three_grid):
         partition,
         20,
     )
-    # Note: these might not even be the actual expected flips
+    # Captured under PYTHONHASHSEED=0 with random.seed(2018). Regenerate (and make
+    # sure it passes consistently) whenever a library change alters how the RNG
+    # stream is consumed - e.g. before a release.
     expected_flips = [
         None,
         {2: 2},
-        {4: 2},
-        {6: 1},
-        {1: 2},
-        {7: 1},
+        {5: 1},
         {0: 2},
-        {3: 2},
-        {7: 2},
-        {3: 1},
-        {4: 1},
-        {7: 1},
+        {0: 1},
+        {0: 2},
+        {0: 1},
+        {5: 2},
+        {5: 1},
+        {2: 1},
         {8: 1},
+        {6: 1},
         {8: 2},
-        {8: 1},
-        {8: 2},
-        {3: 2},
         {4: 2},
-        {7: 2},
-        {3: 1},
+        {5: 2},
+        {6: 2},
+        {5: 1},
+        {5: 2},
+        {2: 2},
+        {2: 1},
     ]
     flips = [partition.flips for partition in chain]
     assert flips == expected_flips
