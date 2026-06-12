@@ -1,26 +1,30 @@
 """
-This module defines proposal functions for use with MarkovChain.
+This module defines proposal functions for use with MarkovChain.  A
+proposal function is a function that takes a Partition as its only
+parameter and returns a new Partition.
 
-A ProposalFn is a function that takes a Partition as its only argument and
-returns a new Partition, and is used by the MarkovChain to generate
-the next Partition at each step of the chain.
+To make this explicit, the code defines a Protocol class with the
+name ProposalFn which acts like a proposal function that takes one
+parameter of a Partition and returns a Partition.
 
 Because a ProposalFn must accept only a single Partition argument, any
 additional information to be used by a ProposalFn needs to be bound
-ahead of time. This is often done by partially applying the proposal
-function with functools.partial, or by using a helper function that returns
-a closure capturing the additional parameters.
+ahead of time.  Some proposal functions do not need additional
+parameter values, but for those that do, the standard way to provide
+those values is to create a "partial" function that binds all of
+the additional parameter values, leaving only the Partition as the
+sole remaining parameter.
 
 For instance, the recom() function needs to know which bipartition function
-to use, and so the appropriate bipartition function is bound in advance through
-one of the aformentioned methods and the returned a ProposalFn will have the
-expected single-argument signature.
+to use, and so the appropriate bipartition function is bound in advance
+using functools.partial().
 
 Since using the paritial function or creating an appropriate closure can be
-unintuitive, convenience functions are often provided to perform this binding.
-"""
+unintuitive, convenience functions are provided to perform this binding.
+These convenience functions are of the form: build_xxx_proposal() where
+"xxx" describes the semantics of proposal function.
 
-# frm: TODO: Documentation: Peter - are you OK with the comments above?
+"""
 
 import random
 from typing import Protocol
