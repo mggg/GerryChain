@@ -254,6 +254,22 @@ class FindBalancedEdgeCutsFn(Protocol):
     ) -> list[_Cut]: ...
 
 
+class SpanningTreeFn(Protocol):
+    """Call signature shared by all spanning-tree functions.
+
+    A spanning-tree function (``random_spanning_tree``, ``uniform_spanning_tree``, or a custom
+    replacement) takes the graph to build a tree from and an optional ``region_surcharge``, and may
+    accept additional, function-specific keyword options. ``bipartition_tree`` forwards those extra
+    options verbatim from its ``spanning_tree_fn_kwargs`` argument, so a custom spanning-tree
+    function can expose its own knobs (e.g. ``random_spanning_tree``'s
+    ``treat_unassigned_as_single_region``) without any change to the bipartition/recom plumbing.
+    """
+
+    def __call__(
+        self, graph: Graph, region_surcharge: dict | None = None, **kwargs: Any
+    ) -> Graph: ...
+
+
 def _bfs_predecessors_and_successors_for_tree(
     tree: Graph, root: Any, build_successors: bool = False
 ) -> tuple[dict[Any, Any], dict[Any, list[Any]] | None]:
@@ -780,8 +796,9 @@ def _internal_bipartition_tree(
     epsilon: float,
     node_repeats: int = 1,
     spanning_tree: Graph | None = None,
-    spanning_tree_fn: Callable = random_spanning_tree,
+    spanning_tree_fn: SpanningTreeFn = random_spanning_tree,
     region_surcharge: dict | None = None,
+    spanning_tree_fn_kwargs: dict | None = None,
     find_balanced_edge_cuts_fn: Callable = find_balanced_edge_cuts_memoization,
     one_sided_cut: bool = False,
     rootnode_choice_fn: Callable = random.choice,
@@ -818,6 +835,10 @@ def _internal_bipartition_tree(
             spanning tree is not provided. Defaults to `random_spanning_tree`.
         region_surcharge (Optional[Dict], optional): A dictionary of surcharges for the spanning
             tree algorithm. Defaults to None.
+        spanning_tree_fn_kwargs (Optional[Dict], optional): Extra keyword arguments forwarded
+            verbatim to ``spanning_tree_fn``. Use this to set function-specific options that are
+            not named here, e.g. ``{"treat_unassigned_as_single_region": True}`` for
+            ``random_spanning_tree``. Defaults to None.
         find_balanced_edge_cuts_fn (Callable, optional): The function to find balanced edge cuts.
             Defaults to `find_balanced_edge_cuts_memoization`.
         one_sided_cut (bool, optional): Passed to the ``find_balanced_edge_cuts_fn``. Determines
@@ -856,7 +877,17 @@ def _internal_bipartition_tree(
     if region_surcharge is None:
         region_surcharge = {}
 
-    spanning_tree_fn = partial(spanning_tree_fn, region_surcharge=region_surcharge)
+    if spanning_tree_fn_kwargs and "region_surcharge" in spanning_tree_fn_kwargs:
+        raise ValueError(
+            "Pass region_surcharge via the region_surcharge parameter, not inside "
+            "spanning_tree_fn_kwargs."
+        )
+
+    spanning_tree_fn = partial(
+        spanning_tree_fn,
+        region_surcharge=region_surcharge,
+        **(spanning_tree_fn_kwargs or {}),
+    )
 
     if "one_sided_cut" in signature(find_balanced_edge_cuts_fn).parameters:
         find_balanced_edge_cuts_fn = partial(
@@ -935,8 +966,9 @@ def bipartition_tree(
     epsilon: float,
     node_repeats: int = 1,
     spanning_tree: Graph | None = None,
-    spanning_tree_fn: Callable = random_spanning_tree,
+    spanning_tree_fn: SpanningTreeFn = random_spanning_tree,
     region_surcharge: dict | None = None,
+    spanning_tree_fn_kwargs: dict | None = None,
     find_balanced_edge_cuts_fn: Callable = find_balanced_edge_cuts_memoization,
     one_sided_cut: bool = False,
     rootnode_choice_fn: Callable = random.choice,
@@ -973,6 +1005,10 @@ def bipartition_tree(
             spanning tree is not provided. Defaults to `random_spanning_tree`.
         region_surcharge (Optional[Dict], optional): A dictionary of surcharges for the spanning
             tree algorithm. Defaults to None.
+        spanning_tree_fn_kwargs (Optional[Dict], optional): Extra keyword arguments forwarded verbatim
+            to ``spanning_tree_fn``. Use this to set function-specific options that are not named
+            here, e.g. ``{"treat_unassigned_as_single_region": True}`` for ``random_spanning_tree``.
+            Defaults to None.
         find_balanced_edge_cuts_fn (Callable, optional): The function to find balanced edge cuts.
             Defaults to `find_balanced_edge_cuts_memoization`.
         one_sided_cut (bool, optional): Passed to the ``find_balanced_edge_cuts_fn``. Determines
@@ -1014,6 +1050,7 @@ def bipartition_tree(
         spanning_tree=spanning_tree,
         spanning_tree_fn=spanning_tree_fn,
         region_surcharge=region_surcharge,
+        spanning_tree_fn_kwargs=spanning_tree_fn_kwargs,
         find_balanced_edge_cuts_fn=find_balanced_edge_cuts_fn,
         one_sided_cut=one_sided_cut,
         rootnode_choice_fn=rootnode_choice_fn,
@@ -1054,7 +1091,7 @@ def _get_possible_edge_cuts_and_populated_graph(
     epsilon: float,
     node_repeats: int = 1,
     spanning_tree: Graph | None = None,
-    spanning_tree_fn: Callable = random_spanning_tree,
+    spanning_tree_fn: SpanningTreeFn = random_spanning_tree,
     find_balanced_edge_cuts_fn: Callable = find_balanced_edge_cuts_memoization,
     rootnode_choice_fn: Callable = random.choice,
     repeat_until_valid: bool = True,
@@ -1196,7 +1233,7 @@ def bipartition_tree_random_with_num_cuts(
     node_repeats: int = 1,
     repeat_until_valid: bool = True,
     spanning_tree: Graph | None = None,
-    spanning_tree_fn: Callable = random_spanning_tree,
+    spanning_tree_fn: SpanningTreeFn = random_spanning_tree,
     find_balanced_edge_cuts_fn: Callable = find_balanced_edge_cuts_memoization,
     one_sided_cut: bool = False,
     rootnode_choice_fn: Callable = random.choice,
