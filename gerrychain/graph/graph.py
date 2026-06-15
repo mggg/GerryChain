@@ -1245,11 +1245,17 @@ class Graph:
         return len(self.node_indices)
 
     def __getattr__(self, __name: str) -> Any:
-        """Delegate unknown attributes to the embedded backing graph.
+        """Delegate unknown attributes to the embedded NetworkX backing graph.
 
-        Accesses that Graph itself does not define are forwarded to the embedded NetworkX or
-        RustworkX graph. This keeps backend conveniences reachable - e.g. ``graph.geometry``
-        (stored on the NX graph) or ``graph.graph["crs"]`` (the NX graph-level attribute dict).
+        Accesses that Graph itself does not define are forwarded to the embedded NetworkX graph.
+        This keeps backend conveniences reachable - e.g. ``graph.geometry`` (stored on the NX
+        graph) or ``graph.graph["crs"]`` (the NX graph-level attribute dict) - and lets an
+        NX-backed Graph be passed to NetworkX algorithms.
+
+        Delegation is intentionally NX-only. Forwarding to a RustworkX backing graph would leak
+        rustworkx's raw integer-index API, the very distinction this wrapper exists to hide, and
+        none of those conveniences exist on a PyGraph anyway; an RX-backed Graph raises
+        AttributeError here instead.
 
         Two safety rules apply:
 
@@ -1257,32 +1263,31 @@ class Graph:
           ``__deepcopy__`` / ``__getstate__`` / ``__test__`` to the backing graph would leak
           copy/pickle/introspection probes into it; we raise AttributeError so the normal Python
           machinery handles them.
-        * Because ``_nx_graph`` / ``_rx_graph`` have class-level None defaults, reading them here
-          can never fall back into ``__getattr__`` - so the infinite-recursion hazard that used to
-          require a special-case guard is gone by construction.
+        * Because ``_nx_graph`` has a class-level None default, reading it here can never fall
+          back into ``__getattr__`` - so the infinite-recursion hazard that used to require a
+          special-case guard is gone by construction.
 
         Args:
             __name (str): The attribute being requested.
 
         Returns:
-            Any: The attribute value from the embedded graph.
+            Any: The attribute value from the embedded NetworkX graph.
 
         Raises:
-            AttributeError: If the name is a dunder, or no backing graph is configured,
-                or the backing graph has no such attribute.
+            AttributeError: If the name is a dunder, the Graph is not NetworkX-backed, or the NX
+                graph has no such attribute.
         """
         if __name.startswith("__") and __name.endswith("__"):
             raise AttributeError(__name)
 
-        if self._rx_graph is not None:
-            return getattr(self._rx_graph, __name)
-        elif self._nx_graph is not None:
+        if self._nx_graph is not None:
             return getattr(self._nx_graph, __name)
-        else:
-            raise AttributeError(
-                f"'Graph' object has no attribute {__name!r} (the Graph is not "
-                "configured with a backing NetworkX or RustworkX graph)"
-            )
+
+        raise AttributeError(
+            f"'Graph' object has no attribute {__name!r}. Attribute delegation is only "
+            "supported for NetworkX-backed graphs (e.g. to reach '.geometry' or graph-level "
+            "attributes); it is not forwarded to a RustworkX backing graph."
+        )
 
     def __getitem__(self, __name: str) -> Any:
         if self.is_rx_graph():
@@ -1898,11 +1903,6 @@ class Graph:
                 "a networkx-based graph nor a rustworkx-based graph"
             )
 
-        # if not isinstance(data_dict, dict):
-        #     raise TypeError("graph.node_data(): data for node is not a dict")
-        #
-        # return data_dict
-
     def edge_data(self, edge_id: Any) -> dict[Any, Any]:
         """Return the data dictionary that contains the data for the given edge.
 
@@ -2438,16 +2438,17 @@ class FrozenGraph:
         return self.graph.neighbors(n)
 
     @property
-    def node_indices(self) -> Iterable[Any]:
-        # Cached into a slot (see __slots__ note) since the graph is immutable.
+    def node_indices(self) -> frozenset[Any]:
+        # Cached into a slot (see __slots__ note) since the graph is immutable. Store a
+        # frozenset so a caller can't mutate the shared cached object in place (e.g. via `-=`).
         if self._node_indices is None:
-            self._node_indices = self.graph.node_indices
+            self._node_indices = frozenset(self.graph.node_indices)
         return self._node_indices
 
     @property
-    def edge_indices(self) -> Iterable[Any]:
+    def edge_indices(self) -> frozenset[Any]:
         if self._edge_indices is None:
-            self._edge_indices = self.graph.edge_indices
+            self._edge_indices = frozenset(self.graph.edge_indices)
         return self._edge_indices
 
     @functools.lru_cache(16384)
