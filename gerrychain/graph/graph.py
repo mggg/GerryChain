@@ -2009,6 +2009,14 @@ class Graph:
                 cols.append(v)
                 data.append(1)  # simple adjacency matrix, so just 1 not weight attribute
 
+                # rx_graph.edge_list() yields each undirected edge only once, but the
+                # adjacency matrix of an undirected graph is symmetric, so we must add the
+                # mirrored entry as well. Skip self-loops so the diagonal is not double counted.
+                if u != v:
+                    rows.append(v)
+                    cols.append(u)
+                    data.append(1)
+
             sparse_array = scipy.sparse.coo_matrix(
                 (data, (rows, cols)), shape=(num_nodes, num_nodes)
             )
@@ -2040,12 +2048,9 @@ class Graph:
 
             """
 
-            # frm: * TODO:  Get someone to validate that this in fact does the right thing.
-            #
-            # The one test, test_proposal_returns_a_partition[spectral_recom], in test_proposals.py
-            # that uses normalized_laplacian_matrix() now passes, but it is for a small 6x6 graph
-            # and hence is not a real world test...
-            #
+            # The RX result is validated against networkx.normalized_laplacian_matrix()
+            # (the reference implementation used by the NX path) in
+            # tests/test_laplacian.py.
 
             A = create_scipy_sparse_array_from_rx_graph(rx_graph)
             n, _ = A.shape  # shape() => dimensions of the array (rows, cols), so n = num_rows
