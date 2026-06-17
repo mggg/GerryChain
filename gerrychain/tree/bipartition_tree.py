@@ -283,6 +283,9 @@ def _bfs_predecessors_and_successors_for_tree(
         Tuple[Dict[Any, Any], Dict[Any, List[Any]] | None]: A tuple containing the predecessors
         map and the successors map (or None if not built).
     """
+    # TODO: Technically, you can run this on a graph and it should be fine, but there is an implicit
+    # assumption that the passed graph is a tree, and we should probably check this somewhere
+    # if there is a cheap way to do it.
     pred: dict[Any, Any] = {}
     succ: dict[Any, list[Any]] | None = {} if build_successors else None
     seen = {root}
