@@ -23,9 +23,8 @@ from __future__ import annotations
 
 import functools
 import json
-import random
 import warnings
-from collections.abc import Generator, Iterable
+from collections.abc import Generator, Iterable, Sequence
 
 # frm: codereview note: removed type hints that are now baked into Python
 from typing import Any
@@ -40,8 +39,13 @@ from networkx.readwrite import json_graph
 from shapely.ops import unary_union
 from shapely.prepared import prep
 
+from .._config import runtime_checks_enabled
 from .adjacency import neighbors
 from .geo import GeometryError, invalid_geometries, reprojected
+
+
+class GraphValidationError(Exception):
+    """Raised when a Graph fails an integrity check (see ``verify_graph_is_valid``)."""
 
 
 def json_serialize(input_object: Any) -> int | None:
@@ -97,11 +101,19 @@ class Graph:
     creates a Partition object.
     """
 
-    # Note: This class cannot have a constructor - because there is code that assumes
-    #       that it can use the default constructor to create instances of it.
-    #       That code is buried deep in non GerryChain code, so I don't really understand
-    #       what it is doing, but the assignment of nx_graph and rx_graph class attributes/members
-    #       needs to happen in the "from_xxx()" routines.
+    # Note: This class deliberately has no __init__. Some non-GerryChain code (e.g.
+    #       rustworkx's networkx_converter) constructs Graph instances via the default
+    #       constructor, ``cls()``, and the ``from_*`` classmethods rely on that too -
+    #       they do ``graph = cls()`` and then populate the backing graph.
+    #
+    #       Instead of a constructor we give the two backing-graph fields class-level
+    #       defaults of None. This guarantees ``self._nx_graph`` / ``self._rx_graph``
+    #       always resolve (even on a bare ``Graph()``), so ``is_nx_graph()`` /
+    #       ``is_rx_graph()`` can test them directly without ever triggering attribute
+    #       fallback. A bare, unconfigured Graph therefore has both set to None, which
+    #       ``verify_graph_is_valid()`` reports as a clear error.
+    _nx_graph = None
+    _rx_graph = None
 
     @classmethod
     def from_networkx(cls, nx_graph: networkx.Graph) -> Graph:
@@ -123,6 +135,12 @@ class Graph:
         Returns:
             Graph: A Graph object embedding the given NetworkX Graph
         """
+        if nx_graph.is_directed():
+            raise GraphValidationError(
+                "GerryChain Graph objects must be undirected; "
+                "Graph.from_networkx() received a directed graph."
+            )
+
         graph = cls()
         graph._nx_graph = nx_graph
         graph._rx_graph = None
@@ -138,6 +156,7 @@ class Graph:
         graph.nx_to_rx_node_id_map = (
             None  # only set when an NX based graph is converted to be an RX based graph
         )
+        graph.verify_graph_is_valid()
         return graph
 
     @classmethod
@@ -189,6 +208,11 @@ class Graph:
         Returns:
             "Graph": a GerryChain Graph object with an embedded RustworkX.PyGraph object
         """
+        if not isinstance(rx_graph, rustworkx.PyGraph):
+            raise GraphValidationError(
+                "GerryChain Graph objects must be undirected; "
+                "Graph.from_rustworkx() requires a rustworkx.PyGraph."
+            )
 
         # Ensure that the RX graph has node and edge data dictionaries
         #
@@ -272,6 +296,8 @@ class Graph:
 
         # only set when an NX based graph is converted to be an RX based graph
         graph.nx_to_rx_node_id_map = None
+
+        graph.verify_graph_is_valid(thorough=False)
 
         return graph
 
@@ -438,37 +464,78 @@ class Graph:
         }
         return orignal_node_id_to_internal_node_id_map[original_nx_node_id]
 
-    def verify_graph_is_valid(self) -> bool:
-        """Verify that the graph is valid.
+    def verify_graph_is_valid(self, thorough: bool | None = None) -> bool:
+        """Verify that the graph is internally consistent.
 
-        This may be overkill, but the idea is that at least in development mode, it would be
-        prudent to check periodically to see that the graph data structure has not been corrupted.
+        Two levels of checking are performed:
+
+        * An always-on, O(1) structural invariant: a Graph must embed exactly one backing graph -
+          either NetworkX or RustworkX, never both or neither. This runs automatically at every
+          construction boundary and costs nothing measurable, so it is never gated.
+
+        * An opt-in, O(nodes + edges) thorough audit (see ``_verify_graph_thoroughly``). This is
+          expensive enough to matter inside a chain, so it is off by default and controlled by the
+          global runtime-checks switch
+          (``gerrychain.set_runtime_checks`` / ``gerrychain.runtime_checks``).
+          The test suite enables it.
+
+        Args:
+            thorough (Optional[bool]): Whether to run the expensive audit. If ``None`` (default),
+                follows the global runtime-checks setting. Pass ``True`` to force it on or ``False``
+                to force it off (e.g. on hot construction paths that build many short-lived
+                subgraphs).
 
         Returns:
-            bool: True if the graph is deemed valid
+            bool: ``True`` if the graph is valid.
+
+        Raises:
+            GraphValidationError: If the graph fails a check.
         """
 
-        # frm: TODO: Performance:  Only check verify_graph_is_valid() in development.
-        #
-        # For now, in order to assess performance differences between NX and RX
-        # I will just return True...
+        nx_set = getattr(self, "_nx_graph", None) is not None
+        rx_set = getattr(self, "_rx_graph", None) is not None
+        if nx_set == rx_set:  # both set, or neither set
+            raise GraphValidationError(
+                "Graph is not properly configured: it must embed exactly one backing "
+                f"graph (networkx set: {nx_set}, rustworkx set: {rx_set})."
+            )
+
+        if thorough is None:
+            thorough = runtime_checks_enabled()
+        if thorough:
+            self._verify_graph_thoroughly()
+
         return True
 
-        # Sanity check - this is where to add additional sanity checks in the future.
+    def _verify_graph_thoroughly(self) -> None:
+        """Run an expensive O(nodes + edges) structural audit of the backing graph.
 
-        # frm: TODO: Code: Enhance verify_graph_is_valid to do more...
+        Verifies that every node and edge carries a ``dict`` data payload, which the rest of
+        GerryChain relies on. This is the kind of check that is wasteful to run on every chain
+        step, so it only runs when runtime checks are enabled (see ``verify_graph_is_valid``).
 
-        # frm: TODO: Performance:  verify_graph_is_valid() is expensive - called a lot
-        #
-        # Come up with a way to run this in "debug mode" - that is, while in development/testing
-        # but not in production.  It actually accounted for 5% of runtime...
-
-        # Checks that there is one and only one graph
-        if not (
-            (self._nx_graph is not None and self._rx_graph is None)
-            or (self._nx_graph is None and self._rx_graph is not None)
-        ):
-            raise Exception("Graph.verify_graph_is_valid(): graph not properly configured")
+        Raises:
+            GraphValidationError: If a node or edge does not carry a dict payload.
+        """
+        if self._rx_graph is not None:
+            rx_graph = self._rx_graph
+            for node_id in rx_graph.node_indices():
+                if not isinstance(rx_graph[node_id], dict):
+                    raise GraphValidationError(
+                        f"Node {node_id} does not carry a dict data payload."
+                    )
+            for edge_id in rx_graph.edge_indices():
+                if not isinstance(rx_graph.get_edge_data_by_index(edge_id), dict):
+                    raise GraphValidationError(
+                        f"Edge {edge_id} does not carry a dict data payload."
+                    )
+        else:
+            nx_graph = self._nx_graph
+            for node_id, data in nx_graph.nodes(data=True):
+                if not isinstance(data, dict):
+                    raise GraphValidationError(
+                        f"Node {node_id} does not carry a dict data payload."
+                    )
 
     # frm: TODO: Performance:  is_nx_graph() and is_rx_graph() are expensive.
     #
@@ -840,11 +907,9 @@ class Graph:
         Returns:
             set[Any]:
         """
-        self.verify_graph_is_valid()
-
-        if self.is_rx_graph():
+        if self._rx_graph is not None:
             return set(self._rx_graph.node_indices())
-        elif self.is_nx_graph():
+        elif self._nx_graph is not None:
             return set(self._nx_graph.nodes)
         else:
             raise TypeError(
@@ -859,12 +924,10 @@ class Graph:
         Returns:
             set[Any]:
         """
-        self.verify_graph_is_valid()
-
-        if self.is_rx_graph():
+        if self._rx_graph is not None:
             # A set of edge_ids for the edges
             return set(self._rx_graph.edge_indices())
-        elif self.is_nx_graph():
+        elif self._nx_graph is not None:
             # A set of edge_ids (tuples) extracted from the graph's EdgeView
             return set(self._nx_graph.edges)
         else:
@@ -887,9 +950,7 @@ class Graph:
             tuple[Any, Any]: An edge, namely a tuple of node_ids
         """
 
-        self.verify_graph_is_valid()
-
-        if self.is_rx_graph():
+        if self._rx_graph is not None:
             # In RX, we need to go get the edge tuple
             endpoints = self._rx_graph.get_edge_endpoints_by_index(edge_id)
             return (endpoints[0], endpoints[1])
@@ -916,7 +977,6 @@ class Graph:
         Returns:
             Any: The ID associated with the given edge
         """
-        self.verify_graph_is_valid()
 
         if self.is_rx_graph():
             # frm: TODO: Performance: Perhaps get_edge_id_from_edge() is too expensive...
@@ -986,8 +1046,6 @@ class Graph:
         # All this routine does now is to coerce the set of nodes obtained by node_indices()
         # to be a list.
 
-        self.verify_graph_is_valid()
-
         if self.is_rx_graph():
             # A list of integer node_ids
             return list(self._rx_graph.node_indices())
@@ -1008,8 +1066,6 @@ class Graph:
             set[tuple[Any, Any]]::
         """
         # Return a set of edge tuples
-
-        self.verify_graph_is_valid()
 
         if self.is_rx_graph():
             # A set of tuples for the edges
@@ -1038,8 +1094,6 @@ class Graph:
         #
         # It remains for legacy reasons, and because users may find it convenient
         # to operate on a gerrychain Graph instead of an NX graph.
-
-        self.verify_graph_is_valid()
 
         if self.is_rx_graph():
             node1_exists = self._rx_graph.has_node(node_id1)
@@ -1191,42 +1245,51 @@ class Graph:
         return len(self.node_indices)
 
     def __getattr__(self, __name: str) -> Any:
-        """If the user requests the value of an attribute that is not defined for a GerryChain.
+        """Delegate unknown attributes to the embedded NetworkX backing graph.
 
-        graph. object, the request is passed on to the embedded graph object (NetworkX or
-        RustworkX), calling that graph object's __getattribute__() function.
+        Accesses that Graph itself does not define are forwarded to the embedded NetworkX graph.
+        This keeps backend conveniences reachable - e.g. ``graph.geometry`` (stored on the NX
+        graph) or ``graph.graph["crs"]`` (the NX graph-level attribute dict) - and lets an
+        NX-backed Graph be passed to NetworkX algorithms.
+
+        Delegation is intentionally NX-only. Forwarding to a RustworkX backing graph would leak
+        rustworkx's raw integer-index API, the very distinction this wrapper exists to hide, and
+        none of those conveniences exist on a PyGraph anyway; an RX-backed Graph raises
+        AttributeError here instead.
+
+        Two safety rules apply:
+
+        * Dunder / introspection names are never delegated. Forwarding names like
+          ``__deepcopy__`` / ``__getstate__`` / ``__test__`` to the backing graph would leak
+          copy/pickle/introspection probes into it; we raise AttributeError so the normal Python
+          machinery handles them.
+        * Because ``_nx_graph`` has a class-level None default, reading it here can never fall
+          back into ``__getattr__`` - so the infinite-recursion hazard that used to require a
+          special-case guard is gone by construction.
 
         Args:
-            __name (str): The name of the attribute whose value is requested.
+            __name (str): The attribute being requested.
 
         Returns:
-            Any: Whatever the embedded graph object returns from its __getattribute__() function.
+            Any: The attribute value from the embedded NetworkX graph.
+
+        Raises:
+            AttributeError: If the name is a dunder, the Graph is not NetworkX-backed, or the NX
+                graph has no such attribute.
         """
+        if __name.startswith("__") and __name.endswith("__"):
+            raise AttributeError(__name)
 
-        # Avoid an infinite loop that can happen if a user happens to use the default
-        # constructor for a Graph.  In that case the Graph object will have no
-        # attributes, and that is bad, because the code for is_rx_graph() below
-        # checks for the _rx_graph attribute which will end up calling __getattr__()
-        # and we loop forever...
-        #
-        if (__name == "_nx_graph") or (__name == "_rx_graph"):
-            return None
+        if self._nx_graph is not None:
+            return getattr(self._nx_graph, __name)
 
-        # If attribute doesn't exist on this object, try
-        # its underlying graph object...
-        if self.is_rx_graph():
-            return object.__getattribute__(self._rx_graph, __name)
-        elif self.is_nx_graph():
-            return object.__getattribute__(self._nx_graph, __name)
-        else:
-            raise TypeError(
-                "Graph passed to '__gettattr__()' is neither "
-                "a networkx-based graph nor a rustworkx-based graph"
-            )
+        raise AttributeError(
+            f"'Graph' object has no attribute {__name!r}. Attribute delegation is only "
+            "supported for NetworkX-backed graphs (e.g. to reach '.geometry' or graph-level "
+            "attributes); it is not forwarded to a RustworkX backing graph."
+        )
 
     def __getitem__(self, __name: str) -> Any:
-        self.verify_graph_is_valid()
-
         if self.is_rx_graph():
             # frm TODO: Code: Decide if __getitem__() should work for RX
             raise TypeError("Graph._getitem__() is not defined for a rustworkx graph")
@@ -1306,8 +1369,6 @@ class Graph:
         determine if assumptions about a parameter always being a subgraph is accurate.  It also
         helps to educate future readers of the code that subgraphs are "interesting"...
         """
-
-        self.verify_graph_is_valid()
 
         new_subgraph = None
 
@@ -1678,8 +1739,6 @@ class Graph:
               version is significantly better than the generic one.
         """
 
-        self.verify_graph_is_valid()
-
         if self.is_rx_graph():
             return self.generic_bfs_predecessors(root_node_id)
         elif self.is_nx_graph():
@@ -1711,8 +1770,6 @@ class Graph:
         Returns:
             dict[Any: list[Any]]: Returns a dict mapping each node to a list of its children
         """
-        self.verify_graph_is_valid()
-
         if self.is_rx_graph():
             return self.generic_bfs_successors(root_node_id)
         elif self.is_nx_graph():
@@ -1761,23 +1818,28 @@ class Graph:
 
         return spanning_graph
 
-    def neighbors(self, node_id: Any) -> list[Any]:
-        """Return A list of neighbor node_ids.
+    def neighbors(self, node_id: Any) -> Sequence[Any]:
+        """Return a sequence of neighbor node_ids.
 
-        Return a list of the node_ids of the nodes that are neighbors of the given node - that is,
-        all of the nodes that are directly connected to the given node by an edge.
+        Return a sequence of the node_ids of the nodes that are neighbors of the given node - that
+        is, all of the nodes that are directly connected to the given node by an edge.
+
+        The result supports iteration (repeatedly), ``len()``, and indexing, but it is not
+        guaranteed to be a ``list``: for an RX graph it is the ``rustworkx.NodeIndices``
+        sequence returned by the backend, which avoids copying the neighbors into a fresh
+        list on every call. Callers that need list methods should wrap it in ``list()``.
 
         Args:
             node_id (Any): The ID of a node
 
         Returns:
-            list[Any]: A list of neighbor node_ids
+            Sequence[Any]: A sequence of neighbor node_ids
         """
-        self.verify_graph_is_valid()
-
-        if self.is_rx_graph():
-            return list(self._rx_graph.neighbors(node_id))
-        elif self.is_nx_graph():
+        if self._rx_graph is not None:
+            return self._rx_graph.neighbors(node_id)
+        elif self._nx_graph is not None:
+            # NX returns a single-pass iterator, so it must be materialized here;
+            # callers (and the FrozenGraph.neighbors lru_cache) expect a re-iterable result.
             return list(self._nx_graph.neighbors(node_id))
         else:
             raise TypeError(
@@ -1797,11 +1859,9 @@ class Graph:
         Returns:
             int: Number of nodes directly connected to the given node
         """
-        self.verify_graph_is_valid()
-
-        if self.is_rx_graph():
+        if self._rx_graph is not None:
             return self._rx_graph.degree(node_id)
-        elif self.is_nx_graph():
+        elif self._nx_graph is not None:
             return self._nx_graph.degree(node_id)
         else:
             raise TypeError(
@@ -1833,22 +1893,15 @@ class Graph:
             dict[Any, Any]: Data dictionary containing the given node's data.
         """
 
-        self.verify_graph_is_valid()
-
-        if self.is_rx_graph():
-            data_dict = self._rx_graph[node_id]
-        elif self.is_nx_graph():
-            data_dict = self._nx_graph.nodes[node_id]
+        if self._rx_graph is not None:
+            return self._rx_graph[node_id]
+        elif self._nx_graph is not None:
+            return self._nx_graph.nodes[node_id]
         else:
             raise TypeError(
                 "Graph passed to 'node_data()' is neither "
                 "a networkx-based graph nor a rustworkx-based graph"
             )
-
-        if not isinstance(data_dict, dict):
-            raise TypeError("graph.node_data(): data for node is not a dict")
-
-        return data_dict
 
     def edge_data(self, edge_id: Any) -> dict[Any, Any]:
         """Return the data dictionary that contains the data for the given edge.
@@ -1864,26 +1917,24 @@ class Graph:
             dict[Any, Any]: The data dictionary for the given edge's data
         """
 
-        self.verify_graph_is_valid()
-
-        if self.is_rx_graph():
-            data_dict = self._rx_graph.get_edge_data_by_index(edge_id)
-        elif self.is_nx_graph():
-            data_dict = self._nx_graph.edges[edge_id]
+        if self._rx_graph is not None:
+            return self._rx_graph.get_edge_data_by_index(edge_id)
+        elif self._nx_graph is not None:
+            return self._nx_graph.edges[edge_id]
         else:
             raise TypeError(
                 "Graph passed to 'edge_data()' is neither "
                 "a networkx-based graph nor a rustworkx-based graph"
             )
 
-        # Sanity check - RX edges do not need to have a data dict for node data
+        # # Sanity check - RX edges do not need to have a data dict for node data
+        # #
+        # # A GerryChain Graph object should always be constructed with a data dict
+        # # for edge data, but it doesn't hurt to check.
+        # if not isinstance(data_dict, dict):
+        #     raise TypeError("graph.edge(): data for edge is not a dict")
         #
-        # A GerryChain Graph object should always be constructed with a data dict
-        # for edge data, but it doesn't hurt to check.
-        if not isinstance(data_dict, dict):
-            raise TypeError("graph.edge(): data for edge is not a dict")
-
-        return data_dict
+        # return data_dict
 
     # Note:  The two laplacian functions: laplacian_matrix() and
     # normalized_laplacian_matrix() are part of the Graph class primarily to
@@ -2020,26 +2071,65 @@ class Graph:
 
         return laplacian_matrix
 
-    # This code replaced calls on nx.is_connected()
-    def is_connected_bfs(self):
+    def is_connected(self):
+        """Return whether the (undirected) graph is connected.
+
+        Delegates to the backend's native connectivity routine - ``rustworkx.is_connected`` for an
+        RX graph, ``networkx.is_connected`` for an NX graph - which are faster than hand-rolled
+        Python traversal.
+
+        A graph with 0 or 1 nodes is treated as trivially connected. This also guards the
+        backend calls, both of which raise on an empty graph (rustworkx ``NullGraph`` /
+        networkx ``NetworkXPointlessConcept``).
+
+        Returns:
+            bool: True if the graph is connected (or has at most one node).
         """
-        Checks if an undirected graph is connected using BFS.
+        if self._rx_graph is not None:
+            if self._rx_graph.num_nodes() <= 1:
+                return True
+            return rustworkx.is_connected(self._rx_graph)
+        elif self._nx_graph is not None:
+            if self._nx_graph.number_of_nodes() <= 1:
+                return True
+            return networkx.is_connected(self._nx_graph)
+        else:
+            raise TypeError(
+                "Graph passed to 'is_connected()' is neither a networkx-based graph nor a "
+                "rustworkx-based graph."
+            )
+
+    def is_node_set_connected(self, nodes: Iterable[Any]) -> bool:
+        """Return whether the given set of nodes induces a connected subgraph of this graph.
+
+        This is a fast path for connectivity checks. It hands the node set straight to the
+        backend's subgraph constructor and runs the native connectivity routine on the result,
+        skipping the ``Graph`` wrapper and the node-id translation maps that ``subgraph()``
+        builds - none of which are needed to answer a yes/no connectivity question.
+
+        A set of 0 or 1 nodes is treated as trivially connected, mirroring ``is_connected()``.
+
+        Args:
+            nodes (Iterable[Any]): The node_ids of the nodes to check.
+
+        Returns:
+            bool: True if the nodes induce a connected subgraph (or there are at most one
+                of them).
         """
+        if not isinstance(nodes, list):
+            nodes = list(nodes)
+        if len(nodes) <= 1:
+            return True
 
-        node_ids = list(self.node_indices)
-
-        start_node = random.choice(node_ids)
-        visited = {start_node}
-        queue = [start_node]
-
-        while queue:
-            current_node = queue.pop(0)
-            for neighbor in self.neighbors(current_node):
-                if neighbor not in visited:
-                    visited.add(neighbor)
-                    queue.append(neighbor)
-
-        return len(visited) == len(node_ids)
+        if self._rx_graph is not None:
+            return rustworkx.is_connected(self._rx_graph.subgraph(nodes))
+        elif self._nx_graph is not None:
+            return networkx.is_connected(self._nx_graph.subgraph(nodes))
+        else:
+            raise TypeError(
+                "Graph passed to 'is_node_set_connected()' is neither "
+                "a networkx-based graph nor a rustworkx-based graph"
+            )
 
     def subgraphs_for_connected_components(self) -> list[Graph]:
         """Create and return a list of subgraphs for each set of nodes in the given graph that are.
@@ -2283,7 +2373,10 @@ class FrozenGraph:
     # that the graph will not be modified.
     #
 
-    __slots__ = ["graph", "size"]
+    # Note: __slots__ means FrozenGraph instances have no __dict__, so we cannot use
+    # functools.cached_property (which caches into the instance __dict__). The cached
+    # node_indices / edge_indices values are stored in dedicated slots instead.
+    __slots__ = ["graph", "size", "_node_indices", "_edge_indices"]
 
     def __init__(self, graph: Graph) -> None:
         """Initialize a FrozenGraph from a Graph.
@@ -2294,6 +2387,8 @@ class FrozenGraph:
         """
 
         self.graph = graph
+        self._node_indices = None
+        self._edge_indices = None
 
         all_node_ids = self.graph.node_indices
         self.size = len(all_node_ids)
@@ -2307,7 +2402,6 @@ class FrozenGraph:
                 "FrozenGraph.__init__(): _node_id_to_parent_node_id_map does not contain all nodes"
             )
         if not all_node_ids.issubset(self.graph._node_id_to_original_nx_node_id_map.keys()):
-
             raise Exception(
                 "FrozenGraph.__init__(): _node_id_to_original_nx_node_id_map does not contain all nodes"
             )
@@ -2320,12 +2414,18 @@ class FrozenGraph:
         """
         return self.size
 
-    def __getattribute__(self, __name: str) -> Any:
-        try:
-            return object.__getattribute__(self, __name)
-        except AttributeError:
-            # delegate getting the attribute to the graph data member
-            return self.graph.__getattribute__(__name)
+    def __getattr__(self, __name: str) -> Any:
+        # Don't delegate dunder/introspection names (e.g. __deepcopy__, __getstate__,
+        # __test__) to the wrapped graph - that would leak copy/pickle/introspection
+        # probes into it. Let normal Python fallback handle them by raising here.
+        if __name.startswith("__") and __name.endswith("__"):
+            raise AttributeError(__name)
+        # 'graph' is a slot; fetch it via object.__getattribute__ so that an
+        # as-yet-unset 'graph' (e.g. during __init__) raises AttributeError here
+        # instead of recursing back into __getattr__.
+        if __name == "graph":
+            raise AttributeError(__name)
+        return getattr(object.__getattribute__(self, "graph"), __name)
 
     def __getitem__(self, __name: str) -> Any:
         return self.graph[__name]
@@ -2334,16 +2434,22 @@ class FrozenGraph:
         yield from self.node_indices
 
     @functools.lru_cache(16384)
-    def neighbors(self, n: Any) -> tuple[Any, ...]:
+    def neighbors(self, n: Any) -> Sequence[Any]:
         return self.graph.neighbors(n)
 
-    @functools.cached_property
-    def node_indices(self) -> Iterable[Any]:
-        return self.graph.node_indices
+    @property
+    def node_indices(self) -> frozenset[Any]:
+        # Cached into a slot (see __slots__ note) since the graph is immutable. Store a
+        # frozenset so a caller can't mutate the shared cached object in place (e.g. via `-=`).
+        if self._node_indices is None:
+            self._node_indices = frozenset(self.graph.node_indices)
+        return self._node_indices
 
-    @functools.cached_property
-    def edge_indices(self) -> Iterable[Any]:
-        return self.graph.edge_indices
+    @property
+    def edge_indices(self) -> frozenset[Any]:
+        if self._edge_indices is None:
+            self._edge_indices = frozenset(self.graph.edge_indices)
+        return self._edge_indices
 
     @functools.lru_cache(16384)
     def degree(self, n: Any) -> int:

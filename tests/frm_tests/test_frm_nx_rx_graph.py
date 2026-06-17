@@ -94,12 +94,8 @@ def test_nx_rx_node_indices_agree(gerrychain_nx_graph, gerrychain_rx_graph):
 
 
 def test_nx_rx_edges_agree(gerrychain_nx_graph, gerrychain_rx_graph):
-    # TODO: Testing:  Rethink this test.  At the moment it relies on the edge_list()
-    #           call which does not exist on a GerryChain Graph object
-    #           being handled by RX through clever __getattr__ stuff.
-    #           I think we should add an edge_list() method to GerryChain Graph
     nx_edges = set(gerrychain_nx_graph.edges)
-    rx_edges = set(gerrychain_rx_graph.edge_list())
+    rx_edges = set(gerrychain_rx_graph.edges)
     assert nx_edges == rx_edges
 
 

@@ -141,37 +141,46 @@ def random_spanning_tree(graph: Graph, region_surcharge: Optional[Dict] = None) 
     # appropriate region_surcharge value to the weight for those
     # edges that are NOT in the region.
     #
-    for edge_id in graph.edge_indices:
-        edge = graph.get_edge_from_edge_id(edge_id)
-        weight = random.random()
-
-        # If there are any entries in the region_surcharge dict, then add
-        # additional weight to the edge if the nodes in the edge are not
-        # in the same "region", that is:
+    if not region_surcharge:
+        # Performance fast path (no region surcharge - the common case):
         #
-        #    * if one of the nodes is NOT in a region (for instance in the
-        #      case of a "municipality" region defined by the key "muni",
-        #      the node was not in any municpality and hence there was no
-        #      node_data for the atrribute, "muni")
-        #
-        #    * or if the nodes were in different "regions"
-        #
-        for key, value in region_surcharge.items():
-            # We surcharge edges that are in different regions and those that are not in any region
-            node_id1 = edge[0]
-            node_id2 = edge[1]
-            node_id1_region = graph.node_data(node_id1)[key]
-            node_id2_region = graph.node_data(node_id2)[key]
-            if (
-                node_id1_region != node_id2_region
-                or node_id1_region is None
-                or node_id2_region is None
-            ):
-                weight += value
+        # The edge endpoints are only needed to compute region surcharges, so
+        # when there are none we can skip the per-edge get_edge_from_edge_id()
+        # lookup entirely and just assign a random weight to every edge.  This
+        # loop runs once per spanning tree, and chains with a tight population
+        # tolerance draw many spanning trees per step, so this matters.
+        for edge_id in graph.edge_indices:
+            graph.edge_data(edge_id)["random_weight"] = random.random()
+    else:
+        for edge_id in graph.edge_indices:
+            edge = graph.get_edge_from_edge_id(edge_id)
+            weight = random.random()
 
-        graph.edge_data(edge_id)["random_weight"] = weight
+            # If there are any entries in the region_surcharge dict, then add
+            # additional weight to the edge if the nodes in the edge are not
+            # in the same "region", that is:
+            #
+            #    * if one of the nodes is NOT in a region (for instance in the
+            #      case of a "municipality" region defined by the key "muni",
+            #      the node was not in any municpality and hence there was no
+            #      node_data for the atrribute, "muni")
+            #
+            #    * or if the nodes were in different "regions"
+            #
+            for key, value in region_surcharge.items():
+                # We surcharge edges that are in different regions and those that are not in any region
+                node_id1 = edge[0]
+                node_id2 = edge[1]
+                node_id1_region = graph.node_data(node_id1)[key]
+                node_id2_region = graph.node_data(node_id2)[key]
+                if (
+                    node_id1_region != node_id2_region
+                    or node_id1_region is None
+                    or node_id2_region is None
+                ):
+                    weight += value
 
-    graph.verify_graph_is_valid()
+            graph.edge_data(edge_id)["random_weight"] = weight
 
     minimum_spanning_tree = graph.minimum_spanning_tree_from_edge_weight(
         edge_weight_attribute_name="random_weight"
