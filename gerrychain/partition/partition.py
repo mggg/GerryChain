@@ -23,6 +23,12 @@ Assignment vs. parts (why keep both?):
     Keeping both means neither direction of lookup has to be recomputed from the other on every use;
     the ``Assignment`` object keeps the two consistent as flips are applied.
 
+Tracking changes (flips and flows):
+    Each child Partition records the ``flips`` that produced it (the nodes whose part differs from
+    the parent) and derives from them the node and edge *flows*: the per-part sets of nodes and
+    edges that entered or left. Those flows are what let the incremental updaters patch the parent's
+    cached values instead of recomputing from scratch. See :mod:`gerrychain.updaters.flows`.
+
 FrozenGraph:
     The underlying graph does not change over the course of a chain - only the assignment of nodes
     to districts does. The graph is therefore wrapped in a
@@ -52,6 +58,16 @@ Inside vs. outside a Markov chain:
     from a graph and an assignment has ``parent is None``; its flow-based updaters then simply fall
     back to computing everything from scratch (their "initializer" path). The same updaters
     therefore work in both settings.
+
+Node ids inside a chain (RustworkX vs. NetworkX labels):
+    When a Graph is converted to RustworkX to run a chain, its nodes are relabeled with contiguous
+    internal integer ids, and a Partition's ``assignment`` is keyed by those *internal* ids, not the
+    original NetworkX node labels. Code that inspects a post-chain assignment, or maps chain results
+    back onto the original graph or its geometry, must therefore translate the ids back. The Graph
+    carries that mapping: see :meth:`Graph.original_nx_node_id_for_internal_node_id` (and the
+    set/list helpers :meth:`Graph.original_nx_node_ids_for_set` /
+    :meth:`Graph.original_nx_node_ids_for_list`), and the inverse
+    :meth:`Graph.internal_node_id_for_original_nx_node_id`.
 
 Note that the mapping / ``[]`` interface of a Partition is over its *updaters*
 (``partition["cut_edges"]``), not its nodes; the node -> part data lives in

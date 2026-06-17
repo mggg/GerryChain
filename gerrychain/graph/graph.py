@@ -1150,10 +1150,12 @@ class Graph:
         There is also a minor subtlety that users are unlikely to encounter unless accessing the
         graph attribute off of a Partition object, but it is worth noting: the node_ids in the
         graph attribute of a Partition object are not necessarily the same as the node_ids in the
-        it was common to create nodes whose ids were essentially names (the id carried semantic
         original graph that was used to create the Partition object. Before the move to RustworkX
-        weight). That is not true of RustworkX node_ids, so any code that relies on the semantics
-        of a node's id (treating it like a name) is suspect in the RustworkX world.
+        it was common to create nodes whose ids were either meaningful (e.g., the FIPS code of a
+        VTD), a subset of node ids of another graph (when the graph was a subgraph), or some
+        coordinate pairs (common with grid graphs). That is not true of RustworkX node_ids, so
+        any code that relies on the semantics of a node's id (treating it like a name) is suspect
+        in the RustworkX world.
 
         Returns:
             list[Any]: An ordered list of all of the node_ids in the graph.
@@ -1181,8 +1183,9 @@ class Graph:
         """Return a ``set`` of all of the edges in the graph, where each edge is a ``(u, v)`` tuple
         of node_ids.
 
-        This returns the edges themselves, which may not be the same as their ids. For the edge
-        *ids* (opaque integers under RustworkX) see :meth:`edge_indices`.
+        This returns the edges themselves, which may not be the same as their ids (in fact, for
+        RustworkX backed graphs, they are guaranteed to be different). For the edge *ids* (opaque
+        integers under RustworkX) see :meth:`edge_indices`.
 
         Returns:
             set[tuple[Any, Any]]: A set of ``(u, v)`` node_id tuples, one per edge.

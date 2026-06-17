@@ -115,10 +115,15 @@ def random_spanning_tree(
 
         Since this function builds a *minimum* spanning tree, making the boundary edges heavier
         biases the MST toward connecting each region through its cheap interior edges. Therefore,
-        the region tends to appear as a single connected subtree of the spanning tree, and
-        because the bipartition step cuts exactly one edge, a connected region tends to be kept
-        whole. In the extreme case, if the surcharge is large enough to dominate the random weights,
-        then the region will be split at most once.
+        the region tends to appear as a single connected subtree of the spanning tree. Because the
+        bipartition step cuts exactly one edge, a region small enough to fit inside one district then
+        tends to be kept whole. A region larger than a district cannot be kept whole: it still
+        has to be cut enough times to break it into district-sized pieces (a region holding roughly
+        k districts' worth of population needs at least k - 1 cuts, so a populous county like Los
+        Angeles must be split a dozen or more times no matter how large the surcharge). What a
+        dominating surcharge buys in that case is splitting the region only as many times as its
+        population forces (possibly plus 1 depending on the rest of the plan), rather than carving
+        it up arbitrarily.
 
         Choosing surcharge values: the random weights are drawn uniformly from ``[0, 1)``, so the
         surcharge should be sized relative to that range. A surcharge well below 1 is a *soft* bias
