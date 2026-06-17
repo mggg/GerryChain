@@ -1,3 +1,79 @@
+"""The :class:`Partition` - an assignment of graph nodes to districts, plus cached updaters.
+
+A :class:`Partition` is GerryChain's central data structure. It represents a single districting
+plan: an assignment of every node of a :class:`~gerrychain.Graph` to a *part* - one district of the
+plan. (In code these are called *parts*, short for "part of a partition".) It also carries a set
+of *updaters* - named functions that compute derived quantities about the plan (cut edges, district
+populations, perimeters, election results, ...) on demand.
+
+A Partition is also the *state* of GerryChain's Markov chain. Each step of a chain takes the current
+Partition and produces a new child Partition that differs by only a small set of node reassignments
+("flips"); see :meth:`Partition.flip` and the ``parent`` attribute. Most of the design of this class
+is shaped by that use case, so the following choices are worth understanding.
+
+Assignment vs. parts (why keep both?):
+    The same plan can be viewed two ways, and different code wants different views:
+
+    * ``assignment`` (an :class:`~gerrychain.partition.assignment.Assignment`) is the
+      node -> part map. It is the source of truth and is cheap to update flip-by-flip.
+    * ``parts`` is the inverse, part -> set-of-nodes, view. Many updaters and the recombination
+      proposals need to iterate the nodes of a part, for which the inverse view is far more
+      convenient and efficient than scanning the entire assignment.
+
+    Keeping both means neither direction of lookup has to be recomputed from the other on every use;
+    the ``Assignment`` object keeps the two consistent as flips are applied.
+
+Tracking changes (flips and flows):
+    Each child Partition records the ``flips`` that produced it (the nodes whose part differs from
+    the parent) and derives from them the node and edge *flows*: the per-part sets of nodes and
+    edges that entered or left. Those flows are what let the incremental updaters patch the parent's
+    cached values instead of recomputing from scratch. See :mod:`gerrychain.updaters.flows`.
+
+FrozenGraph:
+    The underlying graph does not change over the course of a chain - only the assignment of nodes
+    to districts does. The graph is therefore wrapped in a
+    :class:`~gerrychain.graph.graph.FrozenGraph`, an immutable view created once and shared by every
+    Partition in the chain. Freezing the graph buys two things:
+
+    * it lets per-graph results be cached safely (e.g. ``FrozenGraph.neighbors`` /
+      ``FrozenGraph.degree`` are memoized), since the graph can never change under the cache; and
+    * it removes a class of cache-invalidation bugs that a shared, mutable graph could cause if it
+      were edited mid-chain.
+
+    The expensive operations a Partition tries to avoid or amortize are: converting a NetworkX graph
+    to RustworkX, constructing per-district subgraphs (done lazily and cached via ``SubgraphView``),
+    and recomputing updaters.
+
+Updaters:
+    Updater values are computed lazily and cached the first time they are requested via
+    ``partition[name]`` (see :meth:`__getitem__`). Many updaters are additionally *incremental*
+    meaning that they start from the parent partition's cached value and patch only what changed,
+    using the node/edge "flows" between parent and child. See :mod:`gerrychain.updaters.flows`.
+
+Inside vs. outside a Markov chain:
+    A Partition is most useful as chain state, but it is also handy for post-hoc analysis of a fixed
+    plan (computing its cut edges, population deviation, partisan metrics, etc.). The distinguishing
+    feature is the ``parent``: a chain produces a lineage of partitions, each with a parent, which
+    is exactly what the incremental/flow updaters exploit. A standalone Partition built directly
+    from a graph and an assignment has ``parent is None``; its flow-based updaters then simply fall
+    back to computing everything from scratch (their "initializer" path). The same updaters
+    therefore work in both settings.
+
+Node ids inside a chain (RustworkX vs. NetworkX labels):
+    When a Graph is converted to RustworkX to run a chain, its nodes are relabeled with contiguous
+    internal integer ids, and a Partition's ``assignment`` is keyed by those *internal* ids, not the
+    original NetworkX node labels. Code that inspects a post-chain assignment, or maps chain results
+    back onto the original graph or its geometry, must therefore translate the ids back. The Graph
+    carries that mapping: see :meth:`Graph.original_nx_node_id_for_internal_node_id` (and the
+    set/list helpers :meth:`Graph.original_nx_node_ids_for_set` /
+    :meth:`Graph.original_nx_node_ids_for_list`), and the inverse
+    :meth:`Graph.internal_node_id_for_original_nx_node_id`.
+
+Note that the mapping / ``[]`` interface of a Partition is over its *updaters*
+(``partition["cut_edges"]``), not its nodes; the node -> part data lives in
+``partition.assignment``. See :meth:`keys`.
+"""
+
 from __future__ import annotations
 
 import json
@@ -338,16 +414,18 @@ class Partition:
         return self.assignment.mapping[edge[0]] != self.assignment.mapping[edge[1]]
 
     def __getitem__(self, key: str) -> Any:
-        """Allows accessing the values of updaters computed for this Partition instance.
+        """Access the value of one of this Partition's updaters by name.
 
-        This method allows accessing the values of updaters computed for this Partition instance.
-        It returns value of the updater.
+        The ``[]`` interface indexes **updaters**, not nodes: ``key`` is an updater name (e.g.
+        ``"cut_edges"``), and the return value is that updater's computed result (lazily evaluated
+        and cached). For the node-to-part assignment itself, use :attr:`assignment`; see
+        :meth:`keys` for more on this distinction.
 
         Args:
-            key (str): Property to access.
+            key (str): The name of the updater to access.
 
         Returns:
-            Any: The value of the updater.
+            Any: The value of the named updater.
         """
         # Cleverness Alert:  Delayed evaluation of updater functions...
         #
@@ -379,6 +457,20 @@ class Partition:
         )
 
     def keys(self) -> KeysView[str]:
+        """Return the names of this partition's updaters.
+
+        Important: a Partition's mapping/``[]`` interface is over its **updaters**, not its nodes.
+        So ``partition["population"]`` evaluates the ``"population"`` updater, and ``keys()``
+        returns the updater names (e.g. ``["cut_edges", "population", ...]``) - not node_ids or
+        part_ids. This often surprises people who think of a Partition as a node-to-district map.
+
+        The actual node-to-part data lives in :attr:`assignment` (``partition.assignment``, a
+        node_id -> part_id mapping), and the inverse part-to-nodes view is :attr:`parts`
+        (``partition.parts``).
+
+        Returns:
+            KeysView[str]: A view of the updater names available on this partition.
+        """
         return self.updaters.keys()
 
     @property

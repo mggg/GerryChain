@@ -667,16 +667,75 @@ class Graph:
 
     @classmethod
     def from_json(cls, json_file_name: str) -> Graph:
-        """Create a Graph from a JSON file.
+        """Create a :class:`Graph` from a JSON file in NetworkX "adjacency" format.
 
-        This method creates a Graph from a JSON file. It returns a GerryChain Graph object
-        with data from JSON file.
+        This is the standard way to load a dual graph that has already been built and saved to disk;
+        it is the inverse of :meth:`to_json`. To build a graph from geospatial data instead (a
+        shapefile or a GeoDataFrame), use :meth:`from_file` or :meth:`from_geodataframe`.
+
+        Expected file format:
+            The file must contain a single JSON object in the node-link "adjacency" format produced
+            by ``networkx.readwrite.json_graph.adjacency_data`` - which is exactly what
+            :meth:`to_json` writes, so a file written by ``to_json`` round-trips back through
+            ``from_json``. The top-level object has these keys:
+
+            * ``"directed"`` / ``"multigraph"``: booleans. GerryChain graphs are undirected and not
+              multigraphs, so both are normally ``false``.
+            * ``"graph"``: graph-level attributes as a list of ``[key, value]`` pairs (often empty,
+              ``[]``); e.g. a coordinate reference system might live here.
+            * ``"nodes"``: a list of node objects. Each has an ``"id"`` plus any number of arbitrary
+              attributes (population, district, county, geometry, ...).
+            * ``"adjacency"``: a list parallel to ``"nodes"``. ``adjacency[i]`` is the list of edges
+              incident to node ``i``; each edge object has the neighbor's ``"id"`` plus any edge
+              attributes (e.g. ``"shared_perim"``).
+
+            A minimal two-node example::
+
+                {
+                  "directed": false, "multigraph": false, "graph": [],
+                  "nodes": [{"pop": 5, "id": 0}, {"pop": 3, "id": 1}],
+                  "adjacency": [[{"id": 1}], [{"id": 0}]]
+                }
+
+            Node and edge attributes are preserved and become accessible as
+            ``graph.node_data(node_id)[attr]`` and ``graph.edge_data(edge_id)[attr]``. Anything you
+            intend to use later (a population column for ``pop_col``, a ``region_surcharge``
+            attribute, an election column, ...) must already be present as a node attribute here.
+
+        Backend:
+            The returned ``Graph`` is **NetworkX-backed**, which is convenient for inspection and
+            editing. When you later wrap it in a :class:`~gerrychain.Partition`, GerryChain converts
+            it to the faster RustworkX backend automatically. Node ids are taken verbatim from the
+            ``"id"`` fields; note that the RustworkX conversion reassigns node ids to a contiguous
+            integer range, so do not rely on a node's id carrying semantic meaning.
+
+        Side effect (data warnings):
+            After loading, this calls :meth:`issue_warnings`, which warns about "islands" - degree-0
+            nodes. An island usually indicates a problem with the dual graph (a unit with no recorded
+            adjacencies) and will break contiguity-based proposals, so the warning is worth heeding.
 
         Args:
-            json_file_name (str): JSON file
+            json_file_name (str): Path to the JSON file to read. This is an ordinary filesystem
+                path; the file is opened and parsed directly.
 
         Returns:
-            "Graph": A GerryChain Graph object with data from JSON file
+            Graph: A NetworkX-backed GerryChain ``Graph`` containing the nodes, edges, and attributes
+            described by the file.
+
+        Raises:
+            FileNotFoundError: If ``json_file_name`` does not exist.
+            json.JSONDecodeError: If the file does not contain valid JSON.
+            KeyError: If the JSON is valid but is not in the expected adjacency format.
+
+        Example:
+            >>> from gerrychain import Graph
+            >>> graph = Graph.from_json("./my_state.json")  # doctest: +SKIP
+
+            If you just want a graph to experiment with, GerryChain bundles a ready-made example,
+            which needs no file at all::
+
+                from gerrychain.examples import gerrymandria
+                graph = gerrymandria()
         """
 
         # Note that this returns an NX-based Graph object.  At some point in
@@ -696,12 +755,58 @@ class Graph:
         return graph
 
     def to_json(self, json_file_name: str, include_geometries_as_geojson: bool = False) -> None:
-        """Dump a GerryChain Graph object to disk as a JSON file.
+        """Write this :class:`Graph` to disk as a JSON file in NetworkX "adjacency" format.
+
+        This is the inverse of :meth:`from_json`: it serializes the graph - every node and edge,
+        with all of their attributes - to the node-link "adjacency" format produced by
+        ``networkx.readwrite.json_graph.adjacency_data``, so a file written here can be read back
+        with :meth:`from_json`. See :meth:`from_json` for a description of the on-disk structure.
+
+        Backend requirement (NetworkX only):
+            ``to_json`` currently only works on a **NetworkX-backed** graph and raises ``TypeError``
+            otherwise. This matters in practice because wrapping a graph in a
+            :class:`~gerrychain.Partition` converts it to the RustworkX backend, so the graph
+            reached via ``partition.graph`` cannot be serialized directly - keep a reference to the
+            original NetworkX ``Graph`` (e.g. the one returned by
+            :meth:`from_json` / :meth:`from_file`) if you need to write it out. (Serializing an
+            RX-backed graph is a planned enhancement.)
+
+        Geometries:
+            Graphs built from geospatial data (:meth:`from_file` / :meth:`from_geodataframe`) carry
+            a ``shapely`` geometry object on each node, which is not JSON-serializable. The
+            ``include_geometries_as_geojson`` flag decides what happens to those geometry attributes
+            (it has no effect on graphs that have no geometry):
+
+            * ``False`` (default): geometry attributes are **dropped** from the output. The file is
+              smaller, but the geometry is not saved, so a round-trip through :meth:`from_json` will
+              not recover it.
+            * ``True``: each geometry is **converted to GeoJSON** (its ``__geo_interface__``) and
+              written into the file, preserving it. Note that reading the file back returns those
+              attributes as GeoJSON dicts, not as ``shapely`` objects.
+
+        Non-JSON-native values:
+            Attribute values that the standard JSON encoder cannot handle are passed through
+            :func:`json_serialize`, which converts pandas / numpy integer values to plain Python
+            ``int`` (a common result of building a graph from a GeoDataFrame).
 
         Args:
-            json_file_name (str): name of JSON file to be created
-            include_geometries_as_geojson (bool, optional): Whether to include geometries in the
-                JSON file as GeoJSON. Default is False.
+            json_file_name (str): Path of the JSON file to write. An existing file is overwritten.
+            include_geometries_as_geojson (bool, optional): Whether to write node geometries to the
+                file as GeoJSON (``True``) or strip them out (``False``, the default). See
+                "Geometries" above.
+
+        Returns:
+            None: The graph is written to ``json_file_name``.
+
+        Raises:
+            TypeError: If this graph is not NetworkX-backed (e.g. an RX-backed graph, such as the
+                one inside a Partition).
+            OSError: If the file cannot be opened or written.
+
+        Example:
+            >>> from gerrychain import Graph
+            >>> graph = Graph.from_json("./my_state.json")  # doctest: +SKIP
+            >>> graph.to_json("./my_state_copy.json")       # doctest: +SKIP
         """
         # frm TODO: Code: Implement graph.to_json for an RX based graph
         if not self.is_nx_graph():
@@ -902,10 +1007,16 @@ class Graph:
 
     @property
     def node_indices(self) -> set[Any]:
-        """Return a set of the node_ids in the graph.
+        """Return a ``set`` of the node_ids in the graph.
+
+        This is the canonical accessor for the graph's node_ids. It returns a ``set``, so it is
+        suited to membership tests (``node in graph.node_indices``) and de-duplication, but it is
+        unordered. If you need an ordered, indexable sequence of the same node_ids, use
+        :meth:`nodes` (which returns a ``list``). Prefer ``node_indices`` unless list semantics are
+        specifically required.
 
         Returns:
-            set[Any]:
+            set[Any]: An (unordered) set of the node_ids in the graph.
         """
         if self._rx_graph is not None:
             return set(self._rx_graph.node_indices())
@@ -919,10 +1030,16 @@ class Graph:
 
     @property
     def edge_indices(self) -> set[Any]:
-        """Return a set of the edge_ids in the graph.
+        """Return a ``set`` of the edge *ids* in the graph.
+
+        Unlike :meth:`nodes`/:meth:`node_indices` (which carry the same content up to a
+        permutation), ``edge_indices`` and :meth:`edges` are genuinely different: ``edge_indices``
+        returns edge *ids* (opaque integers under RustworkX), while :meth:`edges` returns the edges
+        themselves as ``(u, v)`` tuples of node_ids. Use an edge id with
+        :meth:`get_edge_from_edge_id` / :meth:`get_edge_id_from_edge` to convert between the two.
 
         Returns:
-            set[Any]:
+            set[Any]: A set of the edge_ids in the graph.
         """
         if self._rx_graph is not None:
             # A set of edge_ids for the edges
@@ -1016,29 +1133,32 @@ class Graph:
 
     @property
     def nodes(self) -> list[Any]:
-        """Return a list of all of the node_ids in the graph.
+        """Return a ``list`` of all of the node_ids in the graph.
 
-        This routine still exists because there is a lot of legacy code that uses this syntax to
-        iterate through all of the nodes in a graph.
+        This returns the same node_ids as :meth:`node_indices`, the difference being only the
+        container type: ``nodes`` returns an ordered, indexable ``list`` maintaining the graph
+        node order while ``node_indices`` returns an (unordered) ``set``. ``nodes`` exists mainly
+        because a lot of legacy code uses ``for n in graph.nodes`` to iterate, and it is
+        implemented by coercing ``node_indices`` to a list. Prefer :meth:`node_indices` unless you
+        specifically need list semantics (ordering or indexing).
 
-        There is another routine, node_indices(), which does essentially the same thing (it returns
-        a set of node_ids, however, rather than a list).
+        Note the related distinction for edges: :meth:`edges` returns the edges themselves (tuples
+        of node_ids), whereas :meth:`edge_indices` returns edge *ids* (integers under RustworkX).
+        That object-vs-id distinction is load-bearing for edges, but for nodes the node and its id
+        coincide, which is why ``nodes`` and ``node_indices`` carry the same content.
 
-        Why have two routines that do the same thing? The answer is that with move to RX, it seemed
-        appropriate to emphasize the distinction between objects and the IDs for objects, hence the
-        introduction of node_indices() and edge_indices() routines. This distinction is critical
-        for edges, but mostly not important for nodes. In fact this routine is implemented by just
-        converting node_indices to a list. So, it is essentially a style issue - when referring to
-        nodes, we are almost always really referring to node_ids, so why not use a routine called
-        node_indices()?
-
-        Note that there is a subtle point to be made about node names vs. node_ids. It was common
-        before the transition to RX to create nodes with IDs that were essentially names. That is,
-        the ID had semantic weight. This is not true with RX node_ids. So, any code that relies on
-        the semantics of a node's ID (treating it like a name) is suspect in the new RX world.
+        There is also a minor subtlety that users are unlikely to encounter unless accessing the
+        graph attribute off of a Partition object, but it is worth noting: the node_ids in the
+        graph attribute of a Partition object are not necessarily the same as the node_ids in the
+        original graph that was used to create the Partition object. Before the move to RustworkX
+        it was common to create nodes whose ids were either meaningful (e.g., the FIPS code of a
+        VTD), a subset of node ids of another graph (when the graph was a subgraph), or some
+        coordinate pairs (common with grid graphs). That is not true of RustworkX node_ids, so
+        any code that relies on the semantics of a node's id (treating it like a name) is suspect
+        in the RustworkX world.
 
         Returns:
-            list[Any]: A list of all of the node_ids in the graph
+            list[Any]: An ordered list of all of the node_ids in the graph.
         """
 
         # Note: graph.nodes continues to exist because it was used often in legacy code.
@@ -1060,10 +1180,15 @@ class Graph:
 
     @property
     def edges(self) -> set[tuple[Any, Any]]:
-        """Return a set of all of the edges in the graph, where each edge is a tuple of node_ids.
+        """Return a ``set`` of all of the edges in the graph, where each edge is a ``(u, v)`` tuple
+        of node_ids.
+
+        This returns the edges themselves, which may not be the same as their ids (in fact, for
+        RustworkX backed graphs, they are guaranteed to be different). For the edge *ids* (opaque
+        integers under RustworkX) see :meth:`edge_indices`.
 
         Returns:
-            set[tuple[Any, Any]]::
+            set[tuple[Any, Any]]: A set of ``(u, v)`` node_id tuples, one per edge.
         """
         # Return a set of edge tuples
 

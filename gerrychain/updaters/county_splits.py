@@ -120,11 +120,16 @@ def compute_county_splits(
     return new_county_dict
 
 
-def tally_region_splits(reg_attr_lst: list[str]) -> Callable:
+def tally_region_splits(region_attr_lst: list[str]) -> Callable:
     """A naive updater for tallying the number of times a region attribute is split.
 
+    Here "region" is the generic term for an administrative unit you would prefer not to split
+    (e.g. a county, municipality, or other locality). Each entry in ``region_attr_lst`` is the
+    name of a node attribute holding the region label; the ``county`` and locality updaters are
+    just specific instances of this region concept.
+
     Args:
-        reg_attr_lst (List[str]): A list of region names to tally splits for.
+        region_attr_lst (List[str]): A list of region attribute names to tally splits for.
 
     Returns:
         Callable: A function that takes a partition and returns a dictionary which maps the region
@@ -132,34 +137,37 @@ def tally_region_splits(reg_attr_lst: list[str]) -> Callable:
     """
 
     def _get_splits(partition: Partition) -> dict[str, int]:
-        nonlocal reg_attr_lst
+        nonlocal region_attr_lst
         if "cut_edges" not in partition.updaters:
             raise ValueError("The cut_edges updater must be attached to the partition")
-        return {reg_attr: total_reg_splits(partition, reg_attr) for reg_attr in reg_attr_lst}
+        return {
+            region_attr: total_region_splits(partition, region_attr)
+            for region_attr in region_attr_lst
+        }
 
     return _get_splits
 
 
-def total_reg_splits(partition: Partition, reg_attr: str) -> int:
-    """Computes the total number of times that reg_attr is split in the partition.
+def total_region_splits(partition: Partition, region_attr: str) -> int:
+    """Computes the total number of times that region_attr is split in the partition.
 
     Args:
         partition (Partition): The partition object to compute region splits for.
-        reg_attr (str): The name of the region attribute to compute splits for. This should be a
+        region_attr (str): The name of the region attribute to compute splits for. This should be a
             node attribute on the graph.
     """
     all_region_names = set(
-        partition.graph.node_data(node_id)[reg_attr] for node_id in partition.graph.node_indices
+        partition.graph.node_data(node_id)[region_attr] for node_id in partition.graph.node_indices
     )
     split = {name: 0 for name in all_region_names}
     # Require that the cut_edges updater is attached to the partition
     for node1, node2 in partition["cut_edges"]:
         if (
             partition.assignment[node1] != partition.assignment[node2]
-            and partition.graph.node_data(node1)[reg_attr]
-            == partition.graph.node_data(node2)[reg_attr]
+            and partition.graph.node_data(node1)[region_attr]
+            == partition.graph.node_data(node2)[region_attr]
         ):
-            split[partition.graph.node_data(node1)[reg_attr]] += 1
-            split[partition.graph.node_data(node2)[reg_attr]] += 1
+            split[partition.graph.node_data(node1)[region_attr]] += 1
+            split[partition.graph.node_data(node2)[region_attr]] += 1
 
     return sum(1 for value in split.values() if value > 0)

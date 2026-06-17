@@ -198,23 +198,6 @@ def interior_boundaries(
     return previous + added_perimeter - removed_perimeter
 
 
-def flips(partition: Partition) -> dict:
-    """Return flips that were made to get from the parent partition to the given partition.
-
-    This function returns flips that were made to get from the parent partition to the given
-    partition. It returns flips that were made to get from the parent partition to the given
-    partition.
-
-    Args:
-        partition (Partition): A partition of a Graph
-
-    Returns:
-        Dict: The flips that were made to get from the parent partition to the given partition.
-    """
-    # frm: ???:  Does anyone ever use this?  It seems kind of useless...
-    return partition.flips
-
-
 def perimeter_of_part(partition: Partition, part: int) -> float:
     """Totals up the perimeter of the part in the partition.
 

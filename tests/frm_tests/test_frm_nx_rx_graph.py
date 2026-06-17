@@ -9,8 +9,6 @@ Graph object works the same with NetworkX and RustworkX.
 
 """
 
-import os
-
 # Set the random seed so that the results are reproducible!
 import random
 
@@ -18,6 +16,7 @@ import pytest
 import rustworkx as rx
 
 from gerrychain import Graph
+from gerrychain.examples import gerrymandria
 
 random.seed(2024)
 
@@ -29,19 +28,9 @@ random.seed(2024)
 
 
 @pytest.fixture(scope="module")
-def json_file_path():
-    # Get path to the JSON containing graph data
-    test_file_path = os.path.abspath(__file__)
-    cur_directory = os.path.dirname(test_file_path)
-    path_for_json_file = os.path.join(cur_directory, "gerrymandria.json")
-    # print("json file is: ", json_file_path)
-    return path_for_json_file
-
-
-@pytest.fixture(scope="module")
-def gerrychain_nx_graph(json_file_path):
-    # Create an NX based Graph object from the JSON
-    graph = Graph.from_json(json_file_path)
+def gerrychain_nx_graph():
+    # Create an NX based Graph object from the bundled Gerrymandria example
+    graph = gerrymandria()
     print("gerrychain_nx_graph: len(graph): ", len(graph))
     return graph
 

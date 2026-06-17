@@ -145,15 +145,15 @@ def test_region_aware_county():
     assert (float(tot_splits) / (n_samples * n_regions)) < 0.10
 
 
-def straddled_regions(partition, reg_attr, all_reg_names):
+def straddled_regions(partition, region_attr, all_region_names):
     """Returns the total number of district that straddle two regions in the partition."""
-    split = {name: 0 for name in all_reg_names}
+    split = {name: 0 for name in all_region_names}
 
     # frm: TODO: Testing: Grok what this tests - not clear to me at this time...
 
     for node1, node2 in set(partition.graph.edges() - partition["cut_edges"]):
-        split[partition.graph.node_data(node1)[reg_attr]] += 1
-        split[partition.graph.node_data(node2)[reg_attr]] += 1
+        split[partition.graph.node_data(node1)[region_attr]] += 1
+        split[partition.graph.node_data(node2)[region_attr]] += 1
 
     return sum(1 for value in split.values() if value > 0)
 
@@ -235,6 +235,123 @@ def test_region_aware_muni_warning():
         and "Failed to find a balanced cut after 2 attempts." in str(w.message)
         for w in record
     )
+
+
+def test_spanning_tree_fn_kwargs_forwarded_to_spanning_tree_fn():
+    """``spanning_tree_fn_kwargs`` should be forwarded from ``recom`` / ``bipartition_tree``
+    down to the spanning-tree function (here used to set ``random_spanning_tree``'s
+    ``treat_unassigned_as_single_region`` option).
+    """
+    random.seed(2018)
+
+    # 6x2 grid: 12 nodes, 1 person each. The last 4 nodes are region-less (None) for "region".
+    nx_graph = nx.convert_node_labels_to_integers(nx.grid_2d_graph(6, 2))
+    for node_id in nx_graph.nodes:
+        nx_graph.nodes[node_id]["pop"] = 1
+        nx_graph.nodes[node_id]["region"] = "A" if node_id < 8 else None
+    graph = Graph.from_networkx(nx_graph)
+
+    captured = []
+
+    def spy_spanning_tree_fn(graph, region_surcharge=None, treat_unassigned_as_single_region=False):
+        captured.append(treat_unassigned_as_single_region)
+        return tree.random_spanning_tree(
+            graph,
+            region_surcharge=region_surcharge,
+            treat_unassigned_as_single_region=treat_unassigned_as_single_region,
+        )
+
+    # bipartition_tree forwards spanning_tree_fn_kwargs to the spanning-tree function.
+    captured.clear()
+    tree.bipartition_tree(
+        graph.subgraph(set(range(12))),
+        pop_col="pop",
+        pop_target=6,
+        epsilon=0.5,
+        spanning_tree_fn=spy_spanning_tree_fn,
+        region_surcharge={"region": 1.0},
+        spanning_tree_fn_kwargs={"treat_unassigned_as_single_region": True},
+    )
+    assert captured and all(value is True for value in captured)
+
+    partition = Partition(
+        graph,
+        {node_id: (0 if node_id < 6 else 1) for node_id in range(12)},
+        updaters={"cut_edges": gc_updaters.cut_edges},
+    )
+
+    # recom reaches spanning-tree options by passing a pre-bound bipartition_tree_fn (the same
+    # idiom used to set e.g. max_attempts); spanning_tree_fn_kwargs lives on bipartition_tree.
+    captured.clear()
+    proposals.recom(
+        partition,
+        pop_col="pop",
+        pop_target=6,
+        epsilon=0.5,
+        region_surcharge={"region": 1.0},
+        bipartition_tree_fn=partial(
+            tree.bipartition_tree,
+            spanning_tree_fn=spy_spanning_tree_fn,
+            spanning_tree_fn_kwargs={"treat_unassigned_as_single_region": True},
+        ),
+    )
+    assert captured and all(value is True for value in captured)
+
+    # With no spanning_tree_fn_kwargs, the spanning-tree function's own default (False) is used.
+    captured.clear()
+    proposals.recom(
+        partition,
+        pop_col="pop",
+        pop_target=6,
+        epsilon=0.5,
+        region_surcharge={"region": 1.0},
+        bipartition_tree_fn=partial(tree.bipartition_tree, spanning_tree_fn=spy_spanning_tree_fn),
+    )
+    assert captured and all(value is False for value in captured)
+
+    # uniform_spanning_tree (no extra kwargs forwarded) is unaffected by the plumbing.
+    nodes = tree.bipartition_tree(
+        graph.subgraph(set(range(12))),
+        pop_col="pop",
+        pop_target=6,
+        epsilon=0.5,
+        spanning_tree_fn=tree.uniform_spanning_tree,
+    )
+    assert nodes is not None
+
+
+def test_region_surcharge_inside_spanning_tree_fn_kwargs_raises():
+
+    nx_graph = nx.convert_node_labels_to_integers(nx.grid_2d_graph(6, 2))
+    for node_id in nx_graph.nodes:
+        nx_graph.nodes[node_id]["pop"] = 1
+    graph = Graph.from_networkx(nx_graph)
+
+    with pytest.raises(ValueError, match="region_surcharge via the region_surcharge parameter"):
+        tree.bipartition_tree(
+            graph.subgraph(set(range(12))),
+            pop_col="pop",
+            pop_target=6,
+            epsilon=0.5,
+            spanning_tree_fn_kwargs={"region_surcharge": {"region": 1.0}},
+        )
+
+    partition = Partition(
+        graph,
+        {node_id: (0 if node_id < 6 else 1) for node_id in range(12)},
+        updaters={"cut_edges": gc_updaters.cut_edges},
+    )
+    with pytest.raises(ValueError, match="region_surcharge via the region_surcharge parameter"):
+        proposals.recom(
+            partition,
+            pop_col="pop",
+            pop_target=6,
+            epsilon=0.5,
+            bipartition_tree_fn=partial(
+                tree.bipartition_tree,
+                spanning_tree_fn_kwargs={"region_surcharge": {"region": 1.0}},
+            ),
+        )
 
 
 @pytest.mark.slow

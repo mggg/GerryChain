@@ -59,7 +59,7 @@ def propose_any_node_flip(partition: Partition) -> Partition:
 
 
 # Define a ProposalFn version to make purpose of the function clear
-def build_propose_any_node_flip_proposal() -> ProposalFn:
+def build_any_node_flip_proposal_fn() -> ProposalFn:
     return propose_any_node_flip
 
 
@@ -90,7 +90,7 @@ def propose_flip_every_district(partition: Partition) -> Partition:
 
 
 # Define a ProposalFn version to make purpose of the function clear
-def build_propose_flip_every_district_proposal() -> ProposalFn:
+def build_flip_every_district_proposal_fn() -> ProposalFn:
     return propose_flip_every_district
 
 
@@ -126,7 +126,7 @@ def propose_chunk_flip(partition: Partition) -> Partition:
 
 
 # Define a ProposalFn version to make purpose of the function clear
-def build_propose_chunk_flip_proposal() -> ProposalFn:
+def build_chunk_flip_proposal_fn() -> ProposalFn:
     return propose_chunk_flip
 
 
@@ -152,7 +152,7 @@ def propose_random_flip(partition: Partition) -> Partition:
 
 
 # Define a ProposalFn version to make purpose of the function clear
-def build_propose_random_flip_proposal() -> ProposalFn:
+def build_random_flip_proposal_fn() -> ProposalFn:
     return propose_random_flip
 
 
@@ -190,7 +190,7 @@ flip = propose_random_flip
 
 
 # Define a ProposalFn version to make purpose of the function clear
-def build_slow_reversible_propose_bi_proposal() -> ProposalFn:
+def build_slow_reversible_bi_proposal_fn() -> ProposalFn:
     return slow_reversible_propose_bi
 
 
@@ -213,5 +213,5 @@ def slow_reversible_propose(partition: Partition) -> Partition:
 
 
 # Define a ProposalFn version to make purpose of the function clear
-def build_slow_reversible_propose_proposal() -> ProposalFn:
+def build_slow_reversible_proposal_fn() -> ProposalFn:
     return slow_reversible_propose
