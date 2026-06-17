@@ -141,7 +141,7 @@ def spectral_recom(
 
 
 # Define a ProposalFn version to make purpose of the function clear
-def build_spectral_recom_proposal(
+def build_spectral_recom_proposal_fn(
     weight_type: Optional[str] = None,
     lap_type: str = "normalized",
 ) -> ProposalFn:

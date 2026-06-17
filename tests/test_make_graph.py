@@ -3,14 +3,16 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 import geopandas as gp
-import networkx
+import networkx as nx
 import pandas
 import pytest
+import rustworkx as rx
 from pyproj import CRS
 from shapely.geometry import Polygon
 
 from gerrychain.graph import Graph
 from gerrychain.graph.geo import GeometryError
+from gerrychain.graph.graph import GraphValidationError
 
 # frm: added following import
 # from gerrychain.graph import node_data
@@ -74,7 +76,7 @@ def test_add_data_to_graph_can_handle_column_names_that_start_with_numbers():
     #           object embedded inside it.  I am not sure if this test actually tests
     #           anything useful anymore...
 
-    nx_graph = networkx.Graph([("01", "02"), ("02", "03"), ("03", "01")])
+    nx_graph = nx.Graph([("01", "02"), ("02", "03"), ("03", "01")])
     df = pandas.DataFrame({"16SenDVote": [20, 30, 50], "node": ["01", "02", "03"]})
     df = df.set_index("node")
 
@@ -97,7 +99,7 @@ def test_add_data_to_graph_can_handle_column_names_that_start_with_numbers():
 
 
 def test_join_can_handle_right_index():
-    nx_graph = networkx.Graph([("01", "02"), ("02", "03"), ("03", "01")])
+    nx_graph = nx.Graph([("01", "02"), ("02", "03"), ("03", "01")])
     df = pandas.DataFrame({"16SenDVote": [20, 30, 50], "node": ["01", "02", "03"]})
 
     graph = Graph.from_networkx(nx_graph)
@@ -246,7 +248,7 @@ def test_from_file_and_then_to_json_with_geometries(shapefile, target_file):
 
 
 def test_graph_warns_for_islands():
-    nx_graph = networkx.Graph()
+    nx_graph = nx.Graph()
     nx_graph.add_node(0)
 
     graph = Graph.from_networkx(nx_graph)
@@ -294,3 +296,29 @@ def test_make_graph_from_shapefile_has_crs(shapefile):
     graph = Graph.from_file(shapefile)
     df = gp.read_file(shapefile)
     assert CRS.from_json(graph.graph["crs"]).equals(df.crs)
+
+
+def test_from_networkx_rejects_directed_graph():
+    nx_graph = nx.DiGraph([(0, 1)])
+
+    with pytest.raises(GraphValidationError, match="must be undirected"):
+        Graph.from_networkx(nx_graph)
+
+
+def test_from_rustworkx_rejects_directed_graph():
+    rx_graph = rx.PyDiGraph()
+    rx_graph.add_nodes_from([{}, {}])
+    rx_graph.add_edge(0, 1, {})
+
+    with pytest.raises(GraphValidationError, match="must be undirected"):
+        Graph.from_rustworkx(rx_graph)
+
+
+def test_graph_is_directed_returns_false_for_undirected_backends(four_by_five_grid_nx):
+    nx_graph = Graph.from_networkx(four_by_five_grid_nx)
+    rx_graph = Graph.from_rustworkx(
+        rx.networkx_converter(four_by_five_grid_nx, keep_attributes=True)
+    )
+
+    assert nx_graph.is_directed() is False
+    assert rx_graph.is_directed() is False

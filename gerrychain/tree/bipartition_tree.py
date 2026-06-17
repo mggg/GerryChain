@@ -254,6 +254,73 @@ class FindBalancedEdgeCutsFn(Protocol):
     ) -> list[_Cut]: ...
 
 
+class SpanningTreeFn(Protocol):
+    """Call signature shared by all spanning-tree functions.
+
+    A spanning-tree function (``random_spanning_tree``, ``uniform_spanning_tree``, or a custom
+    replacement) takes the graph to build a tree from and an optional ``region_surcharge``, and may
+    accept additional, function-specific keyword options. ``bipartition_tree`` forwards those extra
+    options verbatim from its ``spanning_tree_fn_kwargs`` argument, so a custom spanning-tree
+    function can expose its own knobs (e.g. ``random_spanning_tree``'s
+    ``treat_unassigned_as_single_region``) without any change to the bipartition/recom plumbing.
+    """
+
+    def __call__(
+        self, graph: Graph, region_surcharge: dict | None = None, **kwargs: Any
+    ) -> Graph: ...
+
+
+def _bfs_predecessors_and_successors_for_tree(
+    tree: Graph, root: Any, build_successors: bool = False
+) -> tuple[dict[Any, Any], dict[Any, list[Any]] | None]:
+    """Return ``(pred, succ)`` parent/child maps for the tree ``graph`` rooted at ``root``.
+
+    ``pred`` maps every non-root node to its parent (the neighbor on the path toward
+    ``root``).  When ``build_successors`` is True, ``succ`` maps every internal node to the
+    list of its children; otherwise ``succ`` is None.
+
+    This is one tight breadth-first traversal that fetches ``graph.neighbors()`` once per
+    node as it is visited.  It replaces ``graph.predecessors(root)`` and
+    ``graph.successors(root)``, each of which ran its own traversal through the
+    ``Graph.generic_bfs_*`` generators. The memoization path previously paid for that traversal
+    twice (predecessors then successors); fusing them here computes both in one pass.
+
+    For a tree, every non-root node has a unique parent, so ``pred`` is identical to the map
+    the old BFS produced regardless of neighbor-visitation order.
+
+    Special thanks to Jeanne Clelland who's original work informed this section of code.
+
+    Args:
+        tree (Graph): The tree for which to compute predecessors and successors.
+        root (Any): The root node of the tree.
+        build_successors (bool, optional): Whether to build the successors map. Defaults to False.
+
+    Returns:
+        Tuple[Dict[Any, Any], Dict[Any, List[Any]] | None]: A tuple containing the predecessors
+        map and the successors map (or None if not built).
+    """
+    # TODO: Technically, you can run this on a graph and it should be fine, but there is an implicit
+    # assumption that the passed graph is a tree, and we should probably check this somewhere
+    # if there is a cheap way to do it.
+    pred: dict[Any, Any] = {}
+    succ: dict[Any, list[Any]] | None = {} if build_successors else None
+    seen = {root}
+    queue = deque([root])
+    while queue:
+        node = queue.popleft()
+        children = None
+        for neighbor in tree.neighbors(node):
+            if neighbor not in seen:
+                seen.add(neighbor)
+                pred[neighbor] = node
+                queue.append(neighbor)
+                if build_successors:
+                    if children is None:
+                        children = succ[node] = []
+                    children.append(neighbor)
+    return pred, succ
+
+
 def find_balanced_edge_cuts_contraction(
     h: _PopulatedGraph, one_sided_cut: bool = False, rootnode_choice_fn: Callable = random.choice
 ) -> list[_Cut]:
@@ -275,8 +342,8 @@ def find_balanced_edge_cuts_contraction(
     root = rootnode_choice_fn(
         [node_id for node_id in h.graph.node_indices if h.degree(node_id) > 1]
     )
-    # BFS predecessors for iteratively contracting leaves
-    pred = h.graph.predecessors(root)
+    # Parent map for iteratively contracting leaves. This used to call h.graph.predecessors(root)
+    pred, _ = _bfs_predecessors_and_successors_for_tree(h.graph, root)
 
     cuts = []
 
@@ -477,8 +544,10 @@ def find_balanced_edge_cuts_memoization(
         [node_id for node_id in h.graph.node_indices if h.degree(node_id) > 1]
     )
 
-    pred = h.graph.predecessors(root)
-    succ = h.graph.successors(root)
+    # Parent and child maps for the tree rooted at `root`. For a tree each non-root node has a
+    # unique parent, so `pred` is identical to the old map; the order of children within
+    # succ[node] may differ, which does not affect the set of cuts found.
+    pred, succ = _bfs_predecessors_and_successors_for_tree(h.graph, root, build_successors=True)
     total_pop = h.tot_pop
 
     # Calculate the population of each subtree in the "succ" tree
@@ -523,7 +592,6 @@ def find_balanced_edge_cuts_memoization(
 
     # We are looking for a way to bisect the graph (one_sided_cut is False)
     for node, tree_pop in subtree_pops.items():
-
         if (abs(tree_pop - h.ideal_pop) <= h.ideal_pop * h.epsilon) and (
             abs((total_pop - tree_pop) - h.ideal_pop) <= h.ideal_pop * h.epsilon
         ):
@@ -731,8 +799,9 @@ def _internal_bipartition_tree(
     epsilon: float,
     node_repeats: int = 1,
     spanning_tree: Graph | None = None,
-    spanning_tree_fn: Callable = random_spanning_tree,
+    spanning_tree_fn: SpanningTreeFn = random_spanning_tree,
     region_surcharge: dict | None = None,
+    spanning_tree_fn_kwargs: dict | None = None,
     find_balanced_edge_cuts_fn: Callable = find_balanced_edge_cuts_memoization,
     one_sided_cut: bool = False,
     rootnode_choice_fn: Callable = random.choice,
@@ -769,6 +838,10 @@ def _internal_bipartition_tree(
             spanning tree is not provided. Defaults to `random_spanning_tree`.
         region_surcharge (Optional[Dict], optional): A dictionary of surcharges for the spanning
             tree algorithm. Defaults to None.
+        spanning_tree_fn_kwargs (Optional[Dict], optional): Extra keyword arguments forwarded
+            verbatim to ``spanning_tree_fn``. Use this to set function-specific options that are
+            not named here, e.g. ``{"treat_unassigned_as_single_region": True}`` for
+            ``random_spanning_tree``. Defaults to None.
         find_balanced_edge_cuts_fn (Callable, optional): The function to find balanced edge cuts.
             Defaults to `find_balanced_edge_cuts_memoization`.
         one_sided_cut (bool, optional): Passed to the ``find_balanced_edge_cuts_fn``. Determines
@@ -807,7 +880,17 @@ def _internal_bipartition_tree(
     if region_surcharge is None:
         region_surcharge = {}
 
-    spanning_tree_fn = partial(spanning_tree_fn, region_surcharge=region_surcharge)
+    if spanning_tree_fn_kwargs and "region_surcharge" in spanning_tree_fn_kwargs:
+        raise ValueError(
+            "Pass region_surcharge via the region_surcharge parameter, not inside "
+            "spanning_tree_fn_kwargs."
+        )
+
+    spanning_tree_fn = partial(
+        spanning_tree_fn,
+        region_surcharge=region_surcharge,
+        **(spanning_tree_fn_kwargs or {}),
+    )
 
     if "one_sided_cut" in signature(find_balanced_edge_cuts_fn).parameters:
         find_balanced_edge_cuts_fn = partial(
@@ -837,7 +920,6 @@ def _internal_bipartition_tree(
 
     num_cuts = len(possible_cuts)
     if num_cuts != 0:
-
         # Note: There are two different function signatures for cut_choice_fn().
         #
         # One just takes the set of possible cuts, but the other takes
@@ -887,8 +969,9 @@ def bipartition_tree(
     epsilon: float,
     node_repeats: int = 1,
     spanning_tree: Graph | None = None,
-    spanning_tree_fn: Callable = random_spanning_tree,
+    spanning_tree_fn: SpanningTreeFn = random_spanning_tree,
     region_surcharge: dict | None = None,
+    spanning_tree_fn_kwargs: dict | None = None,
     find_balanced_edge_cuts_fn: Callable = find_balanced_edge_cuts_memoization,
     one_sided_cut: bool = False,
     rootnode_choice_fn: Callable = random.choice,
@@ -925,6 +1008,10 @@ def bipartition_tree(
             spanning tree is not provided. Defaults to `random_spanning_tree`.
         region_surcharge (Optional[Dict], optional): A dictionary of surcharges for the spanning
             tree algorithm. Defaults to None.
+        spanning_tree_fn_kwargs (Optional[Dict], optional): Extra keyword arguments forwarded verbatim
+            to ``spanning_tree_fn``. Use this to set function-specific options that are not named
+            here, e.g. ``{"treat_unassigned_as_single_region": True}`` for ``random_spanning_tree``.
+            Defaults to None.
         find_balanced_edge_cuts_fn (Callable, optional): The function to find balanced edge cuts.
             Defaults to `find_balanced_edge_cuts_memoization`.
         one_sided_cut (bool, optional): Passed to the ``find_balanced_edge_cuts_fn``. Determines
@@ -966,6 +1053,7 @@ def bipartition_tree(
         spanning_tree=spanning_tree,
         spanning_tree_fn=spanning_tree_fn,
         region_surcharge=region_surcharge,
+        spanning_tree_fn_kwargs=spanning_tree_fn_kwargs,
         find_balanced_edge_cuts_fn=find_balanced_edge_cuts_fn,
         one_sided_cut=one_sided_cut,
         rootnode_choice_fn=rootnode_choice_fn,
@@ -1006,7 +1094,7 @@ def _get_possible_edge_cuts_and_populated_graph(
     epsilon: float,
     node_repeats: int = 1,
     spanning_tree: Graph | None = None,
-    spanning_tree_fn: Callable = random_spanning_tree,
+    spanning_tree_fn: SpanningTreeFn = random_spanning_tree,
     find_balanced_edge_cuts_fn: Callable = find_balanced_edge_cuts_memoization,
     rootnode_choice_fn: Callable = random.choice,
     repeat_until_valid: bool = True,
@@ -1073,7 +1161,6 @@ def _get_possible_edge_cuts_and_populated_graph(
     attempts = 0
 
     while attempts < max_attempts:
-
         # Try to find balanced edge cuts - note that the find_balanced_edge_cuts_fn()
         # typically permutes the spanning tree by selecting a root node for the tree
         # at random, which means that each successive call using the same graph
@@ -1118,7 +1205,6 @@ def _get_possible_edge_cuts_and_populated_graph(
         #
         num_times_current_spanning_tree_has_been_tried += 1
         if num_times_current_spanning_tree_has_been_tried == num_times_to_use_given_spanning_tree:
-
             spanning_tree = spanning_tree_fn(graph_to_split)
             num_times_current_spanning_tree_has_been_tried = 0
 
@@ -1150,7 +1236,7 @@ def bipartition_tree_random_with_num_cuts(
     node_repeats: int = 1,
     repeat_until_valid: bool = True,
     spanning_tree: Graph | None = None,
-    spanning_tree_fn: Callable = random_spanning_tree,
+    spanning_tree_fn: SpanningTreeFn = random_spanning_tree,
     find_balanced_edge_cuts_fn: Callable = find_balanced_edge_cuts_memoization,
     one_sided_cut: bool = False,
     rootnode_choice_fn: Callable = random.choice,

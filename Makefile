@@ -6,7 +6,7 @@ PKG ?= gerrychain
 TEST_PATHS ?= tests
 export UV_MANAGED_PYTHON = 1
 
-.PHONY: help setup install install-docs test lint format precommit docs clean
+.PHONY: all
 
 help:
 	@echo "Available targets:"
@@ -14,6 +14,7 @@ help:
 	@echo "  install       - Install the package"
 	@echo "  install-docs  - Install documentation dependencies"
 	@echo "  test          - Run the test suite"
+	@echo "  test-all      - Run the test suite including slow tests"
 	@echo "  lint          - Run code linters"
 	@echo "  format        - Format the codebase"
 	@echo "  precommit     - Run pre-commit hooks"
@@ -60,6 +61,10 @@ check:
 test:
 	@echo "Running test suite..."
 	PYTHONHASHSEED=0 uv run pytest -v $(TEST_PATHS)
+
+test-all:
+	@echo "Running test suite (including slow tests)..."
+	PYTHONHASHSEED=0 uv run pytest -v --runslow $(TEST_PATHS)
 
 # Add this in later
 # type-check:

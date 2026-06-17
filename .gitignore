@@ -87,3 +87,6 @@ TODO.md
 # Environment items
 .env
 .envrc
+
+# Profiling data
+*.prof

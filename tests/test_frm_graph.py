@@ -1,4 +1,3 @@
-import networkx as nx
 import pytest
 import rustworkx as rx
 
@@ -7,103 +6,6 @@ from gerrychain import Graph
 ###############################################
 # This file contains tests routines in graph.py
 ###############################################
-
-
-@pytest.fixture
-def four_by_five_grid_nx():
-
-    # Create an NX Graph object with attributes
-    #
-    # This graph has the following properties
-    # which are important for the tests below:
-    #
-    #  * The "nx_node_id" attribute serves as an
-    #    effective "original" node_id so that we
-    #    can track a node even when its internal
-    #    node_id changes.
-    #
-    #  * The graph has two "connected" components:
-    #    the first two rows and the last two
-    #    rows.  This is used in the connected
-    #    components tests
-
-    # nx_node_id
-    #
-    #  0  1  2  3  4
-    #  5  6  7  8  9
-    # 10 11 12 13 14
-    # 15 16 17 18 19
-
-    # MVAP:
-    #
-    #  2  2  2  2  2
-    #  2  2  2  2  2
-    #  2  2  2  2  2
-    #  2  2  2  2  2
-
-    nx_graph = nx.Graph()
-    nx_graph.add_nodes_from(
-        [
-            (0, {"population": 10, "nx_node_id": 0, "MVAP": 2}),
-            (1, {"population": 10, "nx_node_id": 1, "MVAP": 2}),
-            (2, {"population": 10, "nx_node_id": 2, "MVAP": 2}),
-            (3, {"population": 10, "nx_node_id": 3, "MVAP": 2}),
-            (4, {"population": 10, "nx_node_id": 4, "MVAP": 2}),
-            (5, {"population": 10, "nx_node_id": 5, "MVAP": 2}),
-            (6, {"population": 10, "nx_node_id": 6, "MVAP": 2}),
-            (7, {"population": 10, "nx_node_id": 7, "MVAP": 2}),
-            (8, {"population": 10, "nx_node_id": 8, "MVAP": 2}),
-            (9, {"population": 10, "nx_node_id": 9, "MVAP": 2}),
-            (10, {"population": 10, "nx_node_id": 10, "MVAP": 2}),
-            (11, {"population": 10, "nx_node_id": 11, "MVAP": 2}),
-            (12, {"population": 10, "nx_node_id": 12, "MVAP": 2}),
-            (13, {"population": 10, "nx_node_id": 13, "MVAP": 2}),
-            (14, {"population": 10, "nx_node_id": 14, "MVAP": 2}),
-            (15, {"population": 10, "nx_node_id": 15, "MVAP": 2}),
-            (16, {"population": 10, "nx_node_id": 16, "MVAP": 2}),
-            (17, {"population": 10, "nx_node_id": 17, "MVAP": 2}),
-            (18, {"population": 10, "nx_node_id": 18, "MVAP": 2}),
-            (19, {"population": 10, "nx_node_id": 19, "MVAP": 2}),
-        ]
-    )
-
-    nx_graph.add_edges_from(
-        [
-            (0, 1),
-            (0, 5),
-            (1, 2),
-            (1, 6),
-            (2, 3),
-            (2, 7),
-            (3, 4),
-            (3, 8),
-            (4, 9),
-            (5, 6),
-            # (5, 10),
-            (6, 7),
-            # (6, 11),
-            (7, 8),
-            # (7, 12),
-            (8, 9),
-            # (8, 13),
-            # (9, 14),
-            (10, 11),
-            (10, 15),
-            (11, 12),
-            (11, 16),
-            (12, 13),
-            (12, 17),
-            (13, 14),
-            (13, 18),
-            (14, 19),
-            (15, 16),
-            (16, 17),
-            (17, 18),
-            (18, 19),
-        ]
-    )
-
-    return nx_graph
 
 
 @pytest.fixture

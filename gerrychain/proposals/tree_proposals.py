@@ -169,7 +169,10 @@ def recom(
         region_surcharge (Optional[Dict], optional): The surcharge dictionary for the graph used
             for region-aware partitioning of the grid. Default is None.
         bipartition_tree_fn (Callable, optional): The method used for bipartitioning the tree.
-            Default is `gerrychain.tree.bipartition_tree`.
+            Default is `gerrychain.tree.bipartition_tree`. To configure the bipartition or
+            spanning-tree step (e.g. ``max_attempts``, or ``spanning_tree_fn_kwargs`` for
+            spanning-tree options), pass a pre-bound function, e.g.
+            ``partial(bipartition_tree, spanning_tree_fn_kwargs={...})``.
 
     Returns:
         Partition: The new partition resulting from the ReCom algorithm.
@@ -180,7 +183,6 @@ def recom(
     #
     set_of_district_pairs_that_touch = set()
     for edge in partition["cut_edges"]:
-
         pair_that_touches = [
             partition.assignment.mapping[edge[0]],
             partition.assignment.mapping[edge[1]],
@@ -200,7 +202,9 @@ def recom(
     #
     random.shuffle(list_of_district_pairs_that_touch)
 
-    # Bind the region_aware parameter to the bipartition_tree_fn
+    # Bind region_surcharge onto the bipartition_tree_fn. Other bipartition / spanning-tree options
+    # (e.g. spanning_tree_fn_kwargs) are configured by passing a pre-bound bipartition_tree_fn, such
+    # as partial(bipartition_tree, spanning_tree_fn_kwargs={...}).
     bipartition_tree_fn = partial(bipartition_tree_fn, region_surcharge=region_surcharge)
 
     flips = None
@@ -209,7 +213,6 @@ def recom(
     # two new "parts"
     #
     while len(list_of_district_pairs_that_touch) > 0:
-
         parts_to_merge = list_of_district_pairs_that_touch.pop()
 
         try:
@@ -239,7 +242,7 @@ def recom(
 
 
 # Define a ProposalFn version to make purpose of the function clear
-def build_recom_proposal(
+def build_recom_proposal_fn(
     pop_col: str,
     pop_target: int | float,
     epsilon: float,
@@ -410,7 +413,7 @@ def reversible_recom(
 
 
 # Define a ProposalFn version to make purpose of the function clear
-def build_reversible_recom_proposal(
+def build_reversible_recom_proposal_fn(
     pop_col: str,
     pop_target: int | float,
     epsilon: float,

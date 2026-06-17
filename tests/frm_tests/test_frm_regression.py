@@ -11,24 +11,19 @@
 # It is a quick and dirty way to make sure I haven't really screwed things up ;-)
 #
 
-import os
-
 # Set the random seed so that the results are reproducible!
 import random
 from functools import partial
 
-from gerrychain import Graph, MarkovChain, Partition, accept, updaters
+from gerrychain import MarkovChain, Partition, accept, updaters
 from gerrychain.constraints import contiguous
+from gerrychain.examples import gerrymandria
 from gerrychain.proposals import recom
 
 random.seed(2024)
 
 
-test_file_path = os.path.abspath(__file__)
-cur_directory = os.path.dirname(test_file_path)
-json_file_path = os.path.join(cur_directory, "gerrymandria.json")
-
-graph = Graph.from_json(json_file_path)
+graph = gerrymandria()
 
 my_updaters = {"population": updaters.Tally("TOTPOP"), "cut_edges": updaters.cut_edges}
 
