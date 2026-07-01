@@ -39,11 +39,11 @@ the first thing to do is to import the required packages:
 
 .. code-block:: python
 
-    import matplotlib.pyplot as plt
     from gerrychain import (Partition, Graph, MarkovChain,
                             updaters, constraints, accept)
-    from gerrychain.proposals import recom
+    from gerrychain.proposals import recom, build_recom_proposal_fn
     from gerrychain.constraints import contiguous
+    # frm: TODO: get rid of import partial once it is no longer needed
     from functools import partial
     import pandas
 
@@ -77,8 +77,7 @@ And we make the proposal:
     # that we defined above and not with the population column in the json file.
     ideal_population = sum(initial_partition["population"].values()) / len(initial_partition)
 
-    proposal = partial(
-        recom,
+    my_proposal = build_recom_proposal_fn(
         pop_col="TOTPOP",
         pop_target=ideal_population,
         epsilon=0.01,
@@ -90,27 +89,95 @@ We can now set up the chain:
 .. code-block:: python
 
     recom_chain = MarkovChain(
-        proposal=proposal,
+        proposal=my_proposal,
         constraints=[contiguous],
         accept=accept.always_accept,
         initial_state=initial_partition,
         total_steps=40
     )
 
-and run it with
+and run it, collecting the assigment for each step, so that we can
+watch the chain work in a fun animation (of course, it would be a
+bad idea to do this for a chain with a large number of steps).
 
 .. code-block:: python
 
   assignment_list = []
 
   for i, item in enumerate(recom_chain):
-      print(f"Finished step {i+1}/{len(recom_chain)}", end="\r")
       assignment_list.append(item.assignment)
 
 
-We'll go ahead an collect the assignment at each step of the chain so
-that we can watch the chain work in a fun animation (of course, it would be a
-bad idea to do this for a chain with a large number of steps).
+To create the animation, we need to define some functions to do 
+the animation.  If the way these functions work is not clear, 
+don't worry about it - they are just a way to show you how 
+recom works.
+
+.. code-block:: python
+
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import math   # frm: I added this...
+    import io     # frm: I added this...
+    from PIL import Image
+    from IPython.display import display, clear_output
+
+    # Define a function to "plot" a GerryChain assignment but as an image
+    # to be displayed later.
+    #
+    def plot_assignment_to_image(this_assignment):
+
+        # Create a grid (numpy array) with district ids (integers)
+        # to use withi matplotlib to plot the assignment
+
+        # Assumes a square grid (graph)
+        grid_size = math.isqrt(len(this_assignment))
+
+        grid = np.empty((grid_size,grid_size))
+
+        # Get (x,y) position from each node in the graph
+        # and set grid value for that position to the district_id
+        for node_id, district_id in this_assignment.items():
+            x_pos = graph.node_data(node_id)['x']
+            y_pos = graph.node_data(node_id)['y']
+            grid_pos = (x_pos, y_pos)
+            grid[grid_pos] = district_id
+
+        fig, ax = plt.subplots(figsize=(grid_size+1, grid_size+1))
+        im = ax.imshow(grid, cmap='viridis')
+
+        ax.set_xticks(np.arange(-0.5, grid_size, 1), minor=True)
+        ax.set_yticks(np.arange(-0.5, grid_size, 1), minor=True)
+
+        ax.grid(which='minor', color='black', linestyle='-', linewidth=1)
+
+        # Hide the numeric labels (axis values)
+        ax.set_xticklabels([])
+        ax.set_yticklabels([])
+
+        buffer = io.BytesIO()
+        plt.savefig(buffer, format='png')
+        buffer.seek(0)
+        image = Image.open(buffer)
+        plt.close(fig)
+        return image
+
+And now let's check to make sure that it works by plotting an
+arbitrary assignment - say, assignment_list[35]
+
+.. code-block:: python
+
+    saved_district_plan = plot_assignment_to_image(assignment_list[35])
+    display(saved_district_plan)
+
+And now another utility routine to display a sequence of assignments
+in a way that you can explore, by going forward and backward in the
+sequence - to see what GerryChain did at each step.
+
+Note that the plot does not change at every step - this is because
+sometimes recom splits a merged pair of districts in exactly the 
+same way that the districts were before being merged, which looks
+like nothing happened.
 
 .. code-block:: python
 
@@ -122,42 +189,126 @@ bad idea to do this for a chain with a large number of steps).
     from PIL import Image
     import io
     import ipywidgets as widgets
+    import ipywidgets as widgets
     from IPython.display import display, clear_output
 
-    frames = []
 
-    for i in range(len(assignment_list)):
-        fig, ax = plt.subplots(figsize=(8,8))
-        pos = {node :(data['x'],data['y']) for node, data in graph.nodes(data=True)}
-        node_colors = [mcm.tab20(int(assignment_list[i][node]) % 20) for node in graph.nodes()]
-        node_labels = {node: str(assignment_list[i][node]) for node in graph.nodes()}
+    def create_assignment_images(assignment_list):
 
-        nx.draw_networkx_nodes(graph, pos, node_color=node_colors)
-        nx.draw_networkx_edges(graph, pos)
-        nx.draw_networkx_labels(graph, pos, labels=node_labels)
-        plt.axis('off')
+        # frm: TODO: Note that this is EXPENSIVE.  When running code below that did 10,000
+        # steps, translating the assignments took much much longer than running the chain.
+        # So, there is some warning / explanation that we need to provide to users about
+        # when they should translate assignments - they should try hard NOT to...
 
-        buffer = io.BytesIO()
-        plt.savefig(buffer, format='png')
-        buffer.seek(0)
-        image = Image.open(buffer)
-        frames.append(image)
-        plt.close(fig)
+        image_list = []
+        
+        for i in range(len(assignment_list)):
+            image_list.append(
+                plot_assignment_to_image(assignment_list[i])
+            )
 
-    def show_frame(idx):
-        clear_output(wait=True)
-        display(frames[idx])
+        return image_list
 
-    slider = widgets.IntSlider(value=0, min=0, max=len(frames)-1, step=1, description='Frame:')
-    slider.layout.width = '500px'
-    widgets.interactive(show_frame, idx=slider)
+    # frm: TODO: Peter: Please feel free to change this code!!!
+    # 
+    # I found it on the web and hacked it until it worked for this case,
+    # but I am sure there are more elegant ways to do this.  
+    #
+    # What I was trying to do was make it easier for the user to understand
+    # what was going on with recom - the nodes and edges presentation was
+    # vidually noisy, and the slider was awkward - so I went with just a 
+    # colored grid with forward and back buttons.
+    #
+    # Note that this made it obvious that sometimes recom doesn't change the 
+    # state of the plan, so I added some verbiage to explain why that might 
+    # be the case.
+
+    def create_assignment_viewer(image_list):
+        """
+        Creates and displays an interactive image viewer with Back and Forward buttons.
+        
+        Parameters:
+        - image_list (list): A list of local images.
+        """
+
+        # Track the index locally inside the function scope
+        state = {'current_index': 0}
+
+        # Create UI components
+        output_widget = widgets.Output()
+        button_back = widgets.Button(description="◀ Back", button_style='primary')
+        button_forward = widgets.Button(description="Forward ▶", button_style='primary')
+
+        def update_image():
+            with output_widget:
+                output_widget.clear_output(wait=True)
+                idx = state['current_index']
+                
+                # Show current step indicator
+                print(f"\nDistrict Plan (assignment) {idx + 1} of {len(image_list)}")
+                
+                # Display the actual image file
+                display(image_list[idx])
+
+        def on_back_click(b):
+            if state['current_index'] > 0:
+                state['current_index'] -= 1
+                update_image()
+
+        def on_forward_click(b):
+            if state['current_index'] < len(image_list) - 1:
+                state['current_index'] += 1
+                update_image()
+
+        # Bind click events
+        button_back.on_click(on_back_click)
+        button_forward.on_click(on_forward_click)
+
+        # Render layout layout and initialize first image
+        controls = widgets.HBox([button_back, button_forward])
+        v_box_layout = widgets.Layout(
+            display='flex',
+            flex_flow='column',
+            align_items='center', # This aligns items along the cross-axis (horizontally)
+            width='50%'
+        )
+        viewer_layout = widgets.VBox([output_widget, controls], layout = v_box_layout)
+        display(viewer_layout)
+        
+        update_image()
+
+.. code-block:: python
+
+    assignment_images = create_assignment_images(assignment_list)
+    create_assignment_viewer(assignment_images)
+
+frm: TODO: Add code to make forward and back button inactive if they get to the end
 
 And this should generate a little widget that you can move through to see the chain
 in action! Here is a gif of what it should look like:
 
+frm: TODO: Clarity...  Explain why the plot might not change every iteration.
+Ideally the user would be able to step through the chain in his/her own time with
+a forward and back button - because it is actually disorienting to have the gif
+go at its own pace.  If you allowed the user to go forward and back with buttons, however,
+they would notice that sometimes the plot does not change and this might make them 
+wonder what is going on.  The answer is that recom works by 1) randomly choosing which
+adjacent districts to merge and then 2) randomly picking a way to split them.  This 
+means that the code might split the merged districts exactly the way they were split 
+before the merge - in which case it would appear that nothing happened.
+
+I would ague that this is in fact a bug in the code - at least from a statistical POV 
+because you want to explore all possible plans and this will give you the same plan over 
+and over sometimes (if there are few ways to split a given combined region).  Perhaps this
+could be solved by removing duplicates after a run...
+
+
 .. image:: ./images/gerrymandria_ensemble.gif
     :width: 400px
     :align: center
+
+*** frm: TODO: This is where I currently am in editing this file ***
+====================================================================
 
 Region-Aware ReCom
 ==================
@@ -181,14 +332,46 @@ edges within the municipalities.
 
 .. code-block:: python
 
-    proposal = partial(
-        recom,
+    my_proposal_2 = build_recom_proposal_fn(
         pop_col="TOTPOP",
         pop_target=ideal_population,
         epsilon=0.01,
         node_repeats=2,
         region_surcharge={"muni": 1.0},
     )
+
+    
+    recom_chain = MarkovChain(
+        proposal=my_proposal_2,
+        constraints=[contiguous],
+        accept=accept.always_accept,
+        initial_state=initial_partition,
+        total_steps=40
+    )
+
+    assignment_list = []
+
+    for i, item in enumerate(recom_chain):
+        assignment_list.append(item.assignment)
+
+    frames = plot_assignments(assignment_list)
+
+    # frm: TODO: Replace this with slider code once I have figured out why the slider doesn't load...
+    display(frames[35])
+
+    # frm: TODO: Think about whether code is now fragile.  This blew up once in a couple of runs
+    #
+    # In editing this block of code, I ran it several times in Jupyter Lab and one of those times
+    # the code blew up saying it could not find a solution.  This has been happening a lot and 
+    # I am worried that perhaps the RX version of GerryChain is somehow more fragile than the one
+    # before, but maybe the tests and the tutorial code was always fragile and just happened
+    # to pick initial conditions (python hash environment variable, random.seed(), etc.) that 
+    # did not blow up.
+    #
+    # In any event, I think the tutorial should have a section on the warning and the exception
+    # that are triggered when it can't find a solution - explain why and then what the user
+    # should do - with changing random.seed as the first thing...
+
 
 And this will produce the following ensemble:
 
@@ -214,13 +397,12 @@ this only requires for us to edit the ``region_surcharge`` parameter of the prop
 
 .. code-block:: python
 
-    proposal = partial(
-        recom,
+    my_proposal_3 = build_recom_proposal_fn(
         pop_col="TOTPOP",
         pop_target=ideal_population,
         epsilon=0.01,
         node_repeats=2,
-        region_surcharge={"muni": 0.2, "water": 0.8},
+        region_surcharge={"muni": 0.2, "water_dist": 0.8},
     )
 
 Since we are trying to be sensitive to multiple bits of information, we should probably
@@ -229,14 +411,39 @@ also increase the length of our chain to make sure that we have time to mix prop
 .. code-block:: python
 
     recom_chain = MarkovChain(
-        proposal=proposal,
+        proposal=my_proposal_3,
         constraints=[contiguous],
         accept=accept.always_accept,
         initial_state=initial_partition,
         total_steps=10000
     )
 
+    assignment_list = []
+
+    for i, item in enumerate(recom_chain):
+        if (i%100 == 0):
+            print(f"\rDoing step {i}...", end="", flush=True)
+        assignment_list.append(item.assignment)
+
+    frames_to_print = assignment_list[9960:9999]
+    frames = plot_assignments(frames_to_print)
+
+    # frm: TODO: Replace this with slider code once I have figured out why the slider doesn't load...
+    display(frames[35])
+
 Then, we can run the chain and look at the last 40 assignments in the ensemble
+
+Note that running the chain with 10,000 steps might take a while...
+
+# frm: TODO: Is there some nice way to show progress while it cranks through 10,000 steps?
+
+
+# frm: TODO: Include the code to just look at the last 40 assignments
+#            
+# It might be nice to tell the user why we decided to run this 10,000 times 
+# instead of the 40 from before.  For instance, in the real world, how would
+# a user decide how many iterations to run in order to get a "reasonable"
+# ensemble of district plans?
 
 .. image:: ./images/gerrymandria_water_muni_ensemble.gif
     :width: 400px
@@ -246,12 +453,21 @@ Comparing the last map with the municipality and water district maps, we can see
 that the chain has done a pretty good job of keeping the water districts together
 while also being sensitive to the municipalities
 
+# frm: TODO: Change the graph to have blocks of color rather than nodes and edges.
+#
+# I think I have said this elsewhere, but it is actually hard to grok what is
+# going on in the graphs when they have colored nodes and edges.  Instead, create
+# graphs that look like the first graph in this section - adjacent blocks of color
+# so that all of the blocks merge into areas of the same color.
+
 .. figure:: ./images/gerrymandria_water_and_muni_aware.png
     :width: 400px
     :align: center
 
     The last map in the ensemble from the 10000 step region-aware ReCom chain with
     surcharges of 0.2 for the municipalities and 0.8 for the water districts.
+
+# frm: TODO: Need to update ALL of the gifs...  *sigh*
 
 .. raw:: html
 
@@ -310,8 +526,9 @@ then they might use ``random.choice()`` in the following way:
 
 .. code-block:: python
 
-    proposal = partial(
-        recom,
+    from gerrychain.tree import bipartition_tree
+
+    my_proposal_4 = build_recom_proposal_fn(
         pop_col="TOTPOP",
         pop_target=ideal_population,
         epsilon=0.01,
@@ -320,11 +537,39 @@ then they might use ``random.choice()`` in the following way:
             "muni": 2.0,
             "water_dist": 2.0
         },
-        method = partial(
+        bipartition_tree_fn = partial(
             bipartition_tree,
-            cut_choice = random.choice,
+            cut_choice_fn = random.choice,
         )
     )
+
+    # frm: TODO: Package up code below into a function to avoid the noise
+    #
+    # function should take as args, the proposal, number of steps, number of frames
+    # and return the list of frames...
+    #
+    # Then go back and add this function and the display() to each my_proposal_N example
+
+    recom_chain = MarkovChain(
+        proposal=my_proposal_4,
+        constraints=[contiguous],
+        accept=accept.always_accept,
+        initial_state=initial_partition,
+        total_steps=10000
+    )
+
+    assignment_list = []
+
+    for i, item in enumerate(recom_chain):
+        if (i%100 == 0):
+            print(f"\rDoing step {i}...", end="", flush=True)
+        assignment_list.append(item.assignment)
+
+    frames_to_print = assignment_list[9960:9999]
+    frames = plot_assignments(frames_to_print)
+
+    # frm: TODO: Replace this with slider code once I have figured out why the slider doesn't load...
+    display(frames[35])
 
 **Note**: When ``region_surcharge`` is not specified, ``bipartition_tree`` will behave as if
 ``cut_choice`` is set to ``random.choice``.
@@ -367,7 +612,7 @@ district, then the chain will get stuck and throw an error. Here is the setup:
 
     from gerrychain import (Partition, Graph, MarkovChain,
                             updaters, constraints, accept)
-    from gerrychain.proposals import recom
+    from gerrychain.proposals import recom, build_recom_proposal_fn
     from gerrychain.tree import bipartition_tree
     from gerrychain.constraints import contiguous
     from functools import partial
@@ -389,8 +634,7 @@ district, then the chain will get stuck and throw an error. Here is the setup:
 
     ideal_population = sum(initial_partition["population"].values()) / len(initial_partition)
 
-    proposal = partial(
-        recom,
+    my_proposal_5 = build_recom_proposal_fn(
         pop_col="TOTPOP",
         pop_target=ideal_population,
         epsilon=0.01,
@@ -399,14 +643,14 @@ district, then the chain will get stuck and throw an error. Here is the setup:
             "muni": 2.0,
             "water_dist": 2.0
         },
-        method = partial(
+        bipartition_tree_fn = partial(
             bipartition_tree, 
             max_attempts=100,
         )
     )
 
     recom_chain = MarkovChain(
-        proposal=proposal,
+        proposal=my_proposal_5,
         constraints=[contiguous],
         accept=accept.always_accept,
         initial_state=initial_partition,
@@ -420,6 +664,8 @@ district, then the chain will get stuck and throw an error. Here is the setup:
         assignment_list.append(item.assignment)
 
 This will output the following sequence of warnings and errors
+
+frm: TODO  The current RX code emits the runtime error but not the BiipartitionWarnig...
 
 .. code-block:: console
 
@@ -486,8 +732,7 @@ node repeats:
 
     ideal_population = sum(initial_partition["population"].values()) / len(initial_partition)
 
-    proposal = partial(
-        recom,
+    my_proposal_6 = build_recom_proposal_fn(
         pop_col="TOTPOP",
         pop_target=ideal_population,
         epsilon=0.01,
@@ -496,14 +741,14 @@ node repeats:
             "muni": 2.0,
             "water_dist": 2.0
         },
-        method = partial(
+        bipartition_tree_fn = partial(
             bipartition_tree,
             max_attempts=100,
         )
     )
 
     recom_chain = MarkovChain(
-        proposal=proposal,
+        proposal=my_proposal_6,
         constraints=[contiguous],
         accept=accept.always_accept,
         initial_state=initial_partition,
@@ -538,8 +783,7 @@ Let's try to enable reselection instead:
 
     ideal_population = sum(initial_partition["population"].values()) / len(initial_partition)
 
-    proposal = partial(
-        recom,
+    my_proposal_7 = build_recom_proposal_fn(
         pop_col="TOTPOP",
         pop_target=ideal_population,
         epsilon=0.01,
@@ -548,7 +792,7 @@ Let's try to enable reselection instead:
             "muni": 2.0,
             "water_dist": 2.0
         },
-        method = partial(
+        bipartition_tree_fn = partial(
             bipartition_tree,
             max_attempts=100,
             allow_pair_reselection=True  # <-- This is the only change
@@ -556,7 +800,7 @@ Let's try to enable reselection instead:
     )
 
     recom_chain = MarkovChain(
-        proposal=proposal,
+        proposal=my_proposal_7,
         constraints=[contiguous],
         accept=accept.always_accept,
         initial_state=initial_partition,
@@ -571,6 +815,7 @@ Let's try to enable reselection instead:
 
 And this time it works! 
 
+frm: TODO:  Add code to display the frame to the above code...
 
 A Real-World Example
 ====================
@@ -722,6 +967,10 @@ before we can use it as our proposal function.
         epsilon=0.02,
         node_repeats=2
     )
+
+    # frm: TODO: Update the discussion above to use build_recom_proposal_fn(...)
+    #
+    # The only use of partial() now is to create a bipartition_tree_fn...
 
 
 Constraints
