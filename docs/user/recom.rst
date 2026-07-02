@@ -43,7 +43,6 @@ the first thing to do is to import the required packages:
                             updaters, constraints, accept)
     from gerrychain.proposals import recom, build_recom_proposal_fn
     from gerrychain.constraints import contiguous
-    # frm: TODO: get rid of import partial once it is no longer needed
     from functools import partial
     import pandas
 
@@ -117,8 +116,8 @@ recom works.
 
     import numpy as np
     import matplotlib.pyplot as plt
-    import math   # frm: I added this...
-    import io     # frm: I added this...
+    import math   
+    import io     
     from PIL import Image
     from IPython.display import display, clear_output
 
@@ -195,11 +194,6 @@ like nothing happened.
 
     def create_assignment_images(assignment_list):
 
-        # frm: TODO: Note that this is EXPENSIVE.  When running code below that did 10,000
-        # steps, translating the assignments took much much longer than running the chain.
-        # So, there is some warning / explanation that we need to provide to users about
-        # when they should translate assignments - they should try hard NOT to...
-
         image_list = []
         
         for i in range(len(assignment_list)):
@@ -230,6 +224,9 @@ like nothing happened.
         Parameters:
         - image_list (list): A list of local images.
         """
+        num_images = len(image_list)
+        first_image_index = 0
+        last_image_index = num_images - 1
 
         # Track the index locally inside the function scope
         state = {'current_index': 0}
@@ -247,6 +244,10 @@ like nothing happened.
                 # Show current step indicator
                 print(f"\nDistrict Plan (assignment) {idx + 1} of {len(image_list)}")
                 
+                # Update button states
+                button_back.disabled = (state['current_index'] == first_image_index)
+                button_forward.disabled = (state['current_index'] == last_image_index)
+
                 # Display the actual image file
                 display(image_list[idx])
 
@@ -282,7 +283,6 @@ like nothing happened.
     assignment_images = create_assignment_images(assignment_list)
     create_assignment_viewer(assignment_images)
 
-frm: TODO: Add code to make forward and back button inactive if they get to the end
 
 And this should generate a little widget that you can move through to see the chain
 in action! Here is a gif of what it should look like:
@@ -307,8 +307,6 @@ could be solved by removing duplicates after a run...
     :width: 400px
     :align: center
 
-*** frm: TODO: This is where I currently am in editing this file ***
-====================================================================
 
 Region-Aware ReCom
 ==================
@@ -339,7 +337,6 @@ edges within the municipalities.
         node_repeats=2,
         region_surcharge={"muni": 1.0},
     )
-
     
     recom_chain = MarkovChain(
         proposal=my_proposal_2,
@@ -354,10 +351,12 @@ edges within the municipalities.
     for i, item in enumerate(recom_chain):
         assignment_list.append(item.assignment)
 
-    frames = plot_assignments(assignment_list)
+And then plot them
 
-    # frm: TODO: Replace this with slider code once I have figured out why the slider doesn't load...
-    display(frames[35])
+.. code-block:: python
+
+    assignment_images = create_assignment_images(assignment_list)
+    create_assignment_viewer(assignment_images)
 
     # frm: TODO: Think about whether code is now fragile.  This blew up once in a couple of runs
     #
@@ -425,25 +424,19 @@ also increase the length of our chain to make sure that we have time to mix prop
             print(f"\rDoing step {i}...", end="", flush=True)
         assignment_list.append(item.assignment)
 
-    frames_to_print = assignment_list[9960:9999]
-    frames = plot_assignments(frames_to_print)
+And plot the last 40 assignments.
 
-    # frm: TODO: Replace this with slider code once I have figured out why the slider doesn't load...
-    display(frames[35])
+.. code-block:: python
 
-Then, we can run the chain and look at the last 40 assignments in the ensemble
+    assignments_to_plot = assignment_list[9960:9999]
+    assignment_images = create_assignment_images(assignments_to_plot)
+    create_assignment_viewer(assignment_images)
 
-Note that running the chain with 10,000 steps might take a while...
-
-# frm: TODO: Is there some nice way to show progress while it cranks through 10,000 steps?
-
-
-# frm: TODO: Include the code to just look at the last 40 assignments
-#            
-# It might be nice to tell the user why we decided to run this 10,000 times 
-# instead of the 40 from before.  For instance, in the real world, how would
-# a user decide how many iterations to run in order to get a "reasonable"
-# ensemble of district plans?
+frm: TODO: Why did we run this 10,000 times?
+It might be nice to tell the user why we decided to run this 10,000 times 
+instead of the 40 from before.  For instance, in the real world, how would
+a user decide how many iterations to run in order to get a "reasonable"
+ensemble of district plans?
 
 .. image:: ./images/gerrymandria_water_muni_ensemble.gif
     :width: 400px
@@ -453,13 +446,6 @@ Comparing the last map with the municipality and water district maps, we can see
 that the chain has done a pretty good job of keeping the water districts together
 while also being sensitive to the municipalities
 
-# frm: TODO: Change the graph to have blocks of color rather than nodes and edges.
-#
-# I think I have said this elsewhere, but it is actually hard to grok what is
-# going on in the graphs when they have colored nodes and edges.  Instead, create
-# graphs that look like the first graph in this section - adjacent blocks of color
-# so that all of the blocks merge into areas of the same color.
-
 .. figure:: ./images/gerrymandria_water_and_muni_aware.png
     :width: 400px
     :align: center
@@ -467,7 +453,10 @@ while also being sensitive to the municipalities
     The last map in the ensemble from the 10000 step region-aware ReCom chain with
     surcharges of 0.2 for the municipalities and 0.8 for the water districts.
 
-# frm: TODO: Need to update ALL of the gifs...  *sigh*
+frm: TODO: Need to update ALL of the gifs...  *sigh*  Note that we need to update
+them for two reasons: 1) the assignments are almost certainly different after 
+the RX code changes but also because 2) they should probably be in the block 
+color format - instead of the dual graph format.
 
 .. raw:: html
 
@@ -565,11 +554,21 @@ then they might use ``random.choice()`` in the following way:
             print(f"\rDoing step {i}...", end="", flush=True)
         assignment_list.append(item.assignment)
 
-    frames_to_print = assignment_list[9960:9999]
-    frames = plot_assignments(frames_to_print)
+And plot the last 40 assignments.
 
-    # frm: TODO: Replace this with slider code once I have figured out why the slider doesn't load...
-    display(frames[35])
+.. code-block:: python
+
+    assignments_to_plot = assignment_list[9960:9999]
+    assignment_images = create_assignment_images(assignments_to_plot)
+    create_assignment_viewer(assignment_images)
+
+frm: TODO: The code above is problematic for a couple of reasons.  The
+first is that it blew up several times saying it could not find a solution
+in 10,000 tries before finally succeeding.  The second is that the district
+plans created are all simple rectangles - which seems like a bad outcome,
+but which certainly requires some explanation.  Note that this observation
+came from having the block/color forward/back output that made it clear
+what was being created...
 
 **Note**: When ``region_surcharge`` is not specified, ``bipartition_tree`` will behave as if
 ``cut_choice`` is set to ``random.choice``.
@@ -666,6 +665,9 @@ district, then the chain will get stuck and throw an error. Here is the setup:
 This will output the following sequence of warnings and errors
 
 frm: TODO  The current RX code emits the runtime error but not the BiipartitionWarnig...
+I am now laughing in an ironic way, because since the time I wrote the sentence above
+and now, the code has stopped generating ANY warning.  It just worked and did all
+20 steps.  WTF!!!
 
 .. code-block:: console
 
@@ -761,6 +763,9 @@ node repeats:
         print(f"Finished step {i + 1}/{len(recom_chain)}", end="\r")
         assignment_list.append(item.assignment)
 
+frm: TODO: The code above now fails (as it is expected to do), even though 
+the previous version succeeded.  Again WTF???
+
 Running this code, we can see that we get stuck once again, so this was not the fix.
 Let's try to enable reselection instead:
 
@@ -815,7 +820,8 @@ Let's try to enable reselection instead:
 
 And this time it works! 
 
-frm: TODO:  Add code to display the frame to the above code...
+frm: TODO:  And indeed this works now (even though the first example worked when
+it was not supposed to...)
 
 A Real-World Example
 ====================
@@ -1087,6 +1093,13 @@ Now we'll create a box plot to help visualize the data report.
 
 
 .. image:: ./images/recom_plot.svg
+
+frm: TODO:  The code did in fact create a plot, but the data shown in
+the plot was not identical to the data in the image shown in the 
+tutorial output.  This is concerning - why would the code produce a
+different output?  Is it OK that the output is different?  I would 
+think that a court of law might be surprised and a little untrustful
+of the data if it changed...
 
 There you go! To build on this, here are some possible next steps:
 
