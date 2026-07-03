@@ -38,9 +38,8 @@ Pennsylvania data:
     from gerrychain.updaters import Tally, cut_edges
     from gerrychain import MarkovChain
     from gerrychain.constraints import contiguous
-    from gerrychain.proposals import recom
+    from gerrychain.proposals import recom, build_recom_proposal_fn
     from gerrychain.accept import always_accept
-    from functools import partial
 
     import random
     random.seed(42)
@@ -61,7 +60,7 @@ Pennsylvania data:
 
     ideal_population = sum(initial_partition["population"].values()) / len(initial_partition)
 
-    proposal = partial(
+    proposal = build_recom_proposal_fn(
         recom,
         pop_col="TOT_POP",
         pop_target=ideal_population,
@@ -167,6 +166,7 @@ The data can then be read back in with something like
         for line in f:
             data = json.loads(line)
             # Do something with the data
+            print(f"data['step'] = {data['step']}")
 
 
 Pandas DataFrames

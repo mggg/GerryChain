@@ -62,15 +62,24 @@ from our shapefile's attribute table.
 ``partition.graph``: the underlying graph
 -----------------------------------------
 
-You can access the partition's underlying Graph as ``partition.graph``. This
-contains no information about the partition---it will be the same graph object
-that you passed in to ``Partition()`` when you created the partition instance.
-
 ``partition.graph`` is a 
 `gerrychain.Graph <https://gerrychain.readthedocs.io/en/latest/api.html#gerrychain.Graph>`_ 
-object. It is based on the NetworkX Graph object, so any functions (e.g. 
-`connected_components <https://networkx.github.io/documentation/stable/reference/algorithms/generated/networkx.algorithms.components.connected_components.html#networkx.algorithms.components.connected_components>`_) 
-you can find in the `NetworkX documentation <https://networkx.github.io/>`_ will be compatible.
+object. In previous releases it was a subclass of a NetworkX Graph object, but the current 
+release instead embeds either a NetworkX Graph object or a RustworkX PyGraph object.  while
+NetworkX has many convenient associated functions, for instance to build a graph or to plot
+a graph, RustworkX is much more efficient at graph manipulation, so the current release uses
+NetworkX to build graphs but it converts the graph to be a RustworkX when a Partition object
+is created to make the number crunching faster.
+
+If when building your graph (before creating a Partition object), you wish to use 
+NetworkX functions, you can get the embedded NetworkX Graph by calling ``graph.get_nx_graph()``.
+This will return the embedded NetworkX graph, and you can use NetworkX functions directly 
+on it and any changes (like adding nodes or attribute values) will be reflected in the 
+embedding GerryChain Graph object.
+
+However, after creating a Partition object, the embedded graph is converted to a RustworkX
+PyGraph object, and it is "frozen", meaning no changes to the structure of the graph are
+permitted (nodes and edges).
 
 .. code-block:: python
 
@@ -80,7 +89,7 @@ prints something like:
 
 .. code-block:: console
 
-    <gerrychain.graph.graph.FrozenGraph object at 0x7fb0a93bbfa0>
+    <gerrychain.graph.graph.FrozenGraph at 0x119b5a140>
 
 Now we have a graph of Pennsylvania's VTDs, with all of the data from our
 shapefile's attribute table attached to the graph as *node attributes*. We can
@@ -88,7 +97,8 @@ see the data that a node has like this:
 
 .. code-block:: python
 
-    partition.graph.nodes[0]
+    node_id = 0
+    partition.graph.node_data(node_id)
 
 which will output:
 
@@ -143,7 +153,13 @@ which will output:
     '538CPCT__1': 3,
     '538DEM_PL': 3,
     '538GOP_PL': 3,
-    '8THGRADE_1': 1}
+    '8THGRADE_1': 1,
+    '__networkx_node__': 0}
+
+It is worth noting the last attribute value, __networkx_node__.  Recall that
+the Partition object's graph object is a RustworkX PyGraph object that was
+created by converting the contents of a NetworkX Graph object.  This attribute
+retains the corresponding NetworkX node_id.  This will be useful later on...
 
 ``partition.assignment``: assign nodes to parts
 ------------------------------------------------
@@ -154,9 +170,12 @@ it just like a dictionary. So the code:
 
 .. code-block:: python
 
-    first_ten_nodes = list(partition.graph.nodes)[:10]
-    for node in first_ten_nodes:
-        print(partition.assignment[node])
+    import itertools
+
+    # RustworkX node_ids are sequential integers starting at 0
+    first_ten_node_ids = range(10)    
+    for node_id in first_ten_node_ids:
+        print(partition.assignment[node_id])
 
 will output:
 
@@ -251,6 +270,15 @@ This will output:
     Part 2 has 2159 edges
     Part 1 has 1780 edges
 
+
+frm: TODO: START OF STUFF TO PROBABLY BE CUT
+============================================
+
+frm: TODO: This whole discussion of using NetworkX to compute some intesting
+stuff is no longer relevant - at least not here.  The user will eventually
+need to know what kinds of operations can be performed by updaters, but 
+I think less is more at this stage...
+
 Let's use NetworkX's 
 `diameter <https://networkx.github.io/documentation/stable/reference/algorithms/generated/networkx.algorithms.distance_measures.diameter.html>`_ 
 function to compute the diameter of each part subgraph. (The _diameter_ of a graph is
@@ -287,14 +315,17 @@ This outputs:
     Part 2 has diameter 28
     Part 1 has diameter 50
 
+frm: TODO: END OF STUFF TO PROBABLY BE CUT
+==========================================
+
 Outputs of updaters
 -------------------
 
 The other main way we can extract information from ``partition`` is through the
 updaters that we configured when we created it. We gave ``partition`` just one
 updater, ``cut_edges``. This is the set of edges that go between nodes that are in
-_different_ parts of the partition. We should note that the updaters for
-our partition are both an item and an attribute of the partition, so we can
+_different_ parts of the partition. Updaters for
+our partition are an attribute of the partition, so we can
 access them with:
 
 .. code-block:: python
@@ -307,24 +338,12 @@ which outputs:
 
     2361
 
-or 
-
-.. code-block:: python
-
-    len(partition.cut_edges)
-
-which also outputs:
-
-.. code-block:: console
-
-    2361
-
 So if we wanted to print out the proportion of cut edges present within our graph,
 we might write:
 
 .. code-block:: python
 
-    proportion_of_cut_edges = len(partition.cut_edges) / len(partition.graph.edges)
+    proportion_of_cut_edges = len(partition["cut_edges"]) / len(partition.graph.edge_indices)
     print("Proportion of edges that are cut:")
     print(proportion_of_cut_edges)
 
