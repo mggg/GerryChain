@@ -288,7 +288,6 @@ Majority-Minority Total Population
     )
 
     proposal = build_recom_proposal_fn(
-        proposals.recom,
         pop_col=POPCOL,
         pop_target=TOTPOP/SEN_DISTS,
         epsilon=EPS,

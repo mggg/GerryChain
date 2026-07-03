@@ -41,7 +41,7 @@ the first thing to do is to import the required packages:
 
     from gerrychain import (Partition, Graph, MarkovChain,
                             updaters, constraints, accept)
-    from gerrychain.proposals import recom, build_recom_proposal_fn
+    from gerrychain.proposals import build_recom_proposal_fn
     from gerrychain.constraints import contiguous
     from functools import partial
     import pandas
@@ -496,7 +496,9 @@ choice by deterministically cutting bridge edges first (when possible). In the e
 multiple types of regions are specified, the surcharges are added together, and edges are
 selected first by the number of types of regions that they span, and then by the
 surcharge added to those weights. So, if we have a region surcharge dictionary of
-``{"a": 1, "b": 4, "c": 2}`` then we we look for edges according to the order
+``{"a": 1, "b": 4, "c": 2}`` then edges which bridge all three regions, "a", "b", and "c", 
+would be cut first (total weight of 7), and then edges which bridge regions, "b" and "c" 
+(total weight of 6), etc.  So, the order in which edges would be selected would be:
 
 - ("a", "b", "c")
 - ("b", "c")
@@ -507,11 +509,58 @@ surcharge added to those weights. So, if we have a region surcharge dictionary o
 - ("a")
 - random
 
-where the tuples indicate that a desired cut edge bridges both types of region in
-the tuple. In the event that this is not the desired behaviour, then the user can simply
-alter the ``cut_choice`` function in the constraints to be different. So, if the user
-would prefer the cut edge to be a random edge with no deference to bridge edges,
-then they might use ``random.choice()`` in the following way:
+In the event that this is not the desired behaviour, for instance, if the user 
+would like to pick an edge at random, then the user can alter the ``cut_choice`` 
+function used by the bipartition_tree_fn which will
+tell the bipartition_tree_fn to use a criteria for picking which 
+edge to cut which is different from the default described above.  
+
+Because the build_recom_proposal_fn expects a function reference for the 
+value of its "bipartition_tree_fn", we need to create a new function 
+using Python's ``functools.partial()`` that will bind the cut_choice_fn to
+be used by the bipartition_tree_fn as follows - in this case to ``random.choice()``:
+
+.. code-block:: python
+
+    from gerrychain.tree import bipartition_tree
+
+    my_new_bipartition_tree_fn = partial(
+        bipartition_tree,
+        cut_choice_fn = random.choice,
+    )
+
+For those of you for whom ``functools.partial()`` is a new concept:
+
+
+.. admonition:: Use of ``functools.partial``
+  :class: note
+
+
+  The ``functools.partial`` function allows us to create a new function from
+  an existing function by binding the values of some of the arguments. For example,
+  we might have a function to make a colored square:
+
+  .. code-block:: python
+
+    from PIL import Image
+
+    def make_color_square(red_val, green_val, blue_val):
+        img = Image.new('RGB', (100, 100), color = (red_val, green_val, blue_val))
+        return img
+
+
+  And we can then use this to make a new function that always makes a blue square:
+
+  .. code-block:: python
+
+    make_blue_square = partial(make_color_square, red_val=0, green_val=0)
+
+    make_color_square(red_val=255, green_val=0, blue_val=0).show() # Makes a red square
+    make_blue_square(blue_val=255).show() # Makes a blue square
+
+
+
+And we can then build our proposal as follows:
 
 .. code-block:: python
 
@@ -526,10 +575,11 @@ then they might use ``random.choice()`` in the following way:
             "muni": 2.0,
             "water_dist": 2.0
         },
-        bipartition_tree_fn = partial(
-            bipartition_tree,
-            cut_choice_fn = random.choice,
-        )
+        bipartition_tree_fn = my_new_bipartition_tree_fn
+        # bipartition_tree_fn = partial(
+        #     bipartition_tree,
+        #     cut_choice_fn = random.choice,
+        # )
     )
 
     # frm: TODO: Package up code below into a function to avoid the noise
@@ -611,7 +661,7 @@ district, then the chain will get stuck and throw an error. Here is the setup:
 
     from gerrychain import (Partition, Graph, MarkovChain,
                             updaters, constraints, accept)
-    from gerrychain.proposals import recom, build_recom_proposal_fn
+    from gerrychain.proposals import build_recom_proposal_fn
     from gerrychain.tree import bipartition_tree
     from gerrychain.constraints import contiguous
     from functools import partial
@@ -843,7 +893,7 @@ As always, the first step is to import everything we need
     import matplotlib.pyplot as plt
     from gerrychain import (GeographicPartition, Partition, Graph, MarkovChain,
                             proposals, updaters, constraints, accept, Election)
-    from gerrychain.proposals import recom
+    from gerrychain.proposals import build_recom_proposal_fn
     from functools import partial
     import pandas
 
@@ -926,36 +976,6 @@ Proposal
 First we'll set up the ReCom proposal. To do this we will need to make use of the python
 `functools`_ package, specifically the ``partial`` function within this package. 
 
-.. admonition:: Use of ``functools.partial``
-  :class: note
-
-
-  For the 
-  uninitiated, the ``functools.partial`` function allows us to create a new function from
-  an existing function by binding the values of some of the arguments. For example,
-  we might have a function to make a colored square:
-
-  .. code-block:: python
-
-    from PIL import Image
-
-    def make_color_square(red_val, green_val, blue_val):
-        img = Image.new('RGB', (100, 100), color = (red_val, green_val, blue_val))
-        return img
-
-
-  And we can then use this to make a new function that always makes a blue square:
-
-  .. code-block:: python
-
-    make_blue_square = partial(make_color_square, red_val=0, green_val=0)
-
-    make_color_square(red_val=255, green_val=0, blue_val=0).show() # Makes a red square
-    make_blue_square(blue_val=255).show() # Makes a blue square
-
-
-Back to Recom, we need to fix some parameters using `functools.partial`
-before we can use it as our proposal function.
 
 .. code-block:: python
 
@@ -964,10 +984,7 @@ before we can use it as our proposal function.
     
     ideal_population = sum(initial_partition["population"].values()) / len(initial_partition)
     
-    # We use functools.partial to bind the extra parameters (pop_col, pop_target, epsilon, node_repeats)
-    # of the recom proposal.
-    proposal = partial(
-        recom,
+    proposal = build_recom_proposal_fn(
         pop_col="TOT_POP",
         pop_target=ideal_population,
         epsilon=0.02,
