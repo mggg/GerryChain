@@ -991,11 +991,6 @@ First we'll set up the ReCom proposal. To do this we will need to make use of th
         node_repeats=2
     )
 
-    # frm: TODO: Update the discussion above to use build_recom_proposal_fn(...)
-    #
-    # The only use of partial() now is to create a bipartition_tree_fn...
-
-
 Constraints
 +++++++++++
 
