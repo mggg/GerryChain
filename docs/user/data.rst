@@ -66,7 +66,12 @@ Pennsylvania data:
         pop_target=ideal_population,
         epsilon=0.01,
         node_repeats=2
-    )
+    proposal = build_recom_proposal_fn(
+       pop_col="TOT_POP",
+       pop_target=ideal_population,
+       epsilon=0.01,
+       node_repeats=2
+   )
 
     chain = MarkovChain(
         proposal=proposal,
