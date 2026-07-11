@@ -56,7 +56,7 @@ The ``Partition`` class takes three arguments to create a Partition:
 - A dictionary of **updaters**.
 
 This creates a partition of the ``graph`` object we created above from the
-Pennsylvania shapefile. The partition is defined by the ``"CD_2011"`` column
+Pennsylvania shapefile. The partition is defined by the ``"2011_PLA_1"`` column
 from our shapefile's attribute table.
 
 ``partition.graph``: the underlying graph
@@ -237,9 +237,8 @@ That is, we can look at the graph made up of all the nodes in a certain part and
 all the edges between those nodes.
 
 ``partition.subgraphs`` gives us a mapping (like a dictionary) from part IDs to
-their subgraphs. These subgraphs are NetworkX Subgraph objects, and work exactly
-like our main graph object---nodes, edges, and node attributes all work the same
-way.
+RX-backed ``FrozenGraph`` objects. Nodes, edges, and node attributes use the same
+GerryChain graph interface as the main graph.
 
 .. code-block:: python
 
@@ -270,53 +269,6 @@ This will output:
     Part 2 has 2159 edges
     Part 1 has 1780 edges
 
-
-frm: TODO: START OF STUFF TO PROBABLY BE CUT
-============================================
-
-frm: TODO: This whole discussion of using NetworkX to compute some intesting
-stuff is no longer relevant - at least not here.  The user will eventually
-need to know what kinds of operations can be performed by updaters, but 
-I think less is more at this stage...
-
-Let's use NetworkX's 
-`diameter <https://networkx.github.io/documentation/stable/reference/algorithms/generated/networkx.algorithms.distance_measures.diameter.html>`_ 
-function to compute the diameter of each part subgraph. (The _diameter_ of a graph is
-the length of the longest path in the set of shortest paths between any two nodes in the
-given graph, but you don't have to know that!)
-
-.. code-block:: python
-
-    import networkx
-    for part, subgraph in partition.subgraphs.items():
-        diameter = networkx.diameter(subgraph)
-        print(f"Part {part} has diameter {diameter}")
-
-This outputs:
-
-.. code-block:: console
-
-    Part 3 has diameter 40
-    Part 10 has diameter 40
-    Part 9 has diameter 40
-    Part 5 has diameter 29
-    Part 15 has diameter 28
-    Part 6 has diameter 32
-    Part 11 has diameter 31
-    Part 8 has diameter 24
-    Part 4 has diameter 19
-    Part 18 has diameter 28
-    Part 12 has diameter 35
-    Part 17 has diameter 35
-    Part 7 has diameter 38
-    Part 16 has diameter 38
-    Part 14 has diameter 38
-    Part 13 has diameter 30
-    Part 2 has diameter 28
-    Part 1 has diameter 50
-
-frm: TODO: END OF STUFF TO PROBABLY BE CUT
-==========================================
 
 Outputs of updaters
 -------------------

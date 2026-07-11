@@ -66,11 +66,7 @@ Installation
 Supported Python Versions
 -------------------------
 
-The most recent version of GerryChain (as of April 2024) supports
-
-- Python 3.9
-- Python 3.10
-- Python 3.11
+The current version of GerryChain requires Python 3.11 or newer.
 
 If you do not have one of these versions installed on you machine, we
 recommend that you go to the 
@@ -231,7 +227,7 @@ GerryChain required pinning it, but that is no longer necessary).
 
   If you are using a jupyter notebook, you will need to make sure that you have
   installed the ``ipykernel`` package in your virtual environment as well as
-  either ``jypyternotebook`` or ``jupyterlab``. To install these packages, run
+  either ``jupyter notebook`` or ``jupyterlab``. To install these packages, run
   ``pip install <package-name>`` from the command line. Then, to use the virtual
   python environment in your jupyter notebook, you need to invoke
 

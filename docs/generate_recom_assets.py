@@ -8,6 +8,7 @@ import matplotlib
 matplotlib.use("Agg")
 
 import matplotlib.pyplot as plt
+import matplotlib.patheffects as path_effects
 import numpy as np
 import pandas as pd
 from matplotlib.colors import ListedColormap
@@ -22,7 +23,7 @@ from gerrychain.updaters import Tally, cut_edges
 DOCS = Path(__file__).parent
 STATIC = DOCS / "_static"
 IMAGES = DOCS / "user" / "images"
-DISTRICTR_COLORS = [
+DISTRICTR_COLORS = (
     "#0099cd",
     "#ffca5d",
     "#00cd99",
@@ -31,7 +32,44 @@ DISTRICTR_COLORS = [
     "#9900cd",
     "#8dd3c7",
     "#bebada",
-]
+    "#fb8072",
+    "#80b1d3",
+    "#fdb462",
+    "#b3de69",
+    "#fccde5",
+    "#bc80bd",
+    "#ccebc5",
+    "#ffed6f",
+    "#ffffb3",
+    "#a6cee3",
+    "#1f78b4",
+    "#b2df8a",
+    "#33a02c",
+    "#fb9a99",
+    "#e31a1c",
+    "#fdbf6f",
+    "#ff7f00",
+    "#cab2d6",
+    "#6a3d9a",
+    "#b15928",
+    "#64ffda",
+    "#00b8d4",
+    "#a1887f",
+    "#76ff03",
+    "#dce775",
+    "#b388ff",
+    "#ff80ab",
+    "#d81b60",
+    "#26a69a",
+    "#ffea00",
+    "#6200ea",
+)
+LABEL_STYLE = {
+    "color": "white",
+    "fontsize": 16,
+    "fontweight": "bold",
+    "path_effects": [path_effects.withStroke(linewidth=2.5, foreground="black")],
+}
 
 
 def gerrymandria_setup():
@@ -64,27 +102,81 @@ def run_gerrymandria(region_surcharge, steps, seed):
     return partition.graph, [state.assignment for state in chain]
 
 
-def assignment_image(graph, assignment):
+def assignment_image(graph, assignment, show_labels=False):
     grid_size = int(len(assignment) ** 0.5)
     grid = np.empty((grid_size, grid_size))
-    for node, district in assignment.items():
-        grid[graph.node_data(node)["y"], graph.node_data(node)["x"]] = district
+    labels = sorted(set(assignment.values()), key=int)
+    color_index = {label: index for index, label in enumerate(labels)}
+    for node, label in assignment.items():
+        grid[graph.node_data(node)["y"], graph.node_data(node)["x"]] = color_index[label]
 
     fig, ax = plt.subplots(figsize=(8, 8))
-    ax.imshow(grid, cmap=ListedColormap(DISTRICTR_COLORS), vmin=0.5, vmax=8.5)
+    ax.imshow(
+        grid,
+        cmap=ListedColormap(DISTRICTR_COLORS[: len(labels)]),
+        vmin=-0.5,
+        vmax=len(labels) - 0.5,
+    )
     ax.set_xticks(np.arange(-0.5, grid_size, 1), minor=True)
     ax.set_yticks(np.arange(-0.5, grid_size, 1), minor=True)
     ax.grid(which="minor", color="black", linewidth=1)
     ax.set_xticklabels([])
     ax.set_yticklabels([])
     ax.tick_params(which="both", bottom=False, left=False)
+    if show_labels:
+        for node, label in assignment.items():
+            data = graph.node_data(node)
+            ax.text(
+                data["x"],
+                data["y"],
+                str(label),
+                ha="center",
+                va="center",
+                **LABEL_STYLE,
+            )
 
     buffer = BytesIO()
-    fig.savefig(buffer, format="png")
+    fig.savefig(buffer, format="png", bbox_inches="tight", pad_inches=0)
     plt.close(fig)
     buffer.seek(0)
     with Image.open(buffer) as image:
         return image.copy()
+
+
+def save_district_dual_graph(graph):
+    assignment = {node: graph.node_data(node)["district"] for node in graph.nodes}
+    labels = sorted(set(assignment.values()), key=int)
+    color_index = {label: index for index, label in enumerate(labels)}
+    positions = {
+        node: (graph.node_data(node)["x"], -graph.node_data(node)["y"]) for node in graph.nodes
+    }
+
+    fig, ax = plt.subplots(figsize=(8, 8))
+    for node, neighbor in graph.edges:
+        x_values = (positions[node][0], positions[neighbor][0])
+        y_values = (positions[node][1], positions[neighbor][1])
+        ax.plot(x_values, y_values, color="black", linewidth=1, zorder=1)
+    ax.scatter(
+        [positions[node][0] for node in graph.nodes],
+        [positions[node][1] for node in graph.nodes],
+        c=[DISTRICTR_COLORS[color_index[assignment[node]]] for node in graph.nodes],
+        edgecolors="black",
+        s=1200,
+        zorder=2,
+    )
+    for node in graph.nodes:
+        ax.text(
+            *positions[node],
+            assignment[node],
+            ha="center",
+            va="center",
+            zorder=3,
+            **LABEL_STYLE,
+        )
+    ax.set_aspect("equal")
+    ax.axis("off")
+    fig.savefig(IMAGES / "gerrymandria_district.png", bbox_inches="tight", pad_inches=0)
+    plt.close(fig)
 
 
 def save_ensemble(graph, assignments, gif_name, png_name=None):
@@ -102,16 +194,26 @@ def save_ensemble(graph, assignments, gif_name, png_name=None):
 
 def regenerate_gerrymandria():
     graph, assignments = run_gerrymandria(None, 40, 2024)
-    save_ensemble(graph, assignments, "gerrymandria_ensemble.gif")
+    for filename, attribute in (
+        ("gerrymandria.png", "district"),
+        ("gerrymandria_cities.png", "muni"),
+        ("gerrymandria_county.png", "county"),
+        ("gerrymandria_water.png", "water_dist"),
+    ):
+        assignment = {node: graph.node_data(node)[attribute] for node in graph.nodes}
+        assignment_image(graph, assignment, show_labels=True).save(IMAGES / filename)
+    save_district_dual_graph(graph)
+
+    save_ensemble(graph, assignments, "gerrymandria_grid_ensemble.gif")
 
     graph, assignments = run_gerrymandria({"muni": 0.5}, 40, 2025)
-    save_ensemble(graph, assignments, "gerrymandria_region_ensemble.gif")
+    save_ensemble(graph, assignments, "gerrymandria_region_grid_ensemble.gif")
 
     graph, assignments = run_gerrymandria({"muni": 0.2, "water_dist": 0.8}, 200, 2026)
     save_ensemble(
         graph,
         assignments[-40:],
-        "gerrymandria_water_muni_ensemble.gif",
+        "gerrymandria_water_muni_grid_ensemble.gif",
         "gerrymandria_water_and_muni_aware.png",
     )
 

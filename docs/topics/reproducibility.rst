@@ -31,8 +31,8 @@ ownership boundaries:
     chain = MarkovChain(..., initial_state=initial_partition, rng=rng)
 
 The chain passes its RNG to proposals, acceptance functions, and tree algorithms. Interleaved
-chains therefore keep separate streams (this second point is probably on only important for those 
-making custom parallel-tempering chains).
+chains therefore keep separate streams, which is mainly relevant for custom parallel-tempering
+chains.
 
 An integer seed starts a new stream each time a standalone function is called. For a sequence of
 standalone operations (creating an initial partition followed by running a chain), create one 

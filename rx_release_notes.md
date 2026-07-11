@@ -17,25 +17,25 @@ Consequences for users:
   standalone stochastic tree calls. `SingleMetricOptimizer` and `Gingleator` also accept `rng`.
 - Every chain owns its RNG and passes it explicitly through proposals, acceptance functions, and
   tree algorithms.
-- Custom proposals and acceptance functions must accept the chain's RNG as a keyword-only `rng`
+- Custom proposals and acceptance functions must accept the chain's RNG as an `rng` keyword
   argument. Custom spanning-tree, balanced-cut, cut-choice, and random-assignment callbacks receive
   the same argument.
 - `PYTHONHASHSEED` no longer needs to be pinned for reproducibility. The set-iteration orders that
-  used to leak string-hash randomization into trajectories are now sorted (or otherwise
-  deterministic) before use. This was thoroughly checked to make sure that the new deterministic
-  behavior had no affect on the stationary distribution of the chain.
-- `rootnode_choice_fn` / `cut_choice_fn` parameters now default to `None` (resolved to the
-  explicitly supplied RNG's `choice`) instead of `random.choice`.
+  used to leak string-hash randomization into trajectories are now made deterministic before use.
+- `rootnode_choice_fn` parameters now default to `None` and resolve to the supplied RNG's `choice`
+  instead of `random.choice`. `bipartition_tree` retains its region-preferred cut chooser;
+  `bipartition_tree_random_with_num_cuts` resolves its cut chooser to the supplied RNG's `choice`.
+- `node_repeats` now defaults to 0, so an unsuccessful exhaustive search redraws the spanning tree
+  immediately. It counts additional roots on the same tree. Positive values are useful with the
+  contraction finder or a custom cut-edge finder, but GerryChain warns when they are combined with
+  the exhaustive memoized finder.
 
 ====================================================
 
 TODO:
 
-- Git delete rx_release_nodes.md (nodes instead of notes)
 - If I move files out of tree.py into new files, we should make sure
   that is mentioned up top of this file.
-- Say that the "method" param that identified which bipartition_tree() function
-  to use has been renamed to be "bipartition_tree_fn"
 - Tell folks about splitting up tree.py into a directory with files under it.
 - Tell folks that we deleted bipartition_tree_random() - they should just use bipartition_tree()
 - ?

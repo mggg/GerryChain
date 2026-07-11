@@ -133,7 +133,6 @@ have previously:
         pop_col="TOTPOP",
         pop_target=ideal_population,
         epsilon=0.01,
-        node_repeats=2,
     )
 
     recom_chain = MarkovChain(
@@ -236,8 +235,7 @@ and our dataframe has collected all of the data we were interested in:
 
 
 
-.. [1] The ``perimeter`` and ``area`` attributes are actually not present in the 
-  MN_precincts.geojson file, but the ``GeographicPartition`` class will calculate
-  them at instantiation time using the geometries provided in the file.
+.. [1] The ``area`` attribute is added when the graph is built from the GeoDataFrame. The
+  ``perimeter`` updater computes district perimeters from the graph's geometries.
 .. [2] The Poslby-Popper test is a part of ``gerrychain``'s ``metrics`` submodule
   as well.

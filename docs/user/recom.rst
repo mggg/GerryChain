@@ -2,6 +2,11 @@
 Running a chain with ReCom
 ==========================
 
+.. image:: ./images/gerrychain_demo.gif
+    :width: 400px
+    :align: center
+    :alt: A GerryMandria ReCom chain changing one district plan into another
+
 Our goal now is to get a handle on using GerryChain to run Markov chains with
 both regular and region-aware settings. Throughout this guide, we'll use the
 toy state of GerryMandria, which has needs to be divided into 8 districts.
@@ -19,8 +24,9 @@ which has corresponding dual graph given by:
     :width: 400px
     :align: center
 
-``gerrychain`` works primarily with the dual graph of the districting plan, so
-all of the pictures in this guide will use the dual graph as well.
+``gerrychain`` works primarily with the dual graph of the districting plan. The
+remaining maps use the equivalent grid layout so that the changing districts
+and the regions they intersect are easier to compare.
 
 A Simple Recom Chain
 ====================
@@ -67,7 +73,7 @@ And we make the proposal:
 
 .. code-block:: python
 
-    # This should be 8 since each district has 1 person in it.
+    # This should be 8 since each node has population 1 and each district has 8 nodes.
     # Note that the key "population" corresponds to the population updater
     # that we defined above and not with the population column in the json file.
     ideal_population = sum(initial_partition["population"].values()) / len(initial_partition)
@@ -76,7 +82,6 @@ And we make the proposal:
         pop_col="TOTPOP",
         pop_target=ideal_population,
         epsilon=0.01,
-        node_repeats=2
     )
 
 We can now set up the chain:
@@ -115,8 +120,14 @@ recom works.
     import matplotlib.pyplot as plt
     import math   
     import io     
+    from matplotlib.colors import ListedColormap
     from PIL import Image
     from IPython.display import display, clear_output
+
+    DISTRICTR_COLORS = [
+        "#0099cd", "#ffca5d", "#00cd99", "#99cd00",
+        "#cd0099", "#9900cd", "#8dd3c7", "#bebada",
+    ]
 
     # Define a function to "plot" a GerryChain assignment but as an image
     # to be displayed later.
@@ -136,11 +147,11 @@ recom works.
         for node_id, district_id in this_assignment.items():
             x_pos = graph.node_data(node_id)['x']
             y_pos = graph.node_data(node_id)['y']
-            grid_pos = (x_pos, y_pos)
+            grid_pos = (y_pos, x_pos)
             grid[grid_pos] = district_id
 
         fig, ax = plt.subplots(figsize=(grid_size+1, grid_size+1))
-        im = ax.imshow(grid, cmap='viridis')
+        im = ax.imshow(grid, cmap=ListedColormap(DISTRICTR_COLORS))
 
         ax.set_xticks(np.arange(-0.5, grid_size, 1), minor=True)
         ax.set_yticks(np.arange(-0.5, grid_size, 1), minor=True)
@@ -177,103 +188,99 @@ like nothing happened.
 
 .. code-block:: python
 
-    %matplotlib inline
-    import matplotlib_inline.backend_inline
-    import matplotlib.cm as mcm
-    import matplotlib.pyplot as plt
-    import networkx as nx
-    from PIL import Image
-    import io
+    from io import BytesIO
+
     import ipywidgets as widgets
-    import ipywidgets as widgets
-    from IPython.display import display, clear_output
+    from IPython.display import display
+
+
+    def image_to_png(image):
+        """Convert a Pillow image into the PNG bytes expected by widgets.Image."""
+        # BytesIO acts like an in-memory file, avoiding temporary image files.
+        with BytesIO() as buffer:
+            image.save(buffer, format="PNG")
+            return buffer.getvalue()
 
 
     def create_assignment_images(assignment_list):
+        """Render each district assignment once and store it as PNG bytes."""
+        # Pre-rendering makes moving between plans faster and reduces flickering.
+        return [
+            image_to_png(plot_assignment_to_image(assignment))
+            for assignment in assignment_list
+        ]
 
-        image_list = []
-        
-        for i in range(len(assignment_list)):
-            image_list.append(
-                plot_assignment_to_image(assignment_list[i])
-            )
-
-        return image_list
-
-    # frm: TODO: Peter: Please feel free to change this code!!!
-    # 
-    # I found it on the web and hacked it until it worked for this case,
-    # but I am sure there are more elegant ways to do this.  
-    #
-    # What I was trying to do was make it easier for the user to understand
-    # what was going on with recom - the nodes and edges presentation was
-    # vidually noisy, and the slider was awkward - so I went with just a 
-    # colored grid with forward and back buttons.
-    #
-    # Note that this made it obvious that sometimes recom doesn't change the 
-    # state of the plan, so I added some verbiage to explain why that might 
-    # be the case.
 
     def create_assignment_viewer(image_list):
-        """
-        Creates and displays an interactive image viewer with Back and Forward buttons.
-        
-        Parameters:
-        - image_list (list): A list of local images.
-        """
-        num_images = len(image_list)
-        first_image_index = 0
-        last_image_index = num_images - 1
+        """Display controls for moving forward and backward through district plans."""
+        if not image_list:
+            raise ValueError("image_list must contain at least one image")
 
-        # Track the index locally inside the function scope
-        state = {'current_index': 0}
-
-        # Create UI components
-        output_widget = widgets.Output()
-        button_back = widgets.Button(description="◀ Back", button_style='primary')
-        button_forward = widgets.Button(description="Forward ▶", button_style='primary')
-
-        def update_image():
-            with output_widget:
-                output_widget.clear_output(wait=True)
-                idx = state['current_index']
-                
-                # Show current step indicator
-                print(f"\nDistrict Plan (assignment) {idx + 1} of {len(image_list)}")
-                
-                # Update button states
-                button_back.disabled = (state['current_index'] == first_image_index)
-                button_forward.disabled = (state['current_index'] == last_image_index)
-
-                # Display the actual image file
-                display(image_list[idx])
-
-        def on_back_click(b):
-            if state['current_index'] > 0:
-                state['current_index'] -= 1
-                update_image()
-
-        def on_forward_click(b):
-            if state['current_index'] < len(image_list) - 1:
-                state['current_index'] += 1
-                update_image()
-
-        # Bind click events
-        button_back.on_click(on_back_click)
-        button_forward.on_click(on_forward_click)
-
-        # Render layout layout and initialize first image
-        controls = widgets.HBox([button_back, button_forward])
-        v_box_layout = widgets.Layout(
-            display='flex',
-            flex_flow='column',
-            align_items='center', # This aligns items along the cross-axis (horizontally)
-            width='50%'
+        # This slider stores the current image index. It is not displayed directly,
+        # but changing its value provides one shared way to update the viewer.
+        step = widgets.IntSlider(
+            value=0,
+            min=0,
+            max=len(image_list) - 1,
+            continuous_update=False,
+            readout=False,
         )
-        viewer_layout = widgets.VBox([output_widget, controls], layout = v_box_layout)
-        display(viewer_layout)
-        
-        update_image()
+
+        # Mount the widgets
+        label = widgets.HTML()
+        image = widgets.Image(
+            value=image_list[0],
+            format="png",
+            layout=widgets.Layout(width="100%"),
+        )
+
+        back = widgets.Button(
+            description="◀ Back",
+            button_style="primary",
+        )
+        forward = widgets.Button(
+            description="Forward ▶",
+            button_style="primary",
+        )
+
+        def update(change=None):
+            """Update the displayed image and its step counter."""
+            index = step.value
+            image.value = image_list[index]
+            label.value = (
+                f"<b>District Plan {index + 1} of {len(image_list)}</b>"
+            )
+
+        def go_back(button):
+            # The modulo operation wraps from the first plan to the last plan.
+            step.value = (step.value - 1) % len(image_list)
+
+        def go_forward(button):
+            # Likewise, moving forward from the last plan returns to the first.
+            step.value = (step.value + 1) % len(image_list)
+
+        # Button clicks change the step. The observer then calls update().
+        back.on_click(go_back)
+        forward.on_click(go_forward)
+        step.observe(update, names="value")
+
+        # Arrange the label and image vertically, with the buttons side by side.
+        viewer = widgets.VBox(
+            [
+                label,
+                image,
+                widgets.HBox([back, forward]),
+            ],
+            layout=widgets.Layout(
+                align_items="center",
+                width="50%",
+            ),
+        )
+
+        # Populate the widgets with the first image before displaying them.
+        update()
+        display(viewer)
+
 
 .. code-block:: python
 
@@ -284,25 +291,15 @@ like nothing happened.
 And this should generate a little widget that you can move through to see the chain
 in action! Here is a gif of what it should look like:
 
-frm: TODO: Clarity...  Explain why the plot might not change every iteration.
-Ideally the user would be able to step through the chain in his/her own time with
-a forward and back button - because it is actually disorienting to have the gif
-go at its own pace.  If you allowed the user to go forward and back with buttons, however,
-they would notice that sometimes the plot does not change and this might make them 
-wonder what is going on.  The answer is that recom works by 1) randomly choosing which
-adjacent districts to merge and then 2) randomly picking a way to split them.  This 
-means that the code might split the merged districts exactly the way they were split 
-before the merge - in which case it would appear that nothing happened.
 
-I would ague that this is in fact a bug in the code - at least from a statistical POV 
-because you want to explore all possible plans and this will give you the same plan over 
-and over sometimes (if there are few ways to split a given combined region).  Perhaps this
-could be solved by removing duplicates after a run...
-
-
-.. image:: ./images/gerrymandria_ensemble.gif
+.. image:: ./images/gerrymandria_grid_ensemble.gif
     :width: 400px
     :align: center
+
+The plan may stay unchanged at some steps. ReCom can reconstruct the same split after merging two
+districts, and constraints or the acceptance function can also produce a self-loop. These repeated
+states are part of the Markov chain and can carry statistical importance, so they should generally
+not be removed from the ensemble.
 
 
 Region-Aware ReCom
@@ -331,8 +328,7 @@ edges within the municipalities.
         pop_col="TOTPOP",
         pop_target=ideal_population,
         epsilon=0.01,
-        node_repeats=2,
-        region_surcharge={"muni": 1.0},
+        region_surcharge={"muni": 0.5},
     )
     
     recom_chain = MarkovChain(
@@ -340,7 +336,8 @@ edges within the municipalities.
         constraints=[contiguous],
         accept=accept.always_accept,
         initial_state=initial_partition,
-        total_steps=40
+        total_steps=40,
+        rng=2025,
     )
 
     assignment_list = []
@@ -355,23 +352,9 @@ And then plot them
     assignment_images = create_assignment_images(assignment_list)
     create_assignment_viewer(assignment_images)
 
-    # frm: TODO: Think about whether code is now fragile.  This blew up once in a couple of runs
-    #
-    # In editing this block of code, I ran it several times in Jupyter Lab and one of those times
-    # the code blew up saying it could not find a solution.  This has been happening a lot and 
-    # I am worried that perhaps the RX version of GerryChain is somehow more fragile than the one
-    # before, but maybe the tests and the tutorial code was always fragile and just happened
-    # to pick initial conditions (python hash environment variable, random.seed(), etc.) that 
-    # did not blow up.
-    #
-    # In any event, I think the tutorial should have a section on the warning and the exception
-    # that are triggered when it can't find a solution - explain why and then what the user
-    # should do - with changing random.seed as the first thing...
-
-
 And this will produce the following ensemble:
 
-.. image:: ./images/gerrymandria_region_ensemble.gif
+.. image:: ./images/gerrymandria_region_grid_ensemble.gif
     :width: 400px
     :align: center
 
@@ -397,7 +380,6 @@ this only requires for us to edit the ``region_surcharge`` parameter of the prop
         pop_col="TOTPOP",
         pop_target=ideal_population,
         epsilon=0.01,
-        node_repeats=2,
         region_surcharge={"muni": 0.2, "water_dist": 0.8},
     )
 
@@ -411,7 +393,8 @@ also increase the length of our chain to make sure that we have time to mix prop
         constraints=[contiguous],
         accept=accept.always_accept,
         initial_state=initial_partition,
-        total_steps=10000
+        total_steps=200,
+        rng=2026,
     )
 
     assignment_list = []
@@ -425,17 +408,16 @@ And plot the last 40 assignments.
 
 .. code-block:: python
 
-    assignments_to_plot = assignment_list[9960:9999]
+    assignments_to_plot = assignment_list[-40:]
     assignment_images = create_assignment_images(assignments_to_plot)
     create_assignment_viewer(assignment_images)
 
-frm: TODO: Why did we run this 10,000 times?
-It might be nice to tell the user why we decided to run this 10,000 times 
-instead of the 40 from before.  For instance, in the real world, how would
-a user decide how many iterations to run in order to get a "reasonable"
-ensemble of district plans?
+Taking the last 40 states reduces the visible influence of the initial plan and allows us to see
+the effect of the surcharges on the preservation of the municipalities and water districts. Since
+this graph is small, 200 steps is enough to show the effects, but a real statistical analysis would
+require a much longer chain.
 
-.. image:: ./images/gerrymandria_water_muni_ensemble.gif
+.. image:: ./images/gerrymandria_water_muni_grid_ensemble.gif
     :width: 400px
     :align: center
 
@@ -447,17 +429,12 @@ while also being sensitive to the municipalities
     :width: 400px
     :align: center
 
-    The last map in the ensemble from the 10000 step region-aware ReCom chain with
+    The last map in the ensemble from the 200-step region-aware ReCom chain with
     surcharges of 0.2 for the municipalities and 0.8 for the water districts.
-
-frm: TODO: Need to update ALL of the gifs...  *sigh*  Note that we need to update
-them for two reasons: 1) the assignments are almost certainly different after 
-the RX code changes but also because 2) they should probably be in the block 
-color format - instead of the dual graph format.
 
 .. raw:: html
 
-   <div style="display: flex; justify-content: space-around;">
+   <div style="display: flex; justify-content: space-around; gap: 1rem;">
        <figure style="text-align: center;">
            <img src="../../_images/gerrymandria_cities.png" style="width: 100%;">
            <figcaption><em>Municipalities of Gerrymandria</em></figcaption>
@@ -476,7 +453,7 @@ When working with region-aware ReCom chains, it is worth knowing how the spannin
 of the dual graph is being split. Weights from the interval :math:`[0,1]` are randomly
 assigned to the edges of the graph and then the surcharges are applied to the edges in
 the graph that span different regions specified by the ``region_surcharge`` dictionary.
-So if we have ``region_surcharge={"muni": 0.2, "water": 0.8}``, then the edges that
+So if we have ``region_surcharge={"muni": 0.2, "water_dist": 0.8}``, then the edges that
 span different municipalities will be upweighted by 0.2 and the edges that span different
 water districts will be upweighted by 0.8. We then draw a minimum spanning tree using
 by greedily selecting the lowest-weight edges via Kruskal's algorithm. The surcharges on
@@ -488,7 +465,7 @@ attached to a bridge node. Thus, when we make a cut, the regions attached to the
 bridge node are more likely to be (mostly) preserved in the subtree on either side
 of the cut.
 
-In the implementation of :meth:`~gerrychain.tree.biparition_tree` we further bias this
+In the implementation of :meth:`~gerrychain.tree.bipartition_tree` we further bias this
 choice by deterministically cutting bridge edges first (when possible). In the event that
 multiple types of regions are specified, the surcharges are added together, and edges are
 selected first by the number of types of regions that they span, and then by the
@@ -504,10 +481,10 @@ would be cut first (total weight of 7), and then edges which bridge regions, "b"
 - ("b")
 - ("c")
 - ("a")
-- random
+- the maximum-weight fallback
 
 In the event that this is not the desired behaviour, for instance, if the user 
-would like to pick an edge at random, then the user can alter the ``cut_choice`` 
+would like to pick an edge at random, then the user can alter the ``cut_choice_fn``
 function used by the bipartition_tree_fn which will
 tell the bipartition_tree_fn to use a criteria for picking which 
 edge to cut which is different from the default described above.  
@@ -515,15 +492,21 @@ edge to cut which is different from the default described above.
 Because the build_recom_proposal_fn expects a function reference for the 
 value of its "bipartition_tree_fn", we need to create a new function 
 using Python's ``functools.partial()`` that will bind the cut_choice_fn to
-be used by the bipartition_tree_fn as follows - in this case to ``random.choice()``:
+be used by the bipartition_tree_fn. GerryChain supplies the chain-owned RNG automatically:
 
 .. code-block:: python
 
     from gerrychain.tree import bipartition_tree
+    from functools import partial
+
+    def choose_random_cut(cuts, *, rng):
+        """Choose one balanced cut uniformly at random."""
+        return rng.choice(cuts)
+
 
     my_new_bipartition_tree_fn = partial(
         bipartition_tree,
-        cut_choice_fn = random.choice,
+        cut_choice_fn=choose_random_cut,
     )
 
 For those of you for whom ``functools.partial()`` is a new concept:
@@ -567,31 +550,20 @@ And we can then build our proposal as follows:
         pop_col="TOTPOP",
         pop_target=ideal_population,
         epsilon=0.01,
-        node_repeats=1,
         region_surcharge={
-            "muni": 2.0,
-            "water_dist": 2.0
+            "muni": 0.2,
+            "water_dist": 0.8,
         },
-        bipartition_tree_fn = my_new_bipartition_tree_fn
-        # bipartition_tree_fn = partial(
-        #     bipartition_tree,
-        #     cut_choice_fn = random.choice,
-        # )
+        bipartition_tree_fn=my_new_bipartition_tree_fn,
     )
-
-    # frm: TODO: Package up code below into a function to avoid the noise
-    #
-    # function should take as args, the proposal, number of steps, number of frames
-    # and return the list of frames...
-    #
-    # Then go back and add this function and the display() to each my_proposal_N example
 
     recom_chain = MarkovChain(
         proposal=my_proposal_4,
         constraints=[contiguous],
         accept=accept.always_accept,
         initial_state=initial_partition,
-        total_steps=10000
+        total_steps=200,
+        rng=2027,
     )
 
     assignment_list = []
@@ -605,43 +577,15 @@ And plot the last 40 assignments.
 
 .. code-block:: python
 
-    assignments_to_plot = assignment_list[9960:9999]
+    assignments_to_plot = assignment_list[-40:]
     assignment_images = create_assignment_images(assignments_to_plot)
     create_assignment_viewer(assignment_images)
 
-frm: TODO: The code above is problematic for a couple of reasons.  The
-first is that it blew up several times saying it could not find a solution
-in 10,000 tries before finally succeeding.  The second is that the district
-plans created are all simple rectangles - which seems like a bad outcome,
-but which certainly requires some explanation.  Note that this observation
-came from having the block/color forward/back output that made it clear
-what was being created...
-
-**Note**: When ``region_surcharge`` is not specified, ``bipartition_tree`` will behave as if
-``cut_choice_fn`` were a uniform random choice among the balanced cuts.
-
-
-.. .. attention::
-
-..   The ``region_surcharge`` parameter is a dictionary that assigns a surcharge to each
-..   edge within a particular region that is determined by the keys of the dictionary.
-..   In the event that multiple regions are specified, the surcharges are added together,
-..   and if the surcharges add to more than 1, then the following warning will be printed 
-..   to the user:
-
-..   .. code-block:: console
-    
-..     ValueWarning: 
-..     The sum of the surcharges in the surcharge dictionary is greater than 1.
-..     Please consider normalizing the surcharges.
-
-..   It is generally inadvisable to set the surcharge of a region to 1 or more. When
-..   using :meth:`~gerrychain.proposals.recom` with a ``region_surcharge``, the proposal
-..   will try to draw a minimum spanning tree using Kruskal's algorithm where,
-..   the surcharges are in the range :math:`[0,1]`, then the surcharges from the surcharge
-..   dictionary are added to them. In the event that
-..   many edges within the tree have a surcharge above 1, then it can sometimes
-..   cause the bipartitioning step to stall.
+Surcharges should be interpreted relative to the base random edge weights in :math:`[0,1)`.
+Since the standard ``random()`` method of Python's built-in ``random`` module outputs
+values in :math:`[0,1)`, surcharges closer to 1 will have a stronger effect on region preservation
+compared to surcharges closer to 0. Surcharges above 1 are allowed (as shown below), but they do 
+not have any stronger effect than a surcharge of 1.
 
 
 What to do if the Chain Gets Stuck
@@ -682,15 +626,15 @@ district, then the chain will get stuck and throw an error. Here is the setup:
         pop_col="TOTPOP",
         pop_target=ideal_population,
         epsilon=0.01,
-        node_repeats=1,
         region_surcharge={
             "muni": 2.0,
-            "water_dist": 2.0
+            "water_dist": 2.0,
         },
-        bipartition_tree_fn = partial(
-            bipartition_tree, 
+        bipartition_tree_fn=partial(
+            bipartition_tree,
             max_attempts=100,
-        )
+            warn_attempts=50,
+        ),
     )
 
     recom_chain = MarkovChain(
@@ -699,152 +643,50 @@ district, then the chain will get stuck and throw an error. Here is the setup:
         accept=accept.always_accept,
         initial_state=initial_partition,
         total_steps=20,
-        rng=5,
+        rng=0,
     )
 
     assignment_list = []
-
-    for i, item in enumerate(recom_chain):
-        print(f"Finished step {i + 1}/{len(recom_chain)}", end="\r")
+    for item in recom_chain:
         assignment_list.append(item.assignment)
 
-This will output the following sequence of warnings and errors
-
-frm: TODO  The current RX code emits the runtime error but not the BiipartitionWarnig...
-I am now laughing in an ironic way, because since the time I wrote the sentence above
-and now, the code has stopped generating ANY warning.  It just worked and did all
-20 steps.  WTF!!!
+This deterministic example emits a warning and then raises an error:
 
 .. code-block:: console
 
-    BipartitionWarning: 
+    BipartitionWarning:
     Failed to find a balanced cut after 50 attempts.
-    If possible, consider enabling pair reselection within your
-    MarkovChain proposal method to allow the algorithm to select
-    a different pair of nodes to try an recombine.
 
     RuntimeError: Could not find a possible cut after 100 attempts.
 
-Let's break down what is happening in each of these:
+Here, ``max_attempts`` is the total number of balanced-cut searches for the selected pair of
+districts. ``node_repeats`` is the number of additional roots tried on each spanning tree, so a
+tree is searched ``node_repeats + 1`` times. With the default memoized cut finder, each search
+already examines every edge in the tree. Re-rooting cannot make an uncuttable tree cuttable, so
+the default ``node_repeats=0`` redraws immediately, and setting it above zero with the memoized 
+finder emits a warning. Positive values remain useful with the contraction finder or a custom 
+cut-edge finder whose result can depend on the root choice.
 
-.. raw:: html
 
-  <ul>
-    <li><strong>BipartitionWarning</strong>
-      This is telling us that somewhere along the way, 
-      we picked a pair of districts that were difficult to bipartition underneath
-      the constraints that we have imposed. More accurately, for the pair of districts
-      that we have selected to recombine, we have selected a root node for a spanning
-      tree, and we are trying to find a cut at some point along that tree that satisfies
-      all of the conditions. We have tried to draw a tree 50 times and have failed to
-      find a balanced cut of any of the trees starting from the selected root node.
-      This indicates that either we have selected a difficult node to start from,
-      or that the pair of districts we are considering is difficult
-      to split regardless of the choice of root node. 
-      If the problem is the choice of root node, we can fix it by increasing the 
-      <code style="color: #E74C3C;">node_repeats</code> parameter of the 
-      <code style="color: #E74C3C;">MarkovChain</code>. However, if the problem is
-      that the pair of districts themselves are difficult to split, then this can
-      generally only be fixed by allowing the chain to reselect the pair of districts
-      that it is trying to split.
-    </li>
-    <br style="line-height: 5px;">
-    <li><strong>RuntimeError</strong>
-        This is telling us that we have tried to draw a tree 10000 times for each
-        node that we have selected, and that we failed to find a valid cut in all
-        of them. This is a pretty strong indication that the pair of districts that 
-        we are trying to split is just too difficult to split and that we need to
-        enable reselection.
-    </li>
-  </ul>
-
-Okay, let's see if we can fix this. First, we'll try to increase the number of
-node repeats:
+The hard regional surcharges can still make a particular district pair difficult to split. Pair
+reselection lets ReCom try another adjacent pair after exhausting the budget:
 
 .. code-block:: python
-
-    graph = Graph.from_json("./gerrymandria.json")
-
-    my_updaters = {
-        "population": updaters.Tally("TOTPOP"),
-        "cut_edges": updaters.cut_edges
-    }
-
-    initial_partition = Partition(
-        graph,
-        assignment="district",
-        updaters=my_updaters
-    )
-
-    ideal_population = sum(initial_partition["population"].values()) / len(initial_partition)
-
-    my_proposal_6 = build_recom_proposal_fn(
-        pop_col="TOTPOP",
-        pop_target=ideal_population,
-        epsilon=0.01,
-        node_repeats=100,                # <-- This is the only change
-        region_surcharge={
-            "muni": 2.0,
-            "water_dist": 2.0
-        },
-        bipartition_tree_fn = partial(
-            bipartition_tree,
-            max_attempts=100,
-        )
-    )
-
-    recom_chain = MarkovChain(
-        proposal=my_proposal_6,
-        constraints=[contiguous],
-        accept=accept.always_accept,
-        initial_state=initial_partition,
-        total_steps=20,
-        rng=5,
-    )
-
-    assignment_list = []
-
-    for i, item in enumerate(recom_chain):
-        print(f"Finished step {i + 1}/{len(recom_chain)}", end="\r")
-        assignment_list.append(item.assignment)
-
-frm: TODO: The code above now fails (as it is expected to do), even though 
-the previous version succeeded.  Again WTF???
-
-Running this code, we can see that we get stuck once again, so this was not the fix.
-Let's try to enable reselection instead:
-
-.. code-block:: python 
-
-    graph = Graph.from_json("./gerrymandria.json")
-
-    my_updaters = {
-        "population": updaters.Tally("TOTPOP"),
-        "cut_edges": updaters.cut_edges
-    }
-
-    initial_partition = Partition(
-        graph,
-        assignment="district",
-        updaters=my_updaters
-    )
-
-    ideal_population = sum(initial_partition["population"].values()) / len(initial_partition)
 
     my_proposal_7 = build_recom_proposal_fn(
         pop_col="TOTPOP",
         pop_target=ideal_population,
         epsilon=0.01,
-        node_repeats=1,
         region_surcharge={
             "muni": 2.0,
-            "water_dist": 2.0
+            "water_dist": 2.0,
         },
-        bipartition_tree_fn = partial(
+        bipartition_tree_fn=partial(
             bipartition_tree,
             max_attempts=100,
-            allow_pair_reselection=True  # <-- This is the only change
-        )
+            warn_attempts=50,
+            allow_pair_reselection=True,
+        ),
     )
 
     recom_chain = MarkovChain(
@@ -853,25 +695,18 @@ Let's try to enable reselection instead:
         accept=accept.always_accept,
         initial_state=initial_partition,
         total_steps=20,
-        rng=5,
+        rng=0,
     )
 
-    assignment_list = []
+    assignment_list = [item.assignment for item in recom_chain]
 
-    for i, item in enumerate(recom_chain):
-        print(f"Finished step {i + 1}/{len(recom_chain)}", end="\r")
-        assignment_list.append(item.assignment)
-
-And this time it works! 
-
-frm: TODO:  And indeed this works now (even though the first example worked when
-it was not supposed to...)
+This chain completes all 20 steps because it can move on from an unsuitable district pair.
 
 A Real-World Example
 ====================
 
-In this example, we'll use GerryChain to analyze the 2011 districting plan for
-Pennsylvania's state legislative districts. We'll compare the partisan vote
+In this example, we'll use GerryChain to analyze Pennsylvania's 2011 congressional districting
+plan. We'll compare the partisan vote
 shares in the 2011 plan to those in an ensemble of districting plans generated
 by our ReCom chain.
 
@@ -982,7 +817,6 @@ First we'll set up the ReCom proposal. To do this we will need to make use of th
         pop_col="TOT_POP",
         pop_target=ideal_population,
         epsilon=0.02,
-        node_repeats=2
     )
 
 Constraints
@@ -1037,7 +871,8 @@ Configuring the Markov chain
         ],
         accept=accept.always_accept,
         initial_state=initial_partition,
-        total_steps=1000
+        total_steps=1000,
+        rng=2024,
     )
 
 Running the chain
@@ -1100,12 +935,9 @@ Now we'll create a box plot to help visualize the data report.
 
 .. image:: ./images/recom_plot.svg
 
-frm: TODO:  The code did in fact create a plot, but the data shown in
-the plot was not identical to the data in the image shown in the 
-tutorial output.  This is concerning - why would the code produce a
-different output?  Is it OK that the output is different?  I would 
-think that a court of law might be surprised and a little untrustful
-of the data if it changed...
+The exact plot is reproducible when the input data, GerryChain version, configuration, and seed
+are all the same. Different seeds produce different valid random samples. This short chain is an
+illustration of the workflow, not evidence by itself for a legal or statistical conclusion.
 
 There you go! To build on this, here are some possible next steps:
 
