@@ -30,7 +30,7 @@ def initial_partition(graph):
 
 
 def make_recom_chain(graph, rng=None, total_steps=25):
-    proposal = partial(recom, pop_col="population", pop_target=50, epsilon=0.0, node_repeats=1)
+    proposal = partial(recom, pop_col="population", pop_target=50, epsilon=0.0)
     return MarkovChain(
         proposal, [contiguous], always_accept, initial_partition(graph), total_steps, rng=rng
     )
@@ -41,7 +41,7 @@ def trajectory(chain):
 
 
 def make_optimizer(graph, rng=None):
-    proposal = partial(recom, pop_col="population", pop_target=50, epsilon=0.0, node_repeats=1)
+    proposal = partial(recom, pop_col="population", pop_target=50, epsilon=0.0)
     return SingleMetricOptimizer(
         proposal=proposal,
         constraints=[contiguous],

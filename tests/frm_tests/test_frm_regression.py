@@ -29,7 +29,7 @@ initial_partition = Partition(graph, assignment="district", updaters=my_updaters
 ideal_population = sum(initial_partition["population"].values()) / len(initial_partition)
 
 proposal = build_recom_proposal_fn(
-    pop_col="TOTPOP", pop_target=ideal_population, epsilon=0.01, node_repeats=2
+    pop_col="TOTPOP", pop_target=ideal_population, epsilon=0.01
 )
 
 recom_chain = MarkovChain(

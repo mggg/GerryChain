@@ -32,6 +32,7 @@ from gerrychain.proposals import (
     slow_reversible_propose,
     slow_reversible_propose_bi,
 )
+from gerrychain.tree import random_spanning_tree, uniform_spanning_tree
 from gerrychain.updaters import Tally, cut_edges
 
 nx_graph = nx.grid_graph(dim=[5, 4])
@@ -52,7 +53,7 @@ def make_partition():
 
 proposals = {
     "flip": propose_random_flip,
-    "recom": partial(recom, pop_col="population", pop_target=50, epsilon=0.0, node_repeats=1),
+    "recom": partial(recom, pop_col="population", pop_target=50, epsilon=0.0),
     "slow_reversible": slow_reversible_propose,
     "slow_reversible_bi": slow_reversible_propose_bi,
 }
@@ -60,6 +61,48 @@ proposals = {
 for name, proposal in proposals.items():
     chain = MarkovChain(proposal, [contiguous], always_accept, make_partition(), 15, rng=2018)
     print(name, [sorted(part.assignment.mapping.items()) for part in chain])
+
+
+node_order = ["node-7", "node-2", "node-10", "node-0", "node-5", "node-1"]
+edges = [
+    ("node-7", "node-2"),
+    ("node-2", "node-10"),
+    ("node-10", "node-0"),
+    ("node-0", "node-5"),
+    ("node-5", "node-1"),
+    ("node-1", "node-7"),
+    ("node-2", "node-5"),
+]
+string_graph = nx.Graph()
+string_graph.add_nodes_from((node, {"population": 1}) for node in node_order)
+string_graph.add_edges_from(edges)
+
+
+def normalized_edges(tree):
+    return sorted(tuple(sorted(edge)) for edge in tree.edges)
+
+
+print("nodes", Graph.from_networkx(string_graph.copy()).nodes)
+print(
+    "initial",
+    sorted(
+        Partition.from_random_assignment(
+            Graph.from_networkx(string_graph.copy()),
+            n_parts=2,
+            epsilon=0,
+            pop_col="population",
+            rng=2024,
+        ).assignment.mapping.items()
+    ),
+)
+print(
+    "random_tree",
+    normalized_edges(random_spanning_tree(Graph.from_networkx(string_graph.copy()), rng=2024)),
+)
+print(
+    "uniform_tree",
+    normalized_edges(uniform_spanning_tree(Graph.from_networkx(string_graph.copy()), rng=2024)),
+)
 """
 
 
@@ -83,6 +126,35 @@ def test_trajectories_do_not_depend_on_pythonhashseed():
     baseline = run_with_hashseed("0")
     assert run_with_hashseed("42") == baseline
     assert run_with_hashseed(None) == baseline
+
+
+def test_random_assignment_method_receives_original_graph_and_node_labels():
+    import networkx as nx
+
+    from gerrychain import Graph, Partition
+
+    nx_graph = nx.path_graph(["node-c", "node-a", "node-b", "node-d"])
+    for node in nx_graph:
+        nx_graph.nodes[node]["population"] = 1
+    graph = Graph.from_networkx(nx_graph)
+    received = {}
+
+    def method(*, graph, parts, **kwargs):
+        received["graph"] = graph
+        received["nodes"] = graph.nodes
+        part_labels = list(parts)
+        return {node: part_labels[index % 2] for index, node in enumerate(graph.nodes)}
+
+    Partition.from_random_assignment(
+        graph,
+        n_parts=2,
+        epsilon=0,
+        pop_col="population",
+        method=method,
+        rng=2024,
+    )
+
+    assert received == {"graph": graph, "nodes": ["node-c", "node-a", "node-b", "node-d"]}
 
 
 def test_repeatable(three_by_three_grid):
@@ -161,7 +233,6 @@ def test_pa_freeze():
         pop_col="TOT_POP",
         pop_target=ideal_population,
         epsilon=0.02,
-        node_repeats=2,
     )
 
     pop_constraint = constraints.within_percent_of_ideal_population(initial_partition, 0.02)
@@ -185,5 +256,5 @@ def test_pa_freeze():
     # tests around. Captured with rng=2018; independent of PYTHONHASHSEED.
     assert (
         hashlib.sha256(result.encode()).hexdigest()
-        == "bc9314457189e903d5b8ff276bb577c06033956fb81a1cd7abd17a442c1c24b6"
+        == "9837b0f4dae11ec90310e5f230f5b28a47180265e17fd6b3e761048c26588104"
     )

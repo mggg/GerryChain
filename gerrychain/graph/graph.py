@@ -1136,11 +1136,9 @@ class Graph:
         """Return a ``list`` of all of the node_ids in the graph.
 
         This returns the same node_ids as :meth:`node_indices`, the difference being only the
-        container type: ``nodes`` returns an ordered, indexable ``list`` maintaining the graph
-        node order while ``node_indices`` returns an (unordered) ``set``. ``nodes`` exists mainly
-        because a lot of legacy code uses ``for n in graph.nodes`` to iterate, and it is
-        implemented by coercing ``node_indices`` to a list. Prefer :meth:`node_indices` unless you
-        specifically need list semantics (ordering or indexing).
+        container type: ``nodes`` returns an ordered, indexable ``list`` maintaining the backend's
+        node insertion order while ``node_indices`` returns an unordered ``set``. Prefer
+        :meth:`node_indices` unless you specifically need list semantics (ordering or indexing).
 
         Note the related distinction for edges: :meth:`edges` returns the edges themselves (tuples
         of node_ids), whereas :meth:`edge_indices` returns edge *ids* (integers under RustworkX).
@@ -1163,9 +1161,6 @@ class Graph:
 
         # Note: graph.nodes continues to exist because it was used often in legacy code.
         #
-        # All this routine does now is to coerce the set of nodes obtained by node_indices()
-        # to be a list.
-
         if self.is_rx_graph():
             # A list of integer node_ids
             return list(self._rx_graph.node_indices())

@@ -28,7 +28,7 @@ def main():
         pop_col="TOTPOP",
         pop_target=ideal_population,
         epsilon=0.01,
-        node_repeats=2,
+        node_repeats=0,
     )
 
     recom_chain = MarkovChain(

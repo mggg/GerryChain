@@ -68,7 +68,7 @@ def test_ginglator_needs_min_perc_or_min_pop_col(four_by_five_grid_for_opt):
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,
-        node_repeats=1,
+        node_repeats=0,
     )
 
     with pytest.raises(ValueError) as gingle_err:
@@ -109,7 +109,7 @@ def test_ginglator_warns_if_min_perc_and_min_pop_col_set(four_by_five_grid_for_o
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,
-        node_repeats=1,
+        node_repeats=0,
     )
 
     with pytest.warns() as record:
@@ -149,7 +149,7 @@ def test_gingleator_finds_best_partition(four_by_five_grid_for_opt):
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,
-        node_repeats=1,
+        node_repeats=0,
     )
 
     gingles = Gingleator(

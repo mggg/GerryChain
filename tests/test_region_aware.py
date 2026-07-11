@@ -43,7 +43,7 @@ def run_chain_single(seed, category, steps, surcharge, max_attempts=100000, rese
         pop_target=ideal_pop,
         epsilon=epsilon,
         region_surcharge=surcharges,
-        node_repeats=10,
+        node_repeats=0,
         bipartition_tree_fn=partial(
             tree.bipartition_tree,
             max_attempts=max_attempts,
@@ -172,7 +172,7 @@ def run_chain_dual(seed, steps, surcharges={"muni": 0.5, "county": 0.5}, warn_at
         pop_target=ideal_pop,
         epsilon=epsilon,
         region_surcharge=surcharges,
-        node_repeats=10,
+        node_repeats=0,
         bipartition_tree_fn=partial(
             tree.bipartition_tree,
             max_attempts=10000,

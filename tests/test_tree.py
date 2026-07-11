@@ -1,5 +1,7 @@
 # import functools
+import inspect
 import random
+import warnings
 from functools import partial
 
 import networkx
@@ -18,9 +20,12 @@ from gerrychain.partition.initial_partition_generators import get_max_prime_fact
 from gerrychain.proposals import (  # recom,; reversible_recom,
     build_recom_proposal_fn,
     build_reversible_recom_proposal_fn,
+    recom,
 )
+from gerrychain.proposals.tree_proposals import epsilon_tree_bipartition
 from gerrychain.tree import (
     bipartition_tree,
+    bipartition_tree_random_with_num_cuts,
     find_balanced_edge_cuts_contraction,
     find_balanced_edge_cuts_memoization,
     random_spanning_tree,
@@ -106,7 +111,7 @@ def twelve_by_twelve_with_pop_rx(twelve_by_twelve_with_pop_nx):
 
 def do_test_bipartition_tree_returns_a_subset_of_nodes(graph):
     ideal_pop = sum(graph.node_data(node)["pop"] for node in graph) / 2
-    result = bipartition_tree(graph, "pop", ideal_pop, 0.25, 10, rng=random.Random(2018))
+    result = bipartition_tree(graph, "pop", ideal_pop, 0.25, rng=random.Random(2018))
     assert isinstance(result, frozenset)
     assert all(node in graph.nodes for node in result)
 
@@ -117,13 +122,64 @@ def test_bipartition_tree_returns_a_subset_of_nodes(graph_with_pop_nx, graph_wit
     do_test_bipartition_tree_returns_a_subset_of_nodes(graph_with_pop_rx)
 
 
+def test_node_repeats_public_defaults_are_zero():
+    callables = [
+        recom,
+        build_recom_proposal_fn,
+        epsilon_tree_bipartition,
+        bipartition_tree,
+        bipartition_tree_random_with_num_cuts,
+        recursive_tree_part,
+        recursive_seed_part,
+    ]
+    assert all(inspect.signature(fn).parameters["node_repeats"].default == 0 for fn in callables)
+
+
+@pytest.mark.parametrize(
+    "cut_finder",
+    [find_balanced_edge_cuts_memoization, partial(find_balanced_edge_cuts_memoization)],
+)
+def test_node_repeats_warns_with_memoized_cut_finder(graph_with_pop_nx, cut_finder):
+    with pytest.warns(UserWarning, match="node_repeats is not beneficial"):
+        bipartition_tree(
+            graph_with_pop_nx,
+            pop_col="pop",
+            pop_target=4.5,
+            epsilon=0.25,
+            node_repeats=1,
+            find_balanced_edge_cuts_fn=cut_finder,
+            rng=2018,
+        )
+
+
+@pytest.mark.parametrize(
+    "cut_finder",
+    [
+        find_balanced_edge_cuts_contraction,
+        lambda *args, **kwargs: find_balanced_edge_cuts_memoization(*args, **kwargs),
+    ],
+)
+def test_node_repeats_does_not_warn_with_other_cut_finders(graph_with_pop_nx, cut_finder):
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", UserWarning)
+        bipartition_tree(
+            graph_with_pop_nx,
+            pop_col="pop",
+            pop_target=4.5,
+            epsilon=0.25,
+            node_repeats=1,
+            find_balanced_edge_cuts_fn=cut_finder,
+            rng=2018,
+        )
+
+
 # ---------------------------------------------------------------------
 
 
 def do_test_bipartition_tree_returns_within_epsilon_of_target_pop(graph):
     ideal_pop = sum(graph.node_data(node)["pop"] for node in graph) / 2
     epsilon = 0.25
-    result = bipartition_tree(graph, "pop", ideal_pop, epsilon, 10, rng=random.Random(2018))
+    result = bipartition_tree(graph, "pop", ideal_pop, epsilon, rng=random.Random(2018))
 
     part_pop = sum(graph.node_data(node)["pop"] for node in result)
     assert abs(part_pop - ideal_pop) / ideal_pop < epsilon
@@ -437,7 +493,7 @@ def do_test_bipartition_tree_returns_a_tree(graph, spanning_tree):
         "pop",
         ideal_pop,
         0.25,
-        10,
+        0,
         spanning_tree,
         rootnode_choice_fn=lambda nodes: nodes[0],
         rng=random.Random(2018),
@@ -562,9 +618,7 @@ def test_recom_works_as_a_proposal(partition_with_pop):
     graph = partition_with_pop.graph
     ideal_pop = sum(graph.node_data(node)["pop"] for node in graph) / 2
 
-    my_proposal = build_recom_proposal_fn(
-        pop_col="pop", pop_target=ideal_pop, epsilon=0.25, node_repeats=5
-    )
+    my_proposal = build_recom_proposal_fn(pop_col="pop", pop_target=ideal_pop, epsilon=0.25)
     constraints = [contiguous]
 
     chain = MarkovChain(

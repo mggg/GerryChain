@@ -1,12 +1,3 @@
-import random
-from typing import (
-    Dict,
-    Optional,
-)
-
-from .._rng import make_rng
-from ..graph import Graph
-
 """
 This module provides two implementation of spanning tree functions:
 uniform_spanning_tree() and random_spanning_tree().
@@ -77,6 +68,16 @@ Dependencies:
 
 """
 
+import random
+from typing import (
+    Dict,
+    Optional,
+)
+
+from .._rng import make_rng
+from ..graph import Graph
+
+
 """
 frm: RX Documentation:
 
@@ -89,6 +90,24 @@ graph is currently being dealt with.
 In short, I am assuming that we can ignore the fact that RX subgraphs have different
 node_ids for this function and all will be well...
 """
+
+
+# NOTE: When fixing the RNG seeding, I discovered that the order of the edges in the graph is
+# not stable when working with NX-backed graphs in (esp. when using
+# `Partition().from_random_assignment`, and so I added this function to yield the edges in a stable
+# order for the sake of reproducibility.
+def _ordered_edge_ids(graph: Graph):
+    """Yield stable edge ids without changing established RX trajectories."""
+    if graph.is_rx_graph():
+        yield from graph.edge_indices
+        return
+
+    visited = set()
+    for node in graph.nodes:
+        visited.add(node)
+        for neighbor in graph.neighbors(node):
+            if neighbor not in visited:
+                yield graph.get_edge_id_from_edge((node, neighbor))
 
 
 def random_spanning_tree(
@@ -220,10 +239,10 @@ def random_spanning_tree(
         # lookup entirely and just assign a random weight to every edge.  This
         # loop runs once per spanning tree, and chains with a tight population
         # tolerance draw many spanning trees per step, so this matters.
-        for edge_id in graph.edge_indices:
+        for edge_id in _ordered_edge_ids(graph):
             graph.edge_data(edge_id)["random_weight"] = rng.random()
     else:
-        for edge_id in graph.edge_indices:
+        for edge_id in _ordered_edge_ids(graph):
             edge = graph.get_edge_from_edge_id(edge_id)
             weight = rng.random()
 
@@ -294,13 +313,14 @@ def uniform_spanning_tree(
         raise ValueError("uniform_spanning_tree() region_surcharge paramter should be empty")
 
     # Pick a starting point at random
-    root_id = rng.choice(list(graph.node_indices))
+    nodes = graph.nodes if graph.is_nx_graph() else list(graph.node_indices)
+    root_id = rng.choice(nodes)
 
     # Initiallize the tree to contain the root_node (with no parent)
     tree_nodes = set([root_id])
     parent_node_id = {root_id: None}
 
-    for node_id in graph.node_indices:
+    for node_id in nodes:
         # Random walk (perhaps with cycles) that records the
         # last path taken before hitting a node already in
         # tree_nodes.  Note that recording the last path
@@ -320,8 +340,11 @@ def uniform_spanning_tree(
 
     graph_of_spanning_tree = Graph.from_null_networkx()
     nx_graph = graph_of_spanning_tree.get_nx_graph()
+    output_nodes = nodes if graph.is_nx_graph() else tree_nodes
+    if graph.is_nx_graph():
+        nx_graph.add_nodes_from(nodes)
 
-    for node_id in tree_nodes:
+    for node_id in output_nodes:
         if parent_node_id[node_id] is not None:
             # Add the nodes and the edge to the spanning_tree
             nx_graph.add_edge(node_id, parent_node_id[node_id])

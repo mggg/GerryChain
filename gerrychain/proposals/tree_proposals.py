@@ -49,24 +49,24 @@ def epsilon_tree_bipartition(
     pop_target: float | int,
     pop_col: str,
     epsilon: float,
-    node_repeats: int = 1,
+    node_repeats: int = 0,
     bipartition_tree_fn: Callable = partial(bipartition_tree, max_attempts=100000),
     *,
     rng: random.Random,
 ) -> dict:
-    """Bipartition a tree into two :math:`\varepsilon`-balanced parts.
+    """Bipartition a tree into two :math:`\\varepsilon`-balanced parts.
 
     Args:
-        graph (Graph): The graph to partition into two :math:`\varepsilon`-balanced parts.
+        graph (Graph): The graph to partition into two :math:`\\varepsilon`-balanced parts.
         parts (Sequence): Iterable of part (district) labels (like ``[0,1,2]`` or ``range(4)``).
         pop_target (Union[float, int]): Target population for each part of the partition.
         pop_col (str): Node attribute key holding population data.
         epsilon (float): How far (as a percentage of ``pop_target``) from ``pop_target`` the parts
             of the partition can be.
-        node_repeats (int, optional): Parameter for `gerrychain.tree.bipartition_tree` to
-            use. Defaults to 1.
+        node_repeats (int, optional): Additional roots to try on each spanning tree before
+            drawing a new tree. Defaults to 0.
         bipartition_tree_fn (Callable, optional): The partition method to use. Defaults to
-            `partial(bipartition_tree, max_attempts=100000)`.
+            ``partial(bipartition_tree, max_attempts=100000)``.
         rng (random.Random): The RNG supplied by the owning operation.
 
     Returns:
@@ -134,7 +134,7 @@ def recom(
     pop_col: str,
     pop_target: int | float,
     epsilon: float,
-    node_repeats: int = 1,
+    node_repeats: int = 0,
     region_surcharge: dict | None = None,
     bipartition_tree_fn: Callable = bipartition_tree,
     *,
@@ -159,9 +159,7 @@ def recom(
 
         # Ideal population: pop_target = sum(partition["population"].values()) / len(partition)
 
-        proposal = partial(
-            recom, pop_col="POP10", pop_target=pop_target, epsilon=.05, node_repeats=10
-        )
+        proposal = partial(recom, pop_col="POP10", pop_target=pop_target, epsilon=.05)
 
         chain = MarkovChain(proposal, constraints, accept, partition, total_steps)
 
@@ -171,8 +169,9 @@ def recom(
         pop_target (Union[int,float]): The target population for each district.
         epsilon (float): The epsilon value for population deviation as a percentage of the target
             population.
-        node_repeats (int, optional): The number of times to repeat the bipartitioning step.
-            Default is 1.
+        node_repeats (int, optional): Additional roots to try on each spanning tree before
+            drawing a new tree. Defaults to 0. Positive values are useful with contraction or
+            custom cut-edge finders, but not with the default memoized finder.
         region_surcharge (Optional[Dict], optional): The surcharge dictionary for the graph used
             for region-aware partitioning of the grid. Default is None.
         bipartition_tree_fn (Callable, optional): The method used for bipartitioning the tree.
@@ -263,7 +262,7 @@ def build_recom_proposal_fn(
     pop_col: str,
     pop_target: int | float,
     epsilon: float,
-    node_repeats: int = 1,
+    node_repeats: int = 0,
     region_surcharge: dict | None = None,
     bipartition_tree_fn: Callable = bipartition_tree,
 ) -> ProposalFn:

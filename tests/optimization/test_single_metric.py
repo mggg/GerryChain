@@ -37,7 +37,7 @@ def test_single_metric_sb_attains_min_quickly(four_by_five_grid_for_opt):
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,
-        node_repeats=1,
+        node_repeats=0,
     )
 
     optimizer = SingleMetricOptimizer(
@@ -84,7 +84,7 @@ def test_single_metric_tilted_sb_attains_min_quickly(four_by_five_grid_for_opt):
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,
-        node_repeats=1,
+        node_repeats=0,
     )
 
     optimizer = SingleMetricOptimizer(
@@ -132,7 +132,7 @@ def test_single_metric_variable_len_sb_attains_min_quickly(four_by_five_grid_for
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,
-        node_repeats=1,
+        node_repeats=0,
     )
 
     optimizer = SingleMetricOptimizer(
@@ -183,7 +183,7 @@ def test_single_metric_sa_jumpcycle_attains_min_quickly(four_by_five_grid_for_op
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,
-        node_repeats=1,
+        node_repeats=0,
     )
 
     optimizer = SingleMetricOptimizer(
@@ -230,7 +230,7 @@ def test_single_metric_sa_lincycle_attains_min_quickly(four_by_five_grid_for_opt
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,
-        node_repeats=1,
+        node_repeats=0,
     )
 
     optimizer = SingleMetricOptimizer(
@@ -278,7 +278,7 @@ def test_single_metric_sa_linear_jumpcycle_attains_min_quickly(
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,
-        node_repeats=1,
+        node_repeats=0,
     )
 
     optimizer = SingleMetricOptimizer(
@@ -324,7 +324,7 @@ def test_single_metric_sa_logitcycle_attains_min_quickly(four_by_five_grid_for_o
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,
-        node_repeats=1,
+        node_repeats=0,
     )
 
     optimizer = SingleMetricOptimizer(
@@ -372,7 +372,7 @@ def test_single_metric_sa_logit_jumpcycle_attains_min_quickly(
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,
-        node_repeats=1,
+        node_repeats=0,
     )
 
     optimizer = SingleMetricOptimizer(
@@ -425,7 +425,7 @@ def test_single_metric_tilted_runs_attains_min_quickly_with_p_eq_0p1(
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,
-        node_repeats=1,
+        node_repeats=0,
     )
 
     optimizer = SingleMetricOptimizer(
@@ -478,7 +478,7 @@ def test_single_metric_sb_finds_hard_max(four_by_five_grid_for_opt):
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,
-        node_repeats=1,
+        node_repeats=0,
     )
 
     optimizer = SingleMetricOptimizer(
@@ -532,7 +532,7 @@ def test_single_metric_sa_finds_hard_max(four_by_five_grid_for_opt):
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,
-        node_repeats=1,
+        node_repeats=0,
     )
 
     optimizer = SingleMetricOptimizer(
@@ -585,7 +585,7 @@ def test_single_metric_tilted_runs_finds_hard_max(four_by_five_grid_for_opt):
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,
-        node_repeats=1,
+        node_repeats=0,
     )
 
     optimizer = SingleMetricOptimizer(

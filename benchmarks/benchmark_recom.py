@@ -152,7 +152,7 @@ def _run_one_seed(seed: int) -> dict:
             pop_col=args.pop_col,
             pop_target=ideal,
             epsilon=args.epsilon,
-            node_repeats=2,
+            node_repeats=0,
         )
         chain_kwargs = {
             "proposal": proposal,
