@@ -514,15 +514,7 @@ def test_bipartition_tree_returns_a_tree(graph_with_pop_nx, graph_with_pop_rx):
 def test_recom_works_as_a_proposal(partition_with_pop):
     graph = partition_with_pop.graph
     ideal_pop = sum(graph.node_data(node)["pop"] for node in graph) / 2
-    # OLD version using explicit partial()...
-    # proposal = functools.partial(
-    #     recom,
-    #     pop_col="pop",
-    #     pop_target=ideal_pop,
-    #     epsilon=0.25,
-    #     node_repeats=5
-    # )
-    #
+
     my_proposal = build_recom_proposal_fn(
         pop_col="pop", pop_target=ideal_pop, epsilon=0.25, node_repeats=5
     )
@@ -539,15 +531,6 @@ def test_reversible_recom_works_as_a_proposal(partition_with_pop):
     graph = partition_with_pop.graph
     ideal_pop = sum(graph.node_data(node)["pop"] for node in graph) / 2
 
-    # OLD version using explicit partial()...
-    #    proposal = functools.partial(
-    #        reversible_recom,
-    #        pop_col="pop",
-    #        pop_target=ideal_pop,
-    #        epsilon=0.10,
-    #        max_balanced_edge_cuts=1,
-    #    )
-    #
     my_proposal = build_reversible_recom_proposal_fn(
         pop_col="pop",
         pop_target=ideal_pop,

@@ -52,10 +52,9 @@ we'll start with the imports:
     from gerrychain import (Partition, Graph, MarkovChain,
                             updaters, constraints, accept,
                             GeographicPartition)
-    from gerrychain.proposals import recom
+    from gerrychain.proposals import build_recom_proposal_fn
     from gerrychain.tree import bipartition_tree
     from gerrychain.constraints import contiguous
-    from functools import partial
     import pandas
 
     # Set the random seed so that the results are reproducible!
@@ -133,8 +132,7 @@ have previously:
     ideal_population = sum(initial_partition["population"].values()) / len(initial_partition)
 
 
-    proposal = partial(
-        recom,
+    proposal = build_recom_proposal_fn(
         pop_col="TOTPOP",
         pop_target=ideal_population,
         epsilon=0.01,
@@ -172,10 +170,10 @@ watch the chain work!
     district_data = []
 
     for i, partition in enumerate(recom_chain):
-        for district_name in partition.perimeter.keys():
-            population = partition.population[district_name]
-            perimeter = partition.perimeter[district_name]
-            area = partition.area[district_name]
+        for district_name in partition["perimeter"].keys():
+            population = partition["population"][district_name]
+            perimeter = partition["perimeter"][district_name]
+            area = partition["area"][district_name]
             district_data.append((i, district_name, population, perimeter, area))
 
         buffer = io.BytesIO()

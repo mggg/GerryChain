@@ -54,7 +54,8 @@ with importing the necessary packages:
     from gerrychain import (GeographicPartition, Partition, Graph, MarkovChain,
                             proposals, updaters, constraints, accept, Election)
     from gerrychain.optimization import SingleMetricOptimizer, Gingleator
-    from gerrychain.tree import recursive_seed_part
+    from gerrychain.partition import recursive_seed_part
+    from gerrychain.proposals import recom, build_recom_proposal_fn
     from functools import partial
     import pandas as pd
     import json
@@ -78,7 +79,7 @@ section:
     POPCOL = "tot_pop_20"
     SEN_DISTS = 35
     EPS = 0.02
-    TOTPOP = sum(graph.nodes()[n][POPCOL] for n in graph.nodes())
+    TOTPOP = sum(graph.node_data(node_id)[POPCOL] for node_id in graph.node_indices)
 
     chain_updaters = {
         "population": updaters.Tally(POPCOL, alias="population"),
@@ -92,8 +93,7 @@ section:
         updaters=chain_updaters
     )
 
-    proposal = partial(
-        proposals.recom,
+    proposal = build_recom_proposal_fn(
         pop_col=POPCOL,
         pop_target=TOTPOP/SEN_DISTS,
         epsilon=EPS,
@@ -269,7 +269,7 @@ Majority-Minority Total Population
     POPCOL = "tot_pop_20"
     SEN_DISTS = 35
     EPS = 0.02
-    TOTPOP = sum(graph.nodes()[n][POPCOL] for n in graph.nodes())
+    TOTPOP = sum(graph.node_data(node_id)[POPCOL] for node_id in graph.node_indices)
 
     # ========================================================
     # WE HAVE UPDATED SOME THINGS IN HERE! MAKE SURE TO CHECK!
@@ -287,8 +287,7 @@ Majority-Minority Total Population
         updaters=chain_updaters
     )
 
-    proposal = partial(
-        proposals.recom,
+    proposal = build_recom_proposal_fn(
         pop_col=POPCOL,
         pop_target=TOTPOP/SEN_DISTS,
         epsilon=EPS,
@@ -447,7 +446,7 @@ For this, we will just need to tweak our updaters a little bit:
     POPCOL = "tot_pop_20"
     SEN_DISTS = 35
     EPS = 0.02
-    TOTPOP = sum(graph.nodes()[n][POPCOL] for n in graph.nodes())
+    TOTPOP = sum(graph.node_data(node_id)[POPCOL] for node_id in graph.node_indices)
 
 
     # Updaters take in partitions and then return some value. In this case, we
@@ -478,8 +477,7 @@ For this, we will just need to tweak our updaters a little bit:
         updaters=chain_updaters
     )
 
-    proposal = partial(
-        proposals.recom,
+    proposal = build_recom_proposal_fn(
         pop_col=POPCOL,
         pop_target=TOTPOP/SEN_DISTS,
         epsilon=EPS,
