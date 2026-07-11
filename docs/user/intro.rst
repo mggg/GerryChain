@@ -28,10 +28,12 @@ a third possible plan. Continuing in this way for thousands or millions
 of steps then produces an ensemble of possible plans which may
 be used for analyis.
 
-Note that GerryChain represents a district plan as a graph with nodes that 
-define a geographical area (such as a voting precinct or a census block)
-and edges that connect neighboring nodes (any node that touches another 
-node will have an edge between the two nodes).  
+Note that GerryChain represents a district plan as a partition of a graph with 
+nodes that define a geographical area (such as a voting precinct or a census block)
+and edges that encode the notion of adjacency or contiguity used in the analysis.
+Often an edge represents two geographic units sharing a boundary, but
+the graph may require additions or removals for point contacts, water
+connections, islands, data errors, or jurisdiction-specific contiguity rules.
 
 A district then is a collection of nodes, and a district plan is 
 the overall assignment of nodes to districts.
