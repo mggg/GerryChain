@@ -137,8 +137,7 @@ Workflow for a new GerryChain Project
     The calculations you choose will become updater functions.
 
 * **Kick off the Markov Chain**
-    Tell the system how many district plans it should generate 
-    and turn it loose.
+    Configure the number of steps and run the Markov chain.
 
 * **Post process the results of the Markov Chain run**
     This typically involves analysis of the data that your 
