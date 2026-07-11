@@ -1,12 +1,11 @@
 import random
-from functools import partial
 
 import numpy as np
 
 from gerrychain import Partition
 from gerrychain.constraints import contiguous
 from gerrychain.optimization import SingleMetricOptimizer
-from gerrychain.proposals import recom
+from gerrychain.proposals import build_recom_proposal_fn
 from gerrychain.updaters import Tally
 
 
@@ -34,8 +33,7 @@ def test_single_metric_sb_attains_min_quickly(four_by_five_grid_for_opt):
 
     ideal_pop = sum(initial_partition["population"].values()) / 4
 
-    proposal = partial(
-        recom,
+    proposal = build_recom_proposal_fn(
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,
@@ -82,8 +80,7 @@ def test_single_metric_tilted_sb_attains_min_quickly(four_by_five_grid_for_opt):
 
     ideal_pop = sum(initial_partition["population"].values()) / 4
 
-    proposal = partial(
-        recom,
+    proposal = build_recom_proposal_fn(
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,
@@ -131,8 +128,7 @@ def test_single_metric_variable_len_sb_attains_min_quickly(four_by_five_grid_for
 
     ideal_pop = sum(initial_partition["population"].values()) / 4
 
-    proposal = partial(
-        recom,
+    proposal = build_recom_proposal_fn(
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,
@@ -183,8 +179,7 @@ def test_single_metric_sa_jumpcycle_attains_min_quickly(four_by_five_grid_for_op
 
     ideal_pop = sum(initial_partition["population"].values()) / 4
 
-    proposal = partial(
-        recom,
+    proposal = build_recom_proposal_fn(
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,
@@ -231,8 +226,7 @@ def test_single_metric_sa_lincycle_attains_min_quickly(four_by_five_grid_for_opt
 
     ideal_pop = sum(initial_partition["population"].values()) / 4
 
-    proposal = partial(
-        recom,
+    proposal = build_recom_proposal_fn(
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,
@@ -280,8 +274,7 @@ def test_single_metric_sa_linear_jumpcycle_attains_min_quickly(
 
     ideal_pop = sum(initial_partition["population"].values()) / 4
 
-    proposal = partial(
-        recom,
+    proposal = build_recom_proposal_fn(
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,
@@ -327,8 +320,7 @@ def test_single_metric_sa_logitcycle_attains_min_quickly(four_by_five_grid_for_o
 
     ideal_pop = sum(initial_partition["population"].values()) / 4
 
-    proposal = partial(
-        recom,
+    proposal = build_recom_proposal_fn(
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,
@@ -376,8 +368,7 @@ def test_single_metric_sa_logit_jumpcycle_attains_min_quickly(
 
     ideal_pop = sum(initial_partition["population"].values()) / 4
 
-    proposal = partial(
-        recom,
+    proposal = build_recom_proposal_fn(
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,
@@ -430,8 +421,7 @@ def test_single_metric_tilted_runs_attains_min_quickly_with_p_eq_0p1(
 
     ideal_pop = sum(initial_partition["population"].values()) / 4
 
-    proposal = partial(
-        recom,
+    proposal = build_recom_proposal_fn(
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,
@@ -484,8 +474,7 @@ def test_single_metric_sb_finds_hard_max(four_by_five_grid_for_opt):
 
     ideal_pop = sum(initial_partition["population"].values()) / 4
 
-    proposal = partial(
-        recom,
+    proposal = build_recom_proposal_fn(
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,
@@ -539,8 +528,7 @@ def test_single_metric_sa_finds_hard_max(four_by_five_grid_for_opt):
 
     ideal_pop = sum(initial_partition["population"].values()) / 4
 
-    proposal = partial(
-        recom,
+    proposal = build_recom_proposal_fn(
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,
@@ -593,8 +581,7 @@ def test_single_metric_tilted_runs_finds_hard_max(four_by_five_grid_for_opt):
 
     ideal_pop = sum(initial_partition["population"].values()) / 4
 
-    proposal = partial(
-        recom,
+    proposal = build_recom_proposal_fn(
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,

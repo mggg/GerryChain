@@ -1,12 +1,11 @@
 # Code copied from the GerryChain User Guide / Tutorial:
 
 import cProfile
-from functools import partial
 
 from gerrychain import MarkovChain, Partition, accept, updaters
 from gerrychain.constraints import contiguous
 from gerrychain.examples import gerrymandria
-from gerrychain.proposals import recom
+from gerrychain.proposals import build_recom_proposal_fn
 
 
 def main():
@@ -25,8 +24,7 @@ def main():
     # that we defined above and not with the population column in the json file.
     ideal_population = sum(initial_partition["population"].values()) / len(initial_partition)
 
-    proposal = partial(
-        recom,
+    proposal = build_recom_proposal_fn(
         pop_col="TOTPOP",
         pop_target=ideal_population,
         epsilon=0.01,

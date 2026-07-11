@@ -16,6 +16,7 @@ from gerrychain import (
     tree,
 )
 from gerrychain import updaters as gc_updaters
+from gerrychain.proposals import build_recom_proposal_fn
 from gerrychain.tree import BipartitionWarning
 
 
@@ -37,8 +38,7 @@ def run_chain_single(seed, category, steps, surcharge, max_attempts=100000, rese
     num_steps = steps
     epsilon = 0.01
 
-    surcharged_proposal = partial(
-        proposals.recom,
+    surcharged_proposal = build_recom_proposal_fn(
         pop_col=population_col,
         pop_target=ideal_pop,
         epsilon=epsilon,
@@ -167,8 +167,7 @@ def run_chain_dual(seed, steps, surcharges={"muni": 0.5, "county": 0.5}, warn_at
     num_steps = steps
     epsilon = 0.01
 
-    surcharged_proposal = partial(
-        proposals.recom,
+    surcharged_proposal = build_recom_proposal_fn(
         pop_col=population_col,
         pop_target=ideal_pop,
         epsilon=epsilon,

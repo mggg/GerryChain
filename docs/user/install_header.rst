@@ -1,6 +1,15 @@
 Installation
 ============
 
+The programming environment used by GerryChain is based on Python.  
+It takes advantage of the robust Python ecosystem for data analysis, 
+data structures, plotting and more.
+
+In this section we will walk you through installing Python, 
+creating a virtual environment for Python development, installing 
+the needed Python packages, installing VSCode and Jupyter Lab, 
+and validating that everything is ready to go.
+
 Supported Python Versions
 -------------------------
 

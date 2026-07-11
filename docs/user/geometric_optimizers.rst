@@ -34,9 +34,46 @@ Then we can import the package in the head of our jupyter notebook and download 
         f.write(shape_response.content)
 
 
-    pop_url = "https://api.census.gov/data/2020/dec/pl?get=group%28P1%29&for=block%20group&in=state%3A02%20county%3A*"
+    # original: pop_url = "https://api.census.gov/data/2020/dec/pl?get=group%28P1%29&for=block%20group&in=state%3A02%20county%3A*"
+    # Changed state from 02 (Alaska) to 01 (Alabama)
+    # Changed URL to have a (now required) access key
+    pop_url = "https://api.census.gov/data/2020/dec/pl?get=group%28P1%29&for=block%20group&in=state%3A01%20county%3A*&key=e75025ef862ec72853ea6743e4cad5ec086de668"
 
-    pop_response = requests.get(pop_url)
+    import requests
+    import pandas as pd
+    import os
+
+    shape_url = "https://www2.census.gov/geo/tiger/TIGER2020PL/LAYER/BG/2020/tl_2020_01_bg20.zip"
+
+    shape_response = requests.get(shape_url)
+    shape_response.raise_for_status()
+   
+    with open("tl_2020_01_bg20.zip", "wb") as f:
+        f.write(shape_response.content)
+   
+    pop_url = "https://api.census.gov/data/2020/dec/pl"
+    pop_params = {
+        "get": "group(P1)",
+        "for": "block group:*",
+        "in": "state:01 county:*",
+     }
+ 
+    # If you happen to have the key stored in your environment, this will
+    # retrieve it
+    census_api_key = os.environ.get("CENSUS_API_KEY")
+
+    # Otherwise you will need to enter your new key here
+    if census_api_key is None: 
+        census_api_key="REPLACE_WITH_YOUR_KEY"
+  
+    pop_params["key"] = census_api_key
+
+    pop_response = requests.get(
+        pop_url,
+        params=pop_params,
+        timeout=30,
+    )
+    pop_response.raise_for_status()
 
     pop_df = pd.DataFrame(pop_response.json()[1:], columns=pop_response.json()[0])
 
@@ -54,7 +91,7 @@ We are now ready to work with the optimizer. First, we will need to import the n
     from gerrychain import Graph, GeographicPartition, MarkovChain
     from gerrychain.updaters import Tally
     from gerrychain.metrics.compactness import polsby_popper
-    from gerrychain.proposals import recom
+    from gerrychain.proposals import recom, build_recom_proposal_fn
     from gerrychain.tree import bipartition_tree
     from gerrychain.accept import always_accept
     from gerrychain.optimization import SingleMetricOptimizer
@@ -185,12 +222,25 @@ And now we can add the population data to the graph:
 
 .. code:: python
 
+    """
+    Original Code:
+
     for node, data in graph.nodes(data=True):
         # Note that the pops are np.int64 types, so we convert them to ints here
         data["TOTPOP"] = int(full_data.loc[data["GEOID20"]]["P1_001N"])
 
     # Just a quick check of the data that is stored on the graph nodes
     graph.nodes(data=True)[0]
+    """
+
+    for node_id in graph.node_indices:
+        node_data = graph.node_data(node_id)
+        geo_id = node_data["GEOID20"]
+        # Note that the pops are np.int64 types, so we convert them to ints here
+        node_data["TOTPOP"] = int(full_data.at[geo_id, "P1_001N"])
+
+    graph.node_data(0)
+
 
 .. code:: console
 
@@ -249,6 +299,17 @@ of a regular ``Partition`` object for the ``SingleMetricOptimizer`` since we wan
 
     opt_metric = lambda x: sum(x["polsby-popper"].values())/len(x)
 
+    POPCOL = "TOTPOP"
+    SEN_DISTS = 35
+    EPS = 0.02
+    TOTPOP = sum(graph.node_data(node_id)[POPCOL] for node_id in graph.node_indices)
+
+    proposal = build_recom_proposal_fn(
+        pop_col=POPCOL,
+        pop_target=TOTPOP/SEN_DISTS,
+        epsilon=EPS,
+        node_repeats=1
+    )
 
     optimizer = SingleMetricOptimizer(
         initial_state=initial_partition,

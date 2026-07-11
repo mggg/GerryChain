@@ -1,12 +1,10 @@
-from functools import partial
-
 import numpy as np
 import pytest
 
 from gerrychain import Partition
 from gerrychain.constraints import contiguous
 from gerrychain.optimization import Gingleator
-from gerrychain.proposals import recom
+from gerrychain.proposals import build_recom_proposal_fn
 from gerrychain.updaters import Tally
 
 
@@ -66,8 +64,7 @@ def test_ginglator_needs_min_perc_or_min_pop_col(four_by_five_grid_for_opt):
 
     ideal_pop = sum(initial_partition["population"].values()) / 4
 
-    proposal = partial(
-        recom,
+    proposal = build_recom_proposal_fn(
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,
@@ -108,8 +105,7 @@ def test_ginglator_warns_if_min_perc_and_min_pop_col_set(four_by_five_grid_for_o
 
     ideal_pop = sum(initial_partition["population"].values()) / 4
 
-    proposal = partial(
-        recom,
+    proposal = build_recom_proposal_fn(
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,
@@ -149,8 +145,7 @@ def test_gingleator_finds_best_partition(four_by_five_grid_for_opt):
 
     ideal_pop = sum(initial_partition["population"].values()) / 4
 
-    proposal = partial(
-        recom,
+    proposal = build_recom_proposal_fn(
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,

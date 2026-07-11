@@ -139,7 +139,6 @@ def test_repeatable(three_by_three_grid):
 @pytest.mark.slow
 def test_pa_freeze():
     import hashlib
-    from functools import partial
 
     from gerrychain import (
         GeographicPartition,
@@ -149,7 +148,7 @@ def test_pa_freeze():
         constraints,
         updaters,
     )
-    from gerrychain.proposals import recom
+    from gerrychain.proposals import build_recom_proposal_fn
 
     graph = Graph.from_json("docs/_static/PA_VTDs.json")
 
@@ -158,10 +157,7 @@ def test_pa_freeze():
 
     ideal_population = sum(initial_partition["population"].values()) / len(initial_partition)
 
-    # We use functools.partial to bind the extra parameters (pop_col, pop_target, epsilon, node_repeats)
-    # of the recom proposal.
-    proposal = partial(
-        recom,
+    proposal = build_recom_proposal_fn(
         pop_col="TOT_POP",
         pop_target=ideal_population,
         epsilon=0.02,
