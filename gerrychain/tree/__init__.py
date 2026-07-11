@@ -36,14 +36,14 @@ from .bipartition_tree import (
 from .spanning_tree import random_spanning_tree, uniform_spanning_tree
 
 __all__ = [
-    bipartition_tree,
-    bipartition_tree_random_with_num_cuts,
-    find_balanced_edge_cuts_contraction,
-    find_balanced_edge_cuts_memoization,
-    BalanceError,
-    PopulationBalanceError,
-    ReselectException,
-    BipartitionWarning,
-    uniform_spanning_tree,
-    random_spanning_tree,
+    "bipartition_tree",
+    "bipartition_tree_random_with_num_cuts",
+    "find_balanced_edge_cuts_contraction",
+    "find_balanced_edge_cuts_memoization",
+    "BalanceError",
+    "PopulationBalanceError",
+    "ReselectException",
+    "BipartitionWarning",
+    "uniform_spanning_tree",
+    "random_spanning_tree",
 ]

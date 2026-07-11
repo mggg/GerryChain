@@ -545,8 +545,9 @@ class Partition:
         used to draw the districting plan. These shapefiles may be found in a repository in the
         `mggg-states`_ GitHub organization, or by request from MGGG.
 
-        .. _`Districtr`: https://mggg.org/Districtr .. _`mggg-states`:
-        https://github.com/mggg-states
+        .. _`Districtr`: https://mggg.org/Districtr
+
+        .. _`mggg-states`: https://github.com/mggg-states
 
         Args:
             graph (Graph): The graph to create the Partition from

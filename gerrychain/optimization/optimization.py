@@ -17,12 +17,14 @@ class SingleMetricOptimizer:
     SingleMetricOptimizer represents the class of algorithms / chains that optimize plans with
     respect to a single metric.  An instance of this class encapsulates the following state
     information:
+
         * the dual graph and updaters via the initial partition,
         * the constraints new proposals are subject to,
         * the metric over which to optimize,
         * and whether or not to seek maximal or minimal values of the metric.
 
     The SingleMetricOptimizer class implements the following common methods of optimization:
+
         * Short Bursts
         * Simulated Annealing
         * Tilted Runs
