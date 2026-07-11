@@ -113,7 +113,7 @@ Workflow for a new GerryChain Project
     As you will see later, there are convenient functions to create
     a graph once you have clean data.
 
-* Pick a Proposal function
+* **Pick a Proposal function**
     This is the way the Markov Chain will create a new district 
     plan from the current plan.  For instance, as we will see later, one
     might pick "ReCom" which merges two adjacent districts and then randomly
