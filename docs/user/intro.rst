@@ -136,7 +136,7 @@ Workflow for a new GerryChain Project
 
     The calculations you choose will become updater functions.
 
-* Kick off the Markov Chain
+* **Kick off the Markov Chain**
     Tell the system how many district plans it should generate 
     and turn it loose.
 
