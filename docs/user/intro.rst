@@ -119,7 +119,7 @@ Workflow for a new GerryChain Project
     might pick "ReCom" which merges two adjacent districts and then randomly
     splits them into two new districts.
 
-* Create an initial district plan
+* **Create an initial district plan**
     The choice of an initial plan is typically not super important, as
     whatever you select as your initial plan will end up as just one
     plan in the ensemble of perhaps thousands or hundreds of thousands
