@@ -91,7 +91,7 @@ The layers function as follows:
 Workflow for a new GerryChain Project
 -------------------------------------
 
-* Get the data 
+* **Get the data** 
     You will need data that defines distinct geographic areas (your nodes)
     and records the neighbors of each node (your edges).  You will also 
     need data about each of the nodes, for instance, population and 
