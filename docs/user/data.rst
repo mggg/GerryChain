@@ -38,7 +38,7 @@ Pennsylvania data:
     from gerrychain.updaters import Tally, cut_edges
     from gerrychain import MarkovChain
     from gerrychain.constraints import contiguous
-    from gerrychain.proposals import recom, build_recom_proposal_fn
+    from gerrychain.proposals import build_recom_proposal_fn
     from gerrychain.accept import always_accept
 
     import random
