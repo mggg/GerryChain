@@ -5,9 +5,11 @@ from typing import Any
 
 from tqdm import tqdm
 
-from ..accept import always_accept
+from .._rng import make_rng
+from ..accept import AcceptFn, always_accept
 from ..chain import MarkovChain
 from ..partition import Partition
+from ..proposals import ProposalFn
 
 
 class SingleMetricOptimizer:
@@ -33,12 +35,14 @@ class SingleMetricOptimizer:
 
     def __init__(
         self,
-        proposal: Callable[[Partition], Partition],
+        proposal: ProposalFn,
         constraints: Callable[[Partition], bool] | list[Callable[[Partition], bool]],
         initial_state: Partition,
         optimization_metric: Callable[[Partition], Any],
         maximize: bool = True,
         step_indexer: str = "step",
+        *,
+        rng: random.Random | int | None = None,
     ) -> None:
         """Initialize a SingleMetricOptimizer instance.
 
@@ -57,6 +61,13 @@ class SingleMetricOptimizer:
             step_indexer (str, optional): Name of the updater tracking the partitions step in the
                 chain. If not implemented on the partition the constructor creates and adds it.
                 Defaults to "step".
+            rng (Union[random.Random, int, None], optional): Source of randomness for the
+                optimizer's internal chains. An int seeds a fresh ``random.Random`` once, here;
+                every optimization run then continues that one stream (consecutive short bursts
+                do not restart it). This means re-running an optimization method on the same
+                optimizer does not repeat its trajectory: construct a fresh optimizer to
+                reproduce a run. ``None`` (the default) creates an independent RNG from system
+                entropy.
 
         Returns:
             SingleMetricOptimizer: A SingleMetricOptimizer object
@@ -69,6 +80,7 @@ class SingleMetricOptimizer:
         self._best_part = None
         self._best_score = None
         self._step_indexer = step_indexer
+        self._rng = make_rng(rng)
 
         if self._step_indexer not in self._initial_part.updaters:
 
@@ -129,7 +141,7 @@ class SingleMetricOptimizer:
             Callable[[Partition], bool]: An acceptance function for tilted chains.
         """
 
-        def tilted_acceptance_function(part: Partition) -> bool:
+        def tilted_acceptance_function(part: Partition, *, rng: random.Random) -> bool:
             if part.parent is None:
                 return True
 
@@ -139,7 +151,7 @@ class SingleMetricOptimizer:
             if self._is_improvement(part_score, prev_score):
                 return True
             else:
-                return random.random() < p
+                return rng.random() < p
 
         return tilted_acceptance_function
 
@@ -159,14 +171,14 @@ class SingleMetricOptimizer:
             Callable[[Partition], bool]: A acceptance function for simulated annealing runs.
         """
 
-        def simulated_annealing_acceptance_function(part: Partition) -> bool:
+        def simulated_annealing_acceptance_function(part: Partition, *, rng: random.Random) -> bool:
             if part.parent is None:
                 return True
             score_delta = self.score(part) - self.score(part.parent)
             beta = beta_function(part[self._step_indexer])
             if self._maximize:
                 score_delta *= -1
-            return random.random() < math.exp(-beta * beta_magnitude * score_delta)
+            return rng.random() < math.exp(-beta * beta_magnitude * score_delta)
 
         return simulated_annealing_acceptance_function
 
@@ -361,7 +373,7 @@ class SingleMetricOptimizer:
         self,
         burst_length: int,
         num_bursts: int,
-        accept: Callable[[Partition], bool] = always_accept,
+        accept: AcceptFn = always_accept,
         with_progress_bar: bool = False,
     ) -> Generator[Partition, None, None]:
         """Performs a short burst run using the instance's score function.
@@ -372,8 +384,9 @@ class SingleMetricOptimizer:
         Args:
             burst_length (int): Number of steps to run within each burst.
             num_bursts (int): Number of bursts to perform.
-            accept (Callable[[Partition], bool], optional): Function accepting or rejecting the
-                proposed state. Defaults to `gerrychain.accept.always_accept`.
+            accept (AcceptFn, optional): Function called with a partition and keyword-only
+                ``rng`` to accept or reject the proposed state. Defaults to
+                `gerrychain.accept.always_accept`.
             with_progress_bar (bool, optional): Whether or not to draw tqdm progress bar. Defaults
                 to False.
 
@@ -393,7 +406,12 @@ class SingleMetricOptimizer:
 
         for _ in range(num_bursts):
             chain = MarkovChain(
-                self._proposal, self._constraints, accept, self._best_part, burst_length
+                self._proposal,
+                self._constraints,
+                accept,
+                self._best_part,
+                burst_length,
+                rng=self._rng,
             )
 
             for part in chain:
@@ -433,6 +451,7 @@ class SingleMetricOptimizer:
             self._simulated_annealing_acceptance_function(beta_function, beta_magnitude),
             self._initial_part,
             num_steps,
+            rng=self._rng,
         )
 
         self._best_part = self._initial_part
@@ -482,7 +501,7 @@ class SingleMetricOptimizer:
         self,
         num_steps: int,
         stuck_buffer: int,
-        accept: Callable[[Partition], bool] = always_accept,
+        accept: AcceptFn = always_accept,
         with_progress_bar: bool = False,
     ) -> Generator[Partition, None, None]:
         """Performs a short burst where the burst length is allowed to increase dynamically.
@@ -495,8 +514,9 @@ class SingleMetricOptimizer:
             num_steps (int): Number of steps to run for.
             stuck_buffer (int): How many bursts of a given length with no improvement to allow
                 before increasing the burst length.
-            accept (Callable[[Partition], bool], optional): Function accepting or rejecting the
-                proposed state. Defaults to `gerrychain.accept.always_accept`.
+            accept (AcceptFn, optional): Function called with a partition and keyword-only
+                ``rng`` to accept or reject the proposed state. Defaults to
+                `gerrychain.accept.always_accept`.
             with_progress_bar (bool, optional): Whether or not to draw tqdm progress bar. Defaults
                 to False.
 
@@ -521,7 +541,12 @@ class SingleMetricOptimizer:
 
         while i < num_steps:
             chain = MarkovChain(
-                self._proposal, self._constraints, accept, self._best_part, burst_length
+                self._proposal,
+                self._constraints,
+                accept,
+                self._best_part,
+                burst_length,
+                rng=self._rng,
             )
             for part in chain:
                 yield part
@@ -563,6 +588,7 @@ class SingleMetricOptimizer:
             self._tilted_acceptance_function(p),
             self._initial_part,
             num_steps,
+            rng=self._rng,
         )
 
         self._best_part = self._initial_part
