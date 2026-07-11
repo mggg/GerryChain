@@ -58,13 +58,13 @@ pinned --seed is actually reproducible despite Python's hash-randomized set/dict
 from __future__ import annotations
 
 import argparse
+import inspect
 import json
 import os
 import subprocess
 import sys
 import tempfile
 import time
-
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -131,15 +131,19 @@ def _run_one_seed(seed: int) -> dict:
     for _ in range(args.repeats):
         random.seed(seed)
         np.random.seed(seed)
+        rng = random.Random(seed)
 
         t0 = time.perf_counter()
-        initial = Partition.from_random_assignment(
-            graph,
-            n_parts=args.parts,
-            epsilon=args.epsilon,
-            pop_col=args.pop_col,
-            updaters={"population": updaters.Tally(args.pop_col, alias="population")},
-        )
+        initial_kwargs = {
+            "graph": graph,
+            "n_parts": args.parts,
+            "epsilon": args.epsilon,
+            "pop_col": args.pop_col,
+            "updaters": {"population": updaters.Tally(args.pop_col, alias="population")},
+        }
+        if "rng" in inspect.signature(Partition.from_random_assignment).parameters:
+            initial_kwargs["rng"] = rng
+        initial = Partition.from_random_assignment(**initial_kwargs)
         build_s.append(time.perf_counter() - t0)
 
         ideal = sum(initial["population"].values()) / len(initial)
@@ -150,13 +154,16 @@ def _run_one_seed(seed: int) -> dict:
             epsilon=args.epsilon,
             node_repeats=2,
         )
-        chain = MarkovChain(
-            proposal=proposal,
-            constraints=[],
-            accept=accept.always_accept,
-            initial_state=initial,
-            total_steps=args.steps,
-        )
+        chain_kwargs = {
+            "proposal": proposal,
+            "constraints": [],
+            "accept": accept.always_accept,
+            "initial_state": initial,
+            "total_steps": args.steps,
+        }
+        if "rng" in inspect.signature(MarkovChain).parameters:
+            chain_kwargs["rng"] = rng
+        chain = MarkovChain(**chain_kwargs)
         steps_iter = chain.with_progress_bar() if progress else chain
 
         if profiler is not None:

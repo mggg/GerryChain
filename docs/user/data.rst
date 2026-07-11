@@ -42,10 +42,6 @@ Pennsylvania data:
     from gerrychain.accept import always_accept
     from functools import partial
 
-    import random
-    random.seed(42)
-
-
     graph = Graph.from_json("./PA_VTDs.json")
 
     initial_partition = Partition(
@@ -74,7 +70,8 @@ Pennsylvania data:
         constraints=[contiguous],
         accept=always_accept,
         initial_state=initial_partition,
-        total_steps=20
+        total_steps=20,
+        rng=42,
     )
 
 And now we can run the chain and write the data to a JSONL file:
@@ -180,9 +177,18 @@ is to store the data in a pandas dataframe.
 .. code-block:: python
 
     import pandas as pd
-    random.seed(42)
-
     district_data = []  
+
+    # Reconstruct the chain to replay the same seeded trajectory. Iterating the
+    # original chain again would continue its RNG stream.
+    chain = MarkovChain(
+        proposal=proposal,
+        constraints=[contiguous],
+        accept=always_accept,
+        initial_state=initial_partition,
+        total_steps=20,
+        rng=42,
+    )
 
     for i, partition in enumerate(chain):
         for district_name in partition["population"].keys():
@@ -253,4 +259,3 @@ which will produce:
 +-----+------+---------------+------------+----------+-------------+
 | 215 |  11  |       1       |   707880   | 0.221007 |    2103     |
 +-----+------+---------------+------------+----------+-------------+
-

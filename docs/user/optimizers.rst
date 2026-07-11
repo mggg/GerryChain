@@ -54,7 +54,7 @@ with importing the necessary packages:
     from gerrychain import (GeographicPartition, Partition, Graph, MarkovChain,
                             proposals, updaters, constraints, accept, Election)
     from gerrychain.optimization import SingleMetricOptimizer, Gingleator
-    from gerrychain.tree import recursive_seed_part
+    from gerrychain.partition import recursive_seed_part
     from functools import partial
     import pandas as pd
     import json
@@ -64,9 +64,7 @@ with importing the necessary packages:
     import numpy as np
     import random
 
-    random.seed(2024)
-
-
+    rng = random.Random(2024)
 Since the ``SingleMetricOptimizer`` class uses ReCom under the hood, we will need to 
 do a lot of the same setup that we did in the :doc:`Running a Chain with ReCom <./recom>`
 section:
@@ -89,7 +87,8 @@ section:
         n_parts=SEN_DISTS,
         epsilon=EPS,
         pop_col=POPCOL,
-        updaters=chain_updaters
+        updaters=chain_updaters,
+        rng=rng,
     )
 
     proposal = partial(
@@ -120,7 +119,8 @@ state, and the objective function of interest:
         constraints=chain_constraints,
         initial_state=initial_partition,
         optimization_metric=num_cut_edges,
-        maximize=False
+        maximize=False,
+        rng=rng,
     )
 
 
@@ -284,7 +284,8 @@ Majority-Minority Total Population
         n_parts=SEN_DISTS,
         epsilon=EPS,
         pop_col=POPCOL,
-        updaters=chain_updaters
+        updaters=chain_updaters,
+        rng=rng,
     )
 
     proposal = partial(
@@ -346,7 +347,8 @@ We are now prepared to instantiate the ``Gingleator`` class:
         initial_partition,
         minority_pop_col='bpop',
         total_pop_col='population',
-        score_function=Gingleator.reward_partial_dist
+        score_function=Gingleator.reward_partial_dist,
+        rng=rng,
     )
 
 Since the ``Gingleator`` class is a subclass of the ``SingleMetricOptimizer`` class, we can
@@ -433,7 +435,8 @@ and then change our ``Gingleator`` class instantiation to be
         initial_partition,
         minority_pop_col='bvap',
         total_pop_col='vap',
-        score_function=Gingleator.reward_partial_dist
+        score_function=Gingleator.reward_partial_dist,
+        rng=rng,
     )
 
 and we will be off to the races. In the interest of being thorough, however, let us see how to
@@ -475,7 +478,8 @@ For this, we will just need to tweak our updaters a little bit:
         n_parts=SEN_DISTS,
         epsilon=EPS,
         pop_col=POPCOL,
-        updaters=chain_updaters
+        updaters=chain_updaters,
+        rng=rng,
     )
 
     proposal = partial(
@@ -496,7 +500,8 @@ For this, we will just need to tweak our updaters a little bit:
         chain_constraints,
         initial_partition,
         minority_perc_col='bvap_pct',
-        score_function=Gingleator.reward_partial_dist
+        score_function=Gingleator.reward_partial_dist,
+        rng=rng,
     )
 
 

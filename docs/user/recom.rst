@@ -47,10 +47,6 @@ the first thing to do is to import the required packages:
     from functools import partial
     import pandas
 
-    # Set the random seed so that the results are reproducible!
-    import random
-    random.seed(2024)
-
 Now we set up the initial partition:
 
 .. code-block:: python 
@@ -94,7 +90,8 @@ We can now set up the chain:
         constraints=[contiguous],
         accept=accept.always_accept,
         initial_state=initial_partition,
-        total_steps=40
+        total_steps=40,
+        rng=2024,
     )
 
 and run it with
@@ -304,9 +301,9 @@ surcharge added to those weights. So, if we have a region surcharge dictionary o
 
 where the tuples indicate that a desired cut edge bridges both types of region in
 the tuple. In the event that this is not the desired behaviour, then the user can simply
-alter the ``cut_choice`` function in the constraints to be different. So, if the user
-would prefer the cut edge to be a random edge with no deference to bridge edges,
-then they might use ``random.choice()`` in the following way:
+alter the ``cut_choice_fn`` function to be different. So, if the user would prefer the cut
+edge to be a random edge with no deference to bridge edges, then they can use the RNG supplied
+by ``MarkovChain``:
 
 .. code-block:: python
 
@@ -320,14 +317,17 @@ then they might use ``random.choice()`` in the following way:
             "muni": 2.0,
             "water_dist": 2.0
         },
-        method = partial(
+        bipartition_tree_fn = partial(
             bipartition_tree,
-            cut_choice = random.choice,
+            cut_choice_fn = lambda cuts, *, rng: rng.choice(cuts),
         )
     )
 
+``MarkovChain`` passes its owned RNG through ReCom and the bipartition callbacks, so this choice
+uses the same stream as the rest of the chain step.
+
 **Note**: When ``region_surcharge`` is not specified, ``bipartition_tree`` will behave as if
-``cut_choice`` is set to ``random.choice``.
+``cut_choice_fn`` were a uniform random choice among the balanced cuts.
 
 
 .. .. attention::
@@ -371,8 +371,6 @@ district, then the chain will get stuck and throw an error. Here is the setup:
     from gerrychain.tree import bipartition_tree
     from gerrychain.constraints import contiguous
     from functools import partial
-    import random
-    random.seed(5)
 
     graph = Graph.from_json("./gerrymandria.json")
 
@@ -399,7 +397,7 @@ district, then the chain will get stuck and throw an error. Here is the setup:
             "muni": 2.0,
             "water_dist": 2.0
         },
-        method = partial(
+        bipartition_tree_fn = partial(
             bipartition_tree, 
             max_attempts=100,
         )
@@ -411,6 +409,7 @@ district, then the chain will get stuck and throw an error. Here is the setup:
         accept=accept.always_accept,
         initial_state=initial_partition,
         total_steps=20,
+        rng=5,
     )
 
     assignment_list = []
@@ -469,8 +468,6 @@ node repeats:
 
 .. code-block:: python
 
-    random.seed(5)
-
     graph = Graph.from_json("./gerrymandria.json")
 
     my_updaters = {
@@ -496,7 +493,7 @@ node repeats:
             "muni": 2.0,
             "water_dist": 2.0
         },
-        method = partial(
+        bipartition_tree_fn = partial(
             bipartition_tree,
             max_attempts=100,
         )
@@ -508,6 +505,7 @@ node repeats:
         accept=accept.always_accept,
         initial_state=initial_partition,
         total_steps=20,
+        rng=5,
     )
 
     assignment_list = []
@@ -520,8 +518,6 @@ Running this code, we can see that we get stuck once again, so this was not the 
 Let's try to enable reselection instead:
 
 .. code-block:: python 
-
-    random.seed(5)
 
     graph = Graph.from_json("./gerrymandria.json")
 
@@ -548,7 +544,7 @@ Let's try to enable reselection instead:
             "muni": 2.0,
             "water_dist": 2.0
         },
-        method = partial(
+        bipartition_tree_fn = partial(
             bipartition_tree,
             max_attempts=100,
             allow_pair_reselection=True  # <-- This is the only change
@@ -561,6 +557,7 @@ Let's try to enable reselection instead:
         accept=accept.always_accept,
         initial_state=initial_partition,
         total_steps=20,
+        rng=5,
     )
 
     assignment_list = []

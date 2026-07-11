@@ -7,6 +7,40 @@ your analysis is completely repeatable by anyone else on their own computer. Thi
 will walk you through the steps required to make that possible.
 
 
+Seed the random number generator
+--------------------------------
+
+Each ``MarkovChain`` owns an independent random number generator, so making a chain reproducible
+just requires passing a seed to the chain:
+
+.. code-block:: python
+
+    chain = MarkovChain(
+        proposal, constraints, accept, initial_partition, total_steps, rng=2024
+    )
+
+When randomness is needed before the chain, create one ``random.Random`` and pass it to the two
+ownership boundaries:
+
+.. code-block:: python
+
+    import random
+
+    rng = random.Random(2024)
+    initial_partition = Partition.from_random_assignment(..., rng=rng)
+    chain = MarkovChain(..., initial_state=initial_partition, rng=rng)
+
+The chain passes its RNG to proposals, acceptance functions, and tree algorithms. Interleaved
+chains therefore keep separate streams (this second point is probably on only important for those 
+making custom parallel-tempering chains).
+
+An integer seed starts a new stream each time a standalone function is called. For a sequence of
+standalone operations (creating an initial partition followed by running a chain), create one 
+``random.Random(seed)`` and pass that same instance to every call.
+
+Chain trajectories do not depend on the ``PYTHONHASHSEED`` environment variable; older versions
+of GerryChain required pinning it, but that is no longer necessary.
+
 Share your code on GitHub
 -------------------------
 
@@ -84,12 +118,6 @@ and they can create the same virtual environment by running
 .. code:: console
 
   pip install -r requirements.txt
-
-Of course, you will both be responsible for making sure that your virtual environments
-have the same ``PYTHONHASHSEED`` set. How to do this is detailed in the next section.
-
-
-.. include:: ../repeated_subsections/reproducible_envs.rst
 
 .. _`pcompress`: https://github.com/mggg/pcompress
 .. _`install Cargo`: https://doc.rust-lang.org/cargo/getting-started/installation.html

@@ -62,9 +62,10 @@ We are now ready to work with the optimizer. First, we will need to import the n
     import numpy as np
     import pandas as pd
     import geopandas as gpd
-
     import random
-    random.seed(2024)
+
+    rng = random.Random(2024)
+
 
 Now we need to import the data and check the Coordinate Reference System (CRS) for reasons that
 will be explained momentarily:
@@ -240,7 +241,8 @@ of a regular ``Partition`` object for the ``SingleMetricOptimizer`` since we wan
         n_parts=4,
         epsilon=0.01,
         pop_col="TOTPOP",
-        updaters=updaters
+        updaters=updaters,
+        rng=rng,
     )
 
     ideal_population = sum(initial_partition["population"].values())/len(initial_partition)
@@ -254,6 +256,7 @@ of a regular ``Partition`` object for the ``SingleMetricOptimizer`` since we wan
         constraints=[],
         optimization_metric=opt_metric,
         maximize=True,
+        rng=rng,
     )
 
 
@@ -268,4 +271,3 @@ of a regular ``Partition`` object for the ``SingleMetricOptimizer`` since we wan
 
     100%|██████████| 1000/1000 [03:48<00:00,  4.38it/s]
     0.30465552990184624
-
