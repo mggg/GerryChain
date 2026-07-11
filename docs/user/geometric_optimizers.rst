@@ -233,10 +233,10 @@ And now we can add the population data to the graph:
     """
 
     for node_id in graph.node_indices:
-        geo_id = graph.node_data(node_id)["GEOID20"]
+        node_data = graph.node_data(node_id)
+        geo_id = node_data["GEOID20"]
         # Note that the pops are np.int64 types, so we convert them to ints here
-        population = int(full_data.loc[geo_id]["P1_001N"])
-        graph.node_data(node_id)["TOTPOP"] = population
+        node_data["TOTPOP"] = int(full_data.at[geo_id, "P1_001N"])
 
     graph.node_data(0)
 
