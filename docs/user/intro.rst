@@ -88,8 +88,8 @@ The layers function as follows:
 
 .. _`Metropolis-Hastings`: https://en.wikipedia.org/wiki/Metropolis%E2%80%93Hastings_algorithm
 
-Steps for doing a GerryChain Project
-------------------------------------
+Workflow for a new GerryChain Project
+-------------------------------------
 
 * Get the data 
     You will need data that defines distinct geographic areas (your nodes)
