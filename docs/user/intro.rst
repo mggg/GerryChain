@@ -109,7 +109,7 @@ Workflow for a new GerryChain Project
     underlying data to artificially connect the island nodes 
     to nodes on the mainland.
 
-* Create a graph of the data
+* **Create a graph of the data**
     As you will see later, there are convenient functions to create
     a graph once you have clean data.
 
