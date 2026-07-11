@@ -77,6 +77,7 @@ Note that the mapping / ``[]`` interface of a Partition is over its *updaters*
 from __future__ import annotations
 
 import json
+import random
 from collections.abc import Callable, KeysView
 from typing import Any
 
@@ -90,6 +91,7 @@ import networkx
 
 from gerrychain.graph.graph import FrozenGraph, Graph
 
+from .._rng import make_rng
 from ..updaters import compute_edge_flows, cut_edges, flows_from_changes
 from .assignment import Assignment, get_assignment
 from .initial_partition_generators import recursive_tree_part
@@ -201,6 +203,8 @@ class Partition:
         updaters: dict[str, Callable] | None = None,
         use_default_updaters: bool = True,
         method: Callable = recursive_tree_part,
+        *,
+        rng: random.Random | int | None = None,
     ) -> Partition:
         """Create a Partition with a random assignment of nodes to districts.
 
@@ -215,7 +219,12 @@ class Partition:
             updaters (Optional[Dict[str, Callable]], optional): Dictionary of updaters
             use_default_updaters (bool, optional): If `False`, do not include default updaters.
             method (Callable, optional): The function to use to partition the graph into
-                ``n_parts``. Defaults to `gerrychain.tree.recursive_tree_part`.
+                ``n_parts``. The method is called with this method's normalized ``rng``, which
+                takes precedence over an ``rng`` partially bound to the ``method`` parameter.
+                Defaults to `gerrychain.tree.recursive_tree_part`.
+            rng (Union[random.Random, int, None], optional): Source of randomness. An integer
+                creates a reproducible RNG; ``None`` creates an independent RNG from system
+                entropy.
 
         Returns:
             Partition: The partition created with a random assignment
@@ -230,6 +239,7 @@ class Partition:
             pop_target=ideal_pop,
             pop_col=pop_col,
             epsilon=epsilon,
+            rng=make_rng(rng),
         )
 
         return cls(
@@ -320,7 +330,7 @@ class Partition:
             updaters = dict()
 
         if use_default_updaters:
-            self.updaters = self.default_updaters
+            self.updaters = dict(self.default_updaters)
         else:
             self.updaters = {}
 

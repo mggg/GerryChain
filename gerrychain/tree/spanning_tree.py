@@ -4,6 +4,7 @@ from typing import (
     Optional,
 )
 
+from .._rng import make_rng
 from ..graph import Graph
 
 """
@@ -94,6 +95,8 @@ def random_spanning_tree(
     graph: Graph,
     region_surcharge: Optional[Dict] = None,
     treat_unassigned_as_single_region: bool = False,
+    *,
+    rng: random.Random | int | None = None,
 ) -> Graph:
     """Builds a minimum spanning tree chosen by Kruskal's method using random weights.
 
@@ -167,6 +170,8 @@ def random_spanning_tree(
             surcharged, so the region-less ("unassigned") area may be split freely. When True, such
             edges are not surcharged, so the region-less area is biased to be kept whole, like any
             other region. Has no effect when ``region_surcharge`` is empty or every node has a value.
+        rng (Union[random.Random, int, None], optional): Source of randomness. Pass a shared
+            ``Random`` for repeated standalone calls; an integer restarts the stream each call.
 
     Returns:
         Graph: The minimum spanning tree represented as a GerryChain Graph.
@@ -189,6 +194,8 @@ def random_spanning_tree(
         A spanning tree always has ``len(graph.nodes) - 1`` edges; with no ``region_surcharge`` you
         get an ordinary random spanning tree instead.
     """
+
+    rng = make_rng(rng)
 
     # Create an empty dict now instead of as a default parameter to avoid
     # having a single dict instantiated at program start time that is
@@ -214,11 +221,11 @@ def random_spanning_tree(
         # loop runs once per spanning tree, and chains with a tight population
         # tolerance draw many spanning trees per step, so this matters.
         for edge_id in graph.edge_indices:
-            graph.edge_data(edge_id)["random_weight"] = random.random()
+            graph.edge_data(edge_id)["random_weight"] = rng.random()
     else:
         for edge_id in graph.edge_indices:
             edge = graph.get_edge_from_edge_id(edge_id)
-            weight = random.random()
+            weight = rng.random()
 
             for key, value in region_surcharge.items():
                 node_id1 = edge[0]
@@ -244,6 +251,8 @@ def random_spanning_tree(
 def uniform_spanning_tree(
     graph: Graph,
     region_surcharge: dict = None,  # accepted for API compatibility, but unused
+    *,
+    rng: random.Random | int | None = None,
 ) -> Graph:
     """Builds a spanning tree chosen uniformly from the space of all spanning trees of the graph.
 
@@ -268,20 +277,24 @@ def uniform_spanning_tree(
     Rinse and repeat until all nodes have been added to the tree.
 
     Args:
-        graph (Graph): Graph
+        graph (Graph): The graph from which to sample a spanning tree.
         region_surcharge (Optional[Dict], optional): Not used in this function.  It exists
             in the function signature so that all spanning tree functions will share the
             same signature.
+        rng (Union[random.Random, int, None], optional): Source of randomness. Pass a shared
+            ``Random`` for repeated standalone calls; an integer restarts the stream each call.
 
     Returns:
         Graph: A spanning tree of the graph chosen uniformly at random.
     """
 
+    rng = make_rng(rng)
+
     if region_surcharge:
         raise ValueError("uniform_spanning_tree() region_surcharge paramter should be empty")
 
     # Pick a starting point at random
-    root_id = random.choice(list(graph.node_indices))
+    root_id = rng.choice(list(graph.node_indices))
 
     # Initiallize the tree to contain the root_node (with no parent)
     tree_nodes = set([root_id])
@@ -294,7 +307,7 @@ def uniform_spanning_tree(
         # taken effectively removes cycles from the path.
         u = node_id
         while u not in tree_nodes:
-            parent_node_id[u] = random.choice(list(graph.neighbors(u)))
+            parent_node_id[u] = rng.choice(list(graph.neighbors(u)))
             u = parent_node_id[u]
 
         # Record the "direct" path (the one with no cycles)

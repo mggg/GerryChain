@@ -2,6 +2,7 @@ import random
 from collections.abc import Callable, Hashable, Sequence
 from functools import partial
 
+from gerrychain._rng import make_rng
 from gerrychain.partition import Partition
 
 from ..graph import Graph
@@ -50,6 +51,8 @@ def epsilon_tree_bipartition(
     epsilon: float,
     node_repeats: int = 1,
     bipartition_tree_fn: Callable = partial(bipartition_tree, max_attempts=100000),
+    *,
+    rng: random.Random,
 ) -> dict:
     """Bipartition a tree into two :math:`\varepsilon`-balanced parts.
 
@@ -64,6 +67,7 @@ def epsilon_tree_bipartition(
             use. Defaults to 1.
         bipartition_tree_fn (Callable, optional): The partition method to use. Defaults to
             `partial(bipartition_tree, max_attempts=100000)`.
+        rng (random.Random): The RNG supplied by the owning operation.
 
     Returns:
         dict: New assignments for the nodes of ``graph``.
@@ -89,6 +93,7 @@ def epsilon_tree_bipartition(
         epsilon=epsilon,
         node_repeats=node_repeats,
         one_sided_cut=False,
+        rng=rng,
     )
 
     if nodes is None:
@@ -132,6 +137,8 @@ def recom(
     node_repeats: int = 1,
     region_surcharge: dict | None = None,
     bipartition_tree_fn: Callable = bipartition_tree,
+    *,
+    rng: random.Random | int | None = None,
 ) -> Partition:
     """Return new partition resulting from the ReCom algorithm.
 
@@ -173,14 +180,19 @@ def recom(
             spanning-tree step (e.g. ``max_attempts``, or ``spanning_tree_fn_kwargs`` for
             spanning-tree options), pass a pre-bound function, e.g.
             ``partial(bipartition_tree, spanning_tree_fn_kwargs={...})``.
+        rng (Union[random.Random, int, None], optional): Source of randomness. Pass a shared
+            ``Random`` for repeated standalone calls; an integer restarts the stream each call.
 
     Returns:
         Partition: The new partition resulting from the ReCom algorithm.
     """
 
+    rng = make_rng(rng)
+
     # Compute the set of pairs of "parts" that touch - meaning that there is
     # a cut_edge between the two "parts"
     #
+    part_order = {part: index for index, part in enumerate(partition.parts)}
     set_of_district_pairs_that_touch = set()
     for edge in partition["cut_edges"]:
         pair_that_touches = [
@@ -188,19 +200,23 @@ def recom(
             partition.assignment.mapping[edge[1]],
         ]
         # Need to sort the tuple so that the order is consistent
-        pair_that_touches.sort()
+        pair_that_touches.sort(key=part_order.__getitem__)
         pair_that_touches = tuple(pair_that_touches)
 
         set_of_district_pairs_that_touch.add(pair_that_touches)
 
-    # Convert to a list to make it easy to randomly select and remove element
-    list_of_district_pairs_that_touch = list(set_of_district_pairs_that_touch)
+    # Convert to a list to make it easy to randomly select and remove element.
+    # Sorted so the order does not depend on string-hash iteration order (PYTHONHASHSEED).
+    list_of_district_pairs_that_touch = sorted(
+        set_of_district_pairs_that_touch,
+        key=lambda pair: (part_order[pair[0]], part_order[pair[1]]),
+    )
 
     # To randomly select a pair of districts efficiently, randomly shuffle the
     # list and then pop from the end of the list to get the next randomly
     # selected pair to try.
     #
-    random.shuffle(list_of_district_pairs_that_touch)
+    rng.shuffle(list_of_district_pairs_that_touch)
 
     # Bind region_surcharge onto the bipartition_tree_fn. Other bipartition / spanning-tree options
     # (e.g. spanning_tree_fn_kwargs) are configured by passing a pre-bound bipartition_tree_fn, such
@@ -226,6 +242,7 @@ def recom(
                 epsilon=epsilon,
                 node_repeats=node_repeats,
                 bipartition_tree_fn=bipartition_tree_fn,
+                rng=rng,
             )
             break
 
@@ -270,6 +287,8 @@ def reversible_recom(
     max_balanced_edge_cuts: int,
     find_balanced_edge_cuts_fn: FindBalancedEdgeCutsFn = find_balanced_edge_cuts_memoization,
     repeat_until_valid: bool = False,
+    *,
+    rng: random.Random | int | None = None,
 ) -> Partition:
     """Reversible ReCom algorithm for redistricting.
 
@@ -289,34 +308,42 @@ def reversible_recom(
         M (int, optional): The maximum number of balance edges. Default is 1.
         repeat_until_valid (bool, optional): Flag indicating whether to repeat until a valid
             partition is found. Default is False.
-            random.choice.
+        rng (Union[random.Random, int, None], optional): Source of randomness. Pass a shared
+            ``Random`` for repeated standalone calls; an integer restarts the stream each call.
 
     Returns:
         Partition: The new partition resulting from the reversible ReCom algorithm.
     """
 
+    rng = make_rng(rng)
+
     def dist_pair_edges(
         part: Partition, a: Hashable, b: Hashable
-    ) -> set[tuple[Hashable, Hashable]]:
+    ) -> list[tuple[Hashable, Hashable]]:
         # frm: Find all edges that cross from district a into district b
-        return set(
+        return [
             e
             for e in part.graph.edges
             if (
                 (part.assignment.mapping[e[0]] == a and part.assignment.mapping[e[1]] == b)
                 or (part.assignment.mapping[e[0]] == b and part.assignment.mapping[e[1]] == a)
             )
-        )
+        ]
 
     def _bounded_find_balanced_edge_cuts_fn(
         h: _PopulatedGraph,
         one_sided_cut: bool = False,
-        rootnode_choice_fn: Callable = random.choice,
+        rootnode_choice_fn: Callable | None = None,
+        *,
+        rng: random.Random,
     ) -> list[_Cut]:
+        if rootnode_choice_fn is None:
+            rootnode_choice_fn = rng.choice
         cuts = find_balanced_edge_cuts_fn(
             h,
             one_sided_cut=one_sided_cut,
             rootnode_choice_fn=rootnode_choice_fn,
+            rng=rng,
         )
         if len(cuts) > max_balanced_edge_cuts:
             raise ReversibilityError(
@@ -324,7 +351,7 @@ def reversible_recom(
             )
         return cuts
 
-    parts = sorted(list(partition.parts.keys()))
+    parts = list(partition.parts)
     dist_pairs = []
     for out_part in parts:
         for in_part in parts:
@@ -344,7 +371,7 @@ def reversible_recom(
             # an entire iteration in that case too - which seems kind of dumb...
             #
 
-    random_pair = random.choice(dist_pairs)
+    random_pair = rng.choice(dist_pairs)
     pair_edges = dist_pair_edges(partition, *random_pair)
     if random_pair[0] == random_pair[1] or not pair_edges:
         return partition  # self-loop: no adjacency
@@ -354,7 +381,7 @@ def reversible_recom(
     # schemes is handled, we are able to sample exactly from that distribution
     # rather than an approximation of it like we do in regular ReCom.
 
-    edge = random.choice(list(pair_edges))
+    edge = rng.choice(pair_edges)
     parts_to_merge = (
         partition.assignment.mapping[edge[0]],
         partition.assignment.mapping[edge[1]],
@@ -383,6 +410,7 @@ def reversible_recom(
         repeat_until_valid=repeat_until_valid,
         spanning_tree_fn=uniform_spanning_tree,
         find_balanced_edge_cuts_fn=_bounded_find_balanced_edge_cuts_fn,
+        rng=rng,
     )
     num_possible_districts, nodes = result
     if num_possible_districts == 0:
@@ -406,7 +434,7 @@ def reversible_recom(
             f"Found {len(result) if result is not None else 0} balance edges, but "
             f"the upper bound (with seam length 1) is {max_balanced_edge_cuts}."
         )
-    if random.random() < prob:
+    if rng.random() < prob:
         return new_part
 
     return partition  # self-loop
@@ -668,13 +696,14 @@ class ReCom:
         self.epsilon = epsilon
         self.bipartition_tree_fn = bipartition_tree_fn
 
-    def __call__(self, partition: Partition) -> Partition:
+    def __call__(self, partition: Partition, *, rng: random.Random) -> Partition:
         return recom(
             partition,
             self.pop_col,
             self.ideal_pop,
             self.epsilon,
             bipartition_tree_fn=self.bipartition_tree_fn,
+            rng=rng,
         )
 
 
