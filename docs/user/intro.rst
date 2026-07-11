@@ -13,8 +13,8 @@ such a rule is to prefer compact districts (ones that look more
 like a circle) over districts that look like salamanders (thin with 
 long branches).
 
-The universe of all possible district plans for a given state is really 
-huge, so the challenge is to create a subset of all possible plans that 
+The universe of all possible district plans for a given state is huge, 
+so the challenge is to create a subset of all possible plans that 
 reasonably represents the universe of plans.  GerryChain does this by
 randomly sampling the universe of all plans to create an "ensemble"
 of plans.  One can then examine that ensemble to see if a specific 
