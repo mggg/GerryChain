@@ -20,13 +20,13 @@ randomly sampling the universe of all plans to create an "ensemble"
 of plans.  One can then examine that ensemble to see if a specific 
 district plan is an outlier relative to the ensemble.
 
-GerryChain uses a simple Markov Chain approach that starts with an 
-initial district plan and then randomly creates another district plan
-from that plan, and then yet another from the second plan, and 
-for each successive plan after that, thereby creating the ensemble of plans.
-Each iteration of the Markov Chain creates a new "state" of the 
-chain, which is just the calculated district plan and other associated
-data.
+GerryChain uses a Markov Chain approach that starts with an 
+initial district plan and then randomly alters an adjacent pair of
+districts to create a new plan. That new plan then has another
+pair of adjacent districts selected to randomly alter and this creates
+a third possible plan. Continuing in this way for thousands or millions
+of steps then produces an ensemble of possible plans which may
+be used for analyis.
 
 Note that GerryChain represents a district plan as a graph with nodes that 
 define a geographical area (such as a voting precinct or a census block)
