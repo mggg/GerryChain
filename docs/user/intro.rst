@@ -49,7 +49,7 @@ functions**.
 These layers are implemented as functions and as a result, the behavior of
 the chain can be changed by changing the function used.  The GerryChain codebase
 provides several options for the functions for each layer, as well as 
-defaults.  However, a motivated user can define his/her own function and 
+defaults.  However, a motivated user can define their own function and 
 tell GerryChain to use that instead.
 
 The layers function as follows:
