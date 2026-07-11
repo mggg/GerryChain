@@ -39,7 +39,41 @@ Then we can import the package in the head of our jupyter notebook and download 
     # Changed URL to have a (now required) access key
     pop_url = "https://api.census.gov/data/2020/dec/pl?get=group%28P1%29&for=block%20group&in=state%3A01%20county%3A*&key=e75025ef862ec72853ea6743e4cad5ec086de668"
 
-    pop_response = requests.get(pop_url)
+    import requests
+    import pandas as pd
+    import os
+
+    shape_url = "https://www2.census.gov/geo/tiger/TIGER2020PL/LAYER/BG/2020/tl_2020_01_bg20.zip"
+
+    shape_response = requests.get(shape_url)
+    shape_response.raise_for_status()
+   
+    with open("tl_2020_01_bg20.zip", "wb") as f:
+        f.write(shape_response.content)
+   
+    pop_url = "https://api.census.gov/data/2020/dec/pl"
+    pop_params = {
+        "get": "group(P1)",
+        "for": "block group:*",
+        "in": "state:01 county:*",
+     }
+ 
+    # If you happen to have the key stored in your environment, this will
+    # retrieve it
+    census_api_key = os.environ.get("CENSUS_API_KEY")
+
+    # Otherwise you will need to enter your new key here
+    if census_api_key is None: 
+        census_api_key="REPLACE_WITH_YOUR_KEY"
+  
+    pop_params["key"] = census_api_key
+
+    pop_response = requests.get(
+        pop_url,
+        params=pop_params,
+        timeout=30,
+    )
+    pop_response.raise_for_status()
 
     pop_df = pd.DataFrame(pop_response.json()[1:], columns=pop_response.json()[0])
 
