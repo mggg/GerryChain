@@ -65,7 +65,7 @@ from our shapefile's attribute table.
 ``partition.graph`` is a 
 `gerrychain.Graph <https://gerrychain.readthedocs.io/en/latest/api.html#gerrychain.Graph>`_ 
 object. In previous releases it was a subclass of a NetworkX Graph object, but the current 
-release instead embeds either a NetworkX Graph object or a RustworkX PyGraph object.  while
+release instead embeds either a NetworkX Graph object or a RustworkX PyGraph object.  While
 NetworkX has many convenient associated functions, for instance to build a graph or to plot
 a graph, RustworkX is much more efficient at graph manipulation, so the current release uses
 NetworkX to build graphs but it converts the graph to be a RustworkX when a Partition object
