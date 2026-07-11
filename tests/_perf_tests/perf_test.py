@@ -1,9 +1,6 @@
 # Code copied from the GerryChain User Guide / Tutorial:
 
 import cProfile
-
-# Set the random seed so that the results are reproducible!
-import random
 from functools import partial
 
 from gerrychain import MarkovChain, Partition, accept, updaters
@@ -14,7 +11,6 @@ from gerrychain.proposals import recom
 
 def main():
 
-    random.seed(2024)
     graph = gerrymandria()
 
     my_updaters = {
@@ -43,6 +39,7 @@ def main():
         accept=accept.always_accept,
         initial_state=initial_partition,
         total_steps=40,
+        rng=2024,
     )
 
     assignment_list = []

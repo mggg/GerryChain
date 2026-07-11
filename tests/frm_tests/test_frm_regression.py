@@ -11,17 +11,12 @@
 # It is a quick and dirty way to make sure I haven't really screwed things up ;-)
 #
 
-# Set the random seed so that the results are reproducible!
-import random
 from functools import partial
 
 from gerrychain import MarkovChain, Partition, accept, updaters
 from gerrychain.constraints import contiguous
 from gerrychain.examples import gerrymandria
 from gerrychain.proposals import recom
-
-random.seed(2024)
-
 
 graph = gerrymandria()
 
@@ -44,6 +39,7 @@ recom_chain = MarkovChain(
     accept=accept.always_accept,
     initial_state=initial_partition,
     total_steps=40,
+    rng=2024,
 )
 
 assignment_list = []

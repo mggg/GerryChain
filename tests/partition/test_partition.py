@@ -1,5 +1,6 @@
 import json
 import pathlib
+import random
 from tempfile import TemporaryDirectory
 
 import networkx
@@ -55,7 +56,7 @@ def test_propose_random_flip_proposes_a_partition(example_partition):
 
     # frm: TODO: Testing:  Verify that propose_random_flip() to make sure it is doing the right thing
     #               wrt RX-based node_ids vs. original node_ids.
-    proposal = propose_random_flip(partition)
+    proposal = propose_random_flip(partition, rng=random.Random(0))
     assert isinstance(proposal, partition.__class__)
 
 
@@ -195,6 +196,17 @@ def test_partition_has_default_updaters(example_partition):
 
     for updater in should_have_updaters:
         assert should_have_updaters[updater](partition) == partition[updater]
+
+
+def test_partition_does_not_mutate_default_updaters(graph):
+    custom_updater = "custom_for_default_isolation_test"
+    Partition(
+        graph,
+        {node: node // 3 for node in graph},
+        {custom_updater: lambda partition: partition},
+    )
+
+    assert custom_updater not in Partition.default_updaters
 
 
 def test_partition_has_keys(example_partition):

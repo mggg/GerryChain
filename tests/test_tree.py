@@ -31,8 +31,6 @@ from gerrychain.tree import (
 from gerrychain.tree.bipartition_tree import _PopulatedGraph
 from gerrychain.updaters import Tally, cut_edges
 
-random.seed(2018)
-
 #
 # This code is complicated by the need to test both NX-based
 # and RX-based Graph objects.
@@ -108,7 +106,7 @@ def twelve_by_twelve_with_pop_rx(twelve_by_twelve_with_pop_nx):
 
 def do_test_bipartition_tree_returns_a_subset_of_nodes(graph):
     ideal_pop = sum(graph.node_data(node)["pop"] for node in graph) / 2
-    result = bipartition_tree(graph, "pop", ideal_pop, 0.25, 10)
+    result = bipartition_tree(graph, "pop", ideal_pop, 0.25, 10, rng=random.Random(2018))
     assert isinstance(result, frozenset)
     assert all(node in graph.nodes for node in result)
 
@@ -125,7 +123,7 @@ def test_bipartition_tree_returns_a_subset_of_nodes(graph_with_pop_nx, graph_wit
 def do_test_bipartition_tree_returns_within_epsilon_of_target_pop(graph):
     ideal_pop = sum(graph.node_data(node)["pop"] for node in graph) / 2
     epsilon = 0.25
-    result = bipartition_tree(graph, "pop", ideal_pop, epsilon, 10)
+    result = bipartition_tree(graph, "pop", ideal_pop, epsilon, 10, rng=random.Random(2018))
 
     part_pop = sum(graph.node_data(node)["pop"] for node in result)
     assert abs(part_pop - ideal_pop) / ideal_pop < epsilon
@@ -159,6 +157,7 @@ def do_test_recursive_tree_part_returns_within_epsilon_of_target_pop(
         ideal_pop,
         "pop",
         epsilon,
+        rng=random.Random(2018),
     )
     partition = Partition(twelve_by_twelve_with_pop_graph, result, updaters={"pop": Tally("pop")})
     assert all(
@@ -199,6 +198,7 @@ def do_test_recursive_tree_part_returns_within_epsilon_of_target_pop_using_contr
             max_attempts=10000,
             find_balanced_edge_cuts_fn=find_balanced_edge_cuts_contraction,
         ),
+        rng=random.Random(2018),
     )
     partition = Partition(twelve_by_twelve_with_pop_graph, result, updaters={"pop": Tally("pop")})
     assert all(
@@ -240,6 +240,7 @@ def do_test_recursive_seed_part_returns_within_epsilon_of_target_pop(
         epsilon,
         n=5,
         ceil=None,
+        rng=random.Random(2018),
     )
     partition = Partition(twelve_by_twelve_with_pop_graph, result, updaters={"pop": Tally("pop")})
     assert all(
@@ -282,6 +283,7 @@ def do_test_recursive_seed_part_returns_within_epsilon_of_target_pop_using_contr
             max_attempts=10000,
             find_balanced_edge_cuts_fn=find_balanced_edge_cuts_contraction,
         ),
+        rng=random.Random(2018),
     )
     partition = Partition(twelve_by_twelve_with_pop_graph, result, updaters={"pop": Tally("pop")})
     assert all(
@@ -307,7 +309,9 @@ def test_recursive_seed_part_returns_within_epsilon_of_target_pop_using_contract
 def do_test_recursive_seed_part_uses_bipartition_tree_fn(twelve_by_twelve_with_pop_graph):
     calls = 0
 
-    def dummy_bipartition_tree_fn(graph, pop_col, pop_target, epsilon, node_repeats, one_sided_cut):
+    def dummy_bipartition_tree_fn(
+        graph, pop_col, pop_target, epsilon, node_repeats, one_sided_cut, *, rng
+    ):
         nonlocal calls
         calls += 1
         return bipartition_tree(
@@ -318,6 +322,7 @@ def do_test_recursive_seed_part_uses_bipartition_tree_fn(twelve_by_twelve_with_p
             node_repeats=node_repeats,
             max_attempts=10000,
             one_sided_cut=one_sided_cut,
+            rng=rng,
         )
 
     n_districts = 7  # 144/7 ≈ 20.5 nodes/subgraph (1 person/node)
@@ -337,6 +342,7 @@ def do_test_recursive_seed_part_uses_bipartition_tree_fn(twelve_by_twelve_with_p
         n=5,
         ceil=None,
         bipartition_tree_fn=dummy_bipartition_tree_fn,
+        rng=random.Random(2018),
     )
     # Called at least once for each district besides the last one
     # (note that current implementation of recursive_seed_part calls bipartition_tree_fn
@@ -374,6 +380,7 @@ def do_test_recursive_seed_part_with_n_unspecified_within_epsilon(
         "pop",
         epsilon,
         ceil=None,
+        rng=random.Random(2018),
     )
     partition = Partition(twelve_by_twelve_with_pop_graph, result, updaters={"pop": Tally("pop")})
     assert all(
@@ -393,7 +400,7 @@ def test_recursive_seed_part_with_n_unspecified_within_epsilon(
 
 
 def do_test_random_spanning_tree_returns_tree_with_pop_attribute(graph):
-    tree = random_spanning_tree(graph)
+    tree = random_spanning_tree(graph, rng=random.Random(2018))
     assert tree.is_a_tree()
 
 
@@ -407,7 +414,7 @@ def test_random_spanning_tree_returns_tree_with_pop_attribute(graph_with_pop_nx,
 
 
 def do_test_uniform_spanning_tree_returns_tree_with_pop_attribute(graph):
-    tree = uniform_spanning_tree(graph)
+    tree = uniform_spanning_tree(graph, rng=random.Random(2018))
     assert tree.is_a_tree()
 
 
@@ -425,12 +432,52 @@ def test_uniform_spanning_tree_returns_tree_with_pop_attribute(
 def do_test_bipartition_tree_returns_a_tree(graph, spanning_tree):
     ideal_pop = sum(graph.node_data(node)["pop"] for node in graph) / 2
 
-    result = bipartition_tree(graph, "pop", ideal_pop, 0.25, 10, spanning_tree, lambda x: 4)
+    result = bipartition_tree(
+        graph,
+        "pop",
+        ideal_pop,
+        0.25,
+        10,
+        spanning_tree,
+        rootnode_choice_fn=lambda nodes: nodes[0],
+        rng=random.Random(2018),
+    )
 
     assert spanning_tree.subgraph(result).is_a_tree()
     assert spanning_tree.subgraph(
         {node for node in spanning_tree if node not in result}
     ).is_a_tree()
+
+
+def test_bipartition_tree_threads_rng_to_custom_balanced_cut_fn(graph_with_pop_nx):
+    seen_rngs = []
+    default_root_calls = []
+
+    def choose_root(nodes):
+        default_root_calls.append(True)
+        return nodes[0]
+
+    def find_cuts(h, rootnode_choice_fn=choose_root, *, rng):
+        seen_rngs.append(rng)
+        return find_balanced_edge_cuts_memoization(
+            h,
+            rootnode_choice_fn=rootnode_choice_fn,
+            rng=rng,
+        )
+
+    rng = random.Random(2018)
+    result = bipartition_tree(
+        graph_with_pop_nx,
+        "pop",
+        len(graph_with_pop_nx) / 2,
+        0.25,
+        find_balanced_edge_cuts_fn=find_cuts,
+        rng=rng,
+    )
+
+    assert result
+    assert seen_rngs and all(seen is rng for seen in seen_rngs)
+    assert default_root_calls
 
 
 def create_graphs_from_nx_edges(num_nodes, list_of_edges_nx, nx_to_rx_node_id_map):
@@ -528,14 +575,15 @@ def test_recom_works_as_a_proposal(partition_with_pop):
     )
     constraints = [contiguous]
 
-    chain = MarkovChain(my_proposal, constraints, lambda x: True, partition_with_pop, 100)
+    chain = MarkovChain(
+        my_proposal, constraints, lambda x, *, rng: True, partition_with_pop, 100, rng=2018
+    )
 
     for state in chain:
         assert contiguous(state)
 
 
 def test_reversible_recom_works_as_a_proposal(partition_with_pop):
-    random.seed(2018)
     graph = partition_with_pop.graph
     ideal_pop = sum(graph.node_data(node)["pop"] for node in graph) / 2
 
@@ -601,7 +649,9 @@ def test_reversible_recom_works_as_a_proposal(partition_with_pop):
     #     figure out WTF was going on...
     #
 
-    chain = MarkovChain(my_proposal, constraints, lambda x: True, partition_with_pop, 100)
+    chain = MarkovChain(
+        my_proposal, constraints, lambda x, *, rng: True, partition_with_pop, 100, rng=2018
+    )
 
     for state in chain:
         assert contiguous(state)
@@ -627,7 +677,7 @@ def test_find_balanced_cuts_contraction():
     # 8
 
     populated_tree = _PopulatedGraph(tree, {node: 1 for node in tree}, len(tree) / 2, 0.5)
-    cuts = find_balanced_edge_cuts_contraction(populated_tree)
+    cuts = find_balanced_edge_cuts_contraction(populated_tree, rng=random.Random(2018))
     edges = set(tuple(sorted(cut.edge)) for cut in cuts)
     assert edges == {(1, 4), (3, 4), (3, 6)}
 
@@ -654,10 +704,14 @@ def test_no_balanced_cuts_contraction_when_one_side_okay():
         graph=tree_rx, populations=populations, ideal_pop=10, epsilon=0.1
     )
 
-    cuts_nx = find_balanced_edge_cuts_contraction(populated_tree_nx, one_sided_cut=False)
+    cuts_nx = find_balanced_edge_cuts_contraction(
+        populated_tree_nx, one_sided_cut=False, rng=random.Random(2018)
+    )
     assert cuts_nx == []
 
-    cuts_rx = find_balanced_edge_cuts_contraction(populated_tree_rx, one_sided_cut=False)
+    cuts_rx = find_balanced_edge_cuts_contraction(
+        populated_tree_rx, one_sided_cut=False, rng=random.Random(2018)
+    )
     assert cuts_rx == []
 
 
@@ -688,11 +742,11 @@ def test_find_balanced_cuts_memo():
         tree_rx, {node: 1 for node in tree_rx}, len(tree_rx) / 2, 0.5
     )
 
-    cuts_nx = find_balanced_edge_cuts_memoization(populated_tree_nx)
+    cuts_nx = find_balanced_edge_cuts_memoization(populated_tree_nx, rng=random.Random(2018))
     edges_nx = set(tuple(sorted(cut.edge)) for cut in cuts_nx)
     assert edges_nx == {(1, 4), (3, 4), (3, 6)}
 
-    cuts_rx = find_balanced_edge_cuts_memoization(populated_tree_rx)
+    cuts_rx = find_balanced_edge_cuts_memoization(populated_tree_rx, rng=random.Random(2018))
     edges_rx = set(tuple(sorted(cut.edge)) for cut in cuts_rx)
     assert edges_rx == {(1, 4), (3, 4), (3, 6)}
 
@@ -719,10 +773,10 @@ def test_no_balanced_cuts_memo_when_one_side_okay():
         graph=tree_rx, populations=populations, ideal_pop=10, epsilon=0.1
     )
 
-    cuts_nx = find_balanced_edge_cuts_memoization(populated_tree_nx)
+    cuts_nx = find_balanced_edge_cuts_memoization(populated_tree_nx, rng=random.Random(2018))
     assert cuts_nx == []
 
-    cuts_rx = find_balanced_edge_cuts_memoization(populated_tree_rx)
+    cuts_rx = find_balanced_edge_cuts_memoization(populated_tree_rx, rng=random.Random(2018))
     assert cuts_rx == []
 
 

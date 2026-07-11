@@ -1,4 +1,3 @@
-import random
 from functools import partial
 
 import numpy as np
@@ -9,8 +8,6 @@ from gerrychain.constraints import contiguous
 from gerrychain.optimization import Gingleator
 from gerrychain.proposals import recom
 from gerrychain.updaters import Tally
-
-random.seed(2024)
 
 
 def simple_cut_edge_count(partition):
@@ -54,12 +51,12 @@ def gingleator_test_partition(four_by_five_grid_for_opt):
 
 
 def test_ginglator_needs_min_perc_or_min_pop_col(four_by_five_grid_for_opt):
-    random.seed(2024)
     initial_partition = Partition.from_random_assignment(
         graph=four_by_five_grid_for_opt,
         n_parts=4,
         epsilon=0.0,
         pop_col="population",
+        rng=2024,
         updaters={
             "population": Tally("population", alias="population"),
             "MVAP": Tally("MVAP", alias="MVAP"),
@@ -84,6 +81,7 @@ def test_ginglator_needs_min_perc_or_min_pop_col(four_by_five_grid_for_opt):
             initial_state=initial_partition,
             total_pop_col="population",
             score_function=Gingleator.num_opportunity_dists,
+            rng=2024,
         )
 
     assert "`minority_perc_col` and `minority_pop_col` cannot both be `None`" in str(
@@ -92,12 +90,12 @@ def test_ginglator_needs_min_perc_or_min_pop_col(four_by_five_grid_for_opt):
 
 
 def test_ginglator_warns_if_min_perc_and_min_pop_col_set(four_by_five_grid_for_opt):
-    random.seed(2024)
     initial_partition = Partition.from_random_assignment(
         graph=four_by_five_grid_for_opt,
         n_parts=4,
         epsilon=0.0,
         pop_col="population",
+        rng=2024,
         updaters={
             "population": Tally("population", alias="population"),
             "MVAP": Tally("MVAP", alias="MVAP"),
@@ -127,6 +125,7 @@ def test_ginglator_warns_if_min_perc_and_min_pop_col_set(four_by_five_grid_for_o
             minority_pop_col="MVAP",
             minority_perc_col="m_perc",
             score_function=Gingleator.num_opportunity_dists,
+            rng=2024,
         )
 
     assert "`minority_perc_col` and `minority_pop_col` are both specified" in str(
@@ -135,12 +134,12 @@ def test_ginglator_warns_if_min_perc_and_min_pop_col_set(four_by_five_grid_for_o
 
 
 def test_gingleator_finds_best_partition(four_by_five_grid_for_opt):
-    random.seed(2024)
     initial_partition = Partition.from_random_assignment(
         graph=four_by_five_grid_for_opt,
         n_parts=4,
         epsilon=0.0,
         pop_col="population",
+        rng=2024,
         updaters={
             "population": Tally("population", alias="population"),
             "MVAP": Tally("MVAP", alias="MVAP"),
@@ -165,6 +164,7 @@ def test_gingleator_finds_best_partition(four_by_five_grid_for_opt):
         minority_pop_col="MVAP",
         total_pop_col="population",
         score_function=Gingleator.num_opportunity_dists,
+        rng=2024,
     )
 
     total_steps = 5000
