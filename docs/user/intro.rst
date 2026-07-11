@@ -125,7 +125,7 @@ Workflow for a new GerryChain Project
     plan in the ensemble of perhaps thousands or hundreds of thousands
     of plans, but you do need a starting point.
 
-* Decide on what data to calculate for each Markov Chain step
+* **Decide on what data to calculate for each Markov Chain step**
     To decide if a given district plan is an outlier, you need to 
     calculate the data that defines the metric you are evaluating.
     One fairly common metric is whether a district in a plan is a 
