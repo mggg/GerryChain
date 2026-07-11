@@ -140,7 +140,7 @@ Workflow for a new GerryChain Project
     Tell the system how many district plans it should generate 
     and turn it loose.
 
-* Post process the results of the Markov Chain run.
+* **Post process the results of the Markov Chain run**
     This typically involves analysis of the data that your 
     updater functions computed to generate summary statistics 
     and/or charts.
