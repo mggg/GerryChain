@@ -100,7 +100,7 @@ Workflow for a new GerryChain Project
     Often you will need to combine data from multiple sources which 
     can be challenging.  
 
-* Clean the data
+* **Clean the data**
     Unfortunately data often needs to be "cleaned" to be ready to use
     by GerryChain.  For example, the rules for many district plans 
     include a rule that districts must be contiguous, which leaves 
