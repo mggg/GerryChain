@@ -643,6 +643,7 @@ dependencies = [
 dev = [
     { name = "ipykernel" },
     { name = "ipywidgets" },
+    { name = "matplotlib" },
     { name = "myst-parser" },
     { name = "pre-commit" },
     { name = "pyright" },
@@ -668,9 +669,6 @@ docs-exec = [
     { name = "pillow" },
     { name = "pytest" },
 ]
-frm = [
-    { name = "matplotlib" },
-]
 
 [package.metadata]
 requires-dist = [
@@ -688,6 +686,7 @@ requires-dist = [
 dev = [
     { name = "ipykernel", specifier = ">=6.30.1" },
     { name = "ipywidgets", specifier = ">=8.1.7" },
+    { name = "matplotlib", specifier = ">=3.10.7" },
     { name = "myst-parser", specifier = ">=4.0.1" },
     { name = "pre-commit", specifier = ">=4.3.0" },
     { name = "pyright", specifier = ">=1.1.402" },
@@ -713,7 +712,6 @@ docs-exec = [
     { name = "pillow", specifier = ">=11.0.0" },
     { name = "pytest", specifier = ">=8.4.2" },
 ]
-frm = [{ name = "matplotlib", specifier = ">=3.10.7" }]
 
 [[package]]
 name = "greenlet"

@@ -73,9 +73,9 @@ test-all:
 
 type-check:
 	@echo "Running fast type checking with ty..."
-	uv run --group frm ty check $(TYPECHECK_PATHS)
+	uv run --group dev ty check $(TYPECHECK_PATHS)
 	@echo "Running thorough type checking with Pyright..."
-	uv run --group frm pyright $(TYPECHECK_PATHS)
+	uv run --group dev pyright $(TYPECHECK_PATHS)
 
 format:
 	@echo "Formatting codebase with Ruff..."

@@ -1,29 +1,63 @@
+/* Project-specific tweaks layered on top of the Furo theme. */
+
+/* Visited-link color in light mode. Furo's default (#872ee0) is a bright lavender that
+   reads as washed-out on the cream canvas; deepen it to a richer purple. Scoped to plain
+   `body`, which only wins in light mode: Furo's dark defaults live on higher-specificity
+   selectors (body[data-theme="dark"] and the prefers-color-scheme:dark auto rule), so they
+   keep their lighter purple. */
+body {
+  --color-brand-visited: #6b21a8;
+}
+
+/* Navigation cards (sphinx-design grid-item-cards on the landing page). Furo leaves them
+   near-flat - a transparent background in light mode and a 5%-opacity shadow - so they
+   blend into the page. Give them a real surface, a visible shadow, and a clear hover lift.
+   Colors come from Furo variables, so they track light/dark mode. The shadow utility class
+   uses !important, so these must too. */
+.sd-card {
+  background-color: var(--color-background-secondary) !important;
+  border: 1px solid var(--color-background-border, rgba(128, 128, 128, 0.3)) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2) !important;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease !important;
+}
+.sd-card:hover {
+  transform: translateY(-3px) !important;
+  border-color: var(--color-brand-primary) !important;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22) !important;
+}
+
+/* Data-download badges used by the user guide pages; brand-tinted so they follow the
+   palette in both modes. */
 .download-badge {
-    display: inline-block;
-    padding: 8px 15px;
-    margin: 10px;
-    background-color: #0099CD;
-    color: white;
-    text-decoration: none;
-    border-radius: 5px;
-    font-size: 16px;
+  display: inline-block;
+  padding: 8px 15px;
+  margin: 10px;
+  background-color: var(--color-brand-primary, #0099cd);
+  color: white;
+  text-decoration: none;
+  border-radius: 5px;
+  font-size: 16px;
 }
 .download-badge:hover {
-    background-color: #2980B9;
+  filter: brightness(0.85);
 }
 
 .center-container {
-    text-align: center;
-    width: 100%;
+  text-align: center;
+  width: 100%;
 }
-
 
 table {
-    width: 100%;
-    border-collapse: collapse;
+  width: 100%;
+  border-collapse: collapse;
 }
-th, td {
-    border: 1px solid #DDDDDD;
-    padding: 8px;
-    text-align: center;
+th,
+td {
+  border: 1px solid var(--color-background-border, #dddddd);
+  padding: 8px;
+  text-align: center;
 }

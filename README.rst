@@ -84,7 +84,7 @@ A Note for Windows Users
   better results.
 
   In addition, we recommend that you install the 
-  `Windows Terminal <https://www.microsoft.com/en-us/p/windows-terminal/9n0dx20hk701?activetab=pivot:overviewtab>`_
+  `Windows Terminal <https://apps.microsoft.com/detail/9n0dx20hk701>`_
   from the Microsoft Store. It is still possible to use PowerShell or 
   the Command Prompt, but Windows Terminal tends to be more beginner
   friendly and allows for a greater range of utility than the natively
