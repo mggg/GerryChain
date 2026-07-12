@@ -103,6 +103,29 @@ print(
     "uniform_tree",
     normalized_edges(uniform_spanning_tree(Graph.from_networkx(string_graph.copy()), rng=2024)),
 )
+
+# Regression for the small subgraph issue: NX subgraph views enumerate their nodes in set
+# (hash-dependent) order once the subgraph is smaller than half its parent, which made
+# from_random_assignment PYTHONHASHSEED-sensitive on string-node-id graphs. Five parts so that
+# recursive_tree_part's remaining-nodes subgraph drops below half the graph (the 2-part
+# string_graph case above never crosses that threshold).
+grid = nx.grid_graph(dim=[10, 10])
+grid = nx.relabel_nodes(grid, {node: f"{node[0]:02d}-{node[1]:02d}" for node in grid})
+for node in grid:
+    grid.nodes[node]["population"] = 1
+
+print(
+    "shrinking_subgraph",
+    sorted(
+        Partition.from_random_assignment(
+            Graph.from_networkx(grid),
+            n_parts=5,
+            epsilon=0.05,
+            pop_col="population",
+            rng=2024,
+        ).assignment.mapping.items()
+    ),
+)
 """
 
 

@@ -114,6 +114,9 @@ class Graph:
     #       ``verify_graph_is_valid()`` reports as a clear error.
     _nx_graph = None
     _rx_graph = None
+    # Canonical node order for NX subgraphs; None for top-level and RX graphs. Needed for
+    # reproducible subgraph creation, since string hashing there can still be off.
+    _nx_node_order: list[Any] | None = None
 
     @classmethod
     def from_networkx(cls, nx_graph: networkx.Graph) -> Graph:
@@ -1165,6 +1168,10 @@ class Graph:
             # A list of integer node_ids
             return list(self._rx_graph.node_indices())
         elif self.is_nx_graph():
+            # For subgraphs, serve the canonical order captured in subgraph(): iterating the
+            # NX view directly is hash-ordered when the view is under half its parent's size.
+            if self._nx_node_order is not None:
+                return list(self._nx_node_order)
             # A list of node_ids -
             return list(self._nx_graph.nodes)
         else:
@@ -1493,11 +1500,41 @@ class Graph:
         new_subgraph = None
 
         if self.is_nx_graph():
-            nx_subgraph = self._nx_graph.subgraph(nodes)
+            # Canonicalize to the parent's node order. Callers often pass a set, and the
+            # node order of a subgraph *view* of an NX graph is not guaranteed to be the same
+            # as the parent graph. See the bottom of
+            # https://networkx.org/documentation/stable/reference/classes/generated/networkx.Graph.subgraph.html
+            # for an example.
+            #
+            # In fact, the NX subgraph view enumerates its nodes in set (hash-dependent) order
+            # whenever the view is smaller than half its parent (networkx show_nodes/FilterAtlas).
+            # FilterAtlas.__iter__ is the atlas that backs a subgraph view's node dict and
+            # adjacency rows.
+            #
+            # Link for reference:
+            # https://github.com/networkx/networkx/blob/7530809bfa1ea7ed6fdf918a4d1431488953cb1f/networkx/classes/coreviews.py#L293
+            #
+            # Extracted code snippet:
+            #
+            # """
+            # def __iter__(self):
+            #     try:  # check that NODE_OK has attr 'nodes'
+            #         node_ok_shorter = 2 * len(self.NODE_OK.nodes) < len(self._atlas)
+            #     except AttributeError:
+            #         node_ok_shorter = False
+            #     if node_ok_shorter:
+            #         return (n for n in self.NODE_OK.nodes if n in self._atlas)
+            #     return (n for n in self._atlas if self.NODE_OK(n))
+            # """
+
+            node_set = set(nodes)
+            ordered_nodes = [node for node in self.nodes if node in node_set]
+            nx_subgraph = self._nx_graph.subgraph(ordered_nodes)
             new_subgraph = self.from_networkx(nx_subgraph)
+            new_subgraph._nx_node_order = ordered_nodes
             # for NX, the node_ids in subgraph are the same as in the parent graph
-            _node_id_to_parent_node_id_map = {node: node for node in nodes}
-            _node_id_to_original_nx_node_id_map = {node: node for node in nodes}
+            _node_id_to_parent_node_id_map = {node: node for node in ordered_nodes}
+            _node_id_to_original_nx_node_id_map = {node: node for node in ordered_nodes}
         elif self.is_rx_graph():
             if isinstance(nodes, frozenset) or isinstance(nodes, set):
                 nodes = list(nodes)
@@ -1922,6 +1959,10 @@ class Graph:
                 nx_graph, algorithm="kruskal", weight=edge_weight_attribute_name
             )
             spanning_graph = Graph.from_networkx(spanning_tree)
+            # nx.minimum_spanning_tree seeds its result by iterating this graph's nodes,
+            # which is hash-ordered when this graph is a subgraph view; the tree spans
+            # exactly our node set, so carry the canonical order over.
+            spanning_graph._nx_node_order = self.nodes
         elif self.is_rx_graph():
             rx_graph = self.get_rx_graph()
 
