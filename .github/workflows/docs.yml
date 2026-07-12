@@ -1,6 +1,7 @@
-name: "Publish Docs"
+name: "Docs"
 
 on:
+  pull_request:
   push:
     branches:
       - main
@@ -8,42 +9,29 @@ on:
 jobs:
   docs:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Install uv
-        run: |
-          curl -LsSf https://astral.sh/uv/install.sh | sh
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      # uv manages its own interpreter (UV_MANAGED_PYTHON=1 in the Makefile).
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v4
 
-      - name: Build documentation with Makefile
-        env:
-          PYTHON_VERSION: "3.11"
-        run: |
-          uv python install "$PYTHON_VERSION"
-          make docs PYTHON_VERSION="$PYTHON_VERSION"
+      - name: Build docs (warnings are errors)
+        run: make docs
 
-      - name: Clone gh-pages branch
-        run: |
-          git clone --branch gh-pages --single-branch \
-            "https://github.com/${{ github.repository }}.git" gh-pages
-          rm -rf gh-pages/*
-          cp -r docs/_build/* gh-pages/
+      - name: Run documentation snippet tests
+        run: make docs-test
 
-      - name: Commit documentation changes
-        run: |
-          cd gh-pages
-          touch .nojekyll
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add .
-          git commit -m "Update documentation" || echo "No changes to commit"
+      # Notebooks are committed with their outputs and rendered with execution off;
+      # this proves their text and perceptually compared image outputs are fresh.
+      - name: Check tutorial notebooks are fresh
+        run: make docs-check-notebooks
 
-      - name: Push changes
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          cd gh-pages
-          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git" gh-pages
+      - name: Upload built site
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs
+          path: docs/_build
+
+      - name: Check external links
+        run: make docs-linkcheck

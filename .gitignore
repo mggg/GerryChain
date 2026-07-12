@@ -90,3 +90,4 @@ TODO.md
 
 # Profiling data
 *.prof
+docs/jupyter_execute/

@@ -5,10 +5,12 @@ VENV_DIR ?= .venv
 PKG ?= gerrychain
 TEST_PATHS ?= tests
 TYPECHECK_PATHS ?= $(PKG) tests/typing_assertions.py
+DOCS_PY_PATHS ?= docs/conf.py docs/_refresh_notebooks.py docs/generate_recom_assets.py
 export UV_MANAGED_PYTHON = 1
 
 .PHONY: help check_prereq setup install install-docs check test test-all type-check format lint \
-	precommit docs clean
+	precommit docs docs-serve docs-test docs-linkcheck docs-refresh-notebooks \
+	docs-check-notebooks clean
 
 help:
 	@echo "Available targets:"
@@ -21,7 +23,12 @@ help:
 	@echo "  type-check    - Run ty, then Pyright"
 	@echo "  format        - Format the codebase"
 	@echo "  precommit     - Run pre-commit hooks"
-	@echo "  docs          - Build the documentation"
+	@echo "  docs          - Build the documentation (warnings are errors)"
+	@echo "  docs-serve    - Serve the documentation locally with live reload"
+	@echo "  docs-test     - Execute the Python code blocks in the documentation"
+	@echo "  docs-linkcheck - Check external links in the documentation"
+	@echo "  docs-refresh-notebooks - Re-execute the user-guide notebooks and refresh committed outputs"
+	@echo "  docs-check-notebooks - Verify the committed notebook outputs are fresh"
 	@echo "  clean         - Clean build artifacts"
 
 
@@ -50,7 +57,7 @@ install: check_prereq
 
 install-docs: check_prereq
 	@echo "Installing GerryChain package with all just the documentation dependencies..."
-	uv sync --python $(PYTHON_VERSION) --group docs
+	uv sync --python $(PYTHON_VERSION) --no-default-groups --group docs
 
 check:
 	$(MAKE) format
@@ -58,25 +65,25 @@ check:
 
 test:
 	@echo "Running test suite..."
-	PYTHONHASHSEED=0 uv run pytest -v $(TEST_PATHS)
+	uv run pytest -v $(TEST_PATHS)
 
 test-all:
 	@echo "Running test suite (including slow tests)..."
-	PYTHONHASHSEED=0 uv run pytest -v --runslow $(TEST_PATHS)
+	uv run pytest -v --runslow $(TEST_PATHS)
 
 type-check:
 	@echo "Running fast type checking with ty..."
-	uv run ty check $(TYPECHECK_PATHS)
+	uv run --group frm ty check $(TYPECHECK_PATHS)
 	@echo "Running thorough type checking with Pyright..."
-	uv run pyright $(TYPECHECK_PATHS)
+	uv run --group frm pyright $(TYPECHECK_PATHS)
 
 format:
 	@echo "Formatting codebase with Ruff..."
-	uv run ruff format $(PKG) $(TEST_PATHS)
+	uv run ruff format $(PKG) $(TEST_PATHS) $(DOCS_PY_PATHS)
 
 lint:
 	@echo "Running Ruff..."
-	uv run ruff check $(PKG) $(TEST_PATHS)
+	uv run ruff check $(PKG) $(TEST_PATHS) $(DOCS_PY_PATHS)
 	$(MAKE) type-check
 
 precommit:
@@ -85,7 +92,33 @@ precommit:
 
 docs: install-docs
 	@echo "Building documentation..."
-	uv run sphinx-build -b dirhtml docs/ docs/_build
+	uv run --no-default-groups --group docs sphinx-build -E -a -W --keep-going \
+		-b dirhtml docs/ docs/_build
+
+docs-serve: install-docs
+	@echo "Serving documentation with live reload..."
+	uv run --no-default-groups --group docs sphinx-autobuild -b dirhtml docs/ docs/_build
+
+docs-linkcheck: install-docs
+	@echo "Checking documentation links..."
+	uv run --no-default-groups --group docs sphinx-build -E -a -W --keep-going \
+		-b linkcheck docs/ docs/_build/linkcheck
+
+# Selects the docs-exec group explicitly so it does not rely on uv's implicit dev group.
+docs-test:
+	@echo "Executing documentation code snippets..."
+	uv run --no-default-groups --group docs-exec pytest -v --rundocs \
+		tests/test_docs_snippets.py
+
+# Re-execute user-guide notebooks and rewrite their committed outputs. Pass NOTEBOOKS=...
+# to refresh a subset, e.g. `make docs-refresh-notebooks NOTEBOOKS=docs/user/recom.ipynb`.
+docs-refresh-notebooks:
+	@echo "Refreshing user-guide notebooks..."
+	uv run --no-default-groups --group docs-exec python docs/_refresh_notebooks.py $(NOTEBOOKS)
+
+docs-check-notebooks:
+	@echo "Checking that committed notebook outputs are fresh..."
+	uv run --no-default-groups --group docs-exec python docs/_refresh_notebooks.py --check $(NOTEBOOKS)
 
 clean:
 	@echo "Cleaning build artifacts..."
