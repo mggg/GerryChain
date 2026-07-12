@@ -42,6 +42,6 @@ def gerrymandria() -> Graph:
         >>> sorted({graph.node_data(n)["county"] for n in graph.node_indices})
         ['1', '2', '3', '4']
     """
-    resource = files(__package__).joinpath("gerrymandria.json")
+    resource = files("gerrychain.examples").joinpath("gerrymandria.json")
     with as_file(resource) as path:
         return Graph.from_json(str(path))

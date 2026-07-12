@@ -6,6 +6,7 @@ within a given GeoDataFrame.
 """
 
 from collections import Counter
+from collections.abc import Hashable
 
 from geopandas import GeoDataFrame
 from shapely.geometry import Point
@@ -57,14 +58,14 @@ def explain_validity(geo: BaseGeometry) -> str:
     return shapely.validation.explain_validity(geo)
 
 
-def invalid_geometries(df: GeoDataFrame) -> list[int]:
+def invalid_geometries(df: GeoDataFrame) -> list[Hashable]:
     """Given a GeoDataFrame, returns a list of row indices with invalid geometries.
 
     Args:
         df (GeoDataFrame): The GeoDataFrame to examine
 
     Returns:
-        list of int: List of row indices with invalid geometries
+        list[Hashable]: Row indices with invalid geometries.
     """
     invalid = []
     for idx, row in df.iterrows():

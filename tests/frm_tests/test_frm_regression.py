@@ -28,9 +28,7 @@ initial_partition = Partition(graph, assignment="district", updaters=my_updaters
 # that we defined above and not with the population column in the json file.
 ideal_population = sum(initial_partition["population"].values()) / len(initial_partition)
 
-proposal = build_recom_proposal_fn(
-    pop_col="TOTPOP", pop_target=ideal_population, epsilon=0.01
-)
+proposal = build_recom_proposal_fn(pop_col="TOTPOP", pop_target=ideal_population, epsilon=0.01)
 
 recom_chain = MarkovChain(
     proposal=proposal,
@@ -44,7 +42,7 @@ recom_chain = MarkovChain(
 assignment_list = []
 
 for i, item in enumerate(recom_chain):
-    print(f"Finished step {i+1}/{len(recom_chain)}")
+    print(f"Finished step {i + 1}/{len(recom_chain)}")
     assignment_list.append(item.assignment)
 
 print("Enumerated the chain: number of entries in list is: ", len(assignment_list))

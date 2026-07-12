@@ -1,13 +1,13 @@
 import random
-from collections.abc import Callable, Hashable, Sequence
+from collections.abc import Callable, Hashable, Sequence, Set as AbstractSet
 from functools import partial
+from typing import cast
 
 from gerrychain._rng import make_rng
 from gerrychain.partition import Partition
 
-from ..graph import Graph
+from ..graph import FrozenGraph, Graph
 from ..tree import (  # epsilon_tree_bipartition,
-    BalanceError,
     PopulationBalanceError,
     ReselectException,
     bipartition_tree,
@@ -44,22 +44,25 @@ class ValueWarning(UserWarning):
 
 
 def epsilon_tree_bipartition(
-    subgraph_to_split: Graph,
-    parts: Sequence,
+    subgraph_to_split: Graph | FrozenGraph,
+    parts: Sequence[Hashable],
     pop_target: float | int,
     pop_col: str,
     epsilon: float,
     node_repeats: int = 0,
-    bipartition_tree_fn: Callable = partial(bipartition_tree, max_attempts=100000),
+    bipartition_tree_fn: Callable[..., AbstractSet[Hashable]] = partial(
+        bipartition_tree, max_attempts=100000
+    ),
     *,
     rng: random.Random,
-) -> dict:
+) -> dict[Hashable, Hashable]:
     """Bipartition a tree into two :math:`\\varepsilon`-balanced parts.
 
     Args:
-        graph (Graph): The graph to partition into two :math:`\\varepsilon`-balanced parts.
+        subgraph_to_split (Graph | FrozenGraph): The graph to partition into two
+            :math:`\\varepsilon`-balanced parts.
         parts (Sequence): Iterable of part (district) labels (like ``[0,1,2]`` or ``range(4)``).
-        pop_target (Union[float, int]): Target population for each part of the partition.
+        pop_target (float | int): Target population for each part of the partition.
         pop_col (str): Node attribute key holding population data.
         epsilon (float): How far (as a percentage of ``pop_target``) from ``pop_target`` the parts
             of the partition can be.
@@ -95,9 +98,6 @@ def epsilon_tree_bipartition(
         one_sided_cut=False,
         rng=rng,
     )
-
-    if nodes is None:
-        raise BalanceError()
 
     # Calculate the total population for the two districts based on the
     # results of the "bipartition_tree_fn()" partitioning.
@@ -135,8 +135,8 @@ def recom(
     pop_target: int | float,
     epsilon: float,
     node_repeats: int = 0,
-    region_surcharge: dict | None = None,
-    bipartition_tree_fn: Callable = bipartition_tree,
+    region_surcharge: dict[str, float] | None = None,
+    bipartition_tree_fn: Callable[..., AbstractSet[Hashable]] = bipartition_tree,
     *,
     rng: random.Random | int | None = None,
 ) -> Partition:
@@ -166,20 +166,20 @@ def recom(
     Args:
         partition (Partition): The initial partition.
         pop_col (str): The name of the population column.
-        pop_target (Union[int,float]): The target population for each district.
+        pop_target (int | float): The target population for each district.
         epsilon (float): The epsilon value for population deviation as a percentage of the target
             population.
         node_repeats (int, optional): Additional roots to try on each spanning tree before
             drawing a new tree. Defaults to 0. Positive values are useful with contraction or
             custom cut-edge finders, but not with the default memoized finder.
-        region_surcharge (Optional[Dict], optional): The surcharge dictionary for the graph used
+        region_surcharge (dict | None, optional): The surcharge dictionary for the graph used
             for region-aware partitioning of the grid. Default is None.
         bipartition_tree_fn (Callable, optional): The method used for bipartitioning the tree.
             Default is `gerrychain.tree.bipartition_tree`. To configure the bipartition or
             spanning-tree step (e.g. ``max_attempts``, or ``spanning_tree_fn_kwargs`` for
             spanning-tree options), pass a pre-bound function, e.g.
             ``partial(bipartition_tree, spanning_tree_fn_kwargs={...})``.
-        rng (Union[random.Random, int, None], optional): Source of randomness. Pass a shared
+        rng (random.Random | int | None, optional): Source of randomness. Pass a shared
             ``Random`` for repeated standalone calls; an integer restarts the stream each call.
 
     Returns:
@@ -263,8 +263,8 @@ def build_recom_proposal_fn(
     pop_target: int | float,
     epsilon: float,
     node_repeats: int = 0,
-    region_surcharge: dict | None = None,
-    bipartition_tree_fn: Callable = bipartition_tree,
+    region_surcharge: dict[str, float] | None = None,
+    bipartition_tree_fn: Callable[..., AbstractSet[Hashable]] = bipartition_tree,
 ) -> ProposalFn:
     proposal_fn = partial(
         recom,
@@ -275,7 +275,7 @@ def build_recom_proposal_fn(
         region_surcharge=region_surcharge,
         bipartition_tree_fn=bipartition_tree_fn,
     )
-    return proposal_fn
+    return cast(ProposalFn, proposal_fn)
 
 
 def reversible_recom(
@@ -299,15 +299,16 @@ def reversible_recom(
     Args:
         partition (Partition): The initial partition.
         pop_col (str): The name of the population column.
-        pop_target (Union[int,float]): The target population for each district.
+        pop_target (int | float): The target population for each district.
         epsilon (float): The epsilon value for population deviation as a percentage of the target
             population.
+        max_balanced_edge_cuts (int): The number of balanced edge cuts to draw from the spanning
+            tree before selecting one, used to make the proposal reversible.
         find_balanced_edge_cuts_fn (Callable, optional): The balance edge function. Default is
             find_balanced_edge_cuts_memoization.
-        M (int, optional): The maximum number of balance edges. Default is 1.
         repeat_until_valid (bool, optional): Flag indicating whether to repeat until a valid
             partition is found. Default is False.
-        rng (Union[random.Random, int, None], optional): Source of randomness. Pass a shared
+        rng (random.Random | int | None, optional): Source of randomness. Pass a shared
             ``Random`` for repeated standalone calls; an integer restarts the stream each call.
 
     Returns:
@@ -332,7 +333,7 @@ def reversible_recom(
     def _bounded_find_balanced_edge_cuts_fn(
         h: _PopulatedGraph,
         one_sided_cut: bool = False,
-        rootnode_choice_fn: Callable | None = None,
+        rootnode_choice_fn: Callable[[Sequence[Hashable]], Hashable] | None = None,
         *,
         rng: random.Random,
     ) -> list[_Cut]:
@@ -457,7 +458,7 @@ def build_reversible_recom_proposal_fn(
         find_balanced_edge_cuts_fn=find_balanced_edge_cuts_fn,
         repeat_until_valid=repeat_until_valid,
     )
-    return proposal_fn
+    return cast(ProposalFn, proposal_fn)
 
 
 # frm TODO: Refactoring:  Finish making class ReCom useful...
@@ -583,10 +584,10 @@ def build_reversible_recom_proposal_fn(
 #         def std_recom_proposal(
 #             partition: Partition,
 #             pop_col: str,
-#             pop_target: Union[int, float],
+#             pop_target: int | float,
 #             epsilon: float,
 #             node_repeats: int = 1,
-#             region_surcharge: Optional[Dict] = None,
+#             region_surcharge: dict[str, float] | None = None,
 #             bipartition_tree_fn: Callable = bipartition_tree,
 #         ) -> Partition:
 #             new_proposal = partial(
@@ -634,10 +635,10 @@ def build_reversible_recom_proposal_fn(
 #         def generate_std_recom_proposal(
 #             partition: Partition,
 #             pop_col: str,
-#             pop_target: Union[int, float],
+#             pop_target: int | float,
 #             epsilon: float,
 #             node_repeats: int = 1,
-#             region_surcharge: Optional[Dict] = None,
+#             region_surcharge: dict[str, float] | None = None,
 #             bipartition_tree_fn: Callable = bipartition_tree,
 #         ) -> ProposalFn:
 #             new_proposal = partial(
@@ -677,14 +678,14 @@ class ReCom:
         pop_col: str,
         ideal_pop: int | float,
         epsilon: float,
-        bipartition_tree_fn: Callable = bipartition_tree,
+        bipartition_tree_fn: Callable[..., AbstractSet[Hashable]] = bipartition_tree,
     ) -> None:
         """Initialize a ReCom instance.
 
         Args:
             pop_col (str): The name of the column in the partition that contains the population
                 data.
-            ideal_pop (Union[int,float]): The ideal population for each district.
+            ideal_pop (int | float): The ideal population for each district.
             epsilon (float): The epsilon value for population deviation as a percentage of the
                 target population.
             bipartition_tree_fn (function, optional): The method used for bipartitioning the tree.

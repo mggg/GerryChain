@@ -9,7 +9,6 @@ from gerrychain.proposals import build_recom_proposal_fn
 
 
 def main():
-
     graph = gerrymandria()
 
     my_updaters = {
@@ -43,7 +42,7 @@ def main():
     assignment_list = []
 
     for i, item in enumerate(recom_chain):
-        print(f"Finished step {i+1}/{len(recom_chain)}", end="\r")
+        print(f"Finished step {i + 1}/{len(recom_chain)}", end="\r")
         assignment_list.append(item.assignment)
 
 

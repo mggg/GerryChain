@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Hashable, Iterable, Mapping
 from typing import TYPE_CHECKING
 
 import gerrychain.metrics.partisan as pm
@@ -52,14 +53,14 @@ class Election:
 
     Attributes:
         name (str): The name of the election. (e.g. "2008 Presidential")
-        parties (List[str]): A list of the names of the parties in the election.
-        node_attribute_names (List[str]): A list of the node_attribute_names in the graph's node
+        parties (list[str]): A list of the names of the parties in the election.
+        node_attribute_names (list[str]): A list of the node_attribute_names in the graph's node
         data that
             hold the vote totals for each party.
-        party_names_to_node_attribute_names (Dict[str, str]): A dictionary mapping party names to
+        party_names_to_node_attribute_names (dict[str, str]): A dictionary mapping party names to
         the
             node_attribute_names in the graph's node data that hold the vote totals for that party.
-        tallies (Dict[str, DataTally]): A dictionary mapping party names to DataTally
+        tallies (dict[str, DataTally]): A dictionary mapping party names to DataTally
         objects
             that manage the vote totals for that party.
         updater (ElectionUpdater): An ElectionUpdater object that manages the tallies
@@ -71,14 +72,14 @@ class Election:
     def __init__(
         self,
         name: str,
-        party_names_to_node_attribute_names: dict | list,
+        party_names_to_node_attribute_names: dict[str, str] | list[str],
         alias: str | None = None,
     ) -> None:
         """Initialize a Election instance.
 
         Args:
             name (str): The name of the election. (e.g. "2008 Presidential")
-            party_names_to_node_attribute_names (Union[Dict, List]): A mapping from the name of a
+            party_names_to_node_attribute_names (dict | list): A mapping from the name of a
                 party to the name of an attribute of a node that contains the vote totals for that
                 party. This parameter can be either a list or a dict. If a list, then the name of
                 the party and the name of the node attribute are the same, for instance: ["Dem",
@@ -89,8 +90,8 @@ class Election:
                 actual node_attribute_names (list-like, indexed by nodes) or as string keys for the
                 node attributes that hold the party's vote totals. Or, a list of strings which will
                 serve as both the party names and the node attribute keys.
-            alias (Optional[str], optional): Alias that the election is registered under in the
-                Partition's dictionary of updaters.
+            alias (str | None, optional): Alias that the election is registered under in the
+                Partition's dictionary of updaters. Defaults to ``None``, which uses ``name``.
 
         """
 
@@ -178,7 +179,9 @@ class ElectionUpdater:
 
         return ElectionResults(self.election, counts, regions=partition.parts)
 
-    def get_previous_values(self, partition: Partition) -> dict[str, dict[int, float] | None]:
+    def get_previous_values(
+        self, partition: Partition
+    ) -> Mapping[str, dict[Hashable, float] | None]:
         """Returns a dictionary mapping party names to the vote totals that party received in each.
 
         Args:
@@ -186,29 +189,35 @@ class ElectionUpdater:
                 previous vote totals from.
 
         Returns:
-            Dict[str, Dict[int, float]]: A dictionary mapping party names to the vote totals that
-                party received in each part of the parent of the current partition.
+            Mapping[str, dict[Hashable, float] | None]: A dictionary mapping party names to the
+                vote totals that party received in each part of the parent of the current
+                partition.
         """
         parent = partition.parent
         if parent is None:
             previous_totals_for_party = {party: None for party in self.election.parties}
         else:
-            previous_totals_for_party = partition.parent[self.election.alias].totals_for_party
+            previous_results = parent[self.election.alias]
+            if not isinstance(previous_results, ElectionResults):
+                raise TypeError(f"Updater {self.election.alias!r} must return ElectionResults")
+            previous_totals_for_party = previous_results.totals_for_party
         return previous_totals_for_party
 
 
-def get_percents(counts: dict, totals: dict) -> dict:
+def get_percents(
+    counts: Mapping[Hashable, float], totals: Mapping[Hashable, float]
+) -> dict[Hashable, float]:
     """Returns a dictionary mapping each part in a partition to the percentage of votes that a
     party received in that part.
 
     Args:
-        counts (Dict): A dictionary mapping each part in a partition to the count of the number of
+        counts (dict): A dictionary mapping each part in a partition to the count of the number of
             votes that a party received in that part.
-        totals (Dict): A dictionary mapping each part in a partition to the total number of votes
+        totals (dict): A dictionary mapping each part in a partition to the total number of votes
             cast in that part.
 
     Returns:
-        Dict: A dictionary mapping each part in a partition to the percentage
+        dict: A dictionary mapping each part in a partition to the percentage
     """
     return {part: counts[part] / totals[part] if totals[part] > 0 else math.nan for part in totals}
 
@@ -220,15 +229,12 @@ class ElectionResults:
 
     Attributes:
         election (Election): The Election object that these results are associated with.
-        totals_for_party (Dict[str, Dict[int, float]]): A dictionary mapping party names to the
-        total number of votes
-            that party received in each part of the partition.
-        regions (List[int]): A list of regions that we would like the results for.
-        totals (Dict[int, int]): A dictionary mapping each part of the partition to the total number
-            of votes cast in that part.
-        percents_for_party (Dict[str, Dict[int, float]]): A dictionary mapping party names to the
-        percentage of votes
-            that party received in each part of the partition.
+        totals_for_party (dict[str, dict[Hashable, float]]): Party names mapped to their vote
+            totals in each part.
+        regions (tuple[Hashable, ...]): Regions included in the results.
+        totals (dict[Hashable, float]): Parts mapped to their total votes.
+        percents_for_party (dict[str, dict[Hashable, float]]): Party names mapped to their vote
+            percentages in each part.
     .. note::
 
         The variable "regions" is generally called "parts" in other sections of the
@@ -239,23 +245,22 @@ class ElectionResults:
     def __init__(
         self,
         election: Election,
-        counts: dict[str, dict[int, float]],
-        regions: list[int],
+        counts: dict[str, dict[Hashable, float]],
+        regions: Iterable[Hashable],
     ) -> None:
         """Initialize a ElectionResults instance.
 
         Args:
             election (Election): The Election object that these results are associated
                 with.
-            counts (Dict[str, Dict[int, float]]): A dictionary mapping party names to the total
+            counts (dict[str, dict[Hashable, float]]): Party names mapped to the total
                 number of votes that party received in each part of the partition.
-            regions (List[int]): A list of regions that we would like to consider (e.g.
-                congressional districts).
+            regions (Iterable[Hashable]): Regions to consider, such as congressional districts.
 
         """
         self.election = election
         self.totals_for_party = counts
-        self.regions = regions
+        self.regions = tuple(regions)
 
         self.totals = {
             region: sum(counts[party][region] for party in self.election.parties)
@@ -294,7 +299,7 @@ class ElectionResults:
         """
         return self.seats(party)
 
-    def percent(self, party: str, region: int | None = None) -> float:
+    def percent(self, party: str, region: Hashable | None = None) -> float:
         """Return vote share for ``party`` in one region or overall.
 
         If ``region`` is provided, this returns the vote share in that region. Otherwise, it
@@ -302,7 +307,7 @@ class ElectionResults:
 
         Args:
             party (str): Party ID.
-            region (Optional[int], optional): ID of the part of the partition whose votes we want
+            region (Hashable | None, optional): ID of the part of the partition whose votes we want
                 to tally.
 
         Returns:
@@ -314,7 +319,7 @@ class ElectionResults:
             return self.percents_for_party[party][region]
         return sum(self.votes(party)) / sum(self.totals[region] for region in self.regions)
 
-    def percents(self, party: str) -> tuple:
+    def percents(self, party: str) -> tuple[float, ...]:
         """Return vote shares for ``party`` across all regions.
 
         The returned tuple contains one vote-share value per region, in the order of
@@ -324,12 +329,12 @@ class ElectionResults:
             party (str): Party ID
 
         Returns:
-            Tuple: The tuple of the percentage of votes that ``party`` received in each part of the
+            tuple: The tuple of the percentage of votes that ``party`` received in each part of the
                 partition
         """
         return tuple(self.percents_for_party[party][region] for region in self.regions)
 
-    def count(self, party: str, region: str | None = None) -> int:
+    def count(self, party: str, region: Hashable | None = None) -> float:
         """Return vote total for ``party`` in one region or overall.
 
         If ``region`` is provided, this returns the total vote count in that region. Otherwise, it
@@ -337,29 +342,29 @@ class ElectionResults:
 
         Args:
             party (str): Party ID.
-            region (Optional[int], optional): ID of the part of the partition whose votes we want
+            region (Hashable | None, optional): ID of the part of the partition whose votes we want
                 to tally.
 
         Returns:
-            int: The total number of votes that ``party`` received in a given region (part of the
+            float: The total number of votes that ``party`` received in a given region (part of the
                 partition). If ``region`` is omitted, returns the overall vote total of ``party``.
         """
         if region is not None:
             return self.totals_for_party[party][region]
         return sum(self.totals_for_party[party][region] for region in self.regions)
 
-    def counts(self, party: str) -> tuple:
+    def counts(self, party: str) -> tuple[float, ...]:
         """Return tuple of the total votes cast for ``party`` in each part of the partition.
 
         Args:
             party (str): Party ID
 
         Returns:
-            Tuple: tuple of the total votes cast for ``party`` in each part of the partition
+            tuple: tuple of the total votes cast for ``party`` in each part of the partition
         """
         return tuple(self.totals_for_party[party][region] for region in self.regions)
 
-    def votes(self, party: str) -> tuple:
+    def votes(self, party: str) -> tuple[float, ...]:
         """An alias for `counts`.
 
         It returns a tuple of the total votes cast for ``party`` in each part of the partition.
@@ -368,16 +373,16 @@ class ElectionResults:
             party (str): Party ID
 
         Returns:
-            Tuple: tuple of the total votes cast for ``party`` in each part of the partition
+            tuple: tuple of the total votes cast for ``party`` in each part of the partition
         """
         return self.counts(party)
 
-    def won(self, party: str, region: str) -> bool:
+    def won(self, party: str, region: Hashable) -> bool:
         """Determines if ``party`` won in the region given by ``region``?".
 
         Args:
             party (str): Party ID
-            region (str): ID of the part of the partition whose votes we want to tally.
+            region (Hashable): ID of the part of the partition whose votes we want to tally.
 
         Returns:
             bool: Answer to "Did ``party`` win the region in part ``region``?"
@@ -388,11 +393,11 @@ class ElectionResults:
             if opponent != party
         )
 
-    def total_votes(self) -> int:
+    def total_votes(self) -> float:
         """Return total number of votes cast in the election.
 
         Returns:
-            int: The total number of votes cast in the election.
+            float: The total number of votes cast in the election.
         """
         return sum(self.totals.values())
 
@@ -447,14 +452,16 @@ class ElectionResults:
         return pm.partisan_gini(self)
 
 
-def format_part_results(percents_for_party: dict[str, dict[int, float]], part: int) -> str:
+def format_part_results(
+    percents_for_party: Mapping[str, Mapping[Hashable, float]], part: Hashable
+) -> str:
     """Return A formatted string containing the results for the given part of the partition.
 
     Args:
-        percents_for_party (Dict[str, Dict[int, float]]): A dictionary mapping party names to a
+        percents_for_party (Mapping[str, Mapping[Hashable, float]]): Party names mapped to a
             dict containing the percentage of votes that party received in each part of the
             partition.
-        part (int): The part of the partition whose results we want to format.
+        part (Hashable): The part whose results to format.
 
     Returns:
         str: A formatted string containing the results for the given part of the partition.

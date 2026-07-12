@@ -9,6 +9,7 @@ packages = { find = { include = ["gerrychain*"], exclude = ["tests*"] } }
 [tool.setuptools.package-data]
 # Ship example graph data (e.g. Gerrymandria) inside the wheel so that
 # gerrychain.examples can load it via importlib.resources.
+"gerrychain" = ["py.typed"]
 "gerrychain.examples" = ["*.json"]
 
 [project]
@@ -34,28 +35,29 @@ dependencies = [
     "tqdm>=4.67.1",
 ]
 
-[tool.black]
-line-length = 100
-
-[tool.isort]
-profile = "black"
-line_length = 100
-multi_line_output = 3
-include_trailing_comma = true
-
 [tool.ruff]
 line-length = 100
-extend-exclude = [
-  "tests",
-  "**/__init__.py",
-  "gerrychain/vendor"
-]
 
 [tool.ruff.lint]
-select = ["E", "W", "F"]
+select = [
+  "E",
+  "W",
+  "F",
+  "UP006",
+  "UP007",
+  "UP045",
+  "ANN001",
+  "ANN002",
+  "ANN003",
+  "ANN201",
+  "ANN202",
+  "ANN204",
+  "ANN205",
+  "ANN206",
+]
 ignore = [
-    "E501",  # line length handled by black
-    "E203",  # whitespace before ':', handled by black
+    "E501",  # line length handled by Ruff's formatter
+    "E203",  # whitespace before ':', handled by Ruff's formatter
     "E731",  # do not assign lambda expression
 ]
 task-tags = ["TODO", "FIXME", "XXX", "HACK", "NOTE"]
@@ -63,12 +65,29 @@ task-tags = ["TODO", "FIXME", "XXX", "HACK", "NOTE"]
 [tool.ruff.lint.pycodestyle]
 ignore-overlong-task-comments = true
 
+[tool.ruff.lint.per-file-ignores]
+"**/__init__.py" = ["F401", "F403", "F405"]
+"tests/**" = ["ANN"]
+
+[tool.ty.environment]
+python-version = "3.11"
+
+[tool.ty.rules]
+missing-type-argument = "error"
+
+[tool.pyright]
+include = ["gerrychain", "tests/typing_assertions.py"]
+pythonVersion = "3.11"
+venvPath = "."
+venv = ".venv"
+typeCheckingMode = "standard"
+reportMissingParameterType = "error"
+reportMissingTypeArgument = "error"
+reportUnnecessaryTypeIgnoreComment = "error"
+
 [dependency-groups]
 dev = [
   # Linters, formatters, type checkers
-  "black>=25.1.0",
-  "isort>=6.0.1",
-  "autopep8>=2.3.2",
   "myst-parser>=4.0.1",
   # Iteractive kernel
   "ipykernel>=6.30.1",
@@ -79,6 +98,8 @@ dev = [
   # Other
   "pre-commit>=4.3.0",
   "ruff>=0.14.9",
+  "ty>=0.0.18",
+  "pyright>=1.1.402",
 ]
 docs = [
   "myst-parser>=4.0.1",

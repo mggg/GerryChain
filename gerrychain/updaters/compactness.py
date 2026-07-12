@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import collections
+from collections.abc import Hashable
 from typing import TYPE_CHECKING
 
 from .cut_edges import on_edge_flow
@@ -10,7 +11,7 @@ if TYPE_CHECKING:
     from ..partition.partition import Partition
 
 
-def boundary_nodes(partition: Partition, alias: str = "boundary_nodes") -> set[int]:
+def boundary_nodes(partition: Partition, alias: str = "boundary_nodes") -> set[Hashable]:
     """Return set of nodes in the partition that are on the boundary.
 
     Args:
@@ -19,7 +20,7 @@ def boundary_nodes(partition: Partition, alias: str = "boundary_nodes") -> set[i
             Default is 'boundary_nodes'.
 
     Returns:
-        Set: The set of nodes in the partition that are on the boundary.
+        set: The set of nodes in the partition that are on the boundary.
     """
 
     # Note that the "alias" parameter is used as the attribute name
@@ -37,17 +38,16 @@ def boundary_nodes(partition: Partition, alias: str = "boundary_nodes") -> set[i
         return result
 
 
-def initialize_exterior_boundaries_as_a_set(partition: Partition) -> dict[int, set[int]]:
+def initialize_exterior_boundaries_as_a_set(partition: Partition) -> dict[Hashable, set[Hashable]]:
     """Return exterior boundary nodes for each part in the partition.
 
     Args:
         partition (Partition): A partition of a Graph
 
     Returns:
-        Dict[int, Set]: A dictionary mapping each part of a partition to the set of nodes in that
-            part that are on the boundary.
+        dict[Hashable, set[Hashable]]: Parts mapped to their exterior boundary nodes.
     """
-    part_boundaries = collections.defaultdict(set)
+    part_boundaries: collections.defaultdict[Hashable, set[Hashable]] = collections.defaultdict(set)
     for node in partition["boundary_nodes"]:
         part_boundaries[partition.assignment.mapping[node]].add(node)
 
@@ -56,19 +56,21 @@ def initialize_exterior_boundaries_as_a_set(partition: Partition) -> dict[int, s
 
 @on_flow(initialize_exterior_boundaries_as_a_set, alias="exterior_boundaries_as_a_set")
 def exterior_boundaries_as_a_set(
-    partition: Partition, previous: set[int], inflow: set[int], outflow: set[int]
-) -> set[int]:
+    partition: Partition,
+    previous: set[Hashable],
+    inflow: set[Hashable],
+    outflow: set[Hashable],
+) -> set[Hashable]:
     """Updater function that responds to the flow of nodes between different partitions.
 
     Args:
         partition (Partition): A partition of a Graph
-        previous (Set): The previous set of exterior boundary nodes for a fixed part of the given
-            partition.
-        inflow (Set): The set of nodes that have flowed into the given part of the partition.
-        outflow (Set): The set of nodes that have flowed out of the given part of the partition.
+        previous (set[Hashable]): Previous exterior boundary nodes for a fixed part.
+        inflow (set[Hashable]): Nodes that flowed into the part.
+        outflow (set[Hashable]): Nodes that flowed out of the part.
 
     Returns:
-        Set: The new set of exterior boundary nodes for the given part of the partition.
+        set[Hashable]: The updated exterior boundary nodes for the part.
     """
     # Compute the new set of boundary nodes for the partition.
     #
@@ -84,18 +86,17 @@ def exterior_boundaries_as_a_set(
     return (previous | (inflow & graph_boundary)) - outflow
 
 
-def initialize_exterior_boundaries(partition: Partition) -> dict[int, float]:
+def initialize_exterior_boundaries(partition: Partition) -> dict[Hashable, float]:
     """Return A dictionary mapping each part of a partition to the total perimeter of the boundary.
 
     Args:
         partition (Partition): A partition of a Graph
 
     Returns:
-        Dict[int, float]: A dictionary mapping each part of a partition to the total perimeter of
-            the boundary nodes in that part.
+        dict[Hashable, float]: Parts mapped to their exterior boundary perimeter.
     """
     graph_boundary = partition["boundary_nodes"]
-    boundaries = collections.defaultdict(lambda: 0)
+    boundaries: collections.defaultdict[Hashable, float] = collections.defaultdict(float)
     for node in graph_boundary:
         part = partition.assignment.mapping[node]
         boundaries[part] += partition.graph.node_data(node)["boundary_perim"]
@@ -104,19 +105,21 @@ def initialize_exterior_boundaries(partition: Partition) -> dict[int, float]:
 
 @on_flow(initialize_exterior_boundaries, alias="exterior_boundaries")
 def exterior_boundaries(
-    partition: Partition, previous: float, inflow: set[int], outflow: set[int]
+    partition: Partition,
+    previous: float,
+    inflow: set[Hashable],
+    outflow: set[Hashable],
 ) -> float:
     """Computes the total perimeter of the boundary nodes in each part of the partition.
 
     Args:
         partition (Partition): A partition of a Graph
-        previous (Set): The previous set of exterior boundary nodes for a fixed part of the given
-            partition.
-        inflow (Set): The set of nodes that have flowed into the given part of the partition.
-        outflow (Set): The set of nodes that have flowed out of the given part of the partition.
+        previous (float): Previous exterior boundary perimeter for the part.
+        inflow (set[Hashable]): Nodes that flowed into the part.
+        outflow (set[Hashable]): Nodes that flowed out of the part.
 
     Returns:
-        Dict: A dict mapping each part of the partition to the new exterior boundary of that part.
+        float: The updated exterior boundary perimeter for the part.
     """
     graph_boundary = partition["boundary_nodes"]
     added_perimeter = sum(
@@ -128,15 +131,14 @@ def exterior_boundaries(
     return previous + added_perimeter - removed_perimeter
 
 
-def initialize_interior_boundaries(partition: Partition) -> dict[int, float]:
+def initialize_interior_boundaries(partition: Partition) -> dict[Hashable, float]:
     """Return A dictionary mapping each part of a partition to the total perimeter the given part.
 
     Args:
         partition (Partition): A partition of a Graph
 
     Returns:
-        Dict[int, float]: A dictionary mapping each part of a partition to the total perimeter the
-            given part shares with other parts.
+        dict[Hashable, float]: Parts mapped to the perimeter shared with other parts.
     """
 
     # RustworkX Note:
@@ -157,9 +159,11 @@ def initialize_interior_boundaries(partition: Partition) -> dict[int, float]:
 
     # Compute length of the shared perimeter of each part
     shared_perimeters_for_part = {
-        part: sum(
-            partition.graph.edge_data(edge_id)["shared_perim"]
-            for edge_id in edge_ids_for_part[part]
+        part: float(
+            sum(
+                partition.graph.edge_data(edge_id)["shared_perim"]
+                for edge_id in edge_ids_for_part[part]
+            )
         )
         for part in partition.parts
     }
@@ -178,13 +182,12 @@ def interior_boundaries(
 
     Args:
         partition (Partition): A partition of a Graph
-        previous (Set): The previous set of exterior boundary nodes for a fixed part of the given
-            partition.
-        new_edges (Set): The set of edges that have flowed into the given part of the partition.
-        old_edges (Set): The set of edges that have flowed out of the given part of the partition.
+        previous (float): Previous interior boundary perimeter for the part.
+        new_edges (set[tuple[int, int]]): Edges that flowed into the part.
+        old_edges (set[tuple[int, int]]): Edges that flowed out of the part.
 
     Returns:
-        Dict: A dict mapping each part of the partition to the new interior boundary of that part.
+        float: The updated interior boundary perimeter for the part.
     """
 
     added_perimeter = sum(
@@ -198,7 +201,7 @@ def interior_boundaries(
     return previous + added_perimeter - removed_perimeter
 
 
-def perimeter_of_part(partition: Partition, part: int) -> float:
+def perimeter_of_part(partition: Partition, part: Hashable) -> float:
     """Totals up the perimeter of the part in the partition.
 
     .. Warning::
@@ -208,7 +211,7 @@ def perimeter_of_part(partition: Partition, part: int) -> float:
 
     Args:
         partition (Partition): A partition of a Graph
-        part (int): The id of the part of the partition whose perimeter we want to compute.
+        part (Hashable): The part whose perimeter to compute.
 
     Returns:
         float: The perimeter of the desired part.
@@ -222,13 +225,13 @@ def perimeter_of_part(partition: Partition, part: int) -> float:
     return exterior_perimeter + interior_perimeter
 
 
-def perimeter(partition: Partition) -> dict[int, float]:
+def perimeter(partition: Partition) -> dict[Hashable, float]:
     """Computes the perimeter of each part in the partition.
 
     Args:
         partition (Partition): A partition of a Graph
 
     Returns:
-        Dict[int, float]: A dictionary mapping each part of a partition to its perimeter.
+        dict[Hashable, float]: Parts mapped to their perimeter.
     """
     return {part: perimeter_of_part(partition, part) for part in partition.parts}

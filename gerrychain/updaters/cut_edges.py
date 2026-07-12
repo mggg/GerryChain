@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import collections
-from collections.abc import Iterable
+from collections.abc import Hashable, Iterable
 from typing import TYPE_CHECKING
 
 from .flows import neighbor_flips, on_edge_flow
@@ -13,19 +13,19 @@ if TYPE_CHECKING:
 
 def _put_edges_into_parts(
     cut_edges: Iterable[tuple[int, int]], assignment: Assignment
-) -> dict[int, set[tuple[int, int]]]:
+) -> dict[Hashable, set[tuple[int, int]]]:
     """Return A dictionary mapping each part of a partition to the set of cut_edges in that part.
 
     Args:
-        cut_edges (List): A list of cut_edges in a graph which are to be separated into their
+        cut_edges (list): A list of cut_edges in a graph which are to be separated into their
             respective parts within the partition according to the given assignment.
-        assignment (Dict): A dictionary mapping nodes to their respective parts within the
+        assignment (dict): A dictionary mapping nodes to their respective parts within the
             partition.
 
     Returns:
-        Dict: A dictionary mapping each part of a partition to the set of cut_edges in that part.
+        dict: A dictionary mapping each part of a partition to the set of cut_edges in that part.
     """
-    by_part = collections.defaultdict(set)
+    by_part: collections.defaultdict[Hashable, set[tuple[int, int]]] = collections.defaultdict(set)
     for edge in cut_edges:
         # add edge to the sets corresponding to the parts it touches
         by_part[assignment.mapping[edge[0]]].add(edge)
@@ -40,7 +40,7 @@ def _new_cuts(partition: Partition) -> set[tuple[int, int]]:
         partition (Partition): A partition of a Graph
 
     Returns:
-        Set[Tuple]: The set of edges that were not cut, but now are.
+        set[tuple]: The set of edges that were not cut, but now are.
     """
     return {
         (node, neighbor)
@@ -56,8 +56,9 @@ def _obsolete_cuts(partition: Partition) -> set[tuple[int, int]]:
         partition (Partition): A partition of a Graph
 
     Returns:
-        Set[Tuple]: The set of edges that were cut, but now are not.
+        set[tuple]: The set of edges that were cut, but now are not.
     """
+    assert partition.parent is not None
     return {
         (node, neighbor)
         for node, neighbor in neighbor_flips(partition)
@@ -66,14 +67,14 @@ def _obsolete_cuts(partition: Partition) -> set[tuple[int, int]]:
     }
 
 
-def initialize_cut_edges(partition: Partition) -> dict[int, set[tuple[int, int]]]:
+def initialize_cut_edges(partition: Partition) -> dict[Hashable, set[tuple[int, int]]]:
     """A dictionary mapping each part of a partition to the set of cut edges in that part.
 
     Args:
         partition (Partition): A partition of a Graph
 
     Returns:
-        Dict: A dictionary mapping each part of a partition to the set of cut edges in that part.
+        dict: A dictionary mapping each part of a partition to the set of cut edges in that part.
     """
 
     # Compute the set of edges that are "cut_edges" - that is, edges that go from
@@ -105,13 +106,13 @@ def cut_edges_by_part(
 
     Args:
         partition (Partition): A partition of a Graph
-        previous (Set[Tuple]): The previous set of edges for a fixed part of the given partition.
-        new_edges (Set[Tuple]): The set of edges that have flowed into the given part of the
+        previous (set[tuple]): The previous set of edges for a fixed part of the given partition.
+        new_edges (set[tuple]): The set of edges that have flowed into the given part of the
             partition.
-        old_edges (Set[Tuple]): The set of cut edges in the previous partition.
+        old_edges (set[tuple]): The set of cut edges in the previous partition.
 
     Returns:
-        Set: The new set of cut edges for the newly generated partition.
+        set: The new set of cut edges for the newly generated partition.
     """
     return (previous | new_edges) - old_edges
 
@@ -123,7 +124,7 @@ def cut_edges(partition: Partition) -> set[tuple[int, int]]:
         partition (Partition): A partition of a Graph
 
     Returns:
-        Set[Tuple]: The set of edges that are cut by the given partition.
+        set[tuple]: The set of edges that are cut by the given partition.
     """
     parent = partition.parent
 

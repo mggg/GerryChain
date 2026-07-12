@@ -1,4 +1,4 @@
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Hashable, Iterable
 
 import numpy
 
@@ -21,17 +21,17 @@ class Validator:
         chain = MarkovChain(proposal, is_valid, accept, initial_state, total_steps)
 
     Attributes:
-        constraints (List[Callable]): List of validator functions that will check partitions.
+        constraints (list[Callable]): List of validator functions that will check partitions.
     """
 
-    def __init__(self, constraints: list[Callable]) -> None:
+    def __init__(self, constraints: Iterable[Callable[[Partition], bool]]) -> None:
         """Initialize a Validator instance.
 
         Args:
-            constraints (List[Callable]): List of validator functions that will check partitions.
+            constraints (list[Callable]): List of validator functions that will check partitions.
 
         """
-        self.constraints = constraints
+        self.constraints = list(constraints)
 
     def __call__(self, partition: Partition) -> bool:
         """Determine if the given partition is valid.
@@ -60,13 +60,16 @@ class Validator:
         return True
 
     def __repr__(self) -> str:
-        constraint_names = [constraint.__name__ for constraint in self.constraints]
+        constraint_names = [
+            getattr(constraint, "__name__", type(constraint).__name__)
+            for constraint in self.constraints
+        ]
         return f"Validator(constraints={constraint_names})"
 
 
 def within_percent_of_ideal_population(
     initial_partition: Partition, percent: float = 0.01, pop_key: str = "population"
-) -> Bounds:
+) -> Bounds[[Partition]]:
     """Construct a bounds object to ensure all districts are closed to a target population.
 
     Args:
@@ -91,7 +94,9 @@ def within_percent_of_ideal_population(
     return Bounds(population, bounds=bounds)
 
 
-def deviation_from_ideal(partition: Partition, attribute: str = "population") -> dict[int, float]:
+def deviation_from_ideal(
+    partition: Partition, attribute: str = "population"
+) -> dict[Hashable, float]:
     """Determine the deviation of the given attribute from the ideal value
     among parts of the partition.
 
@@ -107,7 +112,7 @@ def deviation_from_ideal(partition: Partition, attribute: str = "population") ->
             deviation for. Default is ``"population"``.
 
     Returns:
-        Dict[int, float]: dictionary from parts to their deviation
+        dict[Hashable, float]: dictionary from parts to their deviation
     """
     number_of_districts = len(partition[attribute].keys())
     total = sum(partition[attribute].values())
@@ -127,7 +132,7 @@ def districts_within_tolerance(
 
     Args:
         partition (Partition): Partition class instance
-        attrName (str, optional): String that is the name of an updater in partition. Default is
+        attribute_name (str, optional): Name of an updater in ``partition``. Defaults to
             ``"population"``.
         percentage (float, optional): What percent (as a number between 0 and 1) difference is
             allowed. Default is 0.1.

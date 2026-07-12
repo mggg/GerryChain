@@ -182,7 +182,6 @@ def four_by_five_grid_nx():
 
 @pytest.fixture
 def graph_with_random_data_factory(three_by_three_grid):
-
     def factory(columns):
         graph = three_by_three_grid
         attach_random_data(graph, columns)

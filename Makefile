@@ -4,9 +4,11 @@ PYTHON_VERSION = 3.11
 VENV_DIR ?= .venv
 PKG ?= gerrychain
 TEST_PATHS ?= tests
+TYPECHECK_PATHS ?= $(PKG) tests/typing_assertions.py
 export UV_MANAGED_PYTHON = 1
 
-.PHONY: all
+.PHONY: help check_prereq setup install install-docs check test test-all type-check format lint \
+	precommit docs clean
 
 help:
 	@echo "Available targets:"
@@ -15,7 +17,8 @@ help:
 	@echo "  install-docs  - Install documentation dependencies"
 	@echo "  test          - Run the test suite"
 	@echo "  test-all      - Run the test suite including slow tests"
-	@echo "  lint          - Run code linters"
+	@echo "  lint          - Run Ruff and both type checkers"
+	@echo "  type-check    - Run ty, then Pyright"
 	@echo "  format        - Format the codebase"
 	@echo "  precommit     - Run pre-commit hooks"
 	@echo "  docs          - Build the documentation"
@@ -36,9 +39,7 @@ setup: check_prereq
 	@echo
 	uv python install $(PYTHON_VERSION)
 	@echo "Creating virtual environment and installing dev dependencies..."
-	uv sync --python $(PYTHON_VERSION) 
-	uv sync --all-groups
-	uv pip install -e .
+	uv sync --python $(PYTHON_VERSION) --all-groups
 	uv run pre-commit install
 	@echo ""
 	@echo "Development environment setup complete!"
@@ -46,13 +47,10 @@ setup: check_prereq
 install: check_prereq
 	@echo "Installing GerryChain package..."
 	uv sync --python $(PYTHON_VERSION)
-	uv pip install -e .
 
 install-docs: check_prereq
 	@echo "Installing GerryChain package with all just the documentation dependencies..."
-	uv sync --python $(PYTHON_VERSION)
-	uv sync --group docs
-	uv pip install -e .
+	uv sync --python $(PYTHON_VERSION) --group docs
 
 check:
 	$(MAKE) format
@@ -66,19 +64,20 @@ test-all:
 	@echo "Running test suite (including slow tests)..."
 	PYTHONHASHSEED=0 uv run pytest -v --runslow $(TEST_PATHS)
 
-# Add this in later
-# type-check:
-# 	@echo "Running type checking with mypy..."
-# 	uv run mypy $(PKG) ${TEST_PATHS}
+type-check:
+	@echo "Running fast type checking with ty..."
+	uv run ty check $(TYPECHECK_PATHS)
+	@echo "Running thorough type checking with Pyright..."
+	uv run pyright $(TYPECHECK_PATHS)
 
 format:
-	@echo "Formatting codebase with black..."
-	uv run isort $(PKG) $(TEST_PATHS)
-	uv run black $(PKG) $(TEST_PATHS)
+	@echo "Formatting codebase with Ruff..."
+	uv run ruff format $(PKG) $(TEST_PATHS)
 
-lint: 
-	@echo "Running linters (ruff)..."
+lint:
+	@echo "Running Ruff..."
 	uv run ruff check $(PKG) $(TEST_PATHS)
+	$(MAKE) type-check
 
 precommit:
 	@echo "Running pre-commit hooks..."

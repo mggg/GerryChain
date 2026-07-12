@@ -19,21 +19,21 @@ def top_level_graph_is_properly_configured(graph):
     # This routine tests that top-level graphs (not a subgraph)
     # are properly configured
     assert not graph._is_a_subgraph, "Top-level graph _is_a_subgraph is True"
-    assert hasattr(
-        graph, "_node_id_to_parent_node_id_map"
-    ), "Graph._node_id_to_parent_node_id_map is not set"
-    assert hasattr(
-        graph, "_node_id_to_original_nx_node_id_map"
-    ), "Graph._node_id_to_original_nx_node_id_map is not set"
+    assert hasattr(graph, "_node_id_to_parent_node_id_map"), (
+        "Graph._node_id_to_parent_node_id_map is not set"
+    )
+    assert hasattr(graph, "_node_id_to_original_nx_node_id_map"), (
+        "Graph._node_id_to_original_nx_node_id_map is not set"
+    )
 
 
 def test_from_networkx(four_by_five_grid_nx):
     graph = Graph.from_networkx(four_by_five_grid_nx)
     assert len(graph.node_indices) == 20, f"Expected 20 nodes but got {len(graph.node_indices)}"
     assert len(graph.edge_indices) == 26, f"Expected 26 edges but got {len(graph.edge_indices)}"
-    assert (
-        graph.node_data(1)["population"] == 10
-    ), f"Expected population of 10 but got {graph.node_data(1)['population']}"
+    assert graph.node_data(1)["population"] == 10, (
+        f"Expected population of 10 but got {graph.node_data(1)['population']}"
+    )
     top_level_graph_is_properly_configured(graph)
 
 
@@ -41,9 +41,9 @@ def test_from_rustworkx(four_by_five_grid_nx):
     rx_graph = rx.networkx_converter(four_by_five_grid_nx, keep_attributes=True)
     graph = Graph.from_rustworkx(rx_graph)
     assert len(graph.node_indices) == 20, f"Expected 20 nodes but got {len(graph.node_indices)}"
-    assert (
-        graph.node_data(1)["population"] == 10
-    ), f"Expected population of 10 but got {graph.node_data(1)['population']}"
+    assert graph.node_data(1)["population"] == 10, (
+        f"Expected population of 10 but got {graph.node_data(1)['population']}"
+    )
     top_level_graph_is_properly_configured(graph)
 
 
@@ -74,38 +74,38 @@ def test_convert_from_nx_to_rx(four_by_five_graph_nx):
 
     # Same number of nodes
     assert len(graph.node_indices) == 20, f"Expected 20 nodes but got {len(graph.node_indices)}"
-    assert (
-        len(converted_graph.node_indices) == 20
-    ), f"Expected 20 nodes but got {len(graph.node_indices)}"
+    assert len(converted_graph.node_indices) == 20, (
+        f"Expected 20 nodes but got {len(graph.node_indices)}"
+    )
 
     # Same number of edges
     assert len(graph.edge_indices) == 26, f"Expected 26 edges but got {len(graph.edge_indices)}"
-    assert (
-        len(converted_graph.edge_indices) == 26
-    ), f"Expected 26 edges but got {len(graph.edge_indices)}"
+    assert len(converted_graph.edge_indices) == 26, (
+        f"Expected 26 edges but got {len(graph.edge_indices)}"
+    )
 
     # Node data is the same
     # frm: TODO: Refactoring:  Do this the clever Python way and test ALL at the same time
     for node_id in graph.node_indices:
-        assert (
-            graph.node_data(node_id)["population"] == 10
-        ), f"Expected population of 10 but got {graph.node_data(node_id)['population']}"
-        assert (
-            graph.node_data(node_id)["nx_node_id"] == node_id
-        ), f"Expected nx_node_id of {node_id} but got {graph.node_data(node_id)['nx_node_id']}"
-        assert (
-            graph.node_data(node_id)["MVAP"] == 2
-        ), f"Expected MVAP of 2 but got {graph.node_data(node_id)['MVAP']}"
+        assert graph.node_data(node_id)["population"] == 10, (
+            f"Expected population of 10 but got {graph.node_data(node_id)['population']}"
+        )
+        assert graph.node_data(node_id)["nx_node_id"] == node_id, (
+            f"Expected nx_node_id of {node_id} but got {graph.node_data(node_id)['nx_node_id']}"
+        )
+        assert graph.node_data(node_id)["MVAP"] == 2, (
+            f"Expected MVAP of 2 but got {graph.node_data(node_id)['MVAP']}"
+        )
     for node_id in converted_graph.node_indices:
-        assert (
-            graph.node_data(node_id)["population"] == 10
-        ), f"Expected population of 10 but got {graph.node_data(node_id)['population']}"
+        assert graph.node_data(node_id)["population"] == 10, (
+            f"Expected population of 10 but got {graph.node_data(node_id)['population']}"
+        )
         # frm: TODO: Code: Need to use node_id map to get appropriate node_ids for RX graph
         # assert graph.node_data(node_id)["nx_node_id"] == node_id, \
         #   f"Expected nx_node_id of {node_id} but got {graph.node_data(node_id)['nx_node_id']}"
-        assert (
-            graph.node_data(node_id)["MVAP"] == 2
-        ), f"Expected MVAP of 2 but got {graph.node_data(node_id)['MVAP']}"
+        assert graph.node_data(node_id)["MVAP"] == 2, (
+            f"Expected MVAP of 2 but got {graph.node_data(node_id)['MVAP']}"
+        )
 
     # Confirm that the node_id map to the "original" NX node_ids is correct
     for node_id in converted_graph.nodes:
@@ -117,7 +117,6 @@ def test_convert_from_nx_to_rx(four_by_five_graph_nx):
 
 
 def test_get_edge_from_edge_id(four_by_five_graph_nx, four_by_five_graph_rx):
-
     # Test that get_edge_from_edge_id works for both NX and RX based Graph objects
 
     # NX edges and edge_ids are the same, so this first test is trivial
@@ -137,7 +136,6 @@ def test_get_edge_from_edge_id(four_by_five_graph_nx, four_by_five_graph_rx):
 
 
 def test_get_edge_id_from_edge(four_by_five_graph_nx, four_by_five_graph_rx):
-
     # Test that get_edge_id_from_edge works for both NX and RX based Graph objects
 
     # NX edges and edge_ids are the same, so this first test is trivial
@@ -216,9 +214,9 @@ def test_subgraph(four_by_five_graph_rx):
         subgraph_stored_node_id = subgraph_rx.node_data(subgraph_node_id)["nx_node_id"]
         subgraph_stored_node_id = subgraph_rx.node_data(subgraph_node_id)["nx_node_id"]
         parent_stored_node_id = parent_graph_rx.node_data(parent_node_id)["nx_node_id"]
-        assert (
-            parent_stored_node_id == subgraph_stored_node_id
-        ), "_node_id_to_parent_node_id_map is incorrect"
+        assert parent_stored_node_id == subgraph_stored_node_id, (
+            "_node_id_to_parent_node_id_map is incorrect"
+        )
 
     # verify that _node_id_to_original_nx_node_id_map is correct
     for (
@@ -226,9 +224,9 @@ def test_subgraph(four_by_five_graph_rx):
         original_node_id,
     ) in subgraph_rx._node_id_to_original_nx_node_id_map.items():
         subgraph_stored_node_id = subgraph_rx.node_data(subgraph_node_id)["nx_node_id"]
-        assert (
-            subgraph_stored_node_id == original_node_id
-        ), "_node_id_to_original_nx_node_id_map is incorrect"
+        assert subgraph_stored_node_id == original_node_id, (
+            "_node_id_to_original_nx_node_id_map is incorrect"
+        )
 
 
 def test_num_connected_components(four_by_five_graph_nx, four_by_five_graph_rx):
@@ -239,7 +237,6 @@ def test_num_connected_components(four_by_five_graph_nx, four_by_five_graph_rx):
 
 
 def test_subgraphs_for_connected_components(four_by_five_graph_nx, four_by_five_graph_rx):
-
     subgraphs_nx = four_by_five_graph_nx.subgraphs_for_connected_components()
     subgraphs_rx = four_by_five_graph_rx.subgraphs_for_connected_components()
 
@@ -283,7 +280,6 @@ def test_add_data():
 
 
 def graph_has_cycle(set_of_edges):
-
     #
     # Given a set of edges that define a graph, determine
     # if the graph has cycles.
@@ -325,7 +321,6 @@ def graph_has_cycle(set_of_edges):
         return adj_matrix
 
     def create_adjacency_matrix_from_set_of_edges(set_of_edges):
-
         # determine num_nodes
         #
         set_of_nodes = set()

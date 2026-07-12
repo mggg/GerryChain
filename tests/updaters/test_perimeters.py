@@ -8,7 +8,6 @@ from gerrychain.proposals import propose_random_flip
 
 
 def setup():
-
     # Note that the node_ids for the NX graph for a grid are tuples with the (x,y) position of the node
 
     grid = Grid((4, 4), with_diagonals=False)
@@ -35,7 +34,6 @@ def test_interior_perimeter_handles_flips_with_a_simple_grid():
 
 
 def test_cut_edges_by_part_handles_flips_with_a_simple_grid():
-
     # frm: TODO: Testing:  Add a graphic here
     #
     # That will allow the person reading this code to make sense

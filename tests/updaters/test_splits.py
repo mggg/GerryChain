@@ -51,7 +51,6 @@ class TestComputeCountySplits:
         assert set(second_result.keys()) == {"a", "b", "c"}
 
     def test_no_splits(self, graph_with_counties):
-
         # frm: TODO: Testing:  Why does this not just use "split_partition"?  Isn't it the same?
         partition = Partition(graph_with_counties, assignment="county")
 

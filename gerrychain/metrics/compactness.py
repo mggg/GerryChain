@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Hashable
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -23,9 +24,7 @@ def compute_polsby_popper(area: float, perimeter: float) -> float:
         return math.nan
 
 
-# Partition type hint left out due to circular import
-# def polsby_popper(partition: Partition) -> Dict[int, float]:
-def polsby_popper(partition: Partition) -> dict[int, float]:
+def polsby_popper(partition: Partition) -> dict[Hashable, float]:
     """Computes Polsby-Popper compactness scores for each district in the partition.
 
     This function computes Polsby-Popper compactness scores for each district in the partition. It
@@ -35,7 +34,7 @@ def polsby_popper(partition: Partition) -> dict[int, float]:
         partition (Partition): The partition to compute scores for
 
     Returns:
-        Dict[int, float]: A dictionary mapping each district ID to its Polsby-Popper score
+        dict[Hashable, float]: A dictionary mapping each district ID to its Polsby-Popper score
     """
     return {
         part: compute_polsby_popper(partition["area"][part], partition["perimeter"][part])
