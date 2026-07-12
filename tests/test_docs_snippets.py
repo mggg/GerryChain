@@ -20,6 +20,7 @@ In RST the marker is a comment, in Markdown an HTML comment:
 once, before any page, in the shared working directory (e.g. to unzip downloaded data).
 """
 
+import json
 import os
 
 os.environ.setdefault("MPLBACKEND", "Agg")
@@ -250,6 +251,23 @@ def test_every_python_block_is_extracted(page: Path) -> None:
     text = page.read_text(encoding="utf-8")
     loose_re = MD_LOOSE_RE if page.suffix == ".md" else RST_LOOSE_RE
     assert len(loose_re.findall(text)) == len(ALL_BLOCKS[page])
+
+
+@pytest.mark.parametrize("notebook", sorted((DOCS / "user").glob("*.ipynb")), ids=_page_id)
+def test_notebooks_use_portable_markdown(notebook: Path) -> None:
+    """Notebook Markdown must render in Jupyter as well as in myst-nb."""
+    data = json.loads(notebook.read_text(encoding="utf-8"))
+    markdown = "\n".join(
+        "".join(cell["source"]) for cell in data["cells"] if cell["cell_type"] == "markdown"
+    )
+    assert not re.search(r"^`{3,4}\{", markdown, re.MULTILINE)
+    assert not re.search(r"\{(?:doc|class|meth|func|mod|ref|attr|data|exc)\}`", markdown)
+    assert not re.search(r"^\([a-z0-9-]+\)=$", markdown, re.MULTILINE)
+    assert "../_images/" not in markdown
+    assert "<img" not in markdown
+    for image in re.findall(r"!\[[^]]*\]\(([^)]+)\)", markdown):
+        if "://" not in image:
+            assert (notebook.parent / image).is_file(), image
 
 
 # ---------------------------------------------------------------------------
