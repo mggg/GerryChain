@@ -48,49 +48,66 @@ publishing your source code as a [GitHub](https://github.com/) repository, and n
 your personal website. GitHub has a [desktop client](https://desktop.github.com/) that makes this easy, or you
 can easily upload and edit your files on the website directly.
 
-## Make your chains speedily replayable
+## Make your chains replayable
 
-It is sometimes desirable to allow others to reproduce or "replay" your chain runs step
-by step. In such cirucmstances, we recommend using [pcompress](https://github.com/mggg/pcompress) which efficiently and
-rapidly stores your MCMC chain runs in a highly-compressed format. It can then be
-quickly read-in by `pcompress` at a later date. To setup [pcompress](https://github.com/mggg/pcompress), you need to first
-[install Cargo](https://doc.rust-lang.org/cargo/getting-started/installation.html). Then, you can install [pcompress](https://github.com/mggg/pcompress) by installing running `cargo
-install pcompress` and `pip install pcompress` in your terminal.
+To save every plan from a chain without producing a large JSONL file, use
+[Binary Ensemble]. Its `.bendl` format keeps the compressed assignment stream, dual
+graph, and metadata together in one file. Install its Python package with:
 
-To use [pcompress](https://github.com/mggg/pcompress), you can wrap your `MarkovChain` instances with `Record` and
-pass along the file name you want to save your chain as. For example, this will save
-your chain run as `saved-run.chain`:
-
-<!-- docs-test: skip -- incomplete fragment; requires the optional pcompress package -->
-
-```python
-from gerrychain import MarkovChain
-from pcompress import Record
-
-chain = MarkovChain(
-    # chain setup here
-)
-
-for partition in Record(chain, "saved-run.chain"):
-    # normal chain stuff here
+```console
+pip install binary-ensemble
 ```
 
-Then, if you want to replay your chain run, you can select the same filename and pass
-along the graph that was used to generate the chain, along with any updaters that are needed:
+Create an encoder, store the graph, and write each partition in that graph's node order.
+Using `sort=None` preserves the order of the graph on which the chain is already running:
 
-<!-- docs-test: skip -- incomplete fragment; requires the optional pcompress package -->
+<!-- docs-test: skip -- fragment; requires binary-ensemble and a configured chain -->
 
 ```python
-from pcompress import Replay
+from binary_ensemble import BendlEncoder
 
-for partition in Replay(graph, "saved-run.chain", updaters=my_updaters):
-    # normal chain stuff here
+encoder = BendlEncoder("saved-run.bendl", overwrite=True)
+stored_graph = encoder.add_graph(initial_partition.graph, sort=None)
+node_order = list(stored_graph.nodes)
+encoder.add_metadata({"sampler": "ReCom", "seed": 2024})
+
+with encoder.ben_stream() as ensemble:
+    for partition in chain:
+        assignment = partition.assignment.to_series().loc[node_order]
+        ensemble.write(assignment.astype(int).tolist())
 ```
 
-The two code samples provided will produce totally equivalent chain runs, up to
-reordering. Each step in the replayed chain run will match each step in the recorded
-chain run. Furthermore, the replay process will be faster than the original chain
-running process and is compatible across future and past releases of GerryChain.
+To replay the saved plans as GerryChain partitions, read the embedded graph and rebuild a
+partition for each assignment. Updaters are recomputed as the file is streamed:
+
+<!-- docs-test: skip -- fragment; requires binary-ensemble and application-specific updaters -->
+
+```python
+import pandas as pd
+
+from binary_ensemble import BendlDecoder
+from gerrychain import Partition
+
+decoder = BendlDecoder("saved-run.bendl")
+graph = decoder.read_graph()
+node_order = pd.Index(graph.nodes)
+
+for assignment in decoder:
+    partition = Partition(
+        graph,
+        assignment=pd.Series(assignment, index=node_order),
+        updaters=my_updaters,
+    )
+    # Analyze the replayed partition here.
+```
+
+Each decoded assignment is lossless and appears in the same sequence as the recorded
+chain. The bundle also preserves the graph order needed to interpret those assignments.
+See the Binary Ensemble guide to
+[compressing a GerryChain run](https://binary-ensemble.readthedocs.io/en/latest/quick-help/compress-gerrychain-run/)
+for graph reordering, encoding variants, and archival compression.
+
+[Binary Ensemble]: https://binary-ensemble.readthedocs.io/
 
 ## Use the same versions of all of your dependencies
 

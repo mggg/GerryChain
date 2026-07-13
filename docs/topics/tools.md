@@ -28,11 +28,12 @@ gerrymandered redistricting maps. As such, [PyEI] is essential to [MGGG]'s work.
 
 ## Other tools
 
-There are also other tools maintained by [MGGG], including [maup] and
-[pcompress], which have their own set of documentation.
+There are also other tools used in redistricting workflows, including [maup] and
+[Binary Ensemble], which have their own documentation. Binary Ensemble stores,
+compresses, and streams ensembles of districting plans.
 
 [gerrytools]: https://github.com/mggg/gerrytools
 [maup]: https://github.com/mggg/maup
 [mggg]: https://mggg.org
-[pcompress]: https://github.com/mggg/pcompress
+[binary ensemble]: https://binary-ensemble.readthedocs.io/
 [pyei]: https://github.com/mggg/ecological-inference
