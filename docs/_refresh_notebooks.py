@@ -85,6 +85,7 @@ def _without_images(nb: nbformat.NotebookNode) -> tuple[dict, list[str]]:
                     data[mime] = "<image>"
             html = data.get("text/html")
             if html:
+
                 def replace_image(match: re.Match[str]) -> str:
                     images.append(re.sub(r"\\\s*", "", match.group(1)))
                     return "data:image/png;base64,<image>"

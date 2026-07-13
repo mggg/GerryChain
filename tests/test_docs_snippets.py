@@ -58,6 +58,7 @@ MD_MARKER_RE = re.compile(
 # must have been extracted by the strict scanner above (or the scanner needs fixing).
 RST_LOOSE_RE = re.compile(r"code(?:-block)?::\s*python", re.IGNORECASE)
 MD_LOOSE_RE = re.compile(r"^[ \t]*```python", re.MULTILINE)
+DATA_IMAGE_RE = re.compile(r"data:image/[^;]+;base64,(?:[A-Za-z0-9+/=]|\\\s*)+")
 
 
 @dataclass
@@ -201,6 +202,13 @@ def _page_id(page: Path) -> str:
     return str(page.relative_to(REPO))
 
 
+def _reviewable_output_text(output: dict) -> str:
+    """Return human-readable output, excluding embedded binary image payloads."""
+    data = output.get("data", {})
+    html = DATA_IMAGE_RE.sub("<image>", "".join(data.get("text/html", [])))
+    return "".join(output.get("text", [])) + "".join(data.get("text/plain", [])) + html
+
+
 def _run_block(block: Block, namespace: dict) -> None:
     # Pad the source so tracebacks and SyntaxErrors point at the real line in the docs page.
     padded = "\n" * (block.lineno - 1) + block.source
@@ -283,12 +291,19 @@ def test_notebook_text_outputs_are_reviewable(notebook: Path) -> None:
     """One cell should not bury the tutorial in generated text or HTML."""
     data = json.loads(notebook.read_text(encoding="utf-8"))
     for cell in data["cells"]:
-        text = []
-        for output in cell.get("outputs", []):
-            text.extend(output.get("text", []))
-            text.extend(output.get("data", {}).get("text/plain", []))
-            text.extend(output.get("data", {}).get("text/html", []))
-        assert len("".join(text)) <= 10_000
+        text = "".join(_reviewable_output_text(output) for output in cell.get("outputs", []))
+        assert len(text) <= 10_000
+
+
+def test_embedded_image_payload_is_not_counted_as_notebook_text() -> None:
+    payload = "A" * 20_000
+    output = {"data": {"text/html": [f'<img src="data:image/png;base64,{payload}">']}}
+    assert len(_reviewable_output_text(output)) < 10_000
+
+
+def test_large_html_output_is_still_counted_as_notebook_text() -> None:
+    output = {"data": {"text/html": ["A" * 10_001]}}
+    assert len(_reviewable_output_text(output)) > 10_000
 
 
 @pytest.mark.parametrize("notebook", sorted((DOCS / "user").glob("*.ipynb")), ids=_page_id)
