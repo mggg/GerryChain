@@ -31,9 +31,11 @@ DOCS = Path(__file__).resolve().parent
 TUTORIALS = DOCS / "user"
 # Committed sample data the guides load with bare relative paths, mirroring the
 # docs_cwd fixture in tests/test_docs_snippets.py.
-DATA_FILES = ("PA_VTDs.json", "05_bg_census_consolidated.json", "MN.zip", "gerrymandria.json")
+DATA_FILES = ("PA_VTDs.json", "05_bg_census_consolidated.json", "MN.zip")
 IMAGE_SIZE = (64, 64)
 IMAGE_MEAN_DIFFERENCE = 3.0
+DATA_IMAGE_RE = re.compile(r"data:image/[^;]+;base64,((?:[A-Za-z0-9+/=]|\\\s*)+)")
+ANIMATION_ID_RE = re.compile(r"(?<=[A-Za-z_])[0-9a-f]{32}\b")
 
 
 def normalize(nb: nbformat.NotebookNode) -> None:
@@ -81,13 +83,21 @@ def _without_images(nb: nbformat.NotebookNode) -> tuple[dict, list[str]]:
                 if mime.startswith("image/"):
                     images.append(data[mime])
                     data[mime] = "<image>"
+            html = data.get("text/html")
+            if html:
+                def replace_image(match: re.Match[str]) -> str:
+                    images.append(re.sub(r"\\\s*", "", match.group(1)))
+                    return "data:image/png;base64,<image>"
+
+                html = DATA_IMAGE_RE.sub(replace_image, html)
+                data["text/html"] = ANIMATION_ID_RE.sub("<id>", html)
     return dict(stripped), images
 
 
 def _decode_image(payload: str) -> Image.Image | None:
     try:
         return Image.open(BytesIO(base64.b64decode(payload))).convert("RGB")
-    except (UnidentifiedImageError, ValueError):
+    except (OSError, UnidentifiedImageError, ValueError):
         return None
 
 
@@ -120,6 +130,7 @@ def notebooks_match(left: nbformat.NotebookNode, right: nbformat.NotebookNode) -
 
 def execute(path: Path) -> nbformat.NotebookNode:
     nb = nbformat.read(path, as_version=4)
+    nb.metadata.pop("widgets", None)
     with tempfile.TemporaryDirectory() as cwd:
         for name in DATA_FILES:
             (Path(cwd) / name).symlink_to(DOCS / "_static" / name)

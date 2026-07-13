@@ -19,9 +19,9 @@ from matplotlib.colors import ListedColormap
 from PIL import Image
 
 from gerrychain import Graph
+from gerrychain.examples import gerrymandria
 
 DOCS = Path(__file__).parent
-STATIC = DOCS / "_static"
 IMAGES = DOCS / "user" / "images"
 DISTRICTR_COLORS = (
     "#0099cd",
@@ -131,7 +131,7 @@ def save_district_dual_graph(graph: Graph) -> None:
 
 
 def regenerate_gerrymandria() -> None:
-    graph = Graph.from_json(STATIC / "gerrymandria.json")
+    graph = gerrymandria()
     for filename, attribute in (
         ("gerrymandria.png", "district"),
         ("gerrymandria_cities.png", "muni"),
