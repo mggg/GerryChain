@@ -118,5 +118,4 @@ topics/reproducibility
 topics/tools
 topics/contributing
 topics/reporting
-topics/style_reference
 ```

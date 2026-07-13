@@ -54,14 +54,14 @@ The layers function as follows:
 
 :::{glossary}
 Proposals
-: A proposal is an algorithm for creating a new district map from
+  A proposal is an algorithm for creating a new district map from
   an existing one. A simple example is to just pick one node (for
   instance a census block) and reassign it to a different district.
   Another example would be to merge two districts and then
   randomly split the merged nodes into two new districts.
 
 Updaters
-: An updater computes one or more metrics about a district plan
+  An updater computes one or more metrics about a district plan
   for later layers to use. One example of an updater is to
   compute the edges that form the boundary between two districts,
   that is, the edges where one node is in one district and the
@@ -71,14 +71,14 @@ Updaters
   district in the district plan.
 
 Validators
-: A validator decides whether or not a new district plan is valid for
+  A validator decides whether or not a new district plan is valid for
   the chain to move to. For instance, often the redistricting rules require
   that congressional districts be contiguous. A validator may
   require that all proposed steps create only
   contiguous districts.
 
 Acceptance functions
-: An acceptance function decides whether or not the chain *should*
+  An acceptance function decides whether or not the chain *should*
   move to a new, valid state. This is useful for implementing
   techniques such as the [Metropolis-Hastings] algorithm.
 :::
