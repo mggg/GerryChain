@@ -24,6 +24,12 @@ Build and analyze ensembles of districting plans with Markov chain Monte Carlo.
 :target: https://pypi.org/project/gerrychain/
 ```
 
+:::{admonition} 1.0.0 Release
+:class: important
+
+A RELEASE HAPPENED AND THERE IS STUFF TO READ. FINISH LATER.
+:::
+
 GerryChain is a library for using [Markov Chain Monte Carlo](https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo)
 methods to study the problem of political redistricting. Development of the
 library began during the 2018 Voting Rights Data Institute (VRDI).
@@ -114,6 +120,7 @@ api
 :caption: Topics
 :maxdepth: 1
 
+topics/v1p0p0_migration_guide
 topics/reproducibility
 topics/tools
 topics/contributing
