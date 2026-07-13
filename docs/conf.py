@@ -75,6 +75,8 @@ html_theme_options = {
         "color-foreground-primary": "#140f0c",
         "color-brand-primary": "#c2410c",
         "color-brand-content": "#0077c4",
+        "color-admonition-title--note": "#087fc7",
+        "color-admonition-title-background--note": "rgba(8, 127, 199, 0.18)",
     },
     "dark_css_variables": {
         "color-background-primary": "#1c1917",
@@ -82,6 +84,8 @@ html_theme_options = {
         "color-foreground-primary": "#fcffff",
         "color-brand-primary": "#ff750f",
         "color-brand-content": "#0097d4",
+        "color-admonition-title--note": "#169bd5",
+        "color-admonition-title-background--note": "rgba(22, 155, 213, 0.2)",
     },
 }
 

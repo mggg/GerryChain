@@ -118,12 +118,5 @@ topics/reproducibility
 topics/tools
 topics/contributing
 topics/reporting
-```
-
-```{toctree}
-:hidden:
-:caption: Index
-:maxdepth: 4
-
-full_ref
+topics/style_reference
 ```

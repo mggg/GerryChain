@@ -51,6 +51,16 @@ body {
   width: 100%;
 }
 
+/* Make API entries easier to scan without competing with their signatures. */
+[role="main"] dl.py > dt.sig {
+  background: var(--color-background-secondary);
+  border-left: 0.2rem solid var(--color-brand-primary);
+}
+[role="main"] dl.py > dt.sig .sig-name.descname {
+  color: var(--color-brand-primary);
+  font-size: 1.15em;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;

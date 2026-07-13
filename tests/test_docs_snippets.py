@@ -268,6 +268,40 @@ def test_notebooks_use_portable_markdown(notebook: Path) -> None:
     for image in re.findall(r"!\[[^]]*\]\(([^)]+)\)", markdown):
         if "://" not in image:
             assert (notebook.parent / image).is_file(), image
+    for cell in data["cells"]:
+        source = cell.get("source", [])
+        for index, line in enumerate(source):
+            if "notebook-admonition-title" not in line or not line.startswith("> "):
+                continue
+            assert "blockquote:has(.notebook-admonition-title)" in markdown
+            assert source[index + 1] == ">\n"
+            assert source[index + 2].startswith("> ")
+
+
+@pytest.mark.parametrize("notebook", sorted((DOCS / "user").glob("*.ipynb")), ids=_page_id)
+def test_notebook_text_outputs_are_reviewable(notebook: Path) -> None:
+    """One cell should not bury the tutorial in generated text or HTML."""
+    data = json.loads(notebook.read_text(encoding="utf-8"))
+    for cell in data["cells"]:
+        text = []
+        for output in cell.get("outputs", []):
+            text.extend(output.get("text", []))
+            text.extend(output.get("data", {}).get("text/plain", []))
+            text.extend(output.get("data", {}).get("text/html", []))
+        assert len("".join(text)) <= 10_000
+
+
+@pytest.mark.parametrize("notebook", sorted((DOCS / "user").glob("*.ipynb")), ids=_page_id)
+def test_notebook_does_not_repeat_generated_images(notebook: Path) -> None:
+    """A generated plot should not be followed by a second static copy."""
+    cells = json.loads(notebook.read_text(encoding="utf-8"))["cells"]
+    for cell, following in zip(cells, cells[1:]):
+        has_image_output = any(
+            any(mime.startswith("image/") for mime in output.get("data", {}))
+            for output in cell.get("outputs", [])
+        )
+        following_markdown = "".join(following.get("source", []))
+        assert not (has_image_output and re.search(r"!\[[^]]*\]\([^)]+\)", following_markdown))
 
 
 # ---------------------------------------------------------------------------
