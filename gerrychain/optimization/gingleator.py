@@ -138,7 +138,12 @@ class Gingleator(SingleMetricOptimizer):
         """
         dist_percs = part[minority_perc_col].values()
         num_opport_dists = sum(list(map(lambda v: v >= threshold, dist_percs)))
-        next_dist = max(i for i in dist_percs if i < threshold)
+
+        if num_opport_dists < len(dist_percs):
+            next_dist = max(i for i in dist_percs if i < threshold)
+        else:
+            next_dist = 0
+
         return num_opport_dists + next_dist
 
     @classmethod
@@ -163,7 +168,11 @@ class Gingleator(SingleMetricOptimizer):
         """
         dist_percs = part[minority_perc_col].values()
         num_opport_dists = sum(list(map(lambda v: v >= threshold, dist_percs)))
-        next_dist = max(i for i in dist_percs if i < threshold)
+
+        if num_opport_dists < len(dist_percs):
+            next_dist = max(i for i in dist_percs if i < threshold)
+        else:
+            next_dist = 0
 
         if next_dist < threshold - 0.1:
             return num_opport_dists
