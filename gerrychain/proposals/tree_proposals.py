@@ -1,7 +1,7 @@
 import random
-from collections.abc import Callable, Hashable, Sequence, Set as AbstractSet
+from collections.abc import Callable, Hashable, Iterable, Iterator, Sequence, Set as AbstractSet
 from functools import partial
-from typing import cast
+from typing import Literal, cast
 
 from gerrychain._rng import make_rng
 from gerrychain.partition import Partition
@@ -129,6 +129,66 @@ def epsilon_tree_bipartition(
     return translated_flips
 
 
+PairSelection = Literal["district_pairs", "cut_edges"]
+
+
+def _candidate_district_pairs(
+    partition: Partition,
+    pair_selection: PairSelection,
+    rng: random.Random,
+) -> Iterable[tuple[Hashable, Hashable]]:
+    """Return the adjacent district pairs to try merging, in try order.
+
+    With ``"district_pairs"`` each adjacent pair appears once, so the first pair is drawn uniformly
+    from the adjacent district pairs. With ``"cut_edges"`` a pair's chance of coming first is
+    proportional to the number of cut edges the two districts share, matching a uniform draw over
+    the cut edges. Later entries are fallbacks, tried only if bipartitioning the earlier pairs
+    fails; the ``"cut_edges"`` draws are lazy, so a successful first pair costs a single draw.
+    """
+    if pair_selection not in ("district_pairs", "cut_edges"):
+        raise ValueError(
+            f"Unknown pair_selection {pair_selection!r}; expected 'district_pairs' or 'cut_edges'."
+        )
+
+    part_order = {part: index for index, part in enumerate(partition.parts)}
+
+    def normalized_pair(edge: tuple[Hashable, Hashable]) -> tuple[Hashable, Hashable]:
+        pair = [partition.assignment.mapping[edge[0]], partition.assignment.mapping[edge[1]]]
+        # Need to sort the pair so that the order is consistent
+        pair.sort(key=part_order.__getitem__)
+        return (pair[0], pair[1])
+
+    def pair_sort_key(pair: tuple[Hashable, Hashable]) -> tuple[int, int]:
+        return (part_order[pair[0]], part_order[pair[1]])
+
+    if pair_selection == "district_pairs":
+        # Sorted so the order does not depend on string-hash iteration order (PYTHONHASHSEED).
+        pairs = sorted(
+            {normalized_pair(edge) for edge in partition["cut_edges"]}, key=pair_sort_key
+        )
+        rng.shuffle(pairs)
+        return pairs
+
+    # "cut_edges": weight each adjacent pair by the number of cut edges it shares. Counting keeps
+    # the per-edge work to one dict update, with sorting and drawing over the (much smaller) set
+    # of adjacent pairs.
+    counts: dict[tuple[Hashable, Hashable], int] = {}
+    for edge in partition["cut_edges"]:
+        pair = normalized_pair(edge)
+        counts[pair] = counts.get(pair, 0) + 1
+    # Sorted so the order does not depend on string-hash iteration order (PYTHONHASHSEED).
+    pairs = sorted(counts, key=pair_sort_key)
+    weights = [counts[pair] for pair in pairs]
+
+    def draw_without_replacement() -> Iterator[tuple[Hashable, Hashable]]:
+        while pairs:
+            index = rng.choices(range(len(pairs)), weights=weights)[0]
+            weights.pop(index)
+            yield pairs.pop(index)
+
+    return draw_without_replacement()
+
+
 def recom(
     partition: Partition,
     pop_col: str,
@@ -137,6 +197,7 @@ def recom(
     node_repeats: int = 0,
     region_surcharge: dict[str, float] | None = None,
     bipartition_tree_fn: Callable[..., AbstractSet[Hashable]] = bipartition_tree,
+    pair_selection: PairSelection = "district_pairs",
     *,
     rng: random.Random | int | None = None,
 ) -> Partition:
@@ -179,6 +240,11 @@ def recom(
             spanning-tree step (e.g. ``max_attempts``, or ``spanning_tree_fn_kwargs`` for
             spanning-tree options), pass a pre-bound function, e.g.
             ``partial(bipartition_tree, spanning_tree_fn_kwargs={...})``.
+        pair_selection ("district_pairs" | "cut_edges", optional): How to choose the pair of
+            adjacent districts to merge. ``"district_pairs"`` (default) draws uniformly among
+            the adjacent district pairs; ``"cut_edges"`` draws uniformly among the cut edges,
+            so a pair's chance is proportional to the number of cut edges the two districts
+            share.
         rng (random.Random | int | None, optional): Source of randomness. Pass a shared
             ``Random`` for repeated standalone calls; an integer restarts the stream each call.
 
@@ -188,34 +254,7 @@ def recom(
 
     rng = make_rng(rng)
 
-    # Compute the set of pairs of "parts" that touch - meaning that there is
-    # a cut_edge between the two "parts"
-    #
-    part_order = {part: index for index, part in enumerate(partition.parts)}
-    set_of_district_pairs_that_touch = set()
-    for edge in partition["cut_edges"]:
-        pair_that_touches = [
-            partition.assignment.mapping[edge[0]],
-            partition.assignment.mapping[edge[1]],
-        ]
-        # Need to sort the tuple so that the order is consistent
-        pair_that_touches.sort(key=part_order.__getitem__)
-        pair_that_touches = tuple(pair_that_touches)
-
-        set_of_district_pairs_that_touch.add(pair_that_touches)
-
-    # Convert to a list to make it easy to randomly select and remove element.
-    # Sorted so the order does not depend on string-hash iteration order (PYTHONHASHSEED).
-    list_of_district_pairs_that_touch = sorted(
-        set_of_district_pairs_that_touch,
-        key=lambda pair: (part_order[pair[0]], part_order[pair[1]]),
-    )
-
-    # To randomly select a pair of districts efficiently, randomly shuffle the
-    # list and then pop from the end of the list to get the next randomly
-    # selected pair to try.
-    #
-    rng.shuffle(list_of_district_pairs_that_touch)
+    candidate_pairs = _candidate_district_pairs(partition, pair_selection, rng)
 
     # Bind region_surcharge onto the bipartition_tree_fn. Other bipartition / spanning-tree options
     # (e.g. spanning_tree_fn_kwargs) are configured by passing a pre-bound bipartition_tree_fn, such
@@ -227,9 +266,7 @@ def recom(
     # Find a pair of touching "parts" that can be successfully bipartitioned into
     # two new "parts"
     #
-    while len(list_of_district_pairs_that_touch) > 0:
-        parts_to_merge = list_of_district_pairs_that_touch.pop()
-
+    for parts_to_merge in candidate_pairs:
         try:
             subgraph_nodes = partition.parts[parts_to_merge[0]] | partition.parts[parts_to_merge[1]]
 
@@ -265,6 +302,7 @@ def build_recom_proposal_fn(
     node_repeats: int = 0,
     region_surcharge: dict[str, float] | None = None,
     bipartition_tree_fn: Callable[..., AbstractSet[Hashable]] = bipartition_tree,
+    pair_selection: PairSelection = "district_pairs",
 ) -> ProposalFn:
     proposal_fn = partial(
         recom,
@@ -274,6 +312,7 @@ def build_recom_proposal_fn(
         node_repeats=node_repeats,
         region_surcharge=region_surcharge,
         bipartition_tree_fn=bipartition_tree_fn,
+        pair_selection=pair_selection,
     )
     return cast(ProposalFn, proposal_fn)
 
@@ -461,250 +500,240 @@ def build_reversible_recom_proposal_fn(
     return cast(ProposalFn, proposal_fn)
 
 
-# frm TODO: Refactoring:  Finish making class ReCom useful...
-#
-# Peter responded in a January 2026 code review that he thinks the purpose
-# of the ReCom class is to make it easier for folks who find partial functions
-# odd/confusing.  The idea is that this class can be used instead of creating
-# a partial function.
-#
-# I have to admit that I personally find using a class instead of a
-# partial function MORE confusing, but whatever.
-#
-# Here is what Peter said in the PR (with some comments by me afterwards):
-#
-# I am not so sure that we want to get rid of this. I think that this was
-# built by someone trying to solve the problem where, when a user wants
-# to run a chain with ReCom, they have to do the following bit of
-# syntax twister:
-#
-#     from functools import partial
-#
-#     proposal = partial(
-#         recom,
-#         pop_col="TOTPOP",
-#         pop_target=ideal_population,
-#         epsilon=0.01,
-#         node_repeats=2
-#     )
-#
-# This partial application is familiar to anyone that does
-# functional programming, and is effectively just
-#
-#     def proposal(state: Partition) -> Partition:
-#         return recom(
-#             state,
-#             pop_col="TOTPOP",
-#             pop_target=ideal_population,
-#             epsilon=0.01,
-#             node_repeats=2,
-#         )
-#
-# in disguise. But our users are not programmers, and I get a
-# lot of questions about the "partial" function that appears
-# in the documentation. The ReCom class does this partial application
-# under the hood using its __call__ attribute, and eliminates the need
-# for the import of partial from functools, so the user only has to do
-#
-#     Recom(
-#         pop_col="TOTPOP",
-#         ideal_pop=ideal_population,
-#         epsilon=0.01,
-#     )
-#
-# rather than the partial rigmarole.
-#
-# I discovered this class existed in the codebase after doing a big
-# refresh on the main documentation a while ago. I have been waiting
-# to update things until a major release because the values that need
-# to be passed to the __init__ of Recom depend on the underlying
-# bipartition function, and the class would probably be better
-# transformed into something closer to a "namespace" to improve
-# discoverability
-#
-# class ReCom:
-#     def __init__(self, *args, **kwargs):
-#         raise TypeError("ReCom is not instantiable; use ReCom.mst(...), etc.")
-#
-#     @classmethod
-#     def mst(...):
-#         # minimum spanning tree version
-#
-#     @classmethod
-#     def B(...):
-#         # This is the "district pairs minimum spanning tree".  An absolutely terrible name
-#         # for a function, to be sure, but it will make replication of what is in the
-#         # Reversible ReCom paper (https://data-democracy.org/rrc) we published a while
-#         # back easier for other people. This function would just be a wrapper around mst
-#         # defined above.
-#
-# and so on. I am happy to put all of this functionality in later if you don't
-# want to mess with it..
-#
-# ===========================================
-# Fred's comments to Peter's remarks above:
-#
-# Firstly a nit: Peter should have said ReCom(...) instead of Recom()...
-#
-# As Peter points out, there is the issue of passing the proper set of parameters
-# to the ReCom __init__() function.  Given the recent update to tree.py - creating
-# a new module bipartition_tree.py with a unified bipartition_tree approach
-# using _internal_bipartition_tree(), the set of parameters for the ReCom
-# constructor would just be the set of parameters to _internal_bipartition_tree(),
-# which unfortunately is a long list.
-#
-# Peter's other approach, to create a bunch of specific routines (via a namespace
-# approach) would allow the user to deal with fewer parameters - only providing
-# the ones needed).  I presume that the implementation for each of these
-# class methods would just be a partial function.
-#
-# So this is kind of just syntactic sugar, but hey sugar tastes good!
-#
-# One nice thing about this approach is that it is a way to make it obvious
-# to people what the standard ways of doing things are, and it provides
-# the opportunity to introduce a user to partial functions, by adding
-# comments in the ReCom class that tell the user that he/she can create
-# his/her own ReCom function by just creating their own partial function.
-# Stated differently, this provides a very nice, logical, discoverable
-# place in the codebase for a user to grok how the recom approach works
-# and how to extend it if he/she would like to.
-#
-# My only question to Peter is how this namespace should look.  I think
-# the following is what would be the first step, and then Peter could
-# add more later:
-#
-#     from functools import partial
-#
-#     class ReCom:
-#
-#         def __init__(self, *args, **kwargs):
-#             raise TypeError("ReCom is not instantiable; use ReCom.mst(...), etc.")
-#
-#         @classmethod
-#         def std_recom_proposal(
-#             partition: Partition,
-#             pop_col: str,
-#             pop_target: int | float,
-#             epsilon: float,
-#             node_repeats: int = 1,
-#             region_surcharge: dict[str, float] | None = None,
-#             bipartition_tree_fn: Callable = bipartition_tree,
-#         ) -> Partition:
-#             new_proposal = partial(
-#                 recom,
-#                 pop_col = pop_col,
-#                 pop_target = pop_target,
-#                 epsilon = epsilon,
-#                 node_repeats = node_repeats,
-#                 region_surcharge =  region_surcharge,
-#                 bipartition_tree_fn = bipartition_tree_fn,
-#             )
-#             return new_proposal
-#
-#         @classmethod
-#         def mst(...):
-#             # minimum spanning tree version
-
-
-#         @classmethod
-#         def B(...):
-#             # This is the "district pairs minimum spanning tree".  An absolutely terrible name
-#             # for a function, to be sure, but it will make replication of what is in the
-#             # Reversible ReCom paper (https://data-democracy.org/rrc) we published a while
-#             # back easier for other people. This function would just be a wrapper around mst
-#             # defined above..
-#
-# and then a user could just do:
-#
-#     my_proposal = ReCom.std_recom_proposal(
-#         pop_col="TOTPOP",
-#         pop_target=ideal_population,
-#         epsilon=0.01,
-#         node_repeats=2
-#     )
-#
-# Peter: Is this what you had in mind?
-#
-# New question for Peter:  Should we use the ProposalFn definition here?
-#
-# This is really just making the point that if you are OK with my
-# ProposalFn definition, then it should be used in the ReCom class,
-# something like this:
-#
-#         @classmethod
-#         def generate_std_recom_proposal(
-#             partition: Partition,
-#             pop_col: str,
-#             pop_target: int | float,
-#             epsilon: float,
-#             node_repeats: int = 1,
-#             region_surcharge: dict[str, float] | None = None,
-#             bipartition_tree_fn: Callable = bipartition_tree,
-#         ) -> ProposalFn:
-#             new_proposal = partial(
-#                 recom,
-#                 pop_col = pop_col,
-#                 pop_target = pop_target,
-#                 epsilon = epsilon,
-#                 node_repeats = node_repeats,
-#                 region_surcharge =  region_surcharge,
-#                 bipartition_tree_fn = bipartition_tree_fn,
-#             )
-#             return new_proposal
-
-
-# and then a user could just do:
-#
-#     my_proposal = ReCom.generate_std_recom_proposal(
-#         pop_col="TOTPOP",
-#         pop_target=ideal_population,
-#         epsilon=0.01,
-#         node_repeats=2
-#     )
-#
-#
-# ===========================================
-#
 class ReCom:
-    """
-    ReCom (short for ReCombination) is a class that represents a ReCom proposal
-    for redistricting. It is used to create new partitions by recombining existing
-    districts while maintaining population balance.
+    """Ready-made builders for the standard ReCom proposal variants.
 
+    Each method returns a proposal function ready to hand to :class:`~gerrychain.MarkovChain`, so
+    instead of the ``functools.partial`` incantation::
+
+        from functools import partial
+        proposal = partial(recom, pop_col="TOTPOP", pop_target=ideal_pop, epsilon=0.01)
+
+    you can write::
+
+        proposal = ReCom.district_pairs_mst(pop_col="TOTPOP", pop_target=ideal_pop, epsilon=0.01)
+
+    This class is a namespace, not a type: it cannot be instantiated.
+
+    The variants differ along two axes:
+
+    * **Pair selection**: ``cut_edges_*`` picks a cut edge uniformly at random and merges the two
+      districts on either side of it, so a pair's chance is proportional to the number of cut edges
+      the districts share. ``district_pairs_*`` picks uniformly among the adjacent district pairs
+      themselves.
+    * **Spanning tree**: ``*_mst`` draws a minimum spanning tree on random edge weights using
+      Kruskal's algorithm. ``*_ust`` draws a uniform spanning tree using Wilson's algorithm.
+
+    :meth:`reversible` is the Reversible ReCom proposal, which samples exactly from the
+    spanning-tree distribution; see :func:`reversible_recom`.
+
+    The aliases ``A``, ``B``, ``C``, ``D``, and ``R`` name the same builders after the variants in
+    "Spanning Tree Methods for Sampling Graph Partitions" (Cannon et al., 2022,
+    https://arxiv.org/abs/2210.01401), to ease replication of results from that paper.
+
+    These builders expose only the most common options. For anything else (a custom bipartition or
+    spanning-tree function, ``node_repeats``, ...), use :func:`build_recom_proposal_fn` or
+    :func:`build_reversible_recom_proposal_fn`, which these methods wrap, or bind
+    ``functools.partial(recom, ...)`` yourself.
     """
 
-    def __init__(
-        self,
+    def __init__(self, *args: object, **kwargs: object) -> None:
+        raise TypeError(
+            "ReCom is not instantiable; use the builder methods, e.g. "
+            "ReCom.district_pairs_mst(...) or ReCom.reversible(...)."
+        )
+
+    @staticmethod
+    def cut_edges_mst(
         pop_col: str,
-        ideal_pop: int | float,
+        pop_target: int | float,
         epsilon: float,
-        bipartition_tree_fn: Callable[..., AbstractSet[Hashable]] = bipartition_tree,
-    ) -> None:
-        """Initialize a ReCom instance.
+        region_surcharge: dict[str, float] | None = None,
+        allow_pair_reselection: bool = False,
+    ) -> ProposalFn:
+        """ReCom variant A: cut-edges pair selection, minimum spanning tree.
+
+        A cut edge is selected at random and the two districts on either side of it are merged. The
+        merged region is split back into two districts by drawing a minimum spanning tree on random
+        edge weights (Kruskal's algorithm) and finding a population-balanced cut.
 
         Args:
-            pop_col (str): The name of the column in the partition that contains the population
-                data.
-            ideal_pop (int | float): The ideal population for each district.
-            epsilon (float): The epsilon value for population deviation as a percentage of the
-                target population.
-            bipartition_tree_fn (function, optional): The method used for bipartitioning the tree.
-                Defaults to `bipartition_tree`.
-        """
-        self.pop_col = pop_col
-        self.ideal_pop = ideal_pop
-        self.epsilon = epsilon
-        self.bipartition_tree_fn = bipartition_tree_fn
+            pop_col (str): The name of the population column.
+            pop_target (int | float): The target population for each district.
+            epsilon (float): Allowed population deviation as a percentage of the target
+                population.
+            region_surcharge (dict | None, optional): Surcharge dictionary for region-aware
+                chains; see :func:`~gerrychain.tree.random_spanning_tree`. Default is None.
+            allow_pair_reselection (bool, optional): Whether to fall back to a cut edge between
+                a different district pair if bipartitioning the merged pair fails. Default is
+                False.
 
-    def __call__(self, partition: Partition, *, rng: random.Random) -> Partition:
-        return recom(
-            partition,
-            self.pop_col,
-            self.ideal_pop,
-            self.epsilon,
-            bipartition_tree_fn=self.bipartition_tree_fn,
-            rng=rng,
+        Returns:
+            ProposalFn: A proposal function for use with :class:`~gerrychain.MarkovChain`.
+        """
+        return build_recom_proposal_fn(
+            pop_col=pop_col,
+            pop_target=pop_target,
+            epsilon=epsilon,
+            region_surcharge=region_surcharge,
+            bipartition_tree_fn=partial(
+                bipartition_tree,
+                allow_pair_reselection=allow_pair_reselection,
+            ),
+            pair_selection="cut_edges",
         )
+
+    @staticmethod
+    def district_pairs_mst(
+        pop_col: str,
+        pop_target: int | float,
+        epsilon: float,
+        region_surcharge: dict[str, float] | None = None,
+        allow_pair_reselection: bool = False,
+    ) -> ProposalFn:
+        """ReCom variant B: district-pairs pair selection, minimum spanning tree.
+
+        A pair of adjacent districts is selected uniformly at random and merged. The merged region
+        is split back into two districts by drawing a minimum spanning tree on random edge weights
+        (Kruskal's algorithm) and finding a population-balanced cut.
+
+        Args:
+            pop_col (str): The name of the population column.
+            pop_target (int | float): The target population for each district.
+            epsilon (float): Allowed population deviation as a percentage of the target population.
+            region_surcharge (dict | None, optional): Surcharge dictionary for region-aware chains;
+                see :func:`~gerrychain.tree.random_spanning_tree`. Default is None.
+            allow_pair_reselection (bool, optional): Whether to allow reselection of the same
+                district pair if bipartitioning fails. Default is False.
+
+        Returns:
+            ProposalFn: A proposal function for use with :class:`~gerrychain.MarkovChain`.
+        """
+        return build_recom_proposal_fn(
+            pop_col=pop_col,
+            pop_target=pop_target,
+            epsilon=epsilon,
+            region_surcharge=region_surcharge,
+            bipartition_tree_fn=partial(
+                bipartition_tree,
+                allow_pair_reselection=allow_pair_reselection,
+            ),
+            pair_selection="district_pairs",
+        )
+
+    @staticmethod
+    def cut_edges_ust(
+        pop_col: str,
+        pop_target: int | float,
+        epsilon: float,
+        allow_pair_reselection: bool = False,
+    ) -> ProposalFn:
+        """ReCom variant C: cut-edges pair selection, uniform spanning tree.
+
+        Like :meth:`cut_edges_mst`, except the merged region is split using a spanning tree drawn
+        uniformly at random (Wilson's algorithm). Region surcharges are not supported: a uniform
+        spanning tree ignores edge weights.
+
+        Args:
+            pop_col (str): The name of the population column.
+            pop_target (int | float): The target population for each district.
+            epsilon (float): Allowed population deviation as a percentage of the target
+                population.
+            allow_pair_reselection (bool, optional): Whether to fall back to a cut edge between
+                a different district pair if bipartitioning the merged pair fails. Default is
+                False.
+
+        Returns:
+            ProposalFn: A proposal function for use with :class:`~gerrychain.MarkovChain`.
+        """
+        return build_recom_proposal_fn(
+            pop_col=pop_col,
+            pop_target=pop_target,
+            epsilon=epsilon,
+            pair_selection="cut_edges",
+            bipartition_tree_fn=partial(
+                bipartition_tree,
+                spanning_tree_fn=uniform_spanning_tree,
+                allow_pair_reselection=allow_pair_reselection,
+            ),
+        )
+
+    @staticmethod
+    def district_pairs_ust(
+        pop_col: str,
+        pop_target: int | float,
+        epsilon: float,
+        allow_pair_reselection: bool = False,
+    ) -> ProposalFn:
+        """ReCom variant D: district-pairs pair selection, uniform spanning tree.
+
+        Like :meth:`district_pairs_mst`, except the merged region is split using a spanning
+        tree drawn uniformly at random (Wilson's algorithm). Region surcharges are not
+        supported: a uniform spanning tree ignores edge weights.
+
+        Args:
+            pop_col (str): The name of the population column.
+            pop_target (int | float): The target population for each district.
+            epsilon (float): Allowed population deviation as a percentage of the target population.
+            allow_pair_reselection (bool, optional): Whether to allow reselection of the same
+                district pair if bipartitioning fails. Default is False.
+
+        Returns:
+            ProposalFn: A proposal function for use with :class:`~gerrychain.MarkovChain`.
+        """
+        return build_recom_proposal_fn(
+            pop_col=pop_col,
+            pop_target=pop_target,
+            epsilon=epsilon,
+            pair_selection="district_pairs",
+            bipartition_tree_fn=partial(
+                bipartition_tree,
+                spanning_tree_fn=uniform_spanning_tree,
+                allow_pair_reselection=allow_pair_reselection,
+            ),
+        )
+
+    @staticmethod
+    def reversible(
+        pop_col: str,
+        pop_target: int | float,
+        epsilon: float,
+        max_balanced_edge_cuts: int,
+        repeat_until_valid: bool = False,
+    ) -> ProposalFn:
+        """ReCom variant R: the reversible ReCom proposal.
+
+        Samples exactly from the spanning-tree distribution rather than an approximation of it; see
+        :func:`reversible_recom` and the paper "Spanning Tree Methods for Sampling Graph Partitions"
+        (https://arxiv.org/abs/2210.01401) for details.
+
+        Args:
+            pop_col (str): The name of the population column.
+            pop_target (int | float): The target population for each district.
+            epsilon (float): Allowed population deviation as a percentage of the target
+                population.
+            max_balanced_edge_cuts (int): The number of balanced edge cuts to draw from the
+                spanning tree before selecting one, used to make the proposal reversible.
+            repeat_until_valid (bool, optional): Whether to repeat until a valid partition is
+                found. Default is False.
+
+        Returns:
+            ProposalFn: A proposal function for use with :class:`~gerrychain.MarkovChain`.
+        """
+        return build_reversible_recom_proposal_fn(
+            pop_col=pop_col,
+            pop_target=pop_target,
+            epsilon=epsilon,
+            max_balanced_edge_cuts=max_balanced_edge_cuts,
+            repeat_until_valid=repeat_until_valid,
+        )
+
+    # Variant names from "Spanning Tree Methods for Sampling Graph Partitions".
+    A = cut_edges_mst
+    B = district_pairs_mst
+    C = cut_edges_ust
+    D = district_pairs_ust
+    R = reversible
 
 
 class ReversibilityError(Exception):
