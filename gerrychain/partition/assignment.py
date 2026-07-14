@@ -4,6 +4,7 @@ from collections import defaultdict
 from collections.abc import Callable, Hashable, Iterable, Iterator, Mapping
 from typing import TypeVar, cast
 
+import numpy
 import pandas
 
 from ..graph import FrozenGraph, Graph
@@ -138,6 +139,30 @@ class Assignment(Mapping[Hashable, Hashable]):
         """
         groups = [pandas.Series(data=part, index=nodes) for part, nodes in self.parts.items()]
         return pandas.concat(groups)
+
+    def to_vector(self) -> numpy.ndarray:
+        """Return the assignment as an array of part labels indexed by node id.
+
+        Requires the nodes to be the contiguous integers ``0..n-1``, which is true for the internal
+        node ids of a rustworkx-based graph. String part labels are returned as an object array so
+        that labels later written into a copy cannot be silently truncated to a fixed width.
+
+        Returns:
+            numpy.ndarray: Array of length ``n`` whose ``i``-th entry is the part of node ``i``.
+
+        Raises:
+            ValueError: If the nodes are not the contiguous integers ``0..n-1``.
+        """
+        try:
+            vector = numpy.array([self.mapping[node] for node in range(len(self.mapping))])
+        except KeyError:
+            raise ValueError(
+                "to_vector requires the assignment's nodes to be the contiguous integers "
+                "0..n-1 (the internal node ids of a rustworkx-based graph)"
+            ) from None
+        if vector.dtype.kind in "US":
+            vector = vector.astype(object)
+        return vector
 
     def to_dict(self) -> dict[Hashable, Hashable]:
         """Convert to dict.

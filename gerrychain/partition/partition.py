@@ -79,7 +79,7 @@ from __future__ import annotations
 import json
 import random
 from collections.abc import Callable, Hashable, KeysView, Mapping
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 # frm:  Only used in _first_time() inside __init__() to allow for creating
 #       a Partition from a NetworkX Graph object:
@@ -89,6 +89,7 @@ from typing import TYPE_CHECKING, Any, TypeVar
 #               self.graph = FrozenGraph(graph)
 import geopandas
 import networkx
+import numpy
 
 from gerrychain.graph.graph import FrozenGraph, Graph
 
@@ -159,6 +160,7 @@ class Partition:
         "flows",
         "edge_flows",
         "_cache",
+        "_assignment_vector",
     )
 
     graph: FrozenGraph
@@ -169,6 +171,7 @@ class Partition:
     flows: dict[Hashable, dict[str, set[Hashable]]] | None
     edge_flows: dict[Hashable, dict[str, set[tuple[int, int]]]] | None
     _cache: dict[str, Any]
+    _assignment_vector: numpy.ndarray | None
 
     default_updaters: dict[str, Callable[[Partition], Any]] = {"cut_edges": cut_edges}
 
@@ -212,6 +215,7 @@ class Partition:
             self._from_parent(parent, flips)
 
         self._cache = {}
+        self._assignment_vector = None
 
         # SubgraphView provides cached access to subgraphs for each of the
         # partition's districts.  It is important that we asign subgraphs AFTER
@@ -520,6 +524,35 @@ class Partition:
     @property
     def parts(self) -> dict[Hashable, frozenset[Hashable]]:
         return self.assignment.parts
+
+    @property
+    def assignment_vector(self) -> numpy.ndarray:
+        """The part (district) label of each node, as an array indexed by internal node id.
+
+        Computed lazily and cached. When this partition's parent has already emitted its vector,
+        the child's is built by copying it and rewriting only the flipped entries, so emitting the
+        vector at every step of a chain costs an array copy (C-speed) plus the handful of flips
+        rather than an O(n) rebuild from the assignment mapping.
+
+        The returned array is read-only, since child partitions build their vectors from it; call
+        ``.copy()`` on it if you need a mutable version. Positions are internal node ids; use
+        :meth:`Graph.original_nx_node_id_for_internal_node_id` to translate back to the original
+        node labels.
+
+        Returns:
+            numpy.ndarray: Array of length ``n`` whose ``i``-th entry is the part of node ``i``.
+        """
+        if self._assignment_vector is None:
+            parent = self.parent
+            if parent is not None and parent._assignment_vector is not None and self.flips:
+                vector = parent._assignment_vector.copy()
+                for node, part in self.flips.items():
+                    vector[cast(int, node)] = part
+            else:
+                vector = self.assignment.to_vector()
+            vector.setflags(write=False)
+            self._assignment_vector = vector
+        return self._assignment_vector
 
     def plot(
         self,
