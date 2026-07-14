@@ -1,8 +1,10 @@
 import random
+from functools import partial
 
 import pytest
 
 from gerrychain import Partition, proposals, updaters
+from gerrychain.tree import bipartition_tree, uniform_spanning_tree
 
 
 @pytest.fixture
@@ -124,6 +126,66 @@ def test_recom_variants_run_with_pair_reselection(build_proposal, populated_part
     proposed = proposal(populated_partition, rng=random.Random(0))
     assert isinstance(proposed, Partition)
     assert all(pop == 3 for pop in proposed["population"].values())
+
+
+@pytest.mark.parametrize(
+    "build_proposal, recom_kwargs",
+    [
+        (proposals.ReCom.cut_edges_mst, {"pair_selection": "cut_edges"}),
+        (proposals.ReCom.district_pairs_mst, {"pair_selection": "district_pairs"}),
+        (
+            proposals.ReCom.cut_edges_ust,
+            {
+                "pair_selection": "cut_edges",
+                "bipartition_tree_fn": partial(
+                    bipartition_tree, spanning_tree_fn=uniform_spanning_tree
+                ),
+            },
+        ),
+        (
+            proposals.ReCom.district_pairs_ust,
+            {
+                "pair_selection": "district_pairs",
+                "bipartition_tree_fn": partial(
+                    bipartition_tree, spanning_tree_fn=uniform_spanning_tree
+                ),
+            },
+        ),
+    ],
+)
+def test_recom_variants_match_direct_recom_calls(build_proposal, recom_kwargs, populated_partition):
+    """Pin each builder's wiring: same seed, same trajectory as recom with the bound options.
+
+    A builder that binds the wrong pair_selection or forgets the uniform spanning tree consumes
+    the RNG stream differently, so the assignments diverge.
+    """
+    proposal = build_proposal(pop_col="population", pop_target=3, epsilon=0)
+    proposed = proposal(populated_partition, rng=random.Random(0))
+    expected = proposals.recom(
+        populated_partition,
+        pop_col="population",
+        pop_target=3,
+        epsilon=0,
+        rng=random.Random(0),
+        **recom_kwargs,
+    )
+    assert proposed.assignment.mapping == expected.assignment.mapping
+
+
+def test_reversible_variant_matches_direct_reversible_recom_call(populated_partition):
+    proposal = proposals.ReCom.reversible(
+        pop_col="population", pop_target=3, epsilon=0, max_balanced_edge_cuts=100
+    )
+    proposed = proposal(populated_partition, rng=random.Random(0))
+    expected = proposals.reversible_recom(
+        populated_partition,
+        pop_col="population",
+        pop_target=3,
+        epsilon=0,
+        max_balanced_edge_cuts=100,
+        rng=random.Random(0),
+    )
+    assert proposed.assignment.mapping == expected.assignment.mapping
 
 
 def test_recom_reversible_variant_runs(populated_partition):
