@@ -191,6 +191,11 @@ def test_reward_partial_dist(four_by_five_grid_for_opt):
     assert Gingleator.reward_partial_dist(initial_partition, "m_perc", 0.5) == 2 + 0.2
     assert Gingleator.reward_partial_dist(initial_partition, "m_perc", 0.6) == 0.52
 
+    try:
+        assert Gingleator.reward_partial_dist(initial_partition, "m_perc", 0.0) == 4 + 0
+    except ValueError as val_err:
+        pytest.fail(f"ValueError raised when all districts are majority-minority: {str(val_err)}")
+
 
 def test_reward_next_highest_close(four_by_five_grid_for_opt):
     initial_partition = gingleator_test_partition(four_by_five_grid_for_opt)
@@ -200,6 +205,11 @@ def test_reward_next_highest_close(four_by_five_grid_for_opt):
     assert (
         round(Gingleator.reward_next_highest_close(initial_partition, "m_perc", 0.29), 5) == 2 + 0.1
     )
+
+    try:
+        assert Gingleator.reward_next_highest_close(initial_partition, "m_perc", 0.0) == 4 + (0 - 0.0 + 0.1) * 10
+    except ValueError as val_err:
+        pytest.fail(f"ValueError raised when all districts are majority-minority: {str(val_err)}")
 
 
 def test_penalize_maximum_over(four_by_five_grid_for_opt):
