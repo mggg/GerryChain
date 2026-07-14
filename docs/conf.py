@@ -40,11 +40,10 @@ myst_enable_extensions = [
 ]
 myst_heading_anchors = 3
 
-# Tutorial notebooks are committed with their outputs. The default "off" renders those
-# outputs directly (ReadTheDocs and the CI build); developers can set
-# NB_EXECUTION_MODE=cache for an execution-checking preview. Keeping committed outputs
-# fresh is enforced separately by `make docs-check-notebooks` in CI.
-nb_execution_mode = os.environ.get("NB_EXECUTION_MODE", "off")
+# Tutorial notebooks are committed without outputs. The docs build executes them into this
+# ignored cache before Sphinx runs, keeping generated images and animations out of Git.
+nb_execution_mode = os.environ.get("NB_EXECUTION_MODE", "cache")
+nb_execution_cache_path = os.path.join(os.path.dirname(__file__), "_build", ".jupyter_cache")
 nb_execution_timeout = 600
 nb_execution_raise_on_error = True
 

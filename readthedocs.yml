@@ -20,4 +20,9 @@ build:
     install:
       - >-
         UV_PROJECT_ENVIRONMENT="${READTHEDOCS_VIRTUALENV_PATH}" uv sync --frozen
-        --no-default-groups --group docs
+        --no-default-groups --group docs --group docs-exec
+    pre_build:
+      - >-
+        UV_PROJECT_ENVIRONMENT="${READTHEDOCS_VIRTUALENV_PATH}" uv run --frozen
+        --no-default-groups --group docs --group docs-exec
+        python docs/_refresh_notebooks.py

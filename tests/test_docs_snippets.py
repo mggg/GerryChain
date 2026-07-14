@@ -3,9 +3,8 @@
 The docs are the single source of truth: this runner discovers ``docs/**/*.md`` and
 ``docs/**/*.rst`` plus the root README and contributing guide, extracts every Python code block,
 and executes each page's blocks in order in a shared namespace inside a temp working directory.
-Tutorial notebooks are not covered here; they execute through
-``make docs-refresh-notebooks`` and the CI freshness check. The runner generically stages files
-from ``docs/_static`` so download-based examples can use the same filenames readers receive.
+Tutorial notebooks execute through ``make docs-cache-notebooks``. The runner generically stages
+files from ``docs/_static`` so download-based examples can use the same filenames readers receive.
 
 Pages can annotate a block with a marker on the line before it (blank lines allowed between).
 In RST the marker is a comment, in Markdown an HTML comment:
@@ -28,9 +27,7 @@ os.environ.setdefault("MPLBACKEND", "Agg")
 import re
 import sys
 import textwrap
-from base64 import b64encode
 from dataclasses import dataclass
-from io import BytesIO
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 
@@ -58,7 +55,6 @@ MD_MARKER_RE = re.compile(
 # must have been extracted by the strict scanner above (or the scanner needs fixing).
 RST_LOOSE_RE = re.compile(r"code(?:-block)?::\s*python", re.IGNORECASE)
 MD_LOOSE_RE = re.compile(r"^[ \t]*```python", re.MULTILINE)
-DATA_IMAGE_RE = re.compile(r"data:image/[^;]+;base64,(?:[A-Za-z0-9+/=]|\\\s*)+")
 
 
 @dataclass
@@ -202,13 +198,6 @@ def _page_id(page: Path) -> str:
     return str(page.relative_to(REPO))
 
 
-def _reviewable_output_text(output: dict) -> str:
-    """Return human-readable output, excluding embedded binary image payloads."""
-    data = output.get("data", {})
-    html = DATA_IMAGE_RE.sub("<image>", "".join(data.get("text/html", [])))
-    return "".join(output.get("text", [])) + "".join(data.get("text/plain", [])) + html
-
-
 def _run_block(block: Block, namespace: dict) -> None:
     # Pad the source so tracebacks and SyntaxErrors point at the real line in the docs page.
     padded = "\n" * (block.lineno - 1) + block.source
@@ -287,36 +276,67 @@ def test_notebooks_use_portable_markdown(notebook: Path) -> None:
 
 
 @pytest.mark.parametrize("notebook", sorted((DOCS / "user").glob("*.ipynb")), ids=_page_id)
-def test_notebook_text_outputs_are_reviewable(notebook: Path) -> None:
-    """One cell should not bury the tutorial in generated text or HTML."""
+def test_notebooks_do_not_commit_outputs(notebook: Path) -> None:
+    """Generated notebook outputs belong in the ignored documentation cache."""
     data = json.loads(notebook.read_text(encoding="utf-8"))
     for cell in data["cells"]:
-        text = "".join(_reviewable_output_text(output) for output in cell.get("outputs", []))
-        assert len(text) <= 10_000
+        assert not cell.get("outputs")
+        assert cell.get("execution_count") is None
 
 
-def test_embedded_image_payload_is_not_counted_as_notebook_text() -> None:
-    payload = "A" * 20_000
-    output = {"data": {"text/html": [f'<img src="data:image/png;base64,{payload}">']}}
-    assert len(_reviewable_output_text(output)) < 10_000
+def test_clear_notebook_outputs(tmp_path: Path) -> None:
+    path = tmp_path / "example.ipynb"
+    path.write_text(
+        json.dumps(
+            {
+                "cells": [
+                    {
+                        "cell_type": "code",
+                        "execution_count": 1,
+                        "id": "example",
+                        "metadata": {},
+                        "outputs": [{"name": "stdout", "output_type": "stream", "text": ["1\n"]}],
+                        "source": ["print(1)"],
+                    }
+                ],
+                "metadata": {},
+                "nbformat": 4,
+                "nbformat_minor": 5,
+            }
+        ),
+        encoding="utf-8",
+    )
+    spec = spec_from_file_location("clear_notebook_outputs", DOCS / "_clear_notebook_outputs.py")
+    assert spec is not None and spec.loader is not None
+    module = module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    assert module.clear_notebook_outputs(path)
+    assert not module.clear_notebook_outputs(path)
+    cell = json.loads(path.read_text(encoding="utf-8"))["cells"][0]
+    assert cell["outputs"] == []
+    assert cell["execution_count"] is None
 
 
-def test_large_html_output_is_still_counted_as_notebook_text() -> None:
-    output = {"data": {"text/html": ["A" * 10_001]}}
-    assert len(_reviewable_output_text(output)) > 10_000
+def test_notebook_cache_matches_source_content(tmp_path: Path) -> None:
+    path = tmp_path / "example.ipynb"
+    spec = spec_from_file_location("refresh_notebooks", DOCS / "_refresh_notebooks.py")
+    assert spec is not None and spec.loader is not None
+    refresh = module_from_spec(spec)
+    spec.loader.exec_module(refresh)
 
+    source = refresh.nbformat.v4.new_notebook(cells=[refresh.nbformat.v4.new_code_cell("print(1)")])
+    refresh.nbformat.write(source, path)
+    executed = refresh.nbformat.read(path, as_version=4)
+    executed.cells[0].execution_count = 1
+    executed.cells[0].outputs = [refresh.nbformat.v4.new_output("stream", text="1\n")]
+    cache = refresh.get_cache(str(tmp_path / "cache"))
+    cache.cache_notebook_bundle(refresh.CacheBundleIn(executed, str(path)), check_validity=False)
 
-@pytest.mark.parametrize("notebook", sorted((DOCS / "user").glob("*.ipynb")), ids=_page_id)
-def test_notebook_does_not_repeat_generated_images(notebook: Path) -> None:
-    """A generated plot should not be followed by a second static copy."""
-    cells = json.loads(notebook.read_text(encoding="utf-8"))["cells"]
-    for cell, following in zip(cells, cells[1:]):
-        has_image_output = any(
-            any(mime.startswith("image/") for mime in output.get("data", {}))
-            for output in cell.get("outputs", [])
-        )
-        following_markdown = "".join(following.get("source", []))
-        assert not (has_image_output and re.search(r"!\[[^]]*\]\([^)]+\)", following_markdown))
+    assert refresh.notebook_is_cached(path, cache)
+    source.cells[0].source = "print(2)"
+    refresh.nbformat.write(source, path)
+    assert not refresh.notebook_is_cached(path, cache)
 
 
 # ---------------------------------------------------------------------------
@@ -482,36 +502,3 @@ class TestMdExtractor:
         assert len(blocks) == 1
         assert blocks[0].source == "x = 1\ny = 2"
         assert blocks[0].marker is None
-
-
-@pytest.mark.docs
-class TestNotebookImageComparison:
-    @staticmethod
-    def refresh_module():
-        spec = spec_from_file_location("refresh_notebooks", DOCS / "_refresh_notebooks.py")
-        assert spec is not None and spec.loader is not None
-        module = module_from_spec(spec)
-        spec.loader.exec_module(module)
-        return module
-
-    @staticmethod
-    def image_payload(color: str, changed_pixel: bool = False) -> str:
-        from PIL import Image
-
-        image = Image.new("RGB", (100, 100), color)
-        if changed_pixel:
-            image.putpixel((0, 0), (0, 0, 0))
-        buffer = BytesIO()
-        image.save(buffer, format="PNG")
-        return b64encode(buffer.getvalue()).decode()
-
-    def test_material_image_changes_are_detected(self) -> None:
-        refresh = self.refresh_module()
-        assert not refresh._images_match(self.image_payload("white"), self.image_payload("black"))
-        assert not refresh._images_match(self.image_payload("white"), "corrupt")
-
-    def test_tiny_image_changes_are_tolerated(self) -> None:
-        refresh = self.refresh_module()
-        assert refresh._images_match(
-            self.image_payload("white"), self.image_payload("white", changed_pixel=True)
-        )

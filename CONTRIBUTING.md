@@ -190,27 +190,23 @@ include:
 
 ### Notebook-first workflow
 
-Tutorial notebooks under `docs/user/` are the source of truth. Their outputs are committed so that
-reviewers see the same results that appear on the website. Sphinx renders those outputs through
-`myst-nb`; ordinary documentation builds do not execute the notebooks.
+Tutorial notebooks under `docs/user/` are the source of truth. Commit them without outputs so
+reviews contain only source changes. The pre-commit hook clears outputs and execution counts from
+changed notebooks automatically.
 
-Edit notebooks directly in Jupyter or VS Code. After changing a notebook's code, refresh its
-committed output:
-
-```bash
-make docs-refresh-notebooks NOTEBOOKS=docs/user/recom.ipynb
-```
-
-Omit `NOTEBOOKS` to refresh every tutorial:
+The docs build reuses outputs when the notebook source matches the ignored MyST-NB cache under
+`docs/_build/`. New or changed notebooks execute in temporary directories with the example
+datasets staged. To populate that cache for one notebook without building the site, run:
 
 ```bash
-make docs-refresh-notebooks
+make docs-cache-notebooks NOTEBOOKS=docs/user/recom.ipynb
 ```
 
-The refresh script executes each notebook in a fresh temporary directory, stages the committed
-example datasets, removes volatile execution metadata, and normalizes unstable output details.
-Plot comparisons tolerate minor cross-platform rendering differences while detecting material
-changes.
+Omit `NOTEBOOKS` to execute every tutorial:
+
+```bash
+make docs-cache-notebooks
+```
 
 ### Building and previewing docs
 
@@ -224,6 +220,13 @@ The generated site is written to `docs/_build/`. To serve it locally with automa
 
 ```bash
 make docs-serve
+```
+
+To force notebook re-execution before a build or preview, set `FRESH=1`. This also works with
+`docs` and `docs-cache-notebooks`:
+
+```bash
+make docs-serve FRESH=1
 ```
 
 ### Testing docs
@@ -246,14 +249,8 @@ Shared setup blocks use:
 <!-- docs-test: setup -->
 ```
 
-Snippet failures report the original documentation filename and line number.
-
-Check that committed notebook outputs still match the current code:
-
-```bash
-make docs-check-notebooks
-make docs-check-notebooks NOTEBOOKS=docs/user/recom.ipynb
-```
+Snippet failures report the original documentation filename and line number. The docs build fails
+if a notebook cannot execute, and the test suite rejects notebooks containing committed outputs.
 
 Check external links manually with:
 
@@ -261,7 +258,7 @@ Check external links manually with:
 make docs-linkcheck
 ```
 
-Pull requests and pushes to `main` build the site, run snippet and notebook freshness checks, and
+Pull requests and pushes to `main` execute the notebooks, build the site, run snippet checks, and
 upload the built site as a workflow artifact. Read the Docs publishes the site. External link
 checking is temporarily manual while the reorganized pages are unpublished.
 

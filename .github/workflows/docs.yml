@@ -22,11 +22,6 @@ jobs:
       - name: Run documentation snippet tests
         run: make docs-test
 
-      # Notebooks are committed with their outputs and rendered with execution off;
-      # this proves their text and perceptually compared image outputs are fresh.
-      - name: Check tutorial notebooks are fresh
-        run: make docs-check-notebooks
-
       - name: Upload built site
         uses: actions/upload-artifact@v4
         with:

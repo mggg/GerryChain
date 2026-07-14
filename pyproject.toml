@@ -112,8 +112,8 @@ docs = [
   "sphinx-design>=0.6.1",
 ]
 # Only what the executable docs examples need beyond the package itself (see
-# tests/test_docs_snippets.py, docs/_refresh_notebooks.py, and the docs-test /
-# docs-refresh-notebooks Makefile targets).
+# tests/test_docs_snippets.py, the notebook scripts, and the docs-test /
+# docs-cache-notebooks Makefile targets).
 docs-exec = [
   "pytest>=8.4.2",
   "matplotlib>=3.10.7",

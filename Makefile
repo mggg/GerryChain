@@ -5,12 +5,13 @@ VENV_DIR ?= .venv
 PKG ?= gerrychain
 TEST_PATHS ?= tests
 TYPECHECK_PATHS ?= $(PKG) tests/typing_assertions.py
-DOCS_PY_PATHS ?= docs/conf.py docs/_refresh_notebooks.py docs/generate_recom_assets.py
+DOCS_PY_PATHS ?= docs/conf.py docs/_clear_notebook_outputs.py \
+	docs/_refresh_notebooks.py docs/generate_recom_assets.py
+DOCS_CACHE_FLAGS = $(if $(filter 1,$(FRESH)),--force)
 export UV_MANAGED_PYTHON = 1
 
 .PHONY: help check_prereq setup install install-docs check test test-all type-check format lint \
-	precommit docs docs-serve docs-test docs-linkcheck docs-refresh-notebooks \
-	docs-check-notebooks clean
+	precommit docs docs-serve docs-test docs-linkcheck docs-cache-notebooks clean
 
 help:
 	@echo "Available targets:"
@@ -27,8 +28,8 @@ help:
 	@echo "  docs-serve    - Serve the documentation locally with live reload"
 	@echo "  docs-test     - Execute the Python code blocks in the documentation"
 	@echo "  docs-linkcheck - Check external links in the documentation"
-	@echo "  docs-refresh-notebooks - Re-execute the user-guide notebooks and refresh committed outputs"
-	@echo "  docs-check-notebooks - Verify the committed notebook outputs are fresh"
+	@echo "  docs-cache-notebooks - Execute user-guide notebooks into the ignored docs cache"
+	@echo "                  Set FRESH=1 with a docs target to rebuild notebook outputs"
 	@echo "  clean         - Clean build artifacts"
 
 
@@ -56,8 +57,8 @@ install: check_prereq
 	uv sync --python $(PYTHON_VERSION)
 
 install-docs: check_prereq
-	@echo "Installing GerryChain package with all just the documentation dependencies..."
-	uv sync --python $(PYTHON_VERSION) --no-default-groups --group docs
+	@echo "Installing documentation and notebook execution dependencies..."
+	uv sync --python $(PYTHON_VERSION) --no-default-groups --group docs --group docs-exec
 
 check:
 	$(MAKE) format
@@ -90,35 +91,32 @@ precommit:
 	@echo "Running pre-commit hooks..."
 	uv run pre-commit run --all-files
 
-docs: install-docs
+docs: docs-cache-notebooks
 	@echo "Building documentation..."
-	uv run --no-default-groups --group docs sphinx-build -E -a -W --keep-going \
+	uv run --no-default-groups --group docs --group docs-exec sphinx-build -E -a -W --keep-going \
 		-b dirhtml docs/ docs/_build
 
-docs-serve: install-docs
+docs-serve: docs-cache-notebooks
 	@echo "Serving documentation with live reload..."
-	uv run --no-default-groups --group docs sphinx-autobuild -b dirhtml docs/ docs/_build
+	uv run --no-default-groups --group docs --group docs-exec \
+		sphinx-autobuild -b dirhtml docs/ docs/_build
 
-docs-linkcheck: install-docs
+docs-linkcheck: docs-cache-notebooks
 	@echo "Checking documentation links..."
-	uv run --no-default-groups --group docs sphinx-build -E -a -W --keep-going \
+	uv run --no-default-groups --group docs --group docs-exec \
+		sphinx-build -E -a -W --keep-going \
 		-b linkcheck docs/ docs/_build/linkcheck
 
 # Selects the docs-exec group explicitly so it does not rely on uv's implicit dev group.
 docs-test:
 	@echo "Executing documentation code snippets..."
-	uv run --no-default-groups --group docs-exec pytest -v --rundocs \
+	uv run --no-default-groups --group docs --group docs-exec pytest -v --rundocs \
 		tests/test_docs_snippets.py
 
-# Re-execute user-guide notebooks and rewrite their committed outputs. Pass NOTEBOOKS=...
-# to refresh a subset, e.g. `make docs-refresh-notebooks NOTEBOOKS=docs/user/recom.ipynb`.
-docs-refresh-notebooks:
-	@echo "Refreshing user-guide notebooks..."
-	uv run --no-default-groups --group docs-exec python docs/_refresh_notebooks.py $(NOTEBOOKS)
-
-docs-check-notebooks:
-	@echo "Checking that committed notebook outputs are fresh..."
-	uv run --no-default-groups --group docs-exec python docs/_refresh_notebooks.py --check $(NOTEBOOKS)
+docs-cache-notebooks: install-docs
+	@echo "Caching user-guide notebook outputs..."
+	uv run --no-default-groups --group docs --group docs-exec \
+		python docs/_refresh_notebooks.py $(DOCS_CACHE_FLAGS) $(NOTEBOOKS)
 
 clean:
 	@echo "Cleaning build artifacts..."
