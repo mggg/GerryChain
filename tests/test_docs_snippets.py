@@ -1,9 +1,9 @@
 """Execute every Python code block in the documentation.
 
 The docs are the single source of truth: this runner discovers ``docs/**/*.md`` and
-``docs/**/*.rst`` (the autodoc reference pages and the repo README are still RST), extracts
-every Python code block, and executes each page's blocks in order in a shared namespace inside
-a temp working directory. Tutorial notebooks are not covered here; they execute through
+``docs/**/*.rst`` plus the root README and contributing guide, extracts every Python code block,
+and executes each page's blocks in order in a shared namespace inside a temp working directory.
+Tutorial notebooks are not covered here; they execute through
 ``make docs-refresh-notebooks`` and the CI freshness check. The runner generically stages files
 from ``docs/_static`` so download-based examples can use the same filenames readers receive.
 
@@ -189,7 +189,7 @@ def discover_pages() -> list[Path]:
     pages = [
         p for pattern in ("*.rst", "*.md") for p in DOCS.rglob(pattern) if "_build" not in p.parts
     ]
-    pages.append(REPO / "README.rst")
+    pages.extend((REPO / "README.md", REPO / "CONTRIBUTING.md"))
     return sorted(pages)
 
 

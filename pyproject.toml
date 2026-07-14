@@ -16,12 +16,12 @@ packages = { find = { include = ["gerrychain*"], exclude = ["tests*"] } }
 name = "gerrychain"
 version = "1.0.0a2"
 description = "GerryChain is a Python library for building ensembles of districting plans using Markov Chain Monte Carlo methods."
-readme = "README.rst"
+readme = "README.md"
 authors = [
   { name = "Data and Democracy Lab", email = "code@mggg.org" },
 ]
 requires-python = ">=3.11"
-license = { text = "MIT" } 
+license = "BSD-3-Clause"
 
 
 dependencies = [
