@@ -51,8 +51,8 @@ which is stable from 0.3.x onward.
 Note on RNG: by default a fresh base seed is drawn each invocation and printed; pass --seed to pin
 it. Within a `compare`, every target gets the same seeds either way - though different gerrychain
 versions consume the RNG streams differently, so they will not walk the same chains. This measures
-throughput, not output equivalence. The script re-runs itself with PYTHONHASHSEED=0 so that a
-pinned --seed is actually reproducible despite Python's hash-randomized set/dict ordering.
+throughput, not output equivalence. GerryChain owns its RNGs, so a pinned seed is reproducible
+without also pinning Python's hash seed.
 """
 
 from __future__ import annotations
@@ -60,7 +60,6 @@ from __future__ import annotations
 import argparse
 import inspect
 import json
-import os
 import subprocess
 import sys
 import tempfile
@@ -500,14 +499,6 @@ def add_benchmark_options(parser: argparse.ArgumentParser) -> None:
 
 
 def main() -> None:
-    # Hash randomization changes set/dict iteration order inside gerrychain, so a pinned --seed
-    # only reproduces a run under a fixed hash seed. The interpreter's hash seed is locked at
-    # startup, so re-run process once with PYTHONHASHSEED=0 and forward the exit code. (using
-    # spawn-and-exit rather than os.execv b/c Windows fakes exec by spawning a new process)
-    if os.environ.get("PYTHONHASHSEED") != "0":
-        env = {**os.environ, "PYTHONHASHSEED": "0"}
-        sys.exit(subprocess.run([sys.executable] + sys.argv, env=env).returncode)
-
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )

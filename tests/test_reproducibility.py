@@ -128,15 +128,33 @@ print(
 )
 """
 
+RANDOM_ASSIGNMENT_HASHSEED_SCRIPT = """
+import hashlib
+import json
 
-def run_with_hashseed(hashseed):
+from gerrychain import Graph, Partition
+
+graph = Graph.from_json("docs/_static/05_bg_census_consolidated.json")
+partition = Partition.from_random_assignment(
+    graph,
+    n_parts=35,
+    epsilon=0.02,
+    pop_col="tot_pop_20",
+    rng=2024,
+)
+assignment = sorted(partition.assignment.mapping.items())
+print(hashlib.sha256(json.dumps(assignment).encode()).hexdigest())
+"""
+
+
+def run_with_hashseed(hashseed, script=HASHSEED_SCRIPT):
     env = dict(os.environ)
     if hashseed is None:
         env.pop("PYTHONHASHSEED", None)
     else:
         env["PYTHONHASHSEED"] = hashseed
     result = subprocess.run(
-        [sys.executable, "-c", HASHSEED_SCRIPT],
+        [sys.executable, "-c", script],
         capture_output=True,
         text=True,
         env=env,
@@ -149,6 +167,12 @@ def test_trajectories_do_not_depend_on_pythonhashseed():
     baseline = run_with_hashseed("0")
     assert run_with_hashseed("42") == baseline
     assert run_with_hashseed(None) == baseline
+
+
+def test_random_assignment_does_not_depend_on_pythonhashseed():
+    baseline = run_with_hashseed("0", RANDOM_ASSIGNMENT_HASHSEED_SCRIPT)
+    assert run_with_hashseed("1", RANDOM_ASSIGNMENT_HASHSEED_SCRIPT) == baseline
+    assert run_with_hashseed("2", RANDOM_ASSIGNMENT_HASHSEED_SCRIPT) == baseline
 
 
 def test_random_assignment_method_receives_original_graph_and_node_labels():

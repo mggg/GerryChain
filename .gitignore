@@ -59,6 +59,7 @@ coverage.xml
 
 # Sphinx documentation
 docs/_build/
+docs/_generated/
 _build
 
 # PyBuilder
@@ -90,3 +91,4 @@ TODO.md
 
 # Profiling data
 *.prof
+docs/jupyter_execute/

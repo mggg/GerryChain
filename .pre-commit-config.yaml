@@ -5,4 +5,4 @@ repos:
         name: Run `make check` (format + lint)
         entry: make check
         language: system
-        pass_filenames: true
+        pass_filenames: false
