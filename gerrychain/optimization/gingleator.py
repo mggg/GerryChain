@@ -1,3 +1,4 @@
+import random
 import warnings
 from collections.abc import Callable, Iterable
 from functools import partial
@@ -31,6 +32,8 @@ class Gingleator(SingleMetricOptimizer):
         minority_pop_col: str | None = None,
         total_pop_col: str = "TOTPOP",
         min_perc_column_name: str = "_gingleator_auxiliary_helper_updater_min_perc_col",
+        *,
+        rng: random.Random | int | None = None,
     ) -> None:
         """Initialize a Gingleator instance.
 
@@ -58,6 +61,10 @@ class Gingleator(SingleMetricOptimizer):
             min_perc_column_name (str, optional): If minority_perc_col is not defined, the name to
                 give the created percentage updater. Defaults to
                 "_gingleator_auxiliary_helper_updater_min_perc_col".
+            rng (Union[random.Random, int, None], optional): Source of randomness for the
+                optimizer's internal chains; see
+                :meth:`SingleMetricOptimizer.__init__ <gerrychain.optimization.SingleMetricOptimizer.__init__>`.
+                Defaults to None.
         """
         if minority_perc_col is None and minority_pop_col is None:
             raise ValueError(
@@ -82,7 +89,7 @@ class Gingleator(SingleMetricOptimizer):
 
         score = partial(score_function, minority_perc_col=minority_perc_col, threshold=threshold)
 
-        super().__init__(proposal, constraints, initial_state, score, maximize=True)
+        super().__init__(proposal, constraints, initial_state, score, maximize=True, rng=rng)
 
     # ---------------------
     #    Score functions

@@ -2,9 +2,6 @@
 
 import cProfile
 
-# Set the random seed so that the results are reproducible!
-import random
-
 from gerrychain import MarkovChain, Partition, accept, updaters
 from gerrychain.constraints import contiguous
 from gerrychain.examples import gerrymandria
@@ -13,7 +10,6 @@ from gerrychain.proposals import build_recom_proposal_fn
 
 def main():
 
-    random.seed(2024)
     graph = gerrymandria()
 
     my_updaters = {
@@ -32,7 +28,7 @@ def main():
         pop_col="TOTPOP",
         pop_target=ideal_population,
         epsilon=0.01,
-        node_repeats=2,
+        node_repeats=0,
     )
 
     recom_chain = MarkovChain(
@@ -41,6 +37,7 @@ def main():
         accept=accept.always_accept,
         initial_state=initial_partition,
         total_steps=40,
+        rng=2024,
     )
 
     assignment_list = []

@@ -13,7 +13,7 @@ and validating that everything is ready to go.
 Supported Python Versions
 -------------------------
 
-The most recent version of GerryChain (as of April 2024) supports
+The most recent version of GerryChain supports
 
 - Python 3.11
 - Python 3.12

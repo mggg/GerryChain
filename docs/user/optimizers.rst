@@ -55,7 +55,7 @@ with importing the necessary packages:
                             proposals, updaters, constraints, accept, Election)
     from gerrychain.optimization import SingleMetricOptimizer, Gingleator
     from gerrychain.partition import recursive_seed_part
-    from gerrychain.proposals import recom, build_recom_proposal_fn
+    from gerrychain.proposals import build_recom_proposal_fn
     from functools import partial
     import pandas as pd
     import json
@@ -65,8 +65,7 @@ with importing the necessary packages:
     import numpy as np
     import random
 
-    random.seed(2024)
-
+    rng = random.Random(2024)
 
 Since the ``SingleMetricOptimizer`` class uses ReCom under the hood, we will need to 
 do a lot of the same setup that we did in the :doc:`Running a Chain with ReCom <./recom>`
@@ -90,14 +89,14 @@ section:
         n_parts=SEN_DISTS,
         epsilon=EPS,
         pop_col=POPCOL,
-        updaters=chain_updaters
+        updaters=chain_updaters,
+        rng=rng,
     )
 
     proposal = build_recom_proposal_fn(
         pop_col=POPCOL,
         pop_target=TOTPOP/SEN_DISTS,
         epsilon=EPS,
-        node_repeats=1
     )
 
     chain_constraints = constraints.within_percent_of_ideal_population(initial_partition, EPS)
@@ -120,7 +119,8 @@ state, and the objective function of interest:
         constraints=chain_constraints,
         initial_state=initial_partition,
         optimization_metric=num_cut_edges,
-        maximize=False
+        maximize=False,
+        rng=rng,
     )
 
 
@@ -271,9 +271,6 @@ Majority-Minority Total Population
     EPS = 0.02
     TOTPOP = sum(graph.node_data(node_id)[POPCOL] for node_id in graph.node_indices)
 
-    # ========================================================
-    # WE HAVE UPDATED SOME THINGS IN HERE! MAKE SURE TO CHECK!
-    # ========================================================
     chain_updaters = {
         "population": updaters.Tally(POPCOL, alias="population"),
         "bpop": updaters.Tally("bpop_20", alias="bpop"),  
@@ -284,14 +281,14 @@ Majority-Minority Total Population
         n_parts=SEN_DISTS,
         epsilon=EPS,
         pop_col=POPCOL,
-        updaters=chain_updaters
+        updaters=chain_updaters,
+        rng=rng,
     )
 
     proposal = build_recom_proposal_fn(
         pop_col=POPCOL,
         pop_target=TOTPOP/SEN_DISTS,
         epsilon=EPS,
-        node_repeats=1
     )
 
     chain_constraints = constraints.within_percent_of_ideal_population(initial_partition, EPS)
@@ -330,9 +327,9 @@ threshold value :math:`t`, so :math:`n = \sum_{p_i \in P} \mathbb{1}_{p_i\geq t}
 
 - ``reward_next_highest_close``: Given a ``Partition``, let :math:`p_k = \max(\{p_i : p_i < t\})`. This function will return :math:`n` if :math:`p_k + 0.1 < t` and :math:`n + 10(p_k - t + 0.1)` otherwise.
 
-- ``penalize_maximum_over``: Given a ``Partition``, this function will return 0 if :math:`n = 0` and :math:`n - \frac{1-\max(\{p_i\})}{1-t}` otherwise.
+- ``penalize_maximum_over``: Given a ``Partition``, this function will return 0 if :math:`n = 0` and :math:`n + \frac{1-\max(\{p_i\})}{1-t}` otherwise.
 
-- ``penalize_avg_over``: Given a ``Partition``, this function will return 0 if :math:`n = 0` and :math:`n - \frac{1-avg(\{p_i: p_i \geq t\})}{1-t}` otherwise.
+- ``penalize_avg_over``: Given a ``Partition``, this function will return 0 if :math:`n = 0` and :math:`n + \frac{1-avg(\{p_i: p_i \geq t\})}{1-t}` otherwise.
 
 
 We are now prepared to instantiate the ``Gingleator`` class:
@@ -345,7 +342,8 @@ We are now prepared to instantiate the ``Gingleator`` class:
         initial_partition,
         minority_pop_col='bpop',
         total_pop_col='population',
-        score_function=Gingleator.reward_partial_dist
+        score_function=Gingleator.reward_partial_dist,
+        rng=rng,
     )
 
 Since the ``Gingleator`` class is a subclass of the ``SingleMetricOptimizer`` class, we can
@@ -422,6 +420,17 @@ to do is change our updaters to be
         "bvap": updaters.Tally("bvap_20", alias="bvap"),
     }
 
+    initial_partition = Partition.from_random_assignment(
+        graph=graph,
+        n_parts=SEN_DISTS,
+        epsilon=EPS,
+        pop_col=POPCOL,
+        updaters=chain_updaters,
+        rng=rng,
+    )
+
+    chain_constraints = constraints.within_percent_of_ideal_population(initial_partition, EPS)
+
 and then change our ``Gingleator`` class instantiation to be
 
 .. code:: python
@@ -432,7 +441,8 @@ and then change our ``Gingleator`` class instantiation to be
         initial_partition,
         minority_pop_col='bvap',
         total_pop_col='vap',
-        score_function=Gingleator.reward_partial_dist
+        score_function=Gingleator.reward_partial_dist,
+        rng=rng,
     )
 
 and we will be off to the races. In the interest of being thorough, however, let us see how to
@@ -459,9 +469,6 @@ For this, we will just need to tweak our updaters a little bit:
             percent_by_part[part] = partition["bvap"][part] / partition["vap"][part]
         return percent_by_part
 
-    # ========================================================
-    # WE HAVE UPDATED SOME THINGS IN HERE! MAKE SURE TO CHECK!
-    # ========================================================
     chain_updaters = {
         "population": updaters.Tally(POPCOL, alias="population"),
         "vap": updaters.Tally("tot_vap_20", alias="vap"), 
@@ -474,14 +481,14 @@ For this, we will just need to tweak our updaters a little bit:
         n_parts=SEN_DISTS,
         epsilon=EPS,
         pop_col=POPCOL,
-        updaters=chain_updaters
+        updaters=chain_updaters,
+        rng=rng,
     )
 
     proposal = build_recom_proposal_fn(
         pop_col=POPCOL,
         pop_target=TOTPOP/SEN_DISTS,
         epsilon=EPS,
-        node_repeats=1
     )
 
     chain_constraints = constraints.within_percent_of_ideal_population(initial_partition, EPS)
@@ -494,7 +501,8 @@ For this, we will just need to tweak our updaters a little bit:
         chain_constraints,
         initial_partition,
         minority_perc_col='bvap_pct',
-        score_function=Gingleator.reward_partial_dist
+        score_function=Gingleator.reward_partial_dist,
+        rng=rng,
     )
 
 

@@ -4,13 +4,21 @@ from typing import Dict, Optional
 
 from numpy import linalg as LA
 
+from .._rng import make_rng
 from ..graph import Graph
 from ..partition import Partition
 from ..proposals import ProposalFn
 
 
 # frm: only ever used in this file - but maybe it is used externally?
-def spectral_cut(subgraph: Graph, part_labels: Dict, weight_type: str, lap_type: str) -> Dict:
+def spectral_cut(
+    subgraph: Graph,
+    part_labels: Dict,
+    weight_type: str,
+    lap_type: str,
+    *,
+    rng: random.Random | int | None = None,
+) -> Dict:
     """Spectral cut function.
 
     Original templates and work from Daryl DeFord:
@@ -26,10 +34,14 @@ def spectral_cut(subgraph: Graph, part_labels: Dict, weight_type: str, lap_type:
         part_labels (Dict): The current partition of the subgraph.
         weight_type (str): The type of weight to be used in the Laplacian.
         lap_type (str): The type of Laplacian to be used.
+        rng (Union[random.Random, int, None], optional): Source of randomness. Pass a shared
+            ``Random`` for repeated standalone calls; an integer restarts the stream each call.
 
     Returns:
         Dict: A dictionary assigning nodes of the subgraph to their new districts.
     """
+
+    rng = make_rng(rng)
 
     # This routine operates on subgraphs, which is important because the node_ids
     # in a subgraph are different from the node_ids of the parent graph, so
@@ -42,7 +54,7 @@ def spectral_cut(subgraph: Graph, part_labels: Dict, weight_type: str, lap_type:
     if weight_type == "random":
         # assign a random weight to each edge in the subgraph
         for edge_id in subgraph.edge_indices:
-            subgraph.edge_data(edge_id)["weight"] = random.random()
+            subgraph.edge_data(edge_id)["weight"] = rng.random()
 
     # Compute the desired laplacian matrix (convert from sparse to dense)
     if lap_type == "normalized":
@@ -94,6 +106,8 @@ def spectral_recom(
     partition: Partition,
     weight_type: Optional[str] = None,
     lap_type: str = "normalized",
+    *,
+    rng: random.Random | int | None = None,
 ) -> Partition:
     """Spectral ReCom proposal.
 
@@ -116,15 +130,19 @@ def spectral_recom(
         weight_type (Optional[str], optional): The type of weight to be used in the Laplacian.
             Default is None.
         lap_type (str, optional): The type of Laplacian to be used. Default is "normalized".
+        rng (Union[random.Random, int, None], optional): Source of randomness. Pass a shared
+            ``Random`` for repeated standalone calls; an integer restarts the stream each call.
 
     Returns:
         Partition: The new partition resulting from the spectral ReCom algorithm.
     """
 
+    rng = make_rng(rng)
+
     # Select two adjacent parts (districts) at random by first selecting
     # a cut_edge at random and then figuring out the parts (districts)
     # associated with the edge.
-    cut_edge = random.choice(tuple(partition["cut_edges"]))
+    cut_edge = rng.choice(tuple(partition["cut_edges"]))
     parts_to_merge = (
         partition.assignment.mapping[cut_edge[0]],
         partition.assignment.mapping[cut_edge[1]],
@@ -134,7 +152,11 @@ def spectral_recom(
 
     # Cut the set of all nodes from parts_to_merge into two hopefully new parts (districts)
     flips = spectral_cut(
-        partition.graph.subgraph(subgraph_nodes), parts_to_merge, weight_type, lap_type
+        partition.graph.subgraph(subgraph_nodes),
+        parts_to_merge,
+        weight_type,
+        lap_type,
+        rng=rng,
     )
 
     return partition.flip(flips)

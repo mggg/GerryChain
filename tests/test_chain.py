@@ -8,11 +8,11 @@ class MockState:
         return MockState()
 
 
-def mock_proposal(state):
+def mock_proposal(state, *, rng):
     return state.flip({1: 2}, flips_passed_in_use_original_nx_node_ids=True)
 
 
-def mock_accept(state):
+def mock_accept(state, *, rng):
     return True
 
 
@@ -54,10 +54,10 @@ def test_chain_only_yields_accepted_states():
 
     values = list(reversed([Value(x) for x in [0, 1, 2, 3, -1, -2, -3, -4]]))
 
-    def accept(value):
+    def accept(value, *, rng):
         return value.value <= 0
 
-    def proposal(value):
+    def proposal(value, *, rng):
         return values.pop()
 
     chain = MarkovChain(
@@ -69,14 +69,14 @@ def test_chain_only_yields_accepted_states():
     )
 
     for state in chain:
-        assert accept(state), "The chain yielded a non-accepted state"
+        assert state.value <= 0, "The chain yielded a non-accepted state"
 
 
 def test_repr():
     chain = MarkovChain(
-        proposal=lambda x: None,
+        proposal=lambda x, *, rng: None,
         constraints=[],
-        accept=lambda x: True,
+        accept=lambda x, *, rng: True,
         initial_state=None,
         total_steps=100,
     )

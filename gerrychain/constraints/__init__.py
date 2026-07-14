@@ -2,31 +2,11 @@
 The `gerrychain.constraints` module provides a collection of constraint
 functions and helper classes for the validation step in GerryChain.
 
-==================================== ==========================================
-Helper classes
-===============================================================================
-Validator                    Collection of constraints
-Bounds                       Bounds on numeric constraints
-UpperBound                   Upper bounds on numeric constraints
-LowerBound                   Lower bounds on numeric constraints
-SelfConfiguringUpperBound    Automatic upper bounds on numeric constraints
-SelfConfiguringLowerBound    Automatic lower bounds on numeric constraints
-WithinPercentRangeOfBounds   Percentage bounds for numeric constraints
-==================================== ==========================================
+Helper classes include ``Validator`` for collections of constraints, numeric ``Bounds`` and
+``UpperBound``/``LowerBound`` classes, self-configuring bounds, and percentage bounds.
 
-|
-
-=================================================== =============================================
-Binary constraint functions
-=================================================================================================
-`no_worse_L_1_reciprocal_polsby_popper`           Lower bounded L1-reciprocal Polsby-Popper
-`no_worse_L_minus_1_reciprocal_polsby_popper`     Lower bounded L(-1)-reciprocal Polsby-Popper
-`contiguous`                                      Districts are contiguous (with NetworkX
-methods)
-`single_flip_contiguous`                          Districts are contiguous (optimized for
-``propose_random_flip`` proposal)
-`no_vanishing_districts`                          No districts may be completely consumed
-=================================================== =============================================
+Binary constraint functions include contiguity checks, ``no_vanishing_districts``, and lower
+bounds on reciprocal Polsby-Popper scores.
 
 Each new step proposed to the chain is passed off to the "validator" functions
 here to determine whether or not the step is valid. If it is invalid (breaks

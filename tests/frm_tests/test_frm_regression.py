@@ -11,16 +11,11 @@
 # It is a quick and dirty way to make sure I haven't really screwed things up ;-)
 #
 
-# Set the random seed so that the results are reproducible!
-import random
 
 from gerrychain import MarkovChain, Partition, accept, updaters
 from gerrychain.constraints import contiguous
 from gerrychain.examples import gerrymandria
 from gerrychain.proposals import build_recom_proposal_fn
-
-random.seed(2024)
-
 
 graph = gerrymandria()
 
@@ -34,7 +29,7 @@ initial_partition = Partition(graph, assignment="district", updaters=my_updaters
 ideal_population = sum(initial_partition["population"].values()) / len(initial_partition)
 
 proposal = build_recom_proposal_fn(
-    pop_col="TOTPOP", pop_target=ideal_population, epsilon=0.01, node_repeats=2
+    pop_col="TOTPOP", pop_target=ideal_population, epsilon=0.01
 )
 
 recom_chain = MarkovChain(
@@ -43,6 +38,7 @@ recom_chain = MarkovChain(
     accept=accept.always_accept,
     initial_state=initial_partition,
     total_steps=40,
+    rng=2024,
 )
 
 assignment_list = []

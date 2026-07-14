@@ -26,8 +26,11 @@ Last Updated: 11 Jan 2024
 
 from __future__ import annotations
 
+import random
 from collections.abc import Callable, Iterable
 
+from gerrychain._rng import make_rng
+from gerrychain.accept import AcceptFn
 from gerrychain.constraints import Bounds, Validator
 from gerrychain.partition import Partition
 from gerrychain.proposals import ProposalFn
@@ -56,23 +59,30 @@ class MarkovChain:
         # proposal: Callable[[Partition], Partition],
         proposal: ProposalFn,
         constraints: Iterable[Callable] | Validator | Iterable[Bounds] | Callable,
-        accept: Callable,
+        accept: AcceptFn,
         initial_state: Partition,
         total_steps: int,
+        *,
+        rng: random.Random | int | None = None,
     ) -> None:
         """Initialize a MarkovChain instance.
 
         Args:
-            proposal (Callable): Function proposing the next state from the current state.
+            proposal (Callable): Function called as ``proposal(state, rng=chain.rng)`` to propose
+                the next state. The chain's RNG takes precedence over an ``rng`` bound into a
+                ``functools.partial`` proposal.
             constraints (Union[Iterable[Callable], Validator, Iterable[Bounds], Callable]): A
                 function with signature ``Partition -> bool`` determining whether the proposed next
                 state is valid (passes all binary constraints). Usually this is a
                 Validator class instance.
-            accept (Callable): Function accepting or rejecting the proposed state. In the most
-                basic use case, this always returns ``True``. But if the user wanted to use a
-                Metropolis-Hastings acceptance rule, this is where you would implement it.
+            accept (Callable): Function called as ``accept(proposed_state, rng=chain.rng)`` to
+                accept or reject the proposed state. In the most basic use case, this always
+                returns ``True``.
             initial_state (Partition): Initial Partition class.
             total_steps (int): Number of steps to run.
+            rng (Union[random.Random, int, None], optional): Source of randomness for the run.
+                An integer creates a reproducible ``random.Random``; a supplied instance is kept
+                by identity; ``None`` creates an independent RNG from system entropy.
 
         Raises:
             ValueError: If the initial_state is not valid according to the constraints.
@@ -101,6 +111,7 @@ class MarkovChain:
         self.total_steps = total_steps
         self.initial_state = initial_state
         self.state = initial_state
+        self.rng = make_rng(rng)
 
     @property
     def constraints(self) -> Validator:
@@ -153,7 +164,7 @@ class MarkovChain:
         """Resets the Markov chain iterator.
 
         This method is called when an iterator is required for a container. It sets the counter to
-        0 and resets the state to the initial state.
+        0 and resets the state to the initial state. The chain's RNG stream continues.
 
         Returns:
             MarkovChain: Returns itself as an iterator object.
@@ -181,13 +192,13 @@ class MarkovChain:
             return self.state
 
         while self.counter < self.total_steps:
-            proposed_next_state = self.proposal(self.state)
+            proposed_next_state = self.proposal(self.state, rng=self.rng)
             # Erase the parent of the parent, to avoid memory leak
             if self.state is not None:
                 self.state.parent = None
 
             if self.is_valid(proposed_next_state):
-                if self.accept(proposed_next_state):
+                if self.accept(proposed_next_state, rng=self.rng):
                     self.state = proposed_next_state
                 self.counter += 1
                 return self.state

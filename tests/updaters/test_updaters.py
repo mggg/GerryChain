@@ -55,9 +55,10 @@ def chain_with_election(partition_with_election):
     return MarkovChain(
         propose_random_flip,
         Validator([no_vanishing_districts]),
-        lambda x: True,
+        lambda x, *, rng: True,
         partition_with_election,
         total_steps=10,
+        rng=2018,
     )
 
 
@@ -377,9 +378,10 @@ def test_elections_match_the_naive_computation(partition_with_election):
     chain = MarkovChain(
         propose_random_flip,
         Validator([no_vanishing_districts, reject_half_of_all_flips]),
-        lambda x: True,
+        lambda x, *, rng: True,
         partition_with_election,
         total_steps=100,
+        rng=2018,
     )
 
     for partition in chain:

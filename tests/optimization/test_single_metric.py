@@ -8,8 +8,6 @@ from gerrychain.optimization import SingleMetricOptimizer
 from gerrychain.proposals import build_recom_proposal_fn
 from gerrychain.updaters import Tally
 
-random.seed(2024)
-
 
 def simple_cut_edge_count(partition):
     return len(partition["cut_edges"])
@@ -21,12 +19,12 @@ def simple_cut_edge_count(partition):
 
 
 def test_single_metric_sb_attains_min_quickly(four_by_five_grid_for_opt):
-    random.seed(2024)
     initial_partition = Partition.from_random_assignment(
         graph=four_by_five_grid_for_opt,
         n_parts=4,
         epsilon=0.0,
         pop_col="population",
+        rng=2024,
         updaters={
             "population": Tally("population", alias="population"),
             "my_cut_edges": simple_cut_edge_count,
@@ -39,7 +37,7 @@ def test_single_metric_sb_attains_min_quickly(four_by_five_grid_for_opt):
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,
-        node_repeats=1,
+        node_repeats=0,
     )
 
     optimizer = SingleMetricOptimizer(
@@ -48,6 +46,7 @@ def test_single_metric_sb_attains_min_quickly(four_by_five_grid_for_opt):
         initial_state=initial_partition,
         optimization_metric=simple_cut_edge_count,
         maximize=False,
+        rng=2024,
     )
 
     total_steps = 200
@@ -67,12 +66,12 @@ def test_single_metric_sb_attains_min_quickly(four_by_five_grid_for_opt):
 
 
 def test_single_metric_tilted_sb_attains_min_quickly(four_by_five_grid_for_opt):
-    random.seed(2024)
     initial_partition = Partition.from_random_assignment(
         graph=four_by_five_grid_for_opt,
         n_parts=4,
         epsilon=0.0,
         pop_col="population",
+        rng=2024,
         updaters={
             "population": Tally("population", alias="population"),
             "my_cut_edges": simple_cut_edge_count,
@@ -85,7 +84,7 @@ def test_single_metric_tilted_sb_attains_min_quickly(four_by_five_grid_for_opt):
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,
-        node_repeats=1,
+        node_repeats=0,
     )
 
     optimizer = SingleMetricOptimizer(
@@ -94,6 +93,7 @@ def test_single_metric_tilted_sb_attains_min_quickly(four_by_five_grid_for_opt):
         initial_state=initial_partition,
         optimization_metric=simple_cut_edge_count,
         maximize=False,
+        rng=2024,
     )
 
     total_steps = 200
@@ -114,12 +114,12 @@ def test_single_metric_tilted_sb_attains_min_quickly(four_by_five_grid_for_opt):
 
 
 def test_single_metric_variable_len_sb_attains_min_quickly(four_by_five_grid_for_opt):
-    random.seed(2024)
     initial_partition = Partition.from_random_assignment(
         graph=four_by_five_grid_for_opt,
         n_parts=4,
         epsilon=0.0,
         pop_col="population",
+        rng=2024,
         updaters={
             "population": Tally("population", alias="population"),
             "my_cut_edges": simple_cut_edge_count,
@@ -132,7 +132,7 @@ def test_single_metric_variable_len_sb_attains_min_quickly(four_by_five_grid_for
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,
-        node_repeats=1,
+        node_repeats=0,
     )
 
     optimizer = SingleMetricOptimizer(
@@ -141,6 +141,7 @@ def test_single_metric_variable_len_sb_attains_min_quickly(four_by_five_grid_for
         initial_state=initial_partition,
         optimization_metric=simple_cut_edge_count,
         maximize=False,
+        rng=2024,
     )
 
     total_steps = 200
@@ -164,12 +165,12 @@ def test_single_metric_variable_len_sb_attains_min_quickly(four_by_five_grid_for
 
 
 def test_single_metric_sa_jumpcycle_attains_min_quickly(four_by_five_grid_for_opt):
-    random.seed(2024)
     initial_partition = Partition.from_random_assignment(
         graph=four_by_five_grid_for_opt,
         n_parts=4,
         epsilon=0.0,
         pop_col="population",
+        rng=2024,
         updaters={
             "population": Tally("population", alias="population"),
             "my_cut_edges": simple_cut_edge_count,
@@ -182,7 +183,7 @@ def test_single_metric_sa_jumpcycle_attains_min_quickly(four_by_five_grid_for_op
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,
-        node_repeats=1,
+        node_repeats=0,
     )
 
     optimizer = SingleMetricOptimizer(
@@ -191,6 +192,7 @@ def test_single_metric_sa_jumpcycle_attains_min_quickly(four_by_five_grid_for_op
         initial_state=initial_partition,
         optimization_metric=simple_cut_edge_count,
         maximize=False,
+        rng=2024,
     )
 
     total_steps = 200
@@ -210,12 +212,12 @@ def test_single_metric_sa_jumpcycle_attains_min_quickly(four_by_five_grid_for_op
 
 
 def test_single_metric_sa_lincycle_attains_min_quickly(four_by_five_grid_for_opt):
-    random.seed(2024)
     initial_partition = Partition.from_random_assignment(
         graph=four_by_five_grid_for_opt,
         n_parts=4,
         epsilon=0.0,
         pop_col="population",
+        rng=2024,
         updaters={
             "population": Tally("population", alias="population"),
             "my_cut_edges": simple_cut_edge_count,
@@ -228,7 +230,7 @@ def test_single_metric_sa_lincycle_attains_min_quickly(four_by_five_grid_for_opt
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,
-        node_repeats=1,
+        node_repeats=0,
     )
 
     optimizer = SingleMetricOptimizer(
@@ -237,6 +239,7 @@ def test_single_metric_sa_lincycle_attains_min_quickly(four_by_five_grid_for_opt
         initial_state=initial_partition,
         optimization_metric=simple_cut_edge_count,
         maximize=False,
+        rng=2024,
     )
 
     total_steps = 200
@@ -257,12 +260,12 @@ def test_single_metric_sa_lincycle_attains_min_quickly(four_by_five_grid_for_opt
 def test_single_metric_sa_linear_jumpcycle_attains_min_quickly(
     four_by_five_grid_for_opt,
 ):
-    random.seed(2024)
     initial_partition = Partition.from_random_assignment(
         graph=four_by_five_grid_for_opt,
         n_parts=4,
         epsilon=0.0,
         pop_col="population",
+        rng=2024,
         updaters={
             "population": Tally("population", alias="population"),
             "my_cut_edges": simple_cut_edge_count,
@@ -275,7 +278,7 @@ def test_single_metric_sa_linear_jumpcycle_attains_min_quickly(
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,
-        node_repeats=1,
+        node_repeats=0,
     )
 
     optimizer = SingleMetricOptimizer(
@@ -284,6 +287,7 @@ def test_single_metric_sa_linear_jumpcycle_attains_min_quickly(
         initial_state=initial_partition,
         optimization_metric=simple_cut_edge_count,
         maximize=False,
+        rng=2024,
     )
 
     total_steps = 200
@@ -302,12 +306,12 @@ def test_single_metric_sa_linear_jumpcycle_attains_min_quickly(
 
 
 def test_single_metric_sa_logitcycle_attains_min_quickly(four_by_five_grid_for_opt):
-    random.seed(2024)
     initial_partition = Partition.from_random_assignment(
         graph=four_by_five_grid_for_opt,
         n_parts=4,
         epsilon=0.0,
         pop_col="population",
+        rng=2024,
         updaters={
             "population": Tally("population", alias="population"),
             "my_cut_edges": simple_cut_edge_count,
@@ -320,7 +324,7 @@ def test_single_metric_sa_logitcycle_attains_min_quickly(four_by_five_grid_for_o
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,
-        node_repeats=1,
+        node_repeats=0,
     )
 
     optimizer = SingleMetricOptimizer(
@@ -329,6 +333,7 @@ def test_single_metric_sa_logitcycle_attains_min_quickly(four_by_five_grid_for_o
         initial_state=initial_partition,
         optimization_metric=simple_cut_edge_count,
         maximize=False,
+        rng=2024,
     )
 
     total_steps = 200
@@ -349,12 +354,12 @@ def test_single_metric_sa_logitcycle_attains_min_quickly(four_by_five_grid_for_o
 def test_single_metric_sa_logit_jumpcycle_attains_min_quickly(
     four_by_five_grid_for_opt,
 ):
-    random.seed(2024)
     initial_partition = Partition.from_random_assignment(
         graph=four_by_five_grid_for_opt,
         n_parts=4,
         epsilon=0.0,
         pop_col="population",
+        rng=2024,
         updaters={
             "population": Tally("population", alias="population"),
             "my_cut_edges": simple_cut_edge_count,
@@ -367,7 +372,7 @@ def test_single_metric_sa_logit_jumpcycle_attains_min_quickly(
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,
-        node_repeats=1,
+        node_repeats=0,
     )
 
     optimizer = SingleMetricOptimizer(
@@ -376,6 +381,7 @@ def test_single_metric_sa_logit_jumpcycle_attains_min_quickly(
         initial_state=initial_partition,
         optimization_metric=simple_cut_edge_count,
         maximize=False,
+        rng=2024,
     )
 
     total_steps = 200
@@ -401,12 +407,12 @@ def test_single_metric_sa_logit_jumpcycle_attains_min_quickly(
 def test_single_metric_tilted_runs_attains_min_quickly_with_p_eq_0p1(
     four_by_five_grid_for_opt,
 ):
-    random.seed(2024)
     initial_partition = Partition.from_random_assignment(
         graph=four_by_five_grid_for_opt,
         n_parts=4,
         epsilon=0.0,
         pop_col="population",
+        rng=2024,
         updaters={
             "population": Tally("population", alias="population"),
             "my_cut_edges": simple_cut_edge_count,
@@ -419,7 +425,7 @@ def test_single_metric_tilted_runs_attains_min_quickly_with_p_eq_0p1(
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,
-        node_repeats=1,
+        node_repeats=0,
     )
 
     optimizer = SingleMetricOptimizer(
@@ -428,6 +434,7 @@ def test_single_metric_tilted_runs_attains_min_quickly_with_p_eq_0p1(
         initial_state=initial_partition,
         optimization_metric=simple_cut_edge_count,
         maximize=False,
+        rng=2024,
     )
 
     total_steps = 1000
@@ -447,51 +454,22 @@ def test_single_metric_tilted_runs_attains_min_quickly_with_p_eq_0p1(
 
 
 def test_single_metric_sb_finds_hard_max(four_by_five_grid_for_opt):
-
-    # This test is fragile.
-    #
-    # It fails for other random seed values.
-    #
-    # For instance, the test passes for seeds: 2023, 2025, and 5000, but it
-    # fails for seeds: 4, 5, 2024.  Note that before RustworkX work, the
-    # seed had been set to 2024 and the test passed.
-    #
-    # Peter commented that he is not concerned because it is actually
-    # very hard to "find" the solution.  He says that of the 501 possible
-    # partitions, only one has two partitions with the max opt_value.
-    #
-    # However, it still seems odd that when the test passes, it finds
-    # a solution many times - one would think that if it failed for some
-    # seed values then when it succeeded it would only find a solution
-    # a very few times, but in fact, when it succeeds it finds 20+
-    # solutions.`
-    #
-    # Peter's comment from April 2026:
-    #
-    # It would probably be better to just remove or replace our
-    # "finds_hard_max" tests all together (and all the tests of
-    # a similar flavor). For now, we could just replace this test
-    # with a better statistical version where we run short_bursts
-    # from the same initial state with 10 different seeds at 10,000
-    # steps each and assert that at least 6 (this number wold need
-    # to be investigated) out of 10 find score=2. This acknowledges
-    # the probabilistic nature of the algorithm, avoids betting on a
-    # single seed, and should still catch a broken optimizer.
-    #
-
-    random.seed(2025)
-
     def opt_fn(partition):
         mx = 10
         count = sum(1 for x in partition["opt_value_sum"].values() if x == mx)
         return count
 
+    rng = random.Random(2025)
     initial_partition = Partition.from_random_assignment(
         graph=four_by_five_grid_for_opt,
         n_parts=4,
         epsilon=0.0,
         pop_col="population",
-        updaters={"opt_value_sum": Tally("opt_value", alias="opt_value_sum")},
+        rng=rng,
+        updaters={
+            "population": Tally("population", alias="population"),
+            "opt_value_sum": Tally("opt_value", alias="opt_value_sum"),
+        },
     )
 
     ideal_pop = sum(initial_partition["population"].values()) / 4
@@ -500,7 +478,7 @@ def test_single_metric_sb_finds_hard_max(four_by_five_grid_for_opt):
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,
-        node_repeats=1,
+        node_repeats=0,
     )
 
     optimizer = SingleMetricOptimizer(
@@ -509,6 +487,7 @@ def test_single_metric_sb_finds_hard_max(four_by_five_grid_for_opt):
         initial_state=initial_partition,
         optimization_metric=opt_fn,
         maximize=True,
+        rng=rng,
     )
 
     total_steps = 10000
@@ -528,19 +507,23 @@ def test_single_metric_sb_finds_hard_max(four_by_five_grid_for_opt):
 
 
 def test_single_metric_sa_finds_hard_max(four_by_five_grid_for_opt):
-    random.seed(2024)
 
     def opt_fn(partition):
         mx = 10
         count = sum(1 for x in partition["opt_value_sum"].values() if x == mx)
         return count
 
+    rng = random.Random(2024)
     initial_partition = Partition.from_random_assignment(
         graph=four_by_five_grid_for_opt,
         n_parts=4,
         epsilon=0.0,
         pop_col="population",
-        updaters={"opt_value_sum": Tally("opt_value", alias="opt_value_sum")},
+        rng=rng,
+        updaters={
+            "population": Tally("population", alias="population"),
+            "opt_value_sum": Tally("opt_value", alias="opt_value_sum"),
+        },
     )
 
     ideal_pop = sum(initial_partition["population"].values()) / 4
@@ -549,7 +532,7 @@ def test_single_metric_sa_finds_hard_max(four_by_five_grid_for_opt):
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,
-        node_repeats=1,
+        node_repeats=0,
     )
 
     optimizer = SingleMetricOptimizer(
@@ -558,6 +541,7 @@ def test_single_metric_sa_finds_hard_max(four_by_five_grid_for_opt):
         initial_state=initial_partition,
         optimization_metric=opt_fn,
         maximize=True,
+        rng=rng,
     )
 
     total_steps = 20000
@@ -576,19 +560,23 @@ def test_single_metric_sa_finds_hard_max(four_by_five_grid_for_opt):
 
 
 def test_single_metric_tilted_runs_finds_hard_max(four_by_five_grid_for_opt):
-    random.seed(2024)
 
     def opt_fn(partition):
         mx = 10
         count = sum(1 for x in partition["opt_value_sum"].values() if x == mx)
         return count
 
+    rng = random.Random(2024)
     initial_partition = Partition.from_random_assignment(
         graph=four_by_five_grid_for_opt,
         n_parts=4,
         epsilon=0.0,
         pop_col="population",
-        updaters={"opt_value_sum": Tally("opt_value", alias="opt_value_sum")},
+        rng=rng,
+        updaters={
+            "population": Tally("population", alias="population"),
+            "opt_value_sum": Tally("opt_value", alias="opt_value_sum"),
+        },
     )
 
     ideal_pop = sum(initial_partition["population"].values()) / 4
@@ -597,7 +585,7 @@ def test_single_metric_tilted_runs_finds_hard_max(four_by_five_grid_for_opt):
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,
-        node_repeats=1,
+        node_repeats=0,
     )
 
     optimizer = SingleMetricOptimizer(
@@ -606,6 +594,7 @@ def test_single_metric_tilted_runs_finds_hard_max(four_by_five_grid_for_opt):
         initial_state=initial_partition,
         optimization_metric=opt_fn,
         maximize=True,
+        rng=rng,
     )
 
     total_steps = 10000

@@ -1,4 +1,3 @@
-import random
 from collections import deque
 from typing import Any
 
@@ -79,7 +78,7 @@ def single_flip_contiguous(partition: Partition) -> bool:
         if not old_neighbors:
             return False
 
-        start_neighbor = random.choice(old_neighbors)
+        start_neighbor = old_neighbors[0]
 
         # A single old neighbor is trivially reachable from itself.
         if len(old_neighbors) == 1:

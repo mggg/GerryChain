@@ -49,7 +49,7 @@ def main():
         pop_col="TOT_POP",
         pop_target=ideal_population,
         epsilon=0.02,
-        node_repeats=2,
+        node_repeats=0,
     )
 
     def cut_edges_length(p):

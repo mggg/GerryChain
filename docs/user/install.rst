@@ -123,7 +123,6 @@ the command line.
   a simple invocation of ``pip install matplotlib`` from the command
   line.
 
+.. include:: ../repeated_subsections/notebook_envs.rst
+
 .. _PyPI: https://pypi.org/
-
-
-.. include:: ../repeated_subsections/reproducible_envs.rst
