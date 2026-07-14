@@ -255,6 +255,31 @@ def test_repeatable(three_by_three_grid):
     assert flips == expected_flips
 
 
+def test_ust_recom_is_repeatable_in_process(three_by_three_grid):
+    import random
+
+    from gerrychain import Partition, proposals, updaters
+
+    for node in three_by_three_grid:
+        three_by_three_grid.node_data(node)["population"] = 1
+
+    def run():
+        partition = Partition(
+            three_by_three_grid,
+            {0: 1, 1: 1, 2: 1, 3: 2, 4: 2, 5: 2, 6: 3, 7: 3, 8: 3},
+            {"cut_edges": updaters.cut_edges, "population": updaters.Tally("population")},
+        )
+        proposal = proposals.ReCom.district_pairs_ust(pop_col="population", pop_target=3, epsilon=0)
+        rng = random.Random(2024)
+        trajectory = []
+        for _ in range(5):
+            partition = proposal(partition, rng=rng)
+            trajectory.append(sorted(partition.assignment.mapping.items()))
+        return trajectory
+
+    assert run() == run()
+
+
 @pytest.mark.slow
 def test_pa_freeze():
     import hashlib
