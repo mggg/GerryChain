@@ -1,5 +1,7 @@
 from unittest.mock import MagicMock
 
+import pytest
+
 from gerrychain.chain import MarkovChain
 
 
@@ -70,6 +72,92 @@ def test_chain_only_yields_accepted_states():
 
     for state in chain:
         assert state.value <= 0, "The chain yielded a non-accepted state"
+
+
+def test_incremental_construction_matches_constructor():
+    initial = MockState()
+    chain = MarkovChain(total_steps=5)
+    chain.initial_state = initial
+    chain.proposal = mock_proposal
+    chain.constraints = mock_is_valid
+    chain.accept = mock_accept
+
+    assert len(list(chain)) == 5
+
+
+def test_check_valid_names_missing_config():
+    chain = MarkovChain(total_steps=5)
+    with pytest.raises(ValueError, match="proposal, initial_state"):
+        chain.check_valid()
+
+    with pytest.raises(ValueError, match="not fully configured"):
+        next(iter(chain))
+
+
+def test_iter_rejects_invalid_initial_state():
+    def never_valid(state):
+        return False
+
+    chain = MarkovChain(proposal=mock_proposal, accept=mock_accept, total_steps=5)
+    chain.constraints = never_valid  # no initial_state yet, so this cannot validate
+    chain.initial_state = MockState()
+    with pytest.raises(ValueError, match="never_valid"):
+        next(iter(chain))
+
+
+def test_constraints_setter_still_validates_eagerly():
+    chain = MarkovChain(
+        proposal=mock_proposal,
+        accept=mock_accept,
+        initial_state=MockState(),
+        total_steps=5,
+    )
+    with pytest.raises(ValueError, match="lambda"):
+        chain.constraints = lambda state: False
+
+
+def test_config_locked_while_running_and_unlocked_after():
+    chain = MarkovChain(mock_proposal, mock_is_valid, mock_accept, MockState(), total_steps=3)
+    it = iter(chain)
+    next(it)
+    with pytest.raises(AttributeError, match="locked"):
+        chain.total_steps = 100
+    next(it)
+    next(it)
+    with pytest.raises(StopIteration):
+        next(it)
+    # Exhausting the run unlocks the configuration again.
+    chain.total_steps = 5
+    assert len(list(chain)) == 5
+
+
+def test_chain_abandoned_by_break_unlocks_and_can_be_rerun():
+    chain = MarkovChain(mock_proposal, mock_is_valid, mock_accept, MockState(), total_steps=3)
+    for _ in chain:
+        break
+
+    # Leaving the loop ends the run and releases the lock.
+    chain.accept = mock_accept
+
+    count = 0
+    for _ in chain:
+        count += 1
+
+    assert count == 3
+
+
+def test_chain_unlocks_when_a_step_raises():
+    def exploding_proposal(state, *, rng):
+        raise RuntimeError("boom")
+
+    chain = MarkovChain(exploding_proposal, mock_is_valid, mock_accept, MockState(), total_steps=3)
+    it = iter(chain)
+    next(it)  # the initial state is yielded without calling the proposal
+    with pytest.raises(RuntimeError, match="boom"):
+        next(it)
+    # The failure unlocked the chain, so it can be reconfigured.
+    chain.proposal = mock_proposal
+    assert len(list(chain)) == 3
 
 
 def test_repr():
