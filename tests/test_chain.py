@@ -36,7 +36,7 @@ def test_MarkovChain_runs_only_total_steps_times():
             assert False
 
 
-def test_MarkovChain_returns_the_initial_state_first():
+def test_MarkovChain_returns_the_initial_partition_first():
     initial = MagicMock()
     chain = MarkovChain(mock_proposal, mock_is_valid, mock_accept, initial, total_steps=10)
 
@@ -66,7 +66,7 @@ def test_chain_only_yields_accepted_states():
         proposal=proposal,
         constraints=lambda x: True,
         accept=accept,
-        initial_state=Value(0),
+        initial_partition=Value(0),
         total_steps=4,
     )
 
@@ -77,7 +77,7 @@ def test_chain_only_yields_accepted_states():
 def test_incremental_construction_matches_constructor():
     initial = MockState()
     chain = MarkovChain(total_steps=5)
-    chain.initial_state = initial
+    chain.initial_partition = initial
     chain.proposal = mock_proposal
     chain.constraints = mock_is_valid
     chain.accept = mock_accept
@@ -87,20 +87,20 @@ def test_incremental_construction_matches_constructor():
 
 def test_check_valid_names_missing_config():
     chain = MarkovChain(total_steps=5)
-    with pytest.raises(ValueError, match="proposal, initial_state"):
+    with pytest.raises(ValueError, match="proposal, initial_partition"):
         chain.check_valid()
 
     with pytest.raises(ValueError, match="not fully configured"):
         next(iter(chain))
 
 
-def test_iter_rejects_invalid_initial_state():
+def test_iter_rejects_invalid_initial_partition():
     def never_valid(state):
         return False
 
     chain = MarkovChain(proposal=mock_proposal, accept=mock_accept, total_steps=5)
-    chain.constraints = never_valid  # no initial_state yet, so this cannot validate
-    chain.initial_state = MockState()
+    chain.constraints = never_valid  # no initial_partition yet, so this cannot validate
+    chain.initial_partition = MockState()
     with pytest.raises(ValueError, match="never_valid"):
         next(iter(chain))
 
@@ -109,7 +109,7 @@ def test_constraints_setter_still_validates_eagerly():
     chain = MarkovChain(
         proposal=mock_proposal,
         accept=mock_accept,
-        initial_state=MockState(),
+        initial_partition=MockState(),
         total_steps=5,
     )
     with pytest.raises(ValueError, match="lambda"):
@@ -165,7 +165,7 @@ def test_repr():
         proposal=lambda x, *, rng: None,
         constraints=[],
         accept=lambda x, *, rng: True,
-        initial_state=None,
+        initial_partition=None,
         total_steps=100,
     )
 

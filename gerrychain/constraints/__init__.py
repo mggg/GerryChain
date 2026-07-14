@@ -1,21 +1,20 @@
 """
-The `gerrychain.constraints` module provides a collection of constraint
-functions and helper classes for the validation step in GerryChain.
+The `gerrychain.constraints` module provides a collection of constraint functions and helper classes
+for the validation step in GerryChain.
 
 Helper classes include ``Validator`` for collections of constraints, numeric ``Bounds`` and
 ``UpperBound``/``LowerBound`` classes, self-configuring bounds, and percentage bounds.
 
-Binary constraint functions include contiguity checks, ``no_vanishing_districts``, and lower
-bounds on reciprocal Polsby-Popper scores.
+Binary constraint functions include contiguity checks, ``no_vanishing_districts``, and lower bounds
+on reciprocal Polsby-Popper scores.
 
-Each new step proposed to the chain is passed off to the "validator" functions
-here to determine whether or not the step is valid. If it is invalid (breaks
-contiguity, for instance), then the step is immediately rejected.
+Each new step proposed to the chain is passed off to the constraint functions here to determine
+whether or not the step is valid. If it is invalid (breaks contiguity, for instance), then the step
+is immediately rejected.
 
-A validator should take in a Partition instance,
-and should return whether or not the instance is valid according to their
-rules. Many top-level functions following this signature in this module are
-examples of this.
+A constraint function should take in a Partition instance, and should return whether or not the
+instance is valid according to its rules (the ``ConstraintFn`` alias). Many top-level functions in
+this module follow this signature.
 """
 
 from .bounds import (
@@ -40,6 +39,7 @@ from .contiguity import (
     single_flip_contiguous,
 )
 from .validity import (
+    ConstraintFn,
     Validator,
     deviation_from_ideal,
     districts_within_tolerance,
@@ -49,6 +49,7 @@ from .validity import (
 )
 
 __all__ = [
+    "ConstraintFn",
     "LowerBound",
     "SelfConfiguringLowerBound",
     "SelfConfiguringUpperBound",

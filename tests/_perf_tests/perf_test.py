@@ -34,7 +34,7 @@ def main():
         proposal=proposal,
         constraints=[contiguous],
         accept=accept.always_accept,
-        initial_state=initial_partition,
+        initial_partition=initial_partition,
         total_steps=40,
         rng=2024,
     )

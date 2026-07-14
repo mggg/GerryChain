@@ -28,12 +28,12 @@ Last Updated: 14 Jul 2026
 from __future__ import annotations
 
 import random
-from collections.abc import Callable, Iterable, Iterator
+from collections.abc import Iterable, Iterator
 from typing import cast
 
 from gerrychain._rng import make_rng
 from gerrychain.accept import AcceptFn, always_accept
-from gerrychain.constraints import Validator
+from gerrychain.constraints import ConstraintFn, Validator
 from gerrychain.partition import Partition
 from gerrychain.proposals import ProposalFn
 
@@ -50,7 +50,7 @@ class MarkovChain:
 
     .. code-block:: python
 
-        chain = MarkovChain(proposal, constraints, accept, initial_state, total_steps)
+        chain = MarkovChain(proposal, constraints, accept, initial_partition, total_steps)
         for state in chain:
             # Do whatever you want - print output, compute scores, ...
 
@@ -61,14 +61,14 @@ class MarkovChain:
     .. code-block:: python
 
         chain = MarkovChain(total_steps=1000)
-        chain.initial_state = Partition(graph, assignment, updaters)
+        chain.initial_partition = Partition(graph, assignment, updaters)
         chain.proposal = ReCom.cut_edges_mst(pop_col="TOTPOP", pop_target=ideal, epsilon=0.01)
         chain.constraints = [contiguous]
         for state in chain:
             ...
 
     ``accept`` defaults to :func:`~gerrychain.accept.always_accept` and ``constraints`` defaults to
-    no constraints; ``proposal``, ``initial_state``, and ``total_steps`` must be set before
+    no constraints; ``proposal``, ``initial_partition``, and ``total_steps`` must be set before
     iterating. While a run is in progress the configuration is locked: assigning any of these
     attributes (or ``rng``) raises AttributeError. The lock is released when the run ends,
     whether by exhausting the steps, an error in a step, or leaving the loop early with
@@ -81,11 +81,9 @@ class MarkovChain:
     def __init__(
         self,
         proposal: ProposalFn | None = None,
-        constraints: Iterable[Callable[[Partition], bool]]
-        | Validator
-        | Callable[[Partition], bool] = (),
+        constraints: Iterable[ConstraintFn] | ConstraintFn = (),
         accept: AcceptFn = always_accept,
-        initial_state: Partition | None = None,
+        initial_partition: Partition | None = None,
         total_steps: int | None = None,
         *,
         rng: random.Random | int | None = None,
@@ -100,86 +98,107 @@ class MarkovChain:
             proposal (Callable | None, optional): Function called as
                 ``proposal(state, rng=chain.rng)`` to propose the next state. The chain's RNG takes
                 precedence over an ``rng`` bound into a ``functools.partial`` proposal.
-            constraints (Iterable[Callable[[Partition], bool]] | Validator |
-                Callable[[Partition], bool], optional):
-                A function with signature ``Partition -> bool`` determining whether the proposed
-                next state is valid (passes all binary constraints). Usually this is a Validator
-                class instance. Defaults to no constraints.
-            accept (Callable, optional): Function called as ``accept(proposed_state, rng=chain.rng)``
+            constraints (Iterable[ConstraintFn] | ConstraintFn, optional):
+                One or more functions with signature ``Partition -> bool`` determining whether a
+                proposed next state is valid. Bundled into a single :class:`Validator`; passing a
+                Validator directly also works. Defaults to no constraints.
+            accept (AcceptFn, optional): Function called as ``accept(proposed_state, rng=chain.rng)``
                 to accept or reject the proposed state. Defaults to
                 :func:`~gerrychain.accept.always_accept`.
-            initial_state (Partition | None, optional): Initial Partition class.
+            initial_partition (Partition | None, optional): Initial Partition class.
             total_steps (int | None, optional): Number of steps to run.
             rng (random.Random | int | None, optional): Source of randomness for the run. An integer
                 creates a reproducible ``random.Random``; a supplied instance is kept by identity;
                 ``None`` creates an independent RNG from system entropy.
 
         Raises:
-            ValueError: If an initial_state is given and is not valid according to the
+            ValueError: If an initial_partition is given and is not valid according to the
                 given constraints.
         """
         self.proposal = proposal
         self.accept = accept
         self.total_steps = total_steps
-        self.initial_state = initial_state
-        self.state = initial_state
+        self.initial_partition = initial_partition
+        self.state = initial_partition
         self.rng = make_rng(rng)
-        # Last: the setter validates initial_state against the constraints when both are given.
+        # Last: the setter validates initial_partition against the constraints when both are given.
         self.constraints = constraints
 
     @property
     def constraints(self) -> Validator:
-        """Read_only property for the constraints of the Markov chain.
+        """The chain's constraints, bundled into a single :class:`Validator` callable.
 
         Returns:
             Validator: The constraints of the Markov chain.
         """
-        return self.is_valid
+        return self._validator
 
     @constraints.setter
     def constraints(
         self,
-        constraints: Iterable[Callable[[Partition], bool]]
-        | Validator
-        | Callable[[Partition], bool],
+        constraints: Iterable[ConstraintFn] | Validator | ConstraintFn,
     ) -> None:
         """Setter for the constraints property.
 
-        If an initial state has been set, checks that it is valid according to the new constraints
-        being imposed on the Markov chain, and raises a ValueError listing the failed constraints if
-        not. With no initial state yet, the check is deferred to :meth:`check_valid`.
+        If an initial partition has been set, checks that it is valid according to the new
+        constraints being imposed on the Markov chain, and raises a ValueError listing the failed
+        constraints if not. With no initial partition yet, the check is deferred to
+        :meth:`check_valid`.
 
         Args:
-            constraints (Iterable[Callable[[Partition], bool]] | Validator |
-                Callable[[Partition], bool]): The new constraints to impose on the Markov chain.
+            constraints (Iterable[ConstraintFn] | Validator | ConstraintFn): The new constraints
+                to impose on the Markov chain.
 
         Raises:
-            ValueError: If the initial_state is set and not valid according to the new
+            ValueError: If the initial_partition is set and not valid according to the new
                 constraints.
         """
 
         if isinstance(constraints, Validator):
-            is_valid = constraints
+            validator = constraints
         elif callable(constraints):
-            is_valid = Validator([cast(Callable[[Partition], bool], constraints)])
+            validator = Validator([cast(ConstraintFn, constraints)])
         else:
-            is_valid = Validator(constraints)
+            validator = Validator(constraints)
 
-        if self.initial_state is not None:
-            self._assert_initial_state_valid(is_valid)
+        if self.initial_partition is not None:
+            self._assert_initial_partition_valid(validator)
 
-        self.is_valid = is_valid
+        self._validator = validator
 
-    def _assert_initial_state_valid(self, is_valid: Validator) -> None:
-        """Raise ValueError naming the failed constraints if initial_state fails is_valid."""
-        assert self.initial_state is not None
-        if is_valid(self.initial_state):
+    def add_constraint(self, constraint: ConstraintFn) -> None:
+        """Add a constraint to the chain's existing constraints.
+
+        If an initial partition is set, it is checked against the new constraint immediately;
+        otherwise the check is deferred to :meth:`check_valid`.
+
+        Args:
+            constraint (ConstraintFn): A new constraint to add to the Markov chain.
+
+        Raises:
+            AttributeError: If a run is in progress.
+            ValueError: If the initial partition fails the new constraint.
+        """
+        if self.__locked:
+            raise AttributeError("Cannot add constraint to a locked MarkovChain instance.")
+
+        validator = Validator([*self._validator.constraints, constraint])
+        if self.initial_partition is not None:
+            self._assert_initial_partition_valid(validator)
+        self._validator = validator
+
+    def _assert_initial_partition_valid(self, validator: Validator) -> None:
+        """Raise ValueError naming the failed constraints if initial_partition fails them."""
+        assert self.initial_partition is not None
+        if validator(self.initial_partition):
             return
         failed = [
-            constraint for constraint in is_valid.constraints if not constraint(self.initial_state)
+            constraint
+            for constraint in validator.constraints
+            if not constraint(self.initial_partition)
         ]
         raise ValueError(
-            "The given initial_state is not valid according to the constraints. "
+            "The given initial_partition is not valid according to the constraints. "
             "The failed constraints were: "
             + ",".join(getattr(f, "__name__", type(f).__name__) for f in failed)
         )
@@ -191,17 +210,17 @@ class MarkovChain:
         fail fast after incremental configuration.
 
         Raises:
-            ValueError: If ``proposal``, ``initial_state``, or ``total_steps`` is unset, or
-                if the initial state does not satisfy the constraints.
+            ValueError: If ``proposal``, ``initial_partition``, or ``total_steps`` is unset, or
+                if the initial partition does not satisfy the constraints.
         """
         missing = [
             name
-            for name in ("proposal", "initial_state", "total_steps")
+            for name in ("proposal", "initial_partition", "total_steps")
             if getattr(self, name) is None
         ]
         if len(missing) > 0:
             raise ValueError("MarkovChain is not fully configured. Missing: " + ", ".join(missing))
-        self._assert_initial_state_valid(self.is_valid)
+        self._assert_initial_partition_valid(self._validator)
 
     def __lock(self) -> None:
         """Lock the Markov chain to prevent configuration changes while a run is in progress.
@@ -233,9 +252,8 @@ class MarkovChain:
         if self.__locked and name in (
             "proposal",
             "constraints",
-            "is_valid",
             "accept",
-            "initial_state",
+            "initial_partition",
             "total_steps",
             "rng",
         ):
@@ -259,13 +277,13 @@ class MarkovChain:
 
         proposal = self.proposal
         total_steps = self.total_steps
-        initial_state = self.initial_state
-        assert proposal is not None and total_steps is not None and initial_state is not None
+        initial_partition = self.initial_partition
+        assert proposal is not None and total_steps is not None and initial_partition is not None
 
-        return self.__run(proposal, total_steps, initial_state)
+        return self.__run(proposal, total_steps, initial_partition)
 
     def __run(
-        self, proposal: ProposalFn, total_steps: int, initial_state: Partition
+        self, proposal: ProposalFn, total_steps: int, initial_partition: Partition
     ) -> Iterator[Partition]:
         """Generator over one run: propose, validate, accept/reject, yield, for each step.
 
@@ -275,7 +293,7 @@ class MarkovChain:
         """
         self.__lock()
         try:
-            state = initial_state
+            state = initial_partition
             self.state = state
             self.counter = 1
             yield state
@@ -285,7 +303,7 @@ class MarkovChain:
                 # Erase the parent of the parent, to avoid memory leak
                 state.parent = None
 
-                if self.is_valid(proposed_next_state):
+                if self._validator(proposed_next_state):
                     if self.accept(proposed_next_state, rng=self.rng):
                         state = proposed_next_state
                     self.state = state

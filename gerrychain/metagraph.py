@@ -12,15 +12,12 @@ Last Updated: 11 Jan 2024
 """
 
 from itertools import product
-from collections.abc import Callable, Hashable, Iterable, Iterator
+from collections.abc import Hashable, Iterable, Iterator
 from typing import cast
 
 from gerrychain.partition import Partition
 
-from .constraints import Validator
-
-
-Constraint = Callable[[Partition], bool]
+from .constraints import Validator, ConstraintFn
 
 
 def all_cut_edge_flips(partition: Partition) -> Iterator[dict[Hashable, Hashable]]:
@@ -43,7 +40,7 @@ def all_cut_edge_flips(partition: Partition) -> Iterator[dict[Hashable, Hashable
 
 
 def all_valid_states_one_flip_away(
-    partition: Partition, constraints: Iterable[Constraint] | Validator | Constraint
+    partition: Partition, constraints: ConstraintFn | Iterable[ConstraintFn] | Validator
 ) -> Iterator[Partition]:
     """Generates all valid Partitions that differ from the given partition by one flip.
 
@@ -53,7 +50,7 @@ def all_valid_states_one_flip_away(
 
     Args:
         partition (Partition): The initial partition.
-        constraints (Iterable[Constraint] | Validator | Constraint): Constraints determining
+        constraints (ConstraintFn | Iterable[ConstraintFn] | Validator): Constraints determining
             whether a partition is valid.
 
     Returns:
@@ -61,20 +58,20 @@ def all_valid_states_one_flip_away(
             given partition by one flip.
     """
     if isinstance(constraints, Validator):
-        is_valid = constraints
+        validator = constraints
     elif callable(constraints):
-        is_valid = cast(Constraint, constraints)
+        validator = cast(ConstraintFn, constraints)
     else:
-        is_valid = Validator(constraints)
+        validator = Validator(constraints)
 
     for flip in all_cut_edge_flips(partition):
         next_state = partition.flip(flip)
-        if is_valid(next_state):
+        if validator(next_state):
             yield next_state
 
 
 def all_valid_flips(
-    partition: Partition, constraints: Iterable[Constraint] | Validator | Constraint
+    partition: Partition, constraints: ConstraintFn | Iterable[ConstraintFn] | Validator
 ) -> Iterator[dict[Hashable, Hashable]]:
     """Generate all valid flips for a given partition subject to the prescribed constraints.
 
@@ -83,7 +80,7 @@ def all_valid_flips(
 
     Args:
         partition (Partition): The initial partition.
-        constraints (Iterable[Constraint] | Validator | Constraint): Constraints determining
+        constraints (ConstraintFn | Iterable[ConstraintFn] | Validator): Constraints determining
             whether a partition is valid.
 
     Returns:
@@ -96,7 +93,7 @@ def all_valid_flips(
 
 
 def metagraph_degree(
-    partition: Partition, constraints: Iterable[Constraint] | Validator | Constraint
+    partition: Partition, constraints: ConstraintFn | Iterable[ConstraintFn] | Validator
 ) -> int:
     """Calculate the degree of the node in the metagraph of the given partition.
 
@@ -105,7 +102,7 @@ def metagraph_degree(
 
     Args:
         partition (Partition): The partition object representing the current state.
-        constraints (Iterable[Constraint] | Validator | Constraint): Constraints determining
+        constraints (ConstraintFn | Iterable[ConstraintFn] | Validator): Constraints determining
             whether a partition is valid.
 
     Returns:

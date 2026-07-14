@@ -153,14 +153,18 @@ def _run_one_seed(seed: int) -> dict:
             epsilon=args.epsilon,
             node_repeats=0,
         )
+        chain_params = inspect.signature(MarkovChain).parameters
         chain_kwargs = {
             "proposal": proposal,
             "constraints": [],
             "accept": accept.always_accept,
-            "initial_state": initial,
+            # Older gerrychain versions call this parameter initial_state.
+            ("initial_partition" if "initial_partition" in chain_params else "initial_state"): (
+                initial
+            ),
             "total_steps": args.steps,
         }
-        if "rng" in inspect.signature(MarkovChain).parameters:
+        if "rng" in chain_params:
             chain_kwargs["rng"] = rng
         chain = MarkovChain(**chain_kwargs)
         steps_iter = chain.with_progress_bar() if progress else chain
