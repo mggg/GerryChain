@@ -3,14 +3,15 @@ from __future__ import annotations
 import collections
 import math
 import warnings
-from typing import TYPE_CHECKING
+from collections.abc import Callable, Hashable, Mapping
+from typing import TYPE_CHECKING, cast
 
 import pandas
 
 from .flows import flows_from_changes, on_flow
 
 if TYPE_CHECKING:
-    from ..graph.graph import Graph
+    from ..graph.graph import FrozenGraph, Graph
     from ..partition.partition import Partition
 
 
@@ -20,7 +21,7 @@ class DataTally:
     node attributes
 
     Attributes:
-        data (Union[Dict, pandas.Series, str]): A Dict or Series indexed by the graph's nodes,
+        data (dict | pandas.Series | str): A Dict or Series indexed by the graph's nodes,
             or the string key for a node attribute containing the Tally's data.
         alias (str): The name of the tally in the Partition's `updaters` dictionary
     """
@@ -37,11 +38,15 @@ class DataTally:
 
     __slots__ = ["data", "alias", "_call"]
 
-    def __init__(self, data: dict | pandas.Series | str, alias: str) -> None:
+    def __init__(
+        self,
+        data: Mapping[Hashable, float] | pandas.Series | str,
+        alias: str,
+    ) -> None:
         """Initialize a DataTally instance.
 
         Args:
-            data (Union[Dict, pandas.Series, str]): A Dict or Series indexed by the graph's nodes,
+            data (dict | pandas.Series | str): A Dict or Series indexed by the graph's nodes,
                 or the string key for a node attribute containing the Tally's data.
             alias (str): The name of the tally in the Partition's `updaters` dictionary
 
@@ -49,8 +54,7 @@ class DataTally:
         self.data = data
         self.alias = alias
 
-        def initialize_tally(partition: Partition) -> dict[int, float]:
-
+        def initialize_tally(partition: Partition) -> dict[Hashable, float]:
             # If the "data" passed in was a string, then interpret that string
             # as the name of a node attribute in the graph, and construct
             # a dict of the form: {node_id: node_attribution_value}
@@ -66,9 +70,9 @@ class DataTally:
                 attribute = self.data
                 self.data = {node_id: graph.node_data(node_id)[attribute] for node_id in node_ids}
 
-            tally = collections.defaultdict(int)
+            tally: dict[Hashable, float] = collections.defaultdict(int)
             for node_id, part in partition.assignment.items():
-                add = self.data[node_id]
+                add = self._value(node_id)
 
                 # Note: math.isnan() will raise an exception if the value passed in is not
                 # numeric, so there is no need to do another check to ensure that the value
@@ -88,18 +92,23 @@ class DataTally:
         def update_tally(
             partition: Partition,
             previous: float,
-            new_nodes: set[int],
-            old_nodes: set[int],
+            new_nodes: set[Hashable],
+            old_nodes: set[Hashable],
         ) -> float:
-            inflow = sum(self.data[node] for node in new_nodes)
-            outflow = sum(self.data[node] for node in old_nodes)
+            inflow = sum(self._value(node) for node in new_nodes)
+            outflow = sum(self._value(node) for node in old_nodes)
             return previous + inflow - outflow
 
         self._call = update_tally
 
+    def _value(self, node: Hashable) -> float:
+        if isinstance(self.data, str):
+            raise RuntimeError("Tally data has not been initialized")
+        return cast(float, self.data[node])
+
     def __call__(
-        self, partition: Partition, previous: dict[int, float] | None = None
-    ) -> dict[int, float]:
+        self, partition: Partition, previous: dict[Hashable, float] | None = None
+    ) -> dict[Hashable, float]:
         return self._call(partition, previous)
 
 
@@ -108,12 +117,13 @@ class Tally:
     An updater for keeping a tally of one or more node attributes.
 
     Attributes:
-        fields (Union[str, List[str]]): The list of node attributes that you want to tally. Or just
+        fields (str | list[str]): The list of node attributes that you want to tally. Or just
         a
             single attribute name as a string.
-        alias (Optional[str]): The aliased name of this Tally (meaning, the key corresponding to
+        alias (str | None): The aliased name of this Tally (meaning, the key corresponding to
             this Tally in the Partition's updaters dictionary)
-        dtype (Any): The type (int, float, etc.) that you want the tally to have
+        dtype (Callable[[], float]): A zero-argument callable that creates the tally's initial
+            value.
     """
 
     __slots__ = ["fields", "alias", "dtype"]
@@ -122,18 +132,18 @@ class Tally:
         self,
         fields: str | list[str],
         alias: str | None = None,
-        dtype: type = int,
+        dtype: Callable[[], float] = int,
     ) -> None:
         """Initialize a Tally instance.
 
         Args:
-            fields (Union[str, List[str]]): The list of node attributes that you want to tally. Or
+            fields (str | list[str]): The list of node attributes that you want to tally. Or
                 a just a single attribute name as a string.
-            alias (Optional[str], optional): The aliased name of this Tally (meaning, the key
+            alias (str | None, optional): The aliased name of this Tally (meaning, the key
                 corresponding to this Tally in the Partition's updaters dictionary). Default is
                 None.
-            dtype (Any, optional): The type (int, float, etc.) that you want the tally to have.
-                Default is int.
+            dtype (Callable[[], float], optional): A zero-argument callable that creates the
+                tally's initial value. Defaults to ``int``.
 
         """
         if not isinstance(fields, list):
@@ -144,12 +154,12 @@ class Tally:
         self.alias = alias
         self.dtype = dtype
 
-    def __call__(self, partition: Partition) -> dict:
+    def __call__(self, partition: Partition) -> dict[Hashable, float]:
         if partition.parent is None:
             return self._initialize_tally(partition)
         return self._update_tally(partition)
 
-    def _initialize_tally(self, partition: Partition) -> dict:
+    def _initialize_tally(self, partition: Partition) -> dict[Hashable, float]:
         """Compute initial part-level tallies for the configured field values.
 
         Args:
@@ -157,7 +167,7 @@ class Tally:
                 tally for.
 
         Returns:
-            Dict: A dictionary keyed by the parts of the partition, with values being the sum of
+            dict: A dictionary keyed by the parts of the partition, with values being the sum of
                 the "field" attribute of nodes in that part.
         """
         tally = collections.defaultdict(self.dtype)
@@ -173,7 +183,7 @@ class Tally:
                 tally[part] += add
         return dict(tally)
 
-    def _update_tally(self, partition: Partition) -> dict:
+    def _update_tally(self, partition: Partition) -> dict[Hashable, float]:
         """Compute the district-wide tally of data stored in the "field" attribute of nodes.
 
         Args:
@@ -181,10 +191,11 @@ class Tally:
                 for.
 
         Returns:
-            Dict: A dictionary keyed by the parts of the partition, with the updated tallies of the
+            dict: A dictionary keyed by the parts of the partition, with the updated tallies of the
                 "field" attribute of nodes in each part.
         """
         parent = partition.parent
+        assert parent is not None
 
         old_tally = parent[self.alias]
         new_tally = dict(old_tally)
@@ -198,39 +209,41 @@ class Tally:
 
         return new_tally
 
-    def _get_tally_from_node(self, partition: Partition, node: int) -> float:
+    def _get_tally_from_node(self, partition: Partition, node: Hashable) -> float:
         return sum(partition.graph.node_data(node)[field] for field in self.fields)
 
 
-def compute_out_flow(graph: Graph, fields: str | list[str], flow: dict[str, set[int]]) -> float:
+def compute_out_flow(
+    graph: Graph | FrozenGraph, fields: list[str], flow: dict[str, set[Hashable]]
+) -> float:
     """Return sum of the "field" attribute of nodes in the "out" set of the flow.
 
     Args:
         graph (Graph): The graph that the partition is defined on.
-        fields (Union[str, List[str]]): The list of node attributes that you want to tally. Or just
-            a single attribute name as a string.
-        flow (Dict): A dictionary containing the flow from the parent of this partition to this
+        fields (list[str]): The list of node attributes that you want to tally.
+        flow (dict): A dictionary containing the flow from the parent of this partition to this
             partition. This dictionary is of the form `{part: {'in': <set of nodes that flowed in>,
             'out': <set of nodes that flowed out>}}`.
 
     Returns:
-        int: The sum of the "field" attribute of nodes in the "out" set of the flow.
+        float: The sum of the "field" attribute of nodes in the "out" set of the flow.
     """
     return sum(graph.node_data(node)[field] for node in flow["out"] for field in fields)
 
 
-def compute_in_flow(graph: Graph, fields: str | list[str], flow: dict[str, set[int]]) -> float:
+def compute_in_flow(
+    graph: Graph | FrozenGraph, fields: list[str], flow: dict[str, set[Hashable]]
+) -> float:
     """Return sum of the "field" attribute of nodes in the "in" set of the flow.
 
     Args:
         graph (Graph): The graph that the partition is defined on.
-        fields (Union[str, List[str]]): The list of node attributes that you want to tally. Or just
-            a single attribute name as a string.
-        flow (Dict): A dictionary containing the flow from the parent of this partition to this
+        fields (list[str]): The list of node attributes that you want to tally.
+        flow (dict): A dictionary containing the flow from the parent of this partition to this
             partition. This dictionary is of the form `{part: {'in': <set of nodes that flowed in>,
             'out': <set of nodes that flowed out>}}`.
 
     Returns:
-        int: The sum of the "field" attribute of nodes in the "in" set of the flow.
+        float: The sum of the "field" attribute of nodes in the "in" set of the flow.
     """
     return sum(graph.node_data(node)[field] for node in flow["in"] for field in fields)

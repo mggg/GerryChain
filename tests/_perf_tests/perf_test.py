@@ -2,19 +2,13 @@
 
 import cProfile
 
-# Set the random seed so that the results are reproducible!
-import random
-from functools import partial
-
 from gerrychain import MarkovChain, Partition, accept, updaters
 from gerrychain.constraints import contiguous
 from gerrychain.examples import gerrymandria
-from gerrychain.proposals import recom
+from gerrychain.proposals import build_recom_proposal_fn
 
 
 def main():
-
-    random.seed(2024)
     graph = gerrymandria()
 
     my_updaters = {
@@ -29,12 +23,11 @@ def main():
     # that we defined above and not with the population column in the json file.
     ideal_population = sum(initial_partition["population"].values()) / len(initial_partition)
 
-    proposal = partial(
-        recom,
+    proposal = build_recom_proposal_fn(
         pop_col="TOTPOP",
         pop_target=ideal_population,
         epsilon=0.01,
-        node_repeats=2,
+        node_repeats=0,
     )
 
     recom_chain = MarkovChain(
@@ -43,12 +36,13 @@ def main():
         accept=accept.always_accept,
         initial_state=initial_partition,
         total_steps=40,
+        rng=2024,
     )
 
     assignment_list = []
 
     for i, item in enumerate(recom_chain):
-        print(f"Finished step {i+1}/{len(recom_chain)}", end="\r")
+        print(f"Finished step {i + 1}/{len(recom_chain)}", end="\r")
         assignment_list.append(item.assignment)
 
 

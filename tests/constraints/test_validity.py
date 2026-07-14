@@ -76,7 +76,7 @@ def test_discontiguous_with_single_flip_contiguous_no_flips_is_false(
 
 
 @pytest.mark.xfail(
-    reason="single_flip_contiguous does not work" "when the previous partition is discontiguous"
+    reason="single_flip_contiguous does not workwhen the previous partition is discontiguous"
 )
 def test_discontiguous_with_single_flip_contiguous_flips_is_false(
     discontiguous_partition_with_flips,

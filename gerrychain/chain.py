@@ -26,9 +26,13 @@ Last Updated: 11 Jan 2024
 
 from __future__ import annotations
 
+import random
 from collections.abc import Callable, Iterable
+from typing import cast
 
-from gerrychain.constraints import Bounds, Validator
+from gerrychain._rng import make_rng
+from gerrychain.accept import AcceptFn
+from gerrychain.constraints import Validator
 from gerrychain.partition import Partition
 from gerrychain.proposals import ProposalFn
 
@@ -55,43 +59,53 @@ class MarkovChain:
         self,
         # proposal: Callable[[Partition], Partition],
         proposal: ProposalFn,
-        constraints: Iterable[Callable] | Validator | Iterable[Bounds] | Callable,
-        accept: Callable,
+        constraints: Iterable[Callable[[Partition], bool]]
+        | Validator
+        | Callable[[Partition], bool],
+        accept: AcceptFn,
         initial_state: Partition,
         total_steps: int,
+        *,
+        rng: random.Random | int | None = None,
     ) -> None:
         """Initialize a MarkovChain instance.
 
         Args:
-            proposal (Callable): Function proposing the next state from the current state.
-            constraints (Union[Iterable[Callable], Validator, Iterable[Bounds], Callable]): A
-                function with signature ``Partition -> bool`` determining whether the proposed next
-                state is valid (passes all binary constraints). Usually this is a
-                Validator class instance.
-            accept (Callable): Function accepting or rejecting the proposed state. In the most
-                basic use case, this always returns ``True``. But if the user wanted to use a
-                Metropolis-Hastings acceptance rule, this is where you would implement it.
+            proposal (Callable): Function called as ``proposal(state, rng=chain.rng)`` to propose
+                the next state. The chain's RNG takes precedence over an ``rng`` bound into a
+                ``functools.partial`` proposal.
+            constraints (Iterable[Callable[[Partition], bool]] | Validator |
+                Callable[[Partition], bool]): A function with signature ``Partition -> bool``
+                determining whether the proposed next state is valid (passes all binary
+                constraints). Usually this is a Validator class instance.
+            accept (Callable): Function called as ``accept(proposed_state, rng=chain.rng)`` to
+                accept or reject the proposed state. In the most basic use case, this always
+                returns ``True``.
             initial_state (Partition): Initial Partition class.
             total_steps (int): Number of steps to run.
+            rng (random.Random | int | None, optional): Source of randomness for the run.
+                An integer creates a reproducible ``random.Random``; a supplied instance is kept
+                by identity; ``None`` creates an independent RNG from system entropy.
 
         Raises:
             ValueError: If the initial_state is not valid according to the constraints.
         """
 
-        if callable(constraints):
-            is_valid = Validator([constraints])
+        if isinstance(constraints, Validator):
+            is_valid = constraints
+        elif callable(constraints):
+            is_valid = Validator([cast(Callable[[Partition], bool], constraints)])
         else:
             is_valid = Validator(constraints)
 
         if not is_valid(initial_state):
             failed = [
-                constraint
-                for constraint in is_valid.constraints  # type: ignore
-                if not constraint(initial_state)
+                constraint for constraint in is_valid.constraints if not constraint(initial_state)
             ]
             message = (
                 "The given initial_state is not valid according is_valid. "
-                "The failed constraints were: " + ",".join([f.__name__ for f in failed])
+                "The failed constraints were: "
+                + ",".join(getattr(f, "__name__", type(f).__name__) for f in failed)
             )
             raise ValueError(message)
 
@@ -101,20 +115,23 @@ class MarkovChain:
         self.total_steps = total_steps
         self.initial_state = initial_state
         self.state = initial_state
+        self.rng = make_rng(rng)
 
     @property
     def constraints(self) -> Validator:
         """Read_only property for the constraints of the Markov chain.
 
         Returns:
-            String: The constraints of the Markov chain.
+            Validator: The constraints of the Markov chain.
         """
         return self.is_valid
 
     @constraints.setter
     def constraints(
         self,
-        constraints: Iterable[Callable] | Validator | Iterable[Bounds] | Callable,
+        constraints: Iterable[Callable[[Partition], bool]]
+        | Validator
+        | Callable[[Partition], bool],
     ) -> None:
         """Setter for the constraints property.
 
@@ -123,27 +140,30 @@ class MarkovChain:
         failed constraints.
 
         Args:
-            constraints (Union[Iterable[Callable], Validator, Iterable[Bounds], Callable]): The new
-                constraints to be imposed on the Markov chain.
+            constraints (Iterable[Callable[[Partition], bool]] | Validator |
+                Callable[[Partition], bool]): The new constraints to impose on the Markov chain.
 
         Raises:
             ValueError: If the initial_state is not valid according to the new constraints.
         """
 
-        if callable(constraints):
-            is_valid = Validator([constraints])
+        if isinstance(constraints, Validator):
+            is_valid = constraints
+        elif callable(constraints):
+            is_valid = Validator([cast(Callable[[Partition], bool], constraints)])
         else:
             is_valid = Validator(constraints)
 
         if not is_valid(self.initial_state):
             failed = [
                 constraint
-                for constraint in is_valid.constraints  # type: ignore
+                for constraint in is_valid.constraints
                 if not constraint(self.initial_state)
             ]
             message = (
                 "The given initial_state is not valid according to the new constraints. "
-                "The failed constraints were: " + ",".join([f.__name__ for f in failed])
+                "The failed constraints were: "
+                + ",".join(getattr(f, "__name__", type(f).__name__) for f in failed)
             )
             raise ValueError(message)
 
@@ -153,7 +173,7 @@ class MarkovChain:
         """Resets the Markov chain iterator.
 
         This method is called when an iterator is required for a container. It sets the counter to
-        0 and resets the state to the initial state.
+        0 and resets the state to the initial state. The chain's RNG stream continues.
 
         Returns:
             MarkovChain: Returns itself as an iterator object.
@@ -162,7 +182,7 @@ class MarkovChain:
         self.state = self.initial_state
         return self
 
-    def __next__(self) -> Partition | None:
+    def __next__(self) -> Partition:
         """Advances the Markov chain to the next state.
 
         This method is called to get the next item in the iteration. It proposes the next state and
@@ -171,7 +191,7 @@ class MarkovChain:
         StopIteration exception.
 
         Returns:
-            Optional[Partition]: The next state of the Markov chain.
+            Partition: The next state of the Markov chain.
 
         Raises:
             StopIteration: If the total number of steps has been reached.
@@ -181,13 +201,12 @@ class MarkovChain:
             return self.state
 
         while self.counter < self.total_steps:
-            proposed_next_state = self.proposal(self.state)
+            proposed_next_state = self.proposal(self.state, rng=self.rng)
             # Erase the parent of the parent, to avoid memory leak
-            if self.state is not None:
-                self.state.parent = None
+            self.state.parent = None
 
             if self.is_valid(proposed_next_state):
-                if self.accept(proposed_next_state):
+                if self.accept(proposed_next_state, rng=self.rng):
                     self.state = proposed_next_state
                 self.counter += 1
                 return self.state
@@ -211,7 +230,7 @@ class MarkovChain:
         Requires the `tqdm` package to be installed.
 
         Returns:
-            Any: A tqdm-wrapped Markov chain.
+            Iterable[Partition]: A progress-reporting iterable over the chain.
         """
         from tqdm.auto import tqdm
 

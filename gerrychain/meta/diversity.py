@@ -2,8 +2,8 @@
 Simple tooling to collect diversity stats on chain runs
 """
 
+from collections.abc import Hashable, Iterable, Iterator
 from dataclasses import dataclass
-from typing import Iterable, Tuple
 
 from gerrychain.partition import Partition
 
@@ -29,7 +29,7 @@ class DiversityStats:
 
 def collect_diversity_stats(
     chain: Iterable[Partition],
-) -> Iterable[Tuple[Partition, DiversityStats]]:
+) -> Iterator[tuple[Partition, DiversityStats]]:
     """Report the diversity of the chain being run, live, as a drop-in wrapper.
 
     Requires the cut_edges updater on each `Partition` object. Plans/districts are considered
@@ -44,10 +44,10 @@ def collect_diversity_stats(
         chain (Iterable[Partition]): A chain object to collect stats on.
 
     Returns:
-        Iterable[Tuple[Partition, DiversityStats]]: An iterable of `(partition, DiversityStat)`.
+        Iterator[tuple[Partition, DiversityStats]]: Pairs of partitions and cumulative statistics.
     """
-    seen_plans = {}
-    seen_districts = {}
+    seen_plans: set[frozenset[frozenset[Hashable]]] = set()
+    seen_districts: set[frozenset[Hashable]] = set()
 
     unique_plans = 0
     unique_districts = 0
@@ -57,16 +57,16 @@ def collect_diversity_stats(
         steps_taken += 1
 
         for _, nodes in partition.assignment.parts.items():
-            hashable_nodes = tuple(sorted(list(nodes)))
+            hashable_nodes = frozenset(nodes)
             if hashable_nodes not in seen_districts:
                 unique_districts += 1
-                seen_districts[hashable_nodes] = 1
+                seen_districts.add(hashable_nodes)
 
         cut_edges = partition["cut_edges"]
-        hashable_cut_edges = tuple(sorted(list(cut_edges)))
+        hashable_cut_edges = frozenset(frozenset(edge) for edge in cut_edges)
         if hashable_cut_edges not in seen_plans:
             unique_plans += 1
-            seen_plans[hashable_cut_edges] = 1
+            seen_plans.add(hashable_cut_edges)
 
         stats = DiversityStats(
             unique_plans=unique_plans,

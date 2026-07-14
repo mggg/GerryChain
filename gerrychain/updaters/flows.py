@@ -49,11 +49,14 @@ from __future__ import annotations
 
 import collections
 import functools
-from collections.abc import Callable
-from typing import TYPE_CHECKING
+from collections.abc import Callable, Hashable
+from typing import TYPE_CHECKING, TypeVar, cast
 
 if TYPE_CHECKING:
     from ..partition.partition import Partition
+
+ValueT = TypeVar("ValueT")
+KeyT = TypeVar("KeyT", bound=Hashable)
 
 
 @functools.lru_cache(maxsize=2)
@@ -64,23 +67,33 @@ def neighbor_flips(partition: Partition) -> set[tuple[int, int]]:
         partition (Partition): A partition of a Graph
 
     Returns:
-        Set[Tuple]: The set of edges that were flipped in the given partition.
+        set[tuple]: The set of edges that were flipped in the given partition.
     """
-    return {
-        tuple(sorted((node, neighbor)))
-        for node in partition.flips
-        for neighbor in partition.graph.neighbors(node)
-    }
+    flips = partition.flips
+    if flips is None:
+        return set()
+    edges: set[tuple[int, int]] = set()
+    for flipped_node in flips:
+        node = cast(int, flipped_node)
+        for neighboring_node in partition.graph.neighbors(node):
+            neighbor = cast(int, neighboring_node)
+            first, second = sorted((node, neighbor))
+            edges.add((first, second))
+    return edges
 
 
-def create_flow() -> dict[str, set]:
+def create_flow() -> dict[str, set[Hashable]]:
+    return {"in": set(), "out": set()}
+
+
+def create_edge_flow() -> dict[str, set[tuple[int, int]]]:
     return {"in": set(), "out": set()}
 
 
 @functools.lru_cache(maxsize=2)
 def flows_from_changes(
     old_partition: Partition, new_partition: Partition
-) -> dict[int, dict[str, set[int]]]:
+) -> dict[Hashable, dict[str, set[Hashable]]]:
     """Return per-part node flow updates between two partitions.
 
     Args:
@@ -90,7 +103,7 @@ def flows_from_changes(
             representing the current step.
 
     Returns:
-        Dict: A dictionary mapping each node that changed assignment between the previous and
+        dict: A dictionary mapping each node that changed assignment between the previous and
             current partitions to a dictionary of the form `{'in': <set of nodes that flowed in>,
             'out': <set of nodes that flowed out>}`.
     """
@@ -101,8 +114,11 @@ def flows_from_changes(
     # was a "flip" that did not in fact change the partition mapping...
     #
 
-    flows = collections.defaultdict(create_flow)
-    for node, target in new_partition.flips.items():
+    flows: dict[Hashable, dict[str, set[Hashable]]] = collections.defaultdict(create_flow)
+    flips = new_partition.flips
+    if flips is None:
+        return flows
+    for node, target in flips.items():
         source = old_partition.assignment.mapping[node]
         if source != target:
             flows[target]["in"].add(node)
@@ -110,7 +126,9 @@ def flows_from_changes(
     return flows
 
 
-def on_flow(initializer: Callable, alias: str) -> Callable:
+def on_flow(
+    initializer: Callable[[Partition], dict[KeyT, ValueT]], alias: str
+) -> Callable[[Callable[..., ValueT]], Callable[..., dict[KeyT, ValueT]]]:
     """A decorator that responds to flows of nodes between parts of the partition.
 
     Use this decorator to create an updater that responds to flows of nodes between parts of the
@@ -171,19 +189,28 @@ def on_flow(initializer: Callable, alias: str) -> Callable:
         updater function ``updater(partition)``.
     """
 
-    def decorator(function: Callable[..., object]) -> Callable:
+    def decorator(
+        function: Callable[..., ValueT],
+    ) -> Callable[..., dict[KeyT, ValueT]]:
         @functools.wraps(function)
-        def wrapped(partition: Partition, previous: dict | None = None) -> dict:
+        def wrapped(
+            partition: Partition, previous: dict[KeyT, ValueT] | None = None
+        ) -> dict[KeyT, ValueT]:
             if partition.parent is None:
                 return initializer(partition)
 
             if previous is None:
-                previous = partition.parent[alias]
+                parent_values = partition.parent[alias]
+                if not isinstance(parent_values, dict):
+                    raise TypeError(f"Updater {alias!r} must return a dictionary")
+                previous = cast(dict[KeyT, ValueT], parent_values)
 
             new_values = previous.copy()
 
+            assert partition.flows is not None
             for part, flow in partition.flows.items():
-                new_values[part] = function(partition, previous[part], flow["in"], flow["out"])
+                key = cast(KeyT, part)
+                new_values[key] = function(partition, previous[key], flow["in"], flow["out"])
 
             return new_values
 
@@ -192,19 +219,24 @@ def on_flow(initializer: Callable, alias: str) -> Callable:
     return decorator
 
 
-def compute_edge_flows(partition: Partition) -> dict[int, dict[str, set[tuple[int, int]]]]:
+def compute_edge_flows(
+    partition: Partition,
+) -> dict[Hashable, dict[str, set[tuple[int, int]]]]:
     """Computes the flow of cut edges between a partition and its parent.
 
     Args:
         partition (Partition): A partition of a Graph
 
     Returns:
-        Dict: A flow dictionary containing the flow from the parent of this partition to this
+        dict: A flow dictionary containing the flow from the parent of this partition to this
             partition. This dictionary is of the form `{part: {'in': <set of edges that flowed in>,
             'out': <set of edges that flowed out>}}`.
     """
-    edge_flows = collections.defaultdict(create_flow)
+    edge_flows: dict[Hashable, dict[str, set[tuple[int, int]]]] = collections.defaultdict(
+        create_edge_flow
+    )
     assignment = partition.assignment
+    assert partition.parent is not None
     old_assignment = partition.parent.assignment
 
     for node, neighbor in neighbor_flips(partition):
@@ -264,7 +296,9 @@ def compute_edge_flows(partition: Partition) -> dict[int, dict[str, set[tuple[in
     return edge_flows
 
 
-def on_edge_flow(initializer: Callable, alias: str) -> Callable:
+def on_edge_flow(
+    initializer: Callable[[Partition], dict[KeyT, ValueT]], alias: str
+) -> Callable[[Callable[..., ValueT]], Callable[[Partition], dict[KeyT, ValueT]]]:
     """A decorator that responds to flows of cut edges between parts of the partition.
 
     Use this decorator to create an updater that responds to flows of cut edges between parts of
@@ -320,19 +354,26 @@ def on_edge_flow(initializer: Callable, alias: str) -> Callable:
         updater function ``updater(partition)``.
     """
 
-    def decorator(f: Callable[..., object]) -> Callable:
+    def decorator(
+        f: Callable[..., ValueT],
+    ) -> Callable[[Partition], dict[KeyT, ValueT]]:
         @functools.wraps(f)
-        def wrapper(partition: Partition) -> dict:
+        def wrapper(partition: Partition) -> dict[KeyT, ValueT]:
             if not partition.parent:
                 return initializer(partition)
             edge_flows = partition.edge_flows
-            previous = partition.parent[alias]
+            assert edge_flows is not None
+            parent_values = partition.parent[alias]
+            if not isinstance(parent_values, dict):
+                raise TypeError(f"Updater {alias!r} must return a dictionary")
+            previous = cast(dict[KeyT, ValueT], parent_values)
 
             new_values = previous.copy()
-            for part in partition.edge_flows:
-                new_values[part] = f(
+            for part in edge_flows:
+                key = cast(KeyT, part)
+                new_values[key] = f(
                     partition,
-                    previous[part],
+                    previous[key],
                     new_edges=edge_flows[part]["in"],
                     old_edges=edge_flows[part]["out"],
                 )

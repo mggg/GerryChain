@@ -1,19 +1,3 @@
-from functools import partial
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Sequence,
-    Set,
-    Union,
-)
-
-# frm:  import the new Graph object which encapsulates NX and RX Graph...
-from ..graph import Graph
-from ..tree import BalanceError, PopulationBalanceError, bipartition_tree
-
 """
 This module provides routines to create initial assignments for a Partition object.
 
@@ -52,41 +36,58 @@ schema, it's a lot harder to make a snake-y patchwork of districts.
 
 """
 
+import random
+from collections.abc import Callable, Hashable, Sequence, Set as AbstractSet
+from functools import partial
+
+from .._rng import make_rng
+
+# frm:  import the new Graph object which encapsulates NX and RX Graph...
+from ..graph import Graph
+from ..tree import PopulationBalanceError, bipartition_tree
+
 
 def recursive_tree_part(
     graph: Graph,
-    parts: Sequence,
-    pop_target: Union[float, int],
+    parts: Sequence[Hashable],
+    pop_target: float | int,
     pop_col: str,
     epsilon: float,
-    node_repeats: int = 1,
-    bipartition_tree_fn: Callable = partial(bipartition_tree, max_attempts=100000),
-) -> Dict:
+    node_repeats: int = 0,
+    bipartition_tree_fn: Callable[..., AbstractSet[Hashable]] = partial(
+        bipartition_tree, max_attempts=100000
+    ),
+    *,
+    rng: random.Random | int | None = None,
+) -> dict[Hashable, Hashable]:
     """Return new assignments for the nodes of ``graph``.
 
-    Uses `gerrychain.tree.bipartition_tree` recursively to partition a tree into
+    Uses ``gerrychain.tree.bipartition_tree`` recursively to partition a tree into
     ``len(parts)`` parts of population ``pop_target`` (within ``epsilon``).
 
     Can be used to generate initial seed plans (partition assignments) or to implement ReCom-like
     "merge walk" proposals.
 
     Args:
-        graph (Graph): The graph to partition into ``len(parts)`` :math:`\varepsilon`-balanced
+        graph (Graph): The graph to partition into ``len(parts)`` :math:`\\varepsilon`-balanced
             parts.
         parts (Sequence): Iterable of part (district) labels (like ``[0,1,2]`` or ``range(4)``).
-        pop_target (Union[float, int]): Target population for each part of the partition.
+        pop_target (float | int): Target population for each part of the partition.
         pop_col (str): Node attribute key holding population data.
         epsilon (float): How far (as a percentage of ``pop_target``) from ``pop_target`` the parts
             of the partition can be.
-        node_repeats (int, optional): Parameter for `gerrychain.tree.bipartition_tree` to
-            use. Defaluts to 1.
+        node_repeats (int, optional): Additional roots to try on each spanning tree before
+            drawing a new tree. Defaults to 0.
         bipartition_tree_fn (Callable, optional): The partition method to use. Defaults to
-            `partial(bipartition_tree, max_attempts=100000)`.
+            ``partial(bipartition_tree, max_attempts=100000)``.
+        rng (random.Random | int | None, optional): Source of randomness. Pass a shared
+            ``Random`` for repeated standalone calls; an integer restarts the stream each call.
 
     Returns:
         dict: New assignments for the nodes of ``graph``.
     """
 
+    rng = make_rng(rng)
     flips = {}
     remaining_nodes = graph.node_indices
 
@@ -97,7 +98,7 @@ def recursive_tree_part(
     # For instance, if district n's population exceeds the target by 2%
     # with a +/-2% epsilon, then district n+1's population should be between
     # 98% of the target population and the target population.
-    debt: Union[int, float] = 0
+    debt: int | float = 0
 
     lb_pop = pop_target * (1 - epsilon)
     ub_pop = pop_target * (1 + epsilon)
@@ -126,12 +127,10 @@ def recursive_tree_part(
                 epsilon=(max_pop - min_pop) / (2 * new_pop_target),
                 node_repeats=node_repeats,
                 one_sided_cut=True,
+                rng=rng,
             )
         except Exception:
             raise
-
-        if node_ids is None:
-            raise BalanceError()
 
         part_pop = 0
         for node_id in node_ids:
@@ -157,10 +156,8 @@ def recursive_tree_part(
         epsilon=epsilon,
         node_repeats=node_repeats,
         one_sided_cut=False,
+        rng=rng,
     )
-
-    if node_ids is None:
-        raise BalanceError()
 
     part_pop = 0
     for node_id in node_ids:
@@ -188,12 +185,16 @@ def _get_seed_chunks(
     graph: Graph,
     num_chunks: int,
     num_dists: int,
-    pop_target: Union[int, float],
+    pop_target: int | float,
     pop_col: str,
     epsilon: float,
-    node_repeats: int = 1,
-    bipartition_tree_fn: Callable = partial(bipartition_tree, max_attempts=100000),
-) -> List[List[int]]:
+    node_repeats: int = 0,
+    bipartition_tree_fn: Callable[..., AbstractSet[Hashable]] = partial(
+        bipartition_tree, max_attempts=100000
+    ),
+    *,
+    rng: random.Random,
+) -> list[list[Hashable]]:
     """Helper function for recursive_seed_part.
 
     Partitions the graph into ``num_chunks`` chunks, balanced within new_epsilon <= ``epsilon`` of
@@ -205,17 +206,18 @@ def _get_seed_chunks(
         graph (Graph): The graph
         num_chunks (int): The number of chunks to partition the graph into
         num_dists (int): The number of districts
-        pop_target (Union[int, float]): The target population of the districts (not of the chunks)
+        pop_target (int | float): The target population of the districts (not of the chunks)
         pop_col (str): Node attribute key holding population data
         epsilon (float): How far (as a percentage of ``pop_target``) from ``pop_target`` the parts
             of the partition can be
-        node_repeats (int, optional): Parameter for `gerrychain.tree.bipartition_tree` to
-            use. Defaults to 1.
+        node_repeats (int, optional): Additional roots to try on each spanning tree before
+            drawing a new tree. Defaults to 0.
         bipartition_tree_fn (Callable, optional): The method to use for bipartitioning the graph.
             Defaults to `gerrychain.tree.bipartition_tree`
+        rng (random.Random): Random number generator for the operation.
 
     Returns:
-        List[List[int]]: New assignments for the nodes of ``graph``.
+        list[list[Hashable]]: New assignments for the nodes of ``graph``.
     """
 
     if num_dists % num_chunks != 0:
@@ -290,10 +292,8 @@ def _get_seed_chunks(
                 pop_target=chunk_pop_target,
                 epsilon=new_new_epsilon,
                 node_repeats=node_repeats,
+                rng=rng,
             )
-
-            if nodes is None:
-                raise BalanceError()
 
             for node in nodes:
                 flips[node] = part
@@ -328,7 +328,7 @@ def _get_seed_chunks(
         else:
             break
 
-    chunks: Dict[Any, List] = {}
+    chunks: dict[Hashable, list[Hashable]] = {}
     for key in flips.keys():
         if flips[key] not in chunks.keys():
             chunks[flips[key]] = []
@@ -339,7 +339,7 @@ def _get_seed_chunks(
 
 # frm: only used in this file
 #       But maybe this is intended to be used externally...
-def get_max_prime_factor_less_than(n: int, ceil: int) -> Optional[int]:
+def get_max_prime_factor_less_than(n: int, ceil: int) -> int | None:
     """Helper function for _recursive_seed_part_inner.
 
     Returns the largest prime factor of ``n`` less than ``ceil``, or None if all are greater than
@@ -350,7 +350,7 @@ def get_max_prime_factor_less_than(n: int, ceil: int) -> Optional[int]:
         ceil (int): The upper limit for the largest prime factor.
 
     Returns:
-        Optional[int]: The largest prime factor of ``n`` less than ``ceil``, or None if all are
+        int | None: The largest prime factor of ``n`` less than ``ceil``, or None if all are
             greater than ceil.
     """
     if n <= 1 or ceil <= 1:
@@ -378,14 +378,18 @@ def get_max_prime_factor_less_than(n: int, ceil: int) -> Optional[int]:
 def _recursive_seed_part_inner(
     graph: Graph,
     num_dists: int,
-    pop_target: Union[float, int],
+    pop_target: float | int,
     pop_col: str,
     epsilon: float,
-    bipartition_tree_fn: Callable = partial(bipartition_tree, max_attempts=100000),
-    node_repeats: int = 1,
-    n: Optional[int] = None,
-    ceil: Optional[int] = None,
-) -> List[Set]:
+    bipartition_tree_fn: Callable[..., AbstractSet[Hashable]] = partial(
+        bipartition_tree, max_attempts=100000
+    ),
+    node_repeats: int = 0,
+    n: int | None = None,
+    ceil: int | None = None,
+    *,
+    rng: random.Random,
+) -> list[set[Hashable]]:
     """Inner function for recursive_seed_part.
 
     Returns a list of sets of nodes with ``num_dists`` districts balanced within ``epsilon`` of
@@ -413,26 +417,27 @@ def _recursive_seed_part_inner(
     Args:
         graph (Graph): The underlying graph structure.
         num_dists (int): number of districts to partition the graph into
-        pop_target (Union[float, int]): Target population for each part of the partition
+        pop_target (float | int): Target population for each part of the partition
         pop_col (str): Node attribute key holding population data
         epsilon (float): How far (as a percentage of ``pop_target``) from ``pop_target`` the parts
             of the partition can be
         bipartition_tree_fn (Callable, optional): Function used to find balanced partitions at the
             2-district level. Defaults to `gerrychain.tree.bipartition_tree`
-        node_repeats (int, optional): Parameter for `gerrychain.tree.bipartition_tree` to
-            use. Defaults to 1.
-        n (Optional[int], optional): Either a positive integer (greater than 1) or None. If n is a
+        node_repeats (int, optional): Additional roots to try on each spanning tree before
+            drawing a new tree. Defaults to 0.
+        n (int | None, optional): Either a positive integer (greater than 1) or None. If n is a
             positive integer, this function will recursively create a seed plan by either biting
             off districts from graph or dividing graph into n chunks and recursing into each of
-            these. If n is None, this function prime factors ``num_dists``=n_1*n_2*...*n_k (n_1 >
+            these. If n is None, this function prime factors ``num_dists = n_1*n_2*...*n_k`` (n_1 >
             n_2 > ... n_k) and recursively partitions graph into n_1 chunks. Defaults to None.
-        ceil (Optional[int], optional): Either a positive integer (at least 2) or None. Relevant
+        ceil (int | None, optional): Either a positive integer (at least 2) or None. Relevant
             only if n is None. If ``ceil`` is a positive integer then finds the largest factor of
             ``num_dists`` less than or equal to ``ceil``, and recursively splits graph into that
             number of chunks, or bites off a district if that number is 1. Defaults to None.
+        rng (random.Random): The RNG supplied by the owning operation.
 
     Returns:
-        List of sets, each set is a district: New assignments for the nodes of ``graph``.
+        list[set[Hashable]]: Districts represented as sets of nodes.
     """
 
     # Chooses num_chunks
@@ -471,6 +476,7 @@ def _recursive_seed_part_inner(
             epsilon=epsilon,
             node_repeats=node_repeats,
             one_sided_cut=False,  # flag to say we want to bisect graph
+            rng=rng,
         )
 
         nodes_for_one_district = set(nodes)
@@ -503,6 +509,7 @@ def _recursive_seed_part_inner(
             epsilon=epsilon,
             node_repeats=node_repeats,
             one_sided_cut=True,
+            rng=rng,
         )
         remaining_nodes -= nodes
         # frm: Create a list with the set of nodes returned by
@@ -517,6 +524,7 @@ def _recursive_seed_part_inner(
             bipartition_tree_fn,
             n=n,
             ceil=ceil,
+            rng=rng,
         )
 
     # split graph into num_chunks chunks, and recurse into each chunk
@@ -529,6 +537,7 @@ def _recursive_seed_part_inner(
             pop_col,
             epsilon,
             bipartition_tree_fn=partial(bipartition_tree_fn, one_sided_cut=True),
+            rng=rng,
         )
 
         assignment = []
@@ -542,6 +551,7 @@ def _recursive_seed_part_inner(
                 bipartition_tree_fn,
                 n=n,
                 ceil=ceil,
+                rng=rng,
             )
             assignment += chunk_assignment
     else:
@@ -563,15 +573,19 @@ def _recursive_seed_part_inner(
 
 def recursive_seed_part(
     graph: Graph,
-    parts: Sequence,
-    pop_target: Union[float, int],
+    parts: Sequence[Hashable],
+    pop_target: float | int,
     pop_col: str,
     epsilon: float,
-    bipartition_tree_fn: Callable = partial(bipartition_tree, max_attempts=100000),
-    node_repeats: int = 1,
-    n: Optional[int] = None,
-    ceil: Optional[int] = None,
-) -> Dict:
+    bipartition_tree_fn: Callable[..., AbstractSet[Hashable]] = partial(
+        bipartition_tree, max_attempts=100000
+    ),
+    node_repeats: int = 0,
+    n: int | None = None,
+    ceil: int | None = None,
+    *,
+    rng: random.Random | int | None = None,
+) -> dict[Hashable, Hashable]:
     """Returns an assignment dictionary with ``num_dists`` districts balanced within ``epsilon``.
 
     Returns an assignment dictionary with ``num_dists`` districts balanced within ``epsilon`` of.
@@ -579,28 +593,32 @@ def recursive_seed_part(
 
     Args:
         graph (Graph): The graph
-        parts (Sequence): Iterable of part labels (like ``[0,1,2]`` or ``range(4)``
-        pop_target (Union[float, int]): Target population for each part of the partition
+        parts (Sequence): Iterable of part labels (like ``[0,1,2]`` or ``range(4)``).
+        pop_target (float | int): Target population for each part of the partition
         pop_col (str): Node attribute key holding population data
         epsilon (float): How far (as a percentage of ``pop_target``) from ``pop_target`` the parts
             of the partition can be
         bipartition_tree_fn (Callable, optional): Function used to find balanced partitions at the
-            2-district level Defaults to `gerrychain.tree.bipartition_tree`
-        node_repeats (int, optional): Parameter for `gerrychain.tree.bipartition_tree` to
-            use. Defaults to 1.
-        n (Optional[int], optional): Either a positive integer (greater than 1) or None. If n is a
+            2-district level. Defaults to ``gerrychain.tree.bipartition_tree``.
+        node_repeats (int, optional): Additional roots to try on each spanning tree before
+            drawing a new tree. Defaults to 0.
+        n (int | None, optional): Either a positive integer (greater than 1) or None. If n is a
             positive integer, this function will recursively create a seed plan by either biting
             off districts from graph or dividing graph into n chunks and recursing into each of
-            these. If n is None, this function prime factors ``num_dists``=n_1*n_2*...*n_k (n_1 >
+            these. If n is None, this function prime factors ``num_dists = n_1*n_2*...*n_k`` (n_1 >
             n_2 > ... n_k) and recursively partitions graph into n_1 chunks. Defaults to None.
-        ceil (Optional[int], optional): Either a positive integer (at least 2) or None. Relevant
+        ceil (int | None, optional): Either a positive integer (at least 2) or None. Relevant
             only if n is None. If ``ceil`` is a positive integer then finds the largest factor of
             ``num_dists`` less than or equal to ``ceil``, and recursively splits graph into that
             number of chunks, or bites off a district if that number is 1. Defaults to None.
+        rng (random.Random | int | None, optional): Source of randomness. Pass a shared
+            ``Random`` for repeated standalone calls; an integer restarts the stream each call.
 
     Returns:
         dict: New assignments for the nodes of ``graph``.
     """
+
+    rng = make_rng(rng)
 
     # Note: recursive_seed_part() is never used in the GerryCode codebase, but it is
     # part of the public API.
@@ -630,6 +648,7 @@ def recursive_seed_part(
         node_repeats=node_repeats,
         n=n,
         ceil=ceil,
+        rng=rng,
     )
     for i in range(len(assignment)):
         for node in assignment[i]:

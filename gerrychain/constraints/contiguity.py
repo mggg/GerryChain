@@ -1,14 +1,17 @@
-import random
 from collections import deque
-from typing import Any
+from collections.abc import Hashable, Iterable
 
-from ..graph import Graph
+from ..graph import FrozenGraph, Graph
 from ..partition import Partition
 from .bounds import SelfConfiguringLowerBound
 
 
 def _are_reachable(
-    graph: Graph, start_node: Any, mapping: dict[Any, int], part: int, targets: Any
+    graph: Graph | FrozenGraph,
+    start_node: Hashable,
+    mapping: dict[Hashable, Hashable],
+    part: Hashable,
+    targets: Iterable[Hashable],
 ) -> bool:
     """Check if the targets are reachable from the start_node without leaving the given district.
 
@@ -18,10 +21,10 @@ def _are_reachable(
 
     Args:
         graph (Graph): Graph
-        start_node (int): The starting node; must be in ``part``
-        mapping (dict[Any, int]): The node_id -> part assignment mapping
-        part (int): The part (district) the search is confined to
-        targets (Any): The target nodes that we would like to reach
+        start_node (Hashable): The starting node; must be in ``part``
+        mapping (dict[Hashable, Hashable]): The node_id -> part assignment mapping
+        part (Hashable): The part (district) the search is confined to
+        targets (Iterable[Hashable]): The target nodes that we would like to reach
 
     Returns:
         bool: True if all of the targets are reachable from the start_node node
@@ -79,7 +82,7 @@ def single_flip_contiguous(partition: Partition) -> bool:
         if not old_neighbors:
             return False
 
-        start_neighbor = random.choice(old_neighbors)
+        start_neighbor = old_neighbors[0]
 
         # A single old neighbor is trivially reachable from itself.
         if len(old_neighbors) == 1:
@@ -97,21 +100,21 @@ def single_flip_contiguous(partition: Partition) -> bool:
     return True
 
 
-def _affected_parts(partition: Partition) -> set[int]:
+def _affected_parts(partition: Partition) -> set[Hashable]:
     """Checks which partitions were affected by the change of nodes.
 
     Args:
         partition (Partition): The proposed next Partition
 
     Returns:
-        Set[int]: The set of IDs of all parts that gained or lost a node when compared to the
+        set[Hashable]: The set of IDs of all parts that gained or lost a node when compared to the
             parent partition.
     """
     flips = partition.flips
     parent = partition.parent
 
     if flips is None:
-        return partition.parts
+        return set(partition.parts)
 
     if parent is None:
         return set(flips.values())
@@ -165,7 +168,7 @@ def number_of_contiguous_parts(partition: Partition) -> int:
 no_more_discontiguous = SelfConfiguringLowerBound(number_of_contiguous_parts)
 
 
-def contiguous_components(partition: Partition) -> dict[int, list]:
+def contiguous_components(partition: Partition) -> dict[Hashable, list[Graph]]:
     """Determines the connected components of each of the subgraphs of the parts of the partition.
 
     Args:
@@ -176,10 +179,9 @@ def contiguous_components(partition: Partition) -> dict[int, list]:
             part of the partition
     """
 
-    connected_components_in_each_partition = {}
+    connected_components_in_each_partition: dict[Hashable, list[Graph]] = {}
     for part, subgraph in partition.subgraphs.items():
         # create a subgraph for each set of connected nodes in the part's nodes
-        list_of_connected_subgraphs = subgraph.subgraphs_for_connected_components()
-        connected_components_in_each_partition[part] = list_of_connected_subgraphs
+        connected_components_in_each_partition[part] = subgraph.subgraphs_for_connected_components()
 
     return connected_components_in_each_partition

@@ -1,14 +1,18 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from collections.abc import Hashable, Iterator, Mapping
+from collections.abc import Callable, Hashable, Iterable, Iterator, Mapping
+from typing import TypeVar, cast
 
 import pandas
 
-from ..graph import Graph
+from ..graph import FrozenGraph, Graph
+
+NodeT = TypeVar("NodeT", bound=Hashable)
+PartT = TypeVar("PartT", bound=Hashable)
 
 
-class Assignment(Mapping):
+class Assignment(Mapping[Hashable, Hashable]):
     """
     An assignment of nodes into parts.
 
@@ -21,13 +25,20 @@ class Assignment(Mapping):
     """
 
     __slots__ = ["parts", "mapping"]
+    parts: dict[Hashable, frozenset[Hashable]]
+    mapping: dict[Hashable, Hashable]
 
-    def __init__(self, parts: dict, mapping: dict | None = None, validate: bool = True) -> None:
+    def __init__(
+        self,
+        parts: Mapping[PartT, frozenset[NodeT]],
+        mapping: Mapping[NodeT, PartT] | None = None,
+        validate: bool = True,
+    ) -> None:
         """Initialize a Assignment instance.
 
         Args:
-            parts (Dict): Dictionary mapping partition assignments frozensets of nodes.
-            mapping (Optional[Dict], optional): Dictionary mapping nodes to partition assignments.
+            parts (dict): Dictionary mapping partition assignments frozensets of nodes.
+            mapping (dict | None, optional): Dictionary mapping nodes to partition assignments.
                 Default is None.
             validate (bool, optional): Whether to validate the assignment. Default is True.
 
@@ -43,21 +54,23 @@ class Assignment(Mapping):
                 raise ValueError("Keys must have unique assignments.")
             if not all(isinstance(keys, frozenset) for keys in parts.values()):
                 raise TypeError("Level sets must be frozensets")
-        self.parts = parts
+        self.parts: dict[Hashable, frozenset[Hashable]] = {
+            part: frozenset(nodes) for part, nodes in parts.items()
+        }
 
         if not mapping:
-            self.mapping = {}
+            self.mapping: dict[Hashable, Hashable] = {}
             for part, nodes in self.parts.items():
                 for node in nodes:
                     self.mapping[node] = part
         else:
-            self.mapping = mapping
+            self.mapping = {node: part for node, part in mapping.items()}
 
     def __repr__(self) -> str:
         return f"<Assignment [{len(self)} keys, {len(self.parts)} parts]>"
 
     def __iter__(self) -> Iterator[Hashable]:
-        return self.keys()
+        return iter(self.mapping)
 
     def __len__(self) -> int:
         return sum(len(keys) for keys in self.parts.values())
@@ -83,7 +96,7 @@ class Assignment(Mapping):
 
 
         Args:
-            flows (Dict): A dictionary mapping partition assignments to dictionaries with "in" and
+            flows (dict): A dictionary mapping partition assignments to dictionaries with "in" and
                 "out" keys, where the value of "in" is a set of nodes flowing into the partition
                 and the value of "out" is a set of nodes flowing out of the partition.
         """
@@ -103,21 +116,11 @@ class Assignment(Mapping):
             for node in flow["in"]:
                 self.mapping[node] = part
 
-    def items(self) -> Iterator[tuple[Hashable, Hashable]]:
-        """Iterate over ``(node, part)`` tuples, where ``node`` is assigned to ``part``."""
-        yield from self.mapping.items()
-
-    def keys(self) -> Iterator[Hashable]:
-        yield from self.mapping.keys()
-
-    def values(self) -> Iterator[Hashable]:
-        yield from self.mapping.values()
-
-    def update_parts(self, new_parts: dict) -> None:
+    def update_parts(self, new_parts: Mapping[Hashable, Iterable[Hashable]]) -> None:
         """Update some parts of the assignment.
 
         Args:
-            new_parts (Dict): dictionary mapping (some) parts to their new sets or frozensets of
+            new_parts (dict): dictionary mapping (some) parts to their new sets or frozensets of
                 nodes
 
         """
@@ -136,39 +139,42 @@ class Assignment(Mapping):
         groups = [pandas.Series(data=part, index=nodes) for part, nodes in self.parts.items()]
         return pandas.concat(groups)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[Hashable, Hashable]:
         """Convert to dict.
 
         Returns:
-            Dict: The assignment as a ``{node: part}`` dictionary.
+            dict: The assignment as a ``{node: part}`` dictionary.
         """
         return self.mapping
 
     @classmethod
-    def from_dict(cls, nodes_to_parts: dict | pandas.Series) -> Assignment:
+    def from_dict(cls, nodes_to_parts: Mapping[NodeT, PartT] | pandas.Series) -> Assignment:
         """Create an Assignment from a dictionary.
 
         Args:
-            nodes_to_parts (Dict): dictionary mapping nodes to partition assignments
+            nodes_to_parts (Mapping[Hashable, Hashable] | pandas.Series): mapping (a dict-like
+                or a ``pandas.Series``) from nodes to partition assignments
 
         Returns:
             Assignment: A new instance of Assignment with the same assignments as the
                 passed-in dictionary.
         """
 
-        parts = {part: frozenset(keys) for part, keys in level_sets(nodes_to_parts).items()}
-
-        # If a pandas.Series was passed in then convert it to be a dict
         if isinstance(nodes_to_parts, pandas.Series):
-            nodes_to_parts = nodes_to_parts.to_dict()
+            raw_mapping = nodes_to_parts.to_dict()
+            if not all(
+                isinstance(node, Hashable) and isinstance(part, Hashable)
+                for node, part in raw_mapping.items()
+            ):
+                raise TypeError("Assignment keys and part labels must be hashable")
+            return cls.from_dict(cast(dict[Hashable, Hashable], raw_mapping))
 
-        return cls(
-            parts,  # Commented out because __init__() croaks if the nodes_to_parts
-            nodes_to_parts,  # is a pandas series instead of a dict...
-        )
+        mapping = dict(nodes_to_parts)
+        parts = {part: frozenset(keys) for part, keys in level_sets(mapping).items()}
+        return cls(parts, mapping)
 
     def new_assignment_convert_old_node_ids_to_new_node_ids(
-        self, node_id_mapping: dict
+        self, node_id_mapping: Mapping[Hashable, Hashable]
     ) -> Assignment:
         """Create a new Assignment object from the one passed in, where the node_ids are changed.
 
@@ -192,32 +198,29 @@ class Assignment(Mapping):
             for old_node_id, part in old_assignment_mapping.items()
         }
         # Now upate the parts dict that has a frozenset of all the nodes in each part (district)
-        new_parts = {}
+        new_parts: dict[Hashable, set[Hashable]] = {}
         for cur_node_id, cur_part in new_assignment_mapping.items():
             if cur_part not in new_parts:
                 new_parts[cur_part] = set()
             new_parts[cur_part].add(cur_node_id)
-        for cur_part, set_of_nodes in new_parts.items():
-            new_parts[cur_part] = frozenset(set_of_nodes)
-
-        #  pandas.Series(data=part, index=nodes) for part, nodes in self.parts.items()
-
-        new_assignment = Assignment(new_parts, new_assignment_mapping)
+        frozen_parts = {part: frozenset(nodes) for part, nodes in new_parts.items()}
+        new_assignment = Assignment(frozen_parts, new_assignment_mapping)
 
         return new_assignment
 
 
 def get_assignment(
-    part_assignment: str | dict | Assignment, graph: Graph | None = None
+    part_assignment: str | Mapping[NodeT, PartT] | pandas.Series | Assignment,
+    graph: Graph | FrozenGraph | None = None,
 ) -> Assignment:
     """Either extracts an Assignment object from the input graph using the provided key or
     attempts to convert part_assignment into an Assignment object.
 
     Args:
-        part_assignment (str): A node attribute key, dictionary, or Assignment object
-            corresponding to the desired assignment.
-        graph (Optional[Graph], optional): The graph from which to extract the assignment. Default
-            is None.
+        part_assignment (str | Mapping[NodeT, PartT] | pandas.Series | Assignment): A node
+            attribute key, mapping, pandas Series, or Assignment object.
+        graph (Graph | FrozenGraph | None, optional): The graph from which to extract the
+            assignment. Defaults to None.
 
     Returns:
         Assignment: An Assignment object containing the assignment corresponding to the
@@ -237,24 +240,27 @@ def get_assignment(
         return Assignment.from_dict(
             {node: graph.node_data(node)[part_assignment] for node in graph}
         )
-    # Check if assignment is a dict or a mapping type
-    elif callable(getattr(part_assignment, "items", None)):
-        return Assignment.from_dict(part_assignment)
-    elif isinstance(part_assignment, Assignment):
+    if isinstance(part_assignment, Assignment):
         return part_assignment
-    else:
-        raise TypeError("Assignment must be a dict or a node attribute key")
+    if isinstance(part_assignment, pandas.Series):
+        return Assignment.from_dict(part_assignment)
+    if isinstance(part_assignment, Mapping):
+        return Assignment.from_dict(part_assignment)
+    raise TypeError("Assignment must be a mapping or a node attribute key")
 
 
-def level_sets(mapping: dict, container: type[set] = set) -> defaultdict:
+def level_sets(
+    mapping: Mapping[NodeT, PartT],
+    container: Callable[[], set[NodeT]] = set,
+) -> defaultdict[PartT, set[NodeT]]:
     """Inverts a dictionary.
 
     ``{key: value}`` becomes ``{value: <container of keys that map to value>}``.
 
     Args:
-        mapping (Dict): A dictionary to invert. Keys and values can be of any type.
-        container (Type[Set], optional): A container type used to collect keys that map to the same
-            value. By default, the container type is ``set``.
+        mapping (dict): A dictionary to invert. Keys and values can be of any type.
+        container (Callable[[], set], optional): A zero-argument callable returning a container used
+            to collect keys that map to the same value. By default, this is ``set``.
 
     Returns:
         DefaultDict: A dictionary where each key is a value from the original dictionary, and the
@@ -267,7 +273,7 @@ def level_sets(mapping: dict, container: type[set] = set) -> defaultdict:
         >>> level_sets({'a': 1, 'b': 1, 'c': 2})
         defaultdict(<class 'set'>, {1: {'a', 'b'}, 2: {'c'}})
     """
-    sets: dict = defaultdict(container)
+    sets: defaultdict[PartT, set[NodeT]] = defaultdict(container)
     for source, target in mapping.items():
         sets[target].add(source)
     return sets

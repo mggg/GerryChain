@@ -15,7 +15,6 @@ def partition(graph):
 
 
 def test_all_cut_edge_flips(partition):
-
     # frm: TODO: Testing:  Maybe change all_cut_edge_flips to return a dict
     #
     # At present, it returns an iterator, which makes the code below

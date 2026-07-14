@@ -1,23 +1,11 @@
 from __future__ import annotations
 
-import collections
-from collections.abc import Callable
+from collections.abc import Callable, Hashable, Sequence
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, NamedTuple
 
 if TYPE_CHECKING:
     from ..partition.partition import Partition
-
-CountyInfo = collections.namedtuple("CountyInfo", "split nodes contains")
-"""
-A named tuple to store county split information.
-
-Args:
-    split (int): The county split status. Makes use of
-        CountySplit enum to compute.
-    nodes (List): The nodes that are contained in the county.
-    contains (Set): The assignment IDs that are contained in the county.
-"""
 
 
 class CountySplit(Enum):
@@ -25,9 +13,9 @@ class CountySplit(Enum):
     Enum to track county splits in a partition.
 
     Attributes:
-        NOT_SPLIT (Any): The county is not split.
-        NEW_SPLIT (Any): The county is split in the current partition.
-        OLD_SPLIT (Any): The county is split in the parent partition.
+        NOT_SPLIT (CountySplit): The county is not split.
+        NEW_SPLIT (CountySplit): The county is split in the current partition.
+        OLD_SPLIT (CountySplit): The county is split in the parent partition.
     """
 
     NOT_SPLIT = 0
@@ -35,7 +23,17 @@ class CountySplit(Enum):
     OLD_SPLIT = 2
 
 
-def county_splits(partition_name: str, county_field_name: str) -> Callable:
+class CountyInfo(NamedTuple):
+    """Information about how a county intersects a partition."""
+
+    split: CountySplit
+    nodes: list[Hashable]
+    contains: set[Hashable]
+
+
+def county_splits(
+    partition_name: str, county_field_name: str
+) -> Callable[[Partition], dict[Hashable, CountyInfo]]:
     """An updater for tracking the number of counties that are split in a partition.
 
     Args:
@@ -43,13 +41,13 @@ def county_splits(partition_name: str, county_field_name: str) -> Callable:
         county_field_name (str): Name of county ID field on the graph.
 
     Returns:
-        Callable: The tracked data is a dictionary keyed on the county ID. The stored values are
-            tuples of the form `(split, nodes, seen)`. `split` is a CountySplit enum,
-            `nodes` is a list of node IDs, and `seen` is a list of assignment IDs that are
-            contained in the county.
+        Callable: The tracked data is a ``dict[Hashable, CountyInfo]`` keyed on the county ID. Each
+            ``CountyInfo`` is a named tuple with fields `split` (a CountySplit enum), `nodes` (a
+            list of node IDs in the county), and `contains` (a ``set[Hashable]`` of the assignment
+            IDs the county intersects).
     """
 
-    def _get_county_splits(partition: Partition) -> dict[str, CountyInfo]:
+    def _get_county_splits(partition: Partition) -> dict[Hashable, CountyInfo]:
         return compute_county_splits(partition, county_field_name, partition_name)
 
     return _get_county_splits
@@ -57,7 +55,7 @@ def county_splits(partition_name: str, county_field_name: str) -> Callable:
 
 def compute_county_splits(
     partition: Partition, county_field: str, partition_field: str
-) -> dict[str, CountyInfo]:
+) -> dict[Hashable, CountyInfo]:
     """Computes the number of counties that are split in a partition.
 
     Args:
@@ -69,14 +67,14 @@ def compute_county_splits(
             division of the graph.
 
     Returns:
-        Dict[str, CountyInfo]: A dict containing the information on how counties changed between
-            the parent and child partitions. If there is no parent partition, then only the
-            OLD_SPLIT and NOT_SPLIT values will be used.
+        dict[Hashable, CountyInfo]: Information on how counties changed between the parent and
+            child partitions. If there is no parent partition, only ``OLD_SPLIT`` and
+            ``NOT_SPLIT`` are used.
     """
 
     # Create the initial county data containers.
     if not partition.parent:
-        county_dict = dict()
+        county_dict: dict[Hashable, CountyInfo] = {}
 
         for node_id in partition.graph.node_indices:
             # First figure get current status of the county's information
@@ -101,7 +99,7 @@ def compute_county_splits(
 
         return county_dict
 
-    new_county_dict = dict()
+    new_county_dict: dict[Hashable, CountyInfo] = {}
 
     parent = partition.parent
     for county, county_info in parent[partition_field].items():
@@ -120,7 +118,7 @@ def compute_county_splits(
     return new_county_dict
 
 
-def tally_region_splits(region_attr_lst: list[str]) -> Callable:
+def tally_region_splits(region_attr_lst: Sequence[str]) -> Callable[[Partition], dict[str, int]]:
     """A naive updater for tallying the number of times a region attribute is split.
 
     Here "region" is the generic term for an administrative unit you would prefer not to split
@@ -129,7 +127,7 @@ def tally_region_splits(region_attr_lst: list[str]) -> Callable:
     just specific instances of this region concept.
 
     Args:
-        region_attr_lst (List[str]): A list of region attribute names to tally splits for.
+        region_attr_lst (Sequence[str]): Region attribute names to tally splits for.
 
     Returns:
         Callable: A function that takes a partition and returns a dictionary which maps the region
@@ -137,7 +135,6 @@ def tally_region_splits(region_attr_lst: list[str]) -> Callable:
     """
 
     def _get_splits(partition: Partition) -> dict[str, int]:
-        nonlocal region_attr_lst
         if "cut_edges" not in partition.updaters:
             raise ValueError("The cut_edges updater must be attached to the partition")
         return {

@@ -12,11 +12,14 @@ Dependencies:
 - typing: Used for type hints.
 """
 
+from __future__ import annotations
+
 import math
-from collections.abc import Callable
-from typing import Optional
+from collections.abc import Callable, Hashable
+from typing import Any, cast
 
 import networkx
+from networkx.generators.lattice import grid_2d_graph
 
 from gerrychain.graph import Graph
 from gerrychain.metrics import polsby_popper
@@ -89,22 +92,22 @@ class Grid(Partition):
         self,
         dimensions: tuple[int, int] | None = None,
         with_diagonals: bool = False,
-        assignment: dict | None = None,
-        updaters: dict[str, Callable] | None = None,
-        parent: Optional["Grid"] = None,
+        assignment: dict[tuple[int, int], int] | None = None,
+        updaters: dict[str, Callable[[Partition], object]] | None = None,
+        parent: Grid | None = None,
         flips: dict[tuple[int, int], int] | None = None,
     ) -> None:
         """Initialize a Grid instance.
 
         Args:
-            dimensions (Tuple[int, int], optional): The grid dimensions (rows, columns), defaults
+            dimensions (tuple[int, int], optional): The grid dimensions (rows, columns), defaults
                 to None.
             with_diagonals (bool, optional): If True, includes diagonal connections, defaults to
                 False.
-            assignment (Dict, optional): Node-to-district assignments, defaults to None.
-            updaters (Dict[str, Callable], optional): Custom updater functions, defaults to None.
+            assignment (dict, optional): Node-to-district assignments, defaults to None.
+            updaters (dict[str, Callable], optional): Custom updater functions, defaults to None.
             parent (Grid, optional): Parent Grid object for inheritance, defaults to None.
-            flips (Dict[Tuple[int, int], int], optional): Node flips for partition changes,
+            flips (dict[tuple[int, int], int], optional): Node flips for partition changes,
                 defaults to None. Note that flips are a dict of the form: {node_id: part}. In the
                 case of a Grid, a node_id is a tuple indicating its position in the grid, so for a
                 Grid the flips look like: {(row_node_id, col_node_id): part}
@@ -120,9 +123,14 @@ class Grid(Partition):
             graph = _create_grid_nx_graph(dimensions, with_diagonals)
 
             if not assignment:
-                thresholds = tuple(math.floor(n / 2) for n in self.dimensions)
+                thresholds = (
+                    math.floor(self.dimensions[0] / 2),
+                    math.floor(self.dimensions[1] / 2),
+                )
                 assignment = {
-                    node_id: _color_quadrants(node_id, thresholds)  # type: ignore
+                    cast(tuple[int, int], node_id): _color_quadrants(
+                        cast(tuple[int, int], node_id), thresholds
+                    )
                     for node_id in graph.node_indices
                 }
 
@@ -154,10 +162,10 @@ class Grid(Partition):
         assigned district of the node in position (i,j) on the grid.
 
         Returns:
-            List[List[int]]: List of lists representing the grid.
+            list[list[int]]: List of lists representing the grid.
         """
         m, n = self.dimensions
-        return [[self.assignment.mapping[(i, j)] for i in range(m)] for j in range(n)]
+        return [[cast(int, self.assignment.mapping[(i, j)]) for i in range(m)] for j in range(n)]
 
 
 def _create_grid_nx_graph(dimensions: tuple[int, ...], with_diagonals: bool) -> Graph:
@@ -175,7 +183,7 @@ def _create_grid_nx_graph(dimensions: tuple[int, ...], with_diagonals: bool) -> 
         * "shared_perim" set to 1 except for diagonal edges (if any)
 
     Args:
-        dimensions (Tuple[int, int]): The grid dimensions (rows, columns).
+        dimensions (tuple[int, int]): The grid dimensions (rows, columns).
         with_diagonals (bool): If True, includes diagonal connections.
 
     Returns:
@@ -187,10 +195,11 @@ def _create_grid_nx_graph(dimensions: tuple[int, ...], with_diagonals: bool) -> 
     if len(dimensions) != 2:
         raise ValueError("Expected two dimensions.")
     m, n = dimensions
-    nx_graph = networkx.generators.lattice.grid_2d_graph(m, n)
+    nx_graph = cast("networkx.Graph[Hashable, dict[str, Any], dict[str, Any]]", grid_2d_graph(m, n))
 
     # In a grid graph the shared perimeter with every other node is 1
-    networkx.set_edge_attributes(nx_graph, 1, "shared_perim")
+    for edge in nx_graph.edges:
+        nx_graph.edges[edge]["shared_perim"] = 1
 
     # if "with_diagonals" then create edges between nodes on diagonals
     if with_diagonals:
@@ -202,23 +211,27 @@ def _create_grid_nx_graph(dimensions: tuple[int, ...], with_diagonals: bool) -> 
             # diagonals meet at a point, hence shared perimeter is zero
             nx_graph.edges[edge]["shared_perim"] = 0
 
-    networkx.set_node_attributes(nx_graph, 1, "population")
-    networkx.set_node_attributes(nx_graph, 1, "area")
+    for node in nx_graph.nodes:
+        nx_graph.nodes[node]["population"] = 1
+        nx_graph.nodes[node]["area"] = 1
 
     _tag_boundary_nodes(nx_graph, dimensions)
 
     return Graph.from_networkx(nx_graph)
 
 
-def _tag_boundary_nodes(nx_graph: networkx.Graph, dimensions: tuple[int, int]) -> None:
+def _tag_boundary_nodes(
+    nx_graph: networkx.Graph[Hashable, dict[str, Any], dict[str, Any]],
+    dimensions: tuple[int, int],
+) -> None:
     """Adds the boolean attribute ``boundary_node`` to each node in the graph.
 
     If the node is on the boundary of the grid, that node also gets the attribute
     ``boundary_perim`` which is determined by the function `_get_boundary_perim`.
 
     Args:
-        graph (Graph): The graph to modify.
-        dimensions (Tuple[int, int]): The dimensions of the grid.
+        nx_graph (networkx.Graph): The graph to modify.
+        dimensions (tuple[int, int]): The dimensions of the grid.
 
     """
 
@@ -230,9 +243,10 @@ def _tag_boundary_nodes(nx_graph: networkx.Graph, dimensions: tuple[int, int]) -
 
     m, n = dimensions
     for node_id in nx_graph.nodes:
-        if node_id[0] in [0, m - 1] or node_id[1] in [0, n - 1]:
+        grid_node = cast(tuple[int, int], node_id)
+        if grid_node[0] in [0, m - 1] or grid_node[1] in [0, n - 1]:
             nx_graph.nodes[node_id]["boundary_node"] = True
-            nx_graph.nodes[node_id]["boundary_perim"] = _get_boundary_perim(node_id, dimensions)
+            nx_graph.nodes[node_id]["boundary_perim"] = _get_boundary_perim(grid_node, dimensions)
         else:
             nx_graph.nodes[node_id]["boundary_node"] = False
 
@@ -241,10 +255,10 @@ def _get_boundary_perim(node_id: tuple[int, int], dimensions: tuple[int, int]) -
     """Determines the boundary perimeter of a node on the grid.
 
     Args:
-        node_id (Tuple[int, int]): The ID of the node to check. Note that the node_id is a tuple of
+        node_id (tuple[int, int]): The ID of the node to check. Note that the node_id is a tuple of
             the form (row, col) so that node_id[0] denotes the row a node is in and node_id[1]
             denotes its column.
-        dimensions (Tuple[int, int]): The dimensions of the grid.
+        dimensions (tuple[int, int]): The dimensions of the grid.
 
     Returns:
         int: The boundary perimeter of the node.
@@ -266,7 +280,7 @@ def color_half(node: tuple[int, int], threshold: int) -> int:
     an x-coordinate greater than the threshold are assigned another.
 
     Args:
-        node (Tuple[int, int]): The node to color, represented as a tuple of coordinates (x, y).
+        node (tuple[int, int]): The node to color, represented as a tuple of coordinates (x, y).
         threshold (int): The x-coordinate value that determines the color assignment.
 
     Returns:
@@ -288,8 +302,8 @@ def _color_quadrants(node: tuple[int, int], thresholds: tuple[int, int]) -> int:
     color.
 
     Args:
-        node (Tuple[int, int]): The node to color, represented as a tuple of coordinates (x, y).
-        thresholds (Tuple[int, int]): A tuple of two integers representing the threshold
+        node (tuple[int, int]): The node to color, represented as a tuple of coordinates (x, y).
+        thresholds (tuple[int, int]): A tuple of two integers representing the threshold
             coordinates (x_threshold, y_threshold).
 
     Returns:

@@ -55,9 +55,10 @@ def chain_with_election(partition_with_election):
     return MarkovChain(
         propose_random_flip,
         Validator([no_vanishing_districts]),
-        lambda x: True,
+        lambda x, *, rng: True,
         partition_with_election,
         total_steps=10,
+        rng=2018,
     )
 
 
@@ -123,7 +124,6 @@ def test_vote_proportion_updater_returns_percentage_or_nan(partition_with_electi
 
 
 def test_vote_proportion_returns_nan_if_total_votes_is_zero(three_by_three_grid):
-
     election = Election("Mock Election", ["D", "R"], alias="election")
     graph = three_by_three_grid
 
@@ -201,7 +201,6 @@ def test_election_result_has_a_cute_str_method():
 def _convert_dict_of_set_of_rx_node_ids_to_set_of_nx_node_ids(
     dict_of_set_of_rx_nodes, nx_to_rx_node_id_map
 ):
-
     # frm: TODO: Testing:  This way to convert node_ids is clumsy and inconvenient.  Think of something better...
 
     # When we create a partition from an NX based Graph we convert it to be an
@@ -299,7 +298,6 @@ def test_exterior_boundaries_as_a_set(three_by_three_grid):
 
 
 def test_exterior_boundaries(three_by_three_grid):
-
     graph = three_by_three_grid
 
     for i in [0, 1, 2, 3, 5, 6, 7, 8]:
@@ -373,13 +371,13 @@ def reject_half_of_all_flips(partition):
 
 
 def test_elections_match_the_naive_computation(partition_with_election):
-
     chain = MarkovChain(
         propose_random_flip,
         Validator([no_vanishing_districts, reject_half_of_all_flips]),
-        lambda x: True,
+        lambda x, *, rng: True,
         partition_with_election,
         total_steps=100,
+        rng=2018,
     )
 
     for partition in chain:

@@ -16,13 +16,11 @@ from gerrychain import (
     tree,
 )
 from gerrychain import updaters as gc_updaters
+from gerrychain.proposals import build_recom_proposal_fn
 from gerrychain.tree import BipartitionWarning
-
-random.seed(2018)
 
 
 def run_chain_single(seed, category, steps, surcharge, max_attempts=100000, reselect=False):
-    import random
     from functools import partial
 
     graph = Graph.from_json("tests/graphs_for_test/8x8_with_muni.json")
@@ -40,14 +38,12 @@ def run_chain_single(seed, category, steps, surcharge, max_attempts=100000, rese
     num_steps = steps
     epsilon = 0.01
 
-    random.seed(seed)
-    surcharged_proposal = partial(
-        proposals.recom,
+    surcharged_proposal = build_recom_proposal_fn(
         pop_col=population_col,
         pop_target=ideal_pop,
         epsilon=epsilon,
         region_surcharge=surcharges,
-        node_repeats=10,
+        node_repeats=0,
         bipartition_tree_fn=partial(
             tree.bipartition_tree,
             max_attempts=max_attempts,
@@ -61,6 +57,7 @@ def run_chain_single(seed, category, steps, surcharge, max_attempts=100000, rese
         accept=accept.always_accept,
         initial_state=initial_partition,
         total_steps=num_steps,
+        rng=seed,
     )
 
     n_splits = -1
@@ -75,7 +72,6 @@ def test_region_aware_muni():
     n_samples = 30
     region = "muni"
     n_regions = 16
-    random.seed(2018)
 
     with ProcessPoolExecutor() as executor:
         results = executor.map(
@@ -85,7 +81,6 @@ def test_region_aware_muni():
 
     tot_splits = sum(results)
 
-    random.seed(2018)
     assert (float(tot_splits) / (n_samples * n_regions)) < 0.10
 
 
@@ -96,7 +91,6 @@ def test_region_aware_muni_errors():
         # Random seed 0 should fail here
         run_chain_single(seed=0, category=region, steps=10000, max_attempts=1, surcharge=2.0)
 
-    random.seed(2018)
     assert "Could not find a possible cut after 1 attempts" in str(exec_info.value)
 
 
@@ -121,7 +115,6 @@ def test_region_aware_muni_reselect():
 
     tot_splits = sum(results)
 
-    random.seed(2018)
     assert (float(tot_splits) / (n_samples * n_regions)) < 0.10
 
 
@@ -141,7 +134,6 @@ def test_region_aware_county():
 
     tot_splits = sum(results)
 
-    random.seed(2018)
     assert (float(tot_splits) / (n_samples * n_regions)) < 0.10
 
 
@@ -159,7 +151,6 @@ def straddled_regions(partition, region_attr, all_region_names):
 
 
 def run_chain_dual(seed, steps, surcharges={"muni": 0.5, "county": 0.5}, warn_attempts=1000):
-    import random
     from functools import partial
 
     graph = Graph.from_json("tests/graphs_for_test/8x8_with_muni.json")
@@ -176,14 +167,12 @@ def run_chain_dual(seed, steps, surcharges={"muni": 0.5, "county": 0.5}, warn_at
     num_steps = steps
     epsilon = 0.01
 
-    random.seed(seed)
-    surcharged_proposal = partial(
-        proposals.recom,
+    surcharged_proposal = build_recom_proposal_fn(
         pop_col=population_col,
         pop_target=ideal_pop,
         epsilon=epsilon,
         region_surcharge=surcharges,
-        node_repeats=10,
+        node_repeats=0,
         bipartition_tree_fn=partial(
             tree.bipartition_tree,
             max_attempts=10000,
@@ -197,6 +186,7 @@ def run_chain_dual(seed, steps, surcharges={"muni": 0.5, "county": 0.5}, warn_at
         accept=accept.always_accept,
         initial_state=initial_partition,
         total_steps=num_steps,
+        rng=seed,
     )
 
     n_muni_splits = -1
@@ -228,6 +218,7 @@ def test_region_aware_muni_warning():
                 epsilon=0.01,
                 warn_attempts=2,
                 max_attempts=5,
+                rng=random.Random(2018),
             )
 
     assert any(
@@ -242,7 +233,6 @@ def test_spanning_tree_fn_kwargs_forwarded_to_spanning_tree_fn():
     down to the spanning-tree function (here used to set ``random_spanning_tree``'s
     ``treat_unassigned_as_single_region`` option).
     """
-    random.seed(2018)
 
     # 6x2 grid: 12 nodes, 1 person each. The last 4 nodes are region-less (None) for "region".
     nx_graph = nx.convert_node_labels_to_integers(nx.grid_2d_graph(6, 2))
@@ -253,12 +243,15 @@ def test_spanning_tree_fn_kwargs_forwarded_to_spanning_tree_fn():
 
     captured = []
 
-    def spy_spanning_tree_fn(graph, region_surcharge=None, treat_unassigned_as_single_region=False):
+    def spy_spanning_tree_fn(
+        graph, region_surcharge=None, treat_unassigned_as_single_region=False, *, rng
+    ):
         captured.append(treat_unassigned_as_single_region)
         return tree.random_spanning_tree(
             graph,
             region_surcharge=region_surcharge,
             treat_unassigned_as_single_region=treat_unassigned_as_single_region,
+            rng=rng,
         )
 
     # bipartition_tree forwards spanning_tree_fn_kwargs to the spanning-tree function.
@@ -271,6 +264,7 @@ def test_spanning_tree_fn_kwargs_forwarded_to_spanning_tree_fn():
         spanning_tree_fn=spy_spanning_tree_fn,
         region_surcharge={"region": 1.0},
         spanning_tree_fn_kwargs={"treat_unassigned_as_single_region": True},
+        rng=random.Random(2018),
     )
     assert captured and all(value is True for value in captured)
 
@@ -294,6 +288,7 @@ def test_spanning_tree_fn_kwargs_forwarded_to_spanning_tree_fn():
             spanning_tree_fn=spy_spanning_tree_fn,
             spanning_tree_fn_kwargs={"treat_unassigned_as_single_region": True},
         ),
+        rng=random.Random(2018),
     )
     assert captured and all(value is True for value in captured)
 
@@ -306,6 +301,7 @@ def test_spanning_tree_fn_kwargs_forwarded_to_spanning_tree_fn():
         epsilon=0.5,
         region_surcharge={"region": 1.0},
         bipartition_tree_fn=partial(tree.bipartition_tree, spanning_tree_fn=spy_spanning_tree_fn),
+        rng=random.Random(2018),
     )
     assert captured and all(value is False for value in captured)
 
@@ -316,12 +312,12 @@ def test_spanning_tree_fn_kwargs_forwarded_to_spanning_tree_fn():
         pop_target=6,
         epsilon=0.5,
         spanning_tree_fn=tree.uniform_spanning_tree,
+        rng=random.Random(2018),
     )
     assert nodes is not None
 
 
 def test_region_surcharge_inside_spanning_tree_fn_kwargs_raises():
-
     nx_graph = nx.convert_node_labels_to_integers(nx.grid_2d_graph(6, 2))
     for node_id in nx_graph.nodes:
         nx_graph.nodes[node_id]["pop"] = 1
@@ -334,6 +330,7 @@ def test_region_surcharge_inside_spanning_tree_fn_kwargs_raises():
             pop_target=6,
             epsilon=0.5,
             spanning_tree_fn_kwargs={"region_surcharge": {"region": 1.0}},
+            rng=random.Random(2018),
         )
 
     partition = Partition(
@@ -351,6 +348,7 @@ def test_region_surcharge_inside_spanning_tree_fn_kwargs_raises():
                 tree.bipartition_tree,
                 spanning_tree_fn_kwargs={"region_surcharge": {"region": 1.0}},
             ),
+            rng=random.Random(2018),
         )
 
 
@@ -365,8 +363,6 @@ def test_region_aware_dual():
 
     tot_muni_splits = sum([item[0] for item in results])
     tot_county_splits = sum([item[1] for item in results])
-
-    random.seed(2018)
 
     assert (float(tot_muni_splits) / (n_samples * n_munis)) < 0.10
     assert (float(tot_county_splits) / (n_samples * n_counties)) < 0.10

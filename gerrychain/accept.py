@@ -1,23 +1,25 @@
 """
 This module provides the main acceptance function used in ReCom Markov chains.
 
-Dependencies:
-
-- random: For random number generation for probabilistic acceptance.
-
 Last Updated: 11 Jan 2024
 """
 
 import random
+from typing import Protocol
 
 from gerrychain.partition import Partition
 
 
-def always_accept(partition: Partition) -> bool:
+class AcceptFn(Protocol):
+    def __call__(self, partition: Partition, *, rng: random.Random) -> bool: ...
+
+
+def always_accept(partition: Partition, *, rng: random.Random) -> bool:
     """Always accepts the a proposed next state.
 
     Args:
         partition (Partition): The current partition to accept a flip from.
+        rng (random.Random): The chain's random number generator. Unused by this function.
 
     Returns:
         bool: True
@@ -25,7 +27,7 @@ def always_accept(partition: Partition) -> bool:
     return True
 
 
-def cut_edge_accept(partition: Partition) -> bool:
+def cut_edge_accept(partition: Partition, *, rng: random.Random) -> bool:
     """Always accepts the flip if the number of cut_edges decreases Otherwise, uses the Metropolis.
 
     This function always accepts the flip if the number of cut_edges decreases. Otherwise, uses the
@@ -50,6 +52,7 @@ def cut_edge_accept(partition: Partition) -> bool:
 
     Args:
         partition (Partition): The current partition to accept a flip from.
+        rng (random.Random): The chain's random number generator.
 
     Returns:
         bool: True if accepted, False to remain in place
@@ -82,4 +85,4 @@ def cut_edge_accept(partition: Partition) -> bool:
     # likelihood that the current partition will be rejected.
     #
     bound = parent_partition_compactness_proxy / current_partition_compactness_proxy
-    return random.random() < bound
+    return rng.random() < bound

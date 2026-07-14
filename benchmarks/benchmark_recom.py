@@ -51,20 +51,19 @@ which is stable from 0.3.x onward.
 Note on RNG: by default a fresh base seed is drawn each invocation and printed; pass --seed to pin
 it. Within a `compare`, every target gets the same seeds either way - though different gerrychain
 versions consume the RNG streams differently, so they will not walk the same chains. This measures
-throughput, not output equivalence. The script re-runs itself with PYTHONHASHSEED=0 so that a
-pinned --seed is actually reproducible despite Python's hash-randomized set/dict ordering.
+throughput, not output equivalence. GerryChain owns its RNGs, so a pinned seed is reproducible
+without also pinning Python's hash seed.
 """
 
 from __future__ import annotations
 
 import argparse
+import inspect
 import json
-import os
 import subprocess
 import sys
 import tempfile
 import time
-
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -131,15 +130,19 @@ def _run_one_seed(seed: int) -> dict:
     for _ in range(args.repeats):
         random.seed(seed)
         np.random.seed(seed)
+        rng = random.Random(seed)
 
         t0 = time.perf_counter()
-        initial = Partition.from_random_assignment(
-            graph,
-            n_parts=args.parts,
-            epsilon=args.epsilon,
-            pop_col=args.pop_col,
-            updaters={"population": updaters.Tally(args.pop_col, alias="population")},
-        )
+        initial_kwargs = {
+            "graph": graph,
+            "n_parts": args.parts,
+            "epsilon": args.epsilon,
+            "pop_col": args.pop_col,
+            "updaters": {"population": updaters.Tally(args.pop_col, alias="population")},
+        }
+        if "rng" in inspect.signature(Partition.from_random_assignment).parameters:
+            initial_kwargs["rng"] = rng
+        initial = Partition.from_random_assignment(**initial_kwargs)
         build_s.append(time.perf_counter() - t0)
 
         ideal = sum(initial["population"].values()) / len(initial)
@@ -148,15 +151,18 @@ def _run_one_seed(seed: int) -> dict:
             pop_col=args.pop_col,
             pop_target=ideal,
             epsilon=args.epsilon,
-            node_repeats=2,
+            node_repeats=0,
         )
-        chain = MarkovChain(
-            proposal=proposal,
-            constraints=[],
-            accept=accept.always_accept,
-            initial_state=initial,
-            total_steps=args.steps,
-        )
+        chain_kwargs = {
+            "proposal": proposal,
+            "constraints": [],
+            "accept": accept.always_accept,
+            "initial_state": initial,
+            "total_steps": args.steps,
+        }
+        if "rng" in inspect.signature(MarkovChain).parameters:
+            chain_kwargs["rng"] = rng
+        chain = MarkovChain(**chain_kwargs)
         steps_iter = chain.with_progress_bar() if progress else chain
 
         if profiler is not None:
@@ -493,14 +499,6 @@ def add_benchmark_options(parser: argparse.ArgumentParser) -> None:
 
 
 def main() -> None:
-    # Hash randomization changes set/dict iteration order inside gerrychain, so a pinned --seed
-    # only reproduces a run under a fixed hash seed. The interpreter's hash seed is locked at
-    # startup, so re-run process once with PYTHONHASHSEED=0 and forward the exit code. (using
-    # spawn-and-exit rather than os.execv b/c Windows fakes exec by spawning a new process)
-    if os.environ.get("PYTHONHASHSEED") != "0":
-        env = {**os.environ, "PYTHONHASHSEED": "0"}
-        sys.exit(subprocess.run([sys.executable] + sys.argv, env=env).returncode)
-
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )

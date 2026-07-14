@@ -1,5 +1,4 @@
 import functools
-import random
 
 import pytest
 
@@ -8,8 +7,6 @@ from gerrychain.accept import always_accept
 from gerrychain.constraints import no_vanishing_districts, single_flip_contiguous
 from gerrychain.grid import Grid
 from gerrychain.updaters import cut_edges, cut_edges_by_part
-
-random.seed(2018)
 
 # This is copied and pasted, but should be done with some proper
 # pytest configuration instead:
@@ -170,7 +167,6 @@ def test_implementation_of_cut_edges_matches_naive_method(three_by_three_grid):
     ],
 )
 def test_cut_edges_matches_naive_cut_edges_at_every_step(proposal, number_of_steps):
-    random.seed(2024)
     partition = Grid((10, 10), with_diagonals=True)
 
     chain = MarkovChain(
@@ -179,6 +175,7 @@ def test_cut_edges_matches_naive_cut_edges_at_every_step(proposal, number_of_ste
         always_accept,
         partition,
         number_of_steps,
+        rng=2024,
     )
 
     for state in chain:

@@ -1,6 +1,5 @@
 import cProfile
 import sys
-from functools import partial
 
 from gerrychain import (
     Election,
@@ -11,11 +10,10 @@ from gerrychain import (
     constraints,
     updaters,
 )
-from gerrychain.proposals import recom
+from gerrychain.proposals import build_recom_proposal_fn
 
 
 def main():
-
     graph = Graph.from_json("./PA_VTDs.json")
 
     elections = [
@@ -46,14 +44,11 @@ def main():
 
     ideal_population = sum(initial_partition["population"].values()) / len(initial_partition)
 
-    # We use functools.partial to bind the extra parameters (pop_col, pop_target, epsilon, node_repeats)
-    # of the recom proposal.
-    proposal = partial(
-        recom,
+    proposal = build_recom_proposal_fn(
         pop_col="TOT_POP",
         pop_target=ideal_population,
         epsilon=0.02,
-        node_repeats=2,
+        node_repeats=0,
     )
 
     def cut_edges_length(p):

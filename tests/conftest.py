@@ -182,7 +182,6 @@ def four_by_five_grid_nx():
 
 @pytest.fixture
 def graph_with_random_data_factory(three_by_three_grid):
-
     def factory(columns):
         graph = three_by_three_grid
         attach_random_data(graph, columns)
@@ -218,17 +217,28 @@ def example_partition():
 # From the docs: https://docs.pytest.org/en/latest/example/simple.html#control-skipping-of-tests-according-to-command-line-option
 def pytest_addoption(parser):
     parser.addoption("--runslow", action="store_true", default=False, help="run slow tests")
+    parser.addoption(
+        "--rundocs",
+        action="store_true",
+        default=False,
+        help="run the docs snippet execution tests (need the docs-exec dependency group)",
+    )
 
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "slow: mark test as slow to run")
+    config.addinivalue_line(
+        "markers", "docs: executes documentation code blocks; needs the docs-exec group"
+    )
 
 
 def pytest_collection_modifyitems(config, items):
-    if config.getoption("--runslow"):
-        # --runslow given in cli: do not skip slow tests
-        return
     skip_slow = pytest.mark.skip(reason="need --runslow option to run")
+    skip_docs = pytest.mark.skip(reason="need --rundocs option to run")
     for item in items:
-        if "slow" in item.keywords:
+        if "slow" in item.keywords and not config.getoption("--runslow"):
             item.add_marker(skip_slow)
+        # Kept separate from "slow": these tests also need the docs-exec dependency group,
+        # which the dev environment used by `make test-all` does not install.
+        if "docs" in item.keywords and not config.getoption("--rundocs"):
+            item.add_marker(skip_docs)

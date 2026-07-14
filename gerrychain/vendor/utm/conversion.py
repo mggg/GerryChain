@@ -1,15 +1,11 @@
+from typing import Any
+
+import numpy as mathlib
+import numpy.typing as npt
+
 from .error import OutOfRangeError
 
-# For most use cases in this module, numpy is indistinguishable
-# from math, except it also works on numpy arrays
-try:
-    import numpy as mathlib
-
-    use_numpy = True
-except ImportError:
-    import math as mathlib  # type: ignore
-
-    use_numpy = False
+Coordinate = float | npt.NDArray[Any]
 
 __all__ = ["to_latlon", "from_latlon"]
 
@@ -42,17 +38,13 @@ R = 6378137
 ZONE_LETTERS = "CDEFGHJKLMNPQRSTUVWXX"
 
 
-def in_bounds(x, lower, upper, upper_strict=False):
-    if upper_strict and use_numpy:
-        return lower <= mathlib.min(x) and mathlib.max(x) < upper
-    elif upper_strict and not use_numpy:
-        return lower <= x < upper
-    elif use_numpy:
-        return lower <= mathlib.min(x) and mathlib.max(x) <= upper
-    return lower <= x <= upper
+def in_bounds(x: Coordinate, lower: float, upper: float, upper_strict: bool = False) -> bool:
+    if upper_strict:
+        return bool(lower <= mathlib.min(x)) and bool(mathlib.max(x) < upper)
+    return bool(lower <= mathlib.min(x)) and bool(mathlib.max(x) <= upper)
 
 
-def check_valid_zone(zone_number, zone_letter):
+def check_valid_zone(zone_number: int, zone_letter: str | None) -> None:
     if not 1 <= zone_number <= 60:
         raise OutOfRangeError("zone number out of range (must be between 1 and 60)")
 
@@ -63,41 +55,39 @@ def check_valid_zone(zone_number, zone_letter):
             raise OutOfRangeError("zone letter out of range (must be between C and X)")
 
 
-def mixed_signs(x):
-    return use_numpy and mathlib.min(x) < 0 and mathlib.max(x) >= 0
+def mixed_signs(x: Coordinate) -> bool:
+    return bool(mathlib.min(x) < 0) and bool(mathlib.max(x) >= 0)
 
 
-def negative(x):
-    if use_numpy:
-        return mathlib.max(x) < 0
-    return x < 0
+def negative(x: Coordinate) -> bool:
+    return bool(mathlib.max(x) < 0)
 
 
-def to_latlon(easting, northing, zone_number, zone_letter=None, northern=None, strict=True):
-    """This function convert an UTM coordinate into Latitude and Longitude
+def to_latlon(
+    easting: Coordinate,
+    northing: Coordinate,
+    zone_number: int,
+    zone_letter: str | None = None,
+    northern: bool | None = None,
+    strict: bool = True,
+) -> tuple[Coordinate, Coordinate]:
+    """Convert a UTM coordinate to latitude and longitude.
 
-     Parameters
-     ----------
-     easting: int
-         Easting value of UTM coordinate
+    Args:
+        easting (Coordinate): Easting value of the UTM coordinate.
+        northing (Coordinate): Northing value of the UTM coordinate.
+        zone_number (int): UTM zone number from 1 through 60.
+        zone_letter (str | None, optional): UTM zone letter. Defaults to ``None``.
+        northern (bool | None, optional): Whether the coordinate is in the northern hemisphere.
+            Defaults to ``None``.
+        strict (bool, optional): Whether to validate coordinate bounds. Defaults to ``True``.
 
-     northing: int
-         Northing value of UTM coordinate
+    Returns:
+        tuple[Coordinate, Coordinate]: Latitude and longitude.
 
-     zone number: int
-         Zone Number is represented with global map numbers of an UTM Zone
-         Numbers Map. More information see utmzones [1]_
-
-     zone_letter: str
-         Zone Letter can be represented as string values. Where UTM Zone
-         Designators can be accessed in [1]_
-
-     northern: bool
-         You can set True or False to set this parameter. Default is None
-
-
-    .. _[1]: http://www.jaworski.ca/utmzones.htm
-
+    Raises:
+        ValueError: If neither or both hemisphere indicators are provided.
+        OutOfRangeError: If a coordinate or zone is outside its valid range.
     """
     if not zone_letter and northern is None:
         raise ValueError("either zone_letter or northern needs to be set")
@@ -177,23 +167,26 @@ def to_latlon(easting, northing, zone_number, zone_letter=None, northern=None, s
     )
 
 
-def from_latlon(latitude, longitude, force_zone_number=None, force_zone_letter=None):
-    """This function convert Latitude and Longitude to UTM coordinate
+def from_latlon(
+    latitude: Coordinate,
+    longitude: Coordinate,
+    force_zone_number: int | None = None,
+    force_zone_letter: str | None = None,
+) -> tuple[Coordinate, Coordinate, int, str | None]:
+    """Convert latitude and longitude to a UTM coordinate.
 
-     Parameters
-     ----------
-     latitude: float
-         Latitude between 80 deg S and 84 deg N, e.g. (-80.0 to 84.0)
+    Args:
+        latitude (Coordinate): Latitude between 80 degrees south and 84 degrees north.
+        longitude (Coordinate): Longitude between 180 degrees west and 180 degrees east.
+        force_zone_number (int | None, optional): UTM zone number to use. Defaults to ``None``.
+        force_zone_letter (str | None, optional): UTM zone letter to use. Defaults to ``None``.
 
-     longitude: float
-         Longitude between 180 deg W and 180 deg E, e.g. (-180.0 to 180.0).
+    Returns:
+        tuple[Coordinate, Coordinate, int, str | None]: Easting, northing, zone number, and zone
+            letter.
 
-     force_zone number: int
-         Zone Number is represented with global map numbers of an UTM Zone
-         Numbers Map. You may force conversion including one UTM Zone Number.
-         More information see utmzones [1]_
-
-    .. _[1]: http://www.jaworski.ca/utmzones.htm
+    Raises:
+        OutOfRangeError: If a coordinate or forced zone is outside its valid range.
     """
     if not in_bounds(latitude, -80.0, 84.0):
         raise OutOfRangeError("latitude out of range (must be between 80 deg S and 84 deg N)")
@@ -271,11 +264,11 @@ def from_latlon(latitude, longitude, force_zone_number=None, force_zone_letter=N
     return easting, northing, zone_number, zone_letter
 
 
-def latitude_to_zone_letter(latitude):
+def latitude_to_zone_letter(latitude: Coordinate) -> str | None:
     # If the input is a numpy array, just use the first element
     # User responsibility to make sure that all points are in one zone
-    if use_numpy and isinstance(latitude, mathlib.ndarray):
-        latitude = latitude.flat[0]
+    if isinstance(latitude, mathlib.ndarray):
+        latitude = float(latitude.flat[0])
 
     if -80 <= latitude <= 84:
         return ZONE_LETTERS[int(latitude + 80) >> 3]
@@ -283,14 +276,13 @@ def latitude_to_zone_letter(latitude):
         return None
 
 
-def latlon_to_zone_number(latitude, longitude):
+def latlon_to_zone_number(latitude: Coordinate, longitude: Coordinate) -> int:
     # If the input is a numpy array, just use the first element
     # User responsibility to make sure that all points are in one zone
-    if use_numpy:
-        if isinstance(latitude, mathlib.ndarray):
-            latitude = latitude.flat[0]
-        if isinstance(longitude, mathlib.ndarray):
-            longitude = longitude.flat[0]
+    if isinstance(latitude, mathlib.ndarray):
+        latitude = float(latitude.flat[0])
+    if isinstance(longitude, mathlib.ndarray):
+        longitude = float(longitude.flat[0])
 
     if 56 <= latitude < 64 and 3 <= longitude < 12:
         return 32
@@ -308,5 +300,5 @@ def latlon_to_zone_number(latitude, longitude):
     return int((longitude + 180) / 6) + 1
 
 
-def zone_number_to_central_longitude(zone_number):
+def zone_number_to_central_longitude(zone_number: int) -> int:
     return (zone_number - 1) * 6 - 180 + 3

@@ -11,13 +11,16 @@ unspecified because of import issues.
 
 import warnings
 from collections.abc import Hashable, Iterable, Iterator
+from typing import cast
 
 from geopandas import GeoDataFrame, GeoSeries
 from shapely.geometry.base import BaseGeometry
 from shapely.strtree import STRtree
 
+Adjacency = dict[Hashable, dict[Hashable, dict[str, float]]]
 
-def neighbors(df: GeoDataFrame, adjacency: str) -> dict:
+
+def neighbors(df: GeoDataFrame, adjacency: str) -> Adjacency:
     if adjacency not in ("rook", "queen"):
         raise ValueError(
             "The adjacency parameter provided is not supported. "
@@ -31,11 +34,11 @@ def str_tree(geometries: GeoSeries) -> STRtree:
     """Creates a STR tree for spatial indexing. Useful for spatial operations.
 
     Args:
-        geometries (shapely.geometry.BaseGeometry): A Shapely geometry object to construct the tree
+        geometries (GeoSeries): A Shapely geometry object to construct the tree
             from.
 
     Returns:
-        shapely.strtree.STRtree: A Sort-Tile-Recursive tree for spatial indexing.
+        STRtree: A Sort-Tile-Recursive tree for spatial indexing.
     """
     from shapely.strtree import STRtree
 
@@ -52,21 +55,22 @@ def neighboring_geometries(
     """Generator yielding tuples of the form (id, (ids of neighbors)).
 
     Args:
-        geometries (shapely.geometry.BaseGeometry): A Shapeley geometry object to construct the
+        geometries (GeoSeries): A Shapeley geometry object to construct the
             tree from
-        tree (shapely.strtree.STRtree, optional): A Sort-Tile-Recursive tree for spatial indexing.
-            Default is None.
+        tree (STRtree | None, optional): A Sort-Tile-Recursive tree for spatial indexing.
+            Defaults to None.
 
     Returns:
-        Generator: A generator yielding tuples of the form (id, (ids of neighbors))
+        Iterator[tuple[Hashable, tuple[Hashable, ...]]]: Geometry IDs and their neighboring IDs.
     """
     if tree is None:
         tree = str_tree(geometries)
 
     for geometry_id, geometry in geometries.items():
+        geometry = cast(BaseGeometry, geometry)
         possible = tree.query(geometry)
         actual = tuple(
-            geometries.index[p]
+            cast(Hashable, geometries.index[p])
             for p in possible
             if (not geometries.iloc[p].is_empty) and geometries.index[p] != geometry_id
         )
@@ -82,13 +86,17 @@ def intersections_with_neighbors(
         The intersections may be empty!
 
     Args:
-        geometries (shapely.geometry.BaseGeometry): A Shapeley geometry object.
+        geometries (GeoSeries): A Shapeley geometry object.
 
     Returns:
-        Generator: A generator yielding tuples of the form (id, {neighbor_id: intersection})
+        Iterator[tuple[Hashable, dict[Hashable, BaseGeometry]]]: Geometry IDs mapped to their
+            intersections with neighboring geometries.
     """
     for i, neighbors in neighboring_geometries(geometries):
-        intersections = {j: geometries[i].intersection(geometries[j]) for j in neighbors}
+        geometry = cast(BaseGeometry, geometries[i])
+        intersections = {
+            j: geometry.intersection(cast(BaseGeometry, geometries[j])) for j in neighbors
+        }
         yield (i, intersections)
 
 
@@ -98,20 +106,20 @@ def warn_for_overlaps(
     """Return A generator yielding tuples of intersection pairs.
 
     Args:
-        intersection_pairs (Iterable): An iterable of tuples of the form (id, {neighbor_id:
-            intersection})
+        intersection_pairs (Iterable[tuple[Hashable, dict[Hashable, BaseGeometry]]]): Geometry IDs
+            mapped to their intersections with neighboring geometries.
 
     Returns:
-        Generator: A generator yielding tuples of intersection pairs
+        Iterator[tuple[Hashable, dict[Hashable, BaseGeometry]]]: The original intersection pairs.
 
     Raises:
         UserWarning: if there are overlaps among the given polygons
     """
-    overlaps = set()
+    overlaps: set[frozenset[Hashable]] = set()
     for i, intersections in intersection_pairs:
         overlaps.update(
             set(
-                tuple(sorted([i, j]))
+                frozenset((i, j))
                 for j, intersection in intersections.items()
                 if intersection.area > 0
             )
@@ -121,14 +129,14 @@ def warn_for_overlaps(
         warnings.warn(f"Found overlaps among the given polygons. Indices of overlaps: {overlaps}")
 
 
-def queen(geometries: GeoSeries) -> dict[Hashable, dict[Hashable, dict[str, float]]]:
+def queen(geometries: GeoSeries) -> Adjacency:
     """Return queen adjacency dictionary for the given collection of polygons.
 
     Args:
-        geometries (shapely.geometry.BaseGeometry): A Shapeley geometry object.
+        geometries (GeoSeries): A Shapeley geometry object.
 
     Returns:
-        Dict: The queen adjacency dictionary for the given collection of polygons.
+        Adjacency: The queen adjacency dictionary for the given collection of polygons.
     """
     intersection_pairs = warn_for_overlaps(intersections_with_neighbors(geometries))
 
@@ -142,14 +150,14 @@ def queen(geometries: GeoSeries) -> dict[Hashable, dict[Hashable, dict[str, floa
     }
 
 
-def rook(geometries: GeoSeries) -> dict[Hashable, dict[Hashable, dict[str, float]]]:
+def rook(geometries: GeoSeries) -> Adjacency:
     """Return rook adjacency dictionary for the given collection of polygons.
 
     Args:
-        geometries (shapely.geometry.BaseGeometry): A Shapeley geometry object.
+        geometries (GeoSeries): A Shapeley geometry object.
 
     Returns:
-        Dict: The rook adjacency dictionary for the given collection of polygons.
+        Adjacency: The rook adjacency dictionary for the given collection of polygons.
     """
     return {
         i: {j: data for j, data in neighbors.items() if data["shared_perim"] > 0}
