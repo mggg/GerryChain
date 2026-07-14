@@ -33,7 +33,7 @@ from ..partition import Partition
 # a new partition.
 #
 class ProposalFn(Protocol):
-    def __call__(self, x: Partition, *, rng: random.Random) -> Partition: ...
+    def __call__(self, partition: Partition, *, rng: random.Random) -> Partition: ...
 
 
 def propose_any_node_flip(
@@ -46,7 +46,7 @@ def propose_any_node_flip(
 
     Args:
         partition (Partition): The current partition to propose a flip from.
-        rng (Union[random.Random, int, None], optional): Source of randomness. Pass a shared
+        rng (random.Random | int | None, optional): Source of randomness. Pass a shared
             ``Random`` for repeated standalone calls; an integer restarts the stream each call.
 
     Returns:
@@ -75,7 +75,7 @@ def propose_flip_every_district(
 
     Args:
         partition (Partition): The current partition to propose the flips from.
-        rng (Union[random.Random, int, None], optional): Source of randomness. Pass a shared
+        rng (random.Random | int | None, optional): Source of randomness. Pass a shared
             ``Random`` for repeated standalone calls; an integer restarts the stream each call.
 
     Returns:
@@ -111,7 +111,7 @@ def propose_chunk_flip(
 
     Args:
         partition (Partition): The current partition to propose a flip from.
-        rng (Union[random.Random, int, None], optional): Source of randomness. Pass a shared
+        rng (random.Random | int | None, optional): Source of randomness. Pass a shared
             ``Random`` for repeated standalone calls; an integer restarts the stream each call.
 
     Returns:
@@ -152,7 +152,7 @@ def propose_random_flip(
 
     Args:
         partition (Partition): The current partition to propose a flip from.
-        rng (Union[random.Random, int, None], optional): Source of randomness. Pass a shared
+        rng (random.Random | int | None, optional): Source of randomness. Pass a shared
             ``Random`` for repeated standalone calls; an integer restarts the stream each call.
 
     Returns:
@@ -184,7 +184,7 @@ def slow_reversible_propose_bi(
 
     Args:
         partition (Partition): The current partition to propose a flip from.
-        rng (Union[random.Random, int, None], optional): Source of randomness. Pass a shared
+        rng (random.Random | int | None, optional): Source of randomness. Pass a shared
             ``Random`` for repeated standalone calls; an integer restarts the stream each call.
 
     Returns:
@@ -223,7 +223,7 @@ def slow_reversible_propose(
 
     Args:
         partition (Partition): The current partition to propose a flip from.
-        rng (Union[random.Random, int, None], optional): Source of randomness. Pass a shared
+        rng (random.Random | int | None, optional): Source of randomness. Pass a shared
             ``Random`` for repeated standalone calls; an integer restarts the stream each call.
 
     Returns:

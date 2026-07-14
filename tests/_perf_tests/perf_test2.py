@@ -14,7 +14,6 @@ from gerrychain.proposals import build_recom_proposal_fn
 
 
 def main():
-
     graph = Graph.from_json("./PA_VTDs.json")
 
     elections = [

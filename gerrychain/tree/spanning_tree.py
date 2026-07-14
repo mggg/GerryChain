@@ -69,13 +69,10 @@ Dependencies:
 """
 
 import random
-from typing import (
-    Dict,
-    Optional,
-)
+from collections.abc import Hashable, Iterator
 
 from .._rng import make_rng
-from ..graph import Graph
+from ..graph import FrozenGraph, Graph
 
 
 """
@@ -96,7 +93,7 @@ node_ids for this function and all will be well...
 # not stable when working with NX-backed graphs in (esp. when using
 # `Partition().from_random_assignment`, and so I added this function to yield the edges in a stable
 # order for the sake of reproducibility.
-def _ordered_edge_ids(graph: Graph):
+def _ordered_edge_ids(graph: Graph | FrozenGraph) -> Iterator[Hashable]:
     """Yield stable edge ids without changing established RX trajectories."""
     if graph.is_rx_graph():
         yield from graph.edge_indices
@@ -111,8 +108,8 @@ def _ordered_edge_ids(graph: Graph):
 
 
 def random_spanning_tree(
-    graph: Graph,
-    region_surcharge: Optional[Dict] = None,
+    graph: Graph | FrozenGraph,
+    region_surcharge: dict[str, float] | None = None,
     treat_unassigned_as_single_region: bool = False,
     *,
     rng: random.Random | int | None = None,
@@ -181,7 +178,7 @@ def random_spanning_tree(
 
     Args:
         graph (Graph): The input graph to build the spanning tree from.
-        region_surcharge (Optional[Dict], optional): Dictionary mapping a node-attribute name to the
+        region_surcharge (dict | None, optional): Dictionary mapping a node-attribute name to the
             numeric surcharge added to the random weight of edges that cross a boundary for that
             attribute. Defaults to None (no surcharge - an ordinary random spanning tree).
         treat_unassigned_as_single_region (bool, optional): How to treat edges between two nodes that
@@ -189,7 +186,7 @@ def random_spanning_tree(
             surcharged, so the region-less ("unassigned") area may be split freely. When True, such
             edges are not surcharged, so the region-less area is biased to be kept whole, like any
             other region. Has no effect when ``region_surcharge`` is empty or every node has a value.
-        rng (Union[random.Random, int, None], optional): Source of randomness. Pass a shared
+        rng (random.Random | int | None, optional): Source of randomness. Pass a shared
             ``Random`` for repeated standalone calls; an integer restarts the stream each call.
 
     Returns:
@@ -268,8 +265,8 @@ def random_spanning_tree(
 
 
 def uniform_spanning_tree(
-    graph: Graph,
-    region_surcharge: dict = None,  # accepted for API compatibility, but unused
+    graph: Graph | FrozenGraph,
+    region_surcharge: dict[str, float] | None = None,  # accepted but unused
     *,
     rng: random.Random | int | None = None,
 ) -> Graph:
@@ -297,10 +294,10 @@ def uniform_spanning_tree(
 
     Args:
         graph (Graph): The graph from which to sample a spanning tree.
-        region_surcharge (Optional[Dict], optional): Not used in this function.  It exists
+        region_surcharge (dict | None, optional): Not used in this function.  It exists
             in the function signature so that all spanning tree functions will share the
             same signature.
-        rng (Union[random.Random, int, None], optional): Source of randomness. Pass a shared
+        rng (random.Random | int | None, optional): Source of randomness. Pass a shared
             ``Random`` for repeated standalone calls; an integer restarts the stream each call.
 
     Returns:
@@ -318,7 +315,7 @@ def uniform_spanning_tree(
 
     # Initiallize the tree to contain the root_node (with no parent)
     tree_nodes = set([root_id])
-    parent_node_id = {root_id: None}
+    parent_node_id: dict[Hashable, Hashable | None] = {root_id: None}
 
     for node_id in nodes:
         # Random walk (perhaps with cycles) that records the

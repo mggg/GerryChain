@@ -1,5 +1,4 @@
 import warnings
-from modulefinder import Module
 
 from ._config import runtime_checks, runtime_checks_enabled, set_runtime_checks
 from .chain import MarkovChain

@@ -318,7 +318,6 @@ def test_spanning_tree_fn_kwargs_forwarded_to_spanning_tree_fn():
 
 
 def test_region_surcharge_inside_spanning_tree_fn_kwargs_raises():
-
     nx_graph = nx.convert_node_labels_to_integers(nx.grid_2d_graph(6, 2))
     for node_id in nx_graph.nodes:
         nx_graph.nodes[node_id]["pop"] = 1

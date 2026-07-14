@@ -28,14 +28,14 @@ Dependencies:
 import itertools
 import random
 import warnings
-from collections import deque, namedtuple
-from collections.abc import Callable
+from collections import deque
+from collections.abc import Callable, Hashable, Sequence, Set as AbstractSet
 from functools import partial
 from inspect import signature
-from typing import Any, Protocol
+from typing import NamedTuple, Protocol
 
 from .._rng import make_rng
-from ..graph import Graph
+from ..graph import FrozenGraph, Graph
 from .spanning_tree import random_spanning_tree
 
 
@@ -105,6 +105,10 @@ on NetworkX (and RustworkX) from this module.
 """
 
 
+GraphLike = Graph | FrozenGraph
+SpanningTreeFn = Callable[..., Graph]
+
+
 class _PopulatedGraph:
     """
     A class representing a graph with population information.  It is used by
@@ -113,11 +117,11 @@ class _PopulatedGraph:
 
     Attributes:
         graph (Graph): The underlying graph structure.
-        subsets (Dict): A dictionary mapping nodes to their subsets.  This is used
+        subsets (dict): A dictionary mapping nodes to their subsets.  This is used
             as a way to accumulate nodes that "belong together", so it is kind of
             a scratchpad for nodes that hopefully will become a district.
-        population (Dict): A dictionary mapping nodes to the population of the node.
-        tot_pop (Union[int, float]): The total population of the graph.
+        population (dict): A dictionary mapping nodes to the population of the node.
+        tot_pop (int | float): The total population of the graph.
         ideal_pop (float): The ideal population for each district.
         epsilon (float): The tolerance for population deviation from the ideal population within
         each
@@ -126,8 +130,8 @@ class _PopulatedGraph:
 
     def __init__(
         self,
-        graph: Graph,
-        populations: dict,
+        graph: GraphLike,
+        populations: dict[Hashable, int | float],
         ideal_pop: int | float,
         epsilon: float,
     ) -> None:
@@ -135,8 +139,8 @@ class _PopulatedGraph:
 
         Args:
             graph (Graph): The underlying graph structure.
-            populations (Dict): A dictionary mapping nodes to their populations.
-            ideal_pop (Union[int, float]): The ideal population for each district.
+            populations (dict): A dictionary mapping nodes to their populations.
+            ideal_pop (int | float): The ideal population for each district.
             epsilon (float): The tolerance for population deviation as a percentage of the ideal
                 population within each district.
 
@@ -152,25 +156,10 @@ class _PopulatedGraph:
         # when a node is "contracted" - see _contract_node() below.
         self._degrees = {node_id: graph.degree(node_id) for node_id in graph.node_indices}
 
-    def __iter__(self) -> None:
-        # Note: in the pre RustworkX code, this was implemented as:
-        #
-        #     return iter(self.graph)
-        #
-        # But RustworkX does not support __iter__() - it is not iterable.
-        #
-        # The way to do this in the new RustworkX based code is to use
-        # the node_indices() method which is accessed as a property as in:
-        #
-        #     for node_id in graph.node_indices:
-        #         ...do something with the node_id
-        #
-        raise NotImplementedError("Graph is not iterable - use graph.node_indices instead")
-
-    def degree(self, node: Any) -> int:
+    def degree(self, node: Hashable) -> int:
         return self._degrees[node]
 
-    def _contract_node(self, node: Any, parent: Any) -> None:
+    def _contract_node(self, node: Hashable, parent: Hashable) -> None:
         # Merge the population and the subset of nodes from "self"
         # into the parent node, and reduce the degrees of the parent
         # indicating that the "self" node is no longer in the tree.
@@ -180,11 +169,11 @@ class _PopulatedGraph:
 
     # frm: only ever used inside this file
     #       But maybe this is intended to be used externally...
-    def has_ideal_population(self, node: Any, one_sided_cut: bool = False) -> bool:
+    def has_ideal_population(self, node: Hashable, one_sided_cut: bool = False) -> bool:
         """Checks if a merged node is within epsilon of the ideal population.
 
         Args:
-            node (Any): The node to check.
+            node (Hashable): The node to check.
             one_sided_cut (bool, optional): Whether or not we are cutting off a single district.
                 When set to False, we check if the node we are cutting and the remaining graph are
                 both within epsilon of the ideal population. When set to True, we only check if the
@@ -232,12 +221,12 @@ class _PopulatedGraph:
 #
 # Note that a _Cut object is only ever used inside this file.
 #
-_Cut = namedtuple("_Cut", "edge weight subset")
-_Cut.__new__.__defaults__ = (None, None, None)
-_Cut.__doc__ = "Represents a cut in a graph."
-_Cut.edge.__doc__ = "The edge where the cut is made. Defaults to None."
-_Cut.weight.__doc__ = "The weight assigned to the edge (if any). Defaults to None."
-_Cut.subset.__doc__ = "The (frozen) subset of nodes on one side of the cut. Defaults to None."
+class _Cut(NamedTuple):
+    """A candidate edge cut and the nodes on one side of it."""
+
+    edge: tuple[Hashable, Hashable]
+    weight: float
+    subset: frozenset[Hashable]
 
 
 # Define an interface for find_balanced_edge_cut functions
@@ -252,36 +241,15 @@ class FindBalancedEdgeCutsFn(Protocol):
         self,
         h: _PopulatedGraph,
         one_sided_cut: bool = False,
-        rootnode_choice_fn: Callable | None = None,
+        rootnode_choice_fn: Callable[[Sequence[Hashable]], Hashable] | None = None,
         *,
         rng: random.Random,
     ) -> list[_Cut]: ...
 
 
-class SpanningTreeFn(Protocol):
-    """Call signature shared by all spanning-tree functions.
-
-    A spanning-tree function (``random_spanning_tree``, ``uniform_spanning_tree``, or a custom
-    replacement) takes the graph to build a tree from and an optional ``region_surcharge``, and may
-    accept additional, function-specific keyword options. ``bipartition_tree`` forwards those extra
-    options verbatim from its ``spanning_tree_fn_kwargs`` argument, so a custom spanning-tree
-    function can expose its own knobs (e.g. ``random_spanning_tree``'s
-    ``treat_unassigned_as_single_region``) without any change to the bipartition/recom plumbing.
-    """
-
-    def __call__(
-        self,
-        graph: Graph,
-        region_surcharge: dict | None = None,
-        *,
-        rng: random.Random,
-        **kwargs: Any,
-    ) -> Graph: ...
-
-
 def _bfs_predecessors_and_successors_for_tree(
-    tree: Graph, root: Any, build_successors: bool = False
-) -> tuple[dict[Any, Any], dict[Any, list[Any]] | None]:
+    tree: GraphLike, root: Hashable, build_successors: bool = False
+) -> tuple[dict[Hashable, Hashable], dict[Hashable, list[Hashable]] | None]:
     """Return ``(pred, succ)`` parent/child maps for the tree ``graph`` rooted at ``root``.
 
     ``pred`` maps every non-root node to its parent (the neighbor on the path toward
@@ -301,18 +269,18 @@ def _bfs_predecessors_and_successors_for_tree(
 
     Args:
         tree (Graph): The tree for which to compute predecessors and successors.
-        root (Any): The root node of the tree.
+        root (Hashable): The root node of the tree.
         build_successors (bool, optional): Whether to build the successors map. Defaults to False.
 
     Returns:
-        Tuple[Dict[Any, Any], Dict[Any, List[Any]] | None]: A tuple containing the predecessors
+        tuple[dict[Hashable, Hashable], dict[Hashable, list[Hashable]] | None]: A tuple containing the predecessors
         map and the successors map (or None if not built).
     """
     # TODO: Technically, you can run this on a graph and it should be fine, but there is an implicit
     # assumption that the passed graph is a tree, and we should probably check this somewhere
     # if there is a cheap way to do it.
-    pred: dict[Any, Any] = {}
-    succ: dict[Any, list[Any]] | None = {} if build_successors else None
+    pred: dict[Hashable, Hashable] = {}
+    succ: dict[Hashable, list[Hashable]] | None = {} if build_successors else None
     seen = {root}
     queue = deque([root])
     while queue:
@@ -324,6 +292,7 @@ def _bfs_predecessors_and_successors_for_tree(
                 pred[neighbor] = node
                 queue.append(neighbor)
                 if build_successors:
+                    assert succ is not None
                     if children is None:
                         children = succ[node] = []
                     children.append(neighbor)
@@ -333,7 +302,7 @@ def _bfs_predecessors_and_successors_for_tree(
 def find_balanced_edge_cuts_contraction(
     h: _PopulatedGraph,
     one_sided_cut: bool = False,
-    rootnode_choice_fn: Callable | None = None,
+    rootnode_choice_fn: Callable[[Sequence[Hashable]], Hashable] | None = None,
     *,
     rng: random.Random | int | None = None,
 ) -> list[_Cut]:
@@ -346,13 +315,13 @@ def find_balanced_edge_cuts_contraction(
             set to False, we check if the node we are cutting and the remaining graph are both
             within epsilon of the ideal population. When set to True, we only check if the node we
             are cutting is within epsilon of the ideal population. Defaults to False.
-        rootnode_choice_fn (Optional[Callable]): The function used to select the root node_id.
+        rootnode_choice_fn (Callable | None): The function used to select the root node_id.
             Defaults to the supplied RNG's ``choice``.
-        rng (Union[random.Random, int, None], optional): Source of randomness. Pass a shared
+        rng (random.Random | int | None, optional): Source of randomness. Pass a shared
             ``Random`` for repeated standalone calls; an integer restarts the stream each call.
 
     Returns:
-        List[_Cut]: A list of balanced edge cuts.
+        list[_Cut]: A list of balanced edge cuts.
     """
     rng = make_rng(rng)
     if rootnode_choice_fn is None:
@@ -412,16 +381,18 @@ def find_balanced_edge_cuts_contraction(
     return cuts
 
 
-def _calc_pops(succ: dict[Any, list[Any]], root: Any, h: _PopulatedGraph) -> dict[Any, int | float]:
+def _calc_pops(
+    succ: dict[Hashable, list[Hashable]], root: Hashable, h: _PopulatedGraph
+) -> dict[Hashable, int | float]:
     """Return A dictionary mapping nodes to their subtree populations.
 
     Args:
-        succ (Dict): The successors of the graph.
-        root (Any): The root node of the graph.
+        succ (dict): The successors of the graph.
+        root (Hashable): The root node of the graph.
         h (_PopulatedGraph): The populated graph.
 
     Returns:
-        Dict: A dictionary mapping nodes to their subtree populations.
+        dict: A dictionary mapping nodes to their subtree populations.
     """
     # frm:  This took me a while to sort out what was going on.
     # Conceptually it is easy - given a tree anchored in a root node,
@@ -435,7 +406,7 @@ def _calc_pops(succ: dict[Any, list[Any]], root: Any, h: _PopulatedGraph) -> dic
     # For this to work, you just need to have a list of nodes with
     # their successors associated with them...
     #
-    subtree_pops: dict[Any, int | float] = {}
+    subtree_pops: dict[Hashable, int | float] = {}
     stack = deque(n for n in succ[root])
     while stack:
         next_node = stack.pop()
@@ -456,16 +427,16 @@ def _calc_pops(succ: dict[Any, list[Any]], root: Any, h: _PopulatedGraph) -> dic
     return subtree_pops
 
 
-def _nodes_in_subtree(start: Any, succ: dict[Any, list[Any]]) -> set[Any]:
+def _nodes_in_subtree(start: Hashable, succ: dict[Hashable, list[Hashable]]) -> set[Hashable]:
     """
     Collects the nodes in a subtree that are rooted in the "start" node.
 
     Args:
-        start (Any): The start node.
-        succ (Dict): The successors of the graph.
+        start (Hashable): The start node.
+        succ (dict): The successors of the graph.
 
     Returns:
-        Set: A set of nodes for a particular district (only one side of the cut).
+        set: A set of nodes for a particular district (only one side of the cut).
     """
 
     """
@@ -513,7 +484,7 @@ def _nodes_in_subtree(start: Any, succ: dict[Any, list[Any]]) -> set[Any]:
 def find_balanced_edge_cuts_memoization(
     h: _PopulatedGraph,
     one_sided_cut: bool = False,
-    rootnode_choice_fn: Callable | None = None,
+    rootnode_choice_fn: Callable[[Sequence[Hashable]], Hashable] | None = None,
     *,
     rng: random.Random | int | None = None,
 ) -> list[_Cut]:
@@ -530,13 +501,13 @@ def find_balanced_edge_cuts_memoization(
             set to False, we check if the node we are cutting and the remaining graph are both
             within epsilon of the ideal population. When set to True, we only check if the node we
             are cutting is within epsilon of the ideal population. Defaults to False.
-        rootnode_choice_fn (Optional[Callable]): The choice function used to select the root
+        rootnode_choice_fn (Callable | None): The choice function used to select the root
             node_id. Defaults to the supplied RNG's ``choice``.
-        rng (Union[random.Random, int, None], optional): Source of randomness. Pass a shared
+        rng (random.Random | int | None, optional): Source of randomness. Pass a shared
             ``Random`` for repeated standalone calls; an integer restarts the stream each call.
 
     Returns:
-        List[_Cut]: A list of balanced edge cuts.
+        list[_Cut]: A list of balanced edge cuts.
     """
 
     """
@@ -575,6 +546,7 @@ def find_balanced_edge_cuts_memoization(
     # unique parent, so `pred` is identical to the old map; the order of children within
     # succ[node] may differ, which does not affect the set of cuts found.
     pred, succ = _bfs_predecessors_and_successors_for_tree(h.graph, root, build_successors=True)
+    assert succ is not None
     total_pop = h.tot_pop
 
     # Calculate the population of each subtree in the "succ" tree
@@ -676,8 +648,9 @@ def _max_weight_choice(cut_edge_list: list[_Cut], *, rng: random.Random) -> _Cut
     make the weight assigned to a particular type of cut higher than another.
 
     Args:
-        cut_edge_list (List[_Cut]): A list of _Cut objects. Each object has an edge, a weight, and a
+        cut_edge_list (list[_Cut]): A list of _Cut objects. Each object has an edge, a weight, and a
             subset attribute.
+        rng (random.Random): Random number generator used for fallback selection.
 
     Returns:
         _Cut: The cut with the highest random weight.
@@ -702,14 +675,16 @@ def _random_choice(cut_edge_list: list[_Cut], *, rng: random.Random) -> _Cut:
     return rng.choice(cut_edge_list)
 
 
-def _power_set_sorted_by_size_then_sum(region_surcharge_dict: dict) -> list[tuple[Any, ...]]:
+def _power_set_sorted_by_size_then_sum(
+    region_surcharge_dict: dict[str, float],
+) -> list[tuple[str, ...]]:
     """Power set sorted by size then sum.
 
     This function computes the power set of regions that are listed in the region_surcharge_dict,.
     and then sorts that power set by size and then sum.
 
     Args:
-        region_surcharge_dict (Dict): Description
+        region_surcharge_dict (dict): Description
     """
     num_regions = len(region_surcharge_dict)
     power_set = [
@@ -734,7 +709,7 @@ def _power_set_sorted_by_size_then_sum(region_surcharge_dict: dict) -> list[tupl
 def _region_preferred_max_weight_choice(
     cut_edge_list: list[_Cut],
     populated_graph: _PopulatedGraph,
-    region_surcharge: dict,
+    region_surcharge: dict[str, float],
     *,
     rng: random.Random,
 ) -> _Cut:
@@ -760,9 +735,10 @@ def _region_preferred_max_weight_choice(
 
     Args:
         populated_graph (_PopulatedGraph): The populated graph.
-        region_surcharge (Dict): A dictionary of surcharges for the spanning tree algorithm.
-        cut_edge_list (List[_Cut]): A list of _Cut objects. Each object has an edge, a weight, and a
+        region_surcharge (dict): A dictionary of surcharges for the spanning tree algorithm.
+        cut_edge_list (list[_Cut]): A list of _Cut objects. Each object has an edge, a weight, and a
             subset attribute.
+        rng (random.Random): Random number generator used for selection.
 
     Returns:
         _Cut: A random _Cut from the set of possible _Cuts with the highest surcharge.
@@ -828,26 +804,26 @@ def _region_preferred_max_weight_choice(
 
 
 def _internal_bipartition_tree(
-    subgraph_to_split: Graph,
+    subgraph_to_split: GraphLike,
     pop_col: str,
     pop_target: int | float,
     epsilon: float,
     node_repeats: int = 0,
-    spanning_tree: Graph | None = None,
+    spanning_tree: GraphLike | None = None,
     spanning_tree_fn: SpanningTreeFn = random_spanning_tree,
-    region_surcharge: dict | None = None,
-    spanning_tree_fn_kwargs: dict | None = None,
-    find_balanced_edge_cuts_fn: Callable = find_balanced_edge_cuts_memoization,
+    region_surcharge: dict[str, float] | None = None,
+    spanning_tree_fn_kwargs: dict[str, object] | None = None,
+    find_balanced_edge_cuts_fn: Callable[..., list[_Cut]] = find_balanced_edge_cuts_memoization,
     one_sided_cut: bool = False,
-    rootnode_choice_fn: Callable | None = None,
+    rootnode_choice_fn: Callable[[Sequence[Hashable]], Hashable] | None = None,
     max_attempts: int = 100000,
     warn_attempts: int = 1000,
     allow_pair_reselection: bool = False,
     repeat_until_valid: bool = True,  # frm: TODO: Have this NOT default...
-    cut_choice_fn: Callable = _region_preferred_max_weight_choice,
+    cut_choice_fn: Callable[..., _Cut] = _region_preferred_max_weight_choice,
     *,
     rng: random.Random,
-) -> set[Any] | None:
+) -> tuple[int, AbstractSet[Hashable]]:
     """Find a population-balanced connected subset of nodes.
 
     The returned subset induces a connected subgraph, and its complement forms the other part of
@@ -863,21 +839,21 @@ def _internal_bipartition_tree(
     pop_target`` away from ``pop_target``.
 
     Args:
-        graph (Graph): The graph to partition.
+        subgraph_to_split (Graph | FrozenGraph): The graph to partition.
         pop_col (str): The node attribute holding the population of each node.
-        pop_target (Union[int, float]): The target population for the returned subset of nodes.
+        pop_target (int | float): The target population for the returned subset of nodes.
         epsilon (float): The allowable deviation from ``pop_target`` (as a percentage of
             ``pop_target``) for the subgraph's population.
         node_repeats (int, optional): Additional roots to try on each spanning tree before
             drawing a new tree. Defaults to 0. Positive values are useful with contraction or
             custom cut-edge finders, but not with the default memoized finder.
-        spanning_tree (Optional[Graph], optional): The spanning tree for the algorithm to use (used
+        spanning_tree (Graph | None, optional): The spanning tree for the algorithm to use (used
             when the algorithm chooses a new root and for testing).
         spanning_tree_fn (Callable, optional): The random spanning tree algorithm to use if a
             spanning tree is not provided. Defaults to `random_spanning_tree`.
-        region_surcharge (Optional[Dict], optional): A dictionary of surcharges for the spanning
+        region_surcharge (dict | None, optional): A dictionary of surcharges for the spanning
             tree algorithm. Defaults to None.
-        spanning_tree_fn_kwargs (Optional[Dict], optional): Extra keyword arguments forwarded
+        spanning_tree_fn_kwargs (dict | None, optional): Extra keyword arguments forwarded
             verbatim to ``spanning_tree_fn``. Use this to set function-specific options that are
             not named here, e.g. ``{"treat_unassigned_as_single_region": True}`` for
             ``random_spanning_tree``. Defaults to None.
@@ -888,7 +864,9 @@ def _internal_bipartition_tree(
             set to False, we check if the node we are cutting and the remaining graph are both
             within epsilon of the ideal population. When set to True, we only check if the node we
             are cutting is within epsilon of the ideal population. Defaults to False.
-        rootnode_choice_fn (Optional[Callable]): The function to make a random choice of root node
+        repeat_until_valid (bool, optional): Whether to keep drawing trees until a valid cut is
+            found. Defaults to ``True``.
+        rootnode_choice_fn (Callable | None): The function to make a random choice of root node
             for the population tree. Passed to ``find_balanced_edge_cuts_fn``. Can be substituted
             for testing. Defaults to the supplied RNG's ``choice``.
         max_attempts (int): The maximum number of attempts that should be made
@@ -906,8 +884,8 @@ def _internal_bipartition_tree(
         rng (random.Random): The RNG supplied by the owning operation.
 
     Returns:
-        Set: A subset of nodes of ``graph`` (whose induced subgraph is connected). The other part
-            of the partition is the complement of this subset.
+        tuple[int, AbstractSet[Hashable]]: The number of possible cuts and the selected connected
+            subset of nodes.
 
     Raises:
         BipartitionWarning: If a possible cut cannot be found after 1000 attempts.
@@ -1029,26 +1007,26 @@ def _internal_bipartition_tree(
 
 
 def bipartition_tree(
-    subgraph_to_split: Graph,
+    subgraph_to_split: GraphLike,
     pop_col: str,
     pop_target: int | float,
     epsilon: float,
     node_repeats: int = 0,
-    spanning_tree: Graph | None = None,
+    spanning_tree: GraphLike | None = None,
     spanning_tree_fn: SpanningTreeFn = random_spanning_tree,
-    region_surcharge: dict | None = None,
-    spanning_tree_fn_kwargs: dict | None = None,
-    find_balanced_edge_cuts_fn: Callable = find_balanced_edge_cuts_memoization,
+    region_surcharge: dict[str, float] | None = None,
+    spanning_tree_fn_kwargs: dict[str, object] | None = None,
+    find_balanced_edge_cuts_fn: Callable[..., list[_Cut]] = find_balanced_edge_cuts_memoization,
     one_sided_cut: bool = False,
-    rootnode_choice_fn: Callable | None = None,
+    rootnode_choice_fn: Callable[[Sequence[Hashable]], Hashable] | None = None,
     repeat_until_valid: bool = True,
-    max_attempts: int | None = 100000,
+    max_attempts: int = 100000,
     warn_attempts: int = 1000,
     allow_pair_reselection: bool = False,
-    cut_choice_fn: Callable = _region_preferred_max_weight_choice,
+    cut_choice_fn: Callable[..., _Cut] = _region_preferred_max_weight_choice,
     *,
     rng: random.Random | int | None = None,
-) -> set:
+) -> AbstractSet[Hashable]:
     """Find a population-balanced connected subset of nodes.
 
     The returned subset induces a connected subgraph, and its complement forms the other part of
@@ -1064,21 +1042,21 @@ def bipartition_tree(
     pop_target`` away from ``pop_target``.
 
     Args:
-        graph (Graph): The graph to partition.
+        subgraph_to_split (Graph | FrozenGraph): The graph to partition.
         pop_col (str): The node attribute holding the population of each node.
-        pop_target (Union[int, float]): The target population for the returned subset of nodes.
+        pop_target (int | float): The target population for the returned subset of nodes.
         epsilon (float): The allowable deviation from ``pop_target`` (as a percentage of
             ``pop_target``) for the subgraph's population.
         node_repeats (int, optional): Additional roots to try on each spanning tree before
             drawing a new tree. Defaults to 0. Positive values are useful with contraction or
             custom cut-edge finders, but not with the default memoized finder.
-        spanning_tree (Optional[Graph], optional): The spanning tree for the algorithm to use (used
+        spanning_tree (Graph | None, optional): The spanning tree for the algorithm to use (used
             when the algorithm chooses a new root and for testing).
         spanning_tree_fn (Callable, optional): The random spanning tree algorithm to use if a
             spanning tree is not provided. Defaults to `random_spanning_tree`.
-        region_surcharge (Optional[Dict], optional): A dictionary of surcharges for the spanning
+        region_surcharge (dict | None, optional): A dictionary of surcharges for the spanning
             tree algorithm. Defaults to None.
-        spanning_tree_fn_kwargs (Optional[Dict], optional): Extra keyword arguments forwarded verbatim
+        spanning_tree_fn_kwargs (dict | None, optional): Extra keyword arguments forwarded verbatim
             to ``spanning_tree_fn``. Use this to set function-specific options that are not named
             here, e.g. ``{"treat_unassigned_as_single_region": True}`` for ``random_spanning_tree``.
             Defaults to None.
@@ -1089,10 +1067,12 @@ def bipartition_tree(
             set to False, we check if the node we are cutting and the remaining graph are both
             within epsilon of the ideal population. When set to True, we only check if the node we
             are cutting is within epsilon of the ideal population. Defaults to False.
-        rootnode_choice_fn (Optional[Callable]): The function to make a random choice of root node
+        repeat_until_valid (bool, optional): Whether to keep drawing trees until a valid cut is
+            found. Defaults to ``True``.
+        rootnode_choice_fn (Callable | None): The function to make a random choice of root node
             for the population tree. Passed to ``find_balanced_edge_cuts_fn``. Can be substituted
             for testing. Defaults to the supplied RNG's ``choice``.
-        max_attempts (Optional[int], optional): The maximum number of attempts that should be made
+        max_attempts (int, optional): The maximum number of attempts that should be made
             to bipartition. Defaults to 100000.
         warn_attempts (int, optional): The number of attempts after which a warning is issued if a
             balanced cut cannot be found. Defaults to 1000.
@@ -1104,12 +1084,12 @@ def bipartition_tree(
             Note that this function should gracefully handle the case when the edges in the list of
             possible balanced cuts do not have edge weights - in this case, it should default to
             a uniform random choice.
-        rng (Union[random.Random, int, None], optional): Source of randomness. Pass a shared
+        rng (random.Random | int | None, optional): Source of randomness. Pass a shared
             ``Random`` for repeated standalone calls; an integer restarts the stream each call.
 
     Returns:
-        Set: A subset of nodes of ``graph`` (whose induced subgraph is connected). The other part
-            of the partition is the complement of this subset.
+        set[Hashable] | frozenset[Hashable]: A subset of nodes whose induced subgraph is connected.
+            The other part of the partition is the complement of this subset.
 
     Raises:
         BipartitionWarning: If a possible cut cannot be found after 1000 attempts.
@@ -1162,15 +1142,15 @@ def _get_possible_edge_cuts_and_populated_graph(
     # which node_ids to translate, so we leave both the selection of which edge_cut to cut and
     # the translation of node_ids to the caller.
     #
-    graph_to_split: Graph,
+    graph_to_split: GraphLike,
     pop_col: str,
     pop_target: int | float,
     epsilon: float,
     node_repeats: int = 0,
-    spanning_tree: Graph | None = None,
+    spanning_tree: GraphLike | None = None,
     spanning_tree_fn: SpanningTreeFn = random_spanning_tree,
-    find_balanced_edge_cuts_fn: Callable = find_balanced_edge_cuts_memoization,
-    rootnode_choice_fn: Callable | None = None,
+    find_balanced_edge_cuts_fn: Callable[..., list[_Cut]] = find_balanced_edge_cuts_memoization,
+    rootnode_choice_fn: Callable[[Sequence[Hashable]], Hashable] | None = None,
     repeat_until_valid: bool = True,
     warn_attempts: int = 1000,
     max_attempts: int = 100000,
@@ -1181,29 +1161,32 @@ def _get_possible_edge_cuts_and_populated_graph(
     frm: TODO: Documentation: Peter: Please review the changes I have made to the docstrings...
 
     Args:
-        graph (Graph): The input graph.
+        graph_to_split (Graph | FrozenGraph): The input graph.
         pop_col (str): The name of the column in the graph nodes that contains the population data.
-        pop_target (Union[int, float]): The target population for each subgraph.
+        pop_target (int | float): The target population for each subgraph.
         epsilon (float): The allowed deviation from the target population as a percentage of
             pop_target.
         node_repeats (int, optional): Additional roots to try on each spanning tree before
             drawing a new tree. Defaults to 0.
         repeat_until_valid (bool, optional): Whether to repeat the bipartitioning process until a
             valid bipartition is found. Defaults to True.
-        spanning_tree (Optional[Graph], optional): The spanning tree to use for bipartitioning. If
+        spanning_tree (Graph | None, optional): The spanning tree to use for bipartitioning. If
             None, a random spanning tree will be generated. Defaults to None.
         spanning_tree_fn (Callable, optional): The function to generate a spanning tree. Defaults
             to random_spanning_tree.
         find_balanced_edge_cuts_fn (Callable, optional): The function to find balanced edge cuts.
             Defaults to find_balanced_edge_cuts_memoization.
-        rootnode_choice_fn (Optional[Callable]): The function to choose a random element from a
+        rootnode_choice_fn (Callable | None): The function to choose a random element from a
             list. Defaults to the supplied RNG's ``choice``.
         max_attempts (int, optional): The maximum number of attempts to find a valid
             bipartition.  Defaults to 100000.
+        warn_attempts (int, optional): Number of attempts after which to issue a warning. Defaults
+            to 1000.
+        allow_pair_reselection (bool, optional): Whether to request a different district pair when
+            no valid cut is found. Defaults to ``False``.
 
     Returns:
-        tuple[List[tuple[Hashable, Hashable]], _PopulatedGraph]: A tuple with a list of possible
-            cuts that bipartition the tree into two subgraphs and the _PopulatedGraph the cuts were
+        tuple[list[_Cut], _PopulatedGraph]: The possible cuts and the populated graph they were
             obtained from.
 
     Raises:
@@ -1303,22 +1286,22 @@ def _get_possible_edge_cuts_and_populated_graph(
 
 
 def bipartition_tree_random_with_num_cuts(
-    subgraph_to_split: Graph,
+    subgraph_to_split: GraphLike,
     pop_col: str,
     pop_target: int | float,
     epsilon: float,
     node_repeats: int = 0,
     repeat_until_valid: bool = True,
-    spanning_tree: Graph | None = None,
+    spanning_tree: GraphLike | None = None,
     spanning_tree_fn: SpanningTreeFn = random_spanning_tree,
-    find_balanced_edge_cuts_fn: Callable = find_balanced_edge_cuts_memoization,
+    find_balanced_edge_cuts_fn: Callable[..., list[_Cut]] = find_balanced_edge_cuts_memoization,
     one_sided_cut: bool = False,
-    rootnode_choice_fn: Callable | None = None,
+    rootnode_choice_fn: Callable[[Sequence[Hashable]], Hashable] | None = None,
     max_attempts: int = 100000,
-    cut_choice_fn: Callable | None = None,
+    cut_choice_fn: Callable[..., _Cut] | None = None,
     *,
     rng: random.Random | int | None = None,
-) -> tuple[int, set[Any]]:
+) -> tuple[int, AbstractSet[Hashable]]:
     """This is like `bipartition_tree` except it always chooses a random balanced cut.
 
     This function finds a balanced 2 partition of a graph by drawing a spanning tree and finding an
@@ -1332,16 +1315,16 @@ def bipartition_tree_random_with_num_cuts(
     Args:
         subgraph_to_split (Graph): The graph to partition.
         pop_col (str): The node attribute holding the population of each node.
-        pop_target (Union[int, float]): The target population for the returned subset of nodes.
+        pop_target (int | float): The target population for the returned subset of nodes.
         epsilon (float): The allowable deviation from ``pop_target`` (as a percentage of
             ``pop_target``) for the subgraph's population.
         node_repeats (int): Additional roots to try on each spanning tree before drawing a new
             tree. Defaults to 0.
         repeat_until_valid (bool, optional): Determines whether to keep drawing spanning trees
             until a tree with a balanced cut is found. If `True`, a set of nodes will always be
-            returned; if `False`, `None` will be returned if a valid spanning tree is not found on
-            the first try. Defaults to True.
-        spanning_tree (Optional[Graph], optional): The spanning tree for the algorithm to use (used
+            returned; if `False`, an empty set is returned when no valid cut is found on the first
+            try. Defaults to True.
+        spanning_tree (Graph | None, optional): The spanning tree for the algorithm to use (used
             when the algorithm chooses a new root and for testing). Defaults to None.
         spanning_tree_fn (Callable, optional): The random spanning tree algorithm to use if a
             spanning tree is not provided. Defaults to `random_spanning_tree`.
@@ -1352,18 +1335,18 @@ def bipartition_tree_random_with_num_cuts(
             set to False, we check if the node we are cutting and the remaining graph are both
             within epsilon of the ideal population. When set to True, we only check if the node we
             are cutting is within epsilon of the ideal population. Defaults to False.
-        rootnode_choice_fn (Optional[Callable]): The random choice function. Can be substituted for
+        rootnode_choice_fn (Callable | None): The random choice function. Can be substituted for
             testing. Defaults to the supplied RNG's ``choice``.
         max_attempts (int): The max number of attempts that should be made to
             bipartition. Defaults to 100,000.
-        cut_choice_fn (Optional[Callable]): Function with signature ``(cuts, *, rng)`` used to
+        cut_choice_fn (Callable | None): Function with signature ``(cuts, *, rng)`` used to
             select a cut. Defaults to the supplied RNG's ``choice``.
-        rng (Union[random.Random, int, None], optional): Source of randomness. Pass a shared
+        rng (random.Random | int | None, optional): Source of randomness. Pass a shared
             ``Random`` for repeated standalone calls; an integer restarts the stream each call.
 
     Returns:
-        tuple[int, Set[Any]]: A subset of nodes of ``graph`` (whose induced subgraph is connected)
-            or None if a valid spanning tree is not found.
+        tuple[int, AbstractSet[Hashable]]: The number of possible cuts and the selected connected
+            subset of nodes.
     """
 
     # Note: This routine is only used in one place in the GerryChain code.
@@ -1382,7 +1365,7 @@ def bipartition_tree_random_with_num_cuts(
         node_repeats=node_repeats,
         spanning_tree=spanning_tree,
         spanning_tree_fn=spanning_tree_fn,
-        # region_surcharge: Optional[Dict] = None,
+        # region_surcharge: dict[str, float] | None = None,
         find_balanced_edge_cuts_fn=find_balanced_edge_cuts_fn,
         one_sided_cut=one_sided_cut,
         rootnode_choice_fn=rootnode_choice_fn,

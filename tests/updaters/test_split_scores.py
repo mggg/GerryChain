@@ -101,7 +101,6 @@ def split_partition(graph_with_counties):
 
 
 class TestSplittingScores:
-
     def test_not_split(self, partition):
         _ = partition.updaters["splits"](partition)
         result = partition.updaters["splits"].scores

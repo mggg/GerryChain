@@ -88,7 +88,6 @@ def rx_graph():
 
 
 def test_nx_rx_laplacian_matrix_equality(nx_graph, rx_graph):
-
     # Create Graph objects from the NX and RX graphs
     gc_nx_graph = Graph.from_networkx(nx_graph)
     gc_rx_graph = Graph.from_rustworkx(rx_graph)

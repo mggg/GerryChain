@@ -1,24 +1,25 @@
 import random
+from collections.abc import Hashable, Sequence
 from functools import partial
-from typing import Dict, Optional
+from typing import cast
 
 from numpy import linalg as LA
 
 from .._rng import make_rng
-from ..graph import Graph
+from ..graph import FrozenGraph, Graph
 from ..partition import Partition
 from ..proposals import ProposalFn
 
 
 # frm: only ever used in this file - but maybe it is used externally?
 def spectral_cut(
-    subgraph: Graph,
-    part_labels: Dict,
-    weight_type: str,
+    subgraph: Graph | FrozenGraph,
+    part_labels: Sequence[Hashable],
+    weight_type: str | None,
     lap_type: str,
     *,
     rng: random.Random | int | None = None,
-) -> Dict:
+) -> dict[Hashable, Hashable]:
     """Spectral cut function.
 
     Original templates and work from Daryl DeFord:
@@ -31,14 +32,15 @@ def spectral_cut(
 
     Args:
         subgraph (Graph): The subgraph to be partitioned.
-        part_labels (Dict): The current partition of the subgraph.
-        weight_type (str): The type of weight to be used in the Laplacian.
+        part_labels (Sequence[Hashable]): The current partition of the subgraph.
+        weight_type (str | None): The type of weight to be used in the Laplacian.
         lap_type (str): The type of Laplacian to be used.
-        rng (Union[random.Random, int, None], optional): Source of randomness. Pass a shared
+        rng (random.Random | int | None, optional): Source of randomness. Pass a shared
             ``Random`` for repeated standalone calls; an integer restarts the stream each call.
 
     Returns:
-        Dict: A dictionary assigning nodes of the subgraph to their new districts.
+        dict[Hashable, Hashable]: A dictionary assigning nodes of the subgraph to their new
+            districts.
     """
 
     rng = make_rng(rng)
@@ -104,7 +106,7 @@ def spectral_cut(
 # frm: only ever used in this file - but maybe it is used externally?
 def spectral_recom(
     partition: Partition,
-    weight_type: Optional[str] = None,
+    weight_type: str | None = None,
     lap_type: str = "normalized",
     *,
     rng: random.Random | int | None = None,
@@ -127,10 +129,10 @@ def spectral_recom(
 
     Args:
         partition (Partition): The initial partition.
-        weight_type (Optional[str], optional): The type of weight to be used in the Laplacian.
+        weight_type (str | None, optional): The type of weight to be used in the Laplacian.
             Default is None.
         lap_type (str, optional): The type of Laplacian to be used. Default is "normalized".
-        rng (Union[random.Random, int, None], optional): Source of randomness. Pass a shared
+        rng (random.Random | int | None, optional): Source of randomness. Pass a shared
             ``Random`` for repeated standalone calls; an integer restarts the stream each call.
 
     Returns:
@@ -164,8 +166,8 @@ def spectral_recom(
 
 # Define a ProposalFn version to make purpose of the function clear
 def build_spectral_recom_proposal_fn(
-    weight_type: Optional[str] = None,
+    weight_type: str | None = None,
     lap_type: str = "normalized",
 ) -> ProposalFn:
     proposal_fn = partial(spectral_recom, weight_type=weight_type, lap_type=lap_type)
-    return proposal_fn
+    return cast(ProposalFn, proposal_fn)

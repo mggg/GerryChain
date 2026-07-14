@@ -537,7 +537,6 @@ def test_bipartition_tree_threads_rng_to_custom_balanced_cut_fn(graph_with_pop_n
 
 
 def create_graphs_from_nx_edges(num_nodes, list_of_edges_nx, nx_to_rx_node_id_map):
-
     # NX is easy - just use the list of NX edges
     graph_nx = Graph.from_networkx(networkx.Graph(list_of_edges_nx))
 
@@ -698,7 +697,6 @@ def test_reversible_recom_works_as_a_proposal(partition_with_pop):
 
 
 def test_find_balanced_cuts_contraction():
-
     # frm: TODO: Testing:  Add test for RX-based Graph object
 
     tree = Graph.from_networkx(
@@ -720,7 +718,6 @@ def test_find_balanced_cuts_contraction():
 
 
 def test_no_balanced_cuts_contraction_when_one_side_okay():
-
     list_of_nodes_nx = [(0, 1), (1, 2), (2, 3), (3, 4)]
 
     # For this test we are not dealing with an RX-based Graph object
@@ -753,7 +750,6 @@ def test_no_balanced_cuts_contraction_when_one_side_okay():
 
 
 def test_find_balanced_cuts_memo():
-
     list_of_nodes_nx = [(0, 1), (1, 2), (1, 4), (3, 4), (4, 5), (3, 6), (6, 7), (6, 8)]
 
     # For this test we are not dealing with an RX-based Graph object
@@ -789,7 +785,6 @@ def test_find_balanced_cuts_memo():
 
 
 def test_no_balanced_cuts_memo_when_one_side_okay():
-
     list_of_nodes_nx = [(0, 1), (1, 2), (2, 3), (3, 4)]
 
     # For this test we are not dealing with an RX-based Graph object

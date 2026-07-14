@@ -12,14 +12,18 @@ Last Updated: 11 Jan 2024
 """
 
 from itertools import product
-from typing import Callable, Dict, Iterable, Iterator, Union
+from collections.abc import Callable, Hashable, Iterable, Iterator
+from typing import cast
 
 from gerrychain.partition import Partition
 
 from .constraints import Validator
 
 
-def all_cut_edge_flips(partition: Partition) -> Iterator[Dict]:
+Constraint = Callable[[Partition], bool]
+
+
+def all_cut_edge_flips(partition: Partition) -> Iterator[dict[Hashable, Hashable]]:
     """Generate all possible flips of cut edges in a partition without any constraints.
 
     This routine finds all edges on the boundary of districts - those that are "cut edges" where
@@ -30,7 +34,8 @@ def all_cut_edge_flips(partition: Partition) -> Iterator[Dict]:
         partition (Partition): The partition object.
 
     Returns:
-        Iterator[Dict]: An iterator that yields dictionaries representing the flipped edges.
+        Iterator[dict[Hashable, Hashable]]: An iterator that yields dictionaries representing
+            the flipped edges.
     """
 
     for edge, index in product(partition["cut_edges"], (0, 1)):
@@ -38,7 +43,7 @@ def all_cut_edge_flips(partition: Partition) -> Iterator[Dict]:
 
 
 def all_valid_states_one_flip_away(
-    partition: Partition, constraints: Union[Iterable[Callable], Callable]
+    partition: Partition, constraints: Iterable[Constraint] | Validator | Constraint
 ) -> Iterator[Partition]:
     """Generates all valid Partitions that differ from the given partition by one flip.
 
@@ -48,15 +53,17 @@ def all_valid_states_one_flip_away(
 
     Args:
         partition (Partition): The initial partition.
-        constraints (Union[Iterable[Callable], Callable]): Constraints to determine the validity of
-            a partition. It can be a single callable or an iterable of callables.
+        constraints (Iterable[Constraint] | Validator | Constraint): Constraints determining
+            whether a partition is valid.
 
     Returns:
         Iterator[Partition]: An iterator that yields all valid partitions that differ from the
             given partition by one flip.
     """
-    if callable(constraints):
+    if isinstance(constraints, Validator):
         is_valid = constraints
+    elif callable(constraints):
+        is_valid = cast(Constraint, constraints)
     else:
         is_valid = Validator(constraints)
 
@@ -67,8 +74,8 @@ def all_valid_states_one_flip_away(
 
 
 def all_valid_flips(
-    partition: Partition, constraints: Union[Iterable[Callable], Callable]
-) -> Iterator[Dict]:
+    partition: Partition, constraints: Iterable[Constraint] | Validator | Constraint
+) -> Iterator[dict[Hashable, Hashable]]:
     """Generate all valid flips for a given partition subject to the prescribed constraints.
 
     This function generates all valid flips for a given partition subject to the prescribed
@@ -76,17 +83,21 @@ def all_valid_flips(
 
     Args:
         partition (Partition): The initial partition.
-        constraints (Union[Iterable[Callable], Callable]): The constraints to be satisfied. Can be
-            a single constraint or an iterable of constraints.
+        constraints (Iterable[Constraint] | Validator | Constraint): Constraints determining
+            whether a partition is valid.
 
     Returns:
-        Iterator[Dict]: An iterator that yields dictionaries representing valid flips.
+        Iterator[dict[Hashable, Hashable]]: An iterator that yields dictionaries representing
+            valid flips.
     """
     for state in all_valid_states_one_flip_away(partition, constraints):
+        assert state.flips is not None
         yield state.flips
 
 
-def metagraph_degree(partition: Partition, constraints: Union[Iterable[Callable], Callable]) -> int:
+def metagraph_degree(
+    partition: Partition, constraints: Iterable[Constraint] | Validator | Constraint
+) -> int:
     """Calculate the degree of the node in the metagraph of the given partition.
 
     That is to say, compute how many possible valid states are reachable from the state given by
@@ -94,8 +105,8 @@ def metagraph_degree(partition: Partition, constraints: Union[Iterable[Callable]
 
     Args:
         partition (Partition): The partition object representing the current state.
-        constraints (Union[Iterable[Callable], Callable]): The constraints to be applied to the
-            partition. It can be a single constraint or an iterable of constraints.
+        constraints (Iterable[Constraint] | Validator | Constraint): Constraints determining
+            whether a partition is valid.
 
     Returns:
         int: The degree of the partition node in the metagraph.

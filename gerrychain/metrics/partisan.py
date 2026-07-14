@@ -31,7 +31,7 @@ def mean_median(election_results: ElectionResults) -> float:
     first_party = election_results.election.parties[0]
     data = election_results.percents(first_party)
 
-    return numpy.median(data) - numpy.mean(data)
+    return float(numpy.median(data) - numpy.mean(data))
 
 
 def mean_thirdian(election_results: ElectionResults) -> float:
@@ -55,7 +55,7 @@ def mean_thirdian(election_results: ElectionResults) -> float:
     thirdian_index = round(len(data) / 3)
     thirdian = sorted(data)[thirdian_index]
 
-    return thirdian - numpy.mean(data)
+    return float(thirdian - numpy.mean(data))
 
 
 def efficiency_gap(election_results: ElectionResults) -> float:
@@ -77,18 +77,18 @@ def efficiency_gap(election_results: ElectionResults) -> float:
     return numerator / total_votes
 
 
-def wasted_votes(party1_votes: int, party2_votes: int) -> tuple[int, int]:
+def wasted_votes(party1_votes: float, party2_votes: float) -> tuple[float, float]:
     """Computes the wasted votes for each party in the given race.
 
     This function computes the wasted votes for each party in the given race. It returns a tuple of
     the wasted votes for each party.
 
     Args:
-        party1_votes (int): the number of votes party1 received in the race
-        party2_votes (int): the number of votes party2 received in the race
+        party1_votes (float): the number of votes party1 received in the race
+        party2_votes (float): the number of votes party2 received in the race
 
     Returns:
-        Tuple[int, int]: a tuple of the wasted votes for each party
+        tuple[float, float]: A tuple of the wasted votes for each party.
     """
     total_votes = party1_votes + party2_votes
     if party1_votes > party2_votes:

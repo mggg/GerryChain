@@ -48,6 +48,8 @@ def test_single_metric_sb_attains_min_quickly(four_by_five_grid_for_opt):
         maximize=False,
         rng=2024,
     )
+    assert optimizer.best_part is None
+    assert optimizer.best_score is None
 
     total_steps = 200
     burst_length = 5
@@ -507,7 +509,6 @@ def test_single_metric_sb_finds_hard_max(four_by_five_grid_for_opt):
 
 
 def test_single_metric_sa_finds_hard_max(four_by_five_grid_for_opt):
-
     def opt_fn(partition):
         mx = 10
         count = sum(1 for x in partition["opt_value_sum"].values() if x == mx)
@@ -560,7 +561,6 @@ def test_single_metric_sa_finds_hard_max(four_by_five_grid_for_opt):
 
 
 def test_single_metric_tilted_runs_finds_hard_max(four_by_five_grid_for_opt):
-
     def opt_fn(partition):
         mx = 10
         count = sum(1 for x in partition["opt_value_sum"].values() if x == mx)
