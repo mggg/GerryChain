@@ -1,1 +1,3 @@
 gerrychain/_version.py export-subst
+docs/user/geometries.ipynb linguist-generated
+docs/user/recom.ipynb linguist-generated
