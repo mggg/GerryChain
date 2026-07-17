@@ -1,130 +1,292 @@
-# Migration Guide for GerryChain Alpha 
+# Migration Guide for GerryChain v1.0.0
 
-In order to improve the performance of GerryChain, the graph 
-object used when running a MarkovChain() has been changed from
-a NetworkX.Graph object to a RustworkX.PyGraph object.  The RustworkX 
-graph library is implemented in Rust and is much faster as a result.
+This guide will help you understand what you need to change in your "legacy" GerryChain code so that it can run in the v1.0.0 release.
 
-This change has also come with a significant refactoring of the
-GerryChain.Graph object turning it from a subclass of
-NetworkX.Graph to a new class that wraps either a NetworkX.Graph
-or a RustworkX.PyGraph object.  This refactoring was done to
-allow us to maintain compatibility with legacy code that depends
-on NetworkX functionality while still allowing us to take advantage
-of the performance benefits of RustworkX.
+## Table of Contents
+* [Primary Benefit of GerryChain v1.0.0 for Legacy Users](#primary-benefit-of-gerrychain-v100-for-legacy-users)
+    * [ Minimizing the Impact on Legacy Code](#minimizing-the-impact-on-legacy-code)
+        * [Creating a Graph to use in your Partition](#creating-a-graph-to-use-in-your-partition)
+        * [Changes to Accessing and Setting Node and Edge Data](#changes-to-accessing-and-setting-node-and-edge-data)
+        * [Running a MarkovChain()](#running-a-markovchain)
+        * [Analyzing Data after running a MarkovChain()](#analyzing-data-after-running-a-markovchain)
+            * [Translating node_ids and edge_ids after running a MarkovChain()](#translating-node_ids-and-edge_ids-after-running-a-markovchain)
+    * [Node IDs and Edge IDs - a deep dive...](#node-ids-and-edge-ids---a-deep-dive)
 
-## Minimizing the impact on legacy code
+## Primary Benefit of GerryChain v1.0.0 for Legacy Users
 
-In order to minimize the changes needed in legacy code, 
-several things were done:
+The primary benefit of the v1.0.0 release for legacy users 
+is a significant performance boost: about 2X on large graphs.
 
-* A new GerryChain Graph object (class) was defined that wraps
-    an underlying graph object.  This allowed us to craft the 
-    interface of the new Graph object to be as close to the 
-    same as that of the old Graph object.  Those inherited NetworkX 
-    functions that were most commonly used by legacy code
-    have been implemented as explicit functions of the new Graph
-    object, so the legacy code would run unchanged.
+This performance boost was realized by changing the underlying graph engine from NetworkX to RustworkX - RustworkX is faster.
 
-    Examples of formerly inherited functions that are 
-    now explicit functions are: degree() and neighbors()
+There are additional enhancements in v1.0.0 that 
+this guide will not address.  This guide will
+focus on what you need to do to get your legacy 
+code working.
 
-* The new GerryChain Graph object can still created from a 
-    a NetworkX Graph object in the same way as the legacy
-    code allowed. This should enable legacy users to 
-    continue to use NetworkX to build a graph and to then 
-    conveniently convert it to become a new Graph object.
-    So, if legacy code depends on any NetworkX functionality
-    in the creation of the graph to be run through a MarkovChain()
-    that has not been implemented as part of the new Graph
-    object, then the legacy code can opt to just create
-    a pure NetworkX graph and then hand it over to be 
-    converted to become a new Graph object.
+To provide some context for what follows, the 
+primary change that affects legacy code is that
+the GerryChain.Graph object is no longer a 
+subclass of NetworkX.Graph, but is instead a
+new class that wraps the underlying graph engine.
+This allowed us to provide a single interface to 
+user code that could be implemented under 
+the covers with either a NetworkX.Graph object 
+or a RustworkX.PyGraph object.
 
-* After running a MarkovChain(), legacy code often 
-    uses NetworkX functionality - to extract data from the
-    graph and/or partition or to plot the results.
-    Routines have been provided to convert the embedded
-    RustworkX.PyGraph back to become a NetworkX.Graph
-    object with all of the data preserved (the 
-    `to_networkx_graph()` function, specifically).  So 
-    if it would be convenient to continue to do post-processing 
-    analysis using NetworkX, you can conveniently get back 
-    to a NetworkX environment.
+To the extent possible the functions exposed by
+the new GerryChain.Graph object are the same as
+those exposed by the old NetworkX.Graph based
+graph object - details below.
 
-There are a very few changes to legacy code that you will
-probably need to make, but they are easy to 
-identify and fix.  We will list them later on below.
+## Minimizing the Impact on Legacy Code
 
-If you have not written any custom code (e.g.
-updaters, spanning_tree functions, tree bipartitioning 
-functions, etc.), then your migration process should 
-be something like:
+The new GerryChain.Graph object supports most
+but not all of the functionality of the old
+NetworkX based graph object, so most of the 
+code to manipulate your graph will run unchanged,
+but some changes will be required, in particular
+to set and access node and edge data.  More on 
+this below.
 
-* Create your graph.  Your existing code may "just
-    work" but if it doesn't, then you can modify your
-    code to create a pure NetworkX Graph and then 
-    convert it to be a new GerryChain Graph.
+We crafted the interface 
+of the new Graph object to be close to the same 
+as that of the old Graph object.  Functions that were
+inherited from NetworkX that were most commonly used by 
+legacy code have been implemented as explicit 
+functions of the new Graph object, so that 
+legacy code would run unchanged.
 
-* Run your MarkovChain()
+Examples of formerly inherited functions that are 
+now explicit functions are: 
 
-* After running the chain, convert the graph
-    used for the chain (a RustworkX.PyGraph object)
-    back to become a NetworkX.Graph object.
-    You may need to make some additional conversions
-    if you care about data at the individual node level,
-    but there are functions to make that straight-forward.
+* degree() 
+* neighbors()
 
-If, however, you have written custom code or if
-your post-processing analysis depends on data associated 
-with individual nodes, then there are some issues
-that you need to be aware of.
+In addition, those functions that had been added to 
+the previous GerryChain.Graph object such as:
 
-====================================================
+* Graph.from_json(...)
+* my_gc_graph.to_json(...)
+* Graph.from_file(...)
+* Graph.from_geodataframe(...)
+* etc.
 
-## Changes that most legacy code will need to make:
+have been implemented for the new Gerrychain.Graph object, 
+to avoid requiring changes in legacy code.
 
-If your code updates the data associated with nodes or
-edges then it probably contains code that looks something
+### Creating a Graph to use in your Partition
+
+There are two ways to create a graph that you can 
+use in your Partition object:
+
+1. Creating a NetworkX.Graph object, making
+whatever modifications are needed before
+running a chain, and then
+using that NetworkX.Graph object to create your
+Partition object.
+
+2. Creating a GerryChain.Graph object directly,
+and then making whatever modifications are
+needed to that graph object and then using that
+GerryChain.Graph objhect to create your Partition
+object.
+
+The advantage of #1 is that since you are 
+dealing with a NetworkX.Graph object when you
+are making modifications, your legacy code 
+(which is based on a GerryChain.Graph object
+being a subclass of a NetworkX.Graph object)
+will just work.
+
+Your code in this case would look something
+like:
+
+```python
+    import networkx
+    from gerrychain import Graph
+
+    my_networkx_graph = networkx.Graph()
+
+    ... code to create your NetworkX graph ...
+
+    ... create a Partition using my_networkx_graph ...
+```
+
+However, it is often not possible (or convenient) 
+to restructure your code to just use NetworkX
+functionality to build your graph.  For instance,
+you might have code that creates a graph from
+JSON with:
+
+```python
+    my_graph = Graph.from_json(...)
+```
+or 
+
+```python
+    my_graph = Graph.from_geodataframe(...)
+```
+In these cases, any modifications to your graph
+needed before running a chain will need to be
+done using the new GerryChain.Graph object.
+So your code would look something like:
+
+```python
+    from gerrychain import Graph
+
+    my_gerrychain_graph = \
+        Graph.from_json(...)
+
+    ... code to modify your graph ...
+
+    ... create a Partition using my_gerrychain_graph ...
+```
+
+### Changes to Accessing and Setting Node and Edge Data
+
+As stated above, the new GerryChain Graph object no longer
+inherits from NetworkX.Graph, and instead wraps
+either a NetworkX.Graph or a RustworkX.PyGraph.
+
+As a result, the way to access and set node and edge data
+has changed.
+
+If your code accesses or updates the data associated with nodes 
+then it probably contains code that looks something
 like this:
 ```python
 
-    my_graph.nodes[node_id][attribute_name] = new_value
+    my_graph.nodes[node_id]["<attr_name>"] = new_value
 
-    my_graph.edges[node1_id, node2_id][attribute_name] = new_value
+    node_attr_value = mygraph.nodes[node_id]["<attr_name>"]
 ```
-Since the new GerryChain Graph object no longer
-inherits from NetworkX.Graph, and instead wraps
-both NetworkX.Graph and RustworkX.PyGraph,
-the functionality in the above code needs to be changed to:
+In v1.0.0, this code will need to be changed to be:
+
 ```python
-    my_graph.node_data(node_id)[attribute_name] = new_value
+    my_graph.node_data(node_id)["<attr_name>"] = new_value
 
-    my_graph.edge_data(edge_id)[attribute_name] = new_value
+    node_attr_value = mygraph.node_data(node_id)["<attr_name>"]
+
 ```
 
-For nodes, the needed change is a simple change in 
+The needed change is a simple change in 
 syntax - "node_data" instead of "nodes" and 
 parentheses instead of square-brackets.
 
-For edges, however, the change is more involved 
-because in the RustworkX world, edges are identified
-by an integer ID and not a tuple of node_ids.
+If your code accesses or updates the data associated with edges 
+then it probably contains code that looks something
+like this:
 
-There is discussion below about node_ids and edge_ids
-but perhaps the easiest path forward if your code
-deals with edge data is to convert your graph
-to a pure NetworkX.Graph object which you then convert
-to be a new GerryChain Graph object.  This will allow
-you to use the exact code you already have to 
-manipulate edge data.
+```python
+    my_graph.edges[node1_id, node2_id]["<attr_name>"] = new_value
 
-====================================================
+    edge_attr_value = my_graph.edges[node1_id, node2_id]["<attr_name>"]
+```
 
-## Changes for code after running MarkovChain()
+In v1.0.0, this code will need to be changed to be:
 
-After running MarkovChain() it is time to explore
-results.  Results can be stored in several places:
+```python
+    # Get an edge_id given the two nodes in the edge
+    my_edge_id = \
+        Graph.get_edge_id_from_edge((node1_id, node2_id))
+
+    my_graph.edge_data(my_edge_id)["<attr_name>"] = new_value
+
+    edge_attr_value = my_graph.edge_data(my_edge_id)["<attr_name>"]
+```
+
+The interesting change here is that you need to obtain the 
+edge_id before calling my_graph.edge_data(edge_id).  In NetworkX
+an edge_id is a tuple of node_ids, but in RustworkX an edge_id
+is an integer.  
+
+Note that the new GerryChain.Graph object also provides a way
+to obtain the node_ids associated with an edge:
+
+```python
+    edge_node_ids = \
+        Graph.get_edge_from_edge_id(my_edge_id)
+    
+    node1_id = edge_node_ids[0]
+    node2_id = edge_node_ids[1]
+```
+
+### Running a MarkovChain()
+
+In most cases, there will be no need to change any legacy
+code in order to run a MarkovChain() in v1.0.0.
+
+The code that creates a Partition object will convert the
+graph provided into a RustworkX.PyGraph automatically and
+all of the internal code that runs when running a MarkovChain()
+has been updated to work with the RustworkX.PyGraph object.
+
+The exception to this is if the legacy code contains custom
+code for updaters.  Since any such code will operate on a
+GerryChain.Graph object that is wrapped around a RustworkX.PyGraph
+object, that code will need to be aware of the fact that 
+node_ids and edge_ids will be different from those in the 
+original NetworkX.Graph object used to create the Partition 
+object.
+
+Another concern for such code is the use of subgraphs.
+In RustworkX, the node_ids and edge_ids for a subgraph are 
+different from those of the parent graph, so again, any code
+involving subgraphs that runs when doing a MarkovChain()
+will need to be aware of the fact that node_ids and edge_ids
+are different from the parent graph.
+
+There is a more detailed discussion of node_ids and edge_ids
+later in this guide.
+
+### Analyzing Data after running a MarkovChain()
+
+After running a MarkovChain(), legacy code often 
+uses NetworkX functionality - to extract data from the
+graph and/or partition or to plot the results.
+A function has been provided to convert the embedded
+RustworkX.PyGraph back to become a NetworkX.Graph
+object with all of the data preserved (the 
+`to_networkx_graph()` function, specifically).  
+
+So, if your legacy code uses NetworkX functionality 
+to post-process the data after running a MarkovChain(),
+or perhaps to plot results,
+then you probably want to convert the graph associated
+with your Partition object to be a NetworkX.Graph 
+object:
+
+```python
+    my_gc_graph = my_partition.graph
+    
+    my_networkx_graph = \ 
+        my_gc_graph.to_networkx_graph()
+
+    ... do post-processing using my_networkx_graph ...
+```
+
+Note that all node_data and edge_data that was 
+generated during the procssing of the MarkovChain()
+is preserved in the generated NetworkX.Graph object.
+
+For many legacy projects, this is all that will be required.
+However, if your post MarkovChain() processing depends on 
+the original NetworkX.Graph node_ids and/or edge_ids, then
+you have work to do, because the node_ids and edge_ids that
+are stored in the chain are RustworkX.PyGraph node_ids and
+edge_ids.
+
+You will need to translate those node_ids and edge_ids back
+to the original NetworkX.Graph node_ids and edge_ids.  
+
+We have provided routines to help you do this translation.
+Those routines are discussed below.
+
+#### Translating node_ids and edge_ids after running a MarkovChain()
+
+After running MarkovChain() results can be 
+stored in several places:
 
 * In the data associated with the nodes or the
     edges in the graph, or
@@ -134,32 +296,14 @@ results.  Results can be stored in several places:
     district or in the attributes of the partition 
     (created by updaters).
 
-Note, however, that the graph used in the MarkovChain()
+As stated above, the graph used in the MarkovChain()
 processing is a RustworkX.PyGraph object, and 
 the node_ids and the edge_ids for that graph are NOT
 necessarily the same as the node_ids and the edge_ids (pair 
 of node_ids) that were used to build the graph.
 
-So, if your post-MarkovChain() analysis does not depend
-on node_ids or edge_ids - that is if your code 
-does not specifically reference the same node_ids
-and edge_ids used to build your graph, then you
-may not need to do anything to have your code work.
-
-Even so, it might be convenient to convert the
-RustworkX.PyGraph object back to be a NetworkX.Graph
-object, perhaps just to use existing NetworkX based
-plotting routines or other NetworkX functionality.
-
-There is a routine that will do that conversion, 
-preserving all of the node data and edge data.
-The routine is:
-```python
-    my_graph.to_networkx_graph()
-```
-If your code DOES depend on node_ids and edge_ids,
-meaning that your code uses the same node_ids and 
-edge_ids that were used to create your graph, then
+So, if your code depends on the original
+NetworkX.Graph node_ids and edge_ids,
 you will need to translate the node_ids and edge_ids
 back into what they were in the original NetworkX.Graph
 object.  There are routines to do this:
@@ -194,7 +338,7 @@ If you wish to extract NetworkX.Graph edges then you will need
 a tuple of node_ids.  First you need to get the
 RustworkX.PyGraph node_ids for an edge, given its
 RustworkX edge_id (an integer), and then you need
-to use the original_nx_node_id_for_internal_node_id()
+to use the `original_nx_node_id_for_internal_node_id()`
 routine to get the original NX node_ids for the edge.  The routines to do this are:
 ```python
     def get_edge_from_edge_id(
@@ -218,9 +362,7 @@ So, to extract the NetworkX.Graph edge for a specific edge from a new GerryChain
     my_nx_edge = (nx_node_id_1, nx_node_id_2)
 ```
 
-====================================================
-
-## Node IDs and Edge IDs
+## Node IDs and Edge IDs - a deep dive...
 
 If you have written custom code, (for instance, a 
 custom updater or a spanning function or a bipartition
@@ -234,12 +376,11 @@ an integer, and even more, the set of node_ids is always
 a sequential list of integers starting at 0 with no 
 gaps.
 
-In NetworkX an edge is a tuple of node_ids and the ID
-for an edge is also the ***same*** tuple of node_ids,
+In NetworkX an edge is a tuple of node_ids and an edge_id is the ***same*** tuple of node_ids,
 so there is no difference between an edge and an edge_id.
-However, in RustworkX edges are effectively stored in
-a list and the ID for an edge is the index in the list
-at which the edge is stored.
+However, in RustworkX while edges are still
+a tuple of node_ids, an edge_id is an integer.
+So an edge and an edge_id are different.
 
 This creates some interesting challenges...
 
@@ -250,7 +391,7 @@ node_ids to RustworkX node_ids and vice versa.
 
 So, legacy code that involves node_ids needs to be 
 aware of whether it is manipulating "original" NetworkX
-node_ids or RustworkX node_ids used during MarkovChain()
+node_ids or "internal" RustworkX node_ids used during MarkovChain()
 calculations.  This is relatively straight-forward - you
 just need to know which kind of node_id you need and 
 perhaps convert from one kind to the other.
@@ -293,6 +434,18 @@ The routines to do this are:
 
     def nodes(self) -> list[Any]:
 ```
+
+**Caution:**  In pre v1.0.0 code 
+graph.nodes[node_id] would return a
+data dict for the data associated with 
+the given node_id.  However, in v1.0.0 this
+code will interpret the node_id as an index
+into the list of nodes defined for the
+graph.  This might end up being a subtle and 
+hence hard bug to find, so please search
+your legacy code for any uses of 
+graph.nodes[node_id]...
+
 Note that node_indices and nodes return the same thing - except
 that one is a list and the other a set.  The nodes function was
 retained because legacy code uses it a lot to iterate over the graph.
