@@ -1,4 +1,5 @@
-from collections.abc import Callable, Hashable, Iterable
+from collections.abc import Callable, Hashable, Iterable, Mapping
+from numbers import Integral
 
 import numpy
 
@@ -94,6 +95,61 @@ def within_percent_of_ideal_population(
     bounds = ((1 - percent) * ideal_population, (1 + percent) * ideal_population)
 
     return Bounds(population, bounds=bounds)
+
+
+def within_percent_of_ideal_population_per_member(
+    initial_partition: Partition,
+    members_per_district: Mapping[Hashable, int],
+    percent: float = 0.01,
+    pop_key: str = "population",
+) -> Bounds[[Partition]]:
+    """Bound each district's population per member around the plan-wide ideal.
+
+    The ideal population is the total population divided by the total number of members. Member
+    counts are copied when the constraint is constructed, so they remain fixed to district labels.
+
+    Args:
+        initial_partition (Partition): Starting partition used to compute the ideal population.
+        members_per_district (Mapping[Hashable, int]): Positive member count for every district.
+        percent (float, optional): Allowed percentage deviation. Default is 1%.
+        pop_key (str, optional): The name of the population Tally. Default is ``"population"``.
+
+    Returns:
+        Bounds: A Bounds constraint on each district's population divided by its member count.
+    """
+    if not members_per_district:
+        raise ValueError("members_per_district must not be empty.")
+
+    members: dict[Hashable, int] = {}
+    for part, member_count in members_per_district.items():
+        if isinstance(member_count, bool) or not isinstance(member_count, Integral):
+            raise ValueError(
+                f"Member count for district {part!r} must be a positive integer; "
+                f"got {member_count!r}."
+            )
+        if member_count <= 0:
+            raise ValueError(
+                f"Member count for district {part!r} must be a positive integer; "
+                f"got {member_count!r}."
+            )
+        members[part] = int(member_count)
+
+    populations = initial_partition[pop_key]
+    missing = [part for part in populations if part not in members]
+    unexpected = [part for part in members if part not in populations]
+    if missing or unexpected:
+        raise ValueError(
+            "members_per_district keys must match the partition labels exactly; "
+            f"missing={missing!r}, unexpected={unexpected!r}."
+        )
+
+    def population_per_member(partition: Partition) -> Iterable[float]:
+        return [population / members[part] for part, population in partition[pop_key].items()]
+
+    ideal_population = sum(populations.values()) / sum(members.values())
+    bounds = ((1 - percent) * ideal_population, (1 + percent) * ideal_population)
+
+    return Bounds(population_per_member, bounds=bounds)
 
 
 def deviation_from_ideal(

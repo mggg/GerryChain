@@ -46,6 +46,7 @@ from .validity import (
     no_vanishing_districts,
     refuse_new_splits,
     within_percent_of_ideal_population,
+    within_percent_of_ideal_population_per_member,
 )
 
 __all__ = [
@@ -70,5 +71,6 @@ __all__ = [
     "no_vanishing_districts",
     "refuse_new_splits",
     "within_percent_of_ideal_population",
+    "within_percent_of_ideal_population_per_member",
     "Bounds",
 ]
