@@ -33,7 +33,9 @@ from ..partition import Partition
 # a new partition.
 #
 class ProposalFn(Protocol):
-    def __call__(self, partition: Partition, *, rng: random.Random) -> Partition: ...
+    """Propose a new partition, called as ``proposal_fn(partition, rng=rng)``."""
+
+    def __call__(self, partition: Partition, /, *, rng: random.Random) -> Partition: ...
 
 
 def propose_any_node_flip(

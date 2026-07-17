@@ -31,9 +31,9 @@ def main():
     )
 
     recom_chain = MarkovChain(
-        proposal=proposal,
+        proposal_fn=proposal,
         constraints=[contiguous],
-        accept=accept.always_accept,
+        acceptance_fn=accept.always_accept,
         initial_partition=initial_partition,
         total_steps=40,
         rng=2024,

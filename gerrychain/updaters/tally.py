@@ -122,17 +122,17 @@ class Tally:
             single attribute name as a string.
         alias (str | None): The aliased name of this Tally (meaning, the key corresponding to
             this Tally in the Partition's updaters dictionary)
-        dtype (Callable[[], float]): A zero-argument callable that creates the tally's initial
+        dtype_fn (Callable[[], float]): A zero-argument callable that creates the tally's initial
             value.
     """
 
-    __slots__ = ["fields", "alias", "dtype"]
+    __slots__ = ["fields", "alias", "dtype_fn"]
 
     def __init__(
         self,
         fields: str | list[str],
         alias: str | None = None,
-        dtype: Callable[[], float] = int,
+        dtype_fn: Callable[[], float] = int,
     ) -> None:
         """Initialize a Tally instance.
 
@@ -142,7 +142,7 @@ class Tally:
             alias (str | None, optional): The aliased name of this Tally (meaning, the key
                 corresponding to this Tally in the Partition's updaters dictionary). Default is
                 None.
-            dtype (Callable[[], float], optional): A zero-argument callable that creates the
+            dtype_fn (Callable[[], float], optional): A zero-argument callable that creates the
                 tally's initial value. Defaults to ``int``.
 
         """
@@ -152,7 +152,7 @@ class Tally:
             alias = fields[0]
         self.fields = fields
         self.alias = alias
-        self.dtype = dtype
+        self.dtype_fn = dtype_fn
 
     def __call__(self, partition: Partition) -> dict[Hashable, float]:
         if partition.parent is None:
@@ -170,7 +170,7 @@ class Tally:
             dict: A dictionary keyed by the parts of the partition, with values being the sum of
                 the "field" attribute of nodes in that part.
         """
-        tally = collections.defaultdict(self.dtype)
+        tally = collections.defaultdict(self.dtype_fn)
         for node, part in partition.assignment.items():
             add = self._get_tally_from_node(partition, node)
 

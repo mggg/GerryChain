@@ -96,7 +96,7 @@ from gerrychain.graph.graph import FrozenGraph, Graph
 from .._rng import make_rng
 from ..updaters import compute_edge_flows, cut_edges, flows_from_changes
 from .assignment import Assignment, get_assignment
-from .initial_partition_generators import recursive_tree_part
+from .initial_partition_generators import PartitionFn, recursive_tree_part
 from .subgraphs import SubgraphView
 
 if TYPE_CHECKING:
@@ -235,7 +235,7 @@ class Partition:
         pop_col: str,
         updaters: Mapping[str, Callable[[Partition], Any]] | None = None,
         use_default_updaters: bool = True,
-        method: Callable[..., dict[Hashable, Hashable]] = recursive_tree_part,
+        partition_fn: PartitionFn = recursive_tree_part,
         *,
         rng: random.Random | int | None = None,
     ) -> Partition:
@@ -251,10 +251,11 @@ class Partition:
             pop_col (str): The column of the graph's node data that holds the population data.
             updaters (Mapping[str, Callable] | None, optional): Dictionary of updaters.
             use_default_updaters (bool, optional): If `False`, do not include default updaters.
-            method (Callable, optional): The function to use to partition the graph into
-                ``n_parts``. The method is called with this method's normalized ``rng``, which
-                takes precedence over an ``rng`` partially bound to the ``method`` parameter.
-                Defaults to `gerrychain.tree.recursive_tree_part`.
+            partition_fn (PartitionFn, optional): The function to use to partition the graph into
+                ``n_parts``; it returns the full node-to-part assignment dict. It is called with
+                this method's normalized ``rng``, which takes precedence over an ``rng`` partially
+                bound to the ``partition_fn`` parameter. Defaults to
+                `gerrychain.partition.recursive_tree_part`.
             rng (random.Random | int | None, optional): Source of randomness. An integer
                 creates a reproducible RNG; ``None`` creates an independent RNG from system
                 entropy.
@@ -266,7 +267,7 @@ class Partition:
         total_pop = sum(graph.node_data(n)[pop_col] for n in graph)
         ideal_pop = total_pop / n_parts
 
-        assignment = method(
+        assignment = partition_fn(
             graph=graph,
             parts=range(n_parts),
             pop_target=ideal_pop,

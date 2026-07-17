@@ -31,9 +31,9 @@ ideal_population = sum(initial_partition["population"].values()) / len(initial_p
 proposal = build_recom_proposal_fn(pop_col="TOTPOP", pop_target=ideal_population, epsilon=0.01)
 
 recom_chain = MarkovChain(
-    proposal=proposal,
+    proposal_fn=proposal,
     constraints=[contiguous],
-    accept=accept.always_accept,
+    acceptance_fn=accept.always_accept,
     initial_partition=initial_partition,
     total_steps=40,
     rng=2024,

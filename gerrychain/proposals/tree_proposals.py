@@ -1,5 +1,5 @@
 import random
-from collections.abc import Callable, Hashable, Iterable, Iterator, Sequence, Set as AbstractSet
+from collections.abc import Callable, Hashable, Iterable, Iterator, Sequence
 from functools import partial
 from typing import Literal, cast
 
@@ -16,7 +16,9 @@ from ..tree import (  # epsilon_tree_bipartition,
     uniform_spanning_tree,
 )
 from ..tree.bipartition_tree import (
+    BipartitionTreeFn,
     FindBalancedEdgeCutsFn,
+    ReComBipartitionTreeFn,
     _Cut,
     _PopulatedGraph,
 )
@@ -50,9 +52,7 @@ def epsilon_tree_bipartition(
     pop_col: str,
     epsilon: float,
     node_repeats: int = 0,
-    bipartition_tree_fn: Callable[..., AbstractSet[Hashable]] = partial(
-        bipartition_tree, max_attempts=100000
-    ),
+    bipartition_tree_fn: BipartitionTreeFn = partial(bipartition_tree, max_attempts=100000),
     *,
     rng: random.Random,
 ) -> dict[Hashable, Hashable]:
@@ -68,7 +68,7 @@ def epsilon_tree_bipartition(
             of the partition can be.
         node_repeats (int, optional): Additional roots to try on each spanning tree before
             drawing a new tree. Defaults to 0.
-        bipartition_tree_fn (Callable, optional): The partition method to use. Defaults to
+        bipartition_tree_fn (BipartitionTreeFn, optional): The partition method to use. Defaults to
             ``partial(bipartition_tree, max_attempts=100000)``.
         rng (random.Random): The RNG supplied by the owning operation.
 
@@ -196,7 +196,7 @@ def recom(
     epsilon: float,
     node_repeats: int = 0,
     region_surcharge: dict[str, float] | None = None,
-    bipartition_tree_fn: Callable[..., AbstractSet[Hashable]] = bipartition_tree,
+    bipartition_tree_fn: ReComBipartitionTreeFn = bipartition_tree,
     pair_selection: PairSelection = "district_pairs",
     *,
     rng: random.Random | int | None = None,
@@ -216,13 +216,13 @@ def recom(
         from gerrychain import MarkovChain
         from gerrychain.proposals import recom
 
-        # ...define constraints, accept, partition, total_steps here...
+        # ...define constraints, acceptance_fn, partition, total_steps here...
 
         # Ideal population: pop_target = sum(partition["population"].values()) / len(partition)
 
-        proposal = partial(recom, pop_col="POP10", pop_target=pop_target, epsilon=.05)
+        proposal_fn = partial(recom, pop_col="POP10", pop_target=pop_target, epsilon=.05)
 
-        chain = MarkovChain(proposal, constraints, accept, partition, total_steps)
+        chain = MarkovChain(proposal_fn, constraints, acceptance_fn, partition, total_steps)
 
     Args:
         partition (Partition): The initial partition.
@@ -235,7 +235,8 @@ def recom(
             custom cut-edge finders, but not with the default memoized finder.
         region_surcharge (dict | None, optional): The surcharge dictionary for the graph used
             for region-aware partitioning of the grid. Default is None.
-        bipartition_tree_fn (Callable, optional): The method used for bipartitioning the tree.
+        bipartition_tree_fn (ReComBipartitionTreeFn, optional): The method used for
+            bipartitioning the tree.
             Default is `gerrychain.tree.bipartition_tree`. To configure the bipartition or
             spanning-tree step (e.g. ``max_attempts``, or ``spanning_tree_fn_kwargs`` for
             spanning-tree options), pass a pre-bound function, e.g.
@@ -259,7 +260,10 @@ def recom(
     # Bind region_surcharge onto the bipartition_tree_fn. Other bipartition / spanning-tree options
     # (e.g. spanning_tree_fn_kwargs) are configured by passing a pre-bound bipartition_tree_fn, such
     # as partial(bipartition_tree, spanning_tree_fn_kwargs={...}).
-    bipartition_tree_fn = partial(bipartition_tree_fn, region_surcharge=region_surcharge)
+    bipartition_tree_fn = cast(
+        ReComBipartitionTreeFn,
+        partial(bipartition_tree_fn, region_surcharge=region_surcharge),
+    )
 
     flips = None
 
@@ -301,7 +305,7 @@ def build_recom_proposal_fn(
     epsilon: float,
     node_repeats: int = 0,
     region_surcharge: dict[str, float] | None = None,
-    bipartition_tree_fn: Callable[..., AbstractSet[Hashable]] = bipartition_tree,
+    bipartition_tree_fn: ReComBipartitionTreeFn = bipartition_tree,
     pair_selection: PairSelection = "district_pairs",
 ) -> ProposalFn:
     proposal_fn = partial(
@@ -507,11 +511,11 @@ class ReCom:
     instead of the ``functools.partial`` incantation::
 
         from functools import partial
-        proposal = partial(recom, pop_col="TOTPOP", pop_target=ideal_pop, epsilon=0.01)
+        proposal_fn = partial(recom, pop_col="TOTPOP", pop_target=ideal_pop, epsilon=0.01)
 
     you can write::
 
-        proposal = ReCom.district_pairs_mst(pop_col="TOTPOP", pop_target=ideal_pop, epsilon=0.01)
+        proposal_fn = ReCom.district_pairs_mst(pop_col="TOTPOP", pop_target=ideal_pop, epsilon=0.01)
 
     This class is a namespace, not a type: it cannot be instantiated.
 

@@ -73,11 +73,11 @@ def test_ginglator_needs_min_perc_or_min_pop_col(four_by_five_grid_for_opt):
 
     with pytest.raises(ValueError) as gingle_err:
         _ = Gingleator(
-            proposal=proposal,
+            proposal_fn=proposal,
             constraints=[contiguous],
             initial_state=initial_partition,
             total_pop_col="population",
-            score_function=Gingleator.num_opportunity_dists,
+            score_fn=Gingleator.num_opportunity_dists,
             rng=2024,
         )
 
@@ -114,13 +114,13 @@ def test_ginglator_warns_if_min_perc_and_min_pop_col_set(four_by_five_grid_for_o
 
     with pytest.warns() as record:
         _ = Gingleator(
-            proposal=proposal,
+            proposal_fn=proposal,
             constraints=[contiguous],
             initial_state=initial_partition,
             total_pop_col="population",
             minority_pop_col="MVAP",
             minority_perc_col="m_perc",
-            score_function=Gingleator.num_opportunity_dists,
+            score_fn=Gingleator.num_opportunity_dists,
             rng=2024,
         )
 
@@ -153,12 +153,12 @@ def test_gingleator_finds_best_partition(four_by_five_grid_for_opt):
     )
 
     gingles = Gingleator(
-        proposal=proposal,
+        proposal_fn=proposal,
         constraints=[contiguous],
         initial_state=initial_partition,
         minority_pop_col="MVAP",
         total_pop_col="population",
-        score_function=Gingleator.num_opportunity_dists,
+        score_fn=Gingleator.num_opportunity_dists,
         rng=2024,
     )
 

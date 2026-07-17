@@ -276,7 +276,7 @@ def get_assignment(
 
 def level_sets(
     mapping: Mapping[NodeT, PartT],
-    container: Callable[[], set[NodeT]] = set,
+    container_fn: Callable[[], set[NodeT]] = set,
 ) -> defaultdict[PartT, set[NodeT]]:
     """Inverts a dictionary.
 
@@ -284,8 +284,8 @@ def level_sets(
 
     Args:
         mapping (dict): A dictionary to invert. Keys and values can be of any type.
-        container (Callable[[], set], optional): A zero-argument callable returning a container used
-            to collect keys that map to the same value. By default, this is ``set``.
+        container_fn (Callable[[], set], optional): A zero-argument callable returning a container
+            used to collect keys that map to the same value. By default, this is ``set``.
 
     Returns:
         DefaultDict: A dictionary where each key is a value from the original dictionary, and the
@@ -298,7 +298,7 @@ def level_sets(
         >>> level_sets({'a': 1, 'b': 1, 'c': 2})
         defaultdict(<class 'set'>, {1: {'a', 'b'}, 2: {'c'}})
     """
-    sets: defaultdict[PartT, set[NodeT]] = defaultdict(container)
+    sets: defaultdict[PartT, set[NodeT]] = defaultdict(container_fn)
     for source, target in mapping.items():
         sets[target].add(source)
     return sets
