@@ -1,3 +1,7 @@
+from collections.abc import Hashable, Iterable, Sequence
+from typing import Any, cast
+
+import networkx as nx
 import pytest
 import rustworkx as rx
 
@@ -9,13 +13,13 @@ from gerrychain import Graph
 
 
 @pytest.fixture
-def four_by_five_grid_rx(four_by_five_grid_nx):
+def four_by_five_grid_rx(four_by_five_grid_nx: "nx.Graph[int, dict[str, Any], dict[str, Any]]"):
     # Create an RX Graph object with attributes
     rx_graph = rx.networkx_converter(four_by_five_grid_nx, keep_attributes=True)
     return rx_graph
 
 
-def top_level_graph_is_properly_configured(graph):
+def top_level_graph_is_properly_configured(graph: Graph):
     # This routine tests that top-level graphs (not a subgraph)
     # are properly configured
     assert not graph._is_a_subgraph, "Top-level graph _is_a_subgraph is True"
@@ -27,7 +31,7 @@ def top_level_graph_is_properly_configured(graph):
     )
 
 
-def test_from_networkx(four_by_five_grid_nx):
+def test_from_networkx(four_by_five_grid_nx: "nx.Graph[int, dict[str, Any], dict[str, Any]]"):
     graph = Graph.from_networkx(four_by_five_grid_nx)
     assert len(graph.node_indices) == 20, f"Expected 20 nodes but got {len(graph.node_indices)}"
     assert len(graph.edge_indices) == 26, f"Expected 26 edges but got {len(graph.edge_indices)}"
@@ -37,7 +41,7 @@ def test_from_networkx(four_by_five_grid_nx):
     top_level_graph_is_properly_configured(graph)
 
 
-def test_from_rustworkx(four_by_five_grid_nx):
+def test_from_rustworkx(four_by_five_grid_nx: "nx.Graph[int, dict[str, Any], dict[str, Any]]"):
     rx_graph = rx.networkx_converter(four_by_five_grid_nx, keep_attributes=True)
     graph = Graph.from_rustworkx(rx_graph)
     assert len(graph.node_indices) == 20, f"Expected 20 nodes but got {len(graph.node_indices)}"
@@ -48,14 +52,14 @@ def test_from_rustworkx(four_by_five_grid_nx):
 
 
 @pytest.fixture
-def four_by_five_graph_nx(four_by_five_grid_nx):
+def four_by_five_graph_nx(four_by_five_grid_nx: "nx.Graph[int, dict[str, Any], dict[str, Any]]"):
     # Create an NX Graph object with attributes
     graph = Graph.from_networkx(four_by_five_grid_nx)
     return graph
 
 
 @pytest.fixture
-def four_by_five_graph_rx(four_by_five_grid_nx):
+def four_by_five_graph_rx(four_by_five_grid_nx: "nx.Graph[int, dict[str, Any], dict[str, Any]]"):
     # Create an NX Graph object with attributes
     #
     # Instead of using from_rustworkx(), we use
@@ -68,7 +72,7 @@ def four_by_five_graph_rx(four_by_five_grid_nx):
     return converted_graph
 
 
-def test_convert_from_nx_to_rx(four_by_five_graph_nx):
+def test_convert_from_nx_to_rx(four_by_five_graph_nx: Graph):
     graph = four_by_five_graph_nx  # more readable
     converted_graph = graph.convert_from_nx_to_rx()
 
@@ -116,7 +120,7 @@ def test_convert_from_nx_to_rx(four_by_five_graph_nx):
         assert converted_graph.node_data(node_id)["nx_node_id"] == nx_node_id
 
 
-def test_get_edge_from_edge_id(four_by_five_graph_nx, four_by_five_graph_rx):
+def test_get_edge_from_edge_id(four_by_five_graph_nx: Graph, four_by_five_graph_rx: Graph):
     # Test that get_edge_from_edge_id works for both NX and RX based Graph objects
 
     # NX edges and edge_ids are the same, so this first test is trivial
@@ -135,7 +139,7 @@ def test_get_edge_from_edge_id(four_by_five_graph_nx, four_by_five_graph_rx):
     assert isinstance(rx_edge[1], int), "RX edge does not exist (1)"
 
 
-def test_get_edge_id_from_edge(four_by_five_graph_nx, four_by_five_graph_rx):
+def test_get_edge_id_from_edge(four_by_five_graph_nx: Graph, four_by_five_graph_rx: Graph):
     # Test that get_edge_id_from_edge works for both NX and RX based Graph objects
 
     # NX edges and edge_ids are the same, so this first test is trivial
@@ -167,7 +171,7 @@ def test_add_edge():
     assert True
 
 
-def test_subgraph(four_by_five_graph_rx):
+def test_subgraph(four_by_five_graph_rx: Graph):
     """
     Subgraphs are one of the most dangerous areas of the code.
     In NX, subgraphs preserve node_ids - that is, the node_id
@@ -229,7 +233,9 @@ def test_subgraph(four_by_five_graph_rx):
         )
 
 
-def test_rx_neighbors_are_sorted_and_stable_across_subgraph_rebuilds(four_by_five_graph_rx):
+def test_rx_neighbors_are_sorted_and_stable_across_subgraph_rebuilds(
+    four_by_five_graph_rx: Graph,
+):
     """Regression test for a bug I encountered when updating ReCom class for 1.0.0 release.
 
     RX collects neighbors into a randomly seeded HashSet, so the raw rustworkx order varies call to
@@ -239,26 +245,30 @@ def test_rx_neighbors_are_sorted_and_stable_across_subgraph_rebuilds(four_by_fiv
     """
     parent = four_by_five_graph_rx
     for node_id in parent.node_indices:
-        assert list(parent.neighbors(node_id)) == sorted(parent.neighbors(node_id))
+        neighbors = cast("Sequence[int]", parent.neighbors(node_id))
+        assert list(neighbors) == sorted(neighbors)
 
     subgraph_node_ids = [2, 4, 5, 8, 11, 13]
     first = None
     for _ in range(20):
         subgraph = parent.subgraph(subgraph_node_ids)
-        orders = [tuple(subgraph.neighbors(n)) for n in sorted(subgraph.node_indices)]
+        subgraph_nodes = cast("set[int]", subgraph.node_indices)
+        orders = [tuple(subgraph.neighbors(n)) for n in sorted(subgraph_nodes)]
         if first is None:
             first = orders
         assert orders == first, "neighbor order changed between identical subgraph rebuilds"
 
 
-def test_num_connected_components(four_by_five_graph_nx, four_by_five_graph_rx):
+def test_num_connected_components(four_by_five_graph_nx: Graph, four_by_five_graph_rx: Graph):
     num_components_nx = four_by_five_graph_nx.num_connected_components()
     num_components_rx = four_by_five_graph_rx.num_connected_components()
     assert num_components_nx == 2, f"num_components: expected 2 but got {num_components_nx}"
     assert num_components_rx == 2, f"num_components: expected 2 but got {num_components_rx}"
 
 
-def test_subgraphs_for_connected_components(four_by_five_graph_nx, four_by_five_graph_rx):
+def test_subgraphs_for_connected_components(
+    four_by_five_graph_nx: Graph, four_by_five_graph_rx: Graph
+):
     subgraphs_nx = four_by_five_graph_nx.subgraphs_for_connected_components()
     subgraphs_rx = four_by_five_graph_rx.subgraphs_for_connected_components()
 
@@ -301,7 +311,7 @@ def test_add_data():
 ########################################################
 
 
-def graph_has_cycle(set_of_edges):
+def graph_has_cycle(set_of_edges: Iterable[tuple[Hashable, Hashable]]):
     #
     # Given a set of edges that define a graph, determine
     # if the graph has cycles.
@@ -327,22 +337,24 @@ def graph_has_cycle(set_of_edges):
     # is symetrical - edges go both ways...
     #
 
-    def add_edge(adj_matrix, s, t):
+    def add_edge(adj_matrix: list[list[int]], s: int, t: int):
         # Add an edge to an adjacency matrix
         adj_matrix[s][t] = 1
         adj_matrix[t][s] = 1  # Since it's an undirected graph
 
-    def delete_edge(adj_matrix, s, t):
+    def delete_edge(adj_matrix: list[list[int]], s: int, t: int):
         # Delete an edge from an adjacency matrix
         adj_matrix[s][t] = 0
         adj_matrix[t][s] = 0  # Since it's an undirected graph
 
-    def create_empty_adjacency_matrix(num_nodes):
+    def create_empty_adjacency_matrix(num_nodes: int):
         # create 2D array, num_nodes x num_nodes
         adj_matrix = [[0] * num_nodes for _ in range(num_nodes)]
         return adj_matrix
 
-    def create_adjacency_matrix_from_set_of_edges(set_of_edges):
+    def create_adjacency_matrix_from_set_of_edges(
+        set_of_edges: Iterable[tuple[Hashable, Hashable]],
+    ):
         # determine num_nodes
         #
         set_of_nodes = set()
@@ -376,7 +388,9 @@ def graph_has_cycle(set_of_edges):
 
         return adj_matrix
 
-    def inner_has_cycle(adj_matrix, visited, s, visit_list):
+    def inner_has_cycle(
+        adj_matrix: list[list[int]], visited: list[bool], s: int, visit_list: list[int]
+    ):
         # This routine does a depth first search looking
         # for cycles - if it encounters a node that it has
         # already seen then it returns True.
@@ -439,7 +453,7 @@ def test_graph_has_cycle():
     assert the_graph_has_a_cycle
 
 
-def test_generic_bfs_edges(four_by_five_graph_nx, four_by_five_graph_rx):
+def test_generic_bfs_edges(four_by_five_graph_nx: Graph, four_by_five_graph_rx: Graph):
     #
     # The routine, _generic_bfs_edges() returns an ordered list of
     # edges from a breadth-first traversal of a graph, starting

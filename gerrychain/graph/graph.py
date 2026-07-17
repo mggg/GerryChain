@@ -200,7 +200,9 @@ class Graph:
         return Graph.from_networkx(nx_graph)
 
     @classmethod
-    def from_rustworkx(cls, rx_graph: rustworkx.PyGraph[_NodeDataT, Any]) -> Graph:
+    def from_rustworkx(
+        cls, rx_graph: rustworkx.PyGraph[_NodeDataT, Any] | rustworkx.PyDiGraph[_NodeDataT, Any]
+    ) -> Graph:
         """Create a Graph from a RustworkX.PyGraph object.
 
         There are three primary use cases for this routine: 1) converting an NX-based Graph to be
@@ -226,7 +228,8 @@ class Graph:
         create an RX-based GerryChain graph object.
 
         Args:
-            rx_graph (rustworkx.PyGraph): a RustworkX PyGraph object
+            rx_graph (rustworkx.PyGraph | rustworkx.PyDiGraph): a RustworkX graph object. A
+                directed ``PyDiGraph`` is rejected with :class:`GraphValidationError`.
 
         Returns:
             'Graph': a GerryChain Graph object with an embedded RustworkX.PyGraph object

@@ -6,6 +6,16 @@ from gerrychain.partition import Partition
 from gerrychain.updaters import cut_edges
 
 
+def last_stats(chain: list[Partition]) -> DiversityStats:
+    """Run the chain through collect_diversity_stats and return the final stats."""
+    stats = None
+    for part, stats in collect_diversity_stats(chain):
+        assert isinstance(stats, DiversityStats)
+        assert isinstance(part, Partition)
+    assert stats is not None
+    return stats
+
+
 def test_stats_one_step():
     graph = Graph.from_networkx(networkx.complete_graph(3))
     assignment = {0: 1, 1: 1, 2: 2}
@@ -13,9 +23,7 @@ def test_stats_one_step():
 
     chain = [partition]
 
-    for part, stats in collect_diversity_stats(chain):
-        assert isinstance(stats, DiversityStats)
-        assert isinstance(part, Partition)
+    stats = last_stats(chain)
 
     assert stats.unique_plans == 1
     assert stats.unique_districts == 2
@@ -30,9 +38,7 @@ def test_stats_two_steps():
         Partition(graph, {0: 1, 1: 2, 2: 1}, {"cut_edges": cut_edges}),
     ]
 
-    for part, stats in collect_diversity_stats(chain):
-        assert isinstance(stats, DiversityStats)
-        assert isinstance(part, Partition)
+    stats = last_stats(chain)
 
     assert stats.unique_plans == 2
     assert stats.unique_districts == 4
@@ -47,9 +53,7 @@ def test_stats_two_steps_many_duplicate_districts():
         Partition(graph, {0: 1, 1: 3, 2: 2}, {"cut_edges": cut_edges}),
     ]
 
-    for part, stats in collect_diversity_stats(chain):
-        assert isinstance(stats, DiversityStats)
-        assert isinstance(part, Partition)
+    stats = last_stats(chain)
 
     assert stats.unique_plans == 1
     assert stats.unique_districts == 3
@@ -64,9 +68,7 @@ def test_stats_two_steps_duplicate_plans():
         Partition(graph, {0: 1, 1: 2, 2: 3}, {"cut_edges": cut_edges}),
     ]
 
-    for part, stats in collect_diversity_stats(chain):
-        assert isinstance(stats, DiversityStats)
-        assert isinstance(part, Partition)
+    stats = last_stats(chain)
 
     assert stats.unique_plans == 1
     assert stats.unique_districts == 3

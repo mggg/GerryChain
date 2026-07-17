@@ -1,5 +1,7 @@
 import random
 from collections import defaultdict
+from collections.abc import Callable, Hashable, Iterable
+from typing import cast
 
 import networkx
 
@@ -13,11 +15,11 @@ from gerrychain.updaters.tally import DataTally, Tally
 random.seed(2018)
 
 
-def random_assignment(graph, num_districts):
+def random_assignment(graph: Graph, num_districts: int) -> dict[Hashable, int]:
     return {node: random.choice(range(num_districts)) for node in graph.nodes}
 
 
-def test_data_tally_works_as_an_updater(three_by_three_grid):
+def test_data_tally_works_as_an_updater(three_by_three_grid: Graph):
     # Simple test that a DataTally creates an attribute on a partition.
     # Another test (below) checks that the computed "tally" is correct.
     assignment = random_assignment(three_by_three_grid, 4)
@@ -32,7 +34,7 @@ def test_data_tally_works_as_an_updater(three_by_three_grid):
     assert new_partition["tally"]
 
 
-def test_data_tally_gives_expected_value(three_by_three_grid):
+def test_data_tally_gives_expected_value(three_by_three_grid: Graph):
     # Put all but one of the nodes in part #1, and put the one "first_node"
     # into part #2.
 
@@ -60,7 +62,9 @@ def test_data_tally_gives_expected_value(three_by_three_grid):
     assert new_partition["tally"][1] == partition["tally"][1] + 1
 
 
-def test_data_tally_mimics_old_tally_usage(graph_with_random_data_factory):
+def test_data_tally_mimics_old_tally_usage(
+    graph_with_random_data_factory: Callable[[Iterable[str]], Graph],
+):
     graph = graph_with_random_data_factory(["total"])
 
     # Make a DataTally the same way you make a Tally
@@ -84,8 +88,8 @@ def test_tally_matches_naive_tally_at_every_step():
         rng=2018,
     )
 
-    def get_expected_tally(partition):
-        expected = defaultdict(int)
+    def get_expected_tally(partition: Partition) -> defaultdict[Hashable, int]:
+        expected: defaultdict[Hashable, int] = defaultdict(int)
         for node in partition.graph.nodes:
             part = partition.assignment[node]
             expected[part] += partition.graph.node_data(node)["population"]
@@ -100,7 +104,7 @@ def test_works_when_no_flips_occur():
     nx_graph = networkx.Graph([(0, 1), (1, 2), (2, 3), (3, 0)])
     graph = Graph.from_networkx(nx_graph)
     for node in graph:
-        graph.node_data(node)["pop"] = node + 1
+        graph.node_data(node)["pop"] = cast(int, node) + 1
     partition = Partition(graph, {0: 0, 1: 0, 2: 1, 3: 1}, {"pop": Tally("pop")})
 
     chain = MarkovChain(lambda p, *, rng: p.flip({}), [], always_accept, partition, 10)

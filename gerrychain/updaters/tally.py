@@ -3,7 +3,7 @@ from __future__ import annotations
 import collections
 import math
 import warnings
-from collections.abc import Callable, Hashable, Mapping
+from collections.abc import Callable, Hashable, Mapping, Sequence
 from typing import TYPE_CHECKING, cast
 
 import pandas
@@ -40,14 +40,15 @@ class DataTally:
 
     def __init__(
         self,
-        data: Mapping[Hashable, float] | pandas.Series | str,
+        data: Mapping[Hashable, float] | Sequence[float] | pandas.Series | str,
         alias: str,
     ) -> None:
         """Initialize a DataTally instance.
 
         Args:
-            data (dict | pandas.Series | str): A Dict or Series indexed by the graph's nodes,
-                or the string key for a node attribute containing the Tally's data.
+            data (dict | Sequence | pandas.Series | str): A Dict, Series, or sequence indexed by
+                the graph's nodes, or the string key for a node attribute containing the Tally's
+                data.
             alias (str): The name of the tally in the Partition's `updaters` dictionary
 
         """
@@ -104,7 +105,8 @@ class DataTally:
     def _value(self, node: Hashable) -> float:
         if isinstance(self.data, str):
             raise RuntimeError("Tally data has not been initialized")
-        return cast(float, self.data[node])
+        # A Sequence is valid data when the node ids are 0..n-1 ints; index uniformly as a Mapping.
+        return cast("Mapping[Hashable, float]", self.data)[node]
 
     def __call__(
         self, partition: Partition, previous: dict[Hashable, float] | None = None

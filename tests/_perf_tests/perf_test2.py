@@ -1,11 +1,13 @@
 import cProfile
 import sys
+from collections.abc import Callable
 
 from gerrychain import (
     Election,
     GeographicPartition,
     Graph,
     MarkovChain,
+    Partition,
     accept,
     constraints,
     updaters,
@@ -26,7 +28,9 @@ def main():
 
     # Population updater, for computing how close to equality the district
     # populations are. "TOTPOP" is the population column from our shapefile.
-    my_updaters = {"population": updaters.Tally("TOT_POP", alias="population")}
+    my_updaters: dict[str, Callable[[Partition], object]] = {
+        "population": updaters.Tally("TOT_POP", alias="population")
+    }
 
     # Election updaters, for computing election results using the vote totals
     # from our shapefile.
@@ -51,7 +55,7 @@ def main():
         node_repeats=0,
     )
 
-    def cut_edges_length(p):
+    def cut_edges_length(p: Partition) -> int:
         return len(p["cut_edges"])
 
     compactness_bound = constraints.UpperBound(

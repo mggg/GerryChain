@@ -1,5 +1,6 @@
 import math
 import random
+from typing import cast
 
 import networkx
 
@@ -36,7 +37,7 @@ def create_three_by_three_grid():
     return Graph.from_networkx(nx_graph)
 
 
-def random_assignment(graph, num_districts):
+def random_assignment(graph: Graph, num_districts: int):
     assignment = {node: random.choice(range(num_districts)) for node in graph.nodes}
     # Make sure that there are cut edges:
     while len(set(assignment.values())) == 1:
@@ -44,12 +45,12 @@ def random_assignment(graph, num_districts):
     return assignment
 
 
-def test_vote_proportion_returns_nan_if_total_votes_is_zero(three_by_three_grid):
+def test_vote_proportion_returns_nan_if_total_votes_is_zero(three_by_three_grid: Graph):
     election = Election("Mock Election", ["D", "R"], alias="election")
     graph = three_by_three_grid
 
     for node in graph.nodes:
-        for col in election.columns:
+        for col in cast("list[str]", election.node_attribute_names):
             graph.node_data(node)[col] = 0
 
     updaters = {"election": election}

@@ -88,12 +88,12 @@ compute something about a subgraph but rather to compute something about whateve
 graph is currently being dealt with.
 
 
-prr: Update that was caught when making ReCom namespace class 
+prr: Update that was caught when making ReCom namespace class
 
-It turns out that the tree must, however, use the SAME node_ids as the graph it spans: the 
+It turns out that the tree must, however, use the SAME node_ids as the graph it spans: the
 balanced-cut search returns node subsets in the tree's id space and the caller applies them to the
-input graph. Building the tree through NX and converting (convert_from_nx_to_rx) renumbers the 
-nodes in insertion order and silently relabels the tree, which is why uniform_spanning_tree 
+input graph. Building the tree through NX and converting (convert_from_nx_to_rx) renumbers the
+nodes in insertion order and silently relabels the tree, which is why uniform_spanning_tree
 constructs the RX tree directly with preserved node_ids.
 """
 

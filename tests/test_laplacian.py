@@ -1,9 +1,12 @@
 import random
+from typing import Any, cast
 
 import networkx as nx
 import numpy as np
+import numpy.typing as npt
 import pytest
 import rustworkx as rx
+import scipy.sparse
 
 from gerrychain.graph import Graph
 
@@ -23,13 +26,19 @@ to convert the NX version's result to have floating point values.
 """
 
 
-def _dense(matrix):
+def _dense(matrix: "scipy.sparse.sparray | scipy.sparse.spmatrix | npt.NDArray[Any]"):
     """Return a dense float ndarray for a scipy sparse array/matrix (or ndarray)."""
-    dense = matrix.todense() if hasattr(matrix, "todense") else matrix
+    # cast: pyright does not narrow the union on the hasattr check
+    dense = cast(scipy.sparse.csr_array, matrix).todense() if hasattr(matrix, "todense") else matrix
     return np.asarray(dense, dtype=float)
 
 
-def are_sparse_matrices_equal(sparse_matrix1, sparse_matrix2, rtol=1e-05, atol=1e-08):
+def are_sparse_matrices_equal(
+    sparse_matrix1: scipy.sparse.csr_array,
+    sparse_matrix2: scipy.sparse.csr_array,
+    rtol: float = 1e-05,
+    atol: float = 1e-08,
+):
     """
     Checks if two scipy.sparse.csr_matrix objects are equal, considering
     potential floating-point inaccuracies in the data.
@@ -71,14 +80,16 @@ def are_sparse_matrices_equal(sparse_matrix1, sparse_matrix2, rtol=1e-05, atol=1
 
 
 @pytest.fixture
-def nx_graph():
-    this_nx_graph = nx.Graph([(0, 1), (0, 2), (1, 2), (2, 3)])
+def nx_graph() -> "nx.Graph[int, dict[str, Any], dict[str, Any]]":
+    this_nx_graph: "nx.Graph[int, dict[str, Any], dict[str, Any]]" = nx.Graph(
+        [(0, 1), (0, 2), (1, 2), (2, 3)]
+    )
     return this_nx_graph
 
 
 @pytest.fixture
-def rx_graph():
-    this_rx_graph = rx.PyGraph()
+def rx_graph() -> "rx.PyGraph[dict[str, Any], dict[str, Any]]":
+    this_rx_graph: "rx.PyGraph[dict[str, Any], dict[str, Any]]" = rx.PyGraph()
     # argument to add_node_from() is the data to be associated with each node.
     # To be compatible with GerryChain, nodes need to have data values that are dictionaries
     # so we just have an empty dict for each node's data
@@ -87,7 +98,10 @@ def rx_graph():
     return this_rx_graph
 
 
-def test_nx_rx_laplacian_matrix_equality(nx_graph, rx_graph):
+def test_nx_rx_laplacian_matrix_equality(
+    nx_graph: "nx.Graph[int, dict[str, Any], dict[str, Any]]",
+    rx_graph: "rx.PyGraph[dict[str, Any], dict[str, Any]]",
+):
     # Create Graph objects from the NX and RX graphs
     gc_nx_graph = Graph.from_networkx(nx_graph)
     gc_rx_graph = Graph.from_rustworkx(rx_graph)
@@ -106,7 +120,7 @@ def test_nx_rx_laplacian_matrix_equality(nx_graph, rx_graph):
     assert matrices_are_equal
 
 
-def _random_connected_graph_edges(num_nodes: int, rng: int) -> list[tuple[int, int]]:
+def _random_connected_graph_edges(num_nodes: int, rng: random.Random) -> list[tuple[int, int]]:
     """Return a sorted edge list for a random connected graph on nodes ``0..num_nodes-1``.
 
     Builds a random spanning tree (which guarantees connectivity) by attaching each new node
@@ -158,7 +172,7 @@ def test_rx_normalized_laplacian_matches_networkx_reference(num_nodes: int, seed
     assert np.allclose(rx_result, rx_result.T)  # undirected => symmetric
 
 
-def test_normalized_laplacian_is_symmetric(rx_graph):
+def test_normalized_laplacian_is_symmetric(rx_graph: "rx.PyGraph[dict[str, Any], dict[str, Any]]"):
     gc_rx_graph = Graph.from_rustworkx(rx_graph)
     rx_result = _dense(gc_rx_graph.normalized_laplacian_matrix())
 

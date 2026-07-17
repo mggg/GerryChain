@@ -2,14 +2,14 @@ import random
 
 import numpy as np
 
-from gerrychain import Partition
+from gerrychain import Graph, Partition
 from gerrychain.constraints import contiguous
 from gerrychain.optimization import SingleMetricOptimizer
 from gerrychain.proposals import build_recom_proposal_fn
 from gerrychain.updaters import Tally
 
 
-def simple_cut_edge_count(partition):
+def simple_cut_edge_count(partition: Partition) -> int:
     return len(partition["cut_edges"])
 
 
@@ -18,7 +18,7 @@ def simple_cut_edge_count(partition):
 # ================
 
 
-def test_single_metric_sb_attains_min_quickly(four_by_five_grid_for_opt):
+def test_single_metric_sb_attains_min_quickly(four_by_five_grid_for_opt: Graph):
     initial_partition = Partition.from_random_assignment(
         graph=four_by_five_grid_for_opt,
         n_parts=4,
@@ -67,7 +67,7 @@ def test_single_metric_sb_attains_min_quickly(four_by_five_grid_for_opt):
     assert np.min(min_scores_sb) == 11
 
 
-def test_single_metric_tilted_sb_attains_min_quickly(four_by_five_grid_for_opt):
+def test_single_metric_tilted_sb_attains_min_quickly(four_by_five_grid_for_opt: Graph):
     initial_partition = Partition.from_random_assignment(
         graph=four_by_five_grid_for_opt,
         n_parts=4,
@@ -115,7 +115,7 @@ def test_single_metric_tilted_sb_attains_min_quickly(four_by_five_grid_for_opt):
     assert np.min(min_scores_sb) == 11
 
 
-def test_single_metric_variable_len_sb_attains_min_quickly(four_by_five_grid_for_opt):
+def test_single_metric_variable_len_sb_attains_min_quickly(four_by_five_grid_for_opt: Graph):
     initial_partition = Partition.from_random_assignment(
         graph=four_by_five_grid_for_opt,
         n_parts=4,
@@ -166,7 +166,7 @@ def test_single_metric_variable_len_sb_attains_min_quickly(four_by_five_grid_for
 # ========================
 
 
-def test_single_metric_sa_jumpcycle_attains_min_quickly(four_by_five_grid_for_opt):
+def test_single_metric_sa_jumpcycle_attains_min_quickly(four_by_five_grid_for_opt: Graph):
     initial_partition = Partition.from_random_assignment(
         graph=four_by_five_grid_for_opt,
         n_parts=4,
@@ -213,7 +213,7 @@ def test_single_metric_sa_jumpcycle_attains_min_quickly(four_by_five_grid_for_op
     assert np.min(min_scores_anneal) == 11
 
 
-def test_single_metric_sa_lincycle_attains_min_quickly(four_by_five_grid_for_opt):
+def test_single_metric_sa_lincycle_attains_min_quickly(four_by_five_grid_for_opt: Graph):
     initial_partition = Partition.from_random_assignment(
         graph=four_by_five_grid_for_opt,
         n_parts=4,
@@ -260,7 +260,7 @@ def test_single_metric_sa_lincycle_attains_min_quickly(four_by_five_grid_for_opt
 
 
 def test_single_metric_sa_linear_jumpcycle_attains_min_quickly(
-    four_by_five_grid_for_opt,
+    four_by_five_grid_for_opt: Graph,
 ):
     initial_partition = Partition.from_random_assignment(
         graph=four_by_five_grid_for_opt,
@@ -307,7 +307,7 @@ def test_single_metric_sa_linear_jumpcycle_attains_min_quickly(
     assert np.min(min_scores_anneal) == 11
 
 
-def test_single_metric_sa_logitcycle_attains_min_quickly(four_by_five_grid_for_opt):
+def test_single_metric_sa_logitcycle_attains_min_quickly(four_by_five_grid_for_opt: Graph):
     initial_partition = Partition.from_random_assignment(
         graph=four_by_five_grid_for_opt,
         n_parts=4,
@@ -354,7 +354,7 @@ def test_single_metric_sa_logitcycle_attains_min_quickly(four_by_five_grid_for_o
 
 
 def test_single_metric_sa_logit_jumpcycle_attains_min_quickly(
-    four_by_five_grid_for_opt,
+    four_by_five_grid_for_opt: Graph,
 ):
     initial_partition = Partition.from_random_assignment(
         graph=four_by_five_grid_for_opt,
@@ -407,7 +407,7 @@ def test_single_metric_sa_logit_jumpcycle_attains_min_quickly(
 
 
 def test_single_metric_tilted_runs_attains_min_quickly_with_p_eq_0p1(
-    four_by_five_grid_for_opt,
+    four_by_five_grid_for_opt: Graph,
 ):
     initial_partition = Partition.from_random_assignment(
         graph=four_by_five_grid_for_opt,
@@ -455,8 +455,8 @@ def test_single_metric_tilted_runs_attains_min_quickly_with_p_eq_0p1(
 # ==========================
 
 
-def test_single_metric_sb_finds_hard_max(four_by_five_grid_for_opt):
-    def opt_fn(partition):
+def test_single_metric_sb_finds_hard_max(four_by_five_grid_for_opt: Graph):
+    def opt_fn(partition: Partition) -> int:
         mx = 10
         count = sum(1 for x in partition["opt_value_sum"].values() if x == mx)
         return count
@@ -508,8 +508,8 @@ def test_single_metric_sb_finds_hard_max(four_by_five_grid_for_opt):
     assert np.max(max_scores_sb) == 2
 
 
-def test_single_metric_sa_finds_hard_max(four_by_five_grid_for_opt):
-    def opt_fn(partition):
+def test_single_metric_sa_finds_hard_max(four_by_five_grid_for_opt: Graph):
+    def opt_fn(partition: Partition) -> int:
         mx = 10
         count = sum(1 for x in partition["opt_value_sum"].values() if x == mx)
         return count
@@ -560,8 +560,8 @@ def test_single_metric_sa_finds_hard_max(four_by_five_grid_for_opt):
     assert np.max(max_scores_anneal) == 2
 
 
-def test_single_metric_tilted_runs_finds_hard_max(four_by_five_grid_for_opt):
-    def opt_fn(partition):
+def test_single_metric_tilted_runs_finds_hard_max(four_by_five_grid_for_opt: Graph):
+    def opt_fn(partition: Partition) -> int:
         mx = 10
         count = sum(1 for x in partition["opt_value_sum"].values() if x == mx)
         return count

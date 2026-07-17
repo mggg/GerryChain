@@ -12,8 +12,12 @@ Two guarantees are pinned here:
 import os
 import subprocess
 import sys
+from collections.abc import Hashable, Sequence
+from typing import Any
 
 import pytest
+
+from gerrychain import Graph
 
 # Run in a subprocess so each execution gets its own string-hash seed. String part labels on
 # purpose: they exercise the sorted() set-to-sequence conversions in recom and the two
@@ -147,7 +151,7 @@ print(hashlib.sha256(json.dumps(assignment).encode()).hexdigest())
 """
 
 
-def run_with_hashseed(hashseed, script=HASHSEED_SCRIPT):
+def run_with_hashseed(hashseed: str | None, script: str = HASHSEED_SCRIPT) -> str:
     env = dict(os.environ)
     if hashseed is None:
         env.pop("PYTHONHASHSEED", None)
@@ -186,7 +190,9 @@ def test_random_assignment_method_receives_original_graph_and_node_labels():
     graph = Graph.from_networkx(nx_graph)
     received = {}
 
-    def partition_fn(*, graph, parts, **kwargs):
+    def partition_fn(
+        *, graph: Graph, parts: Sequence[Hashable], **kwargs: Any
+    ) -> dict[Hashable, Hashable]:
         received["graph"] = graph
         received["nodes"] = graph.nodes
         part_labels = list(parts)
@@ -204,7 +210,7 @@ def test_random_assignment_method_receives_original_graph_and_node_labels():
     assert received == {"graph": graph, "nodes": ["node-c", "node-a", "node-b", "node-d"]}
 
 
-def test_repeatable(three_by_three_grid):
+def test_repeatable(three_by_three_grid: Graph):
     from gerrychain import (
         MarkovChain,
         Partition,
@@ -255,7 +261,7 @@ def test_repeatable(three_by_three_grid):
     assert flips == expected_flips
 
 
-def test_ust_recom_is_repeatable_in_process(three_by_three_grid):
+def test_ust_recom_is_repeatable_in_process(three_by_three_grid: Graph):
     import random
 
     from gerrychain import Partition, proposals, updaters
