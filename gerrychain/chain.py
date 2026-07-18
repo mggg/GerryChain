@@ -28,6 +28,7 @@ Last Updated: 14 Jul 2026
 from __future__ import annotations
 
 import random
+import numpy
 from collections.abc import Callable, Iterable, Iterator
 from typing import Any, cast
 
@@ -78,8 +79,21 @@ class MarkovChain:
     ``break``.
     """
 
-    # Class-level default so __setattr__ can read the flag before __init__ assigns anything.
-    __locked = False
+    # "constraints" has no slot: it is a property whose storage is the "_validator" slot, and a
+    # slot would collide with the property (both are class attributes of the same name).
+    # Private names in __slots__ are mangled like any other class-body identifier.
+    __slots__ = (
+        "proposal_fn",
+        "acceptance_fn",
+        "initial_partition",
+        "total_steps",
+        "rng",
+        "_validator",
+        "_added_updaters",
+        "state",
+        "counter",
+        "__locked",
+    )
 
     def __init__(
         self,
@@ -118,6 +132,7 @@ class MarkovChain:
             ValueError: If an initial_partition is given and is not valid according to the
                 given constraints.
         """
+        self.__locked = False
         self._added_updaters: dict[str, Callable[[Partition], Any]] = {}
         self.proposal_fn = proposal_fn
         self.acceptance_fn = acceptance_fn
@@ -191,6 +206,27 @@ class MarkovChain:
             self._assert_initial_partition_valid(validator)
         self._validator = validator
 
+    def add_constraints(self, constraints: Iterable[ConstraintFn]) -> None:
+        """Add multiple constraints to the chain's existing constraints.
+
+        If an initial partition is set, it is checked against the new constraints immediately;
+        otherwise the check is deferred to :meth:`check_valid`.
+
+        Args:
+            constraints (Iterable[ConstraintFn]): New constraints to add to the Markov chain.
+
+        Raises:
+            AttributeError: If a run is in progress.
+            ValueError: If the initial partition fails any of the new constraints.
+        """
+        if self.__locked:
+            raise AttributeError("Cannot add constraints to a locked MarkovChain instance.")
+
+        validator = Validator([*self._validator.constraints, *constraints])
+        if self.initial_partition is not None:
+            self._assert_initial_partition_valid(validator)
+        self._validator = validator
+
     def add_updater(self, name: str, updater: Callable[[Partition], Any]) -> None:
         """Add a named updater to the chain's partitions.
 
@@ -211,6 +247,24 @@ class MarkovChain:
         self._added_updaters[name] = updater
         if self.initial_partition is not None:
             self.initial_partition.updaters[name] = updater
+
+    def add_updaters(self, updaters: dict[str, Callable[[Partition], Any]]) -> None:
+        """Add multiple named updaters to the chain's partitions.
+
+        The updaters are added to the initial partition (immediately if one is set, otherwise as
+        soon as one is assigned) and are inherited by every partition the chain generates. Their
+        values are accessed as ``partition[name]``.
+
+        Args:
+            updaters (dict[str, Callable[[Partition], Any]]): A dictionary of updater functions,
+                where keys are the names under which the updater's values are accessed.
+        """
+        if self.__locked:
+            raise AttributeError("Cannot add updaters to a locked MarkovChain instance.")
+
+        self._added_updaters.update(updaters)
+        if self.initial_partition is not None:
+            self.initial_partition.updaters.update(updaters)
 
     def _assert_initial_partition_valid(self, validator: Validator) -> None:
         """Raise ValueError naming the failed constraints if initial_partition fails them."""
@@ -272,9 +326,12 @@ class MarkovChain:
 
         Raises:
             AttributeError: If the Markov chain is locked and an attempt is made to set an
-                attribute.
+                attribute. Unknown attribute names are rejected by ``object.__setattr__``
+                itself, since ``__slots__`` leaves instances without a ``__dict__``.
         """
-        if self.__locked and name in (
+
+        # The getattr default covers the first assignment in __init__, before the flag exists.
+        if getattr(self, "_MarkovChain__locked", False) and name in (
             "proposal_fn",
             "constraints",
             "acceptance_fn",
@@ -283,6 +340,13 @@ class MarkovChain:
             "rng",
         ):
             raise AttributeError(f"Cannot set attribute '{name}' on a locked MarkovChain instance.")
+
+        if name == "rng":
+            if not isinstance(value, (random.Random, int, numpy.integer)) and value is not None:
+                raise TypeError(
+                    f"rng must be a random.Random instance, an int, or None; got {type(value)}"
+                )
+            value = make_rng(value)
 
         super().__setattr__(name, value)
 
