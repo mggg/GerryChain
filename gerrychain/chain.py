@@ -28,8 +28,8 @@ Last Updated: 14 Jul 2026
 from __future__ import annotations
 
 import random
-from collections.abc import Iterable, Iterator
-from typing import cast
+from collections.abc import Callable, Iterable, Iterator
+from typing import Any, cast
 
 from gerrychain._rng import make_rng
 from gerrychain.accept import AcceptFn, always_accept
@@ -66,6 +66,9 @@ class MarkovChain:
         chain.constraints = [contiguous]
         for state in chain:
             ...
+
+    Constraints and updaters can also be added one at a time, in any order relative to the other
+    configuration, with :meth:`add_constraint` and :meth:`add_updater`.
 
     ``accept`` defaults to :func:`~gerrychain.accept.always_accept` and ``constraints`` defaults to
     no constraints; ``proposal``, ``initial_partition``, and ``total_steps`` must be set before
@@ -115,6 +118,7 @@ class MarkovChain:
             ValueError: If an initial_partition is given and is not valid according to the
                 given constraints.
         """
+        self._added_updaters: dict[str, Callable[[Partition], Any]] = {}
         self.proposal = proposal
         self.accept = accept
         self.total_steps = total_steps
@@ -186,6 +190,27 @@ class MarkovChain:
         if self.initial_partition is not None:
             self._assert_initial_partition_valid(validator)
         self._validator = validator
+
+    def add_updater(self, name: str, updater: Callable[[Partition], Any]) -> None:
+        """Add a named updater to the chain's partitions.
+
+        The updater is added to the initial partition (immediately if one is set, otherwise as
+        soon as one is assigned) and is inherited by every partition the chain generates. Its
+        value is accessed as ``partition[name]``.
+
+        Args:
+            name (str): Name under which the updater's value is accessed.
+            updater (Callable[[Partition], Any]): The updater function.
+
+        Raises:
+            AttributeError: If a run is in progress.
+        """
+        if self.__locked:
+            raise AttributeError("Cannot add updater to a locked MarkovChain instance.")
+
+        self._added_updaters[name] = updater
+        if self.initial_partition is not None:
+            self.initial_partition.updaters[name] = updater
 
     def _assert_initial_partition_valid(self, validator: Validator) -> None:
         """Raise ValueError naming the failed constraints if initial_partition fails them."""
@@ -260,6 +285,12 @@ class MarkovChain:
             raise AttributeError(f"Cannot set attribute '{name}' on a locked MarkovChain instance.")
 
         super().__setattr__(name, value)
+
+        # Updaters added before an initial partition existed are applied once one is assigned.
+        if name == "initial_partition" and value is not None:
+            added = getattr(self, "_added_updaters", None)
+            if added:
+                cast(Partition, value).updaters.update(added)
 
     def __iter__(self) -> Iterator[Partition]:
         """Starts a fresh run of the Markov chain.

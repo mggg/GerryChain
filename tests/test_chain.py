@@ -105,6 +105,64 @@ def test_iter_rejects_invalid_initial_partition():
         next(iter(chain))
 
 
+def test_add_constraint_defers_check_until_iteration():
+    def never_valid(state):
+        return False
+
+    chain = MarkovChain(proposal=mock_proposal, accept=mock_accept, total_steps=3)
+    chain.add_constraint(never_valid)  # no initial_partition yet: recorded, not checked
+    chain.initial_partition = MockState()
+    with pytest.raises(ValueError, match="never_valid"):
+        next(iter(chain))
+
+
+def test_add_constraint_validates_immediately_with_initial_partition():
+    def never_valid(state):
+        return False
+
+    chain = MarkovChain(
+        proposal=mock_proposal,
+        accept=mock_accept,
+        initial_partition=MockState(),
+        total_steps=3,
+    )
+    with pytest.raises(ValueError, match="never_valid"):
+        chain.add_constraint(never_valid)
+    # The failing constraint was not retained.
+    assert never_valid not in chain.constraints.constraints
+
+
+def test_add_updater_applies_before_or_after_initial_partition():
+    class StateWithUpdaters(MockState):
+        def __init__(self):
+            self.updaters = {}
+
+    def answer(partition):
+        return 42
+
+    def zero(partition):
+        return 0
+
+    chain = MarkovChain(proposal=mock_proposal, accept=mock_accept, total_steps=3)
+    chain.add_updater("answer", answer)  # before any initial_partition: applied on assignment
+    initial = StateWithUpdaters()
+    chain.initial_partition = initial
+    assert initial.updaters["answer"] is answer
+
+    chain.add_updater("zero", zero)  # after: applied immediately
+    assert initial.updaters["zero"] is zero
+
+
+def test_add_constraint_and_add_updater_rejected_while_locked():
+    chain = MarkovChain(mock_proposal, mock_is_valid, mock_accept, MockState(), total_steps=3)
+    it = iter(chain)
+    next(it)
+    with pytest.raises(AttributeError, match="locked"):
+        chain.add_constraint(mock_is_valid)
+    with pytest.raises(AttributeError, match="locked"):
+        chain.add_updater("x", lambda partition: None)
+
+
 def test_constraints_setter_still_validates_eagerly():
     chain = MarkovChain(
         proposal=mock_proposal,
