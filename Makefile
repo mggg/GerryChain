@@ -7,6 +7,8 @@ TEST_PATHS ?= tests
 TYPECHECK_PATHS ?= $(PKG) $(TEST_PATHS)
 DOCS_PY_PATHS ?= docs/conf.py docs/_clear_notebook_outputs.py \
 	docs/_refresh_notebooks.py docs/generate_recom_assets.py
+# Tutorial notebooks. Ruff formats the code cells; it ignores the Markdown files alongside them.
+NOTEBOOK_PATHS ?= docs/user
 DOCS_CACHE_FLAGS = $(if $(filter 1,$(FRESH)),--force)
 export UV_MANAGED_PYTHON = 1
 
@@ -81,7 +83,7 @@ type-check:
 
 format:
 	@echo "Formatting codebase with Ruff..."
-	uv run ruff format $(PKG) $(TEST_PATHS) $(DOCS_PY_PATHS)
+	uv run ruff format $(PKG) $(TEST_PATHS) $(DOCS_PY_PATHS) $(NOTEBOOK_PATHS)
 
 lint:
 	@echo "Running Ruff..."

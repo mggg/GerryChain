@@ -144,9 +144,7 @@ def recom_assignments(
             "cut_edges": updaters.cut_edges,
         }
     )
-    pop_target = sum(chain.initial_partition["population"].values()) / len(
-        chain.initial_partition
-    )
+    pop_target = sum(chain.initial_partition["population"].values()) / len(chain.initial_partition)
     chain.proposal_fn = ReCom.district_pairs_mst(
         pop_col="TOTPOP",
         pop_target=pop_target,
