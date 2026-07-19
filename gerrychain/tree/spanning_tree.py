@@ -70,6 +70,9 @@ Dependencies:
 
 import random
 from collections.abc import Hashable, Iterator
+from typing import cast
+
+import rustworkx
 
 from .._rng import make_rng
 from ..graph import FrozenGraph, Graph
@@ -84,8 +87,14 @@ the context of the parent.  Stated differently, a spanning tree is not used to
 compute something about a subgraph but rather to compute something about whatever
 graph is currently being dealt with.
 
-In short, I am assuming that we can ignore the fact that RX subgraphs have different
-node_ids for this function and all will be well...
+
+prr: Update that was caught when making ReCom namespace class 
+
+It turns out that the tree must, however, use the SAME node_ids as the graph it spans: the 
+balanced-cut search returns node subsets in the tree's id space and the caller applies them to the
+input graph. Building the tree through NX and converting (convert_from_nx_to_rx) renumbers the 
+nodes in insertion order and silently relabels the tree, which is why uniform_spanning_tree 
+constructs the RX tree directly with preserved node_ids.
 """
 
 
@@ -335,22 +344,28 @@ def uniform_spanning_tree(
             tree_nodes.add(u)
             u = parent_node_id[u]
 
+    if graph.is_rx_graph():
+        # Build the tree as an RX graph directly, preserving the input graph's node_ids
+        # (RX ids are 0..n-1, and add_nodes_from assigns ids in list order). Round-tripping
+        # through NX and convert_from_nx_to_rx() renumbers the nodes in NX insertion order,
+        # silently relabeling the tree relative to the graph it spans; balanced cuts computed
+        # on such a tree then split the wrong nodes.
+        rx_tree: rustworkx.PyGraph = rustworkx.PyGraph()
+        rx_tree.add_nodes_from(
+            [graph.node_data(node_id) for node_id in sorted(cast("list[int]", nodes))]
+        )
+        for node_id, parent_id in parent_node_id.items():
+            if parent_id is not None:
+                rx_tree.add_edge(cast(int, node_id), cast(int, parent_id), {})
+        return Graph.from_rustworkx(rx_tree)
+
     graph_of_spanning_tree = Graph.from_null_networkx()
     nx_graph = graph_of_spanning_tree.get_nx_graph()
-    output_nodes = nodes if graph.is_nx_graph() else tree_nodes
-    if graph.is_nx_graph():
-        nx_graph.add_nodes_from(nodes)
+    nx_graph.add_nodes_from(nodes)
 
-    for node_id in output_nodes:
+    for node_id in nodes:
         if parent_node_id[node_id] is not None:
             # Add the nodes and the edge to the spanning_tree
             nx_graph.add_edge(node_id, parent_node_id[node_id])
-
-    # Return a graph that is the same "kind" of graph as the graph passed in.
-    # The current graph_of_spanning_tree is an NX-based graph, so convert it to
-    # be RX-based if the graph passed in was RX-based.
-    #
-    if graph.is_rx_graph():
-        graph_of_spanning_tree = graph_of_spanning_tree.convert_from_nx_to_rx()
 
     return graph_of_spanning_tree

@@ -229,6 +229,28 @@ def test_subgraph(four_by_five_graph_rx):
         )
 
 
+def test_rx_neighbors_are_sorted_and_stable_across_subgraph_rebuilds(four_by_five_graph_rx):
+    """Regression test for a bug I encountered when updating ReCom class for 1.0.0 release.
+
+    RX collects neighbors into a randomly seeded HashSet, so the raw rustworkx order varies call to
+    call. Seeded algorithms map RNG draws over neighbor order (e.g. Wilson's random walk in
+    uniform_spanning_tree runs on the RX-backed merged-pair subgraphs recom creates), so an
+    unstable order makes seeded chains unreproducible even within one process.
+    """
+    parent = four_by_five_graph_rx
+    for node_id in parent.node_indices:
+        assert list(parent.neighbors(node_id)) == sorted(parent.neighbors(node_id))
+
+    subgraph_node_ids = [2, 4, 5, 8, 11, 13]
+    first = None
+    for _ in range(20):
+        subgraph = parent.subgraph(subgraph_node_ids)
+        orders = [tuple(subgraph.neighbors(n)) for n in sorted(subgraph.node_indices)]
+        if first is None:
+            first = orders
+        assert orders == first, "neighbor order changed between identical subgraph rebuilds"
+
+
 def test_num_connected_components(four_by_five_graph_nx, four_by_five_graph_rx):
     num_components_nx = four_by_five_graph_nx.num_connected_components()
     num_components_rx = four_by_five_graph_rx.num_connected_components()

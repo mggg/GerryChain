@@ -1,6 +1,7 @@
 from .proposals import *
 from .spectral_proposals import build_spectral_recom_proposal_fn, spectral_recom
 from .tree_proposals import (
+    ReCom,
     build_recom_proposal_fn,
     build_reversible_recom_proposal_fn,
     recom,
@@ -9,6 +10,7 @@ from .tree_proposals import (
 
 __all__ = [
     "ProposalFn",
+    "ReCom",
     "recom",
     "reversible_recom",
     "spectral_recom",

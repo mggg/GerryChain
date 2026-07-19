@@ -2036,9 +2036,12 @@ class Graph:
         is, all of the nodes that are directly connected to the given node by an edge.
 
         The result supports iteration (repeatedly), ``len()``, and indexing, but it is not
-        guaranteed to be a ``list``: for an RX graph it is the ``rustworkx.NodeIndices``
-        sequence returned by the backend, which avoids copying the neighbors into a fresh
-        list on every call. Callers that need list methods should wrap it in ``list()``.
+        guaranteed to be a ``list``. Callers that need list methods should wrap it in ``list()``.
+
+        The neighbors are returned in a deterministic order. RX collects neighbors into a randomly
+        seeded HashSet, so the raw ``rustworkx.NodeIndices`` order varies call to call; any seeded
+        algorithm that maps RNG draws over neighbor order (a random walk, a BFS feeding a random
+        choice) would otherwise be unreproducible.
 
         Args:
             node_id (Hashable): A node ID.
@@ -2047,7 +2050,7 @@ class Graph:
             Sequence[Hashable]: The neighboring node IDs.
         """
         if self._rx_graph is not None:
-            return self._rx_graph.neighbors(cast(int, node_id))
+            return sorted(self._rx_graph.neighbors(cast(int, node_id)))
         elif self._nx_graph is not None:
             # NX returns a single-pass iterator, so it must be materialized here;
             # callers (and the FrozenGraph.neighbors lru_cache) expect a re-iterable result.
