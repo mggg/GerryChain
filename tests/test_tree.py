@@ -38,6 +38,7 @@ from gerrychain.tree import (
 from gerrychain.tree.bipartition_tree import (
     FindBalancedEdgeCutsFn,
     GraphLike,
+    _Cut,
     _PopulatedGraph,
 )
 from gerrychain.updaters import Tally, cut_edges
@@ -383,7 +384,7 @@ def do_test_recursive_seed_part_uses_bipartition_tree_fn(twelve_by_twelve_with_p
         pop_target: float,
         epsilon: float,
         node_repeats: int = 0,
-        one_sided_cut: bool = False,
+        single_district_cut: bool = False,
         region_surcharge: dict[str, float] | None = None,
         *,
         rng: random.Random,
@@ -397,7 +398,7 @@ def do_test_recursive_seed_part_uses_bipartition_tree_fn(twelve_by_twelve_with_p
             epsilon=epsilon,
             node_repeats=node_repeats,
             max_attempts=10000,
-            one_sided_cut=one_sided_cut,
+            single_district_cut=single_district_cut,
             rng=rng,
         )
 
@@ -537,13 +538,16 @@ def test_bipartition_tree_threads_rng_to_custom_balanced_cut_fn(graph_with_pop_n
 
     def find_cuts(
         h: _PopulatedGraph,
-        rootnode_choice_fn: Callable[[Sequence[Hashable]], Hashable] = choose_root,
+        /,
         *,
+        single_district_cut: bool = False,
+        rootnode_choice_fn: Callable[[Sequence[Hashable]], Hashable] | None = choose_root,
         rng: random.Random,
-    ):
+    ) -> list[_Cut]:
         seen_rngs.append(rng)
         return find_balanced_edge_cuts_memoization(
             h,
+            single_district_cut=single_district_cut,
             rootnode_choice_fn=rootnode_choice_fn,
             rng=rng,
         )
@@ -773,14 +777,34 @@ def test_no_balanced_cuts_contraction_when_one_side_okay():
     )
 
     cuts_nx = find_balanced_edge_cuts_contraction(
-        populated_tree_nx, one_sided_cut=False, rng=random.Random(2018)
+        populated_tree_nx, single_district_cut=False, rng=random.Random(2018)
     )
     assert cuts_nx == []
 
     cuts_rx = find_balanced_edge_cuts_contraction(
-        populated_tree_rx, one_sided_cut=False, rng=random.Random(2018)
+        populated_tree_rx, single_district_cut=False, rng=random.Random(2018)
     )
     assert cuts_rx == []
+
+
+def test_exact_population_cut_is_accepted_on_both_branches():
+    """An exactly-on-target cut must be accepted whether or not the complement is checked.
+
+    The two branches of `_PopulatedGraph.has_ideal_population` once disagreed here: the
+    single-district branch used a strict `<`, so at epsilon=0 a perfectly even split passed the
+    two-sided check but failed the single-district one.
+    """
+    pair = Graph.from_networkx(networkx.Graph([(0, 1)]))
+    # Both nodes sit exactly on the ideal population, so either side is a perfect cut.
+    populated = _PopulatedGraph(
+        graph=pair,
+        populations={0: 5, 1: 5},
+        ideal_pop=5,
+        epsilon=0,
+    )
+
+    assert populated.has_ideal_population(0, single_district_cut=False)
+    assert populated.has_ideal_population(0, single_district_cut=True)
 
 
 def test_find_balanced_cuts_memo():

@@ -413,7 +413,7 @@ def test_multi_member_recom_passes_region_surcharge_to_tree():
         pop_target: float,
         epsilon: float,
         node_repeats: int = 0,
-        one_sided_cut: bool = False,
+        single_district_cut: bool = False,
         region_surcharge: dict[str, float] | None = None,
         rng: random.Random,
     ) -> AbstractSet[Hashable]:
@@ -424,7 +424,7 @@ def test_multi_member_recom_passes_region_surcharge_to_tree():
             pop_target=pop_target,
             epsilon=epsilon,
             node_repeats=node_repeats,
-            one_sided_cut=one_sided_cut,
+            single_district_cut=single_district_cut,
             region_surcharge=region_surcharge,
             rng=rng,
         )
@@ -529,7 +529,7 @@ def test_multi_member_bipartition_rejects_out_of_range_custom_cut():
         pop_target: float,
         epsilon: float,
         node_repeats: int = 0,
-        one_sided_cut: bool = False,
+        single_district_cut: bool = False,
         rng: random.Random,
     ) -> AbstractSet[Hashable]:
         return frozenset()
@@ -567,7 +567,7 @@ def test_multi_member_recom_reselects_after_tree_failure(
         pop_target: float,
         epsilon: float,
         node_repeats: int = 0,
-        one_sided_cut: bool = False,
+        single_district_cut: bool = False,
         region_surcharge: dict[str, float] | None = None,
         allow_pair_reselection: bool = False,
         rng: random.Random,

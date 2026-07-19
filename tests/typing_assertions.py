@@ -104,7 +104,7 @@ def assert_callable_types() -> None:
         pop_target: float,
         epsilon: float,
         node_repeats: int = 0,
-        one_sided_cut: bool = False,
+        single_district_cut: bool = False,
         rng: random.Random,
     ) -> frozenset[Hashable]:
         return frozenset()

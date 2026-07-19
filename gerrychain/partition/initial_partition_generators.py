@@ -127,7 +127,7 @@ def recursive_tree_part(
     # function, whose job it is to produce a connected set of
     # nodes that has the desired population target.
     #
-    # Note that it sets one_sided_cut=True which tells the
+    # Note that it sets single_district_cut=True which tells the
     # "bipartition_tree_fn" function that it is NOT bisecting the graph
     # but is rather supposed to just find one connected
     # set of nodes of the correct population size.
@@ -144,7 +144,7 @@ def recursive_tree_part(
                 pop_target=new_pop_target,
                 epsilon=(max_pop - min_pop) / (2 * new_pop_target),
                 node_repeats=node_repeats,
-                one_sided_cut=True,
+                single_district_cut=True,
                 rng=rng,
             )
         except Exception:
@@ -164,7 +164,7 @@ def recursive_tree_part(
     # After making n-2 districts, we need to make sure that the last
     # two districts are both balanced.
 
-    # For the last call to "bipartition_tree_fn", set one_sided_cut=False to
+    # For the last call to "bipartition_tree_fn", set single_district_cut=False to
     # request that "bipartition_tree_fn" create two equal sized districts
     # with the given population goal by bisecting the graph.
     node_ids = bipartition_tree_fn(
@@ -173,7 +173,7 @@ def recursive_tree_part(
         pop_target=pop_target,
         epsilon=epsilon,
         node_repeats=node_repeats,
-        one_sided_cut=False,
+        single_district_cut=False,
         rng=rng,
     )
 
@@ -481,7 +481,7 @@ def _recursive_seed_part_inner(
         return translated_assignment
 
     # frm: In the case when there are exactly 2 districts, split the graph by setting
-    #       one_sided_cut to be False.
+    #       single_district_cut to be False.
     if num_dists == 2:
         nodes = bipartition_tree_fn(
             graph.subgraph(graph.node_indices),  # needs to be a subgraph
@@ -489,7 +489,7 @@ def _recursive_seed_part_inner(
             pop_target=pop_target,
             epsilon=epsilon,
             node_repeats=node_repeats,
-            one_sided_cut=False,  # flag to say we want to bisect graph
+            single_district_cut=False,  # flag to say we want to bisect graph
             rng=rng,
         )
 
@@ -522,7 +522,7 @@ def _recursive_seed_part_inner(
             pop_target=pop_target,
             epsilon=epsilon,
             node_repeats=node_repeats,
-            one_sided_cut=True,
+            single_district_cut=True,
             rng=rng,
         )
         remaining_nodes -= nodes
@@ -550,7 +550,7 @@ def _recursive_seed_part_inner(
             pop_target,
             pop_col,
             epsilon,
-            bipartition_tree_fn=partial(bipartition_tree_fn, one_sided_cut=True),
+            bipartition_tree_fn=partial(bipartition_tree_fn, single_district_cut=True),
             rng=rng,
         )
 

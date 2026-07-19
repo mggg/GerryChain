@@ -95,7 +95,7 @@ def epsilon_tree_bipartition(
         pop_target=pop_target,
         epsilon=epsilon,
         node_repeats=node_repeats,
-        one_sided_cut=False,
+        single_district_cut=False,
         rng=rng,
     )
 
@@ -308,6 +308,32 @@ def build_recom_proposal_fn(
     bipartition_tree_fn: ReComBipartitionTreeFn = bipartition_tree,
     pair_selection: PairSelection = "district_pairs",
 ) -> ProposalFn:
+    """Build a ReCom proposal function with its configuration bound.
+
+    This is the configurable form of the :class:`ReCom` namespace methods: it exposes every
+    :func:`recom` option except ``partition`` and ``rng``, which :class:`~gerrychain.MarkovChain`
+    supplies at each step.
+
+    Args:
+        pop_col (str): The name of the population column.
+        pop_target (int | float): The target population for each district.
+        epsilon (float): Allowed population deviation as a percentage of the target population.
+        node_repeats (int, optional): Additional roots to try on each spanning tree before drawing
+            a new tree. Defaults to 0. Positive values help only with cut finders whose result
+            depends on the root; see :func:`~gerrychain.tree.bipartition_tree`.
+        region_surcharge (dict | None, optional): Surcharges for region-aware chains; see
+            :func:`~gerrychain.tree.random_spanning_tree`. Default is None.
+        bipartition_tree_fn (ReComBipartitionTreeFn, optional): The function used to split the
+            merged district pair. To configure the bipartition or spanning-tree step (for example
+            ``max_attempts``, ``allow_pair_reselection``, or a uniform spanning tree), pass a
+            pre-bound function such as ``partial(bipartition_tree, max_attempts=100)``.
+        pair_selection ("district_pairs" | "cut_edges", optional): How to choose the adjacent
+            district pair to merge. ``"district_pairs"`` (default) draws uniformly among adjacent
+            pairs; ``"cut_edges"`` weights each pair by the number of cut edges it shares.
+
+    Returns:
+        ProposalFn: A proposal function for use with :class:`~gerrychain.MarkovChain`.
+    """
     proposal_fn = partial(
         recom,
         pop_col=pop_col,
@@ -375,7 +401,7 @@ def reversible_recom(
 
     def _bounded_find_balanced_edge_cuts_fn(
         h: _PopulatedGraph,
-        one_sided_cut: bool = False,
+        single_district_cut: bool = False,
         rootnode_choice_fn: Callable[[Sequence[Hashable]], Hashable] | None = None,
         *,
         rng: random.Random,
@@ -384,7 +410,7 @@ def reversible_recom(
             rootnode_choice_fn = rng.choice
         cuts = find_balanced_edge_cuts_fn(
             h,
-            one_sided_cut=one_sided_cut,
+            single_district_cut=single_district_cut,
             rootnode_choice_fn=rootnode_choice_fn,
             rng=rng,
         )
@@ -492,6 +518,27 @@ def build_reversible_recom_proposal_fn(
     find_balanced_edge_cuts_fn: FindBalancedEdgeCutsFn = find_balanced_edge_cuts_memoization,
     repeat_until_valid: bool = False,
 ) -> ProposalFn:
+    """Build a reversible ReCom proposal function with its configuration bound.
+
+    Reversible ReCom samples exactly from the spanning-tree distribution rather than an
+    approximation of it; see :func:`reversible_recom`. This builder exposes every option except
+    ``partition`` and ``rng``, which :class:`~gerrychain.MarkovChain` supplies at each step.
+
+    Args:
+        pop_col (str): The name of the population column.
+        pop_target (int | float): The target population for each district.
+        epsilon (float): Allowed population deviation as a percentage of the target population.
+        max_balanced_edge_cuts (int): The number of balanced edge cuts to draw from the spanning
+            tree before selecting one, which is what makes the proposal reversible. The proposal
+            raises :class:`ReversibilityError` if a tree exceeds this bound.
+        find_balanced_edge_cuts_fn (FindBalancedEdgeCutsFn, optional): The balanced-cut finder.
+            Default is :func:`~gerrychain.tree.find_balanced_edge_cuts_memoization`.
+        repeat_until_valid (bool, optional): Whether to keep drawing until a valid partition is
+            found. Default is False.
+
+    Returns:
+        ProposalFn: A proposal function for use with :class:`~gerrychain.MarkovChain`.
+    """
     proposal_fn = partial(
         reversible_recom,
         pop_col=pop_col,

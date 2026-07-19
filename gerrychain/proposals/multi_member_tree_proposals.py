@@ -117,7 +117,7 @@ def epsilon_tree_bipartition_multi_member(
         pop_target=cut_target,
         epsilon=cut_epsilon,
         node_repeats=node_repeats,
-        one_sided_cut=True,
+        single_district_cut=True,
         rng=rng,
     )
 
