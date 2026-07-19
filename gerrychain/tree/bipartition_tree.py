@@ -167,6 +167,21 @@ class _PopulatedGraph:
         self.subsets[parent] |= self.subsets[node]
         self._degrees[parent] -= 1
 
+    def is_within_epsilon(self, population: int | float) -> bool:
+        """Return whether a population is within epsilon of the ideal district population.
+
+        This is the single definition of "balanced" used by both cut finders. Keeping it in one
+        place matters: the bound is inclusive, and when the two finders spelled the comparison out
+        separately they disagreed about whether an exactly-on-target cut counted.
+
+        Args:
+            population (int | float): The population to test.
+
+        Returns:
+            bool: True if the population is acceptable.
+        """
+        return abs(population - self.ideal_pop) <= self.epsilon * self.ideal_pop
+
     # frm: only ever used inside this file
     #       But maybe this is intended to be used externally...
     def has_ideal_population(self, node: Hashable, single_district_cut: bool = False) -> bool:
@@ -183,14 +198,12 @@ class _PopulatedGraph:
         Returns:
             bool: True if the node has an ideal population within the graph up to epsilon.
         """
-
+        node_population = self.population[node]
         if single_district_cut:
-            return abs(self.population[node] - self.ideal_pop) <= self.epsilon * self.ideal_pop
+            return self.is_within_epsilon(node_population)
 
-        return (
-            abs(self.population[node] - self.ideal_pop) <= self.epsilon * self.ideal_pop
-            and abs((self.tot_pop - self.population[node]) - self.ideal_pop)
-            <= self.epsilon * self.ideal_pop
+        return self.is_within_epsilon(node_population) and self.is_within_epsilon(
+            self.tot_pop - node_population
         )
 
     def __repr__(self) -> str:
@@ -430,6 +443,11 @@ def find_balanced_edge_cuts_contraction(
         rootnode_choice_fn = rng.choice
 
     node_ids = h.graph.nodes if h.graph.is_nx_graph() else h.graph.node_indices
+
+    # NOTE: The root must have degree > 1 here: the loop below seeds its queue from every degree-1
+    # node and then looks up `pred[leaf]`. A leaf root would land in that queue without having a
+    # parent, raising KeyError. On a two-node tree both nodes are leaves, so nothing qualifies and
+    # `rng.choice` raises IndexError.
     root = rootnode_choice_fn([node_id for node_id in node_ids if h.degree(node_id) > 1])
     # Parent map for iteratively contracting leaves. This used to call h.graph.predecessors(root)
     pred, _ = _bfs_predecessors_and_successors_for_tree(h.graph, root)
@@ -612,37 +630,19 @@ def find_balanced_edge_cuts_memoization(
         list[_Cut]: A list of balanced edge cuts.
     """
 
-    """
-    frm: ???: confused...
-
-    This function seems to be used for two very different purposes, depending on the
-    value of the parameter, single_district_cut.  When true, the code looks for lots of cuts
-    that would create a district with the right population - both above and below the
-    node being considered.  Given that it is operating on a tree, one would assume that
-    there is only one (or perhaps two if one node's population was tiny) cut for the top
-    of the tree, but there should be many for the bottom of the tree.
-
-    However, if the paramter is set to false (the default), then the code checks to see
-    whether a cut would produce two districts - on above and one below the tree that
-    have the right populations.  In this case, the code is presumatly looking for the
-    single node (again there might be two if one node's population was way below epsilon)
-    that would bisect the graph into two districts with a tolerable population.
-
-    If I am correct, then there is an opportunity to clarify these two uses - perhaps
-    with wrapper functions.  I am also a bit surprised that snippets of code are repeated.
-    Again - this causes mental load for the reader, and it is an opportunity for bugs to
-    creep in later (you fix it in one place but not the other).  Not sure this "clarification"
-    is desired, but it is worth considering...
-    """
-
-    # frm: ???:  Why does a root have to have degree > 1?  I would think that any node would do...
-
     rng = make_rng(rng)
     if rootnode_choice_fn is None:
         rootnode_choice_fn = rng.choice
 
     node_ids = h.graph.nodes if h.graph.is_nx_graph() else h.graph.node_indices
-    root = rootnode_choice_fn([node_id for node_id in node_ids if h.degree(node_id) > 1])
+
+    # NOTE: Any node may serve as the root. Every non-root node contributes the one edge joining it
+    # to its parent, and a tree on n nodes has n - 1 of each, so the candidate edges are all of them
+    # wherever we root. The root only decides which side of an edge counts as "below", and so which
+    # side a cut hands back. `find_balanced_edge_cuts_contraction` is different: it requires a root
+    # of degree > 1, because it seeds its worklist from every degree-1 node and then looks up
+    # `pred[leaf]`, which a leaf root would not have.
+    root = rootnode_choice_fn(list(node_ids))
 
     # Parent and child maps for the tree rooted at `root`. For a tree each non-root node has a
     # unique parent, so `pred` is identical to the old map; the order of children within
@@ -654,60 +654,49 @@ def find_balanced_edge_cuts_memoization(
     # Calculate the population of each subtree in the "succ" tree
     subtree_pops = _calc_pops(succ, root, h)
 
+    def cut_at(node: Hashable, subset: AbstractSet[Hashable]) -> _Cut:
+        """Build the cut that removes the edge joining ``node`` to its parent.
+
+        ``subset`` is the side of that edge the cut hands back. The edge keeps whatever
+        ``random_weight`` the spanning tree gave it, falling back to a fresh draw. Note that the
+        draw happens either way, so the RNG advances once per cut found.
+        """
+        edge = (node, pred[node])
+        fallback_weight = rng.random()
+        return _Cut(
+            edge=edge,
+            weight=h.graph.edge_data(h.graph.get_edge_id_from_edge(edge)).get(
+                "random_weight", fallback_weight
+            ),
+            subset=frozenset(subset),
+        )
+
+    def below(node: Hashable) -> AbstractSet[Hashable]:
+        """The subtree hanging below ``node``, including ``node`` itself."""
+        return _nodes_in_subtree(node, succ)
+
+    def above(node: Hashable) -> AbstractSet[Hashable]:
+        """Everything except the subtree below ``node``."""
+        return set(h.graph.node_indices) - _nodes_in_subtree(node, succ)
+
     cuts = []
 
     if single_district_cut:
+        # Peeling off one district: only the side we hand back has to be balanced, so a node
+        # qualifies if either the subtree below it or everything above it hits the target. The
+        # remainder is left for later cuts to divide.
         for node, tree_pop in subtree_pops.items():
-            if abs(tree_pop - h.ideal_pop) <= h.ideal_pop * h.epsilon:
-                # frm: If the subtree for this node has a population within epsilon
-                #       of the ideal, then add it to the cuts list.
-                e = (node, pred[node])  # get the edge from the parent to this node
-                wt = rng.random()
-                # frm: Add the cut - set its weight if it does not already have one
-                #       and remember all of the nodes in the subtree in the frozenset
-                cuts.append(
-                    _Cut(
-                        edge=e,
-                        weight=h.graph.edge_data(h.graph.get_edge_id_from_edge(e)).get(
-                            "random_weight", wt
-                        ),
-                        subset=frozenset(_nodes_in_subtree(node, succ)),
-                    )
-                )
-            elif abs((total_pop - tree_pop) - h.ideal_pop) <= h.ideal_pop * h.epsilon:
-                # frm: If the population of everything ABOVE this node in the tree is
-                #       within epsilon of the ideal, then add it to the cut list too.
-                e = (node, pred[node])
-                wt = rng.random()
-                cuts.append(
-                    _Cut(
-                        edge=e,
-                        weight=h.graph.edge_data(h.graph.get_edge_id_from_edge(e)).get(
-                            "random_weight", wt
-                        ),
-                        subset=frozenset(set(h.graph.node_indices) - _nodes_in_subtree(node, succ)),
-                    )
-                )
+            if h.is_within_epsilon(tree_pop):
+                cuts.append(cut_at(node, below(node)))
+            elif h.is_within_epsilon(total_pop - tree_pop):
+                cuts.append(cut_at(node, above(node)))
+    else:
+        # Bisecting the tree: both sides have to be balanced at once, which is a much stricter
+        # test and typically admits far fewer cuts.
+        for node, tree_pop in subtree_pops.items():
+            if h.is_within_epsilon(tree_pop) and h.is_within_epsilon(total_pop - tree_pop):
+                cuts.append(cut_at(node, above(node)))
 
-        return cuts
-
-    # We are looking for a way to bisect the graph (single_district_cut is False)
-    for node, tree_pop in subtree_pops.items():
-        if (abs(tree_pop - h.ideal_pop) <= h.ideal_pop * h.epsilon) and (
-            abs((total_pop - tree_pop) - h.ideal_pop) <= h.ideal_pop * h.epsilon
-        ):
-            e = (node, pred[node])
-            wt = rng.random()
-            # frm: TODO: Performance: Think if code below can be made faster...
-            cuts.append(
-                _Cut(
-                    edge=e,
-                    weight=h.graph.edge_data(h.graph.get_edge_id_from_edge(e)).get(
-                        "random_weight", wt
-                    ),
-                    subset=frozenset(set(h.graph.node_indices) - _nodes_in_subtree(node, succ)),
-                )
-            )
     return cuts
 
 
