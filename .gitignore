@@ -97,3 +97,6 @@ docs/jupyter_execute/
 # The committed copy lives in docs/_static/ and is staged automatically by
 # docs/_refresh_notebooks.py, so this local duplicate must never be committed.
 docs/user/PA_VTDs.json
+
+# Written by docs/user/data.ipynb when it runs; not a source file.
+docs/user/PA_output.jsonl
