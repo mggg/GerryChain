@@ -6,10 +6,28 @@ from pathlib import Path
 import nbformat
 
 
+# Kernel metadata a local Jupyter session stamps onto a notebook. It must match what
+# docs/_refresh_notebooks.py normalizes to before caching, or the docs build recomputes a
+# different cache key, misses the pre-built cache, and re-executes the notebook in a CWD without
+# the sample data (which fails on CI). Keeping the committed metadata pinned here avoids that.
+NORMALIZED_KERNELSPEC = {
+    "display_name": "Python 3",
+    "language": "python",
+    "name": "python3",
+}
+
+
 def clear_notebook_outputs(path: Path) -> bool:
-    """Clear tracked execution state, returning whether the notebook changed."""
+    """Clear tracked execution state and pin kernel metadata, returning whether it changed."""
     notebook = nbformat.read(path, as_version=4)
     changed = False
+
+    if notebook.metadata.get("kernelspec") != NORMALIZED_KERNELSPEC:
+        notebook.metadata["kernelspec"] = dict(NORMALIZED_KERNELSPEC)
+        changed = True
+    if notebook.metadata.pop("language_info", None) is not None:
+        changed = True
+
     for cell in notebook.cells:
         if cell.cell_type != "code":
             continue
