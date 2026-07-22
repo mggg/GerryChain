@@ -32,7 +32,7 @@ from collections.abc import Callable, Iterable, Iterator
 from typing import Any, cast
 
 from gerrychain._rng import make_rng
-from gerrychain.accept import AcceptFn, always_accept
+from gerrychain.accept import AcceptanceFn, always_accept
 from gerrychain.constraints import ConstraintFn, Validator
 from gerrychain.partition import Partition
 from gerrychain.proposals import ProposalFn
@@ -50,7 +50,7 @@ class MarkovChain:
 
     .. code-block:: python
 
-        chain = MarkovChain(proposal, constraints, accept, initial_partition, total_steps)
+        chain = MarkovChain(proposal_fn, constraints, acceptance_fn, initial_partition, total_steps)
         for state in chain:
             # Do whatever you want - print output, compute scores, ...
 
@@ -62,7 +62,7 @@ class MarkovChain:
 
         chain = MarkovChain(total_steps=1000)
         chain.initial_partition = Partition(graph, assignment, updaters)
-        chain.proposal = ReCom.cut_edges_mst(pop_col="TOTPOP", pop_target=ideal, epsilon=0.01)
+        chain.proposal_fn = ReCom.cut_edges_mst(pop_col="TOTPOP", pop_target=ideal, epsilon=0.01)
         chain.constraints = [contiguous]
         for state in chain:
             ...
@@ -70,10 +70,10 @@ class MarkovChain:
     Constraints and updaters can also be added one at a time, in any order relative to the other
     configuration, with :meth:`add_constraint` and :meth:`add_updater`.
 
-    ``accept`` defaults to :func:`~gerrychain.accept.always_accept` and ``constraints`` defaults to
-    no constraints; ``proposal``, ``initial_partition``, and ``total_steps`` must be set before
-    iterating. While a run is in progress the configuration is locked: assigning any of these
-    attributes (or ``rng``) raises AttributeError. The lock is released when the run ends,
+    ``acceptance_fn`` defaults to :func:`~gerrychain.accept.always_accept` and ``constraints``
+    defaults to no constraints; ``proposal_fn``, ``initial_partition``, and ``total_steps`` must be
+    set before iterating. While a run is in progress the configuration is locked: assigning any of
+    these attributes (or ``rng``) raises AttributeError. The lock is released when the run ends,
     whether by exhausting the steps, an error in a step, or leaving the loop early with
     ``break``.
     """
@@ -83,9 +83,9 @@ class MarkovChain:
 
     def __init__(
         self,
-        proposal: ProposalFn | None = None,
+        proposal_fn: ProposalFn | None = None,
         constraints: Iterable[ConstraintFn] | ConstraintFn = (),
-        accept: AcceptFn = always_accept,
+        acceptance_fn: AcceptanceFn = always_accept,
         initial_partition: Partition | None = None,
         total_steps: int | None = None,
         *,
@@ -98,16 +98,16 @@ class MarkovChain:
         iteration begins.
 
         Args:
-            proposal (Callable | None, optional): Function called as
-                ``proposal(state, rng=chain.rng)`` to propose the next state. The chain's RNG takes
-                precedence over an ``rng`` bound into a ``functools.partial`` proposal.
+            proposal_fn (ProposalFn | None, optional): Function called as
+                ``proposal_fn(state, rng=chain.rng)`` to propose the next state. The chain's RNG
+                takes precedence over an ``rng`` bound into a ``functools.partial`` proposal.
             constraints (Iterable[ConstraintFn] | ConstraintFn, optional):
                 One or more functions with signature ``Partition -> bool`` determining whether a
                 proposed next state is valid. Bundled into a single :class:`Validator`; passing a
                 Validator directly also works. Defaults to no constraints.
-            accept (AcceptFn, optional): Function called as ``accept(proposed_state, rng=chain.rng)``
-                to accept or reject the proposed state. Defaults to
-                :func:`~gerrychain.accept.always_accept`.
+            acceptance_fn (AcceptanceFn, optional): Function called as
+                ``acceptance_fn(proposed_state, rng=chain.rng)`` to accept or reject the proposed
+                state. Defaults to :func:`~gerrychain.accept.always_accept`.
             initial_partition (Partition | None, optional): Initial Partition class.
             total_steps (int | None, optional): Number of steps to run.
             rng (random.Random | int | None, optional): Source of randomness for the run. An integer
@@ -119,8 +119,8 @@ class MarkovChain:
                 given constraints.
         """
         self._added_updaters: dict[str, Callable[[Partition], Any]] = {}
-        self.proposal = proposal
-        self.accept = accept
+        self.proposal_fn = proposal_fn
+        self.acceptance_fn = acceptance_fn
         self.total_steps = total_steps
         self.initial_partition = initial_partition
         self.state = initial_partition
@@ -235,12 +235,12 @@ class MarkovChain:
         fail fast after incremental configuration.
 
         Raises:
-            ValueError: If ``proposal``, ``initial_partition``, or ``total_steps`` is unset, or
+            ValueError: If ``proposal_fn``, ``initial_partition``, or ``total_steps`` is unset, or
                 if the initial partition does not satisfy the constraints.
         """
         missing = [
             name
-            for name in ("proposal", "initial_partition", "total_steps")
+            for name in ("proposal_fn", "initial_partition", "total_steps")
             if getattr(self, name) is None
         ]
         if len(missing) > 0:
@@ -275,9 +275,9 @@ class MarkovChain:
                 attribute.
         """
         if self.__locked and name in (
-            "proposal",
+            "proposal_fn",
             "constraints",
-            "accept",
+            "acceptance_fn",
             "initial_partition",
             "total_steps",
             "rng",
@@ -306,15 +306,15 @@ class MarkovChain:
         """
         self.check_valid()
 
-        proposal = self.proposal
+        proposal_fn = self.proposal_fn
         total_steps = self.total_steps
         initial_partition = self.initial_partition
-        assert proposal is not None and total_steps is not None and initial_partition is not None
+        assert proposal_fn is not None and total_steps is not None and initial_partition is not None
 
-        return self.__run(proposal, total_steps, initial_partition)
+        return self.__run(proposal_fn, total_steps, initial_partition)
 
     def __run(
-        self, proposal: ProposalFn, total_steps: int, initial_partition: Partition
+        self, proposal_fn: ProposalFn, total_steps: int, initial_partition: Partition
     ) -> Iterator[Partition]:
         """Generator over one run: propose, validate, accept/reject, yield, for each step.
 
@@ -330,12 +330,12 @@ class MarkovChain:
             yield state
 
             while self.counter < total_steps:
-                proposed_next_state = proposal(state, rng=self.rng)
+                proposed_next_state = proposal_fn(state, rng=self.rng)
                 # Erase the parent of the parent, to avoid memory leak
                 state.parent = None
 
                 if self._validator(proposed_next_state):
-                    if self.accept(proposed_next_state, rng=self.rng):
+                    if self.acceptance_fn(proposed_next_state, rng=self.rng):
                         state = proposed_next_state
                     self.state = state
                     self.counter += 1

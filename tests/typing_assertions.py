@@ -1,16 +1,24 @@
 """Consumer-side assertions for public typing contracts."""
 
-from collections.abc import Hashable, Mapping
+import random
+from collections.abc import Hashable, Mapping, Sequence
 from typing import Any, assert_type
 
 import networkx
 import rustworkx
 
 from gerrychain import Graph, Partition
+from gerrychain.accept import AcceptanceFn
 from gerrychain.constraints import Bounds, deviation_from_ideal, within_percent_of_ideal_population
+from gerrychain.graph import FrozenGraph
 from gerrychain.optimization import SingleMetricOptimizer
+from gerrychain.optimization.gingleator import GingleScoreFn
+from gerrychain.partition.initial_partition_generators import PartitionFn
+from gerrychain.proposals import ProposalFn
+from gerrychain.tree import BipartitionTreeFn, ReComBipartitionTreeFn, bipartition_tree
 from gerrychain.updaters import Tally
 from gerrychain.updaters.election import get_percents
+from gerrychain.updaters.flows import EdgeFlowUpdateFn
 
 
 def assert_public_types(
@@ -39,3 +47,71 @@ def assert_public_types(
 
     assert_type(Tally("population")(partition), dict[Hashable, float])
     assert_type(get_percents(counts, counts), dict[Hashable, float])
+
+
+def assert_callable_types() -> None:
+    """Pin positional and keyword portions of public callable contracts."""
+
+    def consume_contracts(
+        proposal_fn: ProposalFn,
+        acceptance_fn: AcceptanceFn,
+        score_fn: GingleScoreFn,
+        edge_flow_fn: EdgeFlowUpdateFn[float],
+        bipartition_fn: BipartitionTreeFn,
+        recom_bipartition_fn: ReComBipartitionTreeFn,
+        partition_fn: PartitionFn,
+    ) -> None:
+        pass
+
+    def propose(state: Partition, /, *, rng: random.Random) -> Partition:
+        return state
+
+    def accept(state: Partition, /, *, rng: random.Random) -> bool:
+        return True
+
+    def score(state: Partition, /, *, minority_perc_col: str, threshold: float) -> float:
+        return threshold
+
+    def update_edge_flow(
+        state: Partition,
+        old_value: float,
+        /,
+        *,
+        new_edges: set[tuple[int, int]],
+        old_edges: set[tuple[int, int]],
+    ) -> float:
+        return old_value
+
+    def split_seed_graph(
+        source: Graph | FrozenGraph,
+        /,
+        *,
+        pop_col: str,
+        pop_target: float,
+        epsilon: float,
+        node_repeats: int = 0,
+        one_sided_cut: bool = False,
+        rng: random.Random,
+    ) -> frozenset[Hashable]:
+        return frozenset()
+
+    def partition_graph(
+        *,
+        graph: Graph,
+        parts: Sequence[Hashable],
+        pop_target: float,
+        pop_col: str,
+        epsilon: float,
+        rng: random.Random,
+    ) -> dict[Hashable, Hashable]:
+        return {}
+
+    consume_contracts(
+        propose,
+        accept,
+        score,
+        update_edge_flow,
+        split_seed_graph,
+        bipartition_tree,
+        partition_graph,
+    )

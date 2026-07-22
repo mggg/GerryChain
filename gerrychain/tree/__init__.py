@@ -25,8 +25,10 @@ There is additional documentation in each of these sub-modules.
 
 from .bipartition_tree import (
     BalanceError,
+    BipartitionTreeFn,
     BipartitionWarning,
     PopulationBalanceError,
+    ReComBipartitionTreeFn,
     ReselectException,
     bipartition_tree,
     bipartition_tree_random_with_num_cuts,
@@ -44,6 +46,8 @@ __all__ = [
     "PopulationBalanceError",
     "ReselectException",
     "BipartitionWarning",
+    "BipartitionTreeFn",
+    "ReComBipartitionTreeFn",
     "uniform_spanning_tree",
     "random_spanning_tree",
 ]

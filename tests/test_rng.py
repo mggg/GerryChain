@@ -43,10 +43,10 @@ def trajectory(chain):
 def make_optimizer(graph, rng=None):
     proposal = partial(recom, pop_col="population", pop_target=50, epsilon=0.0)
     return SingleMetricOptimizer(
-        proposal=proposal,
+        proposal_fn=proposal,
         constraints=[contiguous],
         initial_state=initial_partition(graph),
-        optimization_metric=lambda part: len(part["cut_edges"]),
+        optimization_metric_fn=lambda part: len(part["cut_edges"]),
         maximize=False,
         rng=rng,
     )

@@ -41,10 +41,10 @@ def test_single_metric_sb_attains_min_quickly(four_by_five_grid_for_opt):
     )
 
     optimizer = SingleMetricOptimizer(
-        proposal=proposal,
+        proposal_fn=proposal,
         constraints=[contiguous],
         initial_state=initial_partition,
-        optimization_metric=simple_cut_edge_count,
+        optimization_metric_fn=simple_cut_edge_count,
         maximize=False,
         rng=2024,
     )
@@ -90,10 +90,10 @@ def test_single_metric_tilted_sb_attains_min_quickly(four_by_five_grid_for_opt):
     )
 
     optimizer = SingleMetricOptimizer(
-        proposal=proposal,
+        proposal_fn=proposal,
         constraints=[contiguous],
         initial_state=initial_partition,
-        optimization_metric=simple_cut_edge_count,
+        optimization_metric_fn=simple_cut_edge_count,
         maximize=False,
         rng=2024,
     )
@@ -138,10 +138,10 @@ def test_single_metric_variable_len_sb_attains_min_quickly(four_by_five_grid_for
     )
 
     optimizer = SingleMetricOptimizer(
-        proposal=proposal,
+        proposal_fn=proposal,
         constraints=[contiguous],
         initial_state=initial_partition,
-        optimization_metric=simple_cut_edge_count,
+        optimization_metric_fn=simple_cut_edge_count,
         maximize=False,
         rng=2024,
     )
@@ -189,10 +189,10 @@ def test_single_metric_sa_jumpcycle_attains_min_quickly(four_by_five_grid_for_op
     )
 
     optimizer = SingleMetricOptimizer(
-        proposal=proposal,
+        proposal_fn=proposal,
         constraints=[contiguous],
         initial_state=initial_partition,
-        optimization_metric=simple_cut_edge_count,
+        optimization_metric_fn=simple_cut_edge_count,
         maximize=False,
         rng=2024,
     )
@@ -236,10 +236,10 @@ def test_single_metric_sa_lincycle_attains_min_quickly(four_by_five_grid_for_opt
     )
 
     optimizer = SingleMetricOptimizer(
-        proposal=proposal,
+        proposal_fn=proposal,
         constraints=[contiguous],
         initial_state=initial_partition,
-        optimization_metric=simple_cut_edge_count,
+        optimization_metric_fn=simple_cut_edge_count,
         maximize=False,
         rng=2024,
     )
@@ -284,10 +284,10 @@ def test_single_metric_sa_linear_jumpcycle_attains_min_quickly(
     )
 
     optimizer = SingleMetricOptimizer(
-        proposal=proposal,
+        proposal_fn=proposal,
         constraints=[contiguous],
         initial_state=initial_partition,
-        optimization_metric=simple_cut_edge_count,
+        optimization_metric_fn=simple_cut_edge_count,
         maximize=False,
         rng=2024,
     )
@@ -330,10 +330,10 @@ def test_single_metric_sa_logitcycle_attains_min_quickly(four_by_five_grid_for_o
     )
 
     optimizer = SingleMetricOptimizer(
-        proposal=proposal,
+        proposal_fn=proposal,
         constraints=[contiguous],
         initial_state=initial_partition,
-        optimization_metric=simple_cut_edge_count,
+        optimization_metric_fn=simple_cut_edge_count,
         maximize=False,
         rng=2024,
     )
@@ -378,10 +378,10 @@ def test_single_metric_sa_logit_jumpcycle_attains_min_quickly(
     )
 
     optimizer = SingleMetricOptimizer(
-        proposal=proposal,
+        proposal_fn=proposal,
         constraints=[contiguous],
         initial_state=initial_partition,
-        optimization_metric=simple_cut_edge_count,
+        optimization_metric_fn=simple_cut_edge_count,
         maximize=False,
         rng=2024,
     )
@@ -431,10 +431,10 @@ def test_single_metric_tilted_runs_attains_min_quickly_with_p_eq_0p1(
     )
 
     optimizer = SingleMetricOptimizer(
-        proposal=proposal,
+        proposal_fn=proposal,
         constraints=[contiguous],
         initial_state=initial_partition,
-        optimization_metric=simple_cut_edge_count,
+        optimization_metric_fn=simple_cut_edge_count,
         maximize=False,
         rng=2024,
     )
@@ -484,10 +484,10 @@ def test_single_metric_sb_finds_hard_max(four_by_five_grid_for_opt):
     )
 
     optimizer = SingleMetricOptimizer(
-        proposal=proposal,
+        proposal_fn=proposal,
         constraints=[contiguous],
         initial_state=initial_partition,
-        optimization_metric=opt_fn,
+        optimization_metric_fn=opt_fn,
         maximize=True,
         rng=rng,
     )
@@ -537,10 +537,10 @@ def test_single_metric_sa_finds_hard_max(four_by_five_grid_for_opt):
     )
 
     optimizer = SingleMetricOptimizer(
-        proposal=proposal,
+        proposal_fn=proposal,
         constraints=[contiguous],
         initial_state=initial_partition,
-        optimization_metric=opt_fn,
+        optimization_metric_fn=opt_fn,
         maximize=True,
         rng=rng,
     )
@@ -589,10 +589,10 @@ def test_single_metric_tilted_runs_finds_hard_max(four_by_five_grid_for_opt):
     )
 
     optimizer = SingleMetricOptimizer(
-        proposal=proposal,
+        proposal_fn=proposal,
         constraints=[contiguous],
         initial_state=initial_partition,
-        optimization_metric=opt_fn,
+        optimization_metric_fn=opt_fn,
         maximize=True,
         rng=rng,
     )

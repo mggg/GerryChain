@@ -32,15 +32,15 @@ Two decorators turn an incremental update rule into a full updater:
 
 In both cases you supply two pieces:
 
-* an **initializer**, which computes the whole ``{part: value}`` dictionary from scratch. It is used
-  for the *root* partition of a chain (the one whose ``partition.parent is None``), where there is
-  no parent to diff against.
+* an **initializer_fn**, which computes the whole ``{part: value}`` dictionary from scratch. It
+  is used for the *root* partition of a chain (the one whose ``partition.parent is None``), where
+  there is no parent to diff against.
 * an **update rule** (the decorated function), which is called once per changed part on every
   later step and returns the new value for that part, given the parent's value for that part plus
   the in/out flow for that part.
 
 So the lifecycle of a flow-based updater is: compute everything once at the root via the
-initializer, then on each subsequent step copy the parent's result and patch only the parts that
+initializer_fn, then on each subsequent step copy the parent's result and patch only the parts that
 actually changed. This is what the docstrings below mean by "initialize" (root) vs. the incremental
 "post-initialization" update (every later step).
 """
@@ -50,13 +50,32 @@ from __future__ import annotations
 import collections
 import functools
 from collections.abc import Callable, Hashable
-from typing import TYPE_CHECKING, TypeVar, cast
+from typing import TYPE_CHECKING, Protocol, TypeVar, cast
 
 if TYPE_CHECKING:
     from ..partition.partition import Partition
 
 ValueT = TypeVar("ValueT")
 KeyT = TypeVar("KeyT", bound=Hashable)
+
+# The update rule decorated by on_flow: given the partition, a part's previous value, and the
+# nodes flowing in and out of that part, return the part's new value.
+FlowUpdateFn = Callable[["Partition", ValueT, set[Hashable], set[Hashable]], ValueT]
+
+
+class EdgeFlowUpdateFn(Protocol[ValueT]):
+    """The update rule decorated by on_edge_flow: given the partition, a part's previous value,
+    and the cut edges flowing in and out of that part, return the part's new value."""
+
+    def __call__(
+        self,
+        partition: Partition,
+        previous: ValueT,
+        /,
+        *,
+        new_edges: set[tuple[int, int]],
+        old_edges: set[tuple[int, int]],
+    ) -> ValueT: ...
 
 
 @functools.lru_cache(maxsize=2)
@@ -127,8 +146,8 @@ def flows_from_changes(
 
 
 def on_flow(
-    initializer: Callable[[Partition], dict[KeyT, ValueT]], alias: str
-) -> Callable[[Callable[..., ValueT]], Callable[..., dict[KeyT, ValueT]]]:
+    initializer_fn: Callable[[Partition], dict[KeyT, ValueT]], alias: str
+) -> Callable[[FlowUpdateFn[ValueT]], Callable[..., dict[KeyT, ValueT]]]:
     """A decorator that responds to flows of nodes between parts of the partition.
 
     Use this decorator to create an updater that responds to flows of nodes between parts of the
@@ -146,7 +165,7 @@ def on_flow(
     This will create an updater whose values are dictionaries of the form `{part: <value of the
     given function on the part>}`.
 
-    The initializer, by contrast, should take the entire partition and return the entire `{part:
+    The initializer_fn, by contrast, should take the entire partition and return the entire `{part:
     <value>}` dictionary.
 
     How it works (initialize vs. incremental update):
@@ -154,8 +173,8 @@ def on_flow(
         is the root of the chain or a later step:
 
         * **Initialize (root partition).** When ``partition.parent is None`` there is no previous
-          step to diff against, so the updater simply calls ``initializer(partition)`` and returns
-          the whole ``{part: value}`` dictionary computed from scratch.
+          step to diff against, so the updater simply calls ``initializer_fn(partition)`` and
+          returns the whole ``{part: value}`` dictionary computed from scratch.
         * **Incremental update (every later step).** Otherwise the updater takes the parent's
           cached ``{part: value}`` dictionary (``partition.parent[alias]``), copies it, and then -
           for each part that had any node flow this step - replaces that part's entry with the
@@ -164,7 +183,7 @@ def on_flow(
           the handful of parts touched by this step's flips are recomputed.
 
         This is why the decorated function only needs to describe how a *single* part's value
-        changes given the nodes flowing in and out of it, while the initializer must be able to
+        changes given the nodes flowing in and out of it, while the initializer_fn must be able to
         compute every part's value directly.
 
     Note:
@@ -175,13 +194,14 @@ def on_flow(
 
     .. code-block:: python
 
-        @on_flow(initializer, alias='my_updater')
+        @on_flow(initializer_fn, alias='my_updater')
         def my_updater(partition, previous, new_nodes, old_nodes):
             # return new value for the part
 
     Args:
-        initializer (Callable): A function that takes the partition and returns a dictionary of the
-            form `{part: <value>}`. Used to compute the value from scratch for the root partition.
+        initializer_fn (Callable): A function that takes the partition and returns a dictionary
+            of the form `{part: <value>}`. Used to compute the value from scratch for the root
+            partition.
         alias (str): The name of the updater to be created (and the key it is registered under).
 
     Returns:
@@ -190,14 +210,14 @@ def on_flow(
     """
 
     def decorator(
-        function: Callable[..., ValueT],
+        fn: FlowUpdateFn[ValueT],
     ) -> Callable[..., dict[KeyT, ValueT]]:
-        @functools.wraps(function)
+        @functools.wraps(fn)
         def wrapped(
             partition: Partition, previous: dict[KeyT, ValueT] | None = None
         ) -> dict[KeyT, ValueT]:
             if partition.parent is None:
-                return initializer(partition)
+                return initializer_fn(partition)
 
             if previous is None:
                 parent_values = partition.parent[alias]
@@ -210,7 +230,7 @@ def on_flow(
             assert partition.flows is not None
             for part, flow in partition.flows.items():
                 key = cast(KeyT, part)
-                new_values[key] = function(partition, previous[key], flow["in"], flow["out"])
+                new_values[key] = fn(partition, previous[key], flow["in"], flow["out"])
 
             return new_values
 
@@ -297,8 +317,8 @@ def compute_edge_flows(
 
 
 def on_edge_flow(
-    initializer: Callable[[Partition], dict[KeyT, ValueT]], alias: str
-) -> Callable[[Callable[..., ValueT]], Callable[[Partition], dict[KeyT, ValueT]]]:
+    initializer_fn: Callable[[Partition], dict[KeyT, ValueT]], alias: str
+) -> Callable[[EdgeFlowUpdateFn[ValueT]], Callable[[Partition], dict[KeyT, ValueT]]]:
     """A decorator that responds to flows of cut edges between parts of the partition.
 
     Use this decorator to create an updater that responds to flows of cut edges between parts of
@@ -316,7 +336,7 @@ def on_edge_flow(
     This will create an updater whose values are dictionaries of the form `{part: <value of the
     given function on the part>}`.
 
-    The initializer, by contrast, should take the entire partition and return the entire `{part:
+    The initializer_fn, by contrast, should take the entire partition and return the entire `{part:
     <value>}` dictionary.
 
     How it works (initialize vs. incremental update):
@@ -325,7 +345,7 @@ def on_edge_flow(
         ``partition.flows`` (nodes joining/leaving each part).
 
         * **Initialize (root partition).** When the partition has no parent, the updater calls
-          ``initializer(partition)`` and returns the whole ``{part: value}`` dictionary computed
+          ``initializer_fn(partition)`` and returns the whole ``{part: value}`` dictionary computed
           from scratch.
         * **Incremental update (every later step).** Otherwise it copies the parent's cached
           ``{part: value}`` dictionary and, for each part with cut-edge flow this step, replaces
@@ -340,13 +360,14 @@ def on_edge_flow(
 
     .. code-block:: python
 
-        @on_edge_flow(initializer, alias='my_updater')
+        @on_edge_flow(initializer_fn, alias='my_updater')
         def my_updater(partition, previous, new_edges, old_edges):
             # return new value of the part
 
     Args:
-        initializer (Callable): A function that takes the partition and returns a dictionary of the
-            form `{part: <value>}`. Used to compute the value from scratch for the root partition.
+        initializer_fn (Callable): A function that takes the partition and returns a dictionary
+            of the form `{part: <value>}`. Used to compute the value from scratch for the root
+            partition.
         alias (str): The name of the updater to be created (and the key it is registered under).
 
     Returns:
@@ -355,12 +376,12 @@ def on_edge_flow(
     """
 
     def decorator(
-        f: Callable[..., ValueT],
+        fn: EdgeFlowUpdateFn[ValueT],
     ) -> Callable[[Partition], dict[KeyT, ValueT]]:
-        @functools.wraps(f)
+        @functools.wraps(fn)
         def wrapper(partition: Partition) -> dict[KeyT, ValueT]:
             if not partition.parent:
-                return initializer(partition)
+                return initializer_fn(partition)
             edge_flows = partition.edge_flows
             assert edge_flows is not None
             parent_values = partition.parent[alias]
@@ -371,7 +392,7 @@ def on_edge_flow(
             new_values = previous.copy()
             for part in edge_flows:
                 key = cast(KeyT, part)
-                new_values[key] = f(
+                new_values[key] = fn(
                     partition,
                     previous[key],
                     new_edges=edge_flows[part]["in"],

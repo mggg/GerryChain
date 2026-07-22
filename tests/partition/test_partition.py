@@ -5,6 +5,7 @@ from tempfile import TemporaryDirectory
 
 import networkx
 import pytest
+import rustworkx
 
 from gerrychain.graph import Graph
 from gerrychain.partition import GeographicPartition, Partition
@@ -43,6 +44,67 @@ def test_Partition_unlabelled_vertices_raises_keyerror():
     assignment = {0: 1, 2: 2}
     with pytest.raises(KeyError):
         Partition(graph, assignment, {"cut_edges": cut_edges})
+
+
+def test_assignment_vector(example_partition):
+    assert example_partition.assignment_vector.tolist() == [1, 1, 2]
+
+
+def test_assignment_vector_is_read_only(example_partition):
+    with pytest.raises(ValueError):
+        example_partition.assignment_vector[0] = 5
+
+
+def test_assignment_vector_incremental_from_cached_parent(example_partition):
+    parent_vector = example_partition.assignment_vector
+    child = example_partition.flip({1: 2})
+    assert child.assignment_vector.tolist() == [1, 2, 2]
+    # The parent's cached vector is unchanged by the child's flips.
+    assert parent_vector.tolist() == [1, 1, 2]
+
+
+def test_assignment_vector_without_cached_parent(example_partition):
+    child = example_partition.flip({1: 2})
+    assert child.assignment_vector.tolist() == [1, 2, 2]
+
+
+def test_assignment_vector_aligns_with_internal_node_ids():
+    # String node labels, inserted in non-sorted order, so the internal rustworkx ids assigned
+    # during conversion are decoupled from any natural ordering of the labels themselves.
+    nx_graph = networkx.Graph()
+    nx_graph.add_edges_from([("D", "A"), ("A", "C"), ("C", "B")])
+    parts_by_label = {"D": 10, "A": 11, "C": 12, "B": 10}
+    partition = Partition(Graph.from_networkx(nx_graph), parts_by_label, {"cut_edges": cut_edges})
+
+    vector = partition.assignment_vector
+    assert len(vector) == 4
+    for label, part in parts_by_label.items():
+        internal_id = partition.graph.internal_node_id_for_original_nx_node_id(label)
+        assert vector[internal_id] == part
+
+    # Position i is internal node id i, i.e. the graph's own node order.
+    assert vector.tolist() == [partition.assignment[node] for node in partition.graph.nodes]
+
+    # The incremental (copy-parent-and-apply-flips) path preserves the same alignment.
+    flipped_id = partition.graph.internal_node_id_for_original_nx_node_id("B")
+    child = partition.flip({flipped_id: 12})
+    child_vector = child.assignment_vector
+    for label, part in {**parts_by_label, "B": 12}.items():
+        internal_id = partition.graph.internal_node_id_for_original_nx_node_id(label)
+        assert child_vector[internal_id] == part
+
+
+def test_assignment_vector_rejects_non_contiguous_graph():
+    # Removing a node from a rustworkx graph leaves a hole in its node ids, so ascending id no
+    # longer matches a dense 0..n-1 vector; emitting one must fail rather than misalign.
+    rx_graph = rustworkx.PyGraph()
+    a, b, c = rx_graph.add_nodes_from([{}, {}, {}])
+    rx_graph.add_edges_from([(a, b, {}), (b, c, {})])
+    rx_graph.remove_node(b)
+
+    partition = Partition(Graph.from_rustworkx(rx_graph), {a: 1, c: 2}, {"cut_edges": cut_edges})
+    with pytest.raises(ValueError, match="contiguous"):
+        partition.assignment_vector
 
 
 def test_Partition_knows_cut_edges_K3(example_partition):

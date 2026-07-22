@@ -146,7 +146,7 @@ def _run_one_seed(seed: int) -> dict:
         build_s.append(time.perf_counter() - t0)
 
         ideal = sum(initial["population"].values()) / len(initial)
-        proposal = partial(
+        proposal_fn = partial(
             recom,
             pop_col=args.pop_col,
             pop_target=ideal,
@@ -154,11 +154,13 @@ def _run_one_seed(seed: int) -> dict:
             node_repeats=0,
         )
         chain_params = inspect.signature(MarkovChain).parameters
+        # Older gerrychain versions call these proposal, accept, and initial_state.
         chain_kwargs = {
-            "proposal": proposal,
+            ("proposal_fn" if "proposal_fn" in chain_params else "proposal"): proposal_fn,
             "constraints": [],
-            "accept": accept.always_accept,
-            # Older gerrychain versions call this parameter initial_state.
+            ("acceptance_fn" if "acceptance_fn" in chain_params else "accept"): (
+                accept.always_accept
+            ),
             ("initial_partition" if "initial_partition" in chain_params else "initial_state"): (
                 initial
             ),

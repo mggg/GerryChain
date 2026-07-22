@@ -186,7 +186,7 @@ def test_random_assignment_method_receives_original_graph_and_node_labels():
     graph = Graph.from_networkx(nx_graph)
     received = {}
 
-    def method(*, graph, parts, **kwargs):
+    def partition_fn(*, graph, parts, **kwargs):
         received["graph"] = graph
         received["nodes"] = graph.nodes
         part_labels = list(parts)
@@ -197,7 +197,7 @@ def test_random_assignment_method_receives_original_graph_and_node_labels():
         n_parts=2,
         epsilon=0,
         pop_col="population",
-        method=method,
+        partition_fn=partition_fn,
         rng=2024,
     )
 
@@ -310,9 +310,9 @@ def test_pa_freeze():
     pop_constraint = constraints.within_percent_of_ideal_population(initial_partition, 0.02)
 
     chain = MarkovChain(
-        proposal=proposal,
+        proposal_fn=proposal,
         constraints=[pop_constraint],
-        accept=accept.always_accept,
+        acceptance_fn=accept.always_accept,
         initial_partition=initial_partition,
         total_steps=100,
         rng=2018,

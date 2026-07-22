@@ -14,7 +14,11 @@ from .optimization import SingleMetricOptimizer
 
 
 class GingleScoreFn(Protocol):
-    def __call__(self, part: Partition, *, minority_perc_col: str, threshold: float) -> float: ...
+    """Score a partition using the configured minority column and threshold."""
+
+    def __call__(
+        self, part: Partition, /, *, minority_perc_col: str, threshold: float
+    ) -> float: ...
 
 
 class Gingleator(SingleMetricOptimizer):
@@ -29,12 +33,12 @@ class Gingleator(SingleMetricOptimizer):
 
     def __init__(
         self,
-        proposal: ProposalFn,
+        proposal_fn: ProposalFn,
         constraints: ConstraintFn | Iterable[ConstraintFn] | Validator,
         initial_state: Partition,
         minority_perc_col: str | None = None,
         threshold: float = 0.5,
-        score_function: GingleScoreFn | None = None,
+        score_fn: GingleScoreFn | None = None,
         minority_pop_col: str | None = None,
         total_pop_col: str = "TOTPOP",
         min_perc_column_name: str = "_gingleator_auxiliary_helper_updater_min_perc_col",
@@ -44,7 +48,7 @@ class Gingleator(SingleMetricOptimizer):
         """Initialize a Gingleator instance.
 
         Args:
-            proposal (Callable): Function proposing the next state from the current state.
+            proposal_fn (ProposalFn): Function proposing the next state from the current state.
             constraints (ConstraintFn | Iterable[ConstraintFn] | Validator): A function with
                 signature ``Partition -> bool`` determining whether the proposed next state is
                 valid (passes all binary constraints). Usually this is a Validator class
@@ -56,11 +60,11 @@ class Gingleator(SingleMetricOptimizer):
                 Defaults to None.
             threshold (float, optional): Fraction beyond which to consider something a "Gingles"
                 (or opportunity) district. Defaults to 0.5.
-            score_function (GingleScoreFn | None): The function to use during optimization. This
+            score_fn (GingleScoreFn | None): The function to use during optimization. This
                 class provides several compatible class methods. Defaults to ``None``.
             minority_pop_col (str | None): If minority_perc_col is not defined, the minority
                 population column with which to compute percentage. Defaults to None.
-            total_pop_col (str, optional): If minority_perc_col is defined, the total population
+            total_pop_col (str, optional): If minority_perc_col is not defined, the total population
                 column with which to compute percentage. Defaults to "TOTPOP".
             min_perc_column_name (str, optional): If minority_perc_col is not defined, the name to
                 give the created percentage updater. Defaults to
@@ -80,7 +84,7 @@ class Gingleator(SingleMetricOptimizer):
                 "`minority_perc_col` and `minority_pop_col` are both specified. By \
                            default `minority_perc_col` will be used."
             )
-        score_function = self.num_opportunity_dists if score_function is None else score_function
+        score_fn = self.num_opportunity_dists if score_fn is None else score_fn
 
         if minority_perc_col is None:
             assert minority_pop_col is not None
@@ -96,9 +100,9 @@ class Gingleator(SingleMetricOptimizer):
             initial_state.updaters.update(perc_up)
             minority_perc_col = min_perc_column_name
 
-        score = partial(score_function, minority_perc_col=minority_perc_col, threshold=threshold)
+        score_fn = partial(score_fn, minority_perc_col=minority_perc_col, threshold=threshold)
 
-        super().__init__(proposal, constraints, initial_state, score, maximize=True, rng=rng)
+        super().__init__(proposal_fn, constraints, initial_state, score_fn, maximize=True, rng=rng)
 
     # ---------------------
     #    Score functions

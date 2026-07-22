@@ -121,11 +121,11 @@ def spectral_recom(
         from functools import partial from gerrychain import MarkovChain from gerrychain.proposals
         import recom
 
-        # ...define constraints, accept, partition, total_steps here...
+        # ...define constraints, acceptance_fn, partition, total_steps here...
 
-        proposal = partial( spectral_recom, weight_type=None, lap_type="normalized" )
+        proposal_fn = partial( spectral_recom, weight_type=None, lap_type="normalized" )
 
-        chain = MarkovChain(proposal, constraints, accept, partition, total_steps)
+        chain = MarkovChain(proposal_fn, constraints, acceptance_fn, partition, total_steps)
 
     Args:
         partition (Partition): The initial partition.

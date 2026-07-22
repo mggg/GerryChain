@@ -27,6 +27,31 @@ class TestAssignment:
         assert isinstance(series, pandas.Series)
         assert list(series.items()) == [(1, 1), (2, 2), (3, 2)]
 
+    def test_to_vector(self):
+        assignment = Assignment.from_dict({0: 1, 1: 1, 2: 2})
+        assert assignment.to_vector().tolist() == [1, 1, 2]
+
+    def test_to_vector_requires_contiguous_0_based_node_ids(self, assignment):
+        # The fixture's nodes are {1, 2, 3}, which are not 0-based.
+        with pytest.raises(ValueError, match="contiguous"):
+            assignment.to_vector()
+
+    def test_to_vector_ignores_mapping_insertion_order(self):
+        assignment = Assignment.from_dict({2: "c", 0: "a", 1: "b"})
+        assert assignment.to_vector().tolist() == ["a", "b", "c"]
+
+    def test_to_vector_rejects_gap_in_node_ids(self):
+        # Keys {0, 2} have the right length for range(2) but a hole at 1.
+        assignment = Assignment.from_dict({0: "a", 2: "b"})
+        with pytest.raises(ValueError, match="contiguous"):
+            assignment.to_vector()
+
+    def test_to_vector_string_labels_are_not_width_limited(self):
+        assignment = Assignment.from_dict({0: "a", 1: "b"})
+        vector = assignment.to_vector().copy()
+        vector[0] = "a_label_longer_than_one_character"
+        assert vector[0] == "a_label_longer_than_one_character"
+
     def test_to_dict(self, assignment):
         assignment_dict = assignment.to_dict()
 
