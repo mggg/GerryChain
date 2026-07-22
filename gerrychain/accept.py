@@ -10,8 +10,10 @@ from typing import Protocol
 from gerrychain.partition import Partition
 
 
-class AcceptFn(Protocol):
-    def __call__(self, partition: Partition, *, rng: random.Random) -> bool: ...
+class AcceptanceFn(Protocol):
+    """Accept or reject a proposal, called as ``acceptance_fn(partition, rng=rng)``."""
+
+    def __call__(self, partition: Partition, /, *, rng: random.Random) -> bool: ...
 
 
 def always_accept(partition: Partition, *, rng: random.Random) -> bool:

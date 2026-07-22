@@ -37,14 +37,34 @@ schema, it's a lot harder to make a snake-y patchwork of districts.
 """
 
 import random
-from collections.abc import Callable, Hashable, Sequence, Set as AbstractSet
+from collections.abc import Hashable, Sequence
 from functools import partial
+from typing import Protocol
 
 from .._rng import make_rng
 
 # frm:  import the new Graph object which encapsulates NX and RX Graph...
 from ..graph import Graph
-from ..tree import PopulationBalanceError, bipartition_tree
+from ..tree import BipartitionTreeFn, PopulationBalanceError, bipartition_tree
+
+
+class PartitionFn(Protocol):
+    """A function that partitions ``graph`` into ``len(parts)`` population-balanced districts.
+
+    Returns the full node-to-part assignment dict. :func:`recursive_tree_part` and
+    :func:`recursive_seed_part` both match this shape.
+    """
+
+    def __call__(
+        self,
+        *,
+        graph: Graph,
+        parts: Sequence[Hashable],
+        pop_target: float,
+        pop_col: str,
+        epsilon: float,
+        rng: random.Random,
+    ) -> dict[Hashable, Hashable]: ...
 
 
 def recursive_tree_part(
@@ -54,9 +74,7 @@ def recursive_tree_part(
     pop_col: str,
     epsilon: float,
     node_repeats: int = 0,
-    bipartition_tree_fn: Callable[..., AbstractSet[Hashable]] = partial(
-        bipartition_tree, max_attempts=100000
-    ),
+    bipartition_tree_fn: BipartitionTreeFn = partial(bipartition_tree, max_attempts=100000),
     *,
     rng: random.Random | int | None = None,
 ) -> dict[Hashable, Hashable]:
@@ -78,7 +96,7 @@ def recursive_tree_part(
             of the partition can be.
         node_repeats (int, optional): Additional roots to try on each spanning tree before
             drawing a new tree. Defaults to 0.
-        bipartition_tree_fn (Callable, optional): The partition method to use. Defaults to
+        bipartition_tree_fn (BipartitionTreeFn, optional): The partition method to use. Defaults to
             ``partial(bipartition_tree, max_attempts=100000)``.
         rng (random.Random | int | None, optional): Source of randomness. Pass a shared
             ``Random`` for repeated standalone calls; an integer restarts the stream each call.
@@ -189,9 +207,7 @@ def _get_seed_chunks(
     pop_col: str,
     epsilon: float,
     node_repeats: int = 0,
-    bipartition_tree_fn: Callable[..., AbstractSet[Hashable]] = partial(
-        bipartition_tree, max_attempts=100000
-    ),
+    bipartition_tree_fn: BipartitionTreeFn = partial(bipartition_tree, max_attempts=100000),
     *,
     rng: random.Random,
 ) -> list[list[Hashable]]:
@@ -212,8 +228,8 @@ def _get_seed_chunks(
             of the partition can be
         node_repeats (int, optional): Additional roots to try on each spanning tree before
             drawing a new tree. Defaults to 0.
-        bipartition_tree_fn (Callable, optional): The method to use for bipartitioning the graph.
-            Defaults to `gerrychain.tree.bipartition_tree`
+        bipartition_tree_fn (BipartitionTreeFn, optional): The method to use for bipartitioning
+            the graph. Defaults to `gerrychain.tree.bipartition_tree`
         rng (random.Random): Random number generator for the operation.
 
     Returns:
@@ -381,9 +397,7 @@ def _recursive_seed_part_inner(
     pop_target: float | int,
     pop_col: str,
     epsilon: float,
-    bipartition_tree_fn: Callable[..., AbstractSet[Hashable]] = partial(
-        bipartition_tree, max_attempts=100000
-    ),
+    bipartition_tree_fn: BipartitionTreeFn = partial(bipartition_tree, max_attempts=100000),
     node_repeats: int = 0,
     n: int | None = None,
     ceil: int | None = None,
@@ -421,8 +435,8 @@ def _recursive_seed_part_inner(
         pop_col (str): Node attribute key holding population data
         epsilon (float): How far (as a percentage of ``pop_target``) from ``pop_target`` the parts
             of the partition can be
-        bipartition_tree_fn (Callable, optional): Function used to find balanced partitions at the
-            2-district level. Defaults to `gerrychain.tree.bipartition_tree`
+        bipartition_tree_fn (BipartitionTreeFn, optional): Function used to find balanced
+            partitions at the 2-district level. Defaults to `gerrychain.tree.bipartition_tree`
         node_repeats (int, optional): Additional roots to try on each spanning tree before
             drawing a new tree. Defaults to 0.
         n (int | None, optional): Either a positive integer (greater than 1) or None. If n is a
@@ -577,9 +591,7 @@ def recursive_seed_part(
     pop_target: float | int,
     pop_col: str,
     epsilon: float,
-    bipartition_tree_fn: Callable[..., AbstractSet[Hashable]] = partial(
-        bipartition_tree, max_attempts=100000
-    ),
+    bipartition_tree_fn: BipartitionTreeFn = partial(bipartition_tree, max_attempts=100000),
     node_repeats: int = 0,
     n: int | None = None,
     ceil: int | None = None,
@@ -598,7 +610,8 @@ def recursive_seed_part(
         pop_col (str): Node attribute key holding population data
         epsilon (float): How far (as a percentage of ``pop_target``) from ``pop_target`` the parts
             of the partition can be
-        bipartition_tree_fn (Callable, optional): Function used to find balanced partitions at the
+        bipartition_tree_fn (BipartitionTreeFn, optional): Function used to find balanced
+            partitions at the
             2-district level. Defaults to ``gerrychain.tree.bipartition_tree``.
         node_repeats (int, optional): Additional roots to try on each spanning tree before
             drawing a new tree. Defaults to 0.

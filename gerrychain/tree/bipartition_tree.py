@@ -32,7 +32,7 @@ from collections import deque
 from collections.abc import Callable, Hashable, Sequence, Set as AbstractSet
 from functools import partial
 from inspect import signature
-from typing import NamedTuple, Protocol
+from typing import NamedTuple, Protocol, cast
 
 from .._rng import make_rng
 from ..graph import FrozenGraph, Graph
@@ -245,6 +245,75 @@ class FindBalancedEdgeCutsFn(Protocol):
         *,
         rng: random.Random,
     ) -> list[_Cut]: ...
+
+
+class BipartitionTreeFn(Protocol):
+    """The bipartitioning step used by seed-plan generators.
+
+    Called with the subgraph to split and keyword configuration; returns the node set of one
+    side of the bipartition. :func:`bipartition_tree` (or a ``functools.partial`` of it, to
+    bind extra options like ``max_attempts``) matches this shape.
+    """
+
+    def __call__(
+        self,
+        subgraph_to_split: GraphLike,
+        /,
+        *,
+        pop_col: str,
+        pop_target: float,
+        epsilon: float,
+        node_repeats: int = 0,
+        one_sided_cut: bool = False,
+        rng: random.Random,
+    ) -> AbstractSet[Hashable]: ...
+
+
+class ReComBipartitionTreeFn(Protocol):
+    """The bipartitioning step used by ReCom proposals.
+
+    This extends the seed-plan call shape with ``region_surcharge`` and returns the node set on one
+    side of the bipartition.
+    """
+
+    def __call__(
+        self,
+        subgraph_to_split: GraphLike,
+        /,
+        *,
+        pop_col: str,
+        pop_target: float,
+        epsilon: float,
+        node_repeats: int = 0,
+        one_sided_cut: bool = False,
+        region_surcharge: dict[str, float] | None = None,
+        rng: random.Random,
+    ) -> AbstractSet[Hashable]: ...
+
+
+class CutChoiceFn(Protocol):
+    """Selects which balanced cut to make. Called as ``cut_choice_fn(cuts, rng=rng)``."""
+
+    def __call__(self, cut_edge_list: list[_Cut], /, *, rng: random.Random) -> _Cut: ...
+
+
+class RegionAwareCutChoiceFn(Protocol):
+    """Region-aware variant of :class:`CutChoiceFn`.
+
+    A cut chooser whose signature declares ``populated_graph`` and ``region_surcharge``
+    parameters (detected via ``inspect.signature``) is additionally handed the populated
+    spanning tree and the region surcharges when selecting a cut.
+    """
+
+    def __call__(
+        self,
+        cut_edge_list: list[_Cut],
+        /,
+        *,
+        populated_graph: _PopulatedGraph,
+        region_surcharge: dict[str, float],
+        rng: random.Random,
+    ) -> _Cut: ...
 
 
 def _bfs_predecessors_and_successors_for_tree(
@@ -820,7 +889,7 @@ def _internal_bipartition_tree(
     warn_attempts: int = 1000,
     allow_pair_reselection: bool = False,
     repeat_until_valid: bool = True,  # frm: TODO: Have this NOT default...
-    cut_choice_fn: Callable[..., _Cut] = _region_preferred_max_weight_choice,
+    cut_choice_fn: CutChoiceFn | RegionAwareCutChoiceFn = _region_preferred_max_weight_choice,
     *,
     rng: random.Random,
 ) -> tuple[int, AbstractSet[Hashable]]:
@@ -876,7 +945,7 @@ def _internal_bipartition_tree(
         allow_pair_reselection (bool, optional): Whether we would like to return an error to the
             calling function to ask it to reselect the pair of nodes to try and recombine. Defaults
             to False.
-        cut_choice_fn (Callable, optional): Function with signature ``(cuts, *, rng)`` used to
+        cut_choice_fn (CutChoiceFn | RegionAwareCutChoiceFn, optional): Function used to
             select the cut edge. Defaults to `_region_preferred_max_weight_choice`.
             Note that this function should gracefully handle the case when the edges in the list of
             possible balanced cuts do not have edge weights - in this case, it should default to
@@ -971,14 +1040,14 @@ def _internal_bipartition_tree(
             "region_surcharge" in signature(cut_choice_fn).parameters
             and "populated_graph" in signature(cut_choice_fn).parameters
         ):
-            chosen_cut = cut_choice_fn(
+            chosen_cut = cast(RegionAwareCutChoiceFn, cut_choice_fn)(
                 possible_cuts,
                 populated_graph=populated_graph,
                 region_surcharge=region_surcharge,
                 rng=rng,
             )
         else:
-            chosen_cut = cut_choice_fn(possible_cuts, rng=rng)
+            chosen_cut = cast(CutChoiceFn, cut_choice_fn)(possible_cuts, rng=rng)
 
         parent_node_ids = subgraph_to_split.translate_subgraph_node_ids_for_set_of_nodes(
             chosen_cut.subset
@@ -1023,7 +1092,7 @@ def bipartition_tree(
     max_attempts: int = 100000,
     warn_attempts: int = 1000,
     allow_pair_reselection: bool = False,
-    cut_choice_fn: Callable[..., _Cut] = _region_preferred_max_weight_choice,
+    cut_choice_fn: CutChoiceFn | RegionAwareCutChoiceFn = _region_preferred_max_weight_choice,
     *,
     rng: random.Random | int | None = None,
 ) -> AbstractSet[Hashable]:
@@ -1079,7 +1148,7 @@ def bipartition_tree(
         allow_pair_reselection (bool, optional): Whether we would like to return an error to the
             calling function to ask it to reselect the pair of nodes to try and recombine. Defaults
             to False.
-        cut_choice_fn (Callable, optional): Function with signature ``(cuts, *, rng)`` used to
+        cut_choice_fn (CutChoiceFn | RegionAwareCutChoiceFn, optional): Function used to
             select the cut edge. Defaults to `_region_preferred_max_weight_choice`.
             Note that this function should gracefully handle the case when the edges in the list of
             possible balanced cuts do not have edge weights - in this case, it should default to
@@ -1298,7 +1367,7 @@ def bipartition_tree_random_with_num_cuts(
     one_sided_cut: bool = False,
     rootnode_choice_fn: Callable[[Sequence[Hashable]], Hashable] | None = None,
     max_attempts: int = 100000,
-    cut_choice_fn: Callable[..., _Cut] | None = None,
+    cut_choice_fn: CutChoiceFn | RegionAwareCutChoiceFn | None = None,
     *,
     rng: random.Random | int | None = None,
 ) -> tuple[int, AbstractSet[Hashable]]:
@@ -1339,7 +1408,7 @@ def bipartition_tree_random_with_num_cuts(
             testing. Defaults to the supplied RNG's ``choice``.
         max_attempts (int): The max number of attempts that should be made to
             bipartition. Defaults to 100,000.
-        cut_choice_fn (Callable | None): Function with signature ``(cuts, *, rng)`` used to
+        cut_choice_fn (CutChoiceFn | RegionAwareCutChoiceFn | None): Function used to
             select a cut. Defaults to the supplied RNG's ``choice``.
         rng (random.Random | int | None, optional): Source of randomness. Pass a shared
             ``Random`` for repeated standalone calls; an integer restarts the stream each call.

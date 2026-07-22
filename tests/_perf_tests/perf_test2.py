@@ -63,9 +63,9 @@ def main():
     print("About to call MarkovChain", file=sys.stderr)
 
     chain = MarkovChain(
-        proposal=proposal,
+        proposal_fn=proposal,
         constraints=[pop_constraint, compactness_bound],
-        accept=accept.always_accept,
+        acceptance_fn=accept.always_accept,
         initial_partition=initial_partition,
         total_steps=1000,
     )

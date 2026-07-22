@@ -79,7 +79,7 @@ from __future__ import annotations
 import json
 import random
 from collections.abc import Callable, Hashable, KeysView, Mapping
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 # frm:  Only used in _first_time() inside __init__() to allow for creating
 #       a Partition from a NetworkX Graph object:
@@ -89,13 +89,14 @@ from typing import TYPE_CHECKING, Any, TypeVar
 #               self.graph = FrozenGraph(graph)
 import geopandas
 import networkx
+import numpy
 
 from gerrychain.graph.graph import FrozenGraph, Graph
 
 from .._rng import make_rng
 from ..updaters import compute_edge_flows, cut_edges, flows_from_changes
 from .assignment import Assignment, get_assignment
-from .initial_partition_generators import recursive_tree_part
+from .initial_partition_generators import PartitionFn, recursive_tree_part
 from .subgraphs import SubgraphView
 
 if TYPE_CHECKING:
@@ -159,6 +160,7 @@ class Partition:
         "flows",
         "edge_flows",
         "_cache",
+        "_assignment_vector",
     )
 
     graph: FrozenGraph
@@ -169,6 +171,7 @@ class Partition:
     flows: dict[Hashable, dict[str, set[Hashable]]] | None
     edge_flows: dict[Hashable, dict[str, set[tuple[int, int]]]] | None
     _cache: dict[str, Any]
+    _assignment_vector: numpy.ndarray | None
 
     default_updaters: dict[str, Callable[[Partition], Any]] = {"cut_edges": cut_edges}
 
@@ -212,6 +215,7 @@ class Partition:
             self._from_parent(parent, flips)
 
         self._cache = {}
+        self._assignment_vector = None
 
         # SubgraphView provides cached access to subgraphs for each of the
         # partition's districts.  It is important that we asign subgraphs AFTER
@@ -231,7 +235,7 @@ class Partition:
         pop_col: str,
         updaters: Mapping[str, Callable[[Partition], Any]] | None = None,
         use_default_updaters: bool = True,
-        method: Callable[..., dict[Hashable, Hashable]] = recursive_tree_part,
+        partition_fn: PartitionFn = recursive_tree_part,
         *,
         rng: random.Random | int | None = None,
     ) -> Partition:
@@ -247,10 +251,11 @@ class Partition:
             pop_col (str): The column of the graph's node data that holds the population data.
             updaters (Mapping[str, Callable] | None, optional): Dictionary of updaters.
             use_default_updaters (bool, optional): If `False`, do not include default updaters.
-            method (Callable, optional): The function to use to partition the graph into
-                ``n_parts``. The method is called with this method's normalized ``rng``, which
-                takes precedence over an ``rng`` partially bound to the ``method`` parameter.
-                Defaults to `gerrychain.tree.recursive_tree_part`.
+            partition_fn (PartitionFn, optional): The function to use to partition the graph into
+                ``n_parts``; it returns the full node-to-part assignment dict. It is called with
+                this method's normalized ``rng``, which takes precedence over an ``rng`` partially
+                bound to the ``partition_fn`` parameter. Defaults to
+                `gerrychain.partition.recursive_tree_part`.
             rng (random.Random | int | None, optional): Source of randomness. An integer
                 creates a reproducible RNG; ``None`` creates an independent RNG from system
                 entropy.
@@ -262,7 +267,7 @@ class Partition:
         total_pop = sum(graph.node_data(n)[pop_col] for n in graph)
         ideal_pop = total_pop / n_parts
 
-        assignment = method(
+        assignment = partition_fn(
             graph=graph,
             parts=range(n_parts),
             pop_target=ideal_pop,
@@ -520,6 +525,35 @@ class Partition:
     @property
     def parts(self) -> dict[Hashable, frozenset[Hashable]]:
         return self.assignment.parts
+
+    @property
+    def assignment_vector(self) -> numpy.ndarray:
+        """The part (district) label of each node, as an array indexed by internal node id.
+
+        Computed lazily and cached. When this partition's parent has already emitted its vector,
+        the child's is built by copying it and rewriting only the flipped entries, so emitting the
+        vector at every step of a chain costs an array copy (C-speed) plus the handful of flips
+        rather than an O(n) rebuild from the assignment mapping.
+
+        The returned array is read-only, since child partitions build their vectors from it; call
+        ``.copy()`` on it if you need a mutable version. Positions are internal node ids; use
+        :meth:`Graph.original_nx_node_id_for_internal_node_id` to translate back to the original
+        node labels.
+
+        Returns:
+            numpy.ndarray: Array of length ``n`` whose ``i``-th entry is the part of node ``i``.
+        """
+        if self._assignment_vector is None:
+            parent = self.parent
+            if parent is not None and parent._assignment_vector is not None and self.flips:
+                vector = parent._assignment_vector.copy()
+                for node, part in self.flips.items():
+                    vector[cast(int, node)] = part
+            else:
+                vector = self.assignment.to_vector()
+            vector.setflags(write=False)
+            self._assignment_vector = vector
+        return self._assignment_vector
 
     def plot(
         self,

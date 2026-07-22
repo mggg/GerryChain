@@ -52,9 +52,9 @@ def run_chain_single(seed, category, steps, surcharge, max_attempts=100000, rese
     )
 
     surcharged_chain = MarkovChain(
-        proposal=surcharged_proposal,
+        proposal_fn=surcharged_proposal,
         constraints=[constraints.contiguous],
-        accept=accept.always_accept,
+        acceptance_fn=accept.always_accept,
         initial_partition=initial_partition,
         total_steps=num_steps,
         rng=seed,
@@ -181,9 +181,9 @@ def run_chain_dual(seed, steps, surcharges={"muni": 0.5, "county": 0.5}, warn_at
     )
 
     surcharged_chain = MarkovChain(
-        proposal=surcharged_proposal,
+        proposal_fn=surcharged_proposal,
         constraints=[constraints.contiguous],
-        accept=accept.always_accept,
+        acceptance_fn=accept.always_accept,
         initial_partition=initial_partition,
         total_steps=num_steps,
         rng=seed,

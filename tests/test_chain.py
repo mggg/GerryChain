@@ -63,9 +63,9 @@ def test_chain_only_yields_accepted_states():
         return values.pop()
 
     chain = MarkovChain(
-        proposal=proposal,
+        proposal_fn=proposal,
         constraints=lambda x: True,
-        accept=accept,
+        acceptance_fn=accept,
         initial_partition=Value(0),
         total_steps=4,
     )
@@ -78,16 +78,16 @@ def test_incremental_construction_matches_constructor():
     initial = MockState()
     chain = MarkovChain(total_steps=5)
     chain.initial_partition = initial
-    chain.proposal = mock_proposal
+    chain.proposal_fn = mock_proposal
     chain.constraints = mock_is_valid
-    chain.accept = mock_accept
+    chain.acceptance_fn = mock_accept
 
     assert len(list(chain)) == 5
 
 
 def test_check_valid_names_missing_config():
     chain = MarkovChain(total_steps=5)
-    with pytest.raises(ValueError, match="proposal, initial_partition"):
+    with pytest.raises(ValueError, match="proposal_fn, initial_partition"):
         chain.check_valid()
 
     with pytest.raises(ValueError, match="not fully configured"):
@@ -98,7 +98,7 @@ def test_iter_rejects_invalid_initial_partition():
     def never_valid(state):
         return False
 
-    chain = MarkovChain(proposal=mock_proposal, accept=mock_accept, total_steps=5)
+    chain = MarkovChain(proposal_fn=mock_proposal, acceptance_fn=mock_accept, total_steps=5)
     chain.constraints = never_valid  # no initial_partition yet, so this cannot validate
     chain.initial_partition = MockState()
     with pytest.raises(ValueError, match="never_valid"):
@@ -109,7 +109,7 @@ def test_add_constraint_defers_check_until_iteration():
     def never_valid(state):
         return False
 
-    chain = MarkovChain(proposal=mock_proposal, accept=mock_accept, total_steps=3)
+    chain = MarkovChain(proposal_fn=mock_proposal, acceptance_fn=mock_accept, total_steps=3)
     chain.add_constraint(never_valid)  # no initial_partition yet: recorded, not checked
     chain.initial_partition = MockState()
     with pytest.raises(ValueError, match="never_valid"):
@@ -121,8 +121,8 @@ def test_add_constraint_validates_immediately_with_initial_partition():
         return False
 
     chain = MarkovChain(
-        proposal=mock_proposal,
-        accept=mock_accept,
+        proposal_fn=mock_proposal,
+        acceptance_fn=mock_accept,
         initial_partition=MockState(),
         total_steps=3,
     )
@@ -143,7 +143,7 @@ def test_add_updater_applies_before_or_after_initial_partition():
     def zero(partition):
         return 0
 
-    chain = MarkovChain(proposal=mock_proposal, accept=mock_accept, total_steps=3)
+    chain = MarkovChain(proposal_fn=mock_proposal, acceptance_fn=mock_accept, total_steps=3)
     chain.add_updater("answer", answer)  # before any initial_partition: applied on assignment
     initial = StateWithUpdaters()
     chain.initial_partition = initial
@@ -165,8 +165,8 @@ def test_add_constraint_and_add_updater_rejected_while_locked():
 
 def test_constraints_setter_still_validates_eagerly():
     chain = MarkovChain(
-        proposal=mock_proposal,
-        accept=mock_accept,
+        proposal_fn=mock_proposal,
+        acceptance_fn=mock_accept,
         initial_partition=MockState(),
         total_steps=5,
     )
@@ -195,7 +195,7 @@ def test_chain_abandoned_by_break_unlocks_and_can_be_rerun():
         break
 
     # Leaving the loop ends the run and releases the lock.
-    chain.accept = mock_accept
+    chain.acceptance_fn = mock_accept
 
     count = 0
     for _ in chain:
@@ -214,15 +214,15 @@ def test_chain_unlocks_when_a_step_raises():
     with pytest.raises(RuntimeError, match="boom"):
         next(it)
     # The failure unlocked the chain, so it can be reconfigured.
-    chain.proposal = mock_proposal
+    chain.proposal_fn = mock_proposal
     assert len(list(chain)) == 3
 
 
 def test_repr():
     chain = MarkovChain(
-        proposal=lambda x, *, rng: None,
+        proposal_fn=lambda x, *, rng: None,
         constraints=[],
-        accept=lambda x, *, rng: True,
+        acceptance_fn=lambda x, *, rng: True,
         initial_partition=None,
         total_steps=100,
     )
