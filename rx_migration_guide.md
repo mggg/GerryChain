@@ -92,12 +92,10 @@ needed to that graph object and then using that
 GerryChain.Graph object to create your Partition
 object.
 
-The advantage of #1 is that since you are 
-dealing with a NetworkX.Graph object when you
-are making modifications, your legacy code 
-(which is based on a GerryChain.Graph object
-being a subclass of a NetworkX.Graph object)
-will just work.
+Approach #1 is the most compatible with previous
+(legacy) workflows since, prior to release 1.0.0, 
+GerryChain treated the `Graph` class as a  proper
+subclass of the NetworkX `Graph` class.
 
 Your code in this case would look something
 like:
