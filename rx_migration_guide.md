@@ -194,7 +194,7 @@ In v1.0.0, this code will need to be changed to be:
     edge_attr_value = my_graph.edge_data(my_edge_id)["<attr_name>"]
 ```
 
-The interesting change here is that you need to obtain the 
+The important change here is that you need to obtain the 
 edge_id before calling my_graph.edge_data(edge_id).  In NetworkX
 an edge_id is a tuple of node_ids, but in RustworkX an edge_id
 is an integer.  
