@@ -205,8 +205,7 @@ Note that the new GerryChain.Graph object also provides a way
 to obtain the node_ids associated with an edge:
 
 ```python
-    edge_node_ids = \
-        Graph.get_edge_from_edge_id(my_edge_id)
+    edge_node_ids = my_graph.get_edge_from_edge_id(my_edge_id)
     
     node1_id = edge_node_ids[0]
     node2_id = edge_node_ids[1]
