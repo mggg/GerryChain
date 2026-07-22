@@ -89,7 +89,7 @@ Partition object.
 2. Creating a GerryChain.Graph object directly,
 and then making whatever modifications are
 needed to that graph object and then using that
-GerryChain.Graph objhect to create your Partition
+GerryChain.Graph object to create your Partition
 object.
 
 The advantage of #1 is that since you are 
