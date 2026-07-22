@@ -259,8 +259,7 @@ object:
 ```python
     my_gc_graph = my_partition.graph
     
-    my_networkx_graph = \ 
-        my_gc_graph.to_networkx_graph()
+    my_networkx_graph = my_gc_graph.to_networkx_graph()
 
     ... do post-processing using my_networkx_graph ...
 ```
