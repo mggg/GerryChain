@@ -1,43 +1,49 @@
+from typing import cast
+
 from gerrychain import constraints
 from gerrychain.constraints import within_percent_of_ideal_population
+from gerrychain.partition import Partition
 
 
 class TestWithinPercent:
     def test_within_percent_fails_when_deviation_too_large(self):
-        partition = {"population": {1: 100, 2: 100, 3: 100}}
+        partition = cast(Partition, {"population": {1: 100, 2: 100, 3: 100}})
 
         percent = 0.5
         constraint = within_percent_of_ideal_population(partition, percent)
 
         ideal = 100
         too_much_deviation = ideal * (percent + 0.2)
-        new_partition = {
-            "population": {
-                1: 100 - too_much_deviation / 2,
-                2: 100 - too_much_deviation / 2,
-                3: 100 + too_much_deviation,
-            }
-        }
+        new_partition = cast(
+            Partition,
+            {
+                "population": {
+                    1: 100 - too_much_deviation / 2,
+                    2: 100 - too_much_deviation / 2,
+                    3: 100 + too_much_deviation,
+                }
+            },
+        )
 
         assert not constraint(new_partition)
 
     def test_within_percent_fails_when_expected(self):
-        partition = {"population": {1: 100, 2: 100, 3: 100}}
+        partition = cast(Partition, {"population": {1: 100, 2: 100, 3: 100}})
 
         percent = 0.5
         constraint = within_percent_of_ideal_population(partition, percent)
 
-        new_partition = {"population": {1: 280, 2: 100, 3: 100}}
+        new_partition = cast(Partition, {"population": {1: 280, 2: 100, 3: 100}})
 
         assert not constraint(new_partition)
 
     def test_within_percent_fails_when_expected2(self):
-        partition = {"population": {1: 100, 2: 100, 3: 100}}
+        partition = cast(Partition, {"population": {1: 100, 2: 100, 3: 100}})
 
         percent = 0.5
         constraint = within_percent_of_ideal_population(partition, percent)
 
-        new_partition = {"population": {1: 200, 2: 10, 3: 100}}
+        new_partition = cast(Partition, {"population": {1: 200, 2: 10, 3: 100}})
 
         assert not constraint(new_partition)
 
@@ -59,7 +65,7 @@ class TestLowerBound:
         assert bound(100) is True
 
     def test_has_informative_repr(self):
-        def my_function(x):
+        def my_function(x: Partition) -> float:
             return 150
 
         bound = constraints.LowerBound(my_function, 100)
@@ -84,7 +90,7 @@ class TestUpperBound:
         assert bound(100) is True
 
     def test_has_informative_repr(self):
-        def my_function(x):
+        def my_function(x: Partition) -> float:
             return 150
 
         bound = constraints.UpperBound(my_function, 100)

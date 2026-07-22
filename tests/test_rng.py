@@ -1,12 +1,14 @@
 """Tests for explicitly owned GerryChain RNGs."""
 
 import random
+from collections.abc import Hashable, Iterable
 from functools import partial
+from typing import cast
 
 import numpy as np
 import pytest
 
-from gerrychain import MarkovChain, Partition
+from gerrychain import Graph, MarkovChain, Partition
 from gerrychain._rng import make_rng
 from gerrychain.accept import always_accept
 from gerrychain.constraints import contiguous
@@ -19,7 +21,7 @@ from gerrychain.updaters import Tally, cut_edges
 PART_LABELS = ["a", "b", "c", "d"]
 
 
-def initial_partition(graph):
+def initial_partition(graph: Graph) -> Partition:
     # Each row of the 4x5 grid is one district: connected, population 50 each.
     assignment = {node: PART_LABELS[node // 5] for node in range(20)}
     return Partition(
@@ -29,18 +31,20 @@ def initial_partition(graph):
     )
 
 
-def make_recom_chain(graph, rng=None, total_steps=25):
+def make_recom_chain(
+    graph: Graph, rng: random.Random | int | None = None, total_steps: int = 25
+) -> MarkovChain:
     proposal = partial(recom, pop_col="population", pop_target=50, epsilon=0.0)
     return MarkovChain(
         proposal, [contiguous], always_accept, initial_partition(graph), total_steps, rng=rng
     )
 
 
-def trajectory(chain):
+def trajectory(chain: Iterable[Partition]) -> list[dict[Hashable, Hashable]]:
     return [dict(part.assignment.mapping) for part in chain]
 
 
-def make_optimizer(graph, rng=None):
+def make_optimizer(graph: Graph, rng: random.Random | int | None = None) -> SingleMetricOptimizer:
     proposal = partial(recom, pop_col="population", pop_target=50, epsilon=0.0)
     return SingleMetricOptimizer(
         proposal_fn=proposal,
@@ -52,30 +56,30 @@ def make_optimizer(graph, rng=None):
     )
 
 
-def run_bursts(optimizer):
+def run_bursts(optimizer: SingleMetricOptimizer) -> list[dict[Hashable, Hashable]]:
     return [
         dict(part.assignment.mapping)
         for part in optimizer.short_bursts(burst_length=5, num_bursts=4)
     ]
 
 
-def test_same_int_seed_reproduces(four_by_five_grid_for_opt):
+def test_same_int_seed_reproduces(four_by_five_grid_for_opt: Graph):
     first = trajectory(make_recom_chain(four_by_five_grid_for_opt, rng=5))
     second = trajectory(make_recom_chain(four_by_five_grid_for_opt, rng=5))
     assert first == second
 
 
-def test_different_seeds_differ(four_by_five_grid_for_opt):
+def test_different_seeds_differ(four_by_five_grid_for_opt: Graph):
     first = trajectory(make_recom_chain(four_by_five_grid_for_opt, rng=5))
     second = trajectory(make_recom_chain(four_by_five_grid_for_opt, rng=6))
     assert first != second
 
 
-def test_random_instance_is_passed_to_proposal(four_by_five_grid_for_opt):
+def test_random_instance_is_passed_to_proposal(four_by_five_grid_for_opt: Graph):
     instance = random.Random(3)
-    seen = []
+    seen: list[random.Random] = []
 
-    def proposal(partition, *, rng):
+    def proposal(partition: Partition, *, rng: random.Random) -> Partition:
         seen.append(rng)
         return partition
 
@@ -92,10 +96,10 @@ def test_random_instance_is_passed_to_proposal(four_by_five_grid_for_opt):
     assert seen == [instance]
 
 
-def test_proposal_error_propagates(four_by_five_grid_for_opt):
+def test_proposal_error_propagates(four_by_five_grid_for_opt: Graph):
     instance = random.Random(3)
 
-    def proposal(_partition, *, rng):
+    def proposal(_partition: Partition, *, rng: random.Random) -> Partition:
         assert rng is instance
         raise RuntimeError("proposal failed")
 
@@ -116,7 +120,7 @@ def test_proposal_error_propagates(four_by_five_grid_for_opt):
 
 def test_make_rng_rejects_unsupported_types():
     with pytest.raises(TypeError):
-        make_rng("2018")
+        make_rng(cast(int, "2018"))
 
     with pytest.raises(TypeError):
         make_rng(True)
@@ -127,20 +131,20 @@ def test_make_rng_accepts_numpy_integer_seed():
     assert numpy_seeded.random() == random.Random(5).random()
 
 
-def test_chain_without_rng_owns_an_independent_instance(four_by_five_grid_for_opt):
+def test_chain_without_rng_owns_an_independent_instance(four_by_five_grid_for_opt: Graph):
     first = make_recom_chain(four_by_five_grid_for_opt)
     second = make_recom_chain(four_by_five_grid_for_opt)
     assert first.rng is not second.rng
 
 
-def test_later_construction_does_not_reseed_earlier_chain(four_by_five_grid_for_opt):
+def test_later_construction_does_not_reseed_earlier_chain(four_by_five_grid_for_opt: Graph):
     baseline = trajectory(make_recom_chain(four_by_five_grid_for_opt, rng=1))
     chain_a = make_recom_chain(four_by_five_grid_for_opt, rng=1)
     make_recom_chain(four_by_five_grid_for_opt, rng=2)  # constructed, never run
     assert trajectory(chain_a) == baseline
 
 
-def test_interleaved_chains_keep_separate_streams(four_by_five_grid_for_opt):
+def test_interleaved_chains_keep_separate_streams(four_by_five_grid_for_opt: Graph):
     baseline_a = trajectory(make_recom_chain(four_by_five_grid_for_opt, rng=1, total_steps=15))
     baseline_b = trajectory(make_recom_chain(four_by_five_grid_for_opt, rng=2, total_steps=15))
     chain_a = iter(make_recom_chain(four_by_five_grid_for_opt, rng=1, total_steps=15))
@@ -156,17 +160,17 @@ def test_interleaved_chains_keep_separate_streams(four_by_five_grid_for_opt):
     assert actual_b == baseline_b
 
 
-def test_reiterating_with_int_seed_continues_stream(four_by_five_grid_for_opt):
+def test_reiterating_with_int_seed_continues_stream(four_by_five_grid_for_opt: Graph):
     chain = make_recom_chain(four_by_five_grid_for_opt, rng=5)
     assert trajectory(chain) != trajectory(chain)
 
 
-def test_reiterating_with_random_instance_continues_stream(four_by_five_grid_for_opt):
+def test_reiterating_with_random_instance_continues_stream(four_by_five_grid_for_opt: Graph):
     chain = make_recom_chain(four_by_five_grid_for_opt, rng=random.Random(5))
     assert trajectory(chain) != trajectory(chain)
 
 
-def test_optimizer_rerun_continues_stream(four_by_five_grid_for_opt):
+def test_optimizer_rerun_continues_stream(four_by_five_grid_for_opt: Graph):
     optimizer = make_optimizer(four_by_five_grid_for_opt, rng=11)
     first = run_bursts(optimizer)
     # Consecutive bursts continue one stream, so re-running the same optimizer does

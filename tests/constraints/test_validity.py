@@ -1,3 +1,4 @@
+from typing import cast
 from unittest.mock import MagicMock
 
 import networkx as nx
@@ -19,7 +20,7 @@ from gerrychain.partition.partition import get_assignment
 
 
 @pytest.fixture
-def contiguous_partition_with_flips():
+def contiguous_partition_with_flips() -> tuple[Partition, dict[int, int]]:
     graph = nx.Graph()
     graph.add_nodes_from(range(4))
     graph.add_edges_from([(0, 1), (1, 2), (2, 3), (3, 0)])
@@ -30,7 +31,7 @@ def contiguous_partition_with_flips():
 
 
 @pytest.fixture
-def discontiguous_partition_with_flips():
+def discontiguous_partition_with_flips() -> tuple[Partition, dict[int, int]]:
     graph = nx.Graph()
     graph.add_nodes_from(range(4))
     graph.add_edges_from([(0, 1), (1, 2), (2, 3)])
@@ -41,22 +42,28 @@ def discontiguous_partition_with_flips():
 
 
 @pytest.fixture
-def contiguous_partition(contiguous_partition_with_flips):
+def contiguous_partition(
+    contiguous_partition_with_flips: tuple[Partition, dict[int, int]],
+) -> Partition:
     return contiguous_partition_with_flips[0]
 
 
 @pytest.fixture
-def discontiguous_partition(discontiguous_partition_with_flips):
+def discontiguous_partition(
+    discontiguous_partition_with_flips: tuple[Partition, dict[int, int]],
+) -> Partition:
     return discontiguous_partition_with_flips[0]
 
 
-def test_contiguous_with_contiguity_no_flips_is_true(contiguous_partition):
+def test_contiguous_with_contiguity_no_flips_is_true(contiguous_partition: Partition):
     assert contiguous(contiguous_partition)
     assert single_flip_contiguous(contiguous_partition)
     assert contiguous(contiguous_partition)
 
 
-def test_contiguous_with_contiguity_flips_is_true(contiguous_partition_with_flips):
+def test_contiguous_with_contiguity_flips_is_true(
+    contiguous_partition_with_flips: tuple[Partition, dict[int, int]],
+):
     contiguous_partition, test_flips = contiguous_partition_with_flips
     # frm: TODO: Testing:  Figure out whether test_flips are in original node_ids or internal RX node_ids
     contiguous_partition2 = contiguous_partition.flip(test_flips)
@@ -65,12 +72,12 @@ def test_contiguous_with_contiguity_flips_is_true(contiguous_partition_with_flip
     assert contiguous(contiguous_partition2)
 
 
-def test_discontiguous_with_contiguous_no_flips_is_false(discontiguous_partition):
+def test_discontiguous_with_contiguous_no_flips_is_false(discontiguous_partition: Partition):
     assert not contiguous(discontiguous_partition)
 
 
 def test_discontiguous_with_single_flip_contiguous_no_flips_is_false(
-    discontiguous_partition,
+    discontiguous_partition: Partition,
 ):
     assert not single_flip_contiguous(discontiguous_partition)
 
@@ -79,7 +86,7 @@ def test_discontiguous_with_single_flip_contiguous_no_flips_is_false(
     reason="single_flip_contiguous does not workwhen the previous partition is discontiguous"
 )
 def test_discontiguous_with_single_flip_contiguous_flips_is_false(
-    discontiguous_partition_with_flips,
+    discontiguous_partition_with_flips: tuple[Partition, dict[int, int]],
 ):
     part, test_flips = discontiguous_partition_with_flips
     # frm: TODO: Testing:  Figure out whether test_flips are in original node_ids or internal RX node_ids
@@ -88,7 +95,7 @@ def test_discontiguous_with_single_flip_contiguous_flips_is_false(
 
 
 def test_discontiguous_with_contiguous_flips_is_false(
-    discontiguous_partition_with_flips,
+    discontiguous_partition_with_flips: tuple[Partition, dict[int, int]],
 ):
     part, test_flips = discontiguous_partition_with_flips
     # frm: TODO: Testing:  Figure out whether test_flips are in original node_ids or internal RX node_ids
@@ -98,7 +105,7 @@ def test_discontiguous_with_contiguous_flips_is_false(
 
 def test_districts_within_tolerance_returns_false_if_districts_are_not_within_tolerance():
     # 100 and 1 are not within 1% of each other, so we should expect False
-    mock_partition = {"population": {0: 100.0, 1: 1.0}}
+    mock_partition = cast(Partition, {"population": {0: 100.0, 1: 1.0}})
 
     result = districts_within_tolerance(
         mock_partition, attribute_name="population", percentage=0.01
@@ -109,7 +116,7 @@ def test_districts_within_tolerance_returns_false_if_districts_are_not_within_to
 
 def test_districts_within_tolerance_returns_true_if_districts_are_within_tolerance():
     # 100 and 100.1 are not within 1% of each other, so we should expect True
-    mock_partition = {"population": {0: 100.0, 1: 100.1}}
+    mock_partition = cast(Partition, {"population": {0: 100.0, 1: 100.1}})
 
     result = districts_within_tolerance(
         mock_partition, attribute_name="population", percentage=0.01
@@ -119,9 +126,9 @@ def test_districts_within_tolerance_returns_true_if_districts_are_within_toleran
 
 
 def test_self_configuring_lower_bound_always_allows_the_first_argument_it_gets():
-    mock_partition = {"value": 1}
+    mock_partition = cast(Partition, {"value": 1})
 
-    def mock_func(partition):
+    def mock_func(partition: Partition) -> float:
         return partition["value"]
 
     bound = SelfConfiguringLowerBound(mock_func)
@@ -170,5 +177,5 @@ def test_no_vanishing_districts_works():
 
 
 def test_deviation_from_ideal():
-    mock_partition = {"population": {0: 99.0, 1: 101.0}}
+    mock_partition = cast(Partition, {"population": {0: 99.0, 1: 101.0}})
     assert deviation_from_ideal(mock_partition, "population") == {0: -0.01, 1: 0.01}

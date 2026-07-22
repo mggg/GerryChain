@@ -72,11 +72,16 @@ ignore-overlong-task-comments = true
 [tool.ty.environment]
 python-version = "3.11"
 
+[tool.ty.src]
+# tests/_foo is stale scratch (imports that no longer resolve); not collected by pytest.
+exclude = ["tests/_foo"]
+
 [tool.ty.rules]
 missing-type-argument = "error"
 
 [tool.pyright]
-include = ["gerrychain", "tests/typing_assertions.py"]
+include = ["gerrychain", "tests"]
+exclude = ["tests/_foo"]
 pythonVersion = "3.11"
 venvPath = "."
 venv = ".venv"

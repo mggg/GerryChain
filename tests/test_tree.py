@@ -2,7 +2,9 @@
 import inspect
 import random
 import warnings
+from collections.abc import Callable, Hashable, Sequence
 from functools import partial
+from typing import cast
 
 import networkx
 import pytest
@@ -33,7 +35,11 @@ from gerrychain.tree import (
 )
 
 # Need to explicitly import "internal" class
-from gerrychain.tree.bipartition_tree import _PopulatedGraph
+from gerrychain.tree.bipartition_tree import (
+    FindBalancedEdgeCutsFn,
+    GraphLike,
+    _PopulatedGraph,
+)
 from gerrychain.updaters import Tally, cut_edges
 
 #
@@ -53,7 +59,7 @@ from gerrychain.updaters import Tally, cut_edges
 
 
 @pytest.fixture
-def graph_with_pop_nx(three_by_three_grid):
+def graph_with_pop_nx(three_by_three_grid: Graph) -> Graph:
     # NX-based Graph object
     for node in three_by_three_grid:
         three_by_three_grid.node_data(node)["pop"] = 1
@@ -61,14 +67,14 @@ def graph_with_pop_nx(three_by_three_grid):
 
 
 @pytest.fixture
-def graph_with_pop_rx(graph_with_pop_nx):
+def graph_with_pop_rx(graph_with_pop_nx: Graph) -> Graph:
     # RX-based Graph object (same data as NX-based version)
     graph_rx = graph_with_pop_nx.convert_from_nx_to_rx()
     return graph_rx
 
 
 @pytest.fixture
-def partition_with_pop(graph_with_pop_nx):
+def partition_with_pop(graph_with_pop_nx: Graph) -> Partition:
     # No need for an RX-based Graph here because creating the
     # Partition object converts the graph to be RX-based if
     # it is not already RX-based
@@ -81,7 +87,7 @@ def partition_with_pop(graph_with_pop_nx):
 
 
 @pytest.fixture
-def twelve_by_twelve_with_pop_nx():
+def twelve_by_twelve_with_pop_nx() -> Graph:
     # NX-based Graph object
 
     xy_grid = networkx.grid_graph([12, 12])
@@ -100,7 +106,7 @@ def twelve_by_twelve_with_pop_nx():
 
 
 @pytest.fixture
-def twelve_by_twelve_with_pop_rx(twelve_by_twelve_with_pop_nx):
+def twelve_by_twelve_with_pop_rx(twelve_by_twelve_with_pop_nx: Graph) -> Graph:
     # RX-based Graph object (same data as NX-based version)
     graph_rx = twelve_by_twelve_with_pop_nx.convert_from_nx_to_rx()
     return graph_rx
@@ -109,14 +115,16 @@ def twelve_by_twelve_with_pop_rx(twelve_by_twelve_with_pop_nx):
 # ---------------------------------------------------------------------
 
 
-def do_test_bipartition_tree_returns_a_subset_of_nodes(graph):
+def do_test_bipartition_tree_returns_a_subset_of_nodes(graph: Graph):
     ideal_pop = sum(graph.node_data(node)["pop"] for node in graph) / 2
     result = bipartition_tree(graph, "pop", ideal_pop, 0.25, rng=random.Random(2018))
     assert isinstance(result, frozenset)
     assert all(node in graph.nodes for node in result)
 
 
-def test_bipartition_tree_returns_a_subset_of_nodes(graph_with_pop_nx, graph_with_pop_rx):
+def test_bipartition_tree_returns_a_subset_of_nodes(
+    graph_with_pop_nx: Graph, graph_with_pop_rx: Graph
+):
     # Test both NX-based and RX-based Graph objects
     do_test_bipartition_tree_returns_a_subset_of_nodes(graph_with_pop_nx)
     do_test_bipartition_tree_returns_a_subset_of_nodes(graph_with_pop_rx)
@@ -139,7 +147,9 @@ def test_node_repeats_public_defaults_are_zero():
     "cut_finder",
     [find_balanced_edge_cuts_memoization, partial(find_balanced_edge_cuts_memoization)],
 )
-def test_node_repeats_warns_with_memoized_cut_finder(graph_with_pop_nx, cut_finder):
+def test_node_repeats_warns_with_memoized_cut_finder(
+    graph_with_pop_nx: Graph, cut_finder: FindBalancedEdgeCutsFn
+):
     with pytest.warns(UserWarning, match="node_repeats is not beneficial"):
         bipartition_tree(
             graph_with_pop_nx,
@@ -159,7 +169,9 @@ def test_node_repeats_warns_with_memoized_cut_finder(graph_with_pop_nx, cut_find
         lambda *args, **kwargs: find_balanced_edge_cuts_memoization(*args, **kwargs),
     ],
 )
-def test_node_repeats_does_not_warn_with_other_cut_finders(graph_with_pop_nx, cut_finder):
+def test_node_repeats_does_not_warn_with_other_cut_finders(
+    graph_with_pop_nx: Graph, cut_finder: FindBalancedEdgeCutsFn
+):
     with warnings.catch_warnings():
         warnings.simplefilter("error", UserWarning)
         bipartition_tree(
@@ -176,7 +188,7 @@ def test_node_repeats_does_not_warn_with_other_cut_finders(graph_with_pop_nx, cu
 # ---------------------------------------------------------------------
 
 
-def do_test_bipartition_tree_returns_within_epsilon_of_target_pop(graph):
+def do_test_bipartition_tree_returns_within_epsilon_of_target_pop(graph: Graph):
     ideal_pop = sum(graph.node_data(node)["pop"] for node in graph) / 2
     epsilon = 0.25
     result = bipartition_tree(graph, "pop", ideal_pop, epsilon, rng=random.Random(2018))
@@ -186,7 +198,7 @@ def do_test_bipartition_tree_returns_within_epsilon_of_target_pop(graph):
 
 
 def test_bipartition_tree_returns_within_epsilon_of_target_pop(
-    graph_with_pop_nx, graph_with_pop_rx
+    graph_with_pop_nx: Graph, graph_with_pop_rx: Graph
 ):
     # Test both NX-based and RX-based Graph objects
     do_test_bipartition_tree_returns_within_epsilon_of_target_pop(graph_with_pop_nx)
@@ -197,7 +209,7 @@ def test_bipartition_tree_returns_within_epsilon_of_target_pop(
 
 
 def do_test_recursive_tree_part_returns_within_epsilon_of_target_pop(
-    twelve_by_twelve_with_pop_graph,
+    twelve_by_twelve_with_pop_graph: Graph,
 ):
     n_districts = 7  # 144/7 ≈ 20.5 nodes/subgraph (1 person/node)
     ideal_pop = (
@@ -222,7 +234,7 @@ def do_test_recursive_tree_part_returns_within_epsilon_of_target_pop(
 
 
 def test_recursive_tree_part_returns_within_epsilon_of_target_pop(
-    twelve_by_twelve_with_pop_nx, twelve_by_twelve_with_pop_rx
+    twelve_by_twelve_with_pop_nx: Graph, twelve_by_twelve_with_pop_rx: Graph
 ):
     # Test both NX-based and RX-based Graph objects
     do_test_recursive_tree_part_returns_within_epsilon_of_target_pop(twelve_by_twelve_with_pop_nx)
@@ -233,7 +245,7 @@ def test_recursive_tree_part_returns_within_epsilon_of_target_pop(
 
 
 def do_test_recursive_tree_part_returns_within_epsilon_of_target_pop_using_contraction(
-    twelve_by_twelve_with_pop_graph,
+    twelve_by_twelve_with_pop_graph: Graph,
 ):
     n_districts = 7  # 144/7 ≈ 20.5 nodes/subgraph (1 person/node)
     ideal_pop = (
@@ -263,7 +275,7 @@ def do_test_recursive_tree_part_returns_within_epsilon_of_target_pop_using_contr
 
 
 def test_recursive_tree_part_returns_within_epsilon_of_target_pop_using_contraction(
-    twelve_by_twelve_with_pop_nx, twelve_by_twelve_with_pop_rx
+    twelve_by_twelve_with_pop_nx: Graph, twelve_by_twelve_with_pop_rx: Graph
 ):
     # Test both NX-based and RX-based Graph objects
     do_test_recursive_tree_part_returns_within_epsilon_of_target_pop_using_contraction(
@@ -278,7 +290,7 @@ def test_recursive_tree_part_returns_within_epsilon_of_target_pop_using_contract
 
 
 def do_test_recursive_seed_part_returns_within_epsilon_of_target_pop(
-    twelve_by_twelve_with_pop_graph,
+    twelve_by_twelve_with_pop_graph: Graph,
 ):
     n_districts = 7  # 144/7 ≈ 20.5 nodes/subgraph (1 person/node)
     ideal_pop = (
@@ -305,7 +317,7 @@ def do_test_recursive_seed_part_returns_within_epsilon_of_target_pop(
 
 
 def test_recursive_seed_part_returns_within_epsilon_of_target_pop(
-    twelve_by_twelve_with_pop_nx, twelve_by_twelve_with_pop_rx
+    twelve_by_twelve_with_pop_nx: Graph, twelve_by_twelve_with_pop_rx: Graph
 ):
     # Test both NX-based and RX-based Graph objects
     do_test_recursive_seed_part_returns_within_epsilon_of_target_pop(twelve_by_twelve_with_pop_nx)
@@ -316,7 +328,7 @@ def test_recursive_seed_part_returns_within_epsilon_of_target_pop(
 
 
 def do_test_recursive_seed_part_returns_within_epsilon_of_target_pop_using_contraction(
-    twelve_by_twelve_with_pop_graph,
+    twelve_by_twelve_with_pop_graph: Graph,
 ):
     n_districts = 7  # 144/7 ≈ 20.5 nodes/subgraph (1 person/node)
     ideal_pop = (
@@ -348,7 +360,7 @@ def do_test_recursive_seed_part_returns_within_epsilon_of_target_pop_using_contr
 
 
 def test_recursive_seed_part_returns_within_epsilon_of_target_pop_using_contraction(
-    twelve_by_twelve_with_pop_nx, twelve_by_twelve_with_pop_rx
+    twelve_by_twelve_with_pop_nx: Graph, twelve_by_twelve_with_pop_rx: Graph
 ):
     # Test both NX-based and RX-based Graph objects
     do_test_recursive_seed_part_returns_within_epsilon_of_target_pop_using_contraction(
@@ -362,11 +374,19 @@ def test_recursive_seed_part_returns_within_epsilon_of_target_pop_using_contract
 # ---------------------------------------------------------------------
 
 
-def do_test_recursive_seed_part_uses_bipartition_tree_fn(twelve_by_twelve_with_pop_graph):
+def do_test_recursive_seed_part_uses_bipartition_tree_fn(twelve_by_twelve_with_pop_graph: Graph):
     calls = 0
 
     def dummy_bipartition_tree_fn(
-        graph, pop_col, pop_target, epsilon, node_repeats, one_sided_cut, *, rng
+        graph: GraphLike,
+        pop_col: str,
+        pop_target: float,
+        epsilon: float,
+        node_repeats: int = 0,
+        one_sided_cut: bool = False,
+        region_surcharge: dict[str, float] | None = None,
+        *,
+        rng: random.Random,
     ):
         nonlocal calls
         calls += 1
@@ -408,7 +428,7 @@ def do_test_recursive_seed_part_uses_bipartition_tree_fn(twelve_by_twelve_with_p
 
 
 def test_recursive_seed_part_uses_bipartition_tree_fn(
-    twelve_by_twelve_with_pop_nx, twelve_by_twelve_with_pop_rx
+    twelve_by_twelve_with_pop_nx: Graph, twelve_by_twelve_with_pop_rx: Graph
 ):
     # Test both NX-based and RX-based Graph objects
     do_test_recursive_seed_part_uses_bipartition_tree_fn(twelve_by_twelve_with_pop_nx)
@@ -419,7 +439,7 @@ def test_recursive_seed_part_uses_bipartition_tree_fn(
 
 
 def do_test_recursive_seed_part_with_n_unspecified_within_epsilon(
-    twelve_by_twelve_with_pop_graph,
+    twelve_by_twelve_with_pop_graph: Graph,
 ):
     n_districts = 6  # This should set n=3
     ideal_pop = (
@@ -445,7 +465,7 @@ def do_test_recursive_seed_part_with_n_unspecified_within_epsilon(
 
 
 def test_recursive_seed_part_with_n_unspecified_within_epsilon(
-    twelve_by_twelve_with_pop_nx, twelve_by_twelve_with_pop_rx
+    twelve_by_twelve_with_pop_nx: Graph, twelve_by_twelve_with_pop_rx: Graph
 ):
     # Test both NX-based and RX-based Graph objects
     do_test_recursive_seed_part_with_n_unspecified_within_epsilon(twelve_by_twelve_with_pop_nx)
@@ -455,12 +475,14 @@ def test_recursive_seed_part_with_n_unspecified_within_epsilon(
 # ---------------------------------------------------------------------
 
 
-def do_test_random_spanning_tree_returns_tree_with_pop_attribute(graph):
+def do_test_random_spanning_tree_returns_tree_with_pop_attribute(graph: Graph):
     tree = random_spanning_tree(graph, rng=random.Random(2018))
     assert tree.is_a_tree()
 
 
-def test_random_spanning_tree_returns_tree_with_pop_attribute(graph_with_pop_nx, graph_with_pop_rx):
+def test_random_spanning_tree_returns_tree_with_pop_attribute(
+    graph_with_pop_nx: Graph, graph_with_pop_rx: Graph
+):
     # Test both NX-based and RX-based Graph objects
     do_test_random_spanning_tree_returns_tree_with_pop_attribute(graph_with_pop_nx)
     do_test_random_spanning_tree_returns_tree_with_pop_attribute(graph_with_pop_rx)
@@ -469,13 +491,13 @@ def test_random_spanning_tree_returns_tree_with_pop_attribute(graph_with_pop_nx,
 # ---------------------------------------------------------------------
 
 
-def do_test_uniform_spanning_tree_returns_tree_with_pop_attribute(graph):
+def do_test_uniform_spanning_tree_returns_tree_with_pop_attribute(graph: Graph):
     tree = uniform_spanning_tree(graph, rng=random.Random(2018))
     assert tree.is_a_tree()
 
 
 def test_uniform_spanning_tree_returns_tree_with_pop_attribute(
-    graph_with_pop_nx, graph_with_pop_rx
+    graph_with_pop_nx: Graph, graph_with_pop_rx: Graph
 ):
     # Test both NX-based and RX-based Graph objects
     do_test_uniform_spanning_tree_returns_tree_with_pop_attribute(graph_with_pop_nx)
@@ -485,7 +507,7 @@ def test_uniform_spanning_tree_returns_tree_with_pop_attribute(
 # ---------------------------------------------------------------------
 
 
-def do_test_bipartition_tree_returns_a_tree(graph, spanning_tree):
+def do_test_bipartition_tree_returns_a_tree(graph: Graph, spanning_tree: Graph):
     ideal_pop = sum(graph.node_data(node)["pop"] for node in graph) / 2
 
     result = bipartition_tree(
@@ -505,15 +527,20 @@ def do_test_bipartition_tree_returns_a_tree(graph, spanning_tree):
     ).is_a_tree()
 
 
-def test_bipartition_tree_threads_rng_to_custom_balanced_cut_fn(graph_with_pop_nx):
-    seen_rngs = []
-    default_root_calls = []
+def test_bipartition_tree_threads_rng_to_custom_balanced_cut_fn(graph_with_pop_nx: Graph):
+    seen_rngs: list[random.Random] = []
+    default_root_calls: list[bool] = []
 
-    def choose_root(nodes):
+    def choose_root(nodes: Sequence[Hashable]) -> Hashable:
         default_root_calls.append(True)
         return nodes[0]
 
-    def find_cuts(h, rootnode_choice_fn=choose_root, *, rng):
+    def find_cuts(
+        h: _PopulatedGraph,
+        rootnode_choice_fn: Callable[[Sequence[Hashable]], Hashable] = choose_root,
+        *,
+        rng: random.Random,
+    ):
         seen_rngs.append(rng)
         return find_balanced_edge_cuts_memoization(
             h,
@@ -536,7 +563,11 @@ def test_bipartition_tree_threads_rng_to_custom_balanced_cut_fn(graph_with_pop_n
     assert default_root_calls
 
 
-def create_graphs_from_nx_edges(num_nodes, list_of_edges_nx, nx_to_rx_node_id_map):
+def create_graphs_from_nx_edges(
+    num_nodes: int,
+    list_of_edges_nx: list[tuple[int, int]],
+    nx_to_rx_node_id_map: dict[Hashable, Hashable],
+) -> tuple[Graph, Graph]:
     # NX is easy - just use the list of NX edges
     graph_nx = Graph.from_networkx(networkx.Graph(list_of_edges_nx))
 
@@ -571,8 +602,8 @@ def create_graphs_from_nx_edges(num_nodes, list_of_edges_nx, nx_to_rx_node_id_ma
     # translate the NX edges into the appropriate node_ids for the derived RX graph
     list_of_edges_rx = [
         (
-            nx_to_rx_node_id_map[edge[0]],
-            nx_to_rx_node_id_map[edge[1]],
+            cast(int, nx_to_rx_node_id_map[edge[0]]),
+            cast(int, nx_to_rx_node_id_map[edge[1]]),
             {},  # empty data dict for edge_data
         )
         for edge in list_of_edges_nx
@@ -585,7 +616,7 @@ def create_graphs_from_nx_edges(num_nodes, list_of_edges_nx, nx_to_rx_node_id_ma
     return graph_nx, graph_rx
 
 
-def test_bipartition_tree_returns_a_tree(graph_with_pop_nx, graph_with_pop_rx):
+def test_bipartition_tree_returns_a_tree(graph_with_pop_nx: Graph, graph_with_pop_rx: Graph):
     # Test both NX-based and RX-based Graph objects
 
     spanning_tree_edges_nx = [
@@ -599,8 +630,11 @@ def test_bipartition_tree_returns_a_tree(graph_with_pop_nx, graph_with_pop_rx):
         (6, 8),
     ]
 
+    nx_to_rx_node_id_map = graph_with_pop_rx.nx_to_rx_node_id_map
+    assert nx_to_rx_node_id_map is not None
+
     spanning_tree_nx, spanning_tree_rx = create_graphs_from_nx_edges(
-        9, spanning_tree_edges_nx, graph_with_pop_rx.nx_to_rx_node_id_map
+        9, spanning_tree_edges_nx, nx_to_rx_node_id_map
     )
 
     # Give the nodes a population
@@ -613,7 +647,7 @@ def test_bipartition_tree_returns_a_tree(graph_with_pop_nx, graph_with_pop_rx):
     do_test_bipartition_tree_returns_a_tree(graph_with_pop_rx, spanning_tree_rx)
 
 
-def test_recom_works_as_a_proposal(partition_with_pop):
+def test_recom_works_as_a_proposal(partition_with_pop: Partition):
     graph = partition_with_pop.graph
     ideal_pop = sum(graph.node_data(node)["pop"] for node in graph) / 2
 
@@ -628,7 +662,7 @@ def test_recom_works_as_a_proposal(partition_with_pop):
         assert contiguous(state)
 
 
-def test_reversible_recom_works_as_a_proposal(partition_with_pop):
+def test_reversible_recom_works_as_a_proposal(partition_with_pop: Partition):
     graph = partition_with_pop.graph
     ideal_pop = sum(graph.node_data(node)["pop"] for node in graph) / 2
 
@@ -713,7 +747,7 @@ def test_find_balanced_cuts_contraction():
 
     populated_tree = _PopulatedGraph(tree, {node: 1 for node in tree}, len(tree) / 2, 0.5)
     cuts = find_balanced_edge_cuts_contraction(populated_tree, rng=random.Random(2018))
-    edges = set(tuple(sorted(cut.edge)) for cut in cuts)
+    edges = set(tuple(sorted(cast("tuple[int, int]", cut.edge))) for cut in cuts)
     assert edges == {(1, 4), (3, 4), (3, 6)}
 
 
@@ -724,12 +758,12 @@ def test_no_balanced_cuts_contraction_when_one_side_okay():
     # that is derived fromn an NX-based Graph object, so the
     # nx_to_rx_node_id_map can just be the identity map...
     #
-    nx_to_rx_node_id_map = {node: node for node in range(5)}
+    nx_to_rx_node_id_map: dict[Hashable, Hashable] = {node: node for node in range(5)}
 
     tree_nx, tree_rx = create_graphs_from_nx_edges(5, list_of_nodes_nx, nx_to_rx_node_id_map)
 
     # OK to use the same populations for NX and RX graphs
-    populations = {0: 4, 1: 4, 2: 3, 3: 3, 4: 3}
+    populations: dict[Hashable, int | float] = {0: 4, 1: 4, 2: 3, 3: 3, 4: 3}
 
     populated_tree_nx = _PopulatedGraph(
         graph=tree_nx, populations=populations, ideal_pop=10, epsilon=0.1
@@ -756,7 +790,7 @@ def test_find_balanced_cuts_memo():
     # that is derived fromn an NX-based Graph object, so the
     # nx_to_rx_node_id_map can just be the identity map...
     #
-    nx_to_rx_node_id_map = {node: node for node in range(9)}
+    nx_to_rx_node_id_map: dict[Hashable, Hashable] = {node: node for node in range(9)}
 
     tree_nx, tree_rx = create_graphs_from_nx_edges(9, list_of_nodes_nx, nx_to_rx_node_id_map)
 
@@ -776,11 +810,11 @@ def test_find_balanced_cuts_memo():
     )
 
     cuts_nx = find_balanced_edge_cuts_memoization(populated_tree_nx, rng=random.Random(2018))
-    edges_nx = set(tuple(sorted(cut.edge)) for cut in cuts_nx)
+    edges_nx = set(tuple(sorted(cast("tuple[int, int]", cut.edge))) for cut in cuts_nx)
     assert edges_nx == {(1, 4), (3, 4), (3, 6)}
 
     cuts_rx = find_balanced_edge_cuts_memoization(populated_tree_rx, rng=random.Random(2018))
-    edges_rx = set(tuple(sorted(cut.edge)) for cut in cuts_rx)
+    edges_rx = set(tuple(sorted(cast("tuple[int, int]", cut.edge))) for cut in cuts_rx)
     assert edges_rx == {(1, 4), (3, 4), (3, 6)}
 
 
@@ -791,12 +825,12 @@ def test_no_balanced_cuts_memo_when_one_side_okay():
     # that is derived fromn an NX-based Graph object, so the
     # nx_to_rx_node_id_map can just be the identity map...
     #
-    nx_to_rx_node_id_map = {node: node for node in range(5)}
+    nx_to_rx_node_id_map: dict[Hashable, Hashable] = {node: node for node in range(5)}
 
     tree_nx, tree_rx = create_graphs_from_nx_edges(5, list_of_nodes_nx, nx_to_rx_node_id_map)
 
     # OK to use the same populations with both NX and RX Graphs
-    populations = {0: 4, 1: 4, 2: 3, 3: 3, 4: 3}
+    populations: dict[Hashable, int | float] = {0: 4, 1: 4, 2: 3, 3: 3, 4: 3}
 
     populated_tree_nx = _PopulatedGraph(
         graph=tree_nx, populations=populations, ideal_pop=10, epsilon=0.1

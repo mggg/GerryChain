@@ -13,7 +13,7 @@ from gerrychain.updaters.election import ElectionResults
 
 
 @pytest.fixture
-def mock_election():
+def mock_election() -> ElectionResults:
     election = MagicMock()
     election.parties = ["B", "A"]
 
@@ -27,12 +27,12 @@ def mock_election():
     )
 
 
-def test_efficiency_gap(mock_election):
+def test_efficiency_gap(mock_election: ElectionResults):
     result = efficiency_gap(mock_election)
     assert result == 0.3
 
 
-def test_wasted_votes(mock_election):
+def test_wasted_votes(mock_election: ElectionResults):
     result = [
         wasted_votes(
             mock_election.totals_for_party["A"][i],
@@ -43,7 +43,7 @@ def test_wasted_votes(mock_election):
     assert result == [(45, 5), (40, 10), (25, 25), (45, 5), (45, 5)]
 
 
-def test_signed_partisan_scores_point_the_same_way(mock_election):
+def test_signed_partisan_scores_point_the_same_way(mock_election: ElectionResults):
     eg = efficiency_gap(mock_election)
     mm = mean_median(mock_election)
     pb = partisan_bias(mock_election)
@@ -51,14 +51,14 @@ def test_signed_partisan_scores_point_the_same_way(mock_election):
     assert (eg > 0 and mm > 0 and pb > 0) or (eg < 0 and mm < 0 and pb < 0)
 
 
-def test_mean_median_has_right_value(mock_election):
+def test_mean_median_has_right_value(mock_election: ElectionResults):
     mm = mean_median(mock_election)
 
     assert abs(mm - 0.15) < 0.00001
 
 
 def test_signed_partisan_scores_are_positive_if_first_party_has_advantage(
-    mock_election,
+    mock_election: ElectionResults,
 ):
     eg = efficiency_gap(mock_election)
     mm = mean_median(mock_election)
@@ -67,13 +67,13 @@ def test_signed_partisan_scores_are_positive_if_first_party_has_advantage(
     assert eg > 0 and mm > 0 and pb > 0
 
 
-def test_partisan_bias_has_right_value(mock_election):
+def test_partisan_bias_has_right_value(mock_election: ElectionResults):
     pb = partisan_bias(mock_election)
 
     assert abs(pb - 0.1) < 0.00001
 
 
-def test_partisan_gini_has_right_value(mock_election):
+def test_partisan_gini_has_right_value(mock_election: ElectionResults):
     pg = partisan_gini(mock_election)
 
     assert abs(pg - 0.12) < 0.00001

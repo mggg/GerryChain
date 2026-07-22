@@ -49,4 +49,4 @@ print("Enumerated the chain: number of entries in list is: ", len(assignment_lis
 
 
 def test_success():
-    len(assignment_list) == 40
+    assert len(assignment_list) == 40

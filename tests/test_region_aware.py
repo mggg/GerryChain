@@ -1,5 +1,6 @@
 import random
 import warnings
+from collections.abc import Iterable
 from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 
@@ -16,11 +17,19 @@ from gerrychain import (
     tree,
 )
 from gerrychain import updaters as gc_updaters
+from gerrychain.graph.graph import FrozenGraph
 from gerrychain.proposals import build_recom_proposal_fn
 from gerrychain.tree import BipartitionWarning
 
 
-def run_chain_single(seed, category, steps, surcharge, max_attempts=100000, reselect=False):
+def run_chain_single(
+    seed: int,
+    category: str,
+    steps: int,
+    surcharge: float,
+    max_attempts: int = 100000,
+    reselect: bool = False,
+) -> int:
     from functools import partial
 
     graph = Graph.from_json("tests/graphs_for_test/8x8_with_muni.json")
@@ -137,7 +146,9 @@ def test_region_aware_county():
     assert (float(tot_splits) / (n_samples * n_regions)) < 0.10
 
 
-def straddled_regions(partition, region_attr, all_region_names):
+def straddled_regions(
+    partition: Partition, region_attr: str, all_region_names: Iterable[str]
+) -> int:
     """Returns the total number of district that straddle two regions in the partition."""
     split = {name: 0 for name in all_region_names}
 
@@ -150,7 +161,12 @@ def straddled_regions(partition, region_attr, all_region_names):
     return sum(1 for value in split.values() if value > 0)
 
 
-def run_chain_dual(seed, steps, surcharges={"muni": 0.5, "county": 0.5}, warn_attempts=1000):
+def run_chain_dual(
+    seed: int,
+    steps: int,
+    surcharges: dict[str, float] = {"muni": 0.5, "county": 0.5},
+    warn_attempts: int = 1000,
+) -> tuple[int, int]:
     from functools import partial
 
     graph = Graph.from_json("tests/graphs_for_test/8x8_with_muni.json")
@@ -244,8 +260,12 @@ def test_spanning_tree_fn_kwargs_forwarded_to_spanning_tree_fn():
     captured = []
 
     def spy_spanning_tree_fn(
-        graph, region_surcharge=None, treat_unassigned_as_single_region=False, *, rng
-    ):
+        graph: Graph | FrozenGraph,
+        region_surcharge: dict[str, float] | None = None,
+        treat_unassigned_as_single_region: bool = False,
+        *,
+        rng: random.Random,
+    ) -> Graph:
         captured.append(treat_unassigned_as_single_region)
         return tree.random_spanning_tree(
             graph,

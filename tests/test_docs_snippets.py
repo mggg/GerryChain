@@ -198,7 +198,7 @@ def _page_id(page: Path) -> str:
     return str(page.relative_to(REPO))
 
 
-def _run_block(block: Block, namespace: dict) -> None:
+def _run_block(block: Block, namespace: dict[str, object]) -> None:
     # Pad the source so tracebacks and SyntaxErrors point at the real line in the docs page.
     padded = "\n" * (block.lineno - 1) + block.source
     exec(compile(padded, str(block.page), "exec"), namespace)
@@ -214,7 +214,7 @@ def docs_cwd(tmp_path_factory: pytest.TempPathFactory) -> Path:
     old = os.getcwd()
     os.chdir(cwd)
     try:
-        namespace: dict = {}
+        namespace: dict[str, object] = {}
         for page in PAGES:
             for block in ALL_BLOCKS[page]:
                 if block.marker == "setup":
@@ -231,7 +231,7 @@ def test_page_snippets(page: Path, docs_cwd: Path, monkeypatch: pytest.MonkeyPat
     # (the conftest fixture re-enables its previous state afterwards).
     set_runtime_checks(False)
     monkeypatch.chdir(docs_cwd)
-    namespace: dict = {}
+    namespace: dict[str, object] = {}
     try:
         for block in ALL_BLOCKS[page]:
             if block.marker in MARKERS:
@@ -472,7 +472,7 @@ class TestRstExtractor:
                 x = f() + 1
             """
         )
-        namespace: dict = {}
+        namespace: dict[str, object] = {}
         _run_block(blocks[0], namespace)
         assert namespace["x"] == 42
 

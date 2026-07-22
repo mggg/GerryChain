@@ -77,6 +77,7 @@ Note that the mapping / ``[]`` interface of a Partition is over its *updaters*
 from __future__ import annotations
 
 import json
+import os
 import random
 from collections.abc import Callable, Hashable, KeysView, Mapping
 from typing import TYPE_CHECKING, Any, TypeVar, cast
@@ -603,7 +604,7 @@ class Partition:
     def from_districtr_file(
         cls,
         graph: Graph,
-        districtr_file: str,
+        districtr_file: str | os.PathLike[str],
         updaters: Mapping[str, Callable[[Partition], Any]] | None = None,
     ) -> Partition:
         """Return partition created from the Districtr file.
@@ -621,7 +622,8 @@ class Partition:
 
         Args:
             graph (Graph): The graph to create the Partition from
-            districtr_file (str): the path to the ``.json`` file exported from Districtr
+            districtr_file (str | os.PathLike): the path to the ``.json`` file exported
+                from Districtr
             updaters (Mapping[str, Callable] | None, optional): Dictionary of updaters.
 
         Returns:

@@ -4,7 +4,7 @@ PYTHON_VERSION = 3.11
 VENV_DIR ?= .venv
 PKG ?= gerrychain
 TEST_PATHS ?= tests
-TYPECHECK_PATHS ?= $(PKG) tests/typing_assertions.py
+TYPECHECK_PATHS ?= $(PKG) $(TEST_PATHS)
 DOCS_PY_PATHS ?= docs/conf.py docs/_clear_notebook_outputs.py \
 	docs/_refresh_notebooks.py docs/generate_recom_assets.py
 DOCS_CACHE_FLAGS = $(if $(filter 1,$(FRESH)),--force)

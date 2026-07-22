@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from gerrychain import MarkovChain
+from gerrychain import MarkovChain, Partition
 from gerrychain.accept import always_accept
 from gerrychain.constraints import no_vanishing_districts, single_flip_contiguous
 from gerrychain.grid import Grid
@@ -117,7 +117,7 @@ def test_perimeter_match_naive_perimeter_at_every_step():
         1000,
     )
 
-    def get_exterior_boundaries(partition):
+    def get_exterior_boundaries(partition: Partition):
         graph_boundary = partition["boundary_nodes"]
         exterior = defaultdict(lambda: 0)
         for node_id in graph_boundary:
@@ -125,7 +125,7 @@ def test_perimeter_match_naive_perimeter_at_every_step():
             exterior[part] += partition.graph.node_data(node_id)["boundary_perim"]
         return exterior
 
-    def get_interior_boundaries(partition):
+    def get_interior_boundaries(partition: Partition):
         cut_edges = {edge for edge in partition.graph.edges if partition.crosses_parts(edge)}
         interior = defaultdict(int)
         for edge in cut_edges:
@@ -135,7 +135,7 @@ def test_perimeter_match_naive_perimeter_at_every_step():
                 )["shared_perim"]
         return interior
 
-    def expected_perimeter(partition):
+    def expected_perimeter(partition: Partition):
         interior_boundaries = get_interior_boundaries(partition)
         exterior_boundaries = get_exterior_boundaries(partition)
         expected = {

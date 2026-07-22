@@ -1,3 +1,5 @@
+from typing import cast
+
 import networkx
 import pytest
 
@@ -7,7 +9,7 @@ from gerrychain.updaters.locality_split_scores import LocalitySplits
 
 
 @pytest.fixture
-def three_by_three_grid():
+def three_by_three_grid() -> Graph:
     """Returns a graph that looks like this:
     0 1 2
     3 4 5
@@ -35,7 +37,7 @@ def three_by_three_grid():
 
 
 @pytest.fixture
-def graph_with_counties(three_by_three_grid):
+def graph_with_counties(three_by_three_grid: Graph) -> Graph:
     for node in [0, 1, 2]:
         three_by_three_grid.node_data(node)["county"] = "a"
         three_by_three_grid.node_data(node)["pop"] = 1
@@ -49,7 +51,7 @@ def graph_with_counties(three_by_three_grid):
 
 
 @pytest.fixture
-def partition(graph_with_counties):
+def partition(graph_with_counties: Graph) -> Partition:
     partition = Partition(
         graph_with_counties,
         assignment={0: 1, 1: 1, 2: 1, 3: 2, 4: 2, 5: 2, 6: 3, 7: 3, 8: 3},
@@ -75,7 +77,7 @@ def partition(graph_with_counties):
 
 
 @pytest.fixture
-def split_partition(graph_with_counties):
+def split_partition(graph_with_counties: Graph) -> Partition:
     partition = Partition(
         graph_with_counties,
         assignment={0: 1, 1: 2, 2: 3, 3: 1, 4: 2, 5: 3, 6: 1, 7: 2, 8: 3},
@@ -101,9 +103,10 @@ def split_partition(graph_with_counties):
 
 
 class TestSplittingScores:
-    def test_not_split(self, partition):
-        _ = partition.updaters["splits"](partition)
-        result = partition.updaters["splits"].scores
+    def test_not_split(self, partition: Partition):
+        splits = cast(LocalitySplits, partition.updaters["splits"])
+        _ = splits(partition)
+        result = splits.scores
 
         assert result["num_parts"] == 3
         assert result["num_pieces"] == 3
@@ -113,14 +116,21 @@ class TestSplittingScores:
         assert result["symmetric_entropy"] == 18
         assert result["num_split_localities"] == 0
 
-    def test_is_split(self, split_partition):
-        _ = split_partition.updaters["splits"](split_partition)
-        result = split_partition.updaters["splits"].scores
+    def test_is_split(self, split_partition: Partition):
+        splits = cast(LocalitySplits, split_partition.updaters["splits"])
+        _ = splits(split_partition)
+        result = splits.scores
 
         assert result["num_parts"] == 9
         assert result["num_pieces"] == 9
         assert result["naked_boundary"] == 6
-        assert 1.2 > result["shannon_entropy"] > 1
-        assert 0.6 > result["power_entropy"] > 0.5
-        assert 32 > result["symmetric_entropy"] > 31
+        shannon_entropy = result["shannon_entropy"]
+        power_entropy = result["power_entropy"]
+        symmetric_entropy = result["symmetric_entropy"]
+        assert shannon_entropy is not None
+        assert power_entropy is not None
+        assert symmetric_entropy is not None
+        assert 1.2 > shannon_entropy > 1
+        assert 0.6 > power_entropy > 0.5
+        assert 32 > symmetric_entropy > 31
         assert result["num_split_localities"] == 3

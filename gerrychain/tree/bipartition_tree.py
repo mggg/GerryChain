@@ -29,7 +29,7 @@ import itertools
 import random
 import warnings
 from collections import deque
-from collections.abc import Callable, Hashable, Sequence, Set as AbstractSet
+from collections.abc import Callable, Hashable, Mapping, Sequence, Set as AbstractSet
 from functools import partial
 from inspect import signature
 from typing import NamedTuple, Protocol, cast
@@ -881,7 +881,7 @@ def _internal_bipartition_tree(
     spanning_tree: GraphLike | None = None,
     spanning_tree_fn: SpanningTreeFn = random_spanning_tree,
     region_surcharge: dict[str, float] | None = None,
-    spanning_tree_fn_kwargs: dict[str, object] | None = None,
+    spanning_tree_fn_kwargs: Mapping[str, object] | None = None,
     find_balanced_edge_cuts_fn: Callable[..., list[_Cut]] = find_balanced_edge_cuts_memoization,
     one_sided_cut: bool = False,
     rootnode_choice_fn: Callable[[Sequence[Hashable]], Hashable] | None = None,
@@ -1084,7 +1084,7 @@ def bipartition_tree(
     spanning_tree: GraphLike | None = None,
     spanning_tree_fn: SpanningTreeFn = random_spanning_tree,
     region_surcharge: dict[str, float] | None = None,
-    spanning_tree_fn_kwargs: dict[str, object] | None = None,
+    spanning_tree_fn_kwargs: Mapping[str, object] | None = None,
     find_balanced_edge_cuts_fn: Callable[..., list[_Cut]] = find_balanced_edge_cuts_memoization,
     one_sided_cut: bool = False,
     rootnode_choice_fn: Callable[[Sequence[Hashable]], Hashable] | None = None,

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import math
-from collections.abc import Hashable, Iterable, Mapping
-from typing import TYPE_CHECKING
+from collections.abc import Hashable, Iterable, Mapping, Sequence
+from typing import TYPE_CHECKING, cast
 
 import gerrychain.metrics.partisan as pm
 from gerrychain.updaters.tally import DataTally
@@ -72,7 +72,7 @@ class Election:
     def __init__(
         self,
         name: str,
-        party_names_to_node_attribute_names: dict[str, str] | list[str],
+        party_names_to_node_attribute_names: Mapping[str, str | Sequence[float]] | list[str],
         alias: str | None = None,
     ) -> None:
         """Initialize a Election instance.
@@ -107,17 +107,18 @@ class Election:
         # "node_attribute_names" are the names of the node attributes storing vote counts
         # "party_names_to_node_attribute_names" is a mapping from one to the other
         #
-        if isinstance(party_names_to_node_attribute_names, dict):
+        if isinstance(party_names_to_node_attribute_names, list):
+            # name of the party and the attribute name containing value is the same
+            names = cast("list[str]", party_names_to_node_attribute_names)
+            self.parties: list[str] = names
+            self.node_attribute_names: list[str | Sequence[float]] = list(names)
+            self.party_names_to_node_attribute_names: Mapping[str, str | Sequence[float]] = dict(
+                zip(names, names)
+            )
+        elif isinstance(party_names_to_node_attribute_names, Mapping):
             self.parties = list(party_names_to_node_attribute_names.keys())
             self.node_attribute_names = list(party_names_to_node_attribute_names.values())
             self.party_names_to_node_attribute_names = party_names_to_node_attribute_names
-        elif isinstance(party_names_to_node_attribute_names, list):
-            # name of the party and the attribute name containing value is the same
-            self.parties = party_names_to_node_attribute_names
-            self.node_attribute_names = party_names_to_node_attribute_names
-            self.party_names_to_node_attribute_names = dict(
-                zip(self.parties, self.node_attribute_names)
-            )
         else:
             raise TypeError(
                 "Election expects party_names_to_node_attribute_names to be a dict or list"

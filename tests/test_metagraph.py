@@ -1,6 +1,6 @@
 import pytest
 
-from gerrychain import Partition, updaters
+from gerrychain import Graph, Partition, updaters
 from gerrychain.metagraph import (
     all_cut_edge_flips,
     all_valid_flips,
@@ -9,12 +9,12 @@ from gerrychain.metagraph import (
 
 
 @pytest.fixture
-def partition(graph):
+def partition(graph: Graph) -> Partition:
     assignment = dict(zip(range(9), [1, 1, 1, 1, 1, 1, 2, 2, 2]))
     return Partition(graph, assignment, {"cut_edges": updaters.cut_edges})
 
 
-def test_all_cut_edge_flips(partition):
+def test_all_cut_edge_flips(partition: Partition):
     # frm: TODO: Testing:  Maybe change all_cut_edge_flips to return a dict
     #
     # At present, it returns an iterator, which makes the code below
@@ -41,22 +41,23 @@ def test_all_cut_edge_flips(partition):
 
 
 class TestAllValidStatesOneFlipAway:
-    def test_accepts_callable_for_constraints(self, partition):
+    def test_accepts_callable_for_constraints(self, partition: Partition):
         constraints = lambda p: True
         result = all_valid_states_one_flip_away(partition, constraints)
 
         assert all(isinstance(state, Partition) for state in result)
 
-    def test_accepts_list_of_constraints(self, partition):
+    def test_accepts_list_of_constraints(self, partition: Partition):
         constraints = [lambda p: True]
         result = all_valid_states_one_flip_away(partition, constraints)
 
         assert all(isinstance(state, Partition) for state in result)
 
 
-def test_all_valid_flips(partition):
+def test_all_valid_flips(partition: Partition):
     # frm: TODO: Testing:  NX vs. RX node_id issues...
-    def disallow_six_to_one(partition):
+    def disallow_six_to_one(partition: Partition) -> bool:
+        assert partition.flips is not None
         for node, part in partition.flips.items():
             if node == 6 and part == 1:
                 return False

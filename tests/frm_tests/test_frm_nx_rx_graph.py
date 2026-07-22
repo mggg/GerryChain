@@ -11,7 +11,10 @@ Graph object works the same with NetworkX and RustworkX.
 
 # Set the random seed so that the results are reproducible!
 import random
+from collections.abc import Hashable
+from typing import Any
 
+import networkx as nx
 import pytest
 import rustworkx as rx
 
@@ -36,19 +39,19 @@ def gerrychain_nx_graph():
 
 
 @pytest.fixture(scope="module")
-def nx_graph(gerrychain_nx_graph):
+def nx_graph(gerrychain_nx_graph: Graph):
     # Fetch the NX graph object from inside the Graph object
     return gerrychain_nx_graph.get_nx_graph()
 
 
 @pytest.fixture(scope="module")
-def rx_graph(nx_graph):
+def rx_graph(nx_graph: "nx.Graph[Hashable, dict[str, Any], dict[str, Any]]"):
     # Create an RX graph object from NX, preserving node data
     return rx.networkx_converter(nx_graph, keep_attributes=True)
 
 
 @pytest.fixture(scope="module")
-def gerrychain_rx_graph(rx_graph):
+def gerrychain_rx_graph(rx_graph: "rx.PyGraph[dict[str, Any], dict[str, Any]]"):
     # Create a Graph object with an RX graph inside
     return Graph.from_rustworkx(rx_graph)
 
@@ -64,31 +67,34 @@ def test_sanity():
     assert True
 
 
-def test_nx_rx_sets_of_nodes_agree(nx_graph, rx_graph):
+def test_nx_rx_sets_of_nodes_agree(
+    nx_graph: "nx.Graph[Hashable, dict[str, Any], dict[str, Any]]",
+    rx_graph: "rx.PyGraph[dict[str, Any], dict[str, Any]]",
+):
     nx_set_of_nodes = set(nx_graph.nodes())
     rx_set_of_nodes = set(rx_graph.node_indices())
     assert nx_set_of_nodes == rx_set_of_nodes
 
 
-def test_nx_rx_node_data_agree(gerrychain_nx_graph, gerrychain_rx_graph):
+def test_nx_rx_node_data_agree(gerrychain_nx_graph: Graph, gerrychain_rx_graph: Graph):
     nx_data_dict = gerrychain_nx_graph.node_data(1)
     rx_data_dict = gerrychain_rx_graph.node_data(1)
     assert nx_data_dict == rx_data_dict
 
 
-def test_nx_rx_node_indices_agree(gerrychain_nx_graph, gerrychain_rx_graph):
+def test_nx_rx_node_indices_agree(gerrychain_nx_graph: Graph, gerrychain_rx_graph: Graph):
     nx_node_indices = gerrychain_nx_graph.node_indices
     rx_node_indices = gerrychain_rx_graph.node_indices
     assert nx_node_indices == rx_node_indices
 
 
-def test_nx_rx_edges_agree(gerrychain_nx_graph, gerrychain_rx_graph):
+def test_nx_rx_edges_agree(gerrychain_nx_graph: Graph, gerrychain_rx_graph: Graph):
     nx_edges = set(gerrychain_nx_graph.edges)
     rx_edges = set(gerrychain_rx_graph.edges)
     assert nx_edges == rx_edges
 
 
-def test_nx_rx_node_neighbors_agree(gerrychain_nx_graph, gerrychain_rx_graph):
+def test_nx_rx_node_neighbors_agree(gerrychain_nx_graph: Graph, gerrychain_rx_graph: Graph):
     for i in gerrychain_nx_graph:
         # Need to convert to set, because ordering of neighbor nodes differs in the lists
         nx_neighbors = set(gerrychain_nx_graph.neighbors(i))
@@ -96,7 +102,7 @@ def test_nx_rx_node_neighbors_agree(gerrychain_nx_graph, gerrychain_rx_graph):
         assert nx_neighbors == rx_neighbors
 
 
-def test_nx_rx_subgraphs_agree(gerrychain_nx_graph, gerrychain_rx_graph):
+def test_nx_rx_subgraphs_agree(gerrychain_nx_graph: Graph, gerrychain_rx_graph: Graph):
     subgraph_nodes = [
         0,
         1,
@@ -115,7 +121,7 @@ def test_nx_rx_subgraphs_agree(gerrychain_nx_graph, gerrychain_rx_graph):
     #                   nodes as the nx_subgraph, and it does not test edge data...
 
 
-def test_nx_rx_degrees_agree(gerrychain_nx_graph, gerrychain_rx_graph):
+def test_nx_rx_degrees_agree(gerrychain_nx_graph: Graph, gerrychain_rx_graph: Graph):
     # Verify that the degree of each node agrees between NX and RX versions
     nx_degrees = {
         node_id: gerrychain_nx_graph.degree(node_id) for node_id in gerrychain_nx_graph.node_indices

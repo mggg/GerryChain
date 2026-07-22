@@ -5,8 +5,10 @@ from __future__ import annotations
 import numbers
 import random
 
+import numpy
 
-def make_rng(rng: random.Random | int | None = None) -> random.Random:
+
+def make_rng(rng: random.Random | int | numpy.integer | None = None) -> random.Random:
     """Return ``rng`` or create a ``Random`` from a seed or system entropy."""
     if isinstance(rng, random.Random):
         return rng

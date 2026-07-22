@@ -1,14 +1,18 @@
 import random
+from collections.abc import Callable
 from functools import partial
+from typing import Any, cast
 
 import pytest
 
-from gerrychain import Partition, proposals, updaters
+from gerrychain import Graph, Partition, proposals, updaters
+from gerrychain.proposals import ProposalFn
+from gerrychain.proposals.tree_proposals import PairSelection
 from gerrychain.tree import bipartition_tree, uniform_spanning_tree
 
 
 @pytest.fixture
-def partition(graph):
+def partition(graph: Graph) -> Partition:
     return Partition(
         graph,
         {0: 1, 1: 1, 2: 1, 3: 2, 4: 2, 5: 2, 6: 3, 7: 3, 8: 3},
@@ -38,12 +42,12 @@ def partition(graph):
         proposals.build_spectral_recom_proposal_fn(),
     ],
 )
-def test_proposal_returns_a_partition(proposal, partition):
+def test_proposal_returns_a_partition(proposal: ProposalFn, partition: Partition):
     proposed = proposal(partition, rng=random.Random(0))
     assert isinstance(proposed, partition.__class__)
 
 
-def test_proposals_support_mixed_type_part_labels(graph):
+def test_proposals_support_mixed_type_part_labels(graph: Graph):
     for node in graph:
         graph.node_data(node)["population"] = 1
     partition = Partition(
@@ -68,7 +72,7 @@ def test_proposals_support_mixed_type_part_labels(graph):
 
 
 @pytest.fixture
-def populated_partition(graph):
+def populated_partition(graph: Graph) -> Partition:
     for node in graph:
         graph.node_data(node)["population"] = 1
     return Partition(
@@ -103,7 +107,9 @@ def test_recom_letter_aliases_match_named_variants():
         proposals.ReCom.district_pairs_ust,
     ],
 )
-def test_recom_variants_return_balanced_partitions(build_proposal, populated_partition):
+def test_recom_variants_return_balanced_partitions(
+    build_proposal: Callable[..., ProposalFn], populated_partition: Partition
+):
     proposal = build_proposal(pop_col="population", pop_target=3, epsilon=0)
     proposed = proposal(populated_partition, rng=random.Random(0))
     assert isinstance(proposed, Partition)
@@ -119,7 +125,9 @@ def test_recom_variants_return_balanced_partitions(build_proposal, populated_par
         proposals.ReCom.district_pairs_ust,
     ],
 )
-def test_recom_variants_run_with_pair_reselection(build_proposal, populated_partition):
+def test_recom_variants_run_with_pair_reselection(
+    build_proposal: Callable[..., ProposalFn], populated_partition: Partition
+):
     proposal = build_proposal(
         pop_col="population", pop_target=3, epsilon=0, allow_pair_reselection=True
     )
@@ -153,7 +161,11 @@ def test_recom_variants_run_with_pair_reselection(build_proposal, populated_part
         ),
     ],
 )
-def test_recom_variants_match_direct_recom_calls(build_proposal, recom_kwargs, populated_partition):
+def test_recom_variants_match_direct_recom_calls(
+    build_proposal: Callable[..., ProposalFn],
+    recom_kwargs: dict[str, Any],
+    populated_partition: Partition,
+):
     """Pin each builder's wiring: same seed, same trajectory as recom with the bound options.
 
     A builder that binds the wrong pair_selection or forgets the uniform spanning tree consumes
@@ -172,7 +184,7 @@ def test_recom_variants_match_direct_recom_calls(build_proposal, recom_kwargs, p
     assert proposed.assignment.mapping == expected.assignment.mapping
 
 
-def test_reversible_variant_matches_direct_reversible_recom_call(populated_partition):
+def test_reversible_variant_matches_direct_reversible_recom_call(populated_partition: Partition):
     proposal = proposals.ReCom.reversible(
         pop_col="population", pop_target=3, epsilon=0, max_balanced_edge_cuts=100
     )
@@ -188,7 +200,7 @@ def test_reversible_variant_matches_direct_reversible_recom_call(populated_parti
     assert proposed.assignment.mapping == expected.assignment.mapping
 
 
-def test_recom_reversible_variant_runs(populated_partition):
+def test_recom_reversible_variant_runs(populated_partition: Partition):
     proposal = proposals.ReCom.reversible(
         pop_col="population", pop_target=3, epsilon=0, max_balanced_edge_cuts=100
     )
@@ -196,19 +208,19 @@ def test_recom_reversible_variant_runs(populated_partition):
     assert isinstance(proposed, Partition)
 
 
-def test_recom_rejects_unknown_pair_selection(populated_partition):
+def test_recom_rejects_unknown_pair_selection(populated_partition: Partition):
     with pytest.raises(ValueError, match="pair_selection"):
         proposals.recom(
             populated_partition,
             pop_col="population",
             pop_target=3,
             epsilon=0,
-            pair_selection="nope",
+            pair_selection=cast(PairSelection, "nope"),
             rng=0,
         )
 
 
-def test_cut_edges_pair_selection_weights_by_shared_boundary(graph):
+def test_cut_edges_pair_selection_weights_by_shared_boundary(graph: Graph):
     """District pairs sharing more cut edges should be tried first more often.
 
     On the 3x3 grid with districts a={0}, b={1,2}, c={3..8}, the pair (b,c) shares two cut
@@ -224,7 +236,7 @@ def test_cut_edges_pair_selection_weights_by_shared_boundary(graph):
         {"cut_edges": updaters.cut_edges},
     )
 
-    def count_bc_first(pair_selection):
+    def count_bc_first(pair_selection: PairSelection) -> int:
         count = 0
         for seed in range(600):
             pairs = list(_candidate_district_pairs(partition, pair_selection, random.Random(seed)))

@@ -1,5 +1,9 @@
 """Tests for the bundled example graphs in :mod:`gerrychain.examples`."""
 
+import pathlib
+
+import pytest
+
 from gerrychain import Graph
 from gerrychain.examples import gerrymandria
 
@@ -25,7 +29,7 @@ def test_gerrymandria_has_region_attributes():
     ]
 
 
-def test_gerrymandria_is_self_contained(tmp_path, monkeypatch):
+def test_gerrymandria_is_self_contained(tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch):
     # The point of shipping the data with the package is that it loads regardless of the working
     # directory (unlike the old Graph.from_json("./gerrymandria.json") relative-path loading).
     monkeypatch.chdir(tmp_path)

@@ -1,3 +1,4 @@
+from typing import cast
 from unittest.mock import MagicMock
 
 import geopandas as gp
@@ -9,14 +10,14 @@ from gerrychain import Graph, Partition
 
 
 @pytest.fixture
-def partition():
+def partition() -> Partition:
     nx_graph = networkx.Graph([(0, 1), (1, 3), (2, 3), (0, 2)])
     graph = Graph.from_networkx(nx_graph)
     return Partition(graph, {0: 1, 1: 1, 2: 2, 3: 2})
 
 
 @pytest.fixture
-def geodataframe():
+def geodataframe() -> gp.GeoDataFrame:
     a = Polygon([(0, 0), (0, 1), (1, 1), (1, 0)])
     b = Polygon([(0, 1), (0, 2), (1, 2), (1, 1)])
     c = Polygon([(1, 0), (1, 1), (2, 1), (2, 0)])
@@ -27,44 +28,56 @@ def geodataframe():
 
 
 class TestPartitionPlotting:
-    def test_can_plot(self, geodataframe, partition):
+    def test_can_plot(
+        self, geodataframe: gp.GeoDataFrame, partition: Partition, monkeypatch: pytest.MonkeyPatch
+    ):
         mock_plot = MagicMock()
-        gp.GeoDataFrame.plot = mock_plot
+        monkeypatch.setattr(gp.GeoDataFrame, "plot", mock_plot)
         partition.plot(geodataframe)
         assert mock_plot.call_count == 1
 
-    def test_raises_typeerror_for_mismatched_indices(self, geodataframe, partition):
-        df = geodataframe.set_index("ID")
+    def test_raises_typeerror_for_mismatched_indices(
+        self, geodataframe: gp.GeoDataFrame, partition: Partition
+    ):
+        df = cast(gp.GeoDataFrame, geodataframe.set_index("ID"))
         with pytest.raises(TypeError):
             partition.plot(df)
 
-    def test_can_plot_using_geoseries(self, geodataframe, partition):
+    def test_can_plot_using_geoseries(
+        self, geodataframe: gp.GeoDataFrame, partition: Partition, monkeypatch: pytest.MonkeyPatch
+    ):
         mock_plot = MagicMock()
-        gp.GeoDataFrame.plot = mock_plot
+        monkeypatch.setattr(gp.GeoDataFrame, "plot", mock_plot)
         partition.plot(geodataframe.geometry)
         assert mock_plot.call_count == 1
 
-    def test_can_pass_kwargs_to_plot(self, geodataframe, partition):
+    def test_can_pass_kwargs_to_plot(
+        self, geodataframe: gp.GeoDataFrame, partition: Partition, monkeypatch: pytest.MonkeyPatch
+    ):
         mock_plot = MagicMock()
-        gp.GeoDataFrame.plot = mock_plot
+        monkeypatch.setattr(gp.GeoDataFrame, "plot", mock_plot)
 
         partition.plot(geodataframe, cmap="viridis")
 
         args, kwargs = mock_plot.call_args
         assert kwargs["cmap"] == "viridis"
 
-    def test_calls_with_column_as_a_string(self, geodataframe, partition):
+    def test_calls_with_column_as_a_string(
+        self, geodataframe: gp.GeoDataFrame, partition: Partition, monkeypatch: pytest.MonkeyPatch
+    ):
         mock_plot = MagicMock()
-        gp.GeoDataFrame.plot = mock_plot
+        monkeypatch.setattr(gp.GeoDataFrame, "plot", mock_plot)
 
         partition.plot(geodataframe)
 
         args, kwargs = mock_plot.call_args
         assert isinstance(kwargs["column"], str)
 
-    def test_uses_graph_geometries_by_default(self, geodataframe):
+    def test_uses_graph_geometries_by_default(
+        self, geodataframe: gp.GeoDataFrame, monkeypatch: pytest.MonkeyPatch
+    ):
         mock_plot = MagicMock()
-        gp.GeoDataFrame.plot = mock_plot
+        monkeypatch.setattr(gp.GeoDataFrame, "plot", mock_plot)
 
         graph = Graph.from_geodataframe(geodataframe)
         partition = Partition(graph=graph, assignment={node: 0 for node in graph})

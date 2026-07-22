@@ -1,22 +1,28 @@
 import functools
+from collections.abc import Hashable
+from collections.abc import Set as AbstractSet
 
 import pytest
 
-from gerrychain import MarkovChain, Partition, proposals
+from gerrychain import Graph, MarkovChain, Partition, proposals
 from gerrychain.accept import always_accept
 from gerrychain.constraints import no_vanishing_districts, single_flip_contiguous
 from gerrychain.grid import Grid
+from gerrychain.proposals import ProposalFn
 from gerrychain.updaters import cut_edges, cut_edges_by_part
 
 # This is copied and pasted, but should be done with some proper
 # pytest configuration instead:
 
 
-def edge_set_equal(set1, set2):
+def edge_set_equal(
+    set1: AbstractSet[tuple[Hashable, Hashable]],
+    set2: AbstractSet[tuple[Hashable, Hashable]],
+) -> bool:
     return {(y, x) for x, y in set1} | set1 == {(y, x) for x, y in set2} | set2
 
 
-def invalid_cut_edges(partition):
+def invalid_cut_edges(partition: Partition) -> list[tuple[int, int]]:
     invalid = [
         edge
         for edge in partition["cut_edges"]
@@ -25,9 +31,11 @@ def invalid_cut_edges(partition):
     return invalid
 
 
-def translate_flips_to_internal_node_ids(partition, flips):
+def translate_flips_to_internal_node_ids(
+    partition: Partition, flips: dict[int, int]
+) -> dict[Hashable, int]:
     # Translate flips into the internal_node_ids for the partition
-    internal_flips = {}
+    internal_flips: dict[Hashable, int] = {}
     for original_nx_node_id, part in flips.items():
         internal_node_id = partition.graph.internal_node_id_for_original_nx_node_id(
             original_nx_node_id
@@ -37,7 +45,7 @@ def translate_flips_to_internal_node_ids(partition, flips):
 
 
 def test_cut_edges_doesnt_duplicate_edges_with_different_order_of_nodes(
-    three_by_three_grid,
+    three_by_three_grid: Graph,
 ):
     graph = three_by_three_grid
     assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
@@ -58,7 +66,7 @@ def test_cut_edges_doesnt_duplicate_edges_with_different_order_of_nodes(
         assert (edge[1], edge[0]) not in result
 
 
-def test_cut_edges_can_handle_multiple_flips(three_by_three_grid):
+def test_cut_edges_can_handle_multiple_flips(three_by_three_grid: Graph):
     graph = three_by_three_grid
     assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
     partition = Partition(graph, assignment, {"cut_edges": cut_edges})
@@ -81,7 +89,7 @@ def test_cut_edges_can_handle_multiple_flips(three_by_three_grid):
 
 
 def test_cut_edges_by_part_doesnt_duplicate_edges_with_opposite_order_of_nodes(
-    three_by_three_grid,
+    three_by_three_grid: Graph,
 ):
     graph = three_by_three_grid
     assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
@@ -103,7 +111,7 @@ def test_cut_edges_by_part_doesnt_duplicate_edges_with_opposite_order_of_nodes(
             assert (edge[1], edge[0]) not in result
 
 
-def test_cut_edges_by_part_gives_same_total_edges_as_naive_method(three_by_three_grid):
+def test_cut_edges_by_part_gives_same_total_edges_as_naive_method(three_by_three_grid: Graph):
     graph = three_by_three_grid
     assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
     updaters = {"cut_edges_by_part": cut_edges_by_part}
@@ -125,7 +133,7 @@ def test_cut_edges_by_part_gives_same_total_edges_as_naive_method(three_by_three
     assert naive_cut_edges == {tuple(sorted(edge)) for part in result for edge in result[part]}
 
 
-def test_implementation_of_cut_edges_matches_naive_method(three_by_three_grid):
+def test_implementation_of_cut_edges_matches_naive_method(three_by_three_grid: Graph):
     graph = three_by_three_grid
     assignment = {0: 1, 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}
     partition = Partition(graph, assignment, {"cut_edges": cut_edges})
@@ -166,7 +174,9 @@ def test_implementation_of_cut_edges_matches_naive_method(three_by_three_grid):
         ),
     ],
 )
-def test_cut_edges_matches_naive_cut_edges_at_every_step(proposal, number_of_steps):
+def test_cut_edges_matches_naive_cut_edges_at_every_step(
+    proposal: ProposalFn, number_of_steps: int
+):
     partition = Grid((10, 10), with_diagonals=True)
 
     chain = MarkovChain(

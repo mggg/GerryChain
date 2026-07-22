@@ -1,18 +1,18 @@
 import numpy as np
 import pytest
 
-from gerrychain import Partition
+from gerrychain import Graph, Partition
 from gerrychain.constraints import contiguous
 from gerrychain.optimization import Gingleator
 from gerrychain.proposals import build_recom_proposal_fn
 from gerrychain.updaters import Tally
 
 
-def simple_cut_edge_count(partition):
+def simple_cut_edge_count(partition: Partition) -> int:
     return len(partition["cut_edges"])
 
 
-def gingleator_test_partition(four_by_five_grid_for_opt):
+def gingleator_test_partition(four_by_five_grid_for_opt: Graph) -> Partition:
     return Partition(
         graph=four_by_five_grid_for_opt,
         assignment={
@@ -48,7 +48,7 @@ def gingleator_test_partition(four_by_five_grid_for_opt):
     )
 
 
-def test_ginglator_needs_min_perc_or_min_pop_col(four_by_five_grid_for_opt):
+def test_ginglator_needs_min_perc_or_min_pop_col(four_by_five_grid_for_opt: Graph):
     initial_partition = Partition.from_random_assignment(
         graph=four_by_five_grid_for_opt,
         n_parts=4,
@@ -86,7 +86,7 @@ def test_ginglator_needs_min_perc_or_min_pop_col(four_by_five_grid_for_opt):
     )
 
 
-def test_ginglator_warns_if_min_perc_and_min_pop_col_set(four_by_five_grid_for_opt):
+def test_ginglator_warns_if_min_perc_and_min_pop_col_set(four_by_five_grid_for_opt: Graph):
     initial_partition = Partition.from_random_assignment(
         graph=four_by_five_grid_for_opt,
         n_parts=4,
@@ -129,7 +129,7 @@ def test_ginglator_warns_if_min_perc_and_min_pop_col_set(four_by_five_grid_for_o
     )
 
 
-def test_gingleator_finds_best_partition(four_by_five_grid_for_opt):
+def test_gingleator_finds_best_partition(four_by_five_grid_for_opt: Graph):
     initial_partition = Partition.from_random_assignment(
         graph=four_by_five_grid_for_opt,
         n_parts=4,
@@ -178,14 +178,14 @@ def test_gingleator_finds_best_partition(four_by_five_grid_for_opt):
     assert max(max_scores_sb) == 2
 
 
-def test_count_num_opportunity_dists(four_by_five_grid_for_opt):
+def test_count_num_opportunity_dists(four_by_five_grid_for_opt: Graph):
     initial_partition = gingleator_test_partition(four_by_five_grid_for_opt)
 
     assert Gingleator.num_opportunity_dists(initial_partition, "m_perc", 0.5) == 2
     assert Gingleator.num_opportunity_dists(initial_partition, "m_perc", 0.6) == 0
 
 
-def test_reward_partial_dist(four_by_five_grid_for_opt):
+def test_reward_partial_dist(four_by_five_grid_for_opt: Graph):
     initial_partition = gingleator_test_partition(four_by_five_grid_for_opt)
 
     assert Gingleator.reward_partial_dist(initial_partition, "m_perc", 0.5) == 2 + 0.2
@@ -197,7 +197,7 @@ def test_reward_partial_dist(four_by_five_grid_for_opt):
         pytest.fail(f"ValueError raised when all districts are majority-minority: {str(val_err)}")
 
 
-def test_reward_next_highest_close(four_by_five_grid_for_opt):
+def test_reward_next_highest_close(four_by_five_grid_for_opt: Graph):
     initial_partition = gingleator_test_partition(four_by_five_grid_for_opt)
 
     assert Gingleator.reward_next_highest_close(initial_partition, "m_perc", 0.5) == 2
@@ -212,7 +212,7 @@ def test_reward_next_highest_close(four_by_five_grid_for_opt):
         pytest.fail(f"ValueError raised when all districts are majority-minority: {str(val_err)}")
 
 
-def test_penalize_maximum_over(four_by_five_grid_for_opt):
+def test_penalize_maximum_over(four_by_five_grid_for_opt: Graph):
     initial_partition = gingleator_test_partition(four_by_five_grid_for_opt)
 
     assert Gingleator.penalize_maximum_over(initial_partition, "m_perc", 0.5) == 2.0 + 0.48 / 0.50
@@ -220,7 +220,7 @@ def test_penalize_maximum_over(four_by_five_grid_for_opt):
     assert Gingleator.penalize_maximum_over(initial_partition, "m_perc", 0.6) == 0
 
 
-def test_penalize_avg_over(four_by_five_grid_for_opt):
+def test_penalize_avg_over(four_by_five_grid_for_opt: Graph):
     initial_partition = gingleator_test_partition(four_by_five_grid_for_opt)
 
     assert Gingleator.penalize_avg_over(initial_partition, "m_perc", 0.5) == 2.0 + 0.48 / 0.50
