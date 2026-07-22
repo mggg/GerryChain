@@ -12,10 +12,12 @@ just requires passing a seed to the chain:
 <!-- docs-test: skip -- fragment; references chain components defined nowhere on this page -->
 
 ```python
-chain = MarkovChain(
-    proposal, constraints, accept, initial_partition, total_steps, rng=2024
-)
+chain = MarkovChain(total_steps=total_steps, rng=2024)
+# ...configure proposal_fn, initial_partition, constraints, and acceptance_fn...
 ```
+
+The seed is fixed when the chain is created, so it does not matter in what order you supply the
+rest of the configuration afterwards.
 
 When randomness is needed before the chain, create one `random.Random` and pass it to the two
 ownership boundaries:

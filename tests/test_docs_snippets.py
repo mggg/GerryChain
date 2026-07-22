@@ -284,6 +284,28 @@ def test_notebooks_do_not_commit_outputs(notebook: Path) -> None:
         assert cell.get("execution_count") is None
 
 
+@pytest.mark.parametrize("notebook", sorted((DOCS / "user").glob("*.ipynb")), ids=_page_id)
+def test_notebooks_have_normalized_kernel_metadata(notebook: Path) -> None:
+    """Committed notebooks must carry the pinned kernel metadata.
+
+    A notebook re-saved in a local Jupyter kernel picks up a machine-specific ``kernelspec`` and a
+    ``language_info`` block. That changes the jupyter-cache key the docs build computes, so the
+    build misses the pre-built cache and re-executes the notebook in a CWD without the sample data,
+    which fails on CI. ``docs/_clear_notebook_outputs.py`` pins this metadata; this test fails
+    loudly with a fixup hint if a drifted notebook is committed anyway.
+    """
+    metadata = json.loads(notebook.read_text(encoding="utf-8")).get("metadata", {})
+    fixup = f"run `python docs/_clear_notebook_outputs.py {notebook}` to fix"
+    assert metadata.get("kernelspec") == {
+        "display_name": "Python 3",
+        "language": "python",
+        "name": "python3",
+    }, f"{notebook.name} has a non-normalized kernelspec; {fixup}"
+    assert "language_info" not in metadata, (
+        f"{notebook.name} still carries a language_info block; {fixup}"
+    )
+
+
 def test_clear_notebook_outputs(tmp_path: Path) -> None:
     path = tmp_path / "example.ipynb"
     path.write_text(

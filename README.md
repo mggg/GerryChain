@@ -128,14 +128,9 @@ are in the virtual environment, and are now ready to install GerryChain.
 To install GerryChain from [PyPI](https://pypi.org/), run `pip install gerrychain` from the command
 line.
 
-If you plan on using GerryChain's GIS functions, such as computing adjacencies or reading in
-shapefiles, then run `pip install gerrychain[geo]` from the command line.
-
-This approach sometimes fails due to compatibility issues between our different Python GIS
-dependencies, like `geopandas`, `pyproj`, `fiona`, and `shapely`. If you run into this issue, try
-installing the dependencies using the
-[geo_settings.txt](https://github.com/mggg/GerryChain/tree/main/docs/geo_settings.txt) file. To do
-this, run `pip install -r geo_settings.txt` from the command line.
+GerryChain's GIS functions, such as computing adjacencies or reading in shapefiles, work out of the
+box: `geopandas` and `shapely` are installed alongside GerryChain, so there is no separate `[geo]`
+extra to install.
 
 > **Note**
 > If you plan on following through the tutorials present within the remainder of this documentation,

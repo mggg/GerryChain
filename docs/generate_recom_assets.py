@@ -136,29 +136,23 @@ def recom_assignments(
     region_surcharge: dict[str, float] | None = None,
 ) -> list[dict[Hashable, Hashable]]:
     """Run the seeded Gerrymandria chain used to render a plan sequence."""
-    partition = Partition(
-        graph,
-        assignment="district",
-        updaters={
+    chain = MarkovChain(total_steps=total_steps, rng=seed)
+    chain.initial_partition = Partition(graph, assignment="district")
+    chain.add_updaters(
+        {
             "population": updaters.Tally("TOTPOP", alias="population"),
             "cut_edges": updaters.cut_edges,
-        },
+        }
     )
-    pop_target = sum(partition["population"].values()) / len(partition)
-    proposal_fn = ReCom.district_pairs_mst(
+    pop_target = sum(chain.initial_partition["population"].values()) / len(chain.initial_partition)
+    chain.proposal_fn = ReCom.district_pairs_mst(
         pop_col="TOTPOP",
         pop_target=pop_target,
         epsilon=0.01,
         region_surcharge=region_surcharge,
     )
-    chain = MarkovChain(
-        proposal_fn=proposal_fn,
-        constraints=[contiguous],
-        acceptance_fn=accept.always_accept,
-        initial_state=partition,
-        total_steps=total_steps,
-        rng=seed,
-    )
+    chain.add_constraint(contiguous)
+    chain.acceptance_fn = accept.always_accept
     return [dict(state.assignment.mapping) for state in chain]
 
 
