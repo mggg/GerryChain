@@ -167,29 +167,43 @@ class _PopulatedGraph:
         self.subsets[parent] |= self.subsets[node]
         self._degrees[parent] -= 1
 
+    def is_within_epsilon(self, population: int | float) -> bool:
+        """Return whether a population is within epsilon of the ideal district population.
+
+        This is the single definition of "balanced" used by both cut finders. Keeping it in one
+        place matters: the bound is inclusive, and when the two finders spelled the comparison out
+        separately they disagreed about whether an exactly-on-target cut counted.
+
+        Args:
+            population (int | float): The population to test.
+
+        Returns:
+            bool: True if the population is acceptable.
+        """
+        return abs(population - self.ideal_pop) <= self.epsilon * self.ideal_pop
+
     # frm: only ever used inside this file
     #       But maybe this is intended to be used externally...
-    def has_ideal_population(self, node: Hashable, one_sided_cut: bool = False) -> bool:
+    def has_ideal_population(self, node: Hashable, single_district_cut: bool = False) -> bool:
         """Checks if a merged node is within epsilon of the ideal population.
 
         Args:
             node (Hashable): The node to check.
-            one_sided_cut (bool, optional): Whether or not we are cutting off a single district.
-                When set to False, we check if the node we are cutting and the remaining graph are
-                both within epsilon of the ideal population. When set to True, we only check if the
-                node we are cutting is within epsilon of the ideal population. Defaults to False.
+            single_district_cut (bool, optional): Whether or not we are cutting off a single
+                district. When set to False, we check if the node we are cutting and the remaining
+                graph are both within epsilon of the ideal population. When set to True, we only
+                check if the node we are cutting is within epsilon of the ideal population.
+                Defaults to False.
 
         Returns:
             bool: True if the node has an ideal population within the graph up to epsilon.
         """
+        node_population = self.population[node]
+        if single_district_cut:
+            return self.is_within_epsilon(node_population)
 
-        if one_sided_cut:
-            return abs(self.population[node] - self.ideal_pop) < self.epsilon * self.ideal_pop
-
-        return (
-            abs(self.population[node] - self.ideal_pop) <= self.epsilon * self.ideal_pop
-            and abs((self.tot_pop - self.population[node]) - self.ideal_pop)
-            <= self.epsilon * self.ideal_pop
+        return self.is_within_epsilon(node_population) and self.is_within_epsilon(
+            self.tot_pop - node_population
         )
 
     def __repr__(self) -> str:
@@ -229,21 +243,53 @@ class _Cut(NamedTuple):
     subset: frozenset[Hashable]
 
 
-# Define an interface for find_balanced_edge_cut functions
-#
-# frm: TODO: Documentation: Add documentation for find_balanced_edge_cut_fn()
-#
-# The whole point is to make it clear to the user that this is a thing, so tell
-# them what kind of thing it is - and what the params are for...
-#
 class FindBalancedEdgeCutsFn(Protocol):
+    """Enumerates the population-balanced cuts of an already-drawn spanning tree.
+
+    A bipartition function draws a spanning tree, calls one of these to find every edge whose
+    removal leaves acceptable populations, and then hands the result to a :class:`CutChoiceFn` to
+    pick one. :func:`find_balanced_edge_cuts_memoization` and
+    :func:`find_balanced_edge_cuts_contraction` both match this shape.
+
+    Args:
+        h (_PopulatedGraph): The spanning tree annotated with node populations, the ideal
+            population, and the allowed epsilon.
+        single_district_cut (bool, optional): When False, both sides of the cut must be within
+            epsilon of the ideal population. When True, only the returned side must be, which is
+            what lets callers peel off a single district of a given size. Default is False.
+        rootnode_choice_fn (Callable | None, optional): Chooses the root to hang the tree from,
+            given the candidate nodes. Defaults to a uniform random choice. Finders that examine
+            every edge regardless of root ignore this.
+        rng (random.Random): The RNG supplied by the owning operation.
+
+    Returns:
+        list[_Cut]: Every balanced cut found, which may be empty if the tree admits none.
+    """
+
     def __call__(
         self,
         h: _PopulatedGraph,
-        one_sided_cut: bool = False,
-        rootnode_choice_fn: Callable[[Sequence[Hashable]], Hashable] | None = None,
+        /,
         *,
+        single_district_cut: bool = False,
+        rootnode_choice_fn: Callable[[Sequence[Hashable]], Hashable] | None = None,
         rng: random.Random,
+    ) -> list[_Cut]: ...
+
+
+class _BoundFindBalancedEdgeCutsFn(Protocol):
+    """A :class:`FindBalancedEdgeCutsFn` with ``single_district_cut`` and ``rng`` already bound.
+
+    :func:`bipartition_tree` binds those two before handing the finder to the retry loop, which
+    then varies only the root choice between attempts.
+    """
+
+    def __call__(
+        self,
+        h: _PopulatedGraph,
+        /,
+        *,
+        rootnode_choice_fn: Callable[[Sequence[Hashable]], Hashable] | None = None,
     ) -> list[_Cut]: ...
 
 
@@ -264,7 +310,7 @@ class BipartitionTreeFn(Protocol):
         pop_target: float,
         epsilon: float,
         node_repeats: int = 0,
-        one_sided_cut: bool = False,
+        single_district_cut: bool = False,
         rng: random.Random,
     ) -> AbstractSet[Hashable]: ...
 
@@ -285,7 +331,7 @@ class ReComBipartitionTreeFn(Protocol):
         pop_target: float,
         epsilon: float,
         node_repeats: int = 0,
-        one_sided_cut: bool = False,
+        single_district_cut: bool = False,
         region_surcharge: dict[str, float] | None = None,
         rng: random.Random,
     ) -> AbstractSet[Hashable]: ...
@@ -370,7 +416,7 @@ def _bfs_predecessors_and_successors_for_tree(
 
 def find_balanced_edge_cuts_contraction(
     h: _PopulatedGraph,
-    one_sided_cut: bool = False,
+    single_district_cut: bool = False,
     rootnode_choice_fn: Callable[[Sequence[Hashable]], Hashable] | None = None,
     *,
     rng: random.Random | int | None = None,
@@ -380,8 +426,8 @@ def find_balanced_edge_cuts_contraction(
 
     Args:
         h (_PopulatedGraph): The populated graph.
-        one_sided_cut (bool, optional): Whether or not we are cutting off a single district. When
-            set to False, we check if the node we are cutting and the remaining graph are both
+        single_district_cut (bool, optional): Whether or not we are cutting off a single district.
+            When set to False, we check if the node we are cutting and the remaining graph are both
             within epsilon of the ideal population. When set to True, we only check if the node we
             are cutting is within epsilon of the ideal population. Defaults to False.
         rootnode_choice_fn (Callable | None): The function used to select the root node_id.
@@ -397,6 +443,11 @@ def find_balanced_edge_cuts_contraction(
         rootnode_choice_fn = rng.choice
 
     node_ids = h.graph.nodes if h.graph.is_nx_graph() else h.graph.node_indices
+
+    # NOTE: The root must have degree > 1 here: the loop below seeds its queue from every degree-1
+    # node and then looks up `pred[leaf]`. A leaf root would land in that queue without having a
+    # parent, raising KeyError. On a two-node tree both nodes are leaves, so nothing qualifies and
+    # `rng.choice` raises IndexError.
     root = rootnode_choice_fn([node_id for node_id in node_ids if h.degree(node_id) > 1])
     # Parent map for iteratively contracting leaves. This used to call h.graph.predecessors(root)
     pred, _ = _bfs_predecessors_and_successors_for_tree(h.graph, root)
@@ -421,9 +472,9 @@ def find_balanced_edge_cuts_contraction(
     leaves = deque(node_id for node_id in node_ids if h.degree(node_id) == 1)
     while len(leaves) > 0:
         leaf = leaves.popleft()
-        if h.has_ideal_population(leaf, one_sided_cut=one_sided_cut):
+        if h.has_ideal_population(leaf, single_district_cut=single_district_cut):
             # frm: If the population of the subtree rooted in this node is the correct
-            #       size, then add it to the cut list.  Note that if one_sided_cut == False,
+            #       size, then add it to the cut list.  Note that if single_district_cut == False,
             #       then the cut means the cut bisects the graph of the spanning tree.
             e = (leaf, pred[leaf])
             cuts.append(
@@ -552,7 +603,7 @@ def _nodes_in_subtree(start: Hashable, succ: dict[Hashable, list[Hashable]]) -> 
 # frm: used externally by tree_proposals.py
 def find_balanced_edge_cuts_memoization(
     h: _PopulatedGraph,
-    one_sided_cut: bool = False,
+    single_district_cut: bool = False,
     rootnode_choice_fn: Callable[[Sequence[Hashable]], Hashable] | None = None,
     *,
     rng: random.Random | int | None = None,
@@ -566,8 +617,8 @@ def find_balanced_edge_cuts_memoization(
 
     Args:
         h (_PopulatedGraph): The _PopulatedGraph object representing the graph.
-        one_sided_cut (bool, optional): Whether or not we are cutting off a single district. When
-            set to False, we check if the node we are cutting and the remaining graph are both
+        single_district_cut (bool, optional): Whether or not we are cutting off a single district.
+            When set to False, we check if the node we are cutting and the remaining graph are both
             within epsilon of the ideal population. When set to True, we only check if the node we
             are cutting is within epsilon of the ideal population. Defaults to False.
         rootnode_choice_fn (Callable | None): The choice function used to select the root
@@ -579,37 +630,19 @@ def find_balanced_edge_cuts_memoization(
         list[_Cut]: A list of balanced edge cuts.
     """
 
-    """
-    frm: ???: confused...
-
-    This function seems to be used for two very different purposes, depending on the
-    value of the parameter, one_sided_cut.  When true, the code looks for lots of cuts
-    that would create a district with the right population - both above and below the
-    node being considered.  Given that it is operating on a tree, one would assume that
-    there is only one (or perhaps two if one node's population was tiny) cut for the top
-    of the tree, but there should be many for the bottom of the tree.
-
-    However, if the paramter is set to false (the default), then the code checks to see
-    whether a cut would produce two districts - on above and one below the tree that
-    have the right populations.  In this case, the code is presumatly looking for the
-    single node (again there might be two if one node's population was way below epsilon)
-    that would bisect the graph into two districts with a tolerable population.
-
-    If I am correct, then there is an opportunity to clarify these two uses - perhaps
-    with wrapper functions.  I am also a bit surprised that snippets of code are repeated.
-    Again - this causes mental load for the reader, and it is an opportunity for bugs to
-    creep in later (you fix it in one place but not the other).  Not sure this "clarification"
-    is desired, but it is worth considering...
-    """
-
-    # frm: ???:  Why does a root have to have degree > 1?  I would think that any node would do...
-
     rng = make_rng(rng)
     if rootnode_choice_fn is None:
         rootnode_choice_fn = rng.choice
 
     node_ids = h.graph.nodes if h.graph.is_nx_graph() else h.graph.node_indices
-    root = rootnode_choice_fn([node_id for node_id in node_ids if h.degree(node_id) > 1])
+
+    # NOTE: Any node may serve as the root. Every non-root node contributes the one edge joining it
+    # to its parent, and a tree on n nodes has n - 1 of each, so the candidate edges are all of them
+    # wherever we root. The root only decides which side of an edge counts as "below", and so which
+    # side a cut hands back. `find_balanced_edge_cuts_contraction` is different: it requires a root
+    # of degree > 1, because it seeds its worklist from every degree-1 node and then looks up
+    # `pred[leaf]`, which a leaf root would not have.
+    root = rootnode_choice_fn(list(node_ids))
 
     # Parent and child maps for the tree rooted at `root`. For a tree each non-root node has a
     # unique parent, so `pred` is identical to the old map; the order of children within
@@ -621,60 +654,49 @@ def find_balanced_edge_cuts_memoization(
     # Calculate the population of each subtree in the "succ" tree
     subtree_pops = _calc_pops(succ, root, h)
 
+    def cut_at(node: Hashable, subset: AbstractSet[Hashable]) -> _Cut:
+        """Build the cut that removes the edge joining ``node`` to its parent.
+
+        ``subset`` is the side of that edge the cut hands back. The edge keeps whatever
+        ``random_weight`` the spanning tree gave it, falling back to a fresh draw. Note that the
+        draw happens either way, so the RNG advances once per cut found.
+        """
+        edge = (node, pred[node])
+        fallback_weight = rng.random()
+        return _Cut(
+            edge=edge,
+            weight=h.graph.edge_data(h.graph.get_edge_id_from_edge(edge)).get(
+                "random_weight", fallback_weight
+            ),
+            subset=frozenset(subset),
+        )
+
+    def below(node: Hashable) -> AbstractSet[Hashable]:
+        """The subtree hanging below ``node``, including ``node`` itself."""
+        return _nodes_in_subtree(node, succ)
+
+    def above(node: Hashable) -> AbstractSet[Hashable]:
+        """Everything except the subtree below ``node``."""
+        return set(h.graph.node_indices) - _nodes_in_subtree(node, succ)
+
     cuts = []
 
-    if one_sided_cut:
+    if single_district_cut:
+        # Peeling off one district: only the side we hand back has to be balanced, so a node
+        # qualifies if either the subtree below it or everything above it hits the target. The
+        # remainder is left for later cuts to divide.
         for node, tree_pop in subtree_pops.items():
-            if abs(tree_pop - h.ideal_pop) <= h.ideal_pop * h.epsilon:
-                # frm: If the subtree for this node has a population within epsilon
-                #       of the ideal, then add it to the cuts list.
-                e = (node, pred[node])  # get the edge from the parent to this node
-                wt = rng.random()
-                # frm: Add the cut - set its weight if it does not already have one
-                #       and remember all of the nodes in the subtree in the frozenset
-                cuts.append(
-                    _Cut(
-                        edge=e,
-                        weight=h.graph.edge_data(h.graph.get_edge_id_from_edge(e)).get(
-                            "random_weight", wt
-                        ),
-                        subset=frozenset(_nodes_in_subtree(node, succ)),
-                    )
-                )
-            elif abs((total_pop - tree_pop) - h.ideal_pop) <= h.ideal_pop * h.epsilon:
-                # frm: If the population of everything ABOVE this node in the tree is
-                #       within epsilon of the ideal, then add it to the cut list too.
-                e = (node, pred[node])
-                wt = rng.random()
-                cuts.append(
-                    _Cut(
-                        edge=e,
-                        weight=h.graph.edge_data(h.graph.get_edge_id_from_edge(e)).get(
-                            "random_weight", wt
-                        ),
-                        subset=frozenset(set(h.graph.node_indices) - _nodes_in_subtree(node, succ)),
-                    )
-                )
+            if h.is_within_epsilon(tree_pop):
+                cuts.append(cut_at(node, below(node)))
+            elif h.is_within_epsilon(total_pop - tree_pop):
+                cuts.append(cut_at(node, above(node)))
+    else:
+        # Bisecting the tree: both sides have to be balanced at once, which is a much stricter
+        # test and typically admits far fewer cuts.
+        for node, tree_pop in subtree_pops.items():
+            if h.is_within_epsilon(tree_pop) and h.is_within_epsilon(total_pop - tree_pop):
+                cuts.append(cut_at(node, above(node)))
 
-        return cuts
-
-    # We are looking for a way to bisect the graph (one_sided_cut is False)
-    for node, tree_pop in subtree_pops.items():
-        if (abs(tree_pop - h.ideal_pop) <= h.ideal_pop * h.epsilon) and (
-            abs((total_pop - tree_pop) - h.ideal_pop) <= h.ideal_pop * h.epsilon
-        ):
-            e = (node, pred[node])
-            wt = rng.random()
-            # frm: TODO: Performance: Think if code below can be made faster...
-            cuts.append(
-                _Cut(
-                    edge=e,
-                    weight=h.graph.edge_data(h.graph.get_edge_id_from_edge(e)).get(
-                        "random_weight", wt
-                    ),
-                    subset=frozenset(set(h.graph.node_indices) - _nodes_in_subtree(node, succ)),
-                )
-            )
     return cuts
 
 
@@ -882,8 +904,8 @@ def _internal_bipartition_tree(
     spanning_tree_fn: SpanningTreeFn = random_spanning_tree,
     region_surcharge: dict[str, float] | None = None,
     spanning_tree_fn_kwargs: Mapping[str, object] | None = None,
-    find_balanced_edge_cuts_fn: Callable[..., list[_Cut]] = find_balanced_edge_cuts_memoization,
-    one_sided_cut: bool = False,
+    find_balanced_edge_cuts_fn: FindBalancedEdgeCutsFn = find_balanced_edge_cuts_memoization,
+    single_district_cut: bool = False,
     rootnode_choice_fn: Callable[[Sequence[Hashable]], Hashable] | None = None,
     max_attempts: int = 100000,
     warn_attempts: int = 1000,
@@ -926,10 +948,12 @@ def _internal_bipartition_tree(
             verbatim to ``spanning_tree_fn``. Use this to set function-specific options that are
             not named here, e.g. ``{"treat_unassigned_as_single_region": True}`` for
             ``random_spanning_tree``. Defaults to None.
-        find_balanced_edge_cuts_fn (Callable, optional): The function to find balanced edge cuts.
-            Defaults to `find_balanced_edge_cuts_memoization`.
-        one_sided_cut (bool, optional): Passed to the ``find_balanced_edge_cuts_fn``. Determines
-            whether or not we are cutting off a single district when partitioning the tree. When
+        find_balanced_edge_cuts_fn (FindBalancedEdgeCutsFn, optional): The function to find
+            balanced edge cuts. Defaults to `find_balanced_edge_cuts_memoization`. A custom
+            finder must accept ``single_district_cut``, ``rootnode_choice_fn``, and ``rng`` as
+            keyword arguments; see :class:`FindBalancedEdgeCutsFn`.
+        single_district_cut (bool, optional): Passed to the ``find_balanced_edge_cuts_fn``.
+            Determines whether we are cutting off a single district when partitioning the tree. When
             set to False, we check if the node we are cutting and the remaining graph are both
             within epsilon of the ideal population. When set to True, we only check if the node we
             are cutting is within epsilon of the ideal population. Defaults to False.
@@ -1001,11 +1025,9 @@ def _internal_bipartition_tree(
         **(spanning_tree_fn_kwargs or {}),
     )
 
-    if "one_sided_cut" in signature(find_balanced_edge_cuts_fn).parameters:
-        find_balanced_edge_cuts_fn = partial(
-            find_balanced_edge_cuts_fn, one_sided_cut=one_sided_cut
-        )
-    find_balanced_edge_cuts_fn = partial(find_balanced_edge_cuts_fn, rng=rng)
+    bound_find_balanced_edge_cuts_fn: _BoundFindBalancedEdgeCutsFn = partial(
+        find_balanced_edge_cuts_fn, single_district_cut=single_district_cut, rng=rng
+    )
 
     # Find possible edge cuts if they exist.
     #
@@ -1020,7 +1042,7 @@ def _internal_bipartition_tree(
         node_repeats=node_repeats,
         spanning_tree=spanning_tree,
         spanning_tree_fn=spanning_tree_fn,
-        find_balanced_edge_cuts_fn=find_balanced_edge_cuts_fn,
+        find_balanced_edge_cuts_fn=bound_find_balanced_edge_cuts_fn,
         rootnode_choice_fn=rootnode_choice_fn,
         max_attempts=max_attempts,
         warn_attempts=warn_attempts,
@@ -1085,8 +1107,8 @@ def bipartition_tree(
     spanning_tree_fn: SpanningTreeFn = random_spanning_tree,
     region_surcharge: dict[str, float] | None = None,
     spanning_tree_fn_kwargs: Mapping[str, object] | None = None,
-    find_balanced_edge_cuts_fn: Callable[..., list[_Cut]] = find_balanced_edge_cuts_memoization,
-    one_sided_cut: bool = False,
+    find_balanced_edge_cuts_fn: FindBalancedEdgeCutsFn = find_balanced_edge_cuts_memoization,
+    single_district_cut: bool = False,
     rootnode_choice_fn: Callable[[Sequence[Hashable]], Hashable] | None = None,
     repeat_until_valid: bool = True,
     max_attempts: int = 100000,
@@ -1129,10 +1151,12 @@ def bipartition_tree(
             to ``spanning_tree_fn``. Use this to set function-specific options that are not named
             here, e.g. ``{"treat_unassigned_as_single_region": True}`` for ``random_spanning_tree``.
             Defaults to None.
-        find_balanced_edge_cuts_fn (Callable, optional): The function to find balanced edge cuts.
-            Defaults to `find_balanced_edge_cuts_memoization`.
-        one_sided_cut (bool, optional): Passed to the ``find_balanced_edge_cuts_fn``. Determines
-            whether or not we are cutting off a single district when partitioning the tree. When
+        find_balanced_edge_cuts_fn (FindBalancedEdgeCutsFn, optional): The function to find
+            balanced edge cuts. Defaults to `find_balanced_edge_cuts_memoization`. A custom
+            finder must accept ``single_district_cut``, ``rootnode_choice_fn``, and ``rng`` as
+            keyword arguments; see :class:`FindBalancedEdgeCutsFn`.
+        single_district_cut (bool, optional): Passed to the ``find_balanced_edge_cuts_fn``.
+            Determines whether we are cutting off a single district when partitioning the tree. When
             set to False, we check if the node we are cutting and the remaining graph are both
             within epsilon of the ideal population. When set to True, we only check if the node we
             are cutting is within epsilon of the ideal population. Defaults to False.
@@ -1177,7 +1201,7 @@ def bipartition_tree(
         region_surcharge=region_surcharge,
         spanning_tree_fn_kwargs=spanning_tree_fn_kwargs,
         find_balanced_edge_cuts_fn=find_balanced_edge_cuts_fn,
-        one_sided_cut=one_sided_cut,
+        single_district_cut=single_district_cut,
         rootnode_choice_fn=rootnode_choice_fn,
         max_attempts=max_attempts,
         warn_attempts=warn_attempts,
@@ -1218,7 +1242,7 @@ def _get_possible_edge_cuts_and_populated_graph(
     node_repeats: int = 0,
     spanning_tree: GraphLike | None = None,
     spanning_tree_fn: SpanningTreeFn = random_spanning_tree,
-    find_balanced_edge_cuts_fn: Callable[..., list[_Cut]] = find_balanced_edge_cuts_memoization,
+    find_balanced_edge_cuts_fn: _BoundFindBalancedEdgeCutsFn = find_balanced_edge_cuts_memoization,
     rootnode_choice_fn: Callable[[Sequence[Hashable]], Hashable] | None = None,
     repeat_until_valid: bool = True,
     warn_attempts: int = 1000,
@@ -1296,6 +1320,8 @@ def _get_possible_edge_cuts_and_populated_graph(
         # each time...
         #
 
+        # Only forward rootnode_choice_fn when the caller set one: passing None explicitly would
+        # override a custom finder's own default root chooser.
         kwargs = {}
         if rootnode_choice_fn is not None:
             kwargs["rootnode_choice_fn"] = rootnode_choice_fn
@@ -1363,8 +1389,8 @@ def bipartition_tree_random_with_num_cuts(
     repeat_until_valid: bool = True,
     spanning_tree: GraphLike | None = None,
     spanning_tree_fn: SpanningTreeFn = random_spanning_tree,
-    find_balanced_edge_cuts_fn: Callable[..., list[_Cut]] = find_balanced_edge_cuts_memoization,
-    one_sided_cut: bool = False,
+    find_balanced_edge_cuts_fn: FindBalancedEdgeCutsFn = find_balanced_edge_cuts_memoization,
+    single_district_cut: bool = False,
     rootnode_choice_fn: Callable[[Sequence[Hashable]], Hashable] | None = None,
     max_attempts: int = 100000,
     cut_choice_fn: CutChoiceFn | RegionAwareCutChoiceFn | None = None,
@@ -1397,10 +1423,12 @@ def bipartition_tree_random_with_num_cuts(
             when the algorithm chooses a new root and for testing). Defaults to None.
         spanning_tree_fn (Callable, optional): The random spanning tree algorithm to use if a
             spanning tree is not provided. Defaults to `random_spanning_tree`.
-        find_balanced_edge_cuts_fn (Callable, optional): The algorithm used to find balanced cut
-            edges. Defaults to `find_balanced_edge_cuts_memoization`.
-        one_sided_cut (bool, optional): Passed to the ``find_balanced_edge_cuts_fn``. Determines
-            whether or not we are cutting off a single district when partitioning the tree. When
+        find_balanced_edge_cuts_fn (FindBalancedEdgeCutsFn, optional): The algorithm used to find
+            balanced cut edges. Defaults to `find_balanced_edge_cuts_memoization`. A custom finder
+            must accept ``single_district_cut``, ``rootnode_choice_fn``, and ``rng`` as keyword
+            arguments; see :class:`FindBalancedEdgeCutsFn`.
+        single_district_cut (bool, optional): Passed to the ``find_balanced_edge_cuts_fn``.
+            Determines whether we are cutting off a single district when partitioning the tree. When
             set to False, we check if the node we are cutting and the remaining graph are both
             within epsilon of the ideal population. When set to True, we only check if the node we
             are cutting is within epsilon of the ideal population. Defaults to False.
@@ -1436,7 +1464,7 @@ def bipartition_tree_random_with_num_cuts(
         spanning_tree_fn=spanning_tree_fn,
         # region_surcharge: dict[str, float] | None = None,
         find_balanced_edge_cuts_fn=find_balanced_edge_cuts_fn,
-        one_sided_cut=one_sided_cut,
+        single_district_cut=single_district_cut,
         rootnode_choice_fn=rootnode_choice_fn,
         max_attempts=max_attempts,
         # warn_attempts: int = 1000,

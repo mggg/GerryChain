@@ -334,5 +334,5 @@ def test_pa_freeze():
     # tests around. Captured with rng=2018; independent of PYTHONHASHSEED.
     assert (
         hashlib.sha256(result.encode()).hexdigest()
-        == "9308a9251f89c58630b68fb4aefadb5923a8c566d129ad4c20af63d53075e8ae"
+        == "2e164b86345d27f905e4f4fad7d54fb7d140908be60ac7e43e93e616ce7931f5"
     )
