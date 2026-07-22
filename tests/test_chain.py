@@ -1,5 +1,7 @@
 from unittest.mock import MagicMock
 
+import pytest
+
 from gerrychain.chain import MarkovChain
 
 
@@ -34,7 +36,7 @@ def test_MarkovChain_runs_only_total_steps_times():
             assert False
 
 
-def test_MarkovChain_returns_the_initial_state_first():
+def test_MarkovChain_returns_the_initial_partition_first():
     initial = MagicMock()
     chain = MarkovChain(mock_proposal, mock_is_valid, mock_accept, initial, total_steps=10)
 
@@ -64,7 +66,7 @@ def test_chain_only_yields_accepted_states():
         proposal=proposal,
         constraints=lambda x: True,
         accept=accept,
-        initial_state=Value(0),
+        initial_partition=Value(0),
         total_steps=4,
     )
 
@@ -72,12 +74,156 @@ def test_chain_only_yields_accepted_states():
         assert state.value <= 0, "The chain yielded a non-accepted state"
 
 
+def test_incremental_construction_matches_constructor():
+    initial = MockState()
+    chain = MarkovChain(total_steps=5)
+    chain.initial_partition = initial
+    chain.proposal = mock_proposal
+    chain.constraints = mock_is_valid
+    chain.accept = mock_accept
+
+    assert len(list(chain)) == 5
+
+
+def test_check_valid_names_missing_config():
+    chain = MarkovChain(total_steps=5)
+    with pytest.raises(ValueError, match="proposal, initial_partition"):
+        chain.check_valid()
+
+    with pytest.raises(ValueError, match="not fully configured"):
+        next(iter(chain))
+
+
+def test_iter_rejects_invalid_initial_partition():
+    def never_valid(state):
+        return False
+
+    chain = MarkovChain(proposal=mock_proposal, accept=mock_accept, total_steps=5)
+    chain.constraints = never_valid  # no initial_partition yet, so this cannot validate
+    chain.initial_partition = MockState()
+    with pytest.raises(ValueError, match="never_valid"):
+        next(iter(chain))
+
+
+def test_add_constraint_defers_check_until_iteration():
+    def never_valid(state):
+        return False
+
+    chain = MarkovChain(proposal=mock_proposal, accept=mock_accept, total_steps=3)
+    chain.add_constraint(never_valid)  # no initial_partition yet: recorded, not checked
+    chain.initial_partition = MockState()
+    with pytest.raises(ValueError, match="never_valid"):
+        next(iter(chain))
+
+
+def test_add_constraint_validates_immediately_with_initial_partition():
+    def never_valid(state):
+        return False
+
+    chain = MarkovChain(
+        proposal=mock_proposal,
+        accept=mock_accept,
+        initial_partition=MockState(),
+        total_steps=3,
+    )
+    with pytest.raises(ValueError, match="never_valid"):
+        chain.add_constraint(never_valid)
+    # The failing constraint was not retained.
+    assert never_valid not in chain.constraints.constraints
+
+
+def test_add_updater_applies_before_or_after_initial_partition():
+    class StateWithUpdaters(MockState):
+        def __init__(self):
+            self.updaters = {}
+
+    def answer(partition):
+        return 42
+
+    def zero(partition):
+        return 0
+
+    chain = MarkovChain(proposal=mock_proposal, accept=mock_accept, total_steps=3)
+    chain.add_updater("answer", answer)  # before any initial_partition: applied on assignment
+    initial = StateWithUpdaters()
+    chain.initial_partition = initial
+    assert initial.updaters["answer"] is answer
+
+    chain.add_updater("zero", zero)  # after: applied immediately
+    assert initial.updaters["zero"] is zero
+
+
+def test_add_constraint_and_add_updater_rejected_while_locked():
+    chain = MarkovChain(mock_proposal, mock_is_valid, mock_accept, MockState(), total_steps=3)
+    it = iter(chain)
+    next(it)
+    with pytest.raises(AttributeError, match="locked"):
+        chain.add_constraint(mock_is_valid)
+    with pytest.raises(AttributeError, match="locked"):
+        chain.add_updater("x", lambda partition: None)
+
+
+def test_constraints_setter_still_validates_eagerly():
+    chain = MarkovChain(
+        proposal=mock_proposal,
+        accept=mock_accept,
+        initial_partition=MockState(),
+        total_steps=5,
+    )
+    with pytest.raises(ValueError, match="lambda"):
+        chain.constraints = lambda state: False
+
+
+def test_config_locked_while_running_and_unlocked_after():
+    chain = MarkovChain(mock_proposal, mock_is_valid, mock_accept, MockState(), total_steps=3)
+    it = iter(chain)
+    next(it)
+    with pytest.raises(AttributeError, match="locked"):
+        chain.total_steps = 100
+    next(it)
+    next(it)
+    with pytest.raises(StopIteration):
+        next(it)
+    # Exhausting the run unlocks the configuration again.
+    chain.total_steps = 5
+    assert len(list(chain)) == 5
+
+
+def test_chain_abandoned_by_break_unlocks_and_can_be_rerun():
+    chain = MarkovChain(mock_proposal, mock_is_valid, mock_accept, MockState(), total_steps=3)
+    for _ in chain:
+        break
+
+    # Leaving the loop ends the run and releases the lock.
+    chain.accept = mock_accept
+
+    count = 0
+    for _ in chain:
+        count += 1
+
+    assert count == 3
+
+
+def test_chain_unlocks_when_a_step_raises():
+    def exploding_proposal(state, *, rng):
+        raise RuntimeError("boom")
+
+    chain = MarkovChain(exploding_proposal, mock_is_valid, mock_accept, MockState(), total_steps=3)
+    it = iter(chain)
+    next(it)  # the initial state is yielded without calling the proposal
+    with pytest.raises(RuntimeError, match="boom"):
+        next(it)
+    # The failure unlocked the chain, so it can be reconfigured.
+    chain.proposal = mock_proposal
+    assert len(list(chain)) == 3
+
+
 def test_repr():
     chain = MarkovChain(
         proposal=lambda x, *, rng: None,
         constraints=[],
         accept=lambda x, *, rng: True,
-        initial_state=None,
+        initial_partition=None,
         total_steps=100,
     )
 

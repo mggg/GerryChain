@@ -6,29 +6,31 @@ from ..partition import Partition
 from ..updaters import CountySplit
 from .bounds import Bounds
 
+# A single binary constraint: takes a Partition and returns whether it is valid.
+ConstraintFn = Callable[[Partition], bool]
+
 
 class Validator:
-    """A single callable for checking that a partition passes a collection of
-    constraints. Intended to be passed as the ``is_valid`` parameter when
-    instantiating MarkovChain.
+    """A single callable that bundles a collection of constraint functions.
 
-    This class is meant to be called as a function after instantiation; its
-    return is ``True`` if all validators pass, and ``False`` if any one fails.
+    This is a callable class used to check partition satisfies a set of constraints, and it is
+    intended to be passed as the ``constraints`` parameter when instantiating a MarkovChain.
+
 
     Example usage::
 
-        is_valid = Validator([constraint1, constraint2, constraint3])
-        chain = MarkovChain(proposal, is_valid, accept, initial_state, total_steps)
+        validator = Validator([constraint1, constraint2, constraint3])
+        chain = MarkovChain(proposal, validator, accept, initial_partition, total_steps)
 
     Attributes:
-        constraints (list[Callable]): List of validator functions that will check partitions.
+        constraints (list[ConstraintFn]): List of constraint functions that will check partitions.
     """
 
-    def __init__(self, constraints: Iterable[Callable[[Partition], bool]]) -> None:
+    def __init__(self, constraints: Iterable[ConstraintFn]) -> None:
         """Initialize a Validator instance.
 
         Args:
-            constraints (list[Callable]): List of validator functions that will check partitions.
+            constraints (Iterable[ConstraintFn]): Constraint functions that will check partitions.
 
         """
         self.constraints = list(constraints)
@@ -150,7 +152,7 @@ def districts_within_tolerance(
     return within_tolerance
 
 
-def refuse_new_splits(partition_county_field: str) -> Callable[[Partition], bool]:
+def refuse_new_splits(partition_county_field: str) -> ConstraintFn:
     """Refuse all proposals that split a county that was previous unsplit.
 
     This function refuse all proposals that split a county that was previous unsplit. It returns

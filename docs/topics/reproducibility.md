@@ -27,7 +27,7 @@ import random
 
 rng = random.Random(2024)
 initial_partition = Partition.from_random_assignment(..., rng=rng)
-chain = MarkovChain(..., initial_state=initial_partition, rng=rng)
+chain = MarkovChain(..., initial_partition=initial_partition, rng=rng)
 ```
 
 The chain passes its RNG to proposals, acceptance functions, and tree algorithms. Interleaved

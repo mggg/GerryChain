@@ -1,12 +1,12 @@
 import random
 import warnings
-from collections.abc import Callable, Hashable, Iterable
+from collections.abc import Hashable, Iterable
 from functools import partial
 from typing import Protocol
 
 import numpy as np
 
-from gerrychain.constraints import Validator
+from gerrychain.constraints import Validator, ConstraintFn
 from gerrychain.partition import Partition
 from gerrychain.proposals import ProposalFn
 
@@ -30,9 +30,7 @@ class Gingleator(SingleMetricOptimizer):
     def __init__(
         self,
         proposal: ProposalFn,
-        constraints: Iterable[Callable[[Partition], bool]]
-        | Validator
-        | Callable[[Partition], bool],
+        constraints: ConstraintFn | Iterable[ConstraintFn] | Validator,
         initial_state: Partition,
         minority_perc_col: str | None = None,
         threshold: float = 0.5,
@@ -47,10 +45,10 @@ class Gingleator(SingleMetricOptimizer):
 
         Args:
             proposal (Callable): Function proposing the next state from the current state.
-            constraints (Iterable[Callable[[Partition], bool]] | Validator |
-                Callable[[Partition], bool]): A function with signature ``Partition -> bool``
-                determining whether the proposed next state is valid (passes all binary
-                constraints). Usually this is a Validator class instance.
+            constraints (ConstraintFn | Iterable[ConstraintFn] | Validator): A function with
+                signature ``Partition -> bool`` determining whether the proposed next state is
+                valid (passes all binary constraints). Usually this is a Validator class
+                instance.
             initial_state (Partition): Initial Partition class.
             minority_perc_col (str | None): The name of the updater mapping of district ids to
                 the fraction of minority population within that district. If no updater is

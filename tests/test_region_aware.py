@@ -55,7 +55,7 @@ def run_chain_single(seed, category, steps, surcharge, max_attempts=100000, rese
         proposal=surcharged_proposal,
         constraints=[constraints.contiguous],
         accept=accept.always_accept,
-        initial_state=initial_partition,
+        initial_partition=initial_partition,
         total_steps=num_steps,
         rng=seed,
     )
@@ -184,7 +184,7 @@ def run_chain_dual(seed, steps, surcharges={"muni": 0.5, "county": 0.5}, warn_at
         proposal=surcharged_proposal,
         constraints=[constraints.contiguous],
         accept=accept.always_accept,
-        initial_state=initial_partition,
+        initial_partition=initial_partition,
         total_steps=num_steps,
         rng=seed,
     )

@@ -7,7 +7,7 @@ from tqdm import tqdm
 from .._rng import make_rng
 from ..accept import AcceptFn, always_accept
 from ..chain import MarkovChain
-from ..constraints import Validator
+from ..constraints import Validator, ConstraintFn
 from ..partition import Partition
 from ..proposals import ProposalFn
 
@@ -38,9 +38,7 @@ class SingleMetricOptimizer:
     def __init__(
         self,
         proposal: ProposalFn,
-        constraints: Iterable[Callable[[Partition], bool]]
-        | Validator
-        | Callable[[Partition], bool],
+        constraints: ConstraintFn | Iterable[ConstraintFn] | Validator,
         initial_state: Partition,
         optimization_metric: Callable[[Partition], float],
         maximize: bool = True,
@@ -52,9 +50,8 @@ class SingleMetricOptimizer:
 
         Args:
             proposal (Callable): Function proposing the next state from the current state.
-            constraints (Iterable[Callable[[Partition], bool]] | Validator |
-                Callable[[Partition], bool]): One or more functions determining whether the
-                proposed state is valid.
+            constraints (ConstraintFn | Iterable[ConstraintFn] | Validator): One or more
+                functions determining whether the proposed state is valid.
             initial_state (Partition): Initial state of the optimizer.
             optimization_metric (Callable[[Partition], float]): Numeric score function to
                 optimize.

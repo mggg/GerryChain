@@ -313,7 +313,7 @@ def test_pa_freeze():
         proposal=proposal,
         constraints=[pop_constraint],
         accept=accept.always_accept,
-        initial_state=initial_partition,
+        initial_partition=initial_partition,
         total_steps=100,
         rng=2018,
     )
