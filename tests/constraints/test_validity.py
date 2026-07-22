@@ -1,4 +1,5 @@
-from typing import cast
+from collections.abc import Hashable
+from typing import Any, cast
 from unittest.mock import MagicMock
 
 import networkx as nx
@@ -13,6 +14,8 @@ from gerrychain.constraints import (
     districts_within_tolerance,
     no_vanishing_districts,
     single_flip_contiguous,
+    within_percent_of_ideal_population,
+    within_percent_of_ideal_population_per_member,
 )
 from gerrychain.graph import Graph
 from gerrychain.partition import Partition
@@ -179,3 +182,56 @@ def test_no_vanishing_districts_works():
 def test_deviation_from_ideal():
     mock_partition = cast(Partition, {"population": {0: 99.0, 1: 101.0}})
     assert deviation_from_ideal(mock_partition, "population") == {0: -0.01, 1: 0.01}
+
+
+def test_per_member_population_constraint_accepts_unequal_district_populations():
+    partition = cast(Partition, {"population": {1: 200, "a": 100, 3: 100}})
+    members: dict[Hashable, int] = {1: 2, "a": 1, 3: 1}
+
+    assert not within_percent_of_ideal_population(partition, 0.01)(partition)
+    assert within_percent_of_ideal_population_per_member(partition, members, 0.01)(partition)
+
+
+def test_per_member_population_constraint_rejects_normalized_violation():
+    initial = cast(Partition, {"population": {1: 200, "a": 100, 3: 100}})
+    changed = cast(Partition, {"population": {1: 204, "a": 98, 3: 98}})
+
+    constraint = within_percent_of_ideal_population_per_member(
+        initial, {1: 2, "a": 1, 3: 1}, percent=0.01
+    )
+
+    assert not constraint(changed)
+
+
+def test_per_member_population_constraint_copies_member_mapping():
+    partition = cast(Partition, {"population": {1: 200, "a": 100, 3: 100}})
+    members: dict[Hashable, int] = {1: 2, "a": 1, 3: 1}
+    constraint = within_percent_of_ideal_population_per_member(partition, members)
+
+    members[1] = 1
+
+    assert constraint(partition)
+
+
+@pytest.mark.parametrize(
+    "members",
+    [
+        {},
+        {1: True},
+        {1: 1.5},
+        {1: 0},
+        {1: -1},
+    ],
+)
+def test_per_member_population_constraint_rejects_invalid_member_counts(members: Any):
+    partition = cast(Partition, {"population": {1: 100}})
+
+    with pytest.raises(ValueError, match="positive integer|must not be empty"):
+        within_percent_of_ideal_population_per_member(partition, members)
+
+
+def test_per_member_population_constraint_reports_missing_and_unexpected_labels():
+    partition = cast(Partition, {"population": {1: 200, "a": 100}})
+
+    with pytest.raises(ValueError, match=r"missing=\['a'\].*unexpected=\[3\]"):
+        within_percent_of_ideal_population_per_member(partition, {1: 2, 3: 1})

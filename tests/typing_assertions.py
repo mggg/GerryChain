@@ -9,12 +9,21 @@ import rustworkx
 
 from gerrychain import Graph, Partition
 from gerrychain.accept import AcceptanceFn
-from gerrychain.constraints import Bounds, deviation_from_ideal, within_percent_of_ideal_population
+from gerrychain.constraints import (
+    Bounds,
+    deviation_from_ideal,
+    within_percent_of_ideal_population,
+    within_percent_of_ideal_population_per_member,
+)
 from gerrychain.graph import FrozenGraph
 from gerrychain.optimization import SingleMetricOptimizer
 from gerrychain.optimization.gingleator import GingleScoreFn
 from gerrychain.partition.initial_partition_generators import PartitionFn
-from gerrychain.proposals import ProposalFn
+from gerrychain.proposals import (
+    MultiMemberReCom,
+    ProposalFn,
+    build_multi_member_recom_proposal_fn,
+)
 from gerrychain.tree import BipartitionTreeFn, ReComBipartitionTreeFn, bipartition_tree
 from gerrychain.updaters import Tally
 from gerrychain.updaters.election import get_percents
@@ -43,6 +52,11 @@ def assert_public_types(
 
     population_bound = within_percent_of_ideal_population(partition)
     assert_type(population_bound, Bounds[[Partition]])
+    members_per_district: Mapping[Hashable, int] = {1: 2, "district-a": 1}
+    per_member_population_bound = within_percent_of_ideal_population_per_member(
+        partition, members_per_district
+    )
+    assert_type(per_member_population_bound, Bounds[[Partition]])
     assert_type(deviation_from_ideal(partition), dict[Hashable, float])
 
     assert_type(Tally("population")(partition), dict[Hashable, float])
@@ -105,6 +119,37 @@ def assert_callable_types() -> None:
         rng: random.Random,
     ) -> dict[Hashable, Hashable]:
         return {}
+
+    members_per_district: Mapping[Hashable, int] = {
+        1: 2,
+        "district-a": 1,
+        ("county", 3): 1,
+    }
+    assert_type(
+        build_multi_member_recom_proposal_fn(
+            pop_col="population",
+            pop_target=100,
+            epsilon=0.01,
+            members_per_district=members_per_district,
+        ),
+        ProposalFn,
+    )
+    assert_type(
+        MultiMemberReCom.cut_edges_mst("population", 100, 0.01, members_per_district),
+        ProposalFn,
+    )
+    assert_type(
+        MultiMemberReCom.district_pairs_mst("population", 100, 0.01, members_per_district),
+        ProposalFn,
+    )
+    assert_type(
+        MultiMemberReCom.cut_edges_ust("population", 100, 0.01, members_per_district),
+        ProposalFn,
+    )
+    assert_type(
+        MultiMemberReCom.district_pairs_ust("population", 100, 0.01, members_per_district),
+        ProposalFn,
+    )
 
     consume_contracts(
         propose,

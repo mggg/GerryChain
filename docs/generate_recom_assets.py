@@ -1,12 +1,8 @@
-"""Regenerate the Gerrymandria maps used by ``docs/user/recom.ipynb``.
-
-The old RST docs also used seeded ensemble animations and a PA boxplot; the tutorial
-notebooks now render their plots live, so only the static region/seed-plan maps remain.
-"""
+"""Regenerate the static Gerrymandria plan and region assets used by the docs."""
 
 from io import BytesIO
 from pathlib import Path
-from collections.abc import Hashable, Mapping
+from collections.abc import Hashable, Mapping, Sequence
 
 import matplotlib
 
@@ -18,8 +14,10 @@ import numpy as np
 from matplotlib.colors import ListedColormap
 from PIL import Image
 
-from gerrychain import Graph
+from gerrychain import Graph, MarkovChain, Partition, accept, updaters
+from gerrychain.constraints import contiguous
 from gerrychain.examples import gerrymandria
+from gerrychain.proposals import ReCom
 
 DOCS = Path(__file__).parent
 IMAGES = DOCS / "user" / "images"
@@ -130,16 +128,98 @@ def save_district_dual_graph(graph: Graph) -> None:
     plt.close(fig)
 
 
+def recom_assignments(
+    graph: Graph,
+    *,
+    seed: int,
+    total_steps: int,
+    region_surcharge: dict[str, float] | None = None,
+) -> list[dict[Hashable, Hashable]]:
+    """Run the seeded Gerrymandria chain used to render a plan sequence."""
+    partition = Partition(
+        graph,
+        assignment="district",
+        updaters={
+            "population": updaters.Tally("TOTPOP", alias="population"),
+            "cut_edges": updaters.cut_edges,
+        },
+    )
+    pop_target = sum(partition["population"].values()) / len(partition)
+    proposal_fn = ReCom.district_pairs_mst(
+        pop_col="TOTPOP",
+        pop_target=pop_target,
+        epsilon=0.01,
+        region_surcharge=region_surcharge,
+    )
+    chain = MarkovChain(
+        proposal_fn=proposal_fn,
+        constraints=[contiguous],
+        acceptance_fn=accept.always_accept,
+        initial_state=partition,
+        total_steps=total_steps,
+        rng=seed,
+    )
+    return [dict(state.assignment.mapping) for state in chain]
+
+
+def save_assignment_gif(
+    graph: Graph,
+    assignments: Sequence[Mapping[Hashable, Hashable]],
+    filename: str,
+) -> None:
+    """Render a sequence of assignments as a looping GIF."""
+    images = [assignment_image(graph, assignment) for assignment in assignments]
+    images[0].save(
+        IMAGES / filename,
+        save_all=True,
+        append_images=images[1:],
+        duration=500,
+        loop=0,
+    )
+
+
 def regenerate_gerrymandria() -> None:
     graph = gerrymandria()
     for filename, attribute in (
         ("gerrymandria.png", "district"),
         ("gerrymandria_cities.png", "muni"),
         ("gerrymandria_water.png", "water_dist"),
+        ("gerrymandria_county.png", "county"),
     ):
         assignment = {node: graph.node_data(node)[attribute] for node in graph.nodes}
         assignment_image(graph, assignment, show_labels=True).save(IMAGES / filename)
     save_district_dual_graph(graph)
+
+    simple_assignments = recom_assignments(graph, seed=2024, total_steps=40)
+    save_assignment_gif(graph, simple_assignments, "gerrychain_demo.gif")
+    save_assignment_gif(graph, simple_assignments, "gerrymandria_grid_ensemble.gif")
+
+    municipality_assignments = recom_assignments(
+        graph,
+        seed=2025,
+        total_steps=40,
+        region_surcharge={"muni": 0.5},
+    )
+    save_assignment_gif(
+        graph,
+        municipality_assignments,
+        "gerrymandria_region_grid_ensemble.gif",
+    )
+
+    water_municipality_assignments = recom_assignments(
+        graph,
+        seed=42,
+        total_steps=200,
+        region_surcharge={"muni": 0.2, "water_dist": 0.8},
+    )
+    save_assignment_gif(
+        graph,
+        water_municipality_assignments[-40:],
+        "gerrymandria_water_muni_grid_ensemble.gif",
+    )
+    assignment_image(graph, water_municipality_assignments[-1]).save(
+        IMAGES / "gerrymandria_water_and_muni_aware.png"
+    )
 
 
 if __name__ == "__main__":

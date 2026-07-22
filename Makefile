@@ -11,7 +11,7 @@ DOCS_CACHE_FLAGS = $(if $(filter 1,$(FRESH)),--force)
 export UV_MANAGED_PYTHON = 1
 
 .PHONY: help check_prereq setup install install-docs check test test-all type-check format lint \
-	precommit docs docs-serve docs-test docs-linkcheck docs-cache-notebooks clean
+	precommit docs docs-serve docs-test docs-linkcheck docs-cache-notebooks docs-recom-assets clean
 
 help:
 	@echo "Available targets:"
@@ -30,6 +30,7 @@ help:
 	@echo "  docs-linkcheck - Check external links in the documentation"
 	@echo "  docs-cache-notebooks - Execute user-guide notebooks into the ignored docs cache"
 	@echo "                  Set FRESH=1 with a docs target to rebuild notebook outputs"
+	@echo "  docs-recom-assets - Regenerate the static Gerrymandria images used by recom.ipynb"
 	@echo "  clean         - Clean build artifacts"
 
 
@@ -117,6 +118,11 @@ docs-cache-notebooks: install-docs
 	@echo "Caching user-guide notebook outputs..."
 	uv run --no-default-groups --group docs --group docs-exec \
 		python docs/_refresh_notebooks.py $(DOCS_CACHE_FLAGS) $(NOTEBOOKS)
+
+docs-recom-assets: install-docs
+	@echo "Regenerating static Gerrymandria images..."
+	uv run --no-default-groups --group docs --group docs-exec \
+		python docs/generate_recom_assets.py
 
 clean:
 	@echo "Cleaning build artifacts..."
