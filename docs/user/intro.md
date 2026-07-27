@@ -20,10 +20,12 @@ of plans. One can then examine that ensemble to see if a specific
 district plan is an outlier relative to the ensemble.
 
 GerryChain uses a Markov Chain approach that starts with an
-initial district plan and then randomly alters an adjacent pair of
-districts to create a new plan. That new plan then has another
-pair of adjacent districts selected to randomly alter and this creates
-a third possible plan. Continuing in this way for thousands or millions
+initial district plan.  An adjacent pair of districts is randomly
+selected from that initial plan, and then the contents of those two
+districts are modified (shifted from one district to the other)
+to create a new plan.  This process is then repeated for the 
+new plan to create a third plan, and so on.
+Continuing in this way for thousands or millions
 of steps then produces an ensemble of possible plans which may
 be used for analyis.
 
@@ -39,10 +41,9 @@ the overall assignment of nodes to districts.
 
 ## Parts of the chain
 
-GerryChain performs a random walk over all partitions of a graph. It does this
-with a simple Markov chain. The chain's behavior is entirely governed by four
-modular layers: **proposals**, **updaters**, **validators**, and **acceptance
-functions**.
+The Markov Chain's behavior is entirely governed by four
+modular layers: **proposals**, **updaters**, **validators**, 
+and **acceptance functions**.
 
 These layers are implemented as functions and as a result, the behavior of
 the chain can be changed by changing the function used. The GerryChain codebase
@@ -105,7 +106,7 @@ Acceptance functions
   : As you will see later, there are convenient functions to create
     a graph once you have clean data.
 - **Pick a Proposal function**
-  : This is the way the Markov Chain will create a new district
+  : A Proposal function tells the Markov Chain how to create a new district
     plan from the current plan. For instance, as we will see later, one
     might pick "ReCom" which merges two adjacent districts and then randomly
     splits them into two new districts.

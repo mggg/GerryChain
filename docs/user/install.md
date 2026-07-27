@@ -15,8 +15,9 @@ The most recent version of GerryChain supports
 - Python 3.13
 - Python 3.14
 
-If you install GerryChain with uv, as recommended below, you do not need to install any of these
-yourself. uv will download a suitable version for you.
+We recommend that you use the "uv" tool to manage the GerryChain environment.  If you 
+use "uv" then you do not need to install Python - uv will download a suitable version 
+for you.
 
 (virtual-envs)=
 
@@ -36,7 +37,7 @@ some brief instructions for doing so on different systems:
   Spotlight Search by pressing "Command (⌘) + Space"). Once you have
   the terminal open, type `cd` followed by the path to your working
   directory. For example, if you are working on a project called
-  `my_project` in your `Documents` folder, you may access by typing
+  `my_project` in your `Documents` folder, you would type
   the command
 
   ```console
@@ -53,7 +54,7 @@ some brief instructions for doing so on different systems:
   `Ctrl + Alt + T` set to open the terminal. From there you may navigate
   to your working directory by typing `cd` followed by the path to your
   working directory. For example, if you are working on a project called
-  `my_project` in your `Documents` folder, you may access this via
+  `my_project` in your `Documents` folder, you would type
   the command
 
   ```console
@@ -70,8 +71,8 @@ some brief instructions for doing so on different systems:
 
 - **Windows**: Open the Windows Terminal and type `cd` followed by the
   path to your working directory. For example, if you are working on a
-  project called `my_project` in your `Documents` folder, you may
-  access this by typing the command
+  project called `my_project` in your `Documents` folder, you would 
+  type the command
 
   ```console
   cd ~\Documents\my_project
@@ -88,7 +89,7 @@ some brief instructions for doing so on different systems:
 
 We recommend [uv](https://docs.astral.sh/uv/), which manages both Python itself and your project's
 packages. When using uv it is not necessary to have Python installed on the machine: the Astral
-team ships stand-alone versions of Python that uv can download and use automagically. This is
+team (creator of uv) ships stand-alone versions of Python that uv can download and use automagically. This is
 particularly helpful for Windows users, since Windows has several ways of installing Python, each
 of which comes with its own quirks.
 
@@ -106,8 +107,8 @@ This creates a `my_project` directory containing a `.venv` environment and a `py
 recording what you installed, and it downloads a suitable Python if you do not already have one.
 `matplotlib` is included because the tutorials in this documentation plot their results.
 
-You do not need to activate anything. Prefix commands with `uv run` and uv will use the project's
-environment:
+You do not need to activate anything. You can prefix commands with `uv run` and uv will use the project's
+.venv environment:
 
 ```console
 uv run python my_script.py
@@ -128,7 +129,10 @@ For more information on managing python projects with uv, see the
 
 ### Using pip and venv
 
-If you would rather not use uv, you can manage the environment yourself. You will need to install
+If you would rather not use uv, you will need to
+manage the environment yourself. 
+
+You will need to install
 Python first from the [Python website](https://www.python.org/downloads/), choosing one of the
 supported versions listed above.
 
@@ -152,30 +156,42 @@ PowerShell,
 and for the use of the Linux Subsystem for Windows).
 :::
 
-To set up a virtual environment, type the following command into the terminal:
+To set up a virtual environment, make sure you are in your working 
+directory, and then type the following command into the terminal:
 
 ```console
 python -m venv .venv
 ```
 
-This will create a virtual environment in your working directory which
-you can see if you list all the files in your working directory via
-the command `ls -a` (`dir` on Windows). Now we need to activate the
-virtual environment. To do this, type the following command into the
+This will create a directory/folder named ".venv" in your 
+working directory that contains what is needed to create a virtual 
+environment.
+
+After installing the code for a virtual environment, you will need
+to activate the virtual environment for each terminal session that 
+is used to execute GerryChain code.
+
+To activate your virtual environment type the following command into the
 terminal:
 
 - **Windows**: `.venv\Scripts\activate`
 - **MacOS/Linux**: `source .venv/bin/activate`
 
 You should now see `(.venv)` at the beginning of your terminal prompt.
-This indicates that you are in the virtual environment, and are now
-ready to install GerryChain.
+This indicates that you are in the virtual environment. 
 
-To install GerryChain and the plotting library used by the tutorials from [PyPI], run:
+You are now ready to install GerryChain into your virtual environment.
+
+To install GerryChain and the plotting library used by the tutorials from [PyPI] 
+into your virtual environment, run:
 
 ```console
 pip install gerrychain matplotlib
 ```
+
+Your virtual environment is now ready to execute GerryChain code.  Just be
+sure that the terminal session you are using has activated the virtual 
+environment - the terminal prompt should include `(.venv)` 
 
 [pypi]: https://pypi.org/
 
@@ -264,7 +280,8 @@ Open the project folder containing `.venv` in VSCode:
 :align: center
 ```
 
-Install Microsoft's Python and Jupyter extensions:
+Install Microsoft's Python and Jupyter extensions (click on the four-square Extensions
+icon in the VSCode sidebar):
 
 ```{image} images/vscode_tutorial/python_extension_vscode.png
 :align: center
