@@ -184,8 +184,10 @@ def regenerate_gerrymandria() -> None:
         assignment_image(graph, assignment, show_labels=True).save(IMAGES / filename)
     save_district_dual_graph(graph)
 
+    # gerrychain_demo.gif is deliberately not regenerated here. It overlays the spanning tree and
+    # the chosen cut edge on the merged district pair, which this script cannot yet render, so
+    # regenerating it produced a plain plan sequence that silently replaced the real animation.
     simple_assignments = recom_assignments(graph, seed=2024, total_steps=40)
-    save_assignment_gif(graph, simple_assignments, "gerrychain_demo.gif")
     save_assignment_gif(graph, simple_assignments, "gerrymandria_grid_ensemble.gif")
 
     municipality_assignments = recom_assignments(
