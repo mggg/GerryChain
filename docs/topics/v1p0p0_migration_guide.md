@@ -10,6 +10,10 @@ it can run in the v1.0.0 release.
     - [Creating a Graph to use in your Partition](#creating-a-graph-to-use-in-your-partition)
     - [Changes to Accessing and Setting Node and Edge Data](#changes-to-accessing-and-setting-node-and-edge-data)
     - [Running a MarkovChain()](#running-a-markovchain)
+    - [Changes to ReCom Proposals](#changes-to-recom-proposals)
+      - [The `ReCom` Namespace](#the-recom-namespace)
+      - [Renamed Proposal and Tree Parameters](#renamed-proposal-and-tree-parameters)
+      - [Multi-Member ReCom](#multi-member-recom)
     - [Analyzing Data after running a MarkovChain()](#analyzing-data-after-running-a-markovchain)
       - [Translating node_ids and edge_ids after running a MarkovChain()](#translating-node_ids-and-edge_ids-after-running-a-markovchain)
   - [Node IDs and Edge IDs - a deep dive...](#node-ids-and-edge-ids---a-deep-dive)
@@ -179,12 +183,49 @@ an edge:
 
 ### Running a MarkovChain()
 
-In most cases, there will be no need to change any legacy code in order to run a MarkovChain() in
-v1.0.0.
+The graph work in v1.0.0 requires very little change here: the code that creates a Partition object
+will convert the graph provided into a RustworkX.PyGraph automatically, and all of the internal code
+that runs when running a MarkovChain() has been updated to work with the RustworkX.PyGraph object.
 
-The code that creates a Partition object will convert the graph provided into a RustworkX.PyGraph
-automatically and all of the internal code that runs when running a MarkovChain() has been updated
-to work with the RustworkX.PyGraph object.
+Separately from the graph change, though, three MarkovChain() parameters were renamed in v1.0.0, so
+legacy code that passes them **by keyword** will need updating:
+
+| Legacy name     | v1.0.0 name         |
+| --------------- | ------------------- |
+| `proposal`      | `proposal_fn`       |
+| `accept`        | `acceptance_fn`     |
+| `initial_state` | `initial_partition` |
+
+The parameter order did not change, so legacy code that passes these positionally keeps working
+unchanged.
+
+<!-- TODO: add in the deprecation shims and update this -->
+
+```python
+    # Legacy keyword form - now raises
+    #   TypeError: MarkovChain.__init__() got an unexpected keyword argument 'proposal'
+    chain = MarkovChain(
+        proposal=my_proposal,
+        constraints=[contiguous],
+        accept=always_accept,
+        initial_state=initial_partition,
+        total_steps=1000,
+    )
+
+    # v1.0.0
+    chain = MarkovChain(
+        proposal_fn=my_proposal,
+        constraints=[contiguous],
+        acceptance_fn=always_accept,
+        initial_partition=initial_partition,
+        total_steps=1000,
+    )
+```
+
+This rename is part of a general convention in v1.0.0: parameters that take a function end in `_fn`.
+Plural collection parameters such as `constraints` and `updaters` keep their noun names. The same
+rename applies to the acceptance functions, the optimizers, and the tree functions, so if a keyword
+you are passing names a callable and it is rejected, try adding the `_fn` suffix.
 
 The exception to this is if the legacy code contains custom code for updaters. Since any such code
 will operate on a GerryChain.Graph object that is wrapped around a RustworkX.PyGraph object, that
@@ -197,6 +238,153 @@ runs when doing a MarkovChain() will need to be aware of the fact that node_ids 
 different from the parent graph.
 
 There is a more detailed discussion of node_ids and edge_ids later in this guide.
+
+One other addition worth knowing: MarkovChain() now takes an `rng` argument (an integer seed or a
+`random.Random`), and the chain's RNG is passed to your proposal and acceptance functions. This is
+what makes runs reproducible. There is more on this in the reproducibility guide.
+
+### Changes to ReCom Proposals
+
+Legacy code almost always builds a ReCom proposal with `functools.partial`:
+
+```python
+    from functools import partial
+    from gerrychain.proposals import recom
+
+    my_proposal = partial(
+        recom,
+        pop_col="TOTPOP",
+        pop_target=ideal_population,
+        epsilon=0.01,
+        node_repeats=2,
+    )
+```
+
+That still works. `recom` is still exported and still takes a partition as its first argument, so
+the `partial` idiom is not going away. But v1.0.0 adds a shorter way to say the same thing, and
+renames a few parameters underneath.
+
+#### The `ReCom` Namespace
+
+Instead of the `partial` incantation, v1.0.0 provides slim, ready-made builders that provide a
+simple interface to return a proposal function directly:
+
+```python
+    from gerrychain.proposals import ReCom
+
+    my_proposal = ReCom.district_pairs_mst(
+        pop_col="TOTPOP",
+        pop_target=ideal_population,
+        epsilon=0.01,
+    )
+```
+
+The variants differ along two axes. `district_pairs_*` picks uniformly among adjacent district
+pairs, while `cut_edges_*` picks a cut edge at random and merges the districts on either side, so a
+pair's chance is proportional to how many cut edges it shares. `*_mst` draws a minimum spanning tree
+over random edge weights using Kruskal's algorithm; `*_ust` draws a uniform spanning tree using
+Wilson's algorithm. `ReCom.reversible(...)` is Reversible ReCom. The single-letter aliases `A`, `B`,
+`C`, `D`, and `R` are also available.
+
+> **Note:** If your legacy code used the old `ReCom` _class_ - the one you constructed with
+> `ReCom(pop_col=..., ideal_pop=..., epsilon=...)` - that class is gone. `ReCom` is now a namespace
+> and cannot be instantiated; calling `ReCom(...)` raises a `TypeError` pointing you at the builder
+> methods. Note also that the old class's `ideal_pop` parameter is spelled `pop_target` throughout
+> v1.0.0.
+
+When you need parameters the slim builders do not expose, use `build_recom_proposal_fn`, which takes
+the full set and returns a proposal function:
+
+```python
+    from gerrychain.proposals import build_recom_proposal_fn
+
+    my_proposal = build_recom_proposal_fn(
+        pop_col="TOTPOP",
+        pop_target=ideal_population,
+        epsilon=0.01,
+        region_surcharge={"county": 0.5},
+        bipartition_tree_fn=my_bipartition_tree_fn,
+    )
+```
+
+#### Renamed Proposal and Tree Parameters
+
+If you pass any of these by keyword, they need updating:
+
+| Legacy name       | v1.0.0 name                  | Where                                  |
+| ----------------- | ---------------------------- | -------------------------------------- |
+| `method`          | `bipartition_tree_fn`        | `recom`                                |
+| `balance_edge_fn` | `find_balanced_edge_cuts_fn` | `bipartition_tree`                     |
+| `one_sided_cut`   | `single_district_cut`        | `bipartition_tree`, custom cut finders |
+| `choice`          | `cut_choice_fn`              | `bipartition_tree`                     |
+
+Two of these deserve extra attention.
+
+`single_district_cut` was renamed because the old name described the cut rather than what the flag
+actually controls: whether only the returned side must be population-balanced (peeling off one
+district) or both sides must be (bisecting). If you wrote a custom balanced-edge-cut finder, it must
+now accept this parameter unconditionally. Previously GerryChain inspected your function's signature
+and only passed the flag if it was present; that probe has been removed.
+
+`cut_choice_fn` is not a drop-in rename of `choice`. The old `choice` defaulted to `random.choice`
+and was called with just the list of cuts. The new `cut_choice_fn` is called as
+`cut_choice_fn(cuts, rng=rng)`, so that the chain can supply its own seeded RNG:
+
+```python
+    def choose_random_cut(cuts, *, rng):
+        return rng.choice(cuts)
+```
+
+Also note that `node_repeats` now defaults to `0` rather than `1`. With the default memoized cut
+finder, each search already examines every edge in the tree, so re-rooting cannot make an uncuttable
+tree cuttable; the new default redraws the tree immediately instead. Legacy code that passes a
+positive `node_repeats` still runs, but now emits a warning:
+
+```console
+    UserWarning: node_repeats is not beneficial with `find_balanced_edge_cuts_memoization`,
+    which exhaustively searches each spanning tree. Set node_repeats=0 to redraw the tree
+    after an unsuccessful search.
+```
+
+Setting `node_repeats=0` (or simply dropping the argument) is the fix. Positive values remain useful
+only with `find_balanced_edge_cuts_contraction` or a custom cut-edge finder whose result depends on
+the root choice.
+
+#### Multi-Member ReCom
+
+Multi-member ReCom - where districts elect different fixed numbers of members - lived on a separate
+branch before the RustworkX migration and was rebuilt for v1.0.0. If you were using that branch, the
+feature is now available from the main package:
+
+```python
+    from gerrychain.proposals import MultiMemberReCom
+
+    members_per_district = {"1": 1, "2": 1, "3": 2, "4": 4}
+    pop_target = total_population / sum(members_per_district.values())
+
+    my_proposal = MultiMemberReCom.district_pairs_mst(
+        pop_col="TOTPOP",
+        pop_target=pop_target,
+        epsilon=0.01,
+        members_per_district=members_per_district,
+    )
+```
+
+`MultiMemberReCom` offers the same four non-reversible variants as `ReCom`, plus
+`build_multi_member_recom_proposal_fn` for the full parameter set. Three things differ from the
+single-member case:
+
+- `pop_target` is the population for a _single member_, so it is the total population divided by the
+  total number of members, not by the number of districts.
+- Member counts attach to district labels and stay fixed for the whole run. The keys of
+  `members_per_district` must match the partition's district labels exactly, and every count must be
+  a positive integer.
+- The equal-population constraint is not appropriate, since districts are deliberately unequal in
+  size. Use `within_percent_of_ideal_population_per_member` instead.
+
+There is no reversible multi-member variant, and no random multi-member seed generation yet; build a
+starting plan by merging single-member districts. The [ReCom user guide](../user/recom.ipynb) has a
+worked example.
 
 ### Analyzing Data after running a MarkovChain()
 
@@ -307,8 +495,10 @@ If you have written custom code, (for instance, a custom updater or a spanning f
 bipartition function) then you need to understand how node_ids and edge_ids have changed.
 
 In NetworkX a node_id can be any hashable Python object other than `None` (an integer, a string, a
-tuple, etc.). In RustworkX a node_id is always an integer, and even more, the set of node_ids is
-always a sequential list of integers starting at 0 with no gaps.
+tuple, etc.). In RustworkX a node_id is always an integer, and in the graphs that GerryChain builds
+the node_ids always run sequentially from 0 with no gaps. RustworkX on its own can leave gaps when
+nodes are removed, but GerryChain never removes them: the embedded graph is frozen once a Partition
+is created.
 
 In NetworkX an edge is a tuple of node_ids and an edge_id is the **_same_** tuple of node_ids, so
 there is no difference between an edge and an edge_id. However, in RustworkX while edges are still a
@@ -321,7 +511,7 @@ The codebase also maintains a mapping from NetworkX node_ids to RustworkX node_i
 
 So, legacy code that involves node_ids needs to be aware of whether it is manipulating "original"
 NetworkX node_ids or "internal" RustworkX node_ids used during MarkovChain() calculations. This is
-relatively straight-forward - you just need to know which kind of node_id you need and perhaps
+relatively straightforward - you just need to know which kind of node_id you need and perhaps
 convert from one kind to the other.
 
 Edges and edge_ids are more challenging, because you need to determine whether the "edge" in your
