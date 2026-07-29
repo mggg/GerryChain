@@ -240,8 +240,9 @@ different from the parent graph.
 There is a more detailed discussion of node_ids and edge_ids later in this guide.
 
 One other addition worth knowing: MarkovChain() now takes an `rng` argument (an integer seed or a
-`random.Random`), and the chain's RNG is passed to your proposal and acceptance functions. This is
-what makes runs reproducible. There is more on this in the reproducibility guide.
+`random.Random`), and the chain's random number generator (RNG) is passed to your proposal and
+acceptance functions. This is what makes runs reproducible. There is more on this in the
+reproducibility guide.
 
 ### Changes to ReCom Proposals
 
@@ -266,8 +267,8 @@ renames a few parameters underneath.
 
 #### The `ReCom` Namespace
 
-Instead of the `partial` incantation, v1.0.0 provides slim, ready-made builders that provide a
-simple interface to return a proposal function directly:
+Because some users found `partial` hard to understand, v1.0.0 also provides slim, ready-made
+builders that make creating proposal functions more legible:
 
 ```python
 from gerrychain.proposals import ReCom
@@ -278,6 +279,16 @@ my_proposal = ReCom.district_pairs_mst(
     epsilon=0.01,
 )
 ```
+
+The namespace provides five variants:
+
+| Builder                    | Alias | Description                                         |
+| -------------------------- | ----- | --------------------------------------------------- |
+| `ReCom.cut_edges_mst`      | `A`   | Cut-edge selection and a minimum spanning tree      |
+| `ReCom.district_pairs_mst` | `B`   | District-pair selection and a minimum spanning tree |
+| `ReCom.cut_edges_ust`      | `C`   | Cut-edge selection and a uniform spanning tree      |
+| `ReCom.district_pairs_ust` | `D`   | District-pair selection and a uniform spanning tree |
+| `ReCom.reversible`         | `R`   | Reversible ReCom                                    |
 
 The variants differ along two axes. `district_pairs_*` picks uniformly among adjacent district
 pairs, while `cut_edges_*` picks a cut edge at random and merges the districts on either side, so a
