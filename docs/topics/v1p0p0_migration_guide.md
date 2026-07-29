@@ -1,5 +1,7 @@
 # Migration Guide for GerryChain v1.0.0
 
+<!-- docs-test: skip-page -- every block is an illustrative fragment: placeholder names, literal `...` arguments, and signature-only stubs -->
+
 This guide will help you understand what you need to change in your "legacy" GerryChain code so that
 it can run in the v1.0.0 release.
 
