@@ -17,6 +17,11 @@ In RST the marker is a comment, in Markdown an HTML comment:
 
 ``skip`` excludes the block from execution and requires a short reason. ``setup`` blocks are run
 once, before any page, in the shared working directory (e.g. to unzip downloaded data).
+
+A page whose blocks are all illustrative fragments can opt out wholesale with a ``skip-page``
+marker, which also requires a reason. It is honored only in the page preamble, before the first
+code block, so quoting the marker inside a fence stays inert. Blocks are still extracted, so the
+completeness check still applies.
 """
 
 import json
@@ -40,6 +45,7 @@ DOCS = REPO / "docs"
 STATIC = DOCS / "_static"
 
 MARKERS = ("skip", "setup")
+PAGE_MARKERS = ("skip-page",)
 
 RST_BLOCK_RE = re.compile(r"^(?P<indent>[ \t]*)\.\.\s+code(?:-block)?::\s+python[ \t]*$")
 RST_MARKER_RE = re.compile(
@@ -50,6 +56,9 @@ MD_FENCE_RE = re.compile(r"^(?P<indent>[ \t]*)```python[ \t]*$")
 MD_MARKER_RE = re.compile(
     r"^[ \t]*<!--\s*docs-test:\s*(?P<name>[\w-]+)[ \t]*(?:--[ \t]*(?P<reason>.*?))?\s*-->[ \t]*$"
 )
+
+PAGE_SKIP_RE = re.compile(r"^[ \t]*(?:<!--|\.\.)\s*docs-test:\s*skip-page\b", re.MULTILINE)
+PRE_CODE_RE = re.compile(r"^[ \t]*(?:```|\.\.\s+code)", re.MULTILINE)
 
 # Loose pattern used by the completeness check: anything that looks like a Python code directive
 # must have been extracted by the strict scanner above (or the scanner needs fixing).
@@ -67,10 +76,10 @@ class Block:
 
 
 def _check_marker(name: str, reason: str | None, page: Path, lineno: int) -> None:
-    if name not in MARKERS:
+    if name not in MARKERS + PAGE_MARKERS:
         raise ValueError(f"{page}:{lineno}: unknown docs-test marker {name!r}")
-    if name == "skip" and not reason:
-        raise ValueError(f"{page}:{lineno}: docs-test: skip requires a reason ('-- <reason>')")
+    if name.startswith("skip") and not reason:
+        raise ValueError(f"{page}:{lineno}: docs-test: {name} requires a reason ('-- <reason>')")
 
 
 def _indent(line: str) -> int:
@@ -189,9 +198,17 @@ def discover_pages() -> list[Path]:
     return sorted(pages)
 
 
+def page_is_skipped(text: str) -> bool:
+    # Honored only in the preamble, before any code block. A marker quoted inside a fence (as
+    # CONTRIBUTING.md does when documenting this) must stay inert.
+    m = PAGE_SKIP_RE.search(text)
+    return m is not None and not PRE_CODE_RE.search(text[: m.start()])
+
+
 PAGES = discover_pages()
 ALL_BLOCKS = {page: extract_blocks(page) for page in PAGES}
-EXEC_PAGES = [page for page, blocks in ALL_BLOCKS.items() if blocks]
+SKIPPED_PAGES = {p for p in PAGES if page_is_skipped(p.read_text(encoding="utf-8"))}
+EXEC_PAGES = [page for page, blocks in ALL_BLOCKS.items() if blocks and page not in SKIPPED_PAGES]
 
 
 def _page_id(page: Path) -> str:
@@ -524,3 +541,27 @@ class TestMdExtractor:
         assert len(blocks) == 1
         assert blocks[0].source == "x = 1\ny = 2"
         assert blocks[0].marker is None
+
+
+class TestPageSkip:
+    def test_marker_at_top_excludes_the_page(self) -> None:
+        text = "# Title\n\n<!-- docs-test: skip-page -- all fragments -->\n\nProse.\n"
+        assert page_is_skipped(text)
+        # The page marker does not attach to a block, so blocks stay unmarked and extractable.
+        blocks = extract_md_blocks(text + "\n```python\nx = 1\n```\n", Path("fake.md"))
+        assert len(blocks) == 1
+        assert blocks[0].marker is None
+
+    def test_rst_form_and_absence(self) -> None:
+        assert page_is_skipped(".. docs-test: skip-page -- all fragments\n")
+        assert not page_is_skipped("<!-- docs-test: skip -- one block -->\n")
+
+    def test_marker_quoted_in_a_fence_is_inert(self) -> None:
+        text = (
+            "# How to skip a page\n\n```md\n<!-- docs-test: skip-page -- all fragments -->\n```\n"
+        )
+        assert not page_is_skipped(text)
+
+    def test_skip_page_without_reason_is_an_error(self) -> None:
+        with pytest.raises(ValueError, match="requires a reason"):
+            extract_md_blocks("<!-- docs-test: skip-page -->\n", Path("fake.md"))

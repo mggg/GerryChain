@@ -249,6 +249,13 @@ Shared setup blocks use:
 <!-- docs-test: setup -->
 ```
 
+A page whose blocks are all illustrative fragments can opt out wholesale, with the marker placed
+just under the title:
+
+```md
+<!-- docs-test: skip-page -- placeholder names and signature-only stubs -->
+```
+
 Snippet failures report the original documentation filename and line number. The docs build fails
 if a notebook cannot execute, and the test suite rejects notebooks containing committed outputs.
 
