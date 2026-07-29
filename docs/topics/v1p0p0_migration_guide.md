@@ -46,10 +46,9 @@ The new GerryChain.Graph object supports most but not all of the functionality o
 based graph object, so most of the code to manipulate your graph will run unchanged, but some
 changes will be required, in particular to set and access node and edge data. More on this below.
 
-We crafted the interface of the new Graph object to be close to the same as that of the old Graph
-object. Functions that were inherited from NetworkX that were most commonly used by legacy code have
-been implemented as explicit functions of the new Graph object, so that legacy code would run
-unchanged.
+We crafted the interface of the new Graph object to be similar to that of the old Graph object. The
+NetworkX functions most commonly used by legacy code are now explicit functions of the new Graph
+object, allowing legacy code to run unchanged.
 
 Examples of formerly inherited functions that are now explicit functions are:
 
@@ -127,7 +126,7 @@ wraps either a NetworkX.Graph or a RustworkX.PyGraph.
 
 As a result, the way to access and set node and edge data has changed.
 
-If your code accesses or updates the data associated with nodes then it probably contains code that
+If your code accesses or updates the data associated with nodes, then it probably contains code that
 looks something like this:
 
 ```python
@@ -144,10 +143,10 @@ my_graph.node_data(node_id)["<attr_name>"] = new_value
 node_attr_value = mygraph.node_data(node_id)["<attr_name>"]
 ```
 
-The needed change is a simple change in syntax - "node_data" instead of "nodes" and parentheses
-instead of square-brackets.
+The syntax change is simple: use `node_data` instead of `nodes`, and parentheses instead of square
+brackets.
 
-If your code accesses or updates the data associated with edges then it probably contains code that
+If your code accesses or updates the data associated with edges, then it probably contains code that
 looks something like this:
 
 ```python
@@ -168,7 +167,7 @@ edge_attr_value = my_graph.edge_data(my_edge_id)["<attr_name>"]
 ```
 
 The important change here is that you need to obtain the edge_id before calling
-my_graph.edge_data(edge_id). In NetworkX an edge_id is a tuple of node_ids, but in RustworkX an
+my_graph.edge_data(edge_id). In NetworkX, an edge_id is a tuple of node_ids, but in RustworkX, an
 edge_id is an integer.
 
 Note that the new GerryChain.Graph object also provides a way to obtain the node_ids associated with
@@ -399,10 +398,9 @@ worked example.
 
 ### Analyzing Data after running a MarkovChain()
 
-After running a MarkovChain(), legacy code often uses NetworkX functionality - to extract data from
-the graph and/or partition or to plot the results. A function has been provided to convert the
-embedded RustworkX.PyGraph back to become a NetworkX.Graph object with all of the data preserved
-(the `to_networkx_graph()` function, specifically).
+After running a MarkovChain(), legacy code often uses NetworkX functionality to extract data from
+the graph or partition, or to plot the results. The `to_networkx_graph()` function converts the
+embedded RustworkX.PyGraph back into a NetworkX.Graph object with all of the data preserved.
 
 So, if your legacy code uses NetworkX functionality to post-process the data after running a
 MarkovChain(), or perhaps to plot results, then you probably want to convert the graph associated
@@ -431,7 +429,7 @@ We have provided routines to help you do this translation. Those routines are di
 
 #### Translating node_ids and edge_ids after running a MarkovChain()
 
-After running MarkovChain() results can be stored in several places:
+After running a MarkovChain(), results can be stored in several places:
 
 - In the data associated with the nodes or the edges in the graph, or
 
@@ -474,7 +472,7 @@ my_graph.original_nx_node_ids_for_list(list_of_node_ids)
 > Note: the "internal_node_id" in the above routines refers to the RustworkX.PyGraph node_id as do
 > the sets and lists of node_ids.
 
-If you wish to extract NetworkX.Graph edges then you will need a tuple of node_ids. First you need
+If you wish to extract NetworkX.Graph edges, then you will need a tuple of node_ids. First you need
 to get the RustworkX.PyGraph node_ids for an edge, given its RustworkX edge_id (an integer), and
 then you need to use the `original_nx_node_id_for_internal_node_id()` routine to get the original NX
 node_ids for the edge. The routines to do this are:
@@ -502,18 +500,17 @@ my_nx_edge = (nx_node_id_1, nx_node_id_2)
 
 ## Node IDs and Edge IDs - a deep dive...
 
-If you have written custom code, (for instance, a custom updater or a spanning function or a
-bipartition function) then you need to understand how node_ids and edge_ids have changed.
+If you have written custom code (for instance, a custom updater, spanning-tree function, or
+bipartition function), then you need to understand how node_ids and edge_ids have changed.
 
-In NetworkX a node_id can be any hashable Python object other than `None` (an integer, a string, a
-tuple, etc.). In RustworkX a node_id is always an integer, and in the graphs that GerryChain builds
+In NetworkX, a node_id can be any hashable Python object other than `None` (an integer, a string, a
+tuple, etc.). In RustworkX, a node_id is always an integer, and in the graphs that GerryChain builds
 the node_ids always run sequentially from 0 with no gaps. RustworkX on its own can leave gaps when
 nodes are removed, but GerryChain never removes them: the embedded graph is frozen once a Partition
 is created.
 
-In NetworkX an edge is a tuple of node_ids and an edge_id is the _same_ tuple of node_ids, so
-there is no difference between an edge and an edge_id. However, in RustworkX while edges are still a
-tuple of node_ids, an edge_id is an integer. So an edge and an edge_id are different.
+In NetworkX, both an edge and its edge_id are represented by the same tuple of node_ids. In
+RustworkX, an edge is still a tuple of node_ids, but its edge_id is an integer.
 
 This creates some interesting challenges...
 
@@ -540,7 +537,7 @@ embedded NetworkX.Graph object is:
 def get_nx_graph(self) -> networkx.Graph:
 ```
 
-The routines to go back and forth from edge_ids to/from edges are:
+The routines to convert between edge_ids and edges are:
 
 ```python
 def get_edge_from_edge_id(self, edge_id: Any) -> tuple[Any, Any]:
@@ -583,25 +580,23 @@ node_ids which do not have to be integers while for RustworkX the node_ids will 
 The last and most important issue involving node_ids and edge_ids is subgraphs. We have noted
 already that node_ids and edge_ids in RustworkX are always sequential integers with no gaps starting
 at 0. This is one of the things that makes it possible for RustworkX to be faster than NetworkX.
-However, it also means that node_ids and edge_ids in RustworkX subgraphs are also sequential
-integers with no gaps starting at 0 - which means that the node_ids for the same node might be
-different in a subgraph containing that node than in that same node's id in the parent graph. This
-can cause some pretty big headaches for anyone working with them, but we anticipate that
-most users will not need to deal with this pain-point.
+However, node_ids and edge_ids in RustworkX subgraphs are also sequential integers with no gaps
+starting at 0. The same node can therefore have a different ID in a subgraph than in its parent
+graph. This can cause some pretty big headaches, but we anticipate that most users will not need to
+deal with this pain point.
 
 There are two major issues that result from subgraphs having new node_ids and edge_ids:
 
 1. Results of computations performed on subgraphs that contain node_id or edge_id information will
    need to be converted to refer to the corresponding node_ids and/or edge_ids in the parent graph.
    For instance, if a subroutine operates on a subgraph and returns flips, then the node_ids in the
-   flips will need to be converted back to be parent graph node_ids.
+   flips will need to be converted back into parent graph node_ids.
 
 2. There is a danger that a computation mixes parent graph node/edge_ids and subgraph node/edge_ids.
    To guard against this in the new codebase, calls on graph.subgraph() are always made as actual
    parameters to a function call. This guarantees that the subgraph IDs cannot be used in the
    caller's context. In addition, as mentioned above in #1, it is the responsibility of the called
-   function to convert any IDs in the return value to be those that are appropriate for the parent
-   graph.
+   function to convert any returned IDs into the corresponding parent graph IDs.
 
 To make it possible to translate from a subgraph back to the parent, whenever a subgraph is created,
 a mapping (dictionary) is created that converts the subgraph node_id to the parent graph's node_id.
