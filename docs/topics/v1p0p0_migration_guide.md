@@ -64,7 +64,7 @@ In addition, those functions that had been added to the previous GerryChain.Grap
 - Graph.from_geodataframe(...)
 - etc.
 
-have been implemented for the new Gerrychain.Graph object, to avoid requiring changes in legacy
+have been implemented for the new GerryChain.Graph object, to avoid requiring changes in legacy
 code.
 
 ### Creating a Graph to use in your Partition
@@ -416,7 +416,7 @@ my_networkx_graph = my_gc_graph.to_networkx_graph()
 ... do post-processing using my_networkx_graph ...
 ```
 
-Note that all node_data and edge_data that was generated during the procssing of the MarkovChain()
+Note that all node_data and edge_data that was generated during the processing of the MarkovChain()
 is preserved in the generated NetworkX.Graph object.
 
 For many legacy projects, this is all that will be required. However, if your post MarkovChain()
@@ -511,7 +511,7 @@ the node_ids always run sequentially from 0 with no gaps. RustworkX on its own c
 nodes are removed, but GerryChain never removes them: the embedded graph is frozen once a Partition
 is created.
 
-In NetworkX an edge is a tuple of node_ids and an edge_id is the **_same_** tuple of node_ids, so
+In NetworkX an edge is a tuple of node_ids and an edge_id is the _same_ tuple of node_ids, so
 there is no difference between an edge and an edge_id. However, in RustworkX while edges are still a
 tuple of node_ids, an edge_id is an integer. So an edge and an edge_id are different.
 
@@ -586,7 +586,7 @@ at 0. This is one of the things that makes it possible for RustworkX to be faste
 However, it also means that node_ids and edge_ids in RustworkX subgraphs are also sequential
 integers with no gaps starting at 0 - which means that the node_ids for the same node might be
 different in a subgraph containing that node than in that same node's id in the parent graph. This
-can cause some headaches pretty big headaches for anyone working with them, but we anticipate that
+can cause some pretty big headaches for anyone working with them, but we anticipate that
 most users will not need to deal with this pain-point.
 
 There are two major issues that result from subgraphs having new node_ids and edge_ids:
