@@ -83,14 +83,14 @@ GerryChain treated the `Graph` class as a proper subclass of the NetworkX `Graph
 Your code in this case would look something like:
 
 ```python
-    import networkx
-    from gerrychain import Graph
+import networkx
+from gerrychain import Graph
 
-    my_networkx_graph = networkx.Graph()
+my_networkx_graph = networkx.Graph()
 
-    ... code to create your NetworkX graph ...
+... code to create your NetworkX graph ...
 
-    ... create a Partition using my_networkx_graph ...
+... create a Partition using my_networkx_graph ...
 ```
 
 However, it is often not possible (or convenient) to restructure your code to just use NetworkX
@@ -98,26 +98,26 @@ functionality to build your graph. For instance, you might have code that create
 with:
 
 ```python
-    my_graph = Graph.from_json(...)
+my_graph = Graph.from_json(...)
 ```
 
 or
 
 ```python
-    my_graph = Graph.from_geodataframe(...)
+my_graph = Graph.from_geodataframe(...)
 ```
 
 In these cases, any modifications to your graph needed before running a chain will need to be done
 using the new GerryChain.Graph object. So your code would look something like:
 
 ```python
-    from gerrychain import Graph
+from gerrychain import Graph
 
-    my_gerrychain_graph = Graph.from_json(...)
+my_gerrychain_graph = Graph.from_json(...)
 
-    ... code to modify your graph ...
+... code to modify your graph ...
 
-    ... create a Partition using my_gerrychain_graph ...
+... create a Partition using my_gerrychain_graph ...
 ```
 
 ### Changes to Accessing and Setting Node and Edge Data
@@ -131,19 +131,17 @@ If your code accesses or updates the data associated with nodes then it probably
 looks something like this:
 
 ```python
+my_graph.nodes[node_id]["<attr_name>"] = new_value
 
-    my_graph.nodes[node_id]["<attr_name>"] = new_value
-
-    node_attr_value = mygraph.nodes[node_id]["<attr_name>"]
+node_attr_value = mygraph.nodes[node_id]["<attr_name>"]
 ```
 
 In v1.0.0, this code will need to be changed to be:
 
 ```python
-    my_graph.node_data(node_id)["<attr_name>"] = new_value
+my_graph.node_data(node_id)["<attr_name>"] = new_value
 
-    node_attr_value = mygraph.node_data(node_id)["<attr_name>"]
-
+node_attr_value = mygraph.node_data(node_id)["<attr_name>"]
 ```
 
 The needed change is a simple change in syntax - "node_data" instead of "nodes" and parentheses
@@ -153,20 +151,20 @@ If your code accesses or updates the data associated with edges then it probably
 looks something like this:
 
 ```python
-    my_graph.edges[node1_id, node2_id]["<attr_name>"] = new_value
+my_graph.edges[node1_id, node2_id]["<attr_name>"] = new_value
 
-    edge_attr_value = my_graph.edges[node1_id, node2_id]["<attr_name>"]
+edge_attr_value = my_graph.edges[node1_id, node2_id]["<attr_name>"]
 ```
 
 In v1.0.0, this code will need to be changed to be:
 
 ```python
-    # Get an edge_id given the two nodes in the edge
-    my_edge_id = my_graph.get_edge_id_from_edge((node1_id, node2_id))
+# Get an edge_id given the two nodes in the edge
+my_edge_id = my_graph.get_edge_id_from_edge((node1_id, node2_id))
 
-    my_graph.edge_data(my_edge_id)["<attr_name>"] = new_value
+my_graph.edge_data(my_edge_id)["<attr_name>"] = new_value
 
-    edge_attr_value = my_graph.edge_data(my_edge_id)["<attr_name>"]
+edge_attr_value = my_graph.edge_data(my_edge_id)["<attr_name>"]
 ```
 
 The important change here is that you need to obtain the edge_id before calling
@@ -177,10 +175,10 @@ Note that the new GerryChain.Graph object also provides a way to obtain the node
 an edge:
 
 ```python
-    edge_node_ids = my_graph.get_edge_from_edge_id(my_edge_id)
+edge_node_ids = my_graph.get_edge_from_edge_id(my_edge_id)
 
-    node1_id = edge_node_ids[0]
-    node2_id = edge_node_ids[1]
+node1_id = edge_node_ids[0]
+node2_id = edge_node_ids[1]
 ```
 
 ### Running a MarkovChain()
@@ -204,24 +202,24 @@ unchanged.
 <!-- TODO: add in the deprecation shims and update this -->
 
 ```python
-    # Legacy keyword form - now raises
-    #   TypeError: MarkovChain.__init__() got an unexpected keyword argument 'proposal'
-    chain = MarkovChain(
-        proposal=my_proposal,
-        constraints=[contiguous],
-        accept=always_accept,
-        initial_state=initial_partition,
-        total_steps=1000,
-    )
+# Legacy keyword form - now raises
+#   TypeError: MarkovChain.__init__() got an unexpected keyword argument 'proposal'
+chain = MarkovChain(
+    proposal=my_proposal,
+    constraints=[contiguous],
+    accept=always_accept,
+    initial_state=initial_partition,
+    total_steps=1000,
+)
 
-    # v1.0.0
-    chain = MarkovChain(
-        proposal_fn=my_proposal,
-        constraints=[contiguous],
-        acceptance_fn=always_accept,
-        initial_partition=initial_partition,
-        total_steps=1000,
-    )
+# v1.0.0
+chain = MarkovChain(
+    proposal_fn=my_proposal,
+    constraints=[contiguous],
+    acceptance_fn=always_accept,
+    initial_partition=initial_partition,
+    total_steps=1000,
+)
 ```
 
 This rename is part of a general convention in v1.0.0: parameters that take a function end in `_fn`.
@@ -250,16 +248,16 @@ what makes runs reproducible. There is more on this in the reproducibility guide
 Legacy code almost always builds a ReCom proposal with `functools.partial`:
 
 ```python
-    from functools import partial
-    from gerrychain.proposals import recom
+from functools import partial
+from gerrychain.proposals import recom
 
-    my_proposal = partial(
-        recom,
-        pop_col="TOTPOP",
-        pop_target=ideal_population,
-        epsilon=0.01,
-        node_repeats=2,
-    )
+my_proposal = partial(
+    recom,
+    pop_col="TOTPOP",
+    pop_target=ideal_population,
+    epsilon=0.01,
+    node_repeats=2,
+)
 ```
 
 That still works. `recom` is still exported and still takes a partition as its first argument, so
@@ -272,13 +270,13 @@ Instead of the `partial` incantation, v1.0.0 provides slim, ready-made builders 
 simple interface to return a proposal function directly:
 
 ```python
-    from gerrychain.proposals import ReCom
+from gerrychain.proposals import ReCom
 
-    my_proposal = ReCom.district_pairs_mst(
-        pop_col="TOTPOP",
-        pop_target=ideal_population,
-        epsilon=0.01,
-    )
+my_proposal = ReCom.district_pairs_mst(
+    pop_col="TOTPOP",
+    pop_target=ideal_population,
+    epsilon=0.01,
+)
 ```
 
 The variants differ along two axes. `district_pairs_*` picks uniformly among adjacent district
@@ -298,15 +296,15 @@ When you need parameters the slim builders do not expose, use `build_recom_propo
 the full set and returns a proposal function:
 
 ```python
-    from gerrychain.proposals import build_recom_proposal_fn
+from gerrychain.proposals import build_recom_proposal_fn
 
-    my_proposal = build_recom_proposal_fn(
-        pop_col="TOTPOP",
-        pop_target=ideal_population,
-        epsilon=0.01,
-        region_surcharge={"county": 0.5},
-        bipartition_tree_fn=my_bipartition_tree_fn,
-    )
+my_proposal = build_recom_proposal_fn(
+    pop_col="TOTPOP",
+    pop_target=ideal_population,
+    epsilon=0.01,
+    region_surcharge={"county": 0.5},
+    bipartition_tree_fn=my_bipartition_tree_fn,
+)
 ```
 
 #### Renamed Proposal and Tree Parameters
@@ -333,8 +331,8 @@ and was called with just the list of cuts. The new `cut_choice_fn` is called as
 `cut_choice_fn(cuts, rng=rng)`, so that the chain can supply its own seeded RNG:
 
 ```python
-    def choose_random_cut(cuts, *, rng):
-        return rng.choice(cuts)
+def choose_random_cut(cuts, *, rng):
+    return rng.choice(cuts)
 ```
 
 Also note that `node_repeats` now defaults to `0` rather than `1`. With the default memoized cut
@@ -343,9 +341,9 @@ tree cuttable; the new default redraws the tree immediately instead. Legacy code
 positive `node_repeats` still runs, but now emits a warning:
 
 ```console
-    UserWarning: node_repeats is not beneficial with `find_balanced_edge_cuts_memoization`,
-    which exhaustively searches each spanning tree. Set node_repeats=0 to redraw the tree
-    after an unsuccessful search.
+UserWarning: node_repeats is not beneficial with `find_balanced_edge_cuts_memoization`,
+which exhaustively searches each spanning tree. Set node_repeats=0 to redraw the tree
+after an unsuccessful search.
 ```
 
 Setting `node_repeats=0` (or simply dropping the argument) is the fix. Positive values remain useful
@@ -359,17 +357,17 @@ branch before the RustworkX migration and was rebuilt for v1.0.0. If you were us
 feature is now available from the main package:
 
 ```python
-    from gerrychain.proposals import MultiMemberReCom
+from gerrychain.proposals import MultiMemberReCom
 
-    members_per_district = {"1": 1, "2": 1, "3": 2, "4": 4}
-    pop_target = total_population / sum(members_per_district.values())
+members_per_district = {"1": 1, "2": 1, "3": 2, "4": 4}
+pop_target = total_population / sum(members_per_district.values())
 
-    my_proposal = MultiMemberReCom.district_pairs_mst(
-        pop_col="TOTPOP",
-        pop_target=pop_target,
-        epsilon=0.01,
-        members_per_district=members_per_district,
-    )
+my_proposal = MultiMemberReCom.district_pairs_mst(
+    pop_col="TOTPOP",
+    pop_target=pop_target,
+    epsilon=0.01,
+    members_per_district=members_per_district,
+)
 ```
 
 `MultiMemberReCom` offers the same four non-reversible variants as `ReCom`, plus
@@ -400,11 +398,11 @@ MarkovChain(), or perhaps to plot results, then you probably want to convert the
 with your Partition object to be a NetworkX.Graph object:
 
 ```python
-    my_gc_graph = my_partition.graph
+my_gc_graph = my_partition.graph
 
-    my_networkx_graph = my_gc_graph.to_networkx_graph()
+my_networkx_graph = my_gc_graph.to_networkx_graph()
 
-    ... do post-processing using my_networkx_graph ...
+... do post-processing using my_networkx_graph ...
 ```
 
 Note that all node_data and edge_data that was generated during the procssing of the MarkovChain()
@@ -438,28 +436,28 @@ translate the node_ids and edge_ids back into what they were in the original Net
 There are routines to do this:
 
 ```python
-    def original_nx_node_id_for_internal_node_id(
-      self,
-      internal_node_id: Any
-    ) -> Any:
+def original_nx_node_id_for_internal_node_id(
+  self,
+  internal_node_id: Any
+) -> Any:
 
-    def original_nx_node_ids_for_set(
-      self,
-      set_of_node_ids: set[Any]
-    ) -> Any:
+def original_nx_node_ids_for_set(
+  self,
+  set_of_node_ids: set[Any]
+) -> Any:
 
-    def original_nx_node_ids_for_list(
-      self,
-      list_of_node_ids: list[Any]
-    ) -> list[Any]:
+def original_nx_node_ids_for_list(
+  self,
+  list_of_node_ids: list[Any]
+) -> list[Any]:
 ```
 
 which are attached as methods of the new GerryChain Graph object and can thus be invoked as:
 
 ```python
-    my_graph.original_nx_node_id_for_internal_node_id(internal_node_id)
-    my_graph.original_nx_node_ids_for_set(set_of_node_ids)
-    my_graph.original_nx_node_ids_for_list(list_of_node_ids)
+my_graph.original_nx_node_id_for_internal_node_id(internal_node_id)
+my_graph.original_nx_node_ids_for_set(set_of_node_ids)
+my_graph.original_nx_node_ids_for_list(list_of_node_ids)
 ```
 
 > Note: the "internal_node_id" in the above routines refers to the RustworkX.PyGraph node_id as do
@@ -471,24 +469,24 @@ then you need to use the `original_nx_node_id_for_internal_node_id()` routine to
 node_ids for the edge. The routines to do this are:
 
 ```python
-    def get_edge_from_edge_id(
-      self,
-      edge_id: Any
-    ) -> tuple[Any, Any]:
-    def original_nx_node_id_for_internal_node_id(
-      self,
-      internal_node_id: Any
-    ) -> Any:
+def get_edge_from_edge_id(
+  self,
+  edge_id: Any
+) -> tuple[Any, Any]:
+def original_nx_node_id_for_internal_node_id(
+  self,
+  internal_node_id: Any
+) -> Any:
 ```
 
 So, to extract the NetworkX.Graph edge for a specific edge from a new GerryChain Graph object that
 embeds a RustworkX.PyGraph object, you would need to do:
 
 ```python
-    rx_edge = my_graph.get_edge_from_edge_id(my_edge_id)
-    nx_node_id_1 = my_graph.original_nx_node_id_for_internal_node_id(rx_edge[0])
-    nx_node_id_2 = my_graph.original_nx_node_id_for_internal_node_id(rx_edge[1])
-    my_nx_edge = (nx_node_id_1, nx_node_id_2)
+rx_edge = my_graph.get_edge_from_edge_id(my_edge_id)
+nx_node_id_1 = my_graph.original_nx_node_id_for_internal_node_id(rx_edge[0])
+nx_node_id_2 = my_graph.original_nx_node_id_for_internal_node_id(rx_edge[1])
+my_nx_edge = (nx_node_id_1, nx_node_id_2)
 ```
 
 ## Node IDs and Edge IDs - a deep dive...
@@ -528,32 +526,32 @@ NetworkX graph and operate directly on the embedded graph. The routine to gain a
 embedded NetworkX.Graph object is:
 
 ```python
-    def get_nx_graph(self) -> networkx.Graph:
+def get_nx_graph(self) -> networkx.Graph:
 ```
 
 The routines to go back and forth from edge_ids to/from edges are:
 
 ```python
-    def get_edge_from_edge_id(self, edge_id: Any) -> tuple[Any, Any]:
+def get_edge_from_edge_id(self, edge_id: Any) -> tuple[Any, Any]:
 
-    def get_edge_id_from_edge(self, edge: tuple[Any, Any]) -> Any:
+def get_edge_id_from_edge(self, edge: tuple[Any, Any]) -> Any:
 ```
 
 Another issue is iterating over nodes and edges. These are properties, not methods, so access them
 without parentheses:
 
 ```python
-    @property
-    def edge_indices(self) -> set[Any]:  # edge_ids
+@property
+def edge_indices(self) -> set[Any]:  # edge_ids
 
-    @property
-    def edges(self) -> set[tuple[Any, Any]]:
+@property
+def edges(self) -> set[tuple[Any, Any]]:
 
-    @property
-    def node_indices(self) -> set[Any]:
+@property
+def node_indices(self) -> set[Any]:
 
-    @property
-    def nodes(self) -> list[Any]:
+@property
+def nodes(self) -> list[Any]:
 ```
 
 That is, write `my_graph.nodes`, not `my_graph.nodes()`.
@@ -601,13 +599,13 @@ This is hidden slightly from the public interface, but is accessible as
 sets of nodes back to the node_ids appropriate for the parent graph:
 
 ```python
-    def translate_subgraph_node_ids_for_flips(
-      self,
-      flips: dict[Any, int]
-    ) -> dict[Any, int]:
+def translate_subgraph_node_ids_for_flips(
+  self,
+  flips: dict[Any, int]
+) -> dict[Any, int]:
 
-    def translate_subgraph_node_ids_for_set_of_nodes(
-      self,
-      set_of_nodes: set[Any]
-    ) -> set[Any]:
+def translate_subgraph_node_ids_for_set_of_nodes(
+  self,
+  set_of_nodes: set[Any]
+) -> set[Any]:
 ```
