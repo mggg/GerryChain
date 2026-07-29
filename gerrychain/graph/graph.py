@@ -1059,7 +1059,7 @@ class Graph:
         This is the canonical accessor for the graph's node_ids. It returns a ``set``, so it is
         suited to membership tests (``node in graph.node_indices``) and de-duplication, but it is
         unordered. If you need an ordered, indexable sequence of the same node_ids, use
-        :meth:`nodes` (which returns a ``list``). Prefer ``node_indices`` unless list semantics are
+        :attr:`nodes` (which returns a ``list``). Prefer ``node_indices`` unless list semantics are
         specifically required.
 
         Returns:
@@ -1079,9 +1079,9 @@ class Graph:
     def edge_indices(self) -> set[Hashable]:
         """Return a ``set`` of the edge *ids* in the graph.
 
-        Unlike :meth:`nodes`/:meth:`node_indices` (which carry the same content up to a
-        permutation), ``edge_indices`` and :meth:`edges` are genuinely different: ``edge_indices``
-        returns edge *ids* (opaque integers under RustworkX), while :meth:`edges` returns the edges
+        Unlike :attr:`nodes`/:attr:`node_indices` (which carry the same content up to a
+        permutation), ``edge_indices`` and :attr:`edges` are genuinely different: ``edge_indices``
+        returns edge *ids* (opaque integers under RustworkX), while :attr:`edges` returns the edges
         themselves as ``(u, v)`` tuples of node_ids. Use an edge id with
         :meth:`get_edge_from_edge_id` / :meth:`get_edge_id_from_edge` to convert between the two.
 
@@ -1184,13 +1184,13 @@ class Graph:
     def nodes(self) -> list[Hashable]:
         """Return a ``list`` of all of the node_ids in the graph.
 
-        This returns the same node_ids as :meth:`node_indices`, the difference being only the
+        This returns the same node_ids as :attr:`node_indices`, the difference being only the
         container type: ``nodes`` returns an ordered, indexable ``list`` maintaining the backend's
         node insertion order while ``node_indices`` returns an unordered ``set``. Prefer
-        :meth:`node_indices` unless you specifically need list semantics (ordering or indexing).
+        :attr:`node_indices` unless you specifically need list semantics (ordering or indexing).
 
-        Note the related distinction for edges: :meth:`edges` returns the edges themselves (tuples
-        of node_ids), whereas :meth:`edge_indices` returns edge *ids* (integers under RustworkX).
+        Note the related distinction for edges: :attr:`edges` returns the edges themselves (tuples
+        of node_ids), whereas :attr:`edge_indices` returns edge *ids* (integers under RustworkX).
         That object-vs-id distinction is load-bearing for edges, but for nodes the node and its id
         coincide, which is why ``nodes`` and ``node_indices`` carry the same content.
 
@@ -1233,7 +1233,7 @@ class Graph:
 
         This returns the edges themselves, which may not be the same as their ids (in fact, for
         RustworkX backed graphs, they are guaranteed to be different). For the edge *ids* (opaque
-        integers under RustworkX) see :meth:`edge_indices`.
+        integers under RustworkX) see :attr:`edge_indices`.
 
         Returns:
             set[tuple[Hashable, Hashable]]: One ``(u, v)`` node ID tuple per edge.

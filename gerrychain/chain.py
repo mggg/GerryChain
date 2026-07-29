@@ -133,6 +133,7 @@ class MarkovChain:
                 given constraints.
         """
         self.__locked = False
+        # Updaters registered before initial_partition is set; __setattr__ applies them when it is.
         self._added_updaters: dict[str, Callable[[Partition], Any]] = {}
         self.proposal_fn = proposal_fn
         self.acceptance_fn = acceptance_fn

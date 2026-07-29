@@ -85,7 +85,7 @@ some brief instructions for doing so on different systems:
   "Location" and from there you can copy the path to your clipboard
   and paste it in the terminal.
 
-### Using uv (recommended)
+### Using uv (Recommended)
 
 We recommend [uv](https://docs.astral.sh/uv/), which manages both Python itself and your project's
 packages. When using uv it is not necessary to have Python installed on the machine: the Astral

@@ -38,7 +38,8 @@ myst_enable_extensions = [
     "deflist",  # definition lists inside {glossary} directives
     "dollarmath",
 ]
-myst_heading_anchors = 3
+# 4 so the migration guide's level-4 subsections can be linked from its table of contents.
+myst_heading_anchors = 4
 
 # Tutorial notebooks are committed without outputs. The docs build executes them into this
 # ignored cache before Sphinx runs, keeping generated images and animations out of Git.

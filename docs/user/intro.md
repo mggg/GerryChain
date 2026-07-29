@@ -39,7 +39,7 @@ connections, islands, data errors, or jurisdiction-specific contiguity rules.
 A district then is a collection of nodes, and a district plan is
 the overall assignment of nodes to districts.
 
-## Parts of the chain
+## Parts of the Chain
 
 The Markov Chain's behavior is entirely governed by four
 modular layers: **proposals**, **updaters**, **validators**, 
@@ -84,7 +84,7 @@ Acceptance functions
   techniques such as the [Metropolis-Hastings] algorithm.
 :::
 
-## Workflow for a new GerryChain Project
+## Workflow for a New GerryChain Project
 
 - **Get the data**
   : You will need data that defines distinct geographic areas (your nodes)
