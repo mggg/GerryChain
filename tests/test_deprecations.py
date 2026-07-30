@@ -13,6 +13,11 @@ from gerrychain.constraints import (
     Bounds,
     L1_polsby_popper,
     L1_reciprocal_polsby_popper,
+    LowerBound,
+    SelfConfiguringLowerBound,
+    SelfConfiguringUpperBound,
+    UpperBound,
+    WithinPercentRangeOfBounds,
     no_worse_L1_reciprocal_polsby_popper,
 )
 from gerrychain.graph import Graph
@@ -72,6 +77,39 @@ def test_canonical_chain_does_not_warn() -> None:
         assert len(list(chain)) == 2
 
     assert caught == []
+
+
+@pytest.mark.parametrize(
+    ("old_name", "new_name"),
+    [
+        ("proposal", "proposal_fn"),
+        ("accept", "acceptance_fn"),
+        ("initial_state", "initial_partition"),
+        ("is_valid", "constraints"),
+    ],
+)
+def test_legacy_chain_attributes_are_read_write_aliases(
+    old_name: str,
+    new_name: str,
+) -> None:
+    chain = MarkovChain(total_steps=1)
+    if old_name == "initial_state":
+        value: object = cast(Partition, State())
+    elif old_name == "is_valid":
+        value = lambda state: True
+    else:
+        value = lambda state: state
+
+    with pytest.warns(DeprecationWarning, match=rf"{old_name}.*{new_name}"):
+        setattr(chain, old_name, value)
+    canonical_value = getattr(chain, new_name)
+    if old_name == "is_valid":
+        assert canonical_value(cast(Partition, State()))
+    else:
+        assert canonical_value is value
+
+    with pytest.warns(DeprecationWarning, match=rf"{old_name}.*{new_name}"):
+        assert getattr(chain, old_name) is canonical_value
 
 
 def test_legacy_and_canonical_keyword_conflict() -> None:
@@ -145,6 +183,28 @@ def test_representative_renamed_keywords_warn(
     message = str(caught[0].message)
     assert old_name in message
     assert new_name in message
+
+
+@pytest.mark.parametrize(
+    "bound",
+    [
+        Bounds(lambda value: [value], (0, 2)),
+        UpperBound(lambda value: value, 2),
+        LowerBound(lambda value: value, 0),
+        SelfConfiguringUpperBound(lambda partition: 1),
+        SelfConfiguringLowerBound(lambda partition: 1),
+        WithinPercentRangeOfBounds(lambda partition: 1, 5),
+    ],
+)
+def test_legacy_bounds_func_is_a_read_write_alias(bound: object) -> None:
+    replacement = lambda value: value
+
+    with pytest.warns(DeprecationWarning, match=r"\.func.*value_fn"):
+        setattr(bound, "func", replacement)
+    assert getattr(bound, "value_fn") is replacement
+
+    with pytest.warns(DeprecationWarning, match=r"\.func.*value_fn"):
+        assert getattr(bound, "func") is replacement
 
 
 def test_l1_names_are_canonical() -> None:

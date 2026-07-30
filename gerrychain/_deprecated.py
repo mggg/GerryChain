@@ -205,17 +205,28 @@ def allow_legacy_missing_rng(fn: Callable[P, R]) -> Callable[P, R]:
     return wrapped
 
 
-def deprecated_property(old_name: str, new_name: str) -> property:
+def deprecated_property(old_name: str, new_name: str, *, writable: bool = False) -> property:
     """Return a property forwarding a deprecated attribute name to its replacement."""
 
-    def get(instance: object) -> Any:
+    def warn() -> None:
         _warn(
             f"{old_name} is deprecated; use {new_name} instead. The legacy name will be removed "
-            "in GerryChain 2.0."
+            "in GerryChain 2.0.",
+            stacklevel=4,
         )
+
+    def get(instance: object) -> Any:
+        warn()
         return getattr(instance, new_name)
 
-    return property(get)
+    if not writable:
+        return property(get)
+
+    def set_(instance: object, value: Any) -> None:
+        warn()
+        setattr(instance, new_name, value)
+
+    return property(get, set_)
 
 
 def deprecated_lazy_alias(

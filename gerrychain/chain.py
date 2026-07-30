@@ -32,7 +32,11 @@ import numpy
 from collections.abc import Callable, Iterable, Iterator
 from typing import Any, cast
 
-from gerrychain._deprecated import adapt_legacy_callable, deprecated_parameters
+from gerrychain._deprecated import (
+    adapt_legacy_callable,
+    deprecated_parameters,
+    deprecated_property,
+)
 from gerrychain._rng import make_rng
 from gerrychain.accept import AcceptanceFn, always_accept
 from gerrychain.constraints import ConstraintFn, Validator
@@ -151,6 +155,13 @@ class MarkovChain:
         self.rng = make_rng(rng)
         # Last: the setter validates initial_partition against the constraints when both are given.
         self.constraints = constraints
+
+    proposal = deprecated_property("MarkovChain.proposal", "proposal_fn", writable=True)
+    accept = deprecated_property("MarkovChain.accept", "acceptance_fn", writable=True)
+    initial_state = deprecated_property(
+        "MarkovChain.initial_state", "initial_partition", writable=True
+    )
+    is_valid = deprecated_property("MarkovChain.is_valid", "constraints", writable=True)
 
     @property
     def constraints(self) -> Validator:

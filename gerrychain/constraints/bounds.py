@@ -1,7 +1,7 @@
 from collections.abc import Callable, Iterable
 from typing import Generic, ParamSpec
 
-from .._deprecated import deprecated_parameters
+from .._deprecated import deprecated_parameters, deprecated_property
 from ..partition import Partition
 
 P = ParamSpec("P")
@@ -34,6 +34,8 @@ class Bounds(Generic[P]):
         """
         self.value_fn = value_fn
         self.bounds = bounds
+
+    func = deprecated_property("Bounds.func", "value_fn", writable=True)
 
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> bool:
         lower, upper = self.bounds
@@ -72,6 +74,8 @@ class UpperBound(Generic[P]):
         self.value_fn = value_fn
         self.bound = bound
 
+    func = deprecated_property("UpperBound.func", "value_fn", writable=True)
+
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> bool:
         return self.value_fn(*args, **kwargs) <= self.bound
 
@@ -106,6 +110,8 @@ class LowerBound(Generic[P]):
         """
         self.value_fn = value_fn
         self.bound = bound
+
+    func = deprecated_property("LowerBound.func", "value_fn", writable=True)
 
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> bool:
         return self.value_fn(*args, **kwargs) >= self.bound
@@ -143,6 +149,8 @@ class SelfConfiguringUpperBound:
         """
         self.value_fn = value_fn
         self.bound = None
+
+    func = deprecated_property("SelfConfiguringUpperBound.func", "value_fn", writable=True)
 
     def __call__(self, partition: Partition) -> bool:
         if not self.bound:
@@ -185,6 +193,8 @@ class SelfConfiguringLowerBound:
         self.value_fn = value_fn
         self.bound = None
         self.epsilon = epsilon
+
+    func = deprecated_property("SelfConfiguringLowerBound.func", "value_fn", writable=True)
 
     def __call__(self, partition: Partition) -> bool:
         if not self.bound:
@@ -230,6 +240,8 @@ class WithinPercentRangeOfBounds:
         self.percent = float(percent) / 100.0
         self.lbound = None
         self.ubound = None
+
+    func = deprecated_property("WithinPercentRangeOfBounds.func", "value_fn", writable=True)
 
     def __call__(self, partition: Partition) -> bool:
         if not (self.lbound and self.ubound):
