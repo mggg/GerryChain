@@ -4,7 +4,7 @@ from ..partition import Partition
 from .bounds import SelfConfiguringLowerBound, SelfConfiguringUpperBound
 
 
-def L_1_reciprocal_polsby_popper(partition: Partition) -> float:
+def L1_reciprocal_polsby_popper(partition: Partition) -> float:
     """Returns the :math:`L^1` norm of the reciprocal Polsby-Popper scores for the given partition.
 
     Args:
@@ -16,7 +16,7 @@ def L_1_reciprocal_polsby_popper(partition: Partition) -> float:
     return sum(1 / value for value in partition["polsby_popper"].values())
 
 
-def L_1_polsby_popper(partition: Partition) -> float:
+def L1_polsby_popper(partition: Partition) -> float:
     """Returns the :math:`L^1` norm of the Polsby-Popper scores for the given partition.
 
     Args:
@@ -54,4 +54,4 @@ def L_minus_1_polsby_popper(partition: Partition) -> float:
 
 no_worse_L_minus_1_polsby_popper = SelfConfiguringLowerBound(L_minus_1_polsby_popper)
 
-no_worse_L_1_reciprocal_polsby_popper = SelfConfiguringUpperBound(L_1_reciprocal_polsby_popper)
+no_worse_L1_reciprocal_polsby_popper = SelfConfiguringUpperBound(L1_reciprocal_polsby_popper)
