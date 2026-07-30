@@ -2,6 +2,7 @@ from .compactness import (
     boundary_nodes,
     exterior_boundaries,
     exterior_boundaries_as_a_set,
+    flips,
     interior_boundaries,
     perimeter,
 )
@@ -20,6 +21,7 @@ __all__ = [
     "Tally",
     "DataTally",
     "boundary_nodes",
+    "flips",
     "perimeter",
     "exterior_boundaries",
     "interior_boundaries",

@@ -4,6 +4,8 @@ from collections.abc import Callable, Hashable, Sequence
 from enum import Enum
 from typing import TYPE_CHECKING, NamedTuple
 
+from .._deprecated import deprecated_alias, deprecated_parameters
+
 if TYPE_CHECKING:
     from ..partition.partition import Partition
 
@@ -118,6 +120,7 @@ def compute_county_splits(
     return new_county_dict
 
 
+@deprecated_parameters(renamed={"reg_attr_lst": "region_attr_lst"})
 def tally_region_splits(region_attr_lst: Sequence[str]) -> Callable[[Partition], dict[str, int]]:
     """A naive updater for tallying the number of times a region attribute is split.
 
@@ -168,3 +171,10 @@ def total_region_splits(partition: Partition, region_attr: str) -> int:
             split[partition.graph.node_data(node2)[region_attr]] += 1
 
     return sum(1 for value in split.values() if value > 0)
+
+
+total_reg_splits = deprecated_alias(
+    "gerrychain.updaters.county_splits.total_reg_splits",
+    "total_region_splits",
+    total_region_splits,
+)

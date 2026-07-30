@@ -21,6 +21,7 @@ from typing import Any, cast
 import networkx
 from networkx.generators.lattice import grid_2d_graph
 
+from gerrychain._deprecated import deprecated_alias, legacy_give_constant_attribute
 from gerrychain.graph import Graph
 from gerrychain.metrics import polsby_popper
 from gerrychain.partition import Partition
@@ -166,6 +167,12 @@ class Grid(Partition):
         """
         m, n = self.dimensions
         return [[cast(int, self.assignment.mapping[(i, j)]) for i in range(m)] for j in range(n)]
+
+    as_list_of_lists = deprecated_alias(
+        "Grid.as_list_of_lists",
+        "Grid._as_list_of_lists",
+        _as_list_of_lists,
+    )
 
 
 def _create_grid_nx_graph(dimensions: tuple[int, ...], with_diagonals: bool) -> Graph:
@@ -315,3 +322,26 @@ def _color_quadrants(node: tuple[int, int], thresholds: tuple[int, int]) -> int:
     y_color = 0 if y < thresholds[1] else 2
 
     return x_color + y_color
+
+
+create_grid_graph = deprecated_alias(
+    "gerrychain.grid.create_grid_graph",
+    "_create_grid_nx_graph",
+    _create_grid_nx_graph,
+)
+give_constant_attribute = legacy_give_constant_attribute
+tag_boundary_nodes = deprecated_alias(
+    "gerrychain.grid.tag_boundary_nodes",
+    "_tag_boundary_nodes",
+    _tag_boundary_nodes,
+)
+get_boundary_perim = deprecated_alias(
+    "gerrychain.grid.get_boundary_perim",
+    "_get_boundary_perim",
+    _get_boundary_perim,
+)
+color_quadrants = deprecated_alias(
+    "gerrychain.grid.color_quadrants",
+    "_color_quadrants",
+    _color_quadrants,
+)
