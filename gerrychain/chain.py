@@ -32,6 +32,7 @@ import numpy
 from collections.abc import Callable, Iterable, Iterator
 from typing import Any, cast
 
+from gerrychain._deprecated import adapt_legacy_callable, deprecated_parameters
 from gerrychain._rng import make_rng
 from gerrychain.accept import AcceptanceFn, always_accept
 from gerrychain.constraints import ConstraintFn, Validator
@@ -95,6 +96,13 @@ class MarkovChain:
         "__locked",
     )
 
+    @deprecated_parameters(
+        renamed={
+            "proposal": "proposal_fn",
+            "accept": "acceptance_fn",
+            "initial_state": "initial_partition",
+        }
+    )
     def __init__(
         self,
         proposal_fn: ProposalFn | None = None,
@@ -372,14 +380,28 @@ class MarkovChain:
         self.check_valid()
 
         proposal_fn = self.proposal_fn
+        acceptance_fn = self.acceptance_fn
         total_steps = self.total_steps
         initial_partition = self.initial_partition
         assert proposal_fn is not None and total_steps is not None and initial_partition is not None
 
-        return self.__run(proposal_fn, total_steps, initial_partition)
+        proposal_fn = cast(
+            ProposalFn,
+            adapt_legacy_callable(proposal_fn, "Proposal function"),
+        )
+        acceptance_fn = cast(
+            AcceptanceFn,
+            adapt_legacy_callable(acceptance_fn, "Acceptance function"),
+        )
+
+        return self.__run(proposal_fn, acceptance_fn, total_steps, initial_partition)
 
     def __run(
-        self, proposal_fn: ProposalFn, total_steps: int, initial_partition: Partition
+        self,
+        proposal_fn: ProposalFn,
+        acceptance_fn: AcceptanceFn,
+        total_steps: int,
+        initial_partition: Partition,
     ) -> Iterator[Partition]:
         """Generator over one run: propose, validate, accept/reject, yield, for each step.
 
@@ -400,7 +422,7 @@ class MarkovChain:
                 state.parent = None
 
                 if self._validator(proposed_next_state):
-                    if self.acceptance_fn(proposed_next_state, rng=self.rng):
+                    if acceptance_fn(proposed_next_state, rng=self.rng):
                         state = proposed_next_state
                     self.state = state
                     self.counter += 1

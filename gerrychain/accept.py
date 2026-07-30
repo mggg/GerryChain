@@ -7,6 +7,7 @@ Last Updated: 11 Jan 2024
 import random
 from typing import Protocol
 
+from gerrychain._deprecated import allow_legacy_missing_rng
 from gerrychain.partition import Partition
 
 
@@ -16,6 +17,7 @@ class AcceptanceFn(Protocol):
     def __call__(self, partition: Partition, /, *, rng: random.Random) -> bool: ...
 
 
+@allow_legacy_missing_rng
 def always_accept(partition: Partition, *, rng: random.Random) -> bool:
     """Always accepts the a proposed next state.
 
@@ -29,6 +31,7 @@ def always_accept(partition: Partition, *, rng: random.Random) -> bool:
     return True
 
 
+@allow_legacy_missing_rng
 def cut_edge_accept(partition: Partition, *, rng: random.Random) -> bool:
     """Always accepts the flip if the number of cut_edges decreases Otherwise, uses the Metropolis.
 
