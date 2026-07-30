@@ -52,6 +52,8 @@ import functools
 from collections.abc import Callable, Hashable
 from typing import TYPE_CHECKING, Protocol, TypeVar, cast
 
+from .._deprecated import deprecated_parameters
+
 if TYPE_CHECKING:
     from ..partition.partition import Partition
 
@@ -145,6 +147,7 @@ def flows_from_changes(
     return flows
 
 
+@deprecated_parameters(renamed={"initializer": "initializer_fn"})
 def on_flow(
     initializer_fn: Callable[[Partition], dict[KeyT, ValueT]], alias: str
 ) -> Callable[[FlowUpdateFn[ValueT]], Callable[..., dict[KeyT, ValueT]]]:
@@ -316,6 +319,7 @@ def compute_edge_flows(
     return edge_flows
 
 
+@deprecated_parameters(renamed={"initializer": "initializer_fn"})
 def on_edge_flow(
     initializer_fn: Callable[[Partition], dict[KeyT, ValueT]], alias: str
 ) -> Callable[[EdgeFlowUpdateFn[ValueT]], Callable[[Partition], dict[KeyT, ValueT]]]:

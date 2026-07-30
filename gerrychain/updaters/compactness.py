@@ -4,11 +4,14 @@ import collections
 from collections.abc import Hashable
 from typing import TYPE_CHECKING
 
+from .._deprecated import legacy_flips
 from .cut_edges import on_edge_flow
 from .flows import on_flow
 
 if TYPE_CHECKING:
     from ..partition.partition import Partition
+
+flips = legacy_flips
 
 
 def boundary_nodes(partition: Partition, alias: str = "boundary_nodes") -> set[Hashable]:

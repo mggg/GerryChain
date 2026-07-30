@@ -1,6 +1,7 @@
 from collections.abc import Callable, Iterable
 from typing import Generic, ParamSpec
 
+from .._deprecated import deprecated_parameters
 from ..partition import Partition
 
 P = ParamSpec("P")
@@ -20,6 +21,7 @@ class Bounds(Generic[P]):
 
     """
 
+    @deprecated_parameters(renamed={"func": "value_fn"})
     def __init__(self, value_fn: Callable[P, Iterable[float]], bounds: tuple[float, float]) -> None:
         """Initialize a Bounds instance.
 
@@ -55,6 +57,7 @@ class UpperBound(Generic[P]):
     and ``False`` otherwise.
     """
 
+    @deprecated_parameters(renamed={"func": "value_fn"})
     def __init__(self, value_fn: Callable[P, float], bound: float) -> None:
         """Initialize a UpperBound instance.
 
@@ -89,6 +92,7 @@ class LowerBound(Generic[P]):
     and ``False`` otherwise.
     """
 
+    @deprecated_parameters(renamed={"func": "value_fn"})
     def __init__(self, value_fn: Callable[P, float], bound: float) -> None:
         """Initialize a LowerBound instance.
 
@@ -126,6 +130,7 @@ class SelfConfiguringUpperBound:
     and ``False`` otherwise.
     """
 
+    @deprecated_parameters(renamed={"func": "value_fn"})
     def __init__(self, value_fn: Callable[[Partition], float]) -> None:
         """Initialize a SelfConfiguringUpperBound instance.
 
@@ -164,6 +169,7 @@ class SelfConfiguringLowerBound:
     and ``False`` otherwise.
     """
 
+    @deprecated_parameters(renamed={"func": "value_fn"})
     def __init__(self, value_fn: Callable[[Partition], float], epsilon: float = 0.05) -> None:
         """Initialize a SelfConfiguringLowerBound instance.
 
@@ -206,6 +212,7 @@ class WithinPercentRangeOfBounds:
     percentage range of the initial value, and ``False`` otherwise.
     """
 
+    @deprecated_parameters(renamed={"func": "value_fn"})
     def __init__(self, value_fn: Callable[[Partition], float], percent: float) -> None:
         """Initialize a WithinPercentRangeOfBounds instance.
 

@@ -4,6 +4,7 @@ from collections.abc import Callable, Generator, Iterable
 
 from tqdm import tqdm
 
+from .._deprecated import deprecated_parameters, deprecated_property
 from .._rng import make_rng
 from ..accept import AcceptanceFn, always_accept
 from ..chain import MarkovChain
@@ -35,6 +36,12 @@ class SingleMetricOptimizer:
     optimization run is invoked.
     """
 
+    @deprecated_parameters(
+        renamed={
+            "proposal": "proposal_fn",
+            "optimization_metric": "optimization_metric_fn",
+        }
+    )
     def __init__(
         self,
         proposal_fn: ProposalFn,
@@ -112,6 +119,8 @@ class SingleMetricOptimizer:
             Callable[[Partition], float]: The score function.
         """
         return self._score_fn
+
+    score = deprecated_property("SingleMetricOptimizer.score", "score_fn")
 
     def _is_improvement(self, new_score: float, old_score: float) -> bool:
         """Helper function to determine whether a new score is an improvement over an old score.
@@ -368,6 +377,7 @@ class SingleMetricOptimizer:
 
         return beta_function
 
+    @deprecated_parameters(renamed={"accept": "acceptance_fn"})
     def short_bursts(
         self,
         burst_length: int,
@@ -421,6 +431,7 @@ class SingleMetricOptimizer:
                     self._best_part = part
                     self._best_score = part_score
 
+    @deprecated_parameters(renamed={"beta_function": "beta_fn"})
     def simulated_annealing(
         self,
         num_steps: int,
@@ -496,6 +507,7 @@ class SingleMetricOptimizer:
             with_progress_bar=with_progress_bar,
         )
 
+    @deprecated_parameters(renamed={"accept": "acceptance_fn"})
     def variable_length_short_bursts(
         self,
         num_steps: int,
