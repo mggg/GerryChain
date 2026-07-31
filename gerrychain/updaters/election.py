@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING, cast
 import gerrychain.metrics.partisan as pm
 from gerrychain.updaters.tally import DataTally
 
+from .._deprecated import deprecated_parameters, deprecated_property
+
 if TYPE_CHECKING:
     from ..partition.partition import Partition
 
@@ -69,6 +71,7 @@ class Election:
             partition's dictionary of updaters.
     """
 
+    @deprecated_parameters(renamed={"parties_to_columns": "party_names_to_node_attribute_names"})
     def __init__(
         self,
         name: str,
@@ -136,6 +139,12 @@ class Election:
         }
 
         self.updater = ElectionUpdater(self)
+
+    columns = deprecated_property("Election.columns", "node_attribute_names")
+    parties_to_columns = deprecated_property(
+        "Election.parties_to_columns",
+        "party_names_to_node_attribute_names",
+    )
 
     def __str__(self) -> str:
         return (

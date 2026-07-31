@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, cast
 
 import pandas
 
+from .._deprecated import deprecated_parameters, deprecated_property
 from .flows import flows_from_changes, on_flow
 
 if TYPE_CHECKING:
@@ -130,6 +131,7 @@ class Tally:
 
     __slots__ = ["fields", "alias", "dtype_fn"]
 
+    @deprecated_parameters(renamed={"dtype": "dtype_fn"})
     def __init__(
         self,
         fields: str | list[str],
@@ -155,6 +157,8 @@ class Tally:
         self.fields = fields
         self.alias = alias
         self.dtype_fn = dtype_fn
+
+    dtype = deprecated_property("Tally.dtype", "dtype_fn")
 
     def __call__(self, partition: Partition) -> dict[Hashable, float]:
         if partition.parent is None:

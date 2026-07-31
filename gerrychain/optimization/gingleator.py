@@ -6,6 +6,7 @@ from typing import Protocol
 
 import numpy as np
 
+from gerrychain._deprecated import deprecated_parameters
 from gerrychain.constraints import Validator, ConstraintFn
 from gerrychain.partition import Partition
 from gerrychain.proposals import ProposalFn
@@ -31,6 +32,12 @@ class Gingleator(SingleMetricOptimizer):
     Gingles districts is one of the litmus tests used in bringing forth a VRA case.
     """
 
+    @deprecated_parameters(
+        renamed={
+            "proposal": "proposal_fn",
+            "score_function": "score_fn",
+        }
+    )
     def __init__(
         self,
         proposal_fn: ProposalFn,

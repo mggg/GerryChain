@@ -3,6 +3,11 @@ from collections.abc import Callable, Hashable, Iterable, Iterator, Sequence
 from functools import partial
 from typing import Literal, cast
 
+from gerrychain._deprecated import (
+    adapt_legacy_callable,
+    allow_legacy_missing_rng,
+    deprecated_parameters,
+)
 from gerrychain._rng import make_rng
 from gerrychain.partition import Partition
 
@@ -45,6 +50,8 @@ class ValueWarning(UserWarning):
     pass
 
 
+@deprecated_parameters(renamed={"method": "bipartition_tree_fn"})
+@allow_legacy_missing_rng
 def epsilon_tree_bipartition(
     subgraph_to_split: Graph | FrozenGraph,
     parts: Sequence[Hashable],
@@ -89,6 +96,14 @@ def epsilon_tree_bipartition(
     ub_pop = pop_target * (1 + epsilon)
     check_pop = lambda x: lb_pop <= x <= ub_pop
 
+    bipartition_tree_fn = cast(
+        BipartitionTreeFn,
+        adapt_legacy_callable(
+            bipartition_tree_fn,
+            "Bipartition function",
+            renamed={"single_district_cut": "one_sided_cut"},
+        ),
+    )
     nodes = bipartition_tree_fn(
         subgraph_to_split.subgraph(remaining_nodes),
         pop_col=pop_col,
@@ -189,6 +204,7 @@ def _candidate_district_pairs(
     return draw_without_replacement()
 
 
+@deprecated_parameters(renamed={"method": "bipartition_tree_fn"})
 def recom(
     partition: Partition,
     pop_col: str,
@@ -260,6 +276,15 @@ def recom(
     # Bind region_surcharge onto the bipartition_tree_fn. Other bipartition / spanning-tree options
     # (e.g. spanning_tree_fn_kwargs) are configured by passing a pre-bound bipartition_tree_fn, such
     # as partial(bipartition_tree, spanning_tree_fn_kwargs={...}).
+    bipartition_tree_fn = cast(
+        ReComBipartitionTreeFn,
+        adapt_legacy_callable(
+            bipartition_tree_fn,
+            "ReCom bipartition function",
+            renamed={"single_district_cut": "one_sided_cut"},
+            dropped={"region_surcharge"},
+        ),
+    )
     bipartition_tree_fn = cast(
         ReComBipartitionTreeFn,
         partial(bipartition_tree_fn, region_surcharge=region_surcharge),
@@ -347,6 +372,16 @@ def build_recom_proposal_fn(
     return cast(ProposalFn, proposal_fn)
 
 
+@deprecated_parameters(
+    renamed={
+        "balance_edge_fn": "find_balanced_edge_cuts_fn",
+        "M": "max_balanced_edge_cuts",
+    },
+    ignored={
+        "choice": "Cut selection now uses the proposal's rng.",
+    },
+    defaults={"max_balanced_edge_cuts": 1},
+)
 def reversible_recom(
     partition: Partition,
     pop_col: str,
@@ -385,6 +420,17 @@ def reversible_recom(
     """
 
     rng = make_rng(rng)
+    find_balanced_edge_cuts_fn = cast(
+        FindBalancedEdgeCutsFn,
+        adapt_legacy_callable(
+            find_balanced_edge_cuts_fn,
+            "Balanced-edge-cut function",
+            renamed={
+                "single_district_cut": "one_sided_cut",
+                "rootnode_choice_fn": "choice",
+            },
+        ),
+    )
 
     def dist_pair_edges(
         part: Partition, a: Hashable, b: Hashable

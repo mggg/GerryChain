@@ -34,6 +34,7 @@ from functools import partial
 from inspect import signature
 from typing import NamedTuple, Protocol, cast
 
+from .._deprecated import adapt_legacy_callable, adapt_legacy_cut_choice, deprecated_parameters
 from .._rng import make_rng
 from ..graph import FrozenGraph, Graph
 from .spanning_tree import random_spanning_tree
@@ -414,6 +415,12 @@ def _bfs_predecessors_and_successors_for_tree(
     return pred, succ
 
 
+@deprecated_parameters(
+    renamed={
+        "one_sided_cut": "single_district_cut",
+        "choice": "rootnode_choice_fn",
+    }
+)
 def find_balanced_edge_cuts_contraction(
     h: _PopulatedGraph,
     single_district_cut: bool = False,
@@ -601,6 +608,12 @@ def _nodes_in_subtree(start: Hashable, succ: dict[Hashable, list[Hashable]]) -> 
 
 
 # frm: used externally by tree_proposals.py
+@deprecated_parameters(
+    renamed={
+        "one_sided_cut": "single_district_cut",
+        "choice": "rootnode_choice_fn",
+    }
+)
 def find_balanced_edge_cuts_memoization(
     h: _PopulatedGraph,
     single_district_cut: bool = False,
@@ -991,6 +1004,27 @@ def _internal_bipartition_tree(
     if region_surcharge is None:
         region_surcharge = {}
 
+    spanning_tree_fn = adapt_legacy_callable(
+        spanning_tree_fn,
+        "Spanning-tree function",
+        dropped={"region_surcharge"},
+    )
+    find_balanced_edge_cuts_fn = cast(
+        FindBalancedEdgeCutsFn,
+        adapt_legacy_callable(
+            find_balanced_edge_cuts_fn,
+            "Balanced-edge-cut function",
+            renamed={
+                "single_district_cut": "one_sided_cut",
+                "rootnode_choice_fn": "choice",
+            },
+        ),
+    )
+    cut_choice_fn = cast(
+        CutChoiceFn | RegionAwareCutChoiceFn,
+        adapt_legacy_cut_choice(cut_choice_fn),
+    )
+
     if spanning_tree_fn_kwargs and "region_surcharge" in spanning_tree_fn_kwargs:
         raise ValueError(
             "Pass region_surcharge via the region_surcharge parameter, not inside "
@@ -1097,6 +1131,15 @@ def _internal_bipartition_tree(
             raise Exception("This should never happen...")
 
 
+@deprecated_parameters(
+    renamed={
+        "graph": "subgraph_to_split",
+        "balance_edge_fn": "find_balanced_edge_cuts_fn",
+        "one_sided_cut": "single_district_cut",
+        "choice": "rootnode_choice_fn",
+        "cut_choice": "cut_choice_fn",
+    }
+)
 def bipartition_tree(
     subgraph_to_split: GraphLike,
     pop_col: str,
@@ -1380,6 +1423,15 @@ def _get_possible_edge_cuts_and_populated_graph(
     raise RuntimeError(f"Could not find a possible cut after {max_attempts} attempts.")
 
 
+@deprecated_parameters(
+    renamed={
+        "graph": "subgraph_to_split",
+        "balance_edge_fn": "find_balanced_edge_cuts_fn",
+        "one_sided_cut": "single_district_cut",
+        "choice": "rootnode_choice_fn",
+        "cut_choice": "cut_choice_fn",
+    }
+)
 def bipartition_tree_random_with_num_cuts(
     subgraph_to_split: GraphLike,
     pop_col: str,

@@ -4,6 +4,7 @@ import collections
 from collections.abc import Hashable, Iterable
 from typing import TYPE_CHECKING
 
+from .._deprecated import deprecated_alias
 from .flows import neighbor_flips, on_edge_flow
 
 if TYPE_CHECKING:
@@ -138,3 +139,20 @@ def cut_edges(partition: Partition) -> set[tuple[int, int]]:
     new, obsolete = _new_cuts(partition), _obsolete_cuts(partition)
 
     return (parent["cut_edges"] | new) - obsolete
+
+
+put_edges_into_parts = deprecated_alias(
+    "gerrychain.updaters.cut_edges.put_edges_into_parts",
+    "_put_edges_into_parts",
+    _put_edges_into_parts,
+)
+new_cuts = deprecated_alias(
+    "gerrychain.updaters.cut_edges.new_cuts",
+    "_new_cuts",
+    _new_cuts,
+)
+obsolete_cuts = deprecated_alias(
+    "gerrychain.updaters.cut_edges.obsolete_cuts",
+    "_obsolete_cuts",
+    _obsolete_cuts,
+)

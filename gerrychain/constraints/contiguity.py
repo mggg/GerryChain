@@ -1,6 +1,7 @@
 from collections import deque
 from collections.abc import Hashable, Iterable
 
+from .._deprecated import deprecated_alias
 from ..graph import FrozenGraph, Graph
 from ..partition import Partition
 from .bounds import SelfConfiguringLowerBound
@@ -185,3 +186,15 @@ def contiguous_components(partition: Partition) -> dict[Hashable, list[Graph]]:
         connected_components_in_each_partition[part] = subgraph.subgraphs_for_connected_components()
 
     return connected_components_in_each_partition
+
+
+affected_parts = deprecated_alias(
+    "gerrychain.constraints.contiguity.affected_parts",
+    "_affected_parts",
+    _affected_parts,
+)
+contiguous_bfs = deprecated_alias(
+    "gerrychain.constraints.contiguous_bfs",
+    "contiguous",
+    contiguous,
+)

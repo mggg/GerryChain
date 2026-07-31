@@ -39,8 +39,9 @@ schema, it's a lot harder to make a snake-y patchwork of districts.
 import random
 from collections.abc import Hashable, Sequence
 from functools import partial
-from typing import Protocol
+from typing import Protocol, cast
 
+from .._deprecated import adapt_legacy_callable, deprecated_parameters
 from .._rng import make_rng
 
 # frm:  import the new Graph object which encapsulates NX and RX Graph...
@@ -67,6 +68,7 @@ class PartitionFn(Protocol):
     ) -> dict[Hashable, Hashable]: ...
 
 
+@deprecated_parameters(renamed={"method": "bipartition_tree_fn"})
 def recursive_tree_part(
     graph: Graph,
     parts: Sequence[Hashable],
@@ -106,6 +108,14 @@ def recursive_tree_part(
     """
 
     rng = make_rng(rng)
+    bipartition_tree_fn = cast(
+        BipartitionTreeFn,
+        adapt_legacy_callable(
+            bipartition_tree_fn,
+            "Bipartition function",
+            renamed={"single_district_cut": "one_sided_cut"},
+        ),
+    )
     flips = {}
     remaining_nodes = graph.node_indices
 
@@ -585,6 +595,7 @@ def _recursive_seed_part_inner(
     return translated_assignment
 
 
+@deprecated_parameters(renamed={"method": "bipartition_tree_fn"})
 def recursive_seed_part(
     graph: Graph,
     parts: Sequence[Hashable],
@@ -632,6 +643,14 @@ def recursive_seed_part(
     """
 
     rng = make_rng(rng)
+    bipartition_tree_fn = cast(
+        BipartitionTreeFn,
+        adapt_legacy_callable(
+            bipartition_tree_fn,
+            "Bipartition function",
+            renamed={"single_district_cut": "one_sided_cut"},
+        ),
+    )
 
     # Note: recursive_seed_part() is never used in the GerryCode codebase, but it is
     # part of the public API.

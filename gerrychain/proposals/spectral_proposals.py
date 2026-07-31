@@ -5,6 +5,7 @@ from typing import cast
 
 from numpy import linalg as LA
 
+from .._deprecated import deprecated_parameters
 from .._rng import make_rng
 from ..graph import FrozenGraph, Graph
 from ..partition import Partition
@@ -12,6 +13,7 @@ from ..proposals import ProposalFn
 
 
 # frm: only ever used in this file - but maybe it is used externally?
+@deprecated_parameters(renamed={"graph": "subgraph"})
 def spectral_cut(
     subgraph: Graph | FrozenGraph,
     part_labels: Sequence[Hashable],

@@ -23,6 +23,13 @@ There is additional documentation in each of these sub-modules.
 
 """
 
+from .._deprecated import (
+    deprecated_lazy_alias,
+    legacy_bipartition_tree_random,
+    legacy_epsilon_tree_bipartition,
+    legacy_predecessors,
+    legacy_successors,
+)
 from .bipartition_tree import (
     BalanceError,
     BipartitionTreeFn,
@@ -37,6 +44,29 @@ from .bipartition_tree import (
 )
 from .spanning_tree import random_spanning_tree, uniform_spanning_tree
 
+predecessors = legacy_predecessors
+successors = legacy_successors
+bipartition_tree_random = legacy_bipartition_tree_random
+epsilon_tree_bipartition = legacy_epsilon_tree_bipartition
+recursive_tree_part = deprecated_lazy_alias(
+    "gerrychain.tree.recursive_tree_part",
+    "gerrychain.partition.recursive_tree_part",
+    "gerrychain.partition.initial_partition_generators",
+    "recursive_tree_part",
+)
+recursive_seed_part = deprecated_lazy_alias(
+    "gerrychain.tree.recursive_seed_part",
+    "gerrychain.partition.recursive_seed_part",
+    "gerrychain.partition.initial_partition_generators",
+    "recursive_seed_part",
+)
+get_max_prime_factor_less_than = deprecated_lazy_alias(
+    "gerrychain.tree.get_max_prime_factor_less_than",
+    "gerrychain.partition.initial_partition_generators.get_max_prime_factor_less_than",
+    "gerrychain.partition.initial_partition_generators",
+    "get_max_prime_factor_less_than",
+)
+
 __all__ = [
     "bipartition_tree",
     "bipartition_tree_random_with_num_cuts",
@@ -50,4 +80,11 @@ __all__ = [
     "ReComBipartitionTreeFn",
     "uniform_spanning_tree",
     "random_spanning_tree",
+    "predecessors",
+    "successors",
+    "bipartition_tree_random",
+    "epsilon_tree_bipartition",
+    "recursive_tree_part",
+    "recursive_seed_part",
+    "get_max_prime_factor_less_than",
 ]

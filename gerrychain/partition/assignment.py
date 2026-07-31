@@ -7,6 +7,7 @@ from typing import TypeVar, cast
 import numpy
 import pandas
 
+from .._deprecated import deprecated_parameters
 from ..graph import FrozenGraph, Graph
 
 NodeT = TypeVar("NodeT", bound=Hashable)
@@ -173,6 +174,7 @@ class Assignment(Mapping[Hashable, Hashable]):
         return self.mapping
 
     @classmethod
+    @deprecated_parameters(renamed={"assignment": "nodes_to_parts"})
     def from_dict(cls, nodes_to_parts: Mapping[NodeT, PartT] | pandas.Series) -> Assignment:
         """Create an Assignment from a dictionary.
 
@@ -274,6 +276,7 @@ def get_assignment(
     raise TypeError("Assignment must be a mapping or a node attribute key")
 
 
+@deprecated_parameters(renamed={"container": "container_fn"})
 def level_sets(
     mapping: Mapping[NodeT, PartT],
     container_fn: Callable[[], set[NodeT]] = set,

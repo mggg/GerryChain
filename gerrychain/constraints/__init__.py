@@ -27,14 +27,15 @@ from .bounds import (
 )
 from .compactness import (
     L2_polsby_popper,
-    L_1_polsby_popper,
-    L_1_reciprocal_polsby_popper,
+    L1_polsby_popper,
+    L1_reciprocal_polsby_popper,
     L_minus_1_polsby_popper,
-    no_worse_L_1_reciprocal_polsby_popper,
+    no_worse_L1_reciprocal_polsby_popper,
     no_worse_L_minus_1_polsby_popper,
 )
 from .contiguity import (
     contiguous,
+    contiguous_bfs,
     no_more_discontiguous,
     single_flip_contiguous,
 )
@@ -56,13 +57,14 @@ __all__ = [
     "SelfConfiguringUpperBound",
     "UpperBound",
     "WithinPercentRangeOfBounds",
-    "L_1_polsby_popper",
-    "L_1_reciprocal_polsby_popper",
+    "L1_polsby_popper",
+    "L1_reciprocal_polsby_popper",
     "L2_polsby_popper",
     "L_minus_1_polsby_popper",
-    "no_worse_L_1_reciprocal_polsby_popper",
+    "no_worse_L1_reciprocal_polsby_popper",
     "no_worse_L_minus_1_polsby_popper",
     "contiguous",
+    "contiguous_bfs",
     "no_more_discontiguous",
     "single_flip_contiguous",
     "Validator",

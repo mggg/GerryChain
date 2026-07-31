@@ -92,6 +92,7 @@ import geopandas
 import networkx
 import numpy
 
+from gerrychain._deprecated import adapt_legacy_callable, deprecated_parameters
 from gerrychain.graph.graph import FrozenGraph, Graph
 
 from .._rng import make_rng
@@ -228,6 +229,12 @@ class Partition:
         self.subgraphs = SubgraphView(self.graph, self.parts)
 
     @classmethod
+    @deprecated_parameters(
+        renamed={"method": "partition_fn"},
+        ignored={
+            "flips": "This argument did not affect random-assignment generation in GerryChain 0.3.2."
+        },
+    )
     def from_random_assignment(
         cls,
         graph: Graph,
@@ -267,6 +274,10 @@ class Partition:
 
         total_pop = sum(graph.node_data(n)[pop_col] for n in graph)
         ideal_pop = total_pop / n_parts
+        partition_fn = cast(
+            PartitionFn,
+            adapt_legacy_callable(partition_fn, "Initial-partition function"),
+        )
 
         assignment = partition_fn(
             graph=graph,

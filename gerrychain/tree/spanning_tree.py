@@ -74,6 +74,7 @@ from typing import cast
 
 import rustworkx
 
+from .._deprecated import deprecated_parameters
 from .._rng import make_rng
 from ..graph import FrozenGraph, Graph
 
@@ -273,6 +274,11 @@ def random_spanning_tree(
     return minimum_spanning_tree
 
 
+@deprecated_parameters(
+    ignored={
+        "choice": "Node selection now uses the function's rng.",
+    }
+)
 def uniform_spanning_tree(
     graph: Graph | FrozenGraph,
     region_surcharge: dict[str, float] | None = None,  # accepted but unused
