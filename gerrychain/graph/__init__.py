@@ -20,9 +20,9 @@ For instance:
     nx_graph.add_edges_from(...)
 
     # Create a GerryChain graph from the NetworkX graph
-    my gerrychain_graph = Graph.from_networkx(nx_graph)
+    my_gerrychain_graph = Graph.from_networkx(nx_graph)
 
-Internally, a Graph object contains and embedded graph
+Internally, a Graph object contains an embedded graph
 object based either on NetworkX or RustworkX.  After
 creating a Partition object in GerryChain, the embedded
 graph object is converted to be based on RustworkX (for
