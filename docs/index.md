@@ -123,6 +123,14 @@ api
 topics/v1p0p0_migration_guide
 topics/reproducibility
 topics/tools
+```
+
+```{toctree}
+:hidden:
+:caption: Help and Project
+:maxdepth: 1
+
+topics/changelog
 topics/contributing
 topics/reporting
 ```
