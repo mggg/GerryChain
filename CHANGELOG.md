@@ -152,9 +152,11 @@
 
 #### Other removals
 
-    See the ???  #### The `ReCom` Namespace for details.
+* `MarkovChain` is now an iterable rather than an iterator. Create an iterator with
+  `chain_iterator = iter(chain)`, then call `next(chain_iterator)` instead of `next(chain)`.
 
-    frm: TODO: Add link for ??? the discussion in the Migration Guide for details.
+* Removed `gerrychain.__version__`. Use `importlib.metadata.version("gerrychain")` to read the
+  installed package version.
 
 ### Deprecated
 

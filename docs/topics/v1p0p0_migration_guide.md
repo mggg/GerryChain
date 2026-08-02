@@ -196,13 +196,11 @@ legacy code that passes them **by keyword** will need updating:
 | `initial_state` | `initial_partition` |
 
 The parameter order did not change, so legacy code that passes these positionally keeps working
-unchanged.
-
-<!-- TODO: add in the deprecation shims and update this -->
+unchanged. The legacy keyword names also remain temporarily available: they emit a
+`DeprecationWarning` and will be removed in GerryChain 2.0.
 
 ```python
-# Legacy keyword form - now raises
-#   TypeError: MarkovChain.__init__() got an unexpected keyword argument 'proposal'
+# Legacy keyword form: still works, but emits DeprecationWarning
 chain = MarkovChain(
     proposal=my_proposal,
     constraints=[contiguous],

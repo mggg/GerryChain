@@ -27,7 +27,10 @@ Build and analyze ensembles of districting plans with Markov chain Monte Carlo.
 :::{admonition} 1.0.0 Release
 :class: important
 
-A RELEASE HAPPENED AND THERE IS STUFF TO READ. FINISH LATER.
+GerryChain 1.0.0 moves core graph computation to RustworkX and adds explicit, reproducible random
+number generation. Existing users should read the
+{doc}`migration guide <topics/v1p0p0_migration_guide>`; the
+{doc}`changelog <topics/changelog>` lists the public API changes.
 :::
 
 GerryChain is a library for using [Markov Chain Monte Carlo](https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo)
