@@ -116,7 +116,7 @@ PALETTES = {
         "light_pygments": "harbor-blush-light",
         "dark_pygments": "harbor-blush-dark",
         "light": _mode("#f4ebe7", "#ecdbd6", "#231412", "#00688a", "#800001", "#00688a", "#00445c"),
-        "dark": _mode("#1d1618", "#2b2024", "#f4ebee", "#3cb4dc", "#ec8383", "#0a6a8c", "#06485f"),
+        "dark": _mode("#1d1618", "#2b2024", "#f4ebee", "#007aa3", "#ec8383", "#0a6a8c", "#06485f"),
     },
 }
 ACTIVE_PALETTE = os.environ.get("DOCS_PALETTE", "blush-blue")
