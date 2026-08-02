@@ -1,6 +1,5 @@
 # GerryChain
 
-[![Build Status][build-badge]][build]
 [![Code Coverage][coverage-badge]][coverage]
 [![Documentation Status][docs-badge]][docs]
 [![PyPI Package][pypi-badge]][pypi]
@@ -158,9 +157,7 @@ GerryChain required pinning it, but that is no longer necessary).
     manager or install from source. You may also find luck installing Python directly from the
     package manager if you find installing from source to be troublesome.
 
-[build-badge]: https://circleci.com/gh/mggg/GerryChain.svg?style=svg
-[build]: https://circleci.com/gh/mggg/GerryChain
-[coverage-badge]: https://codecov.io/gh/mggg/GerryChain/branch/master/graph/badge.svg
+[coverage-badge]: https://codecov.io/gh/mggg/GerryChain/branch/main/graph/badge.svg
 [coverage]: https://codecov.io/gh/mggg/GerryChain
 [docs-badge]: https://readthedocs.org/projects/gerrychain/badge/?version=latest
 [docs]: https://gerrychain.readthedocs.io/en/latest

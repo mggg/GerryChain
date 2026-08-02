@@ -630,7 +630,6 @@ version = "1.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "geopandas" },
-    { name = "ipykernel" },
     { name = "networkx" },
     { name = "numpy" },
     { name = "pandas" },
@@ -674,7 +673,6 @@ docs-exec = [
 [package.metadata]
 requires-dist = [
     { name = "geopandas", specifier = ">=1.1.1" },
-    { name = "ipykernel", specifier = ">=7.1.0" },
     { name = "networkx", specifier = ">=3.6.1" },
     { name = "numpy", specifier = ">=2.3.5" },
     { name = "pandas", specifier = ">=2.3.3" },
