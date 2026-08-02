@@ -1,0 +1,188 @@
+name: Release GerryChain
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag, for example v1.0.0
+        type: string
+        required: true
+      upload_to:
+        description: Upload destination
+        type: choice
+        required: true
+        default: testpypi
+        options: [testpypi, pypi]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and test distributions
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - name: Check out release tag
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag }}
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          version: "0.12.1"
+
+      - name: Install Python
+        run: uv python install 3.13
+
+      - name: Validate release tag
+        id: release
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "Dispatch this workflow from the main branch, not $GITHUB_REF_NAME."
+            exit 1
+          fi
+          project_version="$(uv version --short)"
+          if [[ "$RELEASE_TAG" != "v$project_version" ]]; then
+            echo "Tag $RELEASE_TAG does not match project version $project_version."
+            exit 1
+          fi
+          if ! git show-ref --verify --quiet "refs/tags/$RELEASE_TAG"; then
+            echo "$RELEASE_TAG is not a tag in this repository."
+            exit 1
+          fi
+          git fetch --no-tags origin main
+          if ! git merge-base --is-ancestor HEAD origin/main; then
+            echo "The tagged commit is not on the main branch."
+            exit 1
+          fi
+          echo "version=$project_version" >> "$GITHUB_OUTPUT"
+          echo "RELEASE_VERSION=$project_version" >> "$GITHUB_ENV"
+
+      - name: Run tests
+        run: uv run --locked pytest
+
+      - name: Build distributions
+        run: uv build
+
+      - name: Smoke test wheel
+        run: >-
+          uv run --isolated --no-project --with dist/*.whl python -c
+          'import os; from importlib.metadata import version;
+          from gerrychain.examples import gerrymandria;
+          assert version("gerrychain") == os.environ["RELEASE_VERSION"];
+          assert len(gerrymandria().nodes) == 64'
+
+      - name: Smoke test source distribution
+        run: >-
+          uv run --isolated --no-project --with dist/*.tar.gz python -c
+          'import os; from importlib.metadata import version;
+          from gerrychain.examples import gerrymandria;
+          assert version("gerrychain") == os.environ["RELEASE_VERSION"];
+          assert len(gerrymandria().nodes) == 64'
+
+      - name: Upload distributions
+        uses: actions/upload-artifact@v7
+        with:
+          name: distributions
+          path: dist/
+          if-no-files-found: error
+
+  testpypi:
+    name: Publish and verify on TestPyPI
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/project/gerrychain/
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      RELEASE_VERSION: ${{ needs.build.outputs.version }}
+    steps:
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          version: "0.12.1"
+
+      - name: Install Python
+        run: uv python install 3.13
+
+      - name: Download distributions
+        uses: actions/download-artifact@v8
+        with:
+          name: distributions
+          path: dist/
+
+      - name: Publish to TestPyPI
+        run: >-
+          uv publish --trusted-publishing always
+          --publish-url https://test.pypi.org/legacy/
+          --check-url https://test.pypi.org/simple/
+          dist/*
+
+      - name: Install dependencies from PyPI
+        run: |
+          uv venv --python 3.13 "$RUNNER_TEMP/testpypi-venv"
+          uv pip install --python "$RUNNER_TEMP/testpypi-venv/bin/python" dist/*.whl
+
+      - name: Install wheel from TestPyPI
+        run: |
+          for attempt in {1..10}; do
+            if uv pip install \
+              --python "$RUNNER_TEMP/testpypi-venv/bin/python" \
+              --reinstall-package gerrychain \
+              --no-deps \
+              --default-index https://test.pypi.org/simple/ \
+              "gerrychain==$RELEASE_VERSION"; then
+              exit 0
+            fi
+            if [[ "$attempt" == 10 ]]; then
+              echo "TestPyPI did not make gerrychain $RELEASE_VERSION available in time."
+              exit 1
+            fi
+            sleep 15
+          done
+
+      - name: Smoke test TestPyPI installation
+        run: >-
+          "$RUNNER_TEMP/testpypi-venv/bin/python" -c
+          'import os; from importlib.metadata import version;
+          from gerrychain.examples import gerrymandria;
+          assert version("gerrychain") == os.environ["RELEASE_VERSION"];
+          assert len(gerrymandria().nodes) == 64'
+
+  pypi:
+    name: Publish to PyPI
+    needs: [build, testpypi]
+    if: ${{ inputs.upload_to == 'pypi' }}
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/gerrychain/
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          version: "0.12.1"
+
+      - name: Download distributions
+        uses: actions/download-artifact@v8
+        with:
+          name: distributions
+          path: dist/
+
+      - name: Publish to PyPI
+        run: >-
+          uv publish --trusted-publishing always
+          --check-url https://pypi.org/simple/
+          dist/*
