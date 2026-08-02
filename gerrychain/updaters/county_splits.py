@@ -16,8 +16,8 @@ class CountySplit(Enum):
 
     Attributes:
         NOT_SPLIT (CountySplit): The county is not split.
-        NEW_SPLIT (CountySplit): The county is split in the current partition.
-        OLD_SPLIT (CountySplit): The county is split in the parent partition.
+        NEW_SPLIT (CountySplit): The county became split after the initial partition.
+        OLD_SPLIT (CountySplit): The county has remained split since the initial partition.
     """
 
     NOT_SPLIT = 0
@@ -71,7 +71,8 @@ def compute_county_splits(
     Returns:
         dict[Hashable, CountyInfo]: Information on how counties changed between the parent and
             child partitions. If there is no parent partition, only ``OLD_SPLIT`` and
-            ``NOT_SPLIT`` are used.
+            ``NOT_SPLIT`` are used. Split history is carried only through the parent, so a county
+            that stops being split and later becomes split again is reported as ``NEW_SPLIT``.
     """
 
     # Create the initial county data containers.

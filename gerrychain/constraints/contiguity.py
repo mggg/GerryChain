@@ -54,6 +54,8 @@ def _are_reachable(
 def single_flip_contiguous(partition: Partition) -> bool:
     """Check if swapping the given node from its old assignment disconnects the old assignment.
 
+    This optimized check assumes that the parent partition is contiguous and that the proposal
+    changes one node. Use :func:`contiguous` when either assumption does not hold.
 
     Args:
         partition (Partition): The proposed next Partition
