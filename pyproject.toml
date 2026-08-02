@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=80.0"]
+requires = ["setuptools>=83.0.0"]
 build-backend = "setuptools.build_meta"
 
 
@@ -24,14 +24,14 @@ requires-python = ">=3.11"
 license = "BSD-3-Clause"
 
 dependencies = [
-    "geopandas>=1.1.1",
+    "geopandas>=1.1.4",
     "networkx>=3.6.1",
-    "numpy>=2.3.5",
-    "pandas>=2.3.3",
-    "rustworkx>=0.17.1",
-    "scipy>=1.16.3",
+    "numpy>=2.4.6",
+    "pandas>=3.0.5",
+    "rustworkx>=0.18.1",
+    "scipy>=1.17.1",
     "shapely>=2.1.2",
-    "tqdm>=4.67.1",
+    "tqdm>=4.70.0",
 ]
 
 [project.urls]
@@ -98,40 +98,40 @@ reportUnnecessaryTypeIgnoreComment = "error"
 [dependency-groups]
 dev = [
   # Linters, formatters, type checkers
-  "myst-parser>=4.0.1",
+  "myst-parser>=5.1.0",
   # Iteractive kernel
-  "ipykernel>=6.30.1",
-  "ipywidgets>=8.1.7",
+  "ipykernel>=7.3.0",
+  "ipywidgets>=8.1.8",
   # Plotting
-  "matplotlib>=3.10.7",
+  "matplotlib>=3.11.1",
   # Testing
-  "pytest>=8.4.2",
-  "pytest-cov>=6.3.0",
+  "pytest>=9.1.1",
+  "pytest-cov>=7.1.0",
   # Other
-  "pre-commit>=4.3.0",
-  "ruff>=0.14.9",
-  "ty>=0.0.18",
-  "pyright>=1.1.402",
+  "pre-commit>=4.6.1",
+  "ruff>=0.16.1",
+  "ty>=0.0.65",
+  "pyright>=1.1.411",
 ]
 docs = [
-  "furo>=2024.8.6",
+  "furo>=2025.12.19",
   "myst-nb>=1.4.0",
-  "sphinx>=8.2.3",
-  "sphinx-autobuild>=2024.10.3",
+  "sphinx>=9.0.4",
+  "sphinx-autobuild>=2025.8.25",
   "sphinx-copybutton>=0.5.2",
-  "sphinx-design>=0.6.1",
+  "sphinx-design>=0.7.0",
 ]
 # Only what the executable docs examples need beyond the package itself (see
 # tests/test_docs_snippets.py, the notebook scripts, and the docs-test /
 # docs-cache-notebooks Makefile targets).
 docs-exec = [
-  "pytest>=8.4.2",
-  "matplotlib>=3.10.7",
-  "pillow>=11.0.0",
-  "ipython>=8.30.0",
-  "ipykernel>=6.30.1",
-  "nbclient>=0.10.0",
-  "nbformat>=5.10.0",
+  "pytest>=9.1.1",
+  "matplotlib>=3.11.1",
+  "pillow>=12.3.0",
+  "ipython>=9.16.0",
+  "ipykernel>=7.3.0",
+  "nbclient>=0.11.0",
+  "nbformat>=5.10.4",
 ]
 
 

@@ -283,7 +283,7 @@ def test_can_ignore_errors_while_making_graph(shapefile: str):
 def test_data_and_geometry(gdf_with_data: gp.GeoDataFrame):
     df = gdf_with_data
     graph = Graph.from_geodataframe(df, cols_to_add=["data", "data2"])
-    assert graph.geometry is df.geometry
+    assert graph.geometry.equals(df.geometry)
     # graph.add_data(df[["data"]])
     assert (graph.data["data"] == df["data"]).all()
     # graph.add_data(df[["data2"]])
