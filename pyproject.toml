@@ -14,7 +14,7 @@ packages = { find = { include = ["gerrychain*"], exclude = ["tests*"] } }
 
 [project]
 name = "gerrychain"
-version = "1.0.0rc2"
+version = "1.0.0"
 description = "GerryChain is a Python library for building ensembles of districting plans using Markov Chain Monte Carlo methods."
 readme = "README.md"
 authors = [
