@@ -105,6 +105,9 @@ dev = [
   # Plotting
   "matplotlib>=3.11.1",
   # Testing
+  "jupyter-cache>=1.0.1",
+  "nbclient>=0.11.0",
+  "nbformat>=5.10.4",
   "pytest>=9.1.1",
   "pytest-cov>=7.1.0",
   # Other

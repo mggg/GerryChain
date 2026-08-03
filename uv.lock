@@ -672,8 +672,11 @@ dependencies = [
 dev = [
     { name = "ipykernel" },
     { name = "ipywidgets" },
+    { name = "jupyter-cache" },
     { name = "matplotlib" },
     { name = "myst-parser" },
+    { name = "nbclient" },
+    { name = "nbformat" },
     { name = "pre-commit" },
     { name = "pyright" },
     { name = "pytest" },
@@ -716,8 +719,11 @@ requires-dist = [
 dev = [
     { name = "ipykernel", specifier = ">=7.3.0" },
     { name = "ipywidgets", specifier = ">=8.1.8" },
+    { name = "jupyter-cache", specifier = ">=1.0.1" },
     { name = "matplotlib", specifier = ">=3.11.1" },
     { name = "myst-parser", specifier = ">=5.1.0" },
+    { name = "nbclient", specifier = ">=0.11.0" },
+    { name = "nbformat", specifier = ">=5.10.4" },
     { name = "pre-commit", specifier = ">=4.6.1" },
     { name = "pyright", specifier = ">=1.1.411" },
     { name = "pytest", specifier = ">=9.1.1" },
