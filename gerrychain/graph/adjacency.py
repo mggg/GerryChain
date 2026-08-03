@@ -10,12 +10,17 @@ unspecified because of import issues.
 """
 
 import warnings
-from typing import Dict
+from collections.abc import Hashable, Iterable, Iterator
+from typing import cast
 
-from geopandas import GeoDataFrame
+from geopandas import GeoDataFrame, GeoSeries
+from shapely.geometry.base import BaseGeometry
+from shapely.strtree import STRtree
+
+Adjacency = dict[Hashable, dict[Hashable, dict[str, float]]]
 
 
-def neighbors(df: GeoDataFrame, adjacency: str) -> Dict:
+def neighbors(df: GeoDataFrame, adjacency: str) -> Adjacency:
     if adjacency not in ("rook", "queen"):
         raise ValueError(
             "The adjacency parameter provided is not supported. "
@@ -25,16 +30,15 @@ def neighbors(df: GeoDataFrame, adjacency: str) -> Dict:
     return adjacencies[adjacency](df.geometry)
 
 
-def str_tree(geometries):
-    """
-    Add ids to geometries and create a STR tree for spatial indexing.
-    Use this for all spatial operations!
+def str_tree(geometries: GeoSeries) -> STRtree:
+    """Creates a STR tree for spatial indexing. Useful for spatial operations.
 
-    :param geometries: A Shapely geometry object to construct the tree from.
-    :type geometries: shapely.geometry.BaseGeometry
+    Args:
+        geometries (GeoSeries): A Shapely geometry object to construct the tree
+            from.
 
-    :returns: A Sort-Tile-Recursive tree for spatial indexing.
-    :rtype: shapely.strtree.STRtree
+    Returns:
+        STRtree: A Sort-Tile-Recursive tree for spatial indexing.
     """
     from shapely.strtree import STRtree
 
@@ -45,81 +49,94 @@ def str_tree(geometries):
     return tree
 
 
-def neighboring_geometries(geometries, tree=None):
-    """
-    Generator yielding tuples of the form (id, (ids of neighbors)).
+def neighboring_geometries(
+    geometries: GeoSeries, tree: STRtree | None = None
+) -> Iterator[tuple[Hashable, tuple[Hashable, ...]]]:
+    """Generator yielding tuples of the form (id, (ids of neighbors)).
 
-    :param geometries: A Shapeley geometry object to construct the tree from
-    :type geometries: shapely.geometry.BaseGeometry
-    :param tree: A Sort-Tile-Recursive tree for spatial indexing. Default is None.
-    :type tree: shapely.strtree.STRtree, optional
+    Args:
+        geometries (GeoSeries): A Shapeley geometry object to construct the
+            tree from
+        tree (STRtree | None, optional): A Sort-Tile-Recursive tree for spatial indexing.
+            Defaults to None.
 
-    :returns: A generator yielding tuples of the form (id, (ids of neighbors))
-    :rtype: Generator
+    Returns:
+        Iterator[tuple[Hashable, tuple[Hashable, ...]]]: Geometry IDs and their neighboring IDs.
     """
     if tree is None:
         tree = str_tree(geometries)
 
     for geometry_id, geometry in geometries.items():
+        geometry = cast(BaseGeometry, geometry)
         possible = tree.query(geometry)
         actual = tuple(
-            geometries.index[p]
+            cast(Hashable, geometries.index[p])
             for p in possible
             if (not geometries.iloc[p].is_empty) and geometries.index[p] != geometry_id
         )
         yield (geometry_id, actual)
 
 
-def intersections_with_neighbors(geometries):
-    """
-    Generator yielding tuples of the form (id, {neighbor_id: intersection}).
-    The intersections may be empty!
+def intersections_with_neighbors(
+    geometries: GeoSeries,
+) -> Iterator[tuple[Hashable, dict[Hashable, BaseGeometry]]]:
+    """Generator yielding tuples of the form (id, {neighbor_id: intersection}).
 
-    :param geometries: A Shapeley geometry object.
-    :type geometries: shapely.geometry.BaseGeometry
+    Note:
+        The intersections may be empty!
 
-    :returns: A generator yielding tuples of the form (id, {neighbor_id: intersection})
-    :rtype: Generator
+    Args:
+        geometries (GeoSeries): A Shapeley geometry object.
+
+    Returns:
+        Iterator[tuple[Hashable, dict[Hashable, BaseGeometry]]]: Geometry IDs mapped to their
+            intersections with neighboring geometries.
     """
     for i, neighbors in neighboring_geometries(geometries):
-        intersections = {j: geometries[i].intersection(geometries[j]) for j in neighbors}
+        geometry = cast(BaseGeometry, geometries[i])
+        intersections = {
+            j: geometry.intersection(cast(BaseGeometry, geometries[j])) for j in neighbors
+        }
         yield (i, intersections)
 
 
-def warn_for_overlaps(intersection_pairs):
-    """
-    :param intersection_pairs: An iterable of tuples of
-        the form (id, {neighbor_id: intersection})
-    :type intersection_pairs: Iterable
+def warn_for_overlaps(
+    intersection_pairs: Iterable[tuple[Hashable, dict[Hashable, BaseGeometry]]],
+) -> Iterator[tuple[Hashable, dict[Hashable, BaseGeometry]]]:
+    """Return A generator yielding tuples of intersection pairs.
 
-    :returns: A generator yielding tuples of intersection pairs
-    :rtype: Generator
+    Args:
+        intersection_pairs (Iterable[tuple[Hashable, dict[Hashable, BaseGeometry]]]): Geometry IDs
+            mapped to their intersections with neighboring geometries.
 
-    :raises: UserWarning if there are overlaps among the given polygons
+    Returns:
+        Iterator[tuple[Hashable, dict[Hashable, BaseGeometry]]]: The original intersection pairs.
+
+    Raises:
+        UserWarning: if there are overlaps among the given polygons
     """
-    overlaps = set()
+    overlaps: set[frozenset[Hashable]] = set()
     for i, intersections in intersection_pairs:
         overlaps.update(
             set(
-                tuple(sorted([i, j]))
+                frozenset((i, j))
                 for j, intersection in intersections.items()
                 if intersection.area > 0
             )
         )
         yield (i, intersections)
     if len(overlaps) > 0:
-        warnings.warn(
-            "Found overlaps among the given polygons. Indices of overlaps: {}".format(overlaps)
-        )
+        warnings.warn(f"Found overlaps among the given polygons. Indices of overlaps: {overlaps}")
 
 
-def queen(geometries):
-    """
-    :param geometries: A Shapeley geometry object.
-    :type geometries: shapely.geometry.BaseGeometry
+def queen(geometries: GeoSeries) -> Adjacency:
+    """Return queen adjacency dictionary for the given collection of polygons.
 
-    :returns: The queen adjacency dictionary for the given collection of polygons.
-    :rtype: Dict
+    Args:
+        geometries (GeoSeries): A Shapeley geometry object.
+
+    Returns:
+        Adjacency: The queen adjacency dictionary for the given collection of polygons.
     """
     intersection_pairs = warn_for_overlaps(intersections_with_neighbors(geometries))
 
@@ -133,13 +150,14 @@ def queen(geometries):
     }
 
 
-def rook(geometries):
-    """
-    :param geometries: A Shapeley geometry object.
-    :type geometries: shapely.geometry.BaseGeometry
+def rook(geometries: GeoSeries) -> Adjacency:
+    """Return rook adjacency dictionary for the given collection of polygons.
 
-    :returns: The rook adjacency dictionary for the given collection of polygons.
-    :rtype: Dict
+    Args:
+        geometries (GeoSeries): A Shapeley geometry object.
+
+    Returns:
+        Adjacency: The rook adjacency dictionary for the given collection of polygons.
     """
     return {
         i: {j: data for j, data in neighbors.items() if data["shared_perim"] > 0}

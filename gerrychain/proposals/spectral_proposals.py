@@ -1,32 +1,51 @@
 import random
-from typing import Dict, Optional
+from collections.abc import Hashable, Sequence
+from functools import partial
+from typing import cast
 
 from numpy import linalg as LA
 
-from ..graph import Graph
+from .._deprecated import deprecated_parameters
+from .._rng import make_rng
+from ..graph import FrozenGraph, Graph
 from ..partition import Partition
+from ..proposals import ProposalFn
 
 
 # frm: only ever used in this file - but maybe it is used externally?
-def spectral_cut(subgraph: Graph, part_labels: Dict, weight_type: str, lap_type: str) -> Dict:
+@deprecated_parameters(renamed={"graph": "subgraph"})
+def spectral_cut(
+    subgraph: Graph | FrozenGraph,
+    part_labels: Sequence[Hashable],
+    weight_type: str | None,
+    lap_type: str,
+    *,
+    rng: random.Random | int | None = None,
+) -> dict[Hashable, Hashable]:
+    """Spectral cut function.
+
+    Original templates and work from Daryl DeFord:
+
+        https://github.com/drdeford/GerryChain-Templates
+
+    New preprint on the subject:
+
+        https://arxiv.org/html/2506.13982v1
+
+    Args:
+        subgraph (Graph): The subgraph to be partitioned.
+        part_labels (Sequence[Hashable]): The current partition of the subgraph.
+        weight_type (str | None): The type of weight to be used in the Laplacian.
+        lap_type (str): The type of Laplacian to be used.
+        rng (random.Random | int | None, optional): Source of randomness. Pass a shared
+            ``Random`` for repeated standalone calls; an integer restarts the stream each call.
+
+    Returns:
+        dict[Hashable, Hashable]: A dictionary assigning nodes of the subgraph to their new
+            districts.
     """
-    Spectral cut function.
 
-    Uses the signs of the elements in the Fiedler vector of a subgraph to
-    partition into two components.
-
-    :param subgraph: The subgraph to be partitioned.
-    :type subgraph: Graph
-    :param part_labels: The current partition of the subgraph.
-    :type part_labels: Dict
-    :param weight_type: The type of weight to be used in the Laplacian.
-    :type weight_type: str
-    :param lap_type: The type of Laplacian to be used.
-    :type lap_type: str
-
-    :returns: A dictionary assigning nodes of the subgraph to their new districts.
-    :rtype: Dict
-    """
+    rng = make_rng(rng)
 
     # This routine operates on subgraphs, which is important because the node_ids
     # in a subgraph are different from the node_ids of the parent graph, so
@@ -39,7 +58,7 @@ def spectral_cut(subgraph: Graph, part_labels: Dict, weight_type: str, lap_type:
     if weight_type == "random":
         # assign a random weight to each edge in the subgraph
         for edge_id in subgraph.edge_indices:
-            subgraph.edge_data(edge_id)["weight"] = random.random()
+            subgraph.edge_data(edge_id)["weight"] = rng.random()
 
     # Compute the desired laplacian matrix (convert from sparse to dense)
     if lap_type == "normalized":
@@ -47,13 +66,8 @@ def spectral_cut(subgraph: Graph, part_labels: Dict, weight_type: str, lap_type:
     else:
         laplacian_matrix = (subgraph.laplacian_matrix()).todense()
 
-    # frm TODO: Documentation: Add a better explanation for why eigenvectors are useful
-    #           for determining flips.  Perhaps just a URL to an article
-    #           somewhere...
+    # Note:
     #
-    # I have added comments to describe the nuts and bolts of what is happening,
-    # but the overall rationale for this code is missing - and it should be here...
-
     # LA.eigh(laplacian_matrix) call invokes the eigh() function from
     # the Numpy LinAlg module which:
     #
@@ -63,6 +77,7 @@ def spectral_cut(subgraph: Graph, part_labels: Dict, weight_type: str, lap_type:
     # In our case we have a symmetric matrix, so it returns two
     # objects - a 1-D numpy array containing the eigenvalues (which we don't
     # care about) and a 2-D numpy square matrix of the eigenvectors.
+
     _, numpy_eigen_vectors = LA.eigh(laplacian_matrix)
 
     # Extract an eigenvector as a numpy array
@@ -93,44 +108,45 @@ def spectral_cut(subgraph: Graph, part_labels: Dict, weight_type: str, lap_type:
 # frm: only ever used in this file - but maybe it is used externally?
 def spectral_recom(
     partition: Partition,
-    weight_type: Optional[str] = None,
+    weight_type: str | None = None,
     lap_type: str = "normalized",
+    *,
+    rng: random.Random | int | None = None,
 ) -> Partition:
     """Spectral ReCom proposal.
 
-    Uses spectral clustering to bipartition a subgraph of the original graph
-    formed by merging the nodes corresponding to two adjacent districts.
+    Uses spectral clustering to bipartition a subgraph of the original graph formed by merging the
+    nodes corresponding to two adjacent districts.
 
     Example usage::
 
-        from functools import partial
-        from gerrychain import MarkovChain
-        from gerrychain.proposals import recom
+        from functools import partial from gerrychain import MarkovChain from gerrychain.proposals
+        import recom
 
-        # ...define constraints, accept, partition, total_steps here...
+        # ...define constraints, acceptance_fn, partition, total_steps here...
 
+        proposal_fn = partial( spectral_recom, weight_type=None, lap_type="normalized" )
 
-        proposal = partial(
-            spectral_recom, weight_type=None, lap_type="normalized"
-        )
+        chain = MarkovChain(proposal_fn, constraints, acceptance_fn, partition, total_steps)
 
-        chain = MarkovChain(proposal, constraints, accept, partition, total_steps)
+    Args:
+        partition (Partition): The initial partition.
+        weight_type (str | None, optional): The type of weight to be used in the Laplacian.
+            Default is None.
+        lap_type (str, optional): The type of Laplacian to be used. Default is "normalized".
+        rng (random.Random | int | None, optional): Source of randomness. Pass a shared
+            ``Random`` for repeated standalone calls; an integer restarts the stream each call.
 
-    :param partition: The initial partition.
-    :type partition: Partition
-    :param weight_type: The type of weight to be used in the Laplacian. Default is None.
-    :type weight_type: Optional[str], optional
-    :param lap_type: The type of Laplacian to be used. Default is "normalized".
-    :type lap_type: str, optional
-
-    :returns: The new partition resulting from the spectral ReCom algorithm.
-    :rtype: Partition
+    Returns:
+        Partition: The new partition resulting from the spectral ReCom algorithm.
     """
+
+    rng = make_rng(rng)
 
     # Select two adjacent parts (districts) at random by first selecting
     # a cut_edge at random and then figuring out the parts (districts)
     # associated with the edge.
-    cut_edge = random.choice(tuple(partition["cut_edges"]))
+    cut_edge = rng.choice(tuple(partition["cut_edges"]))
     parts_to_merge = (
         partition.assignment.mapping[cut_edge[0]],
         partition.assignment.mapping[cut_edge[1]],
@@ -140,7 +156,20 @@ def spectral_recom(
 
     # Cut the set of all nodes from parts_to_merge into two hopefully new parts (districts)
     flips = spectral_cut(
-        partition.graph.subgraph(subgraph_nodes), parts_to_merge, weight_type, lap_type
+        partition.graph.subgraph(subgraph_nodes),
+        parts_to_merge,
+        weight_type,
+        lap_type,
+        rng=rng,
     )
 
     return partition.flip(flips)
+
+
+# Define a ProposalFn version to make purpose of the function clear
+def build_spectral_recom_proposal_fn(
+    weight_type: str | None = None,
+    lap_type: str = "normalized",
+) -> ProposalFn:
+    proposal_fn = partial(spectral_recom, weight_type=weight_type, lap_type=lap_type)
+    return cast(ProposalFn, proposal_fn)

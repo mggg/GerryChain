@@ -1,21 +1,21 @@
 import cProfile
 import sys
-from functools import partial
+from collections.abc import Callable
 
 from gerrychain import (
     Election,
     GeographicPartition,
     Graph,
     MarkovChain,
+    Partition,
     accept,
     constraints,
     updaters,
 )
-from gerrychain.proposals import recom
+from gerrychain.proposals import build_recom_proposal_fn
 
 
 def main():
-
     graph = Graph.from_json("./PA_VTDs.json")
 
     elections = [
@@ -28,7 +28,9 @@ def main():
 
     # Population updater, for computing how close to equality the district
     # populations are. "TOTPOP" is the population column from our shapefile.
-    my_updaters = {"population": updaters.Tally("TOT_POP", alias="population")}
+    my_updaters: dict[str, Callable[[Partition], object]] = {
+        "population": updaters.Tally("TOT_POP", alias="population")
+    }
 
     # Election updaters, for computing election results using the vote totals
     # from our shapefile.
@@ -46,17 +48,14 @@ def main():
 
     ideal_population = sum(initial_partition["population"].values()) / len(initial_partition)
 
-    # We use functools.partial to bind the extra parameters (pop_col, pop_target, epsilon, node_repeats)
-    # of the recom proposal.
-    proposal = partial(
-        recom,
+    proposal = build_recom_proposal_fn(
         pop_col="TOT_POP",
         pop_target=ideal_population,
         epsilon=0.02,
-        node_repeats=2,
+        node_repeats=0,
     )
 
-    def cut_edges_length(p):
+    def cut_edges_length(p: Partition) -> int:
         return len(p["cut_edges"])
 
     compactness_bound = constraints.UpperBound(
@@ -68,10 +67,10 @@ def main():
     print("About to call MarkovChain", file=sys.stderr)
 
     chain = MarkovChain(
-        proposal=proposal,
+        proposal_fn=proposal,
         constraints=[pop_constraint, compactness_bound],
-        accept=accept.always_accept,
-        initial_state=initial_partition,
+        acceptance_fn=accept.always_accept,
+        initial_partition=initial_partition,
         total_steps=1000,
     )
 

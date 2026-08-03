@@ -1,5 +1,86 @@
+"""The :class:`Partition` - an assignment of graph nodes to districts, plus cached updaters.
+
+A :class:`Partition` is GerryChain's central data structure. It represents a single districting
+plan: an assignment of every node of a :class:`~gerrychain.Graph` to a *part* - one district of the
+plan. (In code these are called *parts*, short for "part of a partition".) It also carries a set
+of *updaters* - named functions that compute derived quantities about the plan (cut edges, district
+populations, perimeters, election results, ...) on demand.
+
+A Partition is also the *state* of GerryChain's Markov chain. Each step of a chain takes the current
+Partition and produces a new child Partition that differs by only a small set of node reassignments
+("flips"); see :meth:`Partition.flip` and the ``parent`` attribute. Most of the design of this class
+is shaped by that use case, so the following choices are worth understanding.
+
+Assignment vs. parts (why keep both?):
+    The same plan can be viewed two ways, and different code wants different views:
+
+    * ``assignment`` (an :class:`~gerrychain.partition.assignment.Assignment`) is the
+      node -> part map. It is the source of truth and is cheap to update flip-by-flip.
+    * ``parts`` is the inverse, part -> set-of-nodes, view. Many updaters and the recombination
+      proposals need to iterate the nodes of a part, for which the inverse view is far more
+      convenient and efficient than scanning the entire assignment.
+
+    Keeping both means neither direction of lookup has to be recomputed from the other on every use;
+    the ``Assignment`` object keeps the two consistent as flips are applied.
+
+Tracking changes (flips and flows):
+    Each child Partition records the ``flips`` that produced it (the nodes whose part differs from
+    the parent) and derives from them the node and edge *flows*: the per-part sets of nodes and
+    edges that entered or left. Those flows are what let the incremental updaters patch the parent's
+    cached values instead of recomputing from scratch. See :mod:`gerrychain.updaters.flows`.
+
+FrozenGraph:
+    The underlying graph does not change over the course of a chain - only the assignment of nodes
+    to districts does. The graph is therefore wrapped in a
+    :class:`~gerrychain.graph.graph.FrozenGraph`, an immutable view created once and shared by every
+    Partition in the chain. Freezing the graph buys two things:
+
+    * it lets per-graph results be cached safely (e.g. ``FrozenGraph.neighbors`` /
+      ``FrozenGraph.degree`` are memoized), since the graph can never change under the cache; and
+    * it removes a class of cache-invalidation bugs that a shared, mutable graph could cause if it
+      were edited mid-chain.
+
+    The expensive operations a Partition tries to avoid or amortize are: converting a NetworkX graph
+    to RustworkX, constructing per-district subgraphs (done lazily and cached via ``SubgraphView``),
+    and recomputing updaters.
+
+Updaters:
+    Updater values are computed lazily and cached the first time they are requested via
+    ``partition[name]`` (see :meth:`__getitem__`). Many updaters are additionally *incremental*
+    meaning that they start from the parent partition's cached value and patch only what changed,
+    using the node/edge "flows" between parent and child. See :mod:`gerrychain.updaters.flows`.
+
+Inside vs. outside a Markov chain:
+    A Partition is most useful as chain state, but it is also handy for post-hoc analysis of a fixed
+    plan (computing its cut edges, population deviation, partisan metrics, etc.). The distinguishing
+    feature is the ``parent``: a chain produces a lineage of partitions, each with a parent, which
+    is exactly what the incremental/flow updaters exploit. A standalone Partition built directly
+    from a graph and an assignment has ``parent is None``; its flow-based updaters then simply fall
+    back to computing everything from scratch (their "initializer" path). The same updaters
+    therefore work in both settings.
+
+Node ids inside a chain (RustworkX vs. NetworkX labels):
+    When a Graph is converted to RustworkX to run a chain, its nodes are relabeled with contiguous
+    internal integer ids, and a Partition's ``assignment`` is keyed by those *internal* ids, not the
+    original NetworkX node labels. Code that inspects a post-chain assignment, or maps chain results
+    back onto the original graph or its geometry, must therefore translate the ids back. The Graph
+    carries that mapping: see :meth:`Graph.original_nx_node_id_for_internal_node_id` (and the
+    set/list helpers :meth:`Graph.original_nx_node_ids_for_set` /
+    :meth:`Graph.original_nx_node_ids_for_list`), and the inverse
+    :meth:`Graph.internal_node_id_for_original_nx_node_id`.
+
+Note that the mapping / ``[]`` interface of a Partition is over its *updaters*
+(``partition["cut_edges"]``), not its nodes; the node -> part data lives in
+``partition.assignment``. See :meth:`keys`.
+"""
+
+from __future__ import annotations
+
 import json
-from typing import Any, Callable, Dict, Optional, Tuple
+import os
+import random
+from collections.abc import Callable, Hashable, KeysView, Mapping
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 # frm:  Only used in _first_time() inside __init__() to allow for creating
 #       a Partition from a NetworkX Graph object:
@@ -7,43 +88,68 @@ from typing import Any, Callable, Dict, Optional, Tuple
 #           elif isinstance(graph, networkx.Graph):
 #               graph = Graph.from_networkx(graph)
 #               self.graph = FrozenGraph(graph)
+import geopandas
 import networkx
+import numpy
 
+from gerrychain._deprecated import adapt_legacy_callable, deprecated_parameters
 from gerrychain.graph.graph import FrozenGraph, Graph
 
-from ..tree import recursive_tree_part
+from .._rng import make_rng
 from ..updaters import compute_edge_flows, cut_edges, flows_from_changes
-from .assignment import get_assignment
+from .assignment import Assignment, get_assignment
+from .initial_partition_generators import PartitionFn, recursive_tree_part
 from .subgraphs import SubgraphView
 
-# frm TODO: Documentation:     Add documentation about how this all works.  For instance,
-#               what is computationally expensive and how does a FrozenGraph
-#               help?  Why do we need both assignments and parts?
-#
-#               Since a Partition is intimately tied up with how the Markov Chain
-#               does its magic, it would make sense to talk about that a bit...
-#
-#               For instance, is there any reason to use a Partition object
-#               except in a Markov Chain?  I suppose they are useful for post
-#               Markov Chain analysis - but if so, then it would be nice to
-#               know what functionality is tuned for the Markov Chain and what
-#               functionality / data is tuned for post Markov Chain analysis.
+if TYPE_CHECKING:
+    import matplotlib.axes
+
+NodeT = TypeVar("NodeT", bound=Hashable)
+PartT = TypeVar("PartT", bound=Hashable)
 
 
 class Partition:
     """
-    Partition represents a partition of the nodes of the graph. It will perform
-    the first layer of computations at each step in the Markov chain - basic
-    aggregations and calculations that we want to optimize.
+    The Partition class represents a partition of the nodes of the
+    graph into districts (parts).  Every iteration of MarkovChain
+    creates a new Partition object from the previous Partition object
+    by performing the set of flips (changes in association of a node
+    to a district (perhaps confusingly called a "part").
 
-    :ivar graph: The underlying graph.
-    :type graph: :class:`~gerrychain.Graph`
-    :ivar assignment: Maps node IDs to district IDs.
-    :type assignment: :class:`~gerrychain.assignment.Assignment`
-    :ivar parts: Maps district IDs to the set of nodes in that district.
-    :type parts: Dict
-    :ivar subgraphs: Maps district IDs to the induced subgraph of that district.
-    :type subgraphs: Dict
+    Perhaps the primary class attribute is "assignment" which
+    stores the set of nodes in each district ("part").
+
+    Note that the "parts" class attribute is actually a function
+    that returns the "parts" of the assignment class attribute.
+
+    A Partition object also provides access (via __getitem__()) to
+    the values computed by updater functions (see comment on updaters
+    in the file updaters/flows.py).
+
+    Note that by default the constructor for a Partition object will
+    convert the underlying graph in a Graph object from NetworkX to
+    RustworkX - because RustworkX is so much faster than NetworkX.
+    This is done in the _first_time() function below.
+
+    It is perhaps worth noting that when we convert the underlying
+    graph object from NX to RX, we create a mapping dict
+    that records the "original" NX node_ids and the new RX
+    node_ids.  It is stored as a class attribute of the
+    new Graph object: Graph.nx_to_rx_node_id_map.  We use this
+    mapping to update the "assignment" class to use the new
+    RX node_ids.
+
+    Lastly the "subgraphs" class attribute stores a subgraph for each
+    district ("part").  Note that this is done for efficiency reasons
+    because creating a subgraph is expensive - so subgraphs are created
+    lazily (on demand) and subsequently cached.
+
+    Attributes:
+        graph (Graph): The underlying graph.
+        assignment (Assignment): Maps node IDs to district IDs.
+        parts (dict[Hashable, frozenset[Hashable]]): Maps district IDs to the set of nodes in that
+            district.
+        subgraphs (SubgraphView): Maps district IDs to the induced subgraph of that district.
     """
 
     __slots__ = (
@@ -56,26 +162,48 @@ class Partition:
         "flows",
         "edge_flows",
         "_cache",
+        "_assignment_vector",
     )
 
-    default_updaters = {"cut_edges": cut_edges}
+    graph: FrozenGraph
+    assignment: Assignment
+    updaters: dict[str, Callable[[Partition], Any]]
+    parent: Partition | None
+    flips: dict[Hashable, Hashable] | None
+    flows: dict[Hashable, dict[str, set[Hashable]]] | None
+    edge_flows: dict[Hashable, dict[str, set[tuple[int, int]]]] | None
+    _cache: dict[str, Any]
+    _assignment_vector: numpy.ndarray | None
+
+    default_updaters: dict[str, Callable[[Partition], Any]] = {"cut_edges": cut_edges}
 
     def __init__(
         self,
-        graph=None,
-        assignment=None,
-        updaters=None,
-        parent=None,
-        flips=None,
-        use_default_updaters=True,
-    ):
-        """
-        :param graph: Underlying graph.
-        :param assignment: Dictionary assigning nodes to districts.
-        :param updaters: Dictionary of functions to track data about the partition.
-            The keys are stored as attributes on the partition class,
-            which the functions compute.
-        :param use_default_updaters: If `False`, do not include default updaters.
+        graph: Graph
+        | FrozenGraph
+        | networkx.Graph[NodeT, dict[str, Any], dict[str, Any]]
+        | None = None,
+        assignment: Mapping[NodeT, PartT] | Assignment | str | None = None,
+        updaters: Mapping[str, Callable[[Partition], Any]] | None = None,
+        parent: Partition | None = None,
+        flips: Mapping[NodeT, PartT] | None = None,
+        use_default_updaters: bool = True,
+    ) -> None:
+        """Initialize a Partition instance.
+
+        Args:
+            graph (Graph | FrozenGraph | networkx.Graph | None, optional): Underlying graph.
+                Required for a root partition. Defaults to ``None``.
+            assignment (Mapping[Hashable, Hashable] | Assignment | str | None, optional): Node to
+                district assignment, or a node attribute containing it. Defaults to ``None``.
+            updaters (Mapping[str, Callable[[Partition], Any]] | None, optional): Named updater
+                functions. Their result types vary by updater. Defaults to ``None``.
+            parent (Partition | None, optional): Parent partition for a child. Defaults to
+                ``None``.
+            flips (Mapping[Hashable, Hashable] | None, optional): Reassignments relative to the
+                parent. Defaults to ``None``.
+            use_default_updaters (bool, optional): Whether to include default updaters. Defaults
+                to ``True``.
         """
 
         if parent is None:
@@ -84,64 +212,80 @@ class Partition:
 
             self._first_time(graph, assignment, updaters, use_default_updaters)
         else:
+            if flips is None:
+                raise TypeError("A child partition requires flips")
             self._from_parent(parent, flips)
 
-        self._cache = dict()
+        self._cache = {}
+        self._assignment_vector = None
 
-        # frm:   SubgraphView provides cached access to subgraphs for each of the
-        #       partition's districts.  It is important that we asign subgraphs AFTER
-        #       we have established what nodes belong to which parts (districts).  In
-        #       the case when the parent is None, the assignments are explicitly provided,
-        #       and in the case when there is a parent, the _from_parent() logic processes
-        #       the flips to update the assignments.
+        # SubgraphView provides cached access to subgraphs for each of the
+        # partition's districts.  It is important that we asign subgraphs AFTER
+        # we have established what nodes belong to which parts (districts).  In
+        # the case when the parent is None, the assignments are explicitly provided,
+        # and in the case when there is a parent, the _from_parent() logic processes
+        # the flips to update the assignments.
 
         self.subgraphs = SubgraphView(self.graph, self.parts)
 
     @classmethod
+    @deprecated_parameters(
+        renamed={"method": "partition_fn"},
+        ignored={
+            "flips": "This argument did not affect random-assignment generation in GerryChain 0.3.2."
+        },
+    )
     def from_random_assignment(
         cls,
         graph: Graph,
         n_parts: int,
         epsilon: float,
         pop_col: str,
-        updaters: Optional[Dict[str, Callable]] = None,
+        updaters: Mapping[str, Callable[[Partition], Any]] | None = None,
         use_default_updaters: bool = True,
-        method: Callable = recursive_tree_part,
-    ) -> "Partition":
-        """
-        Create a Partition with a random assignment of nodes to districts.
+        partition_fn: PartitionFn = recursive_tree_part,
+        *,
+        rng: random.Random | int | None = None,
+    ) -> Partition:
+        """Create a Partition with a random assignment of nodes to districts.
 
-        :param graph: The graph to create the Partition from.
-        :type graph: :class:`~gerrychain.Graph`
-        :param n_parts: The number of districts to divide the nodes into.
-        :type n_parts: int
-        :param epsilon: The maximum relative population deviation from the ideal
-        :type epsilon: float
-            population. Should be in [0,1].
-        :param pop_col: The column of the graph's node data that holds the population data.
-        :type pop_col: str
-        :param updaters: Dictionary of updaters
-        :type updaters: Optional[Dict[str, Callable]], optional
-        :param use_default_updaters: If `False`, do not include default updaters.
-        :type use_default_updaters: bool, optional
-        :param method: The function to use to partition the graph into ``n_parts``. Defaults to
-            :func:`~gerrychain.tree.recursive_tree_part`.
-        :type method: Callable, optional
+        This method creates a Partition with a random assignment of nodes to districts. It returns
+        partition created with a random assignment.
 
-        :returns: The partition created with a random assignment
-        :rtype: Partition
+        Args:
+            graph (Graph): The graph to create the Partition from.
+            n_parts (int): The number of districts to divide the nodes into.
+            epsilon (float): The maximum relative population deviation from the ideal
+            pop_col (str): The column of the graph's node data that holds the population data.
+            updaters (Mapping[str, Callable] | None, optional): Dictionary of updaters.
+            use_default_updaters (bool, optional): If `False`, do not include default updaters.
+            partition_fn (PartitionFn, optional): The function to use to partition the graph into
+                ``n_parts``; it returns the full node-to-part assignment dict. It is called with
+                this method's normalized ``rng``, which takes precedence over an ``rng`` partially
+                bound to the ``partition_fn`` parameter. Defaults to
+                `gerrychain.partition.recursive_tree_part`.
+            rng (random.Random | int | None, optional): Source of randomness. An integer
+                creates a reproducible RNG; ``None`` creates an independent RNG from system
+                entropy.
+
+        Returns:
+            Partition: The partition created with a random assignment
         """
-        # frm: TODO: BUG:  The param, flips, is never used in this routine...
 
         total_pop = sum(graph.node_data(n)[pop_col] for n in graph)
         ideal_pop = total_pop / n_parts
+        partition_fn = cast(
+            PartitionFn,
+            adapt_legacy_callable(partition_fn, "Initial-partition function"),
+        )
 
-        assignment = method(
+        assignment = partition_fn(
             graph=graph,
             parts=range(n_parts),
             pop_target=ideal_pop,
             pop_col=pop_col,
             epsilon=epsilon,
+            rng=make_rng(rng),
         )
 
         return cls(
@@ -151,7 +295,13 @@ class Partition:
             use_default_updaters=use_default_updaters,
         )
 
-    def _first_time(self, graph, assignment, updaters, use_default_updaters):
+    def _first_time(
+        self,
+        graph: Graph | FrozenGraph | networkx.Graph[NodeT, dict[str, Any], dict[str, Any]],
+        assignment: Mapping[NodeT, PartT] | Assignment | str | None,
+        updaters: Mapping[str, Callable[[Partition], Any]] | None,
+        use_default_updaters: bool,
+    ) -> None:
         # Make sure that the embedded graph for the Partition is based on
         # a RustworkX graph, and make sure it is also a FrozenGraph.  Both
         # of these are important for performance.
@@ -165,10 +315,9 @@ class Partition:
         # convert to RX - both for legacy compatibility, but also because NX provides
         # a really nice and easy way to create graphs.
         #
-        # TODO: Documentation: update the documentation
-        # to describe the use case of creating a graph using NX.  That documentation
-        # should also describe how to post-process results of a MarkovChain run
-        # but I haven't figured that out yet...
+
+        if assignment is None:
+            raise TypeError("A new partition requires an assignment")
 
         # If a NX.Graph, create a Graph object based on NX
         if isinstance(graph, networkx.Graph):
@@ -176,13 +325,20 @@ class Partition:
 
         # if a Graph object, make sure it is based on an embedded RustworkX.PyGraph
         if isinstance(graph, Graph):
-            # frm: TODO: Performance: Remove this short-term hack to do performance testing
+            # Performance Testing:  In order to compare the performance of
+            # RustworkX vs NetworkX, we enable using an NX-based Graph in a partition
+            # by setting the variable, test_performance_using_NX_graph, to be True.
+            # This allows us to run a test with NX and then again with RX in order
+            # to compare the results.
             #
-            # This "test_performance_using_NX_graph" hack just forces the partition
-            # to NOT convert the NX graph to be RX based.  This allows me to
-            # compare RX performance to NX performance with the same code - so that
-            # whatever is different is crystal clear.
+            # RustworkX is much faster, so the default value is False.
+            #
+            # Peter said (January 2026): It might be worth changing this to a global
+            # variable that we can set easily. I'll want to remove it once we get
+            # to release 2.0.0, but it could be useful in the meantime..
+            #
             test_performance_using_NX_graph = False
+
             if (graph.is_nx_graph()) and test_performance_using_NX_graph:
                 self.assignment = get_assignment(assignment, graph)
                 print("=====================================================")
@@ -190,7 +346,6 @@ class Partition:
                 print("=====================================================")
 
             elif graph.is_nx_graph():
-
                 # Get the assignment that would be appropriate for the NX-based graph
                 old_nx_assignment = get_assignment(assignment, graph)
 
@@ -224,7 +379,7 @@ class Partition:
             updaters = dict()
 
         if use_default_updaters:
-            self.updaters = self.default_updaters
+            self.updaters = dict(self.default_updaters)
         else:
             self.updaters = {}
 
@@ -249,9 +404,9 @@ class Partition:
     #               That is, is there any reason why anyone might ever
     #               call this except __init__()?
 
-    def _from_parent(self, parent: "Partition", flips: Dict) -> None:
+    def _from_parent(self, parent: Partition, flips: Mapping[NodeT, PartT]) -> None:
         self.parent = parent
-        self.flips = flips
+        self.flips = {node: part for node, part in flips.items()}
 
         self.graph = parent.graph
         self.updaters = parent.updaters
@@ -264,41 +419,37 @@ class Partition:
         if "cut_edges" in self.updaters:
             self.edge_flows = compute_edge_flows(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         number_of_parts = len(self)
         s = "s" if number_of_parts > 1 else ""
-        return "<{} [{} part{}]>".format(self.__class__.__name__, number_of_parts, s)
+        return f"<{self.__class__.__name__} [{number_of_parts} part{s}]>"
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.parts)
 
-    def flip(self, flips: Dict, use_original_nx_node_ids=False) -> "Partition":
+    def flip(
+        self,
+        flips: Mapping[NodeT, PartT],
+        flips_passed_in_use_original_nx_node_ids: bool = False,
+    ) -> Partition:
+        """Returns the new partition obtained by performing the given `flips` on this partition.
+
+        This method returns the new partition obtained by performing the given `flips` on this
+        partition. It returns new Partition.
+
+        Args:
+            flips (dict): dictionary assigning nodes of the graph to their new districts
+            flips_passed_in_use_original_nx_node_ids (bool): Denotes whether the node_ids in the
+                flips are original NX node_ids or whether they are internal RX node_ids. The only
+                time this is set to True is for testing when the test wants to provide explicit
+                flips using NX node_ids (because the test cannot know what node_ids RX will choose
+                when we convert the underlying graph object).
+
+        Returns:
+            Partition: the new Partition
         """
-        Returns the new partition obtained by performing the given `flips`
-        on this partition.
 
-        :param flips: dictionary assigning nodes of the graph to their new districts
-        :returns: the new :class:`Partition`
-        :rtype: Partition
-        """
-
-        # frm: TODO: Documentation: Change comments above to document new optional parameter,
-        # use_original_nx_node_ids.
-        #
-        # This is a new issue that arises from the fact that node_ids in RX are different from
-        # those in the original NX graph.  In the pre-RX code, we did not need to distinguish
-        # between calls to flip() that were internal code used when doing a MarkovChain versus
-        # user code for instance in tests.  However, in the new RX world, the internal code uses
-        # RX node_ids and the tests want to use "original" NX node_ids.  Hence the new parameter.
-
-        # If the caller identified flips in terms of "original" node_ids (typically node_ids
-        # associated with an NX-based graph before creating a Partition object), then translate
-        # those original node_ids into the appropriate internal RX-based node_ids.
-        #
-        # Note that original node_ids in flips are typically used in tests
-        #
-
-        if use_original_nx_node_ids:
+        if flips_passed_in_use_original_nx_node_ids:
             new_flips = {}
             for original_nx_node_id, part in flips.items():
                 internal_node_id = self.graph.internal_node_id_for_original_nx_node_id(
@@ -309,34 +460,41 @@ class Partition:
 
         return self.__class__(parent=self, flips=flips)
 
-    def crosses_parts(self, edge: Tuple) -> bool:
-        """
-        :param edge: tuple of node IDs
-        :type edge: Tuple
+    def crosses_parts(self, edge: tuple[Hashable, Hashable]) -> bool:
+        """Return True if the edge crosses from one part of the partition to another.
 
-        :returns: True if the edge crosses from one part of the partition to another
-        :rtype: bool
+        This method returns True if the edge crosses from one part of the partition to another. It
+        returns true if the edge crosses from one part of the partition to another.
+
+        Args:
+            edge (tuple): tuple of node IDs
+
+        Returns:
+            bool: True if the edge crosses from one part of the partition to another
         """
         return self.assignment.mapping[edge[0]] != self.assignment.mapping[edge[1]]
 
     def __getitem__(self, key: str) -> Any:
-        """
-        Allows accessing the values of updaters computed for this
-        Partition instance.
+        """Access the value of one of this Partition's updaters by name.
 
-        :param key: Property to access.
-        :type key: str
+        The ``[]`` interface indexes **updaters**, not nodes: ``key`` is an updater name (e.g.
+        ``"cut_edges"``), and the return value is that updater's computed result (lazily evaluated
+        and cached). For the node-to-part assignment itself, use :attr:`assignment`; see
+        :meth:`keys` for more on this distinction.
 
-        :returns: The value of the updater.
-        :rtype: Any
+        Args:
+            key (str): The name of the updater to access.
+
+        Returns:
+            Any: The value of the named updater.
         """
-        # frm: Cleverness Alert:  Delayed evaluation of updater functions...
+        # Cleverness Alert:  Delayed evaluation of updater functions...
         #
-        #   The code immediately below executes the appropriate updater function
-        #   if it has not already been executed and then caches the results.
-        #   This makes sense - why compute something if nobody ever wants it,
-        #   but it took me a while to figure out why the constructor did not
-        #   explicitly call the updaters.
+        # The code immediately below executes the appropriate updater function
+        # if it has not already been executed and then caches the results.
+        # This makes sense - why compute something if nobody ever wants it,
+        # but it took me a while to figure out why the constructor did not
+        # explicitly call the updaters.
         #
 
         if key not in self._cache:
@@ -353,39 +511,67 @@ class Partition:
             self._cache[key] = self.updaters[key](self)
         return self._cache[key]
 
-    def __getattr__(self, key):
-        # frm TODO: Refactor:  Not sure it makes sense to allow two ways to accomplish the same
-        # thing...
-        #
-        # The code below allows Partition users to get the results of updaters by just
-        # doing:  partition.<updater_name>  which is the same as doing: partition["<updater_name>"]
-        # It is clever, but perhaps too clever.  Why provide two ways to do the same thing?
-        #
-        # It is also odd on a more general level - this approach means that the attributes of a
-        # Partition are the same as the names of the updaters and return the results of running
-        # the updater functions.  I guess this makes sense, but there is no documentation (that I
-        # am aware of) that makes this clear.
-        #
-        # Peter's comment in PR:
-        #
-        # This is actually on my list of things that I would prefer removed. When I first
-        # started working with this codebase, I found the fact that you could just do
-        # partition.name_of_my_updater really confusing, and, from a Python perspective,
-        # I think that the more intuitive interface is keyword access like in a dictionary.
-        # I haven't scoured the codebase for instances of ".attr" yet, but this is one of
-        # the things that I am 100% okay with getting rid of. Almost all of the people
-        # that I have seen work with this package use the partition["attr"] paradigm anyway.
-        #
-        return self[key]
+    def __getattr__(self, key: str) -> object:
+        raise Exception(
+            "The Partition object no longer supports <partition>.<updater> to "
+            "access updater results.  Instead use <partition>['updater-name']"
+        )
 
-    def keys(self):
+    def keys(self) -> KeysView[str]:
+        """Return the names of this partition's updaters.
+
+        Important: a Partition's mapping/``[]`` interface is over its **updaters**, not its nodes.
+        So ``partition["population"]`` evaluates the ``"population"`` updater, and ``keys()``
+        returns the updater names (e.g. ``["cut_edges", "population", ...]``) - not node_ids or
+        part_ids. This often surprises people who think of a Partition as a node-to-district map.
+
+        The actual node-to-part data lives in :attr:`assignment` (``partition.assignment``, a
+        node_id -> part_id mapping), and the inverse part-to-nodes view is :attr:`parts`
+        (``partition.parts``).
+
+        Returns:
+            KeysView[str]: A view of the updater names available on this partition.
+        """
         return self.updaters.keys()
 
     @property
-    def parts(self):
+    def parts(self) -> dict[Hashable, frozenset[Hashable]]:
         return self.assignment.parts
 
-    def plot(self, geometries=None, **kwargs):
+    @property
+    def assignment_vector(self) -> numpy.ndarray:
+        """The part (district) label of each node, as an array indexed by internal node id.
+
+        Computed lazily and cached. When this partition's parent has already emitted its vector,
+        the child's is built by copying it and rewriting only the flipped entries, so emitting the
+        vector at every step of a chain costs an array copy (C-speed) plus the handful of flips
+        rather than an O(n) rebuild from the assignment mapping.
+
+        The returned array is read-only, since child partitions build their vectors from it; call
+        ``.copy()`` on it if you need a mutable version. Positions are internal node ids; use
+        :meth:`Graph.original_nx_node_id_for_internal_node_id` to translate back to the original
+        node labels.
+
+        Returns:
+            numpy.ndarray: Array of length ``n`` whose ``i``-th entry is the part of node ``i``.
+        """
+        if self._assignment_vector is None:
+            parent = self.parent
+            if parent is not None and parent._assignment_vector is not None and self.flips:
+                vector = parent._assignment_vector.copy()
+                for node, part in self.flips.items():
+                    vector[cast(int, node)] = part
+            else:
+                vector = self.assignment.to_vector()
+            vector.setflags(write=False)
+            self._assignment_vector = vector
+        return self._assignment_vector
+
+    def plot(
+        self,
+        geometries: geopandas.GeoDataFrame | geopandas.GeoSeries | None = None,
+        **kwargs: Any,
+    ) -> "matplotlib.axes.Axes":
         #
         # frm ???:  I think that this plots districts on a map that is defined
         #           by the geometries parameter (presumably polygons or something similar).
@@ -395,26 +581,27 @@ class Partition:
         #           engine - presumably to define colors and other graph stuff.
         #
 
+        """Plot the partition, using the provided geometries.
+
+        This method plots the partition, using the provided geometries. It returns matplotlib axes
+        object. Which plots the Partition.
+
+        Args:
+            geometries (geopandas.GeoDataFrame or geopandas.GeoSeries): A
+                GeoDataFrame or GeoSeries holding the
+                geometries to use for plotting. Its Index should match the node
+                labels of the partition's underlying Graph.
+            **kwargs (Any): Additional arguments to pass to `geopandas.GeoDataFrame.plot`
+                to adjust the plot.
+
+        Returns:
+            matplotlib.axes.Axes: The matplotlib axes object. Which plots the Partition.
         """
-        Plot the partition, using the provided geometries.
-
-        :param geometries: A :class:`geopandas.GeoDataFrame` or :class:`geopandas.GeoSeries`
-            holding the geometries to use for plotting. Its :class:`~pandas.Index` should match
-            the node labels of the partition's underlying :class:`~gerrychain.Graph`.
-        :type geometries: geopandas.GeoDataFrame or geopandas.GeoSeries
-        :param `**kwargs`: Additional arguments to pass to :meth:`geopandas.GeoDataFrame.plot`
-            to adjust the plot.
-
-        :returns: The matplotlib axes object. Which plots the Partition.
-        :rtype: matplotlib.axes.Axes
-        """
-        import geopandas
-
         if geometries is None:
-            if hasattr(self.graph, "geometry"):
-                geometries = self.graph.geometry
-            else:
+            graph_geometries = getattr(self.graph, "geometry", None)
+            if not isinstance(graph_geometries, (geopandas.GeoDataFrame, geopandas.GeoSeries)):
                 raise Exception("Partition.plot: graph has no geometry data")
+            geometries = graph_geometries
 
         if set(geometries.index) != self.graph.node_indices:
             raise TypeError("The provided geometries do not match the nodes of the graph.")
@@ -428,30 +615,30 @@ class Partition:
     def from_districtr_file(
         cls,
         graph: Graph,
-        districtr_file: str,
-        updaters: Optional[Dict[str, Callable]] = None,
-    ) -> "Partition":
-        """
-        Create a Partition from a districting plan created with `Districtr`_,
-        a free and open-source web app created by MGGG for drawing districts.
+        districtr_file: str | os.PathLike[str],
+        updaters: Mapping[str, Callable[[Partition], Any]] | None = None,
+    ) -> Partition:
+        """Return partition created from the Districtr file.
 
-        The provided ``graph`` should be created from the same shapefile as the
-        Districtr module used to draw the districting plan. These shapefiles may
-        be found in a repository in the `mggg-states`_ GitHub organization, or by
-        request from MGGG.
+        Create a Partition from a districting plan created with `Districtr`_, a free and
+        open-source web app created by MGGG for drawing districts.
+
+        The provided ``graph`` should be created from the same shapefile as the Districtr module
+        used to draw the districting plan. These shapefiles may be found in a repository in the
+        `mggg-states`_ GitHub organization, or by request from MGGG.
 
         .. _`Districtr`: https://mggg.org/Districtr
+
         .. _`mggg-states`: https://github.com/mggg-states
 
-        :param graph: The graph to create the Partition from
-        :type graph: :class:`~gerrychain.Graph`
-        :param districtr_file: the path to the ``.json`` file exported from Districtr
-        :type districtr_file: str
-        :param updaters: dictionary of updaters
-        :type updaters: Optional[Dict[str, Callable]], optional
+        Args:
+            graph (Graph): The graph to create the Partition from
+            districtr_file (str | os.PathLike): the path to the ``.json`` file exported
+                from Districtr
+            updaters (Mapping[str, Callable] | None, optional): Dictionary of updaters.
 
-        :returns: The partition created from the Districtr file
-        :rtype: Partition
+        Returns:
+            Partition: The partition created from the Districtr file
         """
         with open(districtr_file) as f:
             districtr_plan = json.load(f)

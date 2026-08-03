@@ -1,44 +1,132 @@
+"""Incremental "flow"-based updaters for partitions produced by a Markov chain.
+
+GerryChain explores district plans with a Markov chain meaning each step starts from the current
+``Partition`` and produces a child ``Partition`` that differs from it by only a handful of node
+reassignments ("flips"). Most quantities we track about a partition (cut edges, perimeters,
+boundary nodes, tallies, ...) are exposed as *updater* - functions ``updater(partition)`` whose
+results are computed on demand and cached on the partition (see ``Partition.__getitem__``).
+
+Since ReCom steps only modify two districts at a time, for many updaters (e.g. total population),
+it is possible to compute the new value for the child partition by starting from the parent's
+value and adjusting it using only the nodes that changed assignment. For example, if you know the
+population of each part in the parent partition, and you know which nodes joined and left each part,
+you can compute the new population of each part by adding the population of the nodes that joined
+and subtracting the population of the nodes that left. This is much faster than looping through
+all the nodes in the changed parts and summing their populations from scratch. The list of
+nodes that joined and left each part is what we call the "flow" of nodes into and out of each part,
+and the machinery for computing and responding to that flow is what this module provides.
+
+
+There are two notions of "flow":
+
+* **Node flow** (:func:`flows_from_changes`): for each part, the set of nodes that joined it
+  (``"in"``) and the set that left it (``"out"``) relative to the parent partition. This is exposed
+  as ``partition.flows``.
+* **Cut-edge flow** (:func:`compute_edge_flows`): for each part, the cut edges that became - or
+  stopped being - incident to that part. This is exposed as ``partition.edge_flows``.
+
+Two decorators turn an incremental update rule into a full updater:
+
+* :func:`on_flow` drives an updater from node flow.
+* :func:`on_edge_flow` drives an updater from cut-edge flow.
+
+In both cases you supply two pieces:
+
+* an **initializer_fn**, which computes the whole ``{part: value}`` dictionary from scratch. It
+  is used for the *root* partition of a chain (the one whose ``partition.parent is None``), where
+  there is no parent to diff against.
+* an **update rule** (the decorated function), which is called once per changed part on every
+  later step and returns the new value for that part, given the parent's value for that part plus
+  the in/out flow for that part.
+
+So the lifecycle of a flow-based updater is: compute everything once at the root via the
+initializer_fn, then on each subsequent step copy the parent's result and patch only the parts that
+actually changed. This is what the docstrings below mean by "initialize" (root) vs. the incremental
+"post-initialization" update (every later step).
+"""
+
+from __future__ import annotations
+
 import collections
 import functools
-from typing import Callable, Dict, Set, Tuple
+from collections.abc import Callable, Hashable
+from typing import TYPE_CHECKING, Protocol, TypeVar, cast
 
-# frm: TODO: Documentation: This file needs documentation / comments!!!
-#
-# Peter agrees...
+from .._deprecated import deprecated_parameters
+
+if TYPE_CHECKING:
+    from ..partition.partition import Partition
+
+ValueT = TypeVar("ValueT")
+KeyT = TypeVar("KeyT", bound=Hashable)
+
+# The update rule decorated by on_flow: given the partition, a part's previous value, and the
+# nodes flowing in and out of that part, return the part's new value.
+FlowUpdateFn = Callable[["Partition", ValueT, set[Hashable], set[Hashable]], ValueT]
+
+
+class EdgeFlowUpdateFn(Protocol[ValueT]):
+    """The update rule decorated by on_edge_flow: given the partition, a part's previous value,
+    and the cut edges flowing in and out of that part, return the part's new value."""
+
+    def __call__(
+        self,
+        partition: Partition,
+        previous: ValueT,
+        /,
+        *,
+        new_edges: set[tuple[int, int]],
+        old_edges: set[tuple[int, int]],
+    ) -> ValueT: ...
 
 
 @functools.lru_cache(maxsize=2)
-def neighbor_flips(partition) -> Set[Tuple]:
+def neighbor_flips(partition: Partition) -> set[tuple[int, int]]:
+    """Return set of edges that were flipped in the given partition compared to its parent.
+
+    Args:
+        partition (Partition): A partition of a Graph
+
+    Returns:
+        set[tuple]: The set of edges that were flipped in the given partition.
     """
-    :param partition: A partition of a Graph
-    :type partition: :class:`~gerrychain.partition.Partition`
+    flips = partition.flips
+    if flips is None:
+        return set()
+    edges: set[tuple[int, int]] = set()
+    for flipped_node in flips:
+        node = cast(int, flipped_node)
+        for neighboring_node in partition.graph.neighbors(node):
+            neighbor = cast(int, neighboring_node)
+            first, second = sorted((node, neighbor))
+            edges.add((first, second))
+    return edges
 
-    :returns: The set of edges that were flipped in the given partition.
-    :rtype: Set[Tuple]
-    """
-    return {
-        tuple(sorted((node, neighbor)))
-        for node in partition.flips
-        for neighbor in partition.graph.neighbors(node)
-    }
+
+def create_flow() -> dict[str, set[Hashable]]:
+    return {"in": set(), "out": set()}
 
 
-def create_flow():
+def create_edge_flow() -> dict[str, set[tuple[int, int]]]:
     return {"in": set(), "out": set()}
 
 
 @functools.lru_cache(maxsize=2)
-def flows_from_changes(old_partition, new_partition) -> Dict:
-    """
-    :param old_partition: A partition of a Graph representing the previous step.
-    :type old_partition: :class:`~gerrychain.partition.Partition`
-    :param new_partition: A partition of a Graph representing the current step.
-    :type new_partition: :class:`~gerrychain.partition.Partition`
+def flows_from_changes(
+    old_partition: Partition, new_partition: Partition
+) -> dict[Hashable, dict[str, set[Hashable]]]:
+    """Return per-part node flow updates between two partitions.
 
-    :returns: A dictionary mapping each node that changed assignment between
-        the previous and current partitions to a dictionary of the form
-        `{'in': <set of nodes that flowed in>, 'out': <set of nodes that flowed out>}`.
-    :rtype: Dict
+    Args:
+        old_partition (Partition): A partition of a Graph
+            representing the previous step.
+        new_partition (Partition): A partition of a Graph
+            representing the current step.
+
+    Returns:
+        dict: A dictionary mapping each node that changed assignment between the previous and
+            current partitions to a dictionary of the form `{'in': <set of nodes that flowed in>,
+            'out': <set of nodes that flowed out>}`.
     """
 
     # frm: TODO: Code: ???:  Grok why there is a test for:  source != target
@@ -47,8 +135,11 @@ def flows_from_changes(old_partition, new_partition) -> Dict:
     # was a "flip" that did not in fact change the partition mapping...
     #
 
-    flows = collections.defaultdict(create_flow)
-    for node, target in new_partition.flips.items():
+    flows: dict[Hashable, dict[str, set[Hashable]]] = collections.defaultdict(create_flow)
+    flips = new_partition.flips
+    if flips is None:
+        return flows
+    for node, target in flips.items():
         source = old_partition.assignment.mapping[node]
         if source != target:
             flows[target]["in"].add(node)
@@ -56,57 +147,93 @@ def flows_from_changes(old_partition, new_partition) -> Dict:
     return flows
 
 
-def on_flow(initializer: Callable, alias: str) -> Callable:
-    """
-    Use this decorator to create an updater that responds to flows of nodes
-    between parts of the partition.
+@deprecated_parameters(renamed={"initializer": "initializer_fn"})
+def on_flow(
+    initializer_fn: Callable[[Partition], dict[KeyT, ValueT]], alias: str
+) -> Callable[[FlowUpdateFn[ValueT]], Callable[..., dict[KeyT, ValueT]]]:
+    """A decorator that responds to flows of nodes between parts of the partition.
+
+    Use this decorator to create an updater that responds to flows of nodes between parts of the
+    partition.
 
     Decorate a function that takes:
-    - The partition
-    - The previous value of the updater on a fixed part P_i
-    - The new nodes that are just joining P_i at this step
-    - The old nodes that are just leaving P_i at this step
+        - The partition
+        - The previous value of the updater on a fixed part P_i
+        - The new nodes that are just joining P_i at this step
+        - The old nodes that are just leaving P_i at this step
+
     and returns:
-    - The new value of the updater for the fixed part P_i.
+        - The new value of the updater for the fixed part P_i.
 
-    This will create an updater whose values are dictionaries of the
-    form `{part: <value of the given function on the part>}`.
+    This will create an updater whose values are dictionaries of the form `{part: <value of the
+    given function on the part>}`.
 
-    The initializer, by contrast, should take the entire partition and
-    return the entire `{part: <value>}` dictionary.
+    The initializer_fn, by contrast, should take the entire partition and return the entire `{part:
+    <value>}` dictionary.
+
+    How it works (initialize vs. incremental update):
+        The updater this decorator produces behaves differently depending on whether the partition
+        is the root of the chain or a later step:
+
+        * **Initialize (root partition).** When ``partition.parent is None`` there is no previous
+          step to diff against, so the updater simply calls ``initializer_fn(partition)`` and
+          returns the whole ``{part: value}`` dictionary computed from scratch.
+        * **Incremental update (every later step).** Otherwise the updater takes the parent's
+          cached ``{part: value}`` dictionary (``partition.parent[alias]``), copies it, and then -
+          for each part that had any node flow this step - replaces that part's entry with the
+          result of calling the decorated function with ``(partition, previous_value_for_part,
+          flow["in"], flow["out"])``. Parts with no flow keep the parent's value unchanged, so only
+          the handful of parts touched by this step's flips are recomputed.
+
+        This is why the decorated function only needs to describe how a *single* part's value
+        changes given the nodes flowing in and out of it, while the initializer_fn must be able to
+        compute every part's value directly.
+
+    Note:
+        The ``alias`` must match the name the updater is registered under on the partition, because
+        the incremental path looks the parent's value up via ``partition.parent[alias]``.
 
     Example:
 
     .. code-block:: python
 
-        @on_flow(initializer, alias='my_updater')
+        @on_flow(initializer_fn, alias='my_updater')
         def my_updater(partition, previous, new_nodes, old_nodes):
             # return new value for the part
 
-    :param initializer: A function that takes the partition and returns a
-        dictionary of the form `{part: <value>}`.
-    :type initializer: Callable
-    :param alias: The name of the updater to be created.
-    :type alias: str
+    Args:
+        initializer_fn (Callable): A function that takes the partition and returns a dictionary
+            of the form `{part: <value>}`. Used to compute the value from scratch for the root
+            partition.
+        alias (str): The name of the updater to be created (and the key it is registered under).
 
-    :returns: A decorator that takes a function as input and returns a
-        wrapped function.
-    :rtype: Callable
+    Returns:
+        Callable: A decorator that takes a single-part update function as input and returns a full
+        updater function ``updater(partition)``.
     """
 
-    def decorator(function):
-        @functools.wraps(function)
-        def wrapped(partition, previous=None):
+    def decorator(
+        fn: FlowUpdateFn[ValueT],
+    ) -> Callable[..., dict[KeyT, ValueT]]:
+        @functools.wraps(fn)
+        def wrapped(
+            partition: Partition, previous: dict[KeyT, ValueT] | None = None
+        ) -> dict[KeyT, ValueT]:
             if partition.parent is None:
-                return initializer(partition)
+                return initializer_fn(partition)
 
             if previous is None:
-                previous = partition.parent[alias]
+                parent_values = partition.parent[alias]
+                if not isinstance(parent_values, dict):
+                    raise TypeError(f"Updater {alias!r} must return a dictionary")
+                previous = cast(dict[KeyT, ValueT], parent_values)
 
             new_values = previous.copy()
 
+            assert partition.flows is not None
             for part, flow in partition.flows.items():
-                new_values[part] = function(partition, previous[part], flow["in"], flow["out"])
+                key = cast(KeyT, part)
+                new_values[key] = fn(partition, previous[key], flow["in"], flow["out"])
 
             return new_values
 
@@ -115,18 +242,24 @@ def on_flow(initializer: Callable, alias: str) -> Callable:
     return decorator
 
 
-def compute_edge_flows(partition) -> Dict:
-    """
-    :param partition: A partition of a Graph
-    :type partition: :class:`~gerrychain.partition.Partition`
+def compute_edge_flows(
+    partition: Partition,
+) -> dict[Hashable, dict[str, set[tuple[int, int]]]]:
+    """Computes the flow of cut edges between a partition and its parent.
 
-    :returns: A flow dictionary containing the flow from the parent of this partition
-        to this partition. This dictionary is of the form
-        `{part: {'in': <set of edges that flowed in>, 'out': <set of edges that flowed out>}}`.
-    :rtype: Dict
+    Args:
+        partition (Partition): A partition of a Graph
+
+    Returns:
+        dict: A flow dictionary containing the flow from the parent of this partition to this
+            partition. This dictionary is of the form `{part: {'in': <set of edges that flowed in>,
+            'out': <set of edges that flowed out>}}`.
     """
-    edge_flows = collections.defaultdict(create_flow)
+    edge_flows: dict[Hashable, dict[str, set[tuple[int, int]]]] = collections.defaultdict(
+        create_edge_flow
+    )
     assignment = partition.assignment
+    assert partition.parent is not None
     old_assignment = partition.parent.assignment
 
     for node, neighbor in neighbor_flips(partition):
@@ -186,57 +319,86 @@ def compute_edge_flows(partition) -> Dict:
     return edge_flows
 
 
-def on_edge_flow(initializer: Callable, alias: str) -> Callable:
-    """
-    Use this decorator to create an updater that responds to flows of cut
-    edges between parts of the partition.
+@deprecated_parameters(renamed={"initializer": "initializer_fn"})
+def on_edge_flow(
+    initializer_fn: Callable[[Partition], dict[KeyT, ValueT]], alias: str
+) -> Callable[[EdgeFlowUpdateFn[ValueT]], Callable[[Partition], dict[KeyT, ValueT]]]:
+    """A decorator that responds to flows of cut edges between parts of the partition.
+
+    Use this decorator to create an updater that responds to flows of cut edges between parts of
+    the partition.
 
     Decorate a function that takes:
-    - The partition
-    - The previous value of the updater for a fixed part P_i
-    - The new cut edges that are just joining P_i at this step
-    - The old cut edges that are just leaving P_i at this step
+        - The partition
+        - The previous value of the updater for a fixed part P_i
+        - The new cut edges that are just joining P_i at this step
+        - The old cut edges that are just leaving P_i at this step
+
     and returns:
-    - The new value of the updater for the fixed part P_i.
+        - The new value of the updater for the fixed part P_i.
 
-    This will create an updater whose values are dictionaries of the
-    form `{part: <value of the given function on the part>}`.
+    This will create an updater whose values are dictionaries of the form `{part: <value of the
+    given function on the part>}`.
 
-    The initializer, by contrast, should take the entire partition and
-    return the entire `{part: <value>}` dictionary.
+    The initializer_fn, by contrast, should take the entire partition and return the entire `{part:
+    <value>}` dictionary.
+
+    How it works (initialize vs. incremental update):
+        This is the cut-edge analogue of :func:`on_flow`; the only difference is that it is driven
+        by ``partition.edge_flows`` (cut edges joining/leaving each part) instead of
+        ``partition.flows`` (nodes joining/leaving each part).
+
+        * **Initialize (root partition).** When the partition has no parent, the updater calls
+          ``initializer_fn(partition)`` and returns the whole ``{part: value}`` dictionary computed
+          from scratch.
+        * **Incremental update (every later step).** Otherwise it copies the parent's cached
+          ``{part: value}`` dictionary and, for each part with cut-edge flow this step, replaces
+          that part's entry with the result of calling the decorated function with
+          ``(partition, previous_value_for_part, new_edges=flow["in"], old_edges=flow["out"])``.
+
+    Note:
+        The ``alias`` must match the name the updater is registered under, because the incremental
+        path looks the parent's value up via ``partition.parent[alias]``.
 
     Example:
 
     .. code-block:: python
 
-        @on_edge_flow(initializer, alias='my_updater')
+        @on_edge_flow(initializer_fn, alias='my_updater')
         def my_updater(partition, previous, new_edges, old_edges):
             # return new value of the part
 
-    :param initializer: A function that takes the partition and returns a
-        dictionary of the form `{part: <value>}`.
-    :type initializer: Callable
-    :param alias: The name of the updater to be created.
-    :type alias: str
+    Args:
+        initializer_fn (Callable): A function that takes the partition and returns a dictionary
+            of the form `{part: <value>}`. Used to compute the value from scratch for the root
+            partition.
+        alias (str): The name of the updater to be created (and the key it is registered under).
 
-    :returns: A decorator that takes a function as input and returns a
-        wrapped function.
-    :rtype: Callable
+    Returns:
+        Callable: A decorator that takes a single-part update function as input and returns a full
+        updater function ``updater(partition)``.
     """
 
-    def decorator(f):
-        @functools.wraps(f)
-        def wrapper(partition):
+    def decorator(
+        fn: EdgeFlowUpdateFn[ValueT],
+    ) -> Callable[[Partition], dict[KeyT, ValueT]]:
+        @functools.wraps(fn)
+        def wrapper(partition: Partition) -> dict[KeyT, ValueT]:
             if not partition.parent:
-                return initializer(partition)
+                return initializer_fn(partition)
             edge_flows = partition.edge_flows
-            previous = partition.parent[alias]
+            assert edge_flows is not None
+            parent_values = partition.parent[alias]
+            if not isinstance(parent_values, dict):
+                raise TypeError(f"Updater {alias!r} must return a dictionary")
+            previous = cast(dict[KeyT, ValueT], parent_values)
 
             new_values = previous.copy()
-            for part in partition.edge_flows:
-                new_values[part] = f(
+            for part in edge_flows:
+                key = cast(KeyT, part)
+                new_values[key] = fn(
                     partition,
-                    previous[part],
+                    previous[key],
                     new_edges=edge_flows[part]["in"],
                     old_edges=edge_flows[part]["out"],
                 )

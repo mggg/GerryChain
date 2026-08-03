@@ -1,29 +1,262 @@
-.download-badge {
-    display: inline-block;
-    padding: 8px 15px;
-    margin: 10px;
-    background-color: #0099CD;
-    color: white;
-    text-decoration: none;
-    border-radius: 5px;
-    font-size: 16px;
+/* Project-specific tweaks layered on top of the Furo theme. */
+
+/* Visited-link color in light mode. Furo's default (#872ee0) is a bright lavender that
+   reads as washed-out on the cream canvas; deepen it to a richer purple. Scoped to plain
+   `body`, which only wins in light mode: Furo's dark defaults live on higher-specificity
+   selectors (body[data-theme="dark"] and the prefers-color-scheme:dark auto rule), so they
+   keep their lighter purple. */
+body {
+  --color-brand-visited: #6b21a8;
 }
-.download-badge:hover {
-    background-color: #2980B9;
+
+/* Furo flashes `:target` elements (e.g. a heading reached via a TOC or glossary link)
+   with a default light-yellow that clashes with every palette here; tint from the brand
+   color instead so it tracks the palette in both modes. */
+body {
+  --color-highlight-on-target: color-mix(
+    in srgb,
+    var(--color-brand-primary) 14%,
+    var(--color-background-primary)
+  );
+}
+
+/* Sidebar legibility. Furo paints the sidebar on the secondary surface with smallish
+   muted text; on the more saturated canvases (blush's rose especially) that combination
+   gets hard to read. Pull the surface back toward the page color and deepen the link and
+   caption text toward the main foreground. Everything is mixed from palette variables,
+   so it tracks the active palette and both modes: in dark mode the same mix nudges the
+   sidebar slightly darker and its text lighter, which only helps. */
+body {
+  --color-sidebar-background: color-mix(
+    in srgb,
+    var(--color-background-primary) 60%,
+    var(--color-background-secondary)
+  );
+  --color-sidebar-link-text: color-mix(
+    in srgb,
+    var(--color-foreground-primary) 55%,
+    var(--color-foreground-secondary)
+  );
+  --color-sidebar-caption-text: color-mix(
+    in srgb,
+    var(--color-foreground-primary) 35%,
+    var(--color-foreground-muted)
+  );
+  /* Section captions ("User Guide", "API Reference", ...) one step up from Furo's
+     81.25% default. */
+  --sidebar-caption-font-size: var(--font-size--normal);
+}
+
+/* Light-mode sidebar links also get a touch more weight; dark-on-light small text at
+   the default 400 still read thin on the tinted surface. Dark mode keeps the default
+   (light-on-dark already reads heavier than it is). */
+.sidebar-tree .reference {
+  font-weight: 500;
+}
+
+/* Mark the selected entries (current page in the sidebar, actively-scrolled section in
+   the right-hand TOC) a step heavier than Furo's 700, which gets lost among the heavier
+   link weight above. */
+.sidebar-tree .current-page > .reference,
+.toc-tree li.scroll-current > .reference {
+  font-weight: 900;
+}
+/* The dark resets outrank the current-page rule above (the [data-theme] attribute adds
+   specificity), so re-assert the current-page weight alongside each. */
+body[data-theme="dark"] .sidebar-tree .reference {
+  font-weight: 400;
+}
+body[data-theme="dark"] .sidebar-tree .current-page > .reference {
+  font-weight: 900;
+}
+@media (prefers-color-scheme: dark) {
+  body[data-theme="auto"] .sidebar-tree .reference {
+    font-weight: 400;
+  }
+  body[data-theme="auto"] .sidebar-tree .current-page > .reference {
+    font-weight: 900;
+  }
+}
+
+/* Navigation cards (sphinx-design grid-item-cards on the landing page). Furo leaves them
+   near-flat - a transparent background in light mode and a 5%-opacity shadow - so they
+   blend into the page. Give them a real surface, a visible shadow, and a clear hover lift.
+   Colors come from Furo variables, so they track light/dark mode. The shadow utility class
+   uses !important, so these must too. */
+.sd-card {
+  /* Same mixed surface as the sidebar, so the two read as one system. */
+  background-color: var(--color-sidebar-background) !important;
+  border: 1px solid var(--color-background-border, rgba(128, 128, 128, 0.3)) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2) !important;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease !important;
+}
+.sd-card:hover {
+  transform: translateY(-3px) !important;
+  border-color: var(--color-brand-primary) !important;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22) !important;
+}
+
+/* Data-download badges used by the user guide pages; brand-tinted so they follow the
+   palette in both modes. */
+.download-badge {
+  display: inline-block;
+  padding: 8px 15px;
+  margin: 10px;
+  background-color: var(--color-download-badge-background, #c2410c);
+  color: white;
+  text-decoration: none;
+  border-radius: 5px;
+  font-size: 16px;
+}
+.download-badge:visited {
+  background-color: var(--color-download-badge-background-visited);
+  color: var(--color-download-badge-visited);
+}
+.download-badge:hover,
+.download-badge:visited:hover {
+  color: white;
+  filter: brightness(0.85);
+  text-decoration: none;
 }
 
 .center-container {
-    text-align: center;
-    width: 100%;
+  text-align: center;
+  width: 100%;
 }
 
+/* Code blocks whose theme surface sits close to the page canvas (the rose-on-rose pairs
+   especially) can blend into it; a faint foreground-tinted hairline makes every block
+   read as a panel without darkening the surface, which would cost token contrast. The
+   hairline is dimmer in dark mode, where the same tint reads brighter. */
+body {
+  --docs-hairline: color-mix(
+    in srgb,
+    var(--color-foreground-primary) 18%,
+    transparent
+  );
+}
+body[data-theme="dark"] {
+  --docs-hairline: color-mix(
+    in srgb,
+    var(--color-foreground-primary) 12%,
+    transparent
+  );
+}
+@media (prefers-color-scheme: dark) {
+  body[data-theme="auto"] {
+    --docs-hairline: color-mix(
+      in srgb,
+      var(--color-foreground-primary) 12%,
+      transparent
+    );
+  }
+}
+[role="main"] div.highlight > pre {
+  border: 1px solid var(--docs-hairline);
+  border-radius: 4px;
+}
+
+/* myst-nb marks notebook input cells with a thick literal-`green` left border; drop the
+   accent entirely so the left edge matches the cell's other three sides. */
+div.cell > div.cell_input {
+  border-left-color: var(--mystnb-source-border-color);
+  border-left-width: var(--mystnb-source-border-width);
+}
+
+/* In dark mode myst-nb's cell border (its neutral-500 grey) glows against the near-black
+   canvases; dim it to the shared hairline so cells match the plain code blocks. */
+body[data-theme="dark"] {
+  --mystnb-source-border-color: var(--docs-hairline);
+}
+@media (prefers-color-scheme: dark) {
+  body[data-theme="auto"] {
+    --mystnb-source-border-color: var(--docs-hairline);
+  }
+}
+
+/* Make API entries easier to scan without competing with their signatures. */
+[role="main"] dl.py > dt.sig {
+  background: var(--color-background-secondary);
+  border-left: 0.2rem solid var(--color-brand-primary);
+}
+[role="main"] dl.py > dt.sig .sig-name.descname {
+  color: var(--color-brand-primary);
+  font-size: 1.15em;
+}
 
 table {
-    width: 100%;
-    border-collapse: collapse;
+  width: 100%;
+  border-collapse: collapse;
 }
-th, td {
-    border: 1px solid #DDDDDD;
-    padding: 8px;
-    text-align: center;
+th,
+td {
+  border: 1px solid var(--color-background-border, #dddddd);
+  padding: 8px;
+  text-align: center;
+}
+
+/* Live palette switcher (added by js/palette-switcher.js when DOCS_SWITCHER is set). */
+.palette-switcher-bar {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  /* Must clear every Furo layer (its max is 50). At the ben-py value of 30 the bar sits
+     under Furo's right sticky-TOC column, and Firefox 152's WebRender mispaints the
+     overlap: the pills collapse to bare chevrons even though layout is correct. */
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.4rem;
+}
+.palette-switcher {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.55rem;
+  border-radius: 8px;
+  background: var(--color-background-secondary);
+  border: 1px solid var(--color-background-border, rgba(128, 128, 128, 0.3));
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.15);
+  font-size: 0.8rem;
+}
+.palette-switcher__icon {
+  line-height: 1;
+}
+.palette-switcher select {
+  border: none;
+  /* The <select> and its option popup are native widgets: their chrome is governed by
+     the CSS `color-scheme` property, not by `background-color`. Furo never sets it, so
+     without the rules below the popup renders as a light widget (light text on white)
+     even in dark mode. Match color-scheme to the active theme so the native control
+     (and its dropdown list) flips dark; the explicit colors then layer cleanly. */
+  background-color: var(--color-background-secondary);
+  color: var(--color-foreground-primary);
+  font: inherit;
+  cursor: pointer;
+}
+.palette-switcher option,
+.palette-switcher optgroup {
+  background-color: var(--color-background-secondary);
+  color: var(--color-foreground-primary);
+}
+.palette-switcher select {
+  color-scheme: light;
+}
+body[data-theme="dark"] .palette-switcher select {
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: dark) {
+  body[data-theme="auto"] .palette-switcher select {
+    color-scheme: dark;
+  }
+}
+@media (prefers-color-scheme: light) {
+  body[data-theme="auto"] .palette-switcher select {
+    color-scheme: light;
+  }
 }

@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from gerrychain import MarkovChain
+from gerrychain import MarkovChain, Partition
 from gerrychain.accept import always_accept
 from gerrychain.constraints import no_vanishing_districts, single_flip_contiguous
 from gerrychain.grid import Grid
@@ -8,12 +8,11 @@ from gerrychain.proposals import propose_random_flip
 
 
 def setup():
-
     # Note that the node_ids for the NX graph for a grid are tuples with the (x,y) position of the node
 
     grid = Grid((4, 4), with_diagonals=False)
 
-    flipped_grid = grid.flip({(2, 1): 3}, use_original_nx_node_ids=True)
+    flipped_grid = grid.flip({(2, 1): 3}, flips_passed_in_use_original_nx_node_ids=True)
 
     return grid, flipped_grid
 
@@ -35,7 +34,6 @@ def test_interior_perimeter_handles_flips_with_a_simple_grid():
 
 
 def test_cut_edges_by_part_handles_flips_with_a_simple_grid():
-
     # frm: TODO: Testing:  Add a graphic here
     #
     # That will allow the person reading this code to make sense
@@ -119,7 +117,7 @@ def test_perimeter_match_naive_perimeter_at_every_step():
         1000,
     )
 
-    def get_exterior_boundaries(partition):
+    def get_exterior_boundaries(partition: Partition):
         graph_boundary = partition["boundary_nodes"]
         exterior = defaultdict(lambda: 0)
         for node_id in graph_boundary:
@@ -127,7 +125,7 @@ def test_perimeter_match_naive_perimeter_at_every_step():
             exterior[part] += partition.graph.node_data(node_id)["boundary_perim"]
         return exterior
 
-    def get_interior_boundaries(partition):
+    def get_interior_boundaries(partition: Partition):
         cut_edges = {edge for edge in partition.graph.edges if partition.crosses_parts(edge)}
         interior = defaultdict(int)
         for edge in cut_edges:
@@ -137,7 +135,7 @@ def test_perimeter_match_naive_perimeter_at_every_step():
                 )["shared_perim"]
         return interior
 
-    def expected_perimeter(partition):
+    def expected_perimeter(partition: Partition):
         interior_boundaries = get_interior_boundaries(partition)
         exterior_boundaries = get_exterior_boundaries(partition)
         expected = {

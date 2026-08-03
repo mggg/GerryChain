@@ -1,56 +1,68 @@
 [build-system]
-requires = ["setuptools>=80.0"]
+requires = ["setuptools>=83.0.0"]
 build-backend = "setuptools.build_meta"
 
 
 [tool.setuptools]
 packages = { find = { include = ["gerrychain*"], exclude = ["tests*"] } }
 
+[tool.setuptools.package-data]
+# Ship example graph data (e.g. Gerrymandria) inside the wheel so that
+# gerrychain.examples can load it via importlib.resources.
+"gerrychain" = ["py.typed"]
+"gerrychain.examples" = ["*.json"]
+
 [project]
 name = "gerrychain"
-version = "1.0.0a2"
+version = "1.0.0rc1"
 description = "GerryChain is a Python library for building ensembles of districting plans using Markov Chain Monte Carlo methods."
-readme = "README.rst"
+readme = "README.md"
 authors = [
   { name = "Data and Democracy Lab", email = "code@mggg.org" },
 ]
 requires-python = ">=3.11"
-license = { text = "MIT" } 
-
+license = "BSD-3-Clause"
 
 dependencies = [
-    "geopandas>=1.1.1",
+    "geopandas>=1.1.4",
     "networkx>=3.6.1",
-    "numpy>=2.3.5",
-    "pandas>=2.3.3",
-    "rustworkx>=0.17.1",
-    "scipy>=1.16.3",
+    "numpy>=2.4.6",
+    "pandas>=3.0.5",
+    "rustworkx>=0.18.1",
+    "scipy>=1.17.1",
     "shapely>=2.1.2",
-    "tqdm>=4.67.1",
+    "tqdm>=4.70.0",
 ]
 
-[tool.black]
-line-length = 100
-
-[tool.isort]
-profile = "black"
-line_length = 100
-multi_line_output = 3
-include_trailing_comma = true
+[project.urls]
+Documentation = "https://gerrychain.readthedocs.io/"
+Repository = "https://github.com/mggg/GerryChain"
+Issues = "https://github.com/mggg/GerryChain/issues"
+Changelog = "https://github.com/mggg/GerryChain/blob/main/CHANGELOG.md"
 
 [tool.ruff]
 line-length = 100
-extend-exclude = [
-  "tests",
-  "**/__init__.py",
-  "gerrychain/vendor"
-]
 
 [tool.ruff.lint]
-select = ["E", "W", "F"]
+select = [
+  "E",
+  "W",
+  "F",
+  "UP006",
+  "UP007",
+  "UP045",
+  "ANN001",
+  "ANN002",
+  "ANN003",
+  "ANN201",
+  "ANN202",
+  "ANN204",
+  "ANN205",
+  "ANN206",
+]
 ignore = [
-    "E501",  # line length handled by black
-    "E203",  # whitespace before ':', handled by black
+    "E501",  # line length handled by Ruff's formatter
+    "E203",  # whitespace before ':', handled by Ruff's formatter
     "E731",  # do not assign lambda expression
 ]
 task-tags = ["TODO", "FIXME", "XXX", "HACK", "NOTE"]
@@ -58,32 +70,68 @@ task-tags = ["TODO", "FIXME", "XXX", "HACK", "NOTE"]
 [tool.ruff.lint.pycodestyle]
 ignore-overlong-task-comments = true
 
+[tool.ruff.lint.per-file-ignores]
+"**/__init__.py" = ["F401", "F403", "F405"]
+"tests/**" = ["ANN"]
+
+[tool.ty.environment]
+python-version = "3.11"
+
+[tool.ty.src]
+# tests/_foo is stale scratch (imports that no longer resolve); not collected by pytest.
+exclude = ["tests/_foo"]
+
+[tool.ty.rules]
+missing-type-argument = "error"
+
+[tool.pyright]
+include = ["gerrychain", "tests"]
+exclude = ["tests/_foo"]
+pythonVersion = "3.11"
+venvPath = "."
+venv = ".venv"
+typeCheckingMode = "standard"
+reportMissingParameterType = "error"
+reportMissingTypeArgument = "error"
+reportUnnecessaryTypeIgnoreComment = "error"
+
 [dependency-groups]
 dev = [
   # Linters, formatters, type checkers
-  "black>=25.1.0",
-  "isort>=6.0.1",
-  "autopep8>=2.3.2",
-  "myst-parser>=4.0.1",
+  "myst-parser>=5.1.0",
   # Iteractive kernel
-  "ipykernel>=6.30.1",
-  "ipywidgets>=8.1.7",
+  "ipykernel>=7.3.0",
+  "ipywidgets>=8.1.8",
+  # Plotting
+  "matplotlib>=3.11.1",
   # Testing
-  "pytest>=8.4.2",
-  "pytest-cov>=6.3.0",
+  "pytest>=9.1.1",
+  "pytest-cov>=7.1.0",
   # Other
-  "pre-commit>=4.3.0",
-  "ruff>=0.14.9",
+  "pre-commit>=4.6.1",
+  "ruff>=0.16.1",
+  "ty>=0.0.65",
+  "pyright>=1.1.411",
 ]
 docs = [
-  "myst-parser>=4.0.1",
-  "recommonmark>=0.7.1",
-  "sphinx>=8.2.3",
+  "furo>=2025.12.19",
+  "myst-nb>=1.4.0",
+  "sphinx>=9.0.4",
+  "sphinx-autobuild>=2025.8.25",
   "sphinx-copybutton>=0.5.2",
-  "sphinx-rtd-theme>=3.0.2",
+  "sphinx-design>=0.7.0",
 ]
-frm = [
-    "matplotlib>=3.10.7",
+# Only what the executable docs examples need beyond the package itself (see
+# tests/test_docs_snippets.py, the notebook scripts, and the docs-test /
+# docs-cache-notebooks Makefile targets).
+docs-exec = [
+  "pytest>=9.1.1",
+  "matplotlib>=3.11.1",
+  "pillow>=12.3.0",
+  "ipython>=9.16.0",
+  "ipykernel>=7.3.0",
+  "nbclient>=0.11.0",
+  "nbformat>=5.10.4",
 ]
 
 

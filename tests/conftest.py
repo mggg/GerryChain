@@ -1,16 +1,32 @@
 import random
+from collections.abc import Callable, Iterable, Iterator
+from typing import Any
 
 import networkx as nx
 import pytest
 
-from gerrychain import Graph, Partition
+from gerrychain import Graph, Partition, set_runtime_checks
 from gerrychain.updaters import cut_edges
 
 random.seed(2018)
 
 
+@pytest.fixture(autouse=True)
+def _enable_runtime_checks() -> Iterator[None]:
+    """Run the whole suite with GerryChain's thorough integrity checks enabled.
+
+    These checks are off by default in production for performance; turning them on
+    here means CI exercises the validation paths on every test.
+    """
+    set_runtime_checks(True)
+    try:
+        yield
+    finally:
+        set_runtime_checks(False)
+
+
 @pytest.fixture
-def three_by_three_grid():
+def three_by_three_grid() -> Graph:
     """Returns a graph that looks like this:
     0 1 2
     3 4 5
@@ -37,7 +53,7 @@ def three_by_three_grid():
 
 
 @pytest.fixture
-def four_by_five_grid_for_opt():
+def four_by_five_grid_for_opt() -> Graph:
     #  1  2  2  2  2
     #  1  2  1  1  2
     #  1  2  2  1  2
@@ -114,9 +130,61 @@ def four_by_five_grid_for_opt():
 
 
 @pytest.fixture
-def graph_with_random_data_factory(three_by_three_grid):
+def four_by_five_grid_nx() -> "nx.Graph[int, dict[str, Any], dict[str, Any]]":
+    # A raw networkx 4x5 grid with a "nx_node_id" attribute (an effective stable
+    # original id) and two connected components (rows 0-1 and rows 2-3). Lives in
+    # conftest so it is shared across test modules.
+    #
+    # nx_node_id:        MVAP (all 2):
+    #  0  1  2  3  4
+    #  5  6  7  8  9
+    # 10 11 12 13 14
+    # 15 16 17 18 19
+    nx_graph = nx.Graph()
+    nx_graph.add_nodes_from(
+        [(node_id, {"population": 10, "nx_node_id": node_id, "MVAP": 2}) for node_id in range(20)]
+    )
+    nx_graph.add_edges_from(
+        [
+            (0, 1),
+            (0, 5),
+            (1, 2),
+            (1, 6),
+            (2, 3),
+            (2, 7),
+            (3, 4),
+            (3, 8),
+            (4, 9),
+            (5, 6),
+            # (5, 10),   # omitted edges split the grid into two components
+            (6, 7),
+            # (6, 11),
+            (7, 8),
+            # (7, 12),
+            (8, 9),
+            # (8, 13),
+            # (9, 14),
+            (10, 11),
+            (10, 15),
+            (11, 12),
+            (11, 16),
+            (12, 13),
+            (12, 17),
+            (13, 14),
+            (13, 18),
+            (14, 19),
+            (15, 16),
+            (16, 17),
+            (17, 18),
+            (18, 19),
+        ]
+    )
+    return nx_graph
 
-    def factory(columns):
+
+@pytest.fixture
+def graph_with_random_data_factory(three_by_three_grid: Graph) -> Callable[[Iterable[str]], Graph]:
+    def factory(columns: Iterable[str]) -> Graph:
         graph = three_by_three_grid
         attach_random_data(graph, columns)
         return graph
@@ -125,10 +193,7 @@ def graph_with_random_data_factory(three_by_three_grid):
     return factory
 
 
-# frm: TODO: Refactoring:  This routine is only ever used immediately above in def factory(columns).
-#               Is it part of the external API?  If not, then it should be moved inside
-#               the graph_with_random_data_factory() routine
-def attach_random_data(graph, columns):
+def attach_random_data(graph: Graph, columns: Iterable[str]) -> None:
     for node in graph.nodes:
         for col in columns:
             graph.node_data(node)[col] = random.randint(1, 1000)
@@ -139,12 +204,12 @@ def attach_random_data(graph, columns):
 #               the reader an idea of how many nodes there are?  What is the
 #               value of just having a generic "graph" test fixture???
 #
-def graph(three_by_three_grid):
+def graph(three_by_three_grid: Graph) -> Graph:
     return three_by_three_grid
 
 
 @pytest.fixture
-def example_partition():
+def example_partition() -> Partition:
     graph = Graph.from_networkx(nx.complete_graph(3))
     assignment = {0: 1, 1: 1, 2: 2}
     partition = Partition(graph, assignment, {"cut_edges": cut_edges})
@@ -152,19 +217,30 @@ def example_partition():
 
 
 # From the docs: https://docs.pytest.org/en/latest/example/simple.html#control-skipping-of-tests-according-to-command-line-option
-def pytest_addoption(parser):
+def pytest_addoption(parser: pytest.Parser) -> None:
     parser.addoption("--runslow", action="store_true", default=False, help="run slow tests")
+    parser.addoption(
+        "--rundocs",
+        action="store_true",
+        default=False,
+        help="run the docs snippet execution tests (need the docs-exec dependency group)",
+    )
 
 
-def pytest_configure(config):
+def pytest_configure(config: pytest.Config) -> None:
     config.addinivalue_line("markers", "slow: mark test as slow to run")
+    config.addinivalue_line(
+        "markers", "docs: executes documentation code blocks; needs the docs-exec group"
+    )
 
 
-def pytest_collection_modifyitems(config, items):
-    if config.getoption("--runslow"):
-        # --runslow given in cli: do not skip slow tests
-        return
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
     skip_slow = pytest.mark.skip(reason="need --runslow option to run")
+    skip_docs = pytest.mark.skip(reason="need --rundocs option to run")
     for item in items:
-        if "slow" in item.keywords:
+        if "slow" in item.keywords and not config.getoption("--runslow"):
             item.add_marker(skip_slow)
+        # Kept separate from "slow": these tests also need the docs-exec dependency group,
+        # which the dev environment used by `make test-all` does not install.
+        if "docs" in item.keywords and not config.getoption("--rundocs"):
+            item.add_marker(skip_docs)

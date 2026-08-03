@@ -1,6 +1,13 @@
 repos:
   - repo: local
     hooks:
+      - id: clear-notebook-outputs
+        name: Clear notebook outputs
+        entry: >-
+          uv run --no-default-groups --group docs-exec
+          python docs/_clear_notebook_outputs.py
+        language: system
+        files: ^docs/user/.*\.ipynb$
       - id: make-format
         name: Run `make check` (format + lint)
         entry: make check

@@ -6,45 +6,48 @@ but cannot be given an explicit type annotation due to problems
 with circular imports.
 """
 
-from typing import Tuple
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 import numpy
 
-# frm: TODO: Refactoring: Why are these not just included in the file that defines ElectionResults?
+if TYPE_CHECKING:
+    from ..updaters.election import ElectionResults
 
 
-def mean_median(election_results) -> float:
-    """
-    Computes the Mean-Median score for the given ElectionResults.
-    A positive value indicates an advantage for the first party listed
-    in the Election's party_names_to_node_attribute_names dictionary.
+def mean_median(election_results: ElectionResults) -> float:
+    """Computes the Mean-Median score for the given ElectionResults.
 
-    :param election_results: An ElectionResults object
-    :type election_results: ElectionResults
+    A positive value indicates an advantage for the first party listed in the Election's
+    party_names_to_node_attribute_names dictionary.
 
-    :returns: The Mean-Median score for the given ElectionResults
-    :rtype: float
+    Args:
+        election_results (ElectionResults): An ElectionResults object
+
+    Returns:
+        float: The Mean-Median score for the given ElectionResults
     """
     first_party = election_results.election.parties[0]
     data = election_results.percents(first_party)
 
-    return numpy.median(data) - numpy.mean(data)
+    return float(numpy.median(data) - numpy.mean(data))
 
 
-def mean_thirdian(election_results) -> float:
-    """
-    Computes the Mean-Median score for the given ElectionResults.
-    A positive value indicates an advantage for the first party listed
-    in the Election's party_names_to_node_attribute_names dictionary.
+def mean_thirdian(election_results: ElectionResults) -> float:
+    """Computes the Mean-Median score for the given ElectionResults.
 
-    The motivation for this score is that the minority party in many
-    states struggles to win even a third of the seats.
+    A positive value indicates an advantage for the first party listed in the Election's
+    party_names_to_node_attribute_names dictionary.
 
-    :param election_results: An ElectionResults object
-    :type election_results: ElectionResults
+    The motivation for this score is that the minority party in many states struggles to win even a
+    third of the seats.
 
-    :returns: The Mean-Thirdian score for the given ElectionResults
-    :rtype: float
+    Args:
+        election_results (ElectionResults): An ElectionResults object
+
+    Returns:
+        float: The Mean-Thirdian score for the given ElectionResults
     """
     first_party = election_results.election.parties[0]
     data = election_results.percents(first_party)
@@ -52,20 +55,20 @@ def mean_thirdian(election_results) -> float:
     thirdian_index = round(len(data) / 3)
     thirdian = sorted(data)[thirdian_index]
 
-    return thirdian - numpy.mean(data)
+    return float(thirdian - numpy.mean(data))
 
 
-def efficiency_gap(election_results) -> float:
-    """
-    Computes the efficiency gap for the given ElectionResults.
-    A positive value indicates an advantage for the first party listed
-    in the Election's party_names_to_node_attribute_names dictionary.
+def efficiency_gap(election_results: ElectionResults) -> float:
+    """Computes the efficiency gap for the given ElectionResults.
 
-    :param election_results: An ElectionResults object
-    :type election_results: ElectionResults
+    A positive value indicates an advantage for the first party listed in the Election's
+    party_names_to_node_attribute_names dictionary.
 
-    :returns: The efficiency gap for the given ElectionResults
-    :rtype: float
+    Args:
+        election_results (ElectionResults): An ElectionResults object
+
+    Returns:
+        float: The efficiency gap for the given ElectionResults
     """
     party1, party2 = [election_results.counts(party) for party in election_results.election.parties]
     wasted_votes_by_part = map(wasted_votes, party1, party2)
@@ -74,16 +77,18 @@ def efficiency_gap(election_results) -> float:
     return numerator / total_votes
 
 
-def wasted_votes(party1_votes: int, party2_votes: int) -> Tuple[int, int]:
-    """
-    Computes the wasted votes for each party in the given race.
-    :param party1_votes: the number of votes party1 received in the race
-    :type party1_votes: int
-    :param party2_votes: the number of votes party2 received in the race
-    :type party2_votes: int
+def wasted_votes(party1_votes: float, party2_votes: float) -> tuple[float, float]:
+    """Computes the wasted votes for each party in the given race.
 
-    :returns: a tuple of the wasted votes for each party
-    :rtype: Tuple[int, int]
+    This function computes the wasted votes for each party in the given race. It returns a tuple of
+    the wasted votes for each party.
+
+    Args:
+        party1_votes (float): the number of votes party1 received in the race
+        party2_votes (float): the number of votes party2 received in the race
+
+    Returns:
+        tuple[float, float]: A tuple of the wasted votes for each party.
     """
     total_votes = party1_votes + party2_votes
     if party1_votes > party2_votes:
@@ -95,18 +100,17 @@ def wasted_votes(party1_votes: int, party2_votes: int) -> Tuple[int, int]:
     return party1_waste, party2_waste
 
 
-def partisan_bias(election_results) -> float:
-    """
-    Computes the partisan bias for the given ElectionResults.
-    The partisan bias is defined as the number of districts with above-mean
-    vote share by the first party divided by the total number of districts,
-    minus 1/2.
+def partisan_bias(election_results: ElectionResults) -> float:
+    """Computes the partisan bias for the given ElectionResults.
 
-    :param election_results: An ElectionResults object
-    :type election_results: ElectionResults
+    The partisan bias is defined as the number of districts with above-mean vote share by the first
+    party divided by the total number of districts, minus 1/2.
 
-    :returns: The partisan bias for the given ElectionResults
-    :rtype: float
+    Args:
+        election_results (ElectionResults): An ElectionResults object
+
+    Returns:
+        float: The partisan bias for the given ElectionResults
     """
     first_party = election_results.election.parties[0]
     party_shares = numpy.array(election_results.percents(first_party))
@@ -115,20 +119,20 @@ def partisan_bias(election_results) -> float:
     return (above_mean_districts / len(party_shares)) - 0.5
 
 
-def partisan_gini(election_results) -> float:
-    """
-    Computes the partisan Gini score for the given ElectionResults.
-    The partisan Gini score is defined as the area between the seats-votes
-    curve and its reflection about (.5, .5).
+def partisan_gini(election_results: ElectionResults) -> float:
+    """Computes the partisan Gini score for the given ElectionResults.
+
+    The partisan Gini score is defined as the area between the seats-votes curve and its reflection
+    about (.5, .5).
 
     For more information on the computation, see Definition 1 in:
     https://arxiv.org/pdf/2008.06930.pdf
 
-    :param election_results: An ElectionResults object
-    :type election_results: ElectionResults
+    Args:
+        election_results (ElectionResults): An ElectionResults object
 
-    :returns: The partisan Gini score for the given ElectionResults
-    :rtype: float
+    Returns:
+        float: The partisan Gini score for the given ElectionResults
     """
     # For two parties, the Gini score is symmetric--it does not vary by party.
     party = election_results.election.parties[0]

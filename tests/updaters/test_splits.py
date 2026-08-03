@@ -1,6 +1,6 @@
 import pytest
 
-from gerrychain import Partition
+from gerrychain import Graph, Partition
 from gerrychain.updaters.county_splits import (
     CountySplit,
     compute_county_splits,
@@ -9,7 +9,7 @@ from gerrychain.updaters.county_splits import (
 
 
 @pytest.fixture
-def graph_with_counties(three_by_three_grid):
+def graph_with_counties(three_by_three_grid: Graph) -> Graph:
     for node in [0, 1, 2]:
         three_by_three_grid.node_data(node)["county"] = "a"
     for node in [3, 4, 5]:
@@ -20,7 +20,7 @@ def graph_with_counties(three_by_three_grid):
 
 
 @pytest.fixture
-def partition(graph_with_counties):
+def partition(graph_with_counties: Graph) -> Partition:
     partition = Partition(
         graph_with_counties,
         assignment={0: 1, 1: 1, 2: 1, 3: 2, 4: 2, 5: 2, 6: 3, 7: 3, 8: 3},
@@ -30,7 +30,7 @@ def partition(graph_with_counties):
 
 
 @pytest.fixture
-def split_partition(graph_with_counties):
+def split_partition(graph_with_counties: Graph) -> Partition:
     partition = Partition(
         graph_with_counties,
         assignment={0: 1, 1: 1, 2: 1, 3: 1, 4: 2, 5: 2, 6: 3, 7: 3, 8: 3},
@@ -40,30 +40,29 @@ def split_partition(graph_with_counties):
 
 
 class TestComputeCountySplits:
-    def test_describes_splits_for_all_counties(self, partition):
+    def test_describes_splits_for_all_counties(self, partition: Partition):
         result = partition["splits"]
 
         assert set(result.keys()) == {"a", "b", "c"}
 
-        after_a_flip = partition.flip({3: 1}, use_original_nx_node_ids=True)
+        after_a_flip = partition.flip({3: 1}, flips_passed_in_use_original_nx_node_ids=True)
         second_result = after_a_flip["splits"]
 
         assert set(second_result.keys()) == {"a", "b", "c"}
 
-    def test_no_splits(self, graph_with_counties):
-
+    def test_no_splits(self, graph_with_counties: Graph):
         # frm: TODO: Testing:  Why does this not just use "split_partition"?  Isn't it the same?
         partition = Partition(graph_with_counties, assignment="county")
 
-        result = compute_county_splits(partition, "county", None)
+        result = compute_county_splits(partition, "county", "unused_partition_field")
 
         for splits_info in result.values():
             assert splits_info.split == CountySplit.NOT_SPLIT
 
-    def test_new_split(self, partition):
+    def test_new_split(self, partition: Partition):
         # Do a flip, using the node_ids of the original assignment (rather than the
         # node_ids used internally in the RX-based graph)
-        after_a_flip = partition.flip({3: 1}, use_original_nx_node_ids=True)
+        after_a_flip = partition.flip({3: 1}, flips_passed_in_use_original_nx_node_ids=True)
         result = after_a_flip["splits"]
 
         # County b is now split, but a and c are not
@@ -71,7 +70,7 @@ class TestComputeCountySplits:
         assert result["b"].split == CountySplit.NEW_SPLIT
         assert result["c"].split == CountySplit.NOT_SPLIT
 
-    def test_initial_split(self, split_partition):
+    def test_initial_split(self, split_partition: Partition):
         result = split_partition["splits"]
 
         # County b starts out split, but a and c are not
@@ -79,10 +78,10 @@ class TestComputeCountySplits:
         assert result["b"].split == CountySplit.OLD_SPLIT
         assert result["c"].split == CountySplit.NOT_SPLIT
 
-    def test_old_split(self, split_partition):
+    def test_old_split(self, split_partition: Partition):
         # Do a flip, using the node_ids of the original assignment (rather than the
         # node_ids used internally in the RX-based graph)
-        after_a_flip = split_partition.flip({4: 1}, use_original_nx_node_ids=True)
+        after_a_flip = split_partition.flip({4: 1}, flips_passed_in_use_original_nx_node_ids=True)
         result = after_a_flip["splits"]
 
         # County b becomes more split
@@ -91,15 +90,15 @@ class TestComputeCountySplits:
         assert result["c"].split == CountySplit.NOT_SPLIT
 
     @pytest.mark.xfail(
-        reason="county_splits only remembers the splits from the "
-        "previous partition, which is not the intuitive behavior."
+        strict=True,
+        reason="county_splits does not retain history across an intervening unsplit partition",
     )
-    def test_initial_split_that_disappears_and_comes_back(self, split_partition):
-        no_splits = split_partition.flip({3: 2}, use_original_nx_node_ids=True)
+    def test_initial_split_that_disappears_and_comes_back(self, split_partition: Partition):
+        no_splits = split_partition.flip({3: 2}, flips_passed_in_use_original_nx_node_ids=True)
         result = no_splits["splits"]
         assert all(info.split == CountySplit.NOT_SPLIT for info in result.values())
 
-        split_comes_back = no_splits.flip({3: 1}, use_original_nx_node_ids=True)
+        split_comes_back = no_splits.flip({3: 1}, flips_passed_in_use_original_nx_node_ids=True)
         new_result = split_comes_back["splits"]
         assert new_result["a"].split == CountySplit.NOT_SPLIT
         assert new_result["b"].split == CountySplit.OLD_SPLIT

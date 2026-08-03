@@ -1,5 +1,7 @@
 import math
 import random
+from collections.abc import Callable, Hashable, Iterable
+from typing import cast
 
 import networkx
 import pytest
@@ -26,11 +28,13 @@ random.seed(2018)
 
 
 @pytest.fixture
-def graph_with_d_and_r_cols(graph_with_random_data_factory):
+def graph_with_d_and_r_cols(
+    graph_with_random_data_factory: Callable[[Iterable[str]], Graph],
+) -> Graph:
     return graph_with_random_data_factory(["D", "R"])
 
 
-def random_assignment(graph, num_districts):
+def random_assignment(graph: Graph, num_districts: int) -> dict[Hashable, int]:
     assignment = {node: random.choice(range(num_districts)) for node in graph.nodes}
     # Make sure that there are cut edges:
     while len(set(assignment.values())) == 1:
@@ -39,7 +43,7 @@ def random_assignment(graph, num_districts):
 
 
 @pytest.fixture
-def partition_with_election(graph_with_d_and_r_cols):
+def partition_with_election(graph_with_d_and_r_cols: Graph) -> Partition:
     graph = graph_with_d_and_r_cols
     assignment = random_assignment(graph, 3)
 
@@ -51,13 +55,14 @@ def partition_with_election(graph_with_d_and_r_cols):
 
 
 @pytest.fixture
-def chain_with_election(partition_with_election):
+def chain_with_election(partition_with_election: Partition) -> MarkovChain:
     return MarkovChain(
         propose_random_flip,
         Validator([no_vanishing_districts]),
-        lambda x: True,
+        lambda x, *, rng: True,
         partition_with_election,
         total_steps=10,
+        rng=2018,
     )
 
 
@@ -86,12 +91,12 @@ def test_Partition_can_update_stats():
     # Flip node with original node_id of 1 to be in part (district) 2
     flip = {1: 2}
 
-    new_partition = partition.flip(flip, use_original_nx_node_ids=True)
+    new_partition = partition.flip(flip, flips_passed_in_use_original_nx_node_ids=True)
 
     assert new_partition["total_stat"][2] == 9
 
 
-def test_tally_multiple_node_attribute_names(graph_with_d_and_r_cols):
+def test_tally_multiple_node_attribute_names(graph_with_d_and_r_cols: Graph):
     graph = graph_with_d_and_r_cols
 
     updaters = {"total": Tally(["D", "R"], alias="total")}
@@ -104,12 +109,12 @@ def test_tally_multiple_node_attribute_names(graph_with_d_and_r_cols):
     assert partition["total"][1] == expected_total_in_district_one
 
 
-def test_vote_totals_are_nonnegative(partition_with_election):
+def test_vote_totals_are_nonnegative(partition_with_election: Partition):
     partition = partition_with_election
     assert all(count >= 0 for count in partition["Mock Election"].totals.values())
 
 
-def test_vote_proportion_updater_returns_percentage_or_nan(partition_with_election):
+def test_vote_proportion_updater_returns_percentage_or_nan(partition_with_election: Partition):
     partition = partition_with_election
 
     election_view = partition["Mock Election"]
@@ -122,13 +127,13 @@ def test_vote_proportion_updater_returns_percentage_or_nan(partition_with_electi
     )
 
 
-def test_vote_proportion_returns_nan_if_total_votes_is_zero(three_by_three_grid):
-
+def test_vote_proportion_returns_nan_if_total_votes_is_zero(three_by_three_grid: Graph):
     election = Election("Mock Election", ["D", "R"], alias="election")
     graph = three_by_three_grid
 
+    # Built from a list of party names, so every attribute name is a str column key
     for node in graph.nodes:
-        for col in election.node_attribute_names:
+        for col in cast(list[str], election.node_attribute_names):
             graph.node_data(node)[col] = 0
 
     updaters = {"election": election}
@@ -143,12 +148,12 @@ def test_vote_proportion_returns_nan_if_total_votes_is_zero(three_by_three_grid)
     )
 
 
-def is_percentage_or_nan(value):
+def is_percentage_or_nan(value: float) -> bool:
     return (0 <= value and value <= 1) or math.isnan(value)
 
 
 def test_vote_proportion_updater_returns_percentage_or_nan_on_later_steps(
-    chain_with_election,
+    chain_with_election: MarkovChain,
 ):
     for partition in chain_with_election:
         election_view = partition["Mock Election"]
@@ -159,13 +164,13 @@ def test_vote_proportion_updater_returns_percentage_or_nan_on_later_steps(
         )
 
 
-def test_vote_proportion_field_has_key_for_each_district(partition_with_election):
+def test_vote_proportion_field_has_key_for_each_district(partition_with_election: Partition):
     partition = partition_with_election
     for percents in partition["Mock Election"].percents_for_party.values():
         assert set(percents.keys()) == set(partition.parts)
 
 
-def test_vote_proportions_sum_to_one(partition_with_election):
+def test_vote_proportions_sum_to_one(partition_with_election: Partition):
     partition = partition_with_election
     election_view = partition["Mock Election"]
 
@@ -199,9 +204,9 @@ def test_election_result_has_a_cute_str_method():
 
 
 def _convert_dict_of_set_of_rx_node_ids_to_set_of_nx_node_ids(
-    dict_of_set_of_rx_nodes, nx_to_rx_node_id_map
-):
-
+    dict_of_set_of_rx_nodes: dict[Hashable, set[Hashable]],
+    nx_to_rx_node_id_map: dict[Hashable, Hashable] | None,
+) -> dict[Hashable, set[Hashable]]:
     # frm: TODO: Testing:  This way to convert node_ids is clumsy and inconvenient.  Think of something better...
 
     # When we create a partition from an NX based Graph we convert it to be an
@@ -214,7 +219,7 @@ def _convert_dict_of_set_of_rx_node_ids_to_set_of_nx_node_ids(
     # This routine converts the data that some updaters create - namely a mapping from
     # partitions to a set of node_ids.
 
-    converted_set = {}
+    converted_set: dict[Hashable, set[Hashable]] = {}
     if nx_to_rx_node_id_map is not None:  # means graph was converted from NX
         # reverse the map
         rx_to_nx_node_id_map = {value: key for key, value in nx_to_rx_node_id_map.items()}
@@ -232,7 +237,7 @@ def _convert_dict_of_set_of_rx_node_ids_to_set_of_nx_node_ids(
     return converted_set
 
 
-def test_exterior_boundaries_as_a_set(three_by_three_grid):
+def test_exterior_boundaries_as_a_set(three_by_three_grid: Graph):
     graph = three_by_three_grid
 
     for i in [0, 1, 2, 3, 5, 6, 7, 8]:
@@ -255,11 +260,8 @@ def test_exterior_boundaries_as_a_set(three_by_three_grid):
     # then we need to convert the RX node_ids in the partition's graph
     # back to what they were in the NX graph.
     nx_to_rx_node_id_map = partition.graph.get_nx_to_rx_node_id_map()
-    if nx_to_rx_node_id_map is not None:
-        converted_result = _convert_dict_of_set_of_rx_node_ids_to_set_of_nx_node_ids(
-            result, nx_to_rx_node_id_map
-        )
-        result = converted_result
+    assert nx_to_rx_node_id_map is not None
+    result = _convert_dict_of_set_of_rx_node_ids_to_set_of_nx_node_ids(result, nx_to_rx_node_id_map)
 
     assert result[1] == {0, 1, 3} and result[2] == {2, 5, 6, 7, 8}
 
@@ -298,8 +300,7 @@ def test_exterior_boundaries_as_a_set(three_by_three_grid):
     assert result[1] == {0, 1, 2, 3, 5} and result[2] == {6, 7, 8}
 
 
-def test_exterior_boundaries(three_by_three_grid):
-
+def test_exterior_boundaries(three_by_three_grid: Graph):
     graph = three_by_three_grid
 
     for i in [0, 1, 2, 3, 5, 6, 7, 8]:
@@ -335,7 +336,7 @@ def test_exterior_boundaries(three_by_three_grid):
     assert result[1] == 10 and result[2] == 6
 
 
-def test_perimeter(three_by_three_grid):
+def test_perimeter(three_by_three_grid: Graph):
     graph = three_by_three_grid
     for i in [0, 1, 2, 3, 5, 6, 7, 8]:
         graph.node_data(i)["boundary_node"] = True
@@ -366,20 +367,20 @@ def test_perimeter(three_by_three_grid):
     assert result[2] == 5 + 4  # 5 nodes + 4 edges
 
 
-def reject_half_of_all_flips(partition):
+def reject_half_of_all_flips(partition: Partition) -> bool:
     if partition.parent is None:
         return True
     return random.random() > 0.5
 
 
-def test_elections_match_the_naive_computation(partition_with_election):
-
+def test_elections_match_the_naive_computation(partition_with_election: Partition):
     chain = MarkovChain(
         propose_random_flip,
         Validator([no_vanishing_districts, reject_half_of_all_flips]),
-        lambda x: True,
+        lambda x, *, rng: True,
         partition_with_election,
         total_steps=100,
+        rng=2018,
     )
 
     for partition in chain:
@@ -391,7 +392,7 @@ def test_elections_match_the_naive_computation(partition_with_election):
         assert expected_party_totals == election_view.totals_for_party
 
 
-def expected_tally(partition, node_attribute_name):
+def expected_tally(partition: Partition, node_attribute_name: str) -> dict[Hashable, float]:
     return {
         part: sum(partition.graph.node_data(node)[node_attribute_name] for node in nodes)
         for part, nodes in partition.parts.items()

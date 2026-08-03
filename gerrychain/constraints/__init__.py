@@ -1,39 +1,20 @@
 """
-The :mod:`gerrychain.constraints` module provides a collection of constraint
-functions and helper classes for the validation step in GerryChain.
+The `gerrychain.constraints` module provides a collection of constraint functions and helper classes
+for the validation step in GerryChain.
 
-==================================== ==========================================
-Helper classes
-===============================================================================
-:class:`Validator`                    Collection of constraints
-:class:`Bounds`                       Bounds on numeric constraints
-:class:`UpperBound`                   Upper bounds on numeric constraints
-:class:`LowerBound`                   Lower bounds on numeric constraints
-:class:`SelfConfiguringUpperBound`    Automatic upper bounds on numeric constraints
-:class:`SelfConfiguringLowerBound`    Automatic lower bounds on numeric constraints
-:class:`WithinPercentRangeOfBounds`   Percentage bounds for numeric constraints
-==================================== ==========================================
+Helper classes include ``Validator`` for collections of constraints, numeric ``Bounds`` and
+``UpperBound``/``LowerBound`` classes, self-configuring bounds, and percentage bounds.
 
-|
+Binary constraint functions include contiguity checks, ``no_vanishing_districts``, and lower bounds
+on reciprocal Polsby-Popper scores.
 
-=================================================== =============================================
-Binary constraint functions
-=================================================================================================
-:meth:`no_worse_L1_reciprocal_polsby_popper`            Lower bounded L1-reciprocal Polsby-Popper
-:meth:`no_worse_L_minus_1_reciprocal_polsby_popper`     Lower bounded L(-1)-reciprocal Polsby-Popper
-:meth:`contiguous`                                      Districts are contiguous (with NetworkX methods)
-:meth:`single_flip_contiguous`                          Districts are contiguous (optimized for ``propose_random_flip`` proposal)
-:meth:`no_vanishing_districts`                          No districts may be completely consumed
-=================================================== =============================================
+Each new step proposed to the chain is passed off to the constraint functions here to determine
+whether or not the step is valid. If it is invalid (breaks contiguity, for instance), then the step
+is immediately rejected.
 
-Each new step proposed to the chain is passed off to the "validator" functions
-here to determine whether or not the step is valid. If it is invalid (breaks
-contiguity, for instance), then the step is immediately rejected.
-
-A validator should take in a :class:`~gerrychain.partition.Partition` instance,
-and should return whether or not the instance is valid according to their
-rules. Many top-level functions following this signature in this module are
-examples of this.
+A constraint function should take in a Partition instance, and should return whether or not the
+instance is valid according to its rules (the ``ConstraintFn`` alias). Many top-level functions in
+this module follow this signature.
 """
 
 from .bounds import (
@@ -45,9 +26,9 @@ from .bounds import (
     WithinPercentRangeOfBounds,
 )
 from .compactness import (
+    L2_polsby_popper,
     L1_polsby_popper,
     L1_reciprocal_polsby_popper,
-    L2_polsby_popper,
     L_minus_1_polsby_popper,
     no_worse_L1_reciprocal_polsby_popper,
     no_worse_L_minus_1_polsby_popper,
@@ -59,15 +40,18 @@ from .contiguity import (
     single_flip_contiguous,
 )
 from .validity import (
+    ConstraintFn,
     Validator,
     deviation_from_ideal,
     districts_within_tolerance,
     no_vanishing_districts,
     refuse_new_splits,
     within_percent_of_ideal_population,
+    within_percent_of_ideal_population_per_member,
 )
 
 __all__ = [
+    "ConstraintFn",
     "LowerBound",
     "SelfConfiguringLowerBound",
     "SelfConfiguringUpperBound",
@@ -89,5 +73,6 @@ __all__ = [
     "no_vanishing_districts",
     "refuse_new_splits",
     "within_percent_of_ideal_population",
+    "within_percent_of_ideal_population_per_member",
     "Bounds",
 ]

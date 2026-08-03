@@ -1,19 +1,33 @@
 import random
+from collections.abc import Callable, Hashable, Iterable, Iterator, Sequence
 from functools import partial
-from inspect import signature
-from typing import Callable, Dict, Optional, Union
+from typing import Literal, cast
 
+from gerrychain._deprecated import (
+    adapt_legacy_callable,
+    allow_legacy_missing_rng,
+    deprecated_parameters,
+)
+from gerrychain._rng import make_rng
 from gerrychain.partition import Partition
 
-from ..tree import (
+from ..graph import FrozenGraph, Graph
+from ..tree import (  # epsilon_tree_bipartition,
+    PopulationBalanceError,
     ReselectException,
     bipartition_tree,
-    bipartition_tree_random,
     bipartition_tree_random_with_num_cuts,
-    epsilon_tree_bipartition,
     find_balanced_edge_cuts_memoization,
     uniform_spanning_tree,
 )
+from ..tree.bipartition_tree import (
+    BipartitionTreeFn,
+    FindBalancedEdgeCutsFn,
+    ReComBipartitionTreeFn,
+    _Cut,
+    _PopulatedGraph,
+)
+from .proposals import ProposalFn
 
 
 # frm: only used in this file
@@ -36,95 +50,253 @@ class ValueWarning(UserWarning):
     pass
 
 
+@deprecated_parameters(renamed={"method": "bipartition_tree_fn"})
+@allow_legacy_missing_rng
+def epsilon_tree_bipartition(
+    subgraph_to_split: Graph | FrozenGraph,
+    parts: Sequence[Hashable],
+    pop_target: float | int,
+    pop_col: str,
+    epsilon: float,
+    node_repeats: int = 0,
+    bipartition_tree_fn: BipartitionTreeFn = partial(bipartition_tree, max_attempts=100000),
+    *,
+    rng: random.Random,
+) -> dict[Hashable, Hashable]:
+    """Bipartition a tree into two :math:`\\varepsilon`-balanced parts.
+
+    Args:
+        subgraph_to_split (Graph | FrozenGraph): The graph to partition into two
+            :math:`\\varepsilon`-balanced parts.
+        parts (Sequence): Iterable of part (district) labels (like ``[0,1,2]`` or ``range(4)``).
+        pop_target (float | int): Target population for each part of the partition.
+        pop_col (str): Node attribute key holding population data.
+        epsilon (float): How far (as a percentage of ``pop_target``) from ``pop_target`` the parts
+            of the partition can be.
+        node_repeats (int, optional): Additional roots to try on each spanning tree before
+            drawing a new tree. Defaults to 0.
+        bipartition_tree_fn (BipartitionTreeFn, optional): The partition method to use. Defaults to
+            ``partial(bipartition_tree, max_attempts=100000)``.
+        rng (random.Random): The RNG supplied by the owning operation.
+
+    Returns:
+        dict: New assignments for the nodes of ``graph``.
+    """
+
+    if len(parts) != 2:
+        raise ValueError(
+            "This function only supports bipartitioning. Please ensure that there"
+            + " are exactly 2 parts in the parts list."
+        )
+
+    flips = {}
+    remaining_nodes = subgraph_to_split.node_indices
+
+    lb_pop = pop_target * (1 - epsilon)
+    ub_pop = pop_target * (1 + epsilon)
+    check_pop = lambda x: lb_pop <= x <= ub_pop
+
+    bipartition_tree_fn = cast(
+        BipartitionTreeFn,
+        adapt_legacy_callable(
+            bipartition_tree_fn,
+            "Bipartition function",
+            renamed={"single_district_cut": "one_sided_cut"},
+        ),
+    )
+    nodes = bipartition_tree_fn(
+        subgraph_to_split.subgraph(remaining_nodes),
+        pop_col=pop_col,
+        pop_target=pop_target,
+        epsilon=epsilon,
+        node_repeats=node_repeats,
+        single_district_cut=False,
+        rng=rng,
+    )
+
+    # Calculate the total population for the two districts based on the
+    # results of the "bipartition_tree_fn()" partitioning.
+    part_pop = 0
+    for node in nodes:
+        # frm: ???:  The code above has already confirmed that len(parts) is 2
+        #               so why use negative index values - why not just use
+        #               parts[0] and parts[1]?
+        flips[node] = parts[-2]
+        part_pop += subgraph_to_split.node_data(node)[pop_col]
+
+    if not check_pop(part_pop):
+        raise PopulationBalanceError()
+
+    remaining_nodes -= nodes
+
+    # All of the remaining nodes go in the last part
+    part_pop = 0
+    for node in remaining_nodes:
+        flips[node] = parts[-1]
+        part_pop += subgraph_to_split.node_data(node)[pop_col]
+
+    if not check_pop(part_pop):
+        raise PopulationBalanceError()
+
+    # translate subgraph node_ids back into node_ids in parent graph
+    translated_flips = subgraph_to_split.translate_subgraph_node_ids_for_flips(flips)
+
+    return translated_flips
+
+
+PairSelection = Literal["district_pairs", "cut_edges"]
+
+
+def _candidate_district_pairs(
+    partition: Partition,
+    pair_selection: PairSelection,
+    rng: random.Random,
+) -> Iterable[tuple[Hashable, Hashable]]:
+    """Return the adjacent district pairs to try merging, in try order.
+
+    With ``"district_pairs"`` each adjacent pair appears once, so the first pair is drawn uniformly
+    from the adjacent district pairs. With ``"cut_edges"`` a pair's chance of coming first is
+    proportional to the number of cut edges the two districts share, matching a uniform draw over
+    the cut edges. Later entries are fallbacks, tried only if bipartitioning the earlier pairs
+    fails; the ``"cut_edges"`` draws are lazy, so a successful first pair costs a single draw.
+    """
+    if pair_selection not in ("district_pairs", "cut_edges"):
+        raise ValueError(
+            f"Unknown pair_selection {pair_selection!r}; expected 'district_pairs' or 'cut_edges'."
+        )
+
+    part_order = {part: index for index, part in enumerate(partition.parts)}
+
+    def normalized_pair(edge: tuple[Hashable, Hashable]) -> tuple[Hashable, Hashable]:
+        pair = [partition.assignment.mapping[edge[0]], partition.assignment.mapping[edge[1]]]
+        # Need to sort the pair so that the order is consistent
+        pair.sort(key=part_order.__getitem__)
+        return (pair[0], pair[1])
+
+    def pair_sort_key(pair: tuple[Hashable, Hashable]) -> tuple[int, int]:
+        return (part_order[pair[0]], part_order[pair[1]])
+
+    if pair_selection == "district_pairs":
+        # Sorted so the order does not depend on string-hash iteration order (PYTHONHASHSEED).
+        pairs = sorted(
+            {normalized_pair(edge) for edge in partition["cut_edges"]}, key=pair_sort_key
+        )
+        rng.shuffle(pairs)
+        return pairs
+
+    # "cut_edges": weight each adjacent pair by the number of cut edges it shares. Counting keeps
+    # the per-edge work to one dict update, with sorting and drawing over the (much smaller) set
+    # of adjacent pairs.
+    counts: dict[tuple[Hashable, Hashable], int] = {}
+    for edge in partition["cut_edges"]:
+        pair = normalized_pair(edge)
+        counts[pair] = counts.get(pair, 0) + 1
+    # Sorted so the order does not depend on string-hash iteration order (PYTHONHASHSEED).
+    pairs = sorted(counts, key=pair_sort_key)
+    weights = [counts[pair] for pair in pairs]
+
+    def draw_without_replacement() -> Iterator[tuple[Hashable, Hashable]]:
+        while pairs:
+            index = rng.choices(range(len(pairs)), weights=weights)[0]
+            weights.pop(index)
+            yield pairs.pop(index)
+
+    return draw_without_replacement()
+
+
+@deprecated_parameters(renamed={"method": "bipartition_tree_fn"})
 def recom(
     partition: Partition,
     pop_col: str,
-    pop_target: Union[int, float],
+    pop_target: int | float,
     epsilon: float,
-    node_repeats: int = 1,
-    region_surcharge: Optional[Dict] = None,
-    method: Callable = bipartition_tree,
+    node_repeats: int = 0,
+    region_surcharge: dict[str, float] | None = None,
+    bipartition_tree_fn: ReComBipartitionTreeFn = bipartition_tree,
+    pair_selection: PairSelection = "district_pairs",
+    *,
+    rng: random.Random | int | None = None,
 ) -> Partition:
-    """
-    ReCom (short for ReCombination) is a Markov Chain Monte Carlo (MCMC) algorithm
-    used for redistricting. At each step of the algorithm, a pair of adjacent districts
-    is selected at random and merged into a single district. The region is then split
-    into two new districts by generating a spanning tree using the Kruskal/Karger
-    algorithm and cutting an edge at random. The edge is checked to ensure that it
-    separates the region into two new districts that are population balanced, and,
-    if not, a new edge is selected at random and the process is repeated.
+    """Return new partition resulting from the ReCom algorithm.
+
+    ReCom (short for ReCombination) is a Markov Chain Monte Carlo (MCMC) algorithm used for
+    redistricting. At each step of the algorithm, a pair of adjacent districts is selected at
+    random and merged into a single district. The region is then split into two new districts by
+    generating a spanning tree using the Kruskal/Karger algorithm and cutting an edge at random.
+    The edge is checked to ensure that it separates the region into two new districts that are
+    population balanced, and, if not, a new edge is selected at random and the process is repeated.
 
     Example usage:
-
-    .. code-block:: python
 
         from functools import partial
         from gerrychain import MarkovChain
         from gerrychain.proposals import recom
 
-        # ...define constraints, accept, partition, total_steps here...
+        # ...define constraints, acceptance_fn, partition, total_steps here...
 
-        # Ideal population:
-        pop_target = sum(partition["population"].values()) / len(partition)
+        # Ideal population: pop_target = sum(partition["population"].values()) / len(partition)
 
-        proposal = partial(
-            recom, pop_col="POP10", pop_target=pop_target, epsilon=.05, node_repeats=10
-        )
+        proposal_fn = partial(recom, pop_col="POP10", pop_target=pop_target, epsilon=.05)
 
-        chain = MarkovChain(proposal, constraints, accept, partition, total_steps)
+        chain = MarkovChain(proposal_fn, constraints, acceptance_fn, partition, total_steps)
 
-    :param partition: The initial partition.
-    :type partition: Partition
-    :param pop_col: The name of the population column.
-    :type pop_col: str
-    :param pop_target: The target population for each district.
-    :type pop_target: Union[int,float]
-    :param epsilon: The epsilon value for population deviation as a percentage of the
-        target population.
-    :type epsilon: float
-    :param node_repeats: The number of times to repeat the bipartitioning step. Default is 1.
-    :type node_repeats: int, optional
-    :param region_surcharge: The surcharge dictionary for the graph used for region-aware
-        partitioning of the grid. Default is None.
-    :type region_surcharge: Optional[Dict], optional
-    :param method: The method used for bipartitioning the tree. Default is
-        :func:`~gerrychain.tree.bipartition_tree`.
-    :type method: Callable, optional
+    Args:
+        partition (Partition): The initial partition.
+        pop_col (str): The name of the population column.
+        pop_target (int | float): The target population for each district.
+        epsilon (float): The epsilon value for population deviation as a percentage of the target
+            population.
+        node_repeats (int, optional): Additional roots to try on each spanning tree before
+            drawing a new tree. Defaults to 0. Positive values are useful with contraction or
+            custom cut-edge finders, but not with the default memoized finder.
+        region_surcharge (dict | None, optional): The surcharge dictionary for the graph used
+            for region-aware partitioning of the grid. Default is None.
+        bipartition_tree_fn (ReComBipartitionTreeFn, optional): The method used for
+            bipartitioning the tree.
+            Default is `gerrychain.tree.bipartition_tree`. To configure the bipartition or
+            spanning-tree step (e.g. ``max_attempts``, or ``spanning_tree_fn_kwargs`` for
+            spanning-tree options), pass a pre-bound function, e.g.
+            ``partial(bipartition_tree, spanning_tree_fn_kwargs={...})``.
+        pair_selection ("district_pairs" | "cut_edges", optional): How to choose the pair of
+            adjacent districts to merge. ``"district_pairs"`` (default) draws uniformly among
+            the adjacent district pairs; ``"cut_edges"`` draws uniformly among the cut edges,
+            so a pair's chance is proportional to the number of cut edges the two districts
+            share.
+        rng (random.Random | int | None, optional): Source of randomness. Pass a shared
+            ``Random`` for repeated standalone calls; an integer restarts the stream each call.
 
-    :returns: The new partition resulting from the ReCom algorithm.
-        print("bipartition_tree: updating restarts and attempts")
-    :rtype: Partition
+    Returns:
+        Partition: The new partition resulting from the ReCom algorithm.
     """
 
-    bad_district_pairs = set()
-    n_parts = len(partition)
-    tot_pairs = n_parts * (n_parts - 1) / 2  # n choose 2
+    rng = make_rng(rng)
 
-    # Try to add the region aware in if the method accepts the surcharge dictionary
-    if "region_surcharge" in signature(method).parameters:
-        method = partial(method, region_surcharge=region_surcharge)
+    candidate_pairs = _candidate_district_pairs(partition, pair_selection, rng)
 
-    while len(bad_district_pairs) < tot_pairs:
-        # frm: In no particular order, try to merge and then split pairs of districts
-        #       that have a cut_edge - meaning that they are adjacent, until you either
-        #       find one that can be split, or you have tried all possible pairs
-        #       of adjacent districts...
+    # Bind region_surcharge onto the bipartition_tree_fn. Other bipartition / spanning-tree options
+    # (e.g. spanning_tree_fn_kwargs) are configured by passing a pre-bound bipartition_tree_fn, such
+    # as partial(bipartition_tree, spanning_tree_fn_kwargs={...}).
+    bipartition_tree_fn = cast(
+        ReComBipartitionTreeFn,
+        adapt_legacy_callable(
+            bipartition_tree_fn,
+            "ReCom bipartition function",
+            renamed={"single_district_cut": "one_sided_cut"},
+            dropped={"region_surcharge"},
+        ),
+    )
+    bipartition_tree_fn = cast(
+        ReComBipartitionTreeFn,
+        partial(bipartition_tree_fn, region_surcharge=region_surcharge),
+    )
+
+    flips = None
+
+    # Find a pair of touching "parts" that can be successfully bipartitioned into
+    # two new "parts"
+    #
+    for parts_to_merge in candidate_pairs:
         try:
-            # frm: TODO: Refactoring:  see if there is some way to avoid a while True loop...
-            while True:
-                edge = random.choice(tuple(partition["cut_edges"]))
-                # Need to sort the tuple so that the order is consistent
-                # in the bad_district_pairs set
-                parts_to_merge = [
-                    partition.assignment.mapping[edge[0]],
-                    partition.assignment.mapping[edge[1]],
-                ]
-                parts_to_merge.sort()
-
-                if tuple(parts_to_merge) not in bad_district_pairs:
-                    break
-
-            # frm: Note that the vertical bar operator merges the two sets into one set.
             subgraph_nodes = partition.parts[parts_to_merge[0]] | partition.parts[parts_to_merge[1]]
 
             flips = epsilon_tree_bipartition(
@@ -134,118 +306,167 @@ def recom(
                 pop_target=pop_target,
                 epsilon=epsilon,
                 node_repeats=node_repeats,
-                method=method,
+                bipartition_tree_fn=bipartition_tree_fn,
+                rng=rng,
             )
             break
 
-        except Exception as e:
-            if isinstance(e, ReselectException):
-                # frm: Add this pair to list of pairs that did not work...
-                bad_district_pairs.add(tuple(parts_to_merge))
-                continue
-            else:
-                raise
+        except ReselectException:
+            # Try again with a different pair of touching districts
+            continue
 
-    if len(bad_district_pairs) == tot_pairs:
+    if flips is None:
         raise MetagraphError(
-            f"Bipartitioning failed for all {tot_pairs} district pairs."
-            f"Consider rerunning the chain with a different random seed."
+            "Bipartitioning failed for all adjacent district pairs reachable from cut edges."
         )
 
     return partition.flip(flips)
 
 
+# Define a ProposalFn version to make purpose of the function clear
+def build_recom_proposal_fn(
+    pop_col: str,
+    pop_target: int | float,
+    epsilon: float,
+    node_repeats: int = 0,
+    region_surcharge: dict[str, float] | None = None,
+    bipartition_tree_fn: ReComBipartitionTreeFn = bipartition_tree,
+    pair_selection: PairSelection = "district_pairs",
+) -> ProposalFn:
+    """Build a ReCom proposal function with its configuration bound.
+
+    This is the configurable form of the :class:`ReCom` namespace methods: it exposes every
+    :func:`recom` option except ``partition`` and ``rng``, which :class:`~gerrychain.MarkovChain`
+    supplies at each step.
+
+    Args:
+        pop_col (str): The name of the population column.
+        pop_target (int | float): The target population for each district.
+        epsilon (float): Allowed population deviation as a percentage of the target population.
+        node_repeats (int, optional): Additional roots to try on each spanning tree before drawing
+            a new tree. Defaults to 0. Positive values help only with cut finders whose result
+            depends on the root; see :func:`~gerrychain.tree.bipartition_tree`.
+        region_surcharge (dict | None, optional): Surcharges for region-aware chains; see
+            :func:`~gerrychain.tree.random_spanning_tree`. Default is None.
+        bipartition_tree_fn (ReComBipartitionTreeFn, optional): The function used to split the
+            merged district pair. To configure the bipartition or spanning-tree step (for example
+            ``max_attempts``, ``allow_pair_reselection``, or a uniform spanning tree), pass a
+            pre-bound function such as ``partial(bipartition_tree, max_attempts=100)``.
+        pair_selection ("district_pairs" | "cut_edges", optional): How to choose the adjacent
+            district pair to merge. ``"district_pairs"`` (default) draws uniformly among adjacent
+            pairs; ``"cut_edges"`` weights each pair by the number of cut edges it shares.
+
+    Returns:
+        ProposalFn: A proposal function for use with :class:`~gerrychain.MarkovChain`.
+    """
+    proposal_fn = partial(
+        recom,
+        pop_col=pop_col,
+        pop_target=pop_target,
+        epsilon=epsilon,
+        node_repeats=node_repeats,
+        region_surcharge=region_surcharge,
+        bipartition_tree_fn=bipartition_tree_fn,
+        pair_selection=pair_selection,
+    )
+    return cast(ProposalFn, proposal_fn)
+
+
+@deprecated_parameters(
+    renamed={
+        "balance_edge_fn": "find_balanced_edge_cuts_fn",
+        "M": "max_balanced_edge_cuts",
+    },
+    ignored={
+        "choice": "Cut selection now uses the proposal's rng.",
+    },
+    defaults={"max_balanced_edge_cuts": 1},
+)
 def reversible_recom(
     partition: Partition,
     pop_col: str,
-    pop_target: Union[int, float],
+    pop_target: int | float,
     epsilon: float,
-    balance_edge_fn: Callable = find_balanced_edge_cuts_memoization,
-    M: int = 1,
+    max_balanced_edge_cuts: int,
+    find_balanced_edge_cuts_fn: FindBalancedEdgeCutsFn = find_balanced_edge_cuts_memoization,
     repeat_until_valid: bool = False,
-    choice: Callable = random.choice,
+    *,
+    rng: random.Random | int | None = None,
 ) -> Partition:
-    """
-    Reversible ReCom algorithm for redistricting.
+    """Reversible ReCom algorithm for redistricting.
 
-    This function performs the reversible ReCom algorithm, which is a Markov Chain Monte
-    Carlo (MCMC) algorithm used for redistricting. For more information, see the paper
-    "Spanning Tree Methods for Sampling Graph Partitions" by Cannon, et al. (2022) at
+    This function performs the reversible ReCom algorithm, which is a Markov Chain Monte Carlo
+    (MCMC) algorithm used for redistricting. For more information, see the paper "Spanning Tree
+    Methods for Sampling Graph Partitions" by Cannon, et al. (2022) at
     https://arxiv.org/abs/2210.01401
 
-    :param partition: The initial partition.
-    :type partition: Partition
-    :param pop_col: The name of the population column.
-    :type pop_col: str
-    :param pop_target: The target population for each district.
-    :type pop_target: Union[int,float]
-    :param epsilon: The epsilon value for population deviation as a percentage of the
-        target population.
-    :type epsilon: float
-    :param balance_edge_fn: The balance edge function. Default is
-        find_balanced_edge_cuts_memoization.
-    :type balance_edge_fn: Callable, optional
-        frm: it returns a list of Cuts - a named tuple defined in tree.py
-    :param M: The maximum number of balance edges. Default is 1.
-    :type M: int, optional
-    :param repeat_until_valid: Flag indicating whether to repeat until a valid partition is
-        found. Default is False.
-    :type repeat_until_valid: bool, optional
-    :param choice: The choice function for selecting a random element. Default is random.choice.
-    :type choice: Callable, optional
+    Args:
+        partition (Partition): The initial partition.
+        pop_col (str): The name of the population column.
+        pop_target (int | float): The target population for each district.
+        epsilon (float): The epsilon value for population deviation as a percentage of the target
+            population.
+        max_balanced_edge_cuts (int): The number of balanced edge cuts to draw from the spanning
+            tree before selecting one, used to make the proposal reversible.
+        find_balanced_edge_cuts_fn (Callable, optional): The balance edge function. Default is
+            find_balanced_edge_cuts_memoization.
+        repeat_until_valid (bool, optional): Flag indicating whether to repeat until a valid
+            partition is found. Default is False.
+        rng (random.Random | int | None, optional): Source of randomness. Pass a shared
+            ``Random`` for repeated standalone calls; an integer restarts the stream each call.
 
-    :returns: The new partition resulting from the reversible ReCom algorithm.
-    :rtype: Partition
+    Returns:
+        Partition: The new partition resulting from the reversible ReCom algorithm.
     """
 
-    def dist_pair_edges(part, a, b):
+    rng = make_rng(rng)
+    find_balanced_edge_cuts_fn = cast(
+        FindBalancedEdgeCutsFn,
+        adapt_legacy_callable(
+            find_balanced_edge_cuts_fn,
+            "Balanced-edge-cut function",
+            renamed={
+                "single_district_cut": "one_sided_cut",
+                "rootnode_choice_fn": "choice",
+            },
+        ),
+    )
+
+    def dist_pair_edges(
+        part: Partition, a: Hashable, b: Hashable
+    ) -> list[tuple[Hashable, Hashable]]:
         # frm: Find all edges that cross from district a into district b
-        return set(
+        return [
             e
             for e in part.graph.edges
             if (
                 (part.assignment.mapping[e[0]] == a and part.assignment.mapping[e[1]] == b)
                 or (part.assignment.mapping[e[0]] == b and part.assignment.mapping[e[1]] == a)
             )
-        )
+        ]
 
-    def bounded_balance_edge_fn(*args, **kwargs):
-        cuts = balance_edge_fn(*args, **kwargs)
-        if len(cuts) > M:
+    def _bounded_find_balanced_edge_cuts_fn(
+        h: _PopulatedGraph,
+        single_district_cut: bool = False,
+        rootnode_choice_fn: Callable[[Sequence[Hashable]], Hashable] | None = None,
+        *,
+        rng: random.Random,
+    ) -> list[_Cut]:
+        if rootnode_choice_fn is None:
+            rootnode_choice_fn = rng.choice
+        cuts = find_balanced_edge_cuts_fn(
+            h,
+            single_district_cut=single_district_cut,
+            rootnode_choice_fn=rootnode_choice_fn,
+            rng=rng,
+        )
+        if len(cuts) > max_balanced_edge_cuts:
             raise ReversibilityError(
-                f"Found {len(cuts)} balance edges, " f"but the upper bound is {M}."
+                f"Found {len(cuts)} balance edges, but the upper bound is {max_balanced_edge_cuts}."
             )
         return cuts
 
-    """
-    frm: Original Code:
-
-    bipartition_tree_random_reversible = partial(
-        _bipartition_tree_random_all,
-        repeat_until_valid=repeat_until_valid,
-        spanning_tree_fn=uniform_spanning_tree,
-        balance_edge_fn=bounded_balance_edge_fn,
-    )
-
-    I deemed this code to be evil, if only because it used an internal tree.py routine
-    _bipartition_tree_random_all().  This internal routine returns a set of Cut objects
-    which otherwise never appear outside tree.py, so this just adds complexity.
-
-    The only reason the original code used _bipartition_tree_random_all() instead of just
-    using bipartition_tree_random() is that it needs to know how many possible new
-    districts there are.  So, I created a new function in tree.py that does EXACTLY
-    what bipartition_tree_random() does but which also returns the number of possible
-    new districts.
-
-    """
-    bipartition_tree_random_reversible = partial(
-        bipartition_tree_random_with_num_cuts,
-        repeat_until_valid=repeat_until_valid,
-        spanning_tree_fn=uniform_spanning_tree,
-        balance_edge_fn=bounded_balance_edge_fn,
-    )
-
-    parts = sorted(list(partition.parts.keys()))
+    parts = list(partition.parts)
     dist_pairs = []
     for out_part in parts:
         for in_part in parts:
@@ -265,20 +486,17 @@ def reversible_recom(
             # an entire iteration in that case too - which seems kind of dumb...
             #
 
-    random_pair = random.choice(dist_pairs)
+    random_pair = rng.choice(dist_pairs)
     pair_edges = dist_pair_edges(partition, *random_pair)
     if random_pair[0] == random_pair[1] or not pair_edges:
         return partition  # self-loop: no adjacency
 
-    # frm: TODO: Code: ???:  Grok why it is OK to return the partition unchanged as the next step.
-    #
-    # This runs the risk of running an entire chain without ever changing the partition.
-    # I assume that the logic is that there is deliberate randomness introduced each time,
-    # so eventually, if it is possible, the chain will get started, but it seems like there
-    # should be some kind of check to see if it doesn't ever get started, so that the
-    # user can have a clue about what is going on...
+    # Note that Reversible ReCom targets the spanning tree distribution.
+    # By modifying how the acceptance of partituclar partitioning
+    # schemes is handled, we are able to sample exactly from that distribution
+    # rather than an approximation of it like we do in regular ReCom.
 
-    edge = random.choice(list(pair_edges))
+    edge = rng.choice(pair_edges)
     parts_to_merge = (
         partition.assignment.mapping[edge[0]],
         partition.assignment.mapping[edge[1]],
@@ -299,16 +517,19 @@ def reversible_recom(
     #               the subgraph's node_ids afterwards.
     #
 
-    result = bipartition_tree_random_reversible(
+    result = bipartition_tree_random_with_num_cuts(
         partition.graph.subgraph(subgraph_nodes),
         pop_col=pop_col,
         pop_target=pop_target,
         epsilon=epsilon,
+        repeat_until_valid=repeat_until_valid,
+        spanning_tree_fn=uniform_spanning_tree,
+        find_balanced_edge_cuts_fn=_bounded_find_balanced_edge_cuts_fn,
+        rng=rng,
     )
-    if not result:
-        return partition  # self-loop: no balance edge
-
     num_possible_districts, nodes = result
+    if num_possible_districts == 0:
+        return partition  # self-loop: no balance edge
 
     remaining_nodes = subgraph_nodes - set(nodes)
     # Note:  Clever way to create a single dictionary from
@@ -322,74 +543,298 @@ def reversible_recom(
     new_part = partition.flip(flips)
     seam_length = len(dist_pair_edges(new_part, *random_pair))
 
-    prob = num_possible_districts / (M * seam_length)
+    prob = num_possible_districts / (max_balanced_edge_cuts * seam_length)
     if prob > 1:
         raise ReversibilityError(
             f"Found {len(result) if result is not None else 0} balance edges, but "
-            f"the upper bound (with seam length 1) is {M}."
+            f"the upper bound (with seam length 1) is {max_balanced_edge_cuts}."
         )
-    if random.random() < prob:
+    if rng.random() < prob:
         return new_part
 
     return partition  # self-loop
 
 
-# frm TODO: Refactoring:  I do not think that ReCom() is ever called.  Note that it
-#           only defines a constructor and a __call__() which would allow
-#           you to call the recom() function by creating a ReCom object and then
-#           "calling" that object - why not just call the recom function?
-#
-#           ...confused...
-#
-#           My guess is that someone started writing this code thinking that
-#           a class would make sense but then realized that the only use
-#           was to call the recom() function but never went back to remove
-#           the class.  In short, I think that we should probably remove the
-#           class and just keep the function...
-#
-# What Peter said in a PR:
-#
-# Another bit of legacy code. I am also not sure why this exists. Seems like
-# there were plans for this and then it got dropped when someone graduated
-#
+# Define a ProposalFn version to make purpose of the function clear
+def build_reversible_recom_proposal_fn(
+    pop_col: str,
+    pop_target: int | float,
+    epsilon: float,
+    max_balanced_edge_cuts: int,
+    find_balanced_edge_cuts_fn: FindBalancedEdgeCutsFn = find_balanced_edge_cuts_memoization,
+    repeat_until_valid: bool = False,
+) -> ProposalFn:
+    """Build a reversible ReCom proposal function with its configuration bound.
+
+    Reversible ReCom samples exactly from the spanning-tree distribution rather than an
+    approximation of it; see :func:`reversible_recom`. This builder exposes every option except
+    ``partition`` and ``rng``, which :class:`~gerrychain.MarkovChain` supplies at each step.
+
+    Args:
+        pop_col (str): The name of the population column.
+        pop_target (int | float): The target population for each district.
+        epsilon (float): Allowed population deviation as a percentage of the target population.
+        max_balanced_edge_cuts (int): The number of balanced edge cuts to draw from the spanning
+            tree before selecting one, which is what makes the proposal reversible. The proposal
+            raises :class:`ReversibilityError` if a tree exceeds this bound.
+        find_balanced_edge_cuts_fn (FindBalancedEdgeCutsFn, optional): The balanced-cut finder.
+            Default is :func:`~gerrychain.tree.find_balanced_edge_cuts_memoization`.
+        repeat_until_valid (bool, optional): Whether to keep drawing until a valid partition is
+            found. Default is False.
+
+    Returns:
+        ProposalFn: A proposal function for use with :class:`~gerrychain.MarkovChain`.
+    """
+    proposal_fn = partial(
+        reversible_recom,
+        pop_col=pop_col,
+        pop_target=pop_target,
+        epsilon=epsilon,
+        max_balanced_edge_cuts=max_balanced_edge_cuts,
+        find_balanced_edge_cuts_fn=find_balanced_edge_cuts_fn,
+        repeat_until_valid=repeat_until_valid,
+    )
+    return cast(ProposalFn, proposal_fn)
+
+
 class ReCom:
-    """
-    ReCom (short for ReCombination) is a class that represents a ReCom proposal
-    for redistricting. It is used to create new partitions by recombining existing
-    districts while maintaining population balance.
+    """Ready-made builders for the standard ReCom proposal variants.
 
+    Each method returns a proposal function ready to hand to :class:`~gerrychain.MarkovChain`, so
+    instead of the ``functools.partial`` incantation::
+
+        from functools import partial
+        proposal_fn = partial(recom, pop_col="TOTPOP", pop_target=ideal_pop, epsilon=0.01)
+
+    you can write::
+
+        proposal_fn = ReCom.district_pairs_mst(pop_col="TOTPOP", pop_target=ideal_pop, epsilon=0.01)
+
+    This class is a namespace, not a type: it cannot be instantiated.
+
+    The variants differ along two axes:
+
+    * **Pair selection**: ``cut_edges_*`` picks a cut edge uniformly at random and merges the two
+      districts on either side of it, so a pair's chance is proportional to the number of cut edges
+      the districts share. ``district_pairs_*`` picks uniformly among the adjacent district pairs
+      themselves.
+    * **Spanning tree**: ``*_mst`` draws a minimum spanning tree on random edge weights using
+      Kruskal's algorithm. ``*_ust`` draws a uniform spanning tree using Wilson's algorithm.
+
+    :meth:`reversible` is the Reversible ReCom proposal, which samples exactly from the
+    spanning-tree distribution; see :func:`reversible_recom`.
+
+    The aliases ``A``, ``B``, ``C``, ``D``, and ``R`` name the same builders after the variants in
+    "Spanning Tree Methods for Sampling Graph Partitions" (Cannon et al., 2022,
+    https://arxiv.org/abs/2210.01401), to ease replication of results from that paper.
+
+    These builders expose only the most common options. For anything else (a custom bipartition or
+    spanning-tree function, ``node_repeats``, ...), use :func:`build_recom_proposal_fn` or
+    :func:`build_reversible_recom_proposal_fn`, which these methods wrap, or bind
+    ``functools.partial(recom, ...)`` yourself.
     """
 
-    def __init__(
-        self,
+    def __init__(self, *args: object, **kwargs: object) -> None:
+        raise TypeError(
+            "ReCom is not instantiable; use the builder methods, e.g. "
+            "ReCom.district_pairs_mst(...) or ReCom.reversible(...)."
+        )
+
+    @staticmethod
+    def cut_edges_mst(
         pop_col: str,
-        ideal_pop: Union[int, float],
+        pop_target: int | float,
         epsilon: float,
-        method: Callable = bipartition_tree_random,
-    ):
-        """
-        :param pop_col: The name of the column in the partition that contains the population data.
-        :type pop_col: str
-        :param ideal_pop: The ideal population for each district.
-        :type ideal_pop: Union[int,float]
-        :param epsilon: The epsilon value for population deviation as a percentage of the
-            target population.
-        :type epsilon: float
-        :param method: The method used for bipartitioning the tree.
-            Defaults to `bipartition_tree_random`.
-        :type method: function, optional
-        """
-        self.pop_col = pop_col
-        self.ideal_pop = ideal_pop
-        self.epsilon = epsilon
-        self.method = method
+        region_surcharge: dict[str, float] | None = None,
+        allow_pair_reselection: bool = False,
+    ) -> ProposalFn:
+        """ReCom variant A: cut-edges pair selection, minimum spanning tree.
 
-    def __call__(self, partition: Partition):
-        return recom(partition, self.pop_col, self.ideal_pop, self.epsilon, method=self.method)
+        A cut edge is selected at random and the two districts on either side of it are merged. The
+        merged region is split back into two districts by drawing a minimum spanning tree on random
+        edge weights (Kruskal's algorithm) and finding a population-balanced cut.
+
+        Args:
+            pop_col (str): The name of the population column.
+            pop_target (int | float): The target population for each district.
+            epsilon (float): Allowed population deviation as a percentage of the target
+                population.
+            region_surcharge (dict | None, optional): Surcharge dictionary for region-aware
+                chains; see :func:`~gerrychain.tree.random_spanning_tree`. Default is None.
+            allow_pair_reselection (bool, optional): Whether to fall back to a cut edge between
+                a different district pair if bipartitioning the merged pair fails. Default is
+                False.
+
+        Returns:
+            ProposalFn: A proposal function for use with :class:`~gerrychain.MarkovChain`.
+        """
+        return build_recom_proposal_fn(
+            pop_col=pop_col,
+            pop_target=pop_target,
+            epsilon=epsilon,
+            region_surcharge=region_surcharge,
+            bipartition_tree_fn=partial(
+                bipartition_tree,
+                allow_pair_reselection=allow_pair_reselection,
+            ),
+            pair_selection="cut_edges",
+        )
+
+    @staticmethod
+    def district_pairs_mst(
+        pop_col: str,
+        pop_target: int | float,
+        epsilon: float,
+        region_surcharge: dict[str, float] | None = None,
+        allow_pair_reselection: bool = False,
+    ) -> ProposalFn:
+        """ReCom variant B: district-pairs pair selection, minimum spanning tree.
+
+        A pair of adjacent districts is selected uniformly at random and merged. The merged region
+        is split back into two districts by drawing a minimum spanning tree on random edge weights
+        (Kruskal's algorithm) and finding a population-balanced cut.
+
+        Args:
+            pop_col (str): The name of the population column.
+            pop_target (int | float): The target population for each district.
+            epsilon (float): Allowed population deviation as a percentage of the target population.
+            region_surcharge (dict | None, optional): Surcharge dictionary for region-aware chains;
+                see :func:`~gerrychain.tree.random_spanning_tree`. Default is None.
+            allow_pair_reselection (bool, optional): Whether to allow reselection of the same
+                district pair if bipartitioning fails. Default is False.
+
+        Returns:
+            ProposalFn: A proposal function for use with :class:`~gerrychain.MarkovChain`.
+        """
+        return build_recom_proposal_fn(
+            pop_col=pop_col,
+            pop_target=pop_target,
+            epsilon=epsilon,
+            region_surcharge=region_surcharge,
+            bipartition_tree_fn=partial(
+                bipartition_tree,
+                allow_pair_reselection=allow_pair_reselection,
+            ),
+            pair_selection="district_pairs",
+        )
+
+    @staticmethod
+    def cut_edges_ust(
+        pop_col: str,
+        pop_target: int | float,
+        epsilon: float,
+        allow_pair_reselection: bool = False,
+    ) -> ProposalFn:
+        """ReCom variant C: cut-edges pair selection, uniform spanning tree.
+
+        Like :meth:`cut_edges_mst`, except the merged region is split using a spanning tree drawn
+        uniformly at random (Wilson's algorithm). Region surcharges are not supported: a uniform
+        spanning tree ignores edge weights.
+
+        Args:
+            pop_col (str): The name of the population column.
+            pop_target (int | float): The target population for each district.
+            epsilon (float): Allowed population deviation as a percentage of the target
+                population.
+            allow_pair_reselection (bool, optional): Whether to fall back to a cut edge between
+                a different district pair if bipartitioning the merged pair fails. Default is
+                False.
+
+        Returns:
+            ProposalFn: A proposal function for use with :class:`~gerrychain.MarkovChain`.
+        """
+        return build_recom_proposal_fn(
+            pop_col=pop_col,
+            pop_target=pop_target,
+            epsilon=epsilon,
+            pair_selection="cut_edges",
+            bipartition_tree_fn=partial(
+                bipartition_tree,
+                spanning_tree_fn=uniform_spanning_tree,
+                allow_pair_reselection=allow_pair_reselection,
+            ),
+        )
+
+    @staticmethod
+    def district_pairs_ust(
+        pop_col: str,
+        pop_target: int | float,
+        epsilon: float,
+        allow_pair_reselection: bool = False,
+    ) -> ProposalFn:
+        """ReCom variant D: district-pairs pair selection, uniform spanning tree.
+
+        Like :meth:`district_pairs_mst`, except the merged region is split using a spanning
+        tree drawn uniformly at random (Wilson's algorithm). Region surcharges are not
+        supported: a uniform spanning tree ignores edge weights.
+
+        Args:
+            pop_col (str): The name of the population column.
+            pop_target (int | float): The target population for each district.
+            epsilon (float): Allowed population deviation as a percentage of the target population.
+            allow_pair_reselection (bool, optional): Whether to allow reselection of the same
+                district pair if bipartitioning fails. Default is False.
+
+        Returns:
+            ProposalFn: A proposal function for use with :class:`~gerrychain.MarkovChain`.
+        """
+        return build_recom_proposal_fn(
+            pop_col=pop_col,
+            pop_target=pop_target,
+            epsilon=epsilon,
+            pair_selection="district_pairs",
+            bipartition_tree_fn=partial(
+                bipartition_tree,
+                spanning_tree_fn=uniform_spanning_tree,
+                allow_pair_reselection=allow_pair_reselection,
+            ),
+        )
+
+    @staticmethod
+    def reversible(
+        pop_col: str,
+        pop_target: int | float,
+        epsilon: float,
+        max_balanced_edge_cuts: int,
+        repeat_until_valid: bool = False,
+    ) -> ProposalFn:
+        """ReCom variant R: the reversible ReCom proposal.
+
+        Samples exactly from the spanning-tree distribution rather than an approximation of it; see
+        :func:`reversible_recom` and the paper "Spanning Tree Methods for Sampling Graph Partitions"
+        (https://arxiv.org/abs/2210.01401) for details.
+
+        Args:
+            pop_col (str): The name of the population column.
+            pop_target (int | float): The target population for each district.
+            epsilon (float): Allowed population deviation as a percentage of the target
+                population.
+            max_balanced_edge_cuts (int): The number of balanced edge cuts to draw from the
+                spanning tree before selecting one, used to make the proposal reversible.
+            repeat_until_valid (bool, optional): Whether to repeat until a valid partition is
+                found. Default is False.
+
+        Returns:
+            ProposalFn: A proposal function for use with :class:`~gerrychain.MarkovChain`.
+        """
+        return build_reversible_recom_proposal_fn(
+            pop_col=pop_col,
+            pop_target=pop_target,
+            epsilon=epsilon,
+            max_balanced_edge_cuts=max_balanced_edge_cuts,
+            repeat_until_valid=repeat_until_valid,
+        )
+
+    # Variant names from "Spanning Tree Methods for Sampling Graph Partitions".
+    A = cut_edges_mst
+    B = district_pairs_mst
+    C = cut_edges_ust
+    D = district_pairs_ust
+    R = reversible
 
 
 class ReversibilityError(Exception):
     """Raised when the cut edge upper bound is violated."""
 
-    def __init__(self, msg):
+    def __init__(self, msg: str) -> None:
         self.message = msg

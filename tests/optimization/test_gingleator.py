@@ -1,23 +1,18 @@
-import random
-from functools import partial
-
 import numpy as np
 import pytest
 
-from gerrychain import Partition
+from gerrychain import Graph, Partition
 from gerrychain.constraints import contiguous
 from gerrychain.optimization import Gingleator
-from gerrychain.proposals import recom
+from gerrychain.proposals import build_recom_proposal_fn
 from gerrychain.updaters import Tally
 
-random.seed(2024)
 
-
-def simple_cut_edge_count(partition):
+def simple_cut_edge_count(partition: Partition) -> int:
     return len(partition["cut_edges"])
 
 
-def gingleator_test_partition(four_by_five_grid_for_opt):
+def gingleator_test_partition(four_by_five_grid_for_opt: Graph) -> Partition:
     return Partition(
         graph=four_by_five_grid_for_opt,
         assignment={
@@ -53,13 +48,13 @@ def gingleator_test_partition(four_by_five_grid_for_opt):
     )
 
 
-def test_ginglator_needs_min_perc_or_min_pop_col(four_by_five_grid_for_opt):
-    random.seed(2024)
+def test_ginglator_needs_min_perc_or_min_pop_col(four_by_five_grid_for_opt: Graph):
     initial_partition = Partition.from_random_assignment(
         graph=four_by_five_grid_for_opt,
         n_parts=4,
         epsilon=0.0,
         pop_col="population",
+        rng=2024,
         updaters={
             "population": Tally("population", alias="population"),
             "MVAP": Tally("MVAP", alias="MVAP"),
@@ -69,21 +64,21 @@ def test_ginglator_needs_min_perc_or_min_pop_col(four_by_five_grid_for_opt):
 
     ideal_pop = sum(initial_partition["population"].values()) / 4
 
-    proposal = partial(
-        recom,
+    proposal = build_recom_proposal_fn(
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,
-        node_repeats=1,
+        node_repeats=0,
     )
 
     with pytest.raises(ValueError) as gingle_err:
         _ = Gingleator(
-            proposal=proposal,
+            proposal_fn=proposal,
             constraints=[contiguous],
             initial_state=initial_partition,
             total_pop_col="population",
-            score_function=Gingleator.num_opportunity_dists,
+            score_fn=Gingleator.num_opportunity_dists,
+            rng=2024,
         )
 
     assert "`minority_perc_col` and `minority_pop_col` cannot both be `None`" in str(
@@ -91,13 +86,13 @@ def test_ginglator_needs_min_perc_or_min_pop_col(four_by_five_grid_for_opt):
     )
 
 
-def test_ginglator_warns_if_min_perc_and_min_pop_col_set(four_by_five_grid_for_opt):
-    random.seed(2024)
+def test_ginglator_warns_if_min_perc_and_min_pop_col_set(four_by_five_grid_for_opt: Graph):
     initial_partition = Partition.from_random_assignment(
         graph=four_by_five_grid_for_opt,
         n_parts=4,
         epsilon=0.0,
         pop_col="population",
+        rng=2024,
         updaters={
             "population": Tally("population", alias="population"),
             "MVAP": Tally("MVAP", alias="MVAP"),
@@ -110,23 +105,23 @@ def test_ginglator_warns_if_min_perc_and_min_pop_col_set(four_by_five_grid_for_o
 
     ideal_pop = sum(initial_partition["population"].values()) / 4
 
-    proposal = partial(
-        recom,
+    proposal = build_recom_proposal_fn(
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,
-        node_repeats=1,
+        node_repeats=0,
     )
 
     with pytest.warns() as record:
         _ = Gingleator(
-            proposal=proposal,
+            proposal_fn=proposal,
             constraints=[contiguous],
             initial_state=initial_partition,
             total_pop_col="population",
             minority_pop_col="MVAP",
             minority_perc_col="m_perc",
-            score_function=Gingleator.num_opportunity_dists,
+            score_fn=Gingleator.num_opportunity_dists,
+            rng=2024,
         )
 
     assert "`minority_perc_col` and `minority_pop_col` are both specified" in str(
@@ -134,13 +129,13 @@ def test_ginglator_warns_if_min_perc_and_min_pop_col_set(four_by_five_grid_for_o
     )
 
 
-def test_gingleator_finds_best_partition(four_by_five_grid_for_opt):
-    random.seed(2024)
+def test_gingleator_finds_best_partition(four_by_five_grid_for_opt: Graph):
     initial_partition = Partition.from_random_assignment(
         graph=four_by_five_grid_for_opt,
         n_parts=4,
         epsilon=0.0,
         pop_col="population",
+        rng=2024,
         updaters={
             "population": Tally("population", alias="population"),
             "MVAP": Tally("MVAP", alias="MVAP"),
@@ -150,21 +145,21 @@ def test_gingleator_finds_best_partition(four_by_five_grid_for_opt):
 
     ideal_pop = sum(initial_partition["population"].values()) / 4
 
-    proposal = partial(
-        recom,
+    proposal = build_recom_proposal_fn(
         pop_col="population",
         pop_target=ideal_pop,
         epsilon=0.0,
-        node_repeats=1,
+        node_repeats=0,
     )
 
     gingles = Gingleator(
-        proposal=proposal,
+        proposal_fn=proposal,
         constraints=[contiguous],
         initial_state=initial_partition,
         minority_pop_col="MVAP",
         total_pop_col="population",
-        score_function=Gingleator.num_opportunity_dists,
+        score_fn=Gingleator.num_opportunity_dists,
+        rng=2024,
     )
 
     total_steps = 5000
@@ -183,21 +178,26 @@ def test_gingleator_finds_best_partition(four_by_five_grid_for_opt):
     assert max(max_scores_sb) == 2
 
 
-def test_count_num_opportunity_dists(four_by_five_grid_for_opt):
+def test_count_num_opportunity_dists(four_by_five_grid_for_opt: Graph):
     initial_partition = gingleator_test_partition(four_by_five_grid_for_opt)
 
     assert Gingleator.num_opportunity_dists(initial_partition, "m_perc", 0.5) == 2
     assert Gingleator.num_opportunity_dists(initial_partition, "m_perc", 0.6) == 0
 
 
-def test_reward_partial_dist(four_by_five_grid_for_opt):
+def test_reward_partial_dist(four_by_five_grid_for_opt: Graph):
     initial_partition = gingleator_test_partition(four_by_five_grid_for_opt)
 
     assert Gingleator.reward_partial_dist(initial_partition, "m_perc", 0.5) == 2 + 0.2
     assert Gingleator.reward_partial_dist(initial_partition, "m_perc", 0.6) == 0.52
 
+    try:
+        assert Gingleator.reward_partial_dist(initial_partition, "m_perc", 0.0) == 4 + 0
+    except ValueError as val_err:
+        pytest.fail(f"ValueError raised when all districts are majority-minority: {str(val_err)}")
 
-def test_reward_next_highest_close(four_by_five_grid_for_opt):
+
+def test_reward_next_highest_close(four_by_five_grid_for_opt: Graph):
     initial_partition = gingleator_test_partition(four_by_five_grid_for_opt)
 
     assert Gingleator.reward_next_highest_close(initial_partition, "m_perc", 0.5) == 2
@@ -206,8 +206,16 @@ def test_reward_next_highest_close(four_by_five_grid_for_opt):
         round(Gingleator.reward_next_highest_close(initial_partition, "m_perc", 0.29), 5) == 2 + 0.1
     )
 
+    try:
+        assert (
+            Gingleator.reward_next_highest_close(initial_partition, "m_perc", 0.0)
+            == 4 + (0 - 0.0 + 0.1) * 10
+        )
+    except ValueError as val_err:
+        pytest.fail(f"ValueError raised when all districts are majority-minority: {str(val_err)}")
 
-def test_penalize_maximum_over(four_by_five_grid_for_opt):
+
+def test_penalize_maximum_over(four_by_five_grid_for_opt: Graph):
     initial_partition = gingleator_test_partition(four_by_five_grid_for_opt)
 
     assert Gingleator.penalize_maximum_over(initial_partition, "m_perc", 0.5) == 2.0 + 0.48 / 0.50
@@ -215,7 +223,7 @@ def test_penalize_maximum_over(four_by_five_grid_for_opt):
     assert Gingleator.penalize_maximum_over(initial_partition, "m_perc", 0.6) == 0
 
 
-def test_penalize_avg_over(four_by_five_grid_for_opt):
+def test_penalize_avg_over(four_by_five_grid_for_opt: Graph):
     initial_partition = gingleator_test_partition(four_by_five_grid_for_opt)
 
     assert Gingleator.penalize_avg_over(initial_partition, "m_perc", 0.5) == 2.0 + 0.48 / 0.50

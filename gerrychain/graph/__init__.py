@@ -1,17 +1,32 @@
 """
-This module provides a :class:`~gerrychain.graph.Graph` class that
-extends the :class:`networkx.Graph` and includes some useful methods
-for working with graphs representing geographic data. The class
-:class:`~gerrychain.graph.Graph` is the only part of this module that
-is intended to be used directly by users of GerryChain.
+This module implements the Graph class that is used
+by GerryChain code.
 
-The other classes and functions in this module are used internally by
-GerryChain. These include the geographic manipulation functions
-available in :mod:`gerrychain.graph.geo`, the adjacency functions
-in :mod:`gerrychain.graph.adjacency`, and the class
-:class:`~gerrychain.graph.FrozenGraph` in the file
-:mod:`gerrychain.graph.graph`. See the documentation at the top
-of those files for more information.
+It exposes standard graph functionality for a dual-graph
+containing nodes and edges.  Both nodes and edges can have
+data associated with them.
+
+A Graph object is typically created by first creating
+a NetworkX.Graph object and then converting it to
+a GerryChain Graph object using from_networkx().
+
+For instance:
+
+    import networkx
+    from gerrychain import Graph
+
+    # Create a NetworkX graph
+    nx_graph = networkx.Graph()
+    nx_graph.add_edges_from(...)
+
+    # Create a GerryChain graph from the NetworkX graph
+    my_gerrychain_graph = Graph.from_networkx(nx_graph)
+
+Internally, a Graph object contains an embedded graph
+object based either on NetworkX or RustworkX.  After
+creating a Partition object in GerryChain, the embedded
+graph object is converted to be based on RustworkX (for
+performance reasons).
 """
 
 from .adjacency import *

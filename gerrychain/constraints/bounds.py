@@ -1,9 +1,17 @@
-from typing import Callable, Tuple
+from collections.abc import Callable, Iterable
+from typing import Generic, ParamSpec
 
+from .._deprecated import deprecated_parameters, deprecated_property
 from ..partition import Partition
 
+P = ParamSpec("P")
 
-class Bounds:
+
+def _fn_name(value_fn: object) -> str:
+    return getattr(value_fn, "__name__", type(value_fn).__name__)
+
+
+class Bounds(Generic[P]):
     """
     Wrapper for numeric-validators to enforce upper and lower limits.
 
@@ -13,30 +21,36 @@ class Bounds:
 
     """
 
-    def __init__(self, func: Callable, bounds: Tuple[float, float]) -> None:
+    @deprecated_parameters(renamed={"func": "value_fn"})
+    def __init__(self, value_fn: Callable[P, Iterable[float]], bounds: tuple[float, float]) -> None:
+        """Initialize a Bounds instance.
+
+        This initializer sets up `Bounds` with the provided arguments and validates required state.
+
+        Args:
+            value_fn (Callable): Numeric validator function. Should return an iterable of values.
+            bounds (tuple[float, float]): Tuple of (lower, upper) numeric bounds.
+
         """
-        :param func: Numeric validator function. Should return an iterable of values.
-        :type func: Callable
-        :param bounds: Tuple of (lower, upper) numeric bounds.
-        :type bounds: Tuple[float, float]
-        """
-        self.func = func
+        self.value_fn = value_fn
         self.bounds = bounds
 
-    def __call__(self, *args, **kwargs) -> bool:
+    func = deprecated_property("Bounds.func", "value_fn", writable=True)
+
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> bool:
         lower, upper = self.bounds
-        values = self.func(*args, **kwargs)
+        values = self.value_fn(*args, **kwargs)
         return lower <= min(values) and max(values) <= upper
 
     @property
     def __name__(self) -> str:
-        return "Bounds({},{})".format(self.func.__name__, str(self.bounds))
+        return f"Bounds({_fn_name(self.value_fn)},{self.bounds})"
 
     def __repr__(self) -> str:
-        return "<{}>".format(self.__name__)
+        return f"<{self.__name__}>"
 
 
-class UpperBound:
+class UpperBound(Generic[P]):
     """
     Wrapper for numeric-validators to enforce upper limits.
 
@@ -45,28 +59,35 @@ class UpperBound:
     and ``False`` otherwise.
     """
 
-    def __init__(self, func: Callable, bound: float) -> None:
+    @deprecated_parameters(renamed={"func": "value_fn"})
+    def __init__(self, value_fn: Callable[P, float], bound: float) -> None:
+        """Initialize a UpperBound instance.
+
+        This initializer sets up `UpperBound` with the provided arguments and validates required
+        state.
+
+        Args:
+            value_fn (Callable): Numeric validator function. Should return a comparable value.
+            bound (float): Comparable upper bound.
+
         """
-        :param func: Numeric validator function. Should return a comparable value.
-        :type func: Callable
-        :param bounds: Comparable upper bound.
-        :type bounds: float
-        """
-        self.func = func
+        self.value_fn = value_fn
         self.bound = bound
 
-    def __call__(self, *args, **kwargs) -> bool:
-        return self.func(*args, **kwargs) <= self.bound
+    func = deprecated_property("UpperBound.func", "value_fn", writable=True)
+
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> bool:
+        return self.value_fn(*args, **kwargs) <= self.bound
 
     @property
     def __name__(self) -> str:
-        return "UpperBound({} >= {})".format(self.func.__name__, self.bound)
+        return f"UpperBound({_fn_name(self.value_fn)} >= {self.bound})"
 
     def __repr__(self) -> str:
-        return "<{}>".format(self.__name__)
+        return f"<{self.__name__}>"
 
 
-class LowerBound:
+class LowerBound(Generic[P]):
     """
     Wrapper for numeric-validators to enforce lower limits.
 
@@ -75,25 +96,32 @@ class LowerBound:
     and ``False`` otherwise.
     """
 
-    def __init__(self, func: Callable, bound: float) -> None:
+    @deprecated_parameters(renamed={"func": "value_fn"})
+    def __init__(self, value_fn: Callable[P, float], bound: float) -> None:
+        """Initialize a LowerBound instance.
+
+        This initializer sets up `LowerBound` with the provided arguments and validates required
+        state.
+
+        Args:
+            value_fn (Callable): Numeric validator function. Should return a comparable value.
+            bound (float): Comparable lower bound.
+
         """
-        :param func: Numeric validator function. Should return a comparable value.
-        :type func: Callable
-        :param bounds: Comparable lower bound.
-        :type bounds: float
-        """
-        self.func = func
+        self.value_fn = value_fn
         self.bound = bound
 
-    def __call__(self, *args, **kwargs) -> bool:
-        return self.func(*args, **kwargs) >= self.bound
+    func = deprecated_property("LowerBound.func", "value_fn", writable=True)
+
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> bool:
+        return self.value_fn(*args, **kwargs) >= self.bound
 
     @property
     def __name__(self) -> str:
-        return "LowerBound({} <= {})".format(self.func.__name__, self.bound)
+        return f"LowerBound({_fn_name(self.value_fn)} <= {self.bound})"
 
     def __repr__(self) -> str:
-        return "<{}>".format(self.__name__)
+        return f"<{self.__name__}>"
 
 
 class SelfConfiguringUpperBound:
@@ -108,25 +136,33 @@ class SelfConfiguringUpperBound:
     and ``False`` otherwise.
     """
 
-    def __init__(self, func: Callable) -> None:
+    @deprecated_parameters(renamed={"func": "value_fn"})
+    def __init__(self, value_fn: Callable[[Partition], float]) -> None:
+        """Initialize a SelfConfiguringUpperBound instance.
+
+        This initializer sets up `SelfConfiguringUpperBound` with the provided arguments and
+        validates required state.
+
+        Args:
+            value_fn (Callable): Numeric validator function.
+
         """
-        :param func: Numeric validator function.
-        :type func: Callable
-        """
-        self.func = func
+        self.value_fn = value_fn
         self.bound = None
+
+    func = deprecated_property("SelfConfiguringUpperBound.func", "value_fn", writable=True)
 
     def __call__(self, partition: Partition) -> bool:
         if not self.bound:
-            self.bound = self.func(partition)
-        return self.func(partition) <= self.bound
+            self.bound = self.value_fn(partition)
+        return self.value_fn(partition) <= self.bound
 
     @property
     def __name__(self) -> str:
-        return "SelfConfiguringUpperBound({})".format(self.func.__name__)
+        return f"SelfConfiguringUpperBound({_fn_name(self.value_fn)})"
 
     def __repr__(self) -> str:
-        return "<{}>".format(self.__name__)
+        return f"<{self.__name__}>"
 
 
 class SelfConfiguringLowerBound:
@@ -141,29 +177,36 @@ class SelfConfiguringLowerBound:
     and ``False`` otherwise.
     """
 
-    def __init__(self, func: Callable, epsilon: float = 0.05) -> None:
+    @deprecated_parameters(renamed={"func": "value_fn"})
+    def __init__(self, value_fn: Callable[[Partition], float], epsilon: float = 0.05) -> None:
+        """Initialize a SelfConfiguringLowerBound instance.
+
+        This initializer sets up `SelfConfiguringLowerBound` with the provided arguments and
+        validates required state.
+
+        Args:
+            value_fn (Callable): Numeric validator function.
+            epsilon (float, optional): Initial population deviation allowable by the validator as a
+                percentage of the ideal population. Defaults to 0.05.
+
         """
-        :param func: Numeric validator function.
-        :type func: Callable
-        :param epsilon: Initial population deviation allowable by the validator
-            as a percentage of the ideal population. Defaults to 0.05.
-        :type epsilon: float, optional
-        """
-        self.func = func
+        self.value_fn = value_fn
         self.bound = None
         self.epsilon = epsilon
 
+    func = deprecated_property("SelfConfiguringLowerBound.func", "value_fn", writable=True)
+
     def __call__(self, partition: Partition) -> bool:
         if not self.bound:
-            self.bound = self.func(partition) - self.epsilon
-        return self.func(partition) >= self.bound
+            self.bound = self.value_fn(partition) - self.epsilon
+        return self.value_fn(partition) >= self.bound
 
     @property
     def __name__(self) -> str:
-        return "SelfConfiguringLowerBound({})".format(self.func.__name__)
+        return f"SelfConfiguringLowerBound({_fn_name(self.value_fn)})"
 
     def __repr__(self) -> str:
-        return "<{}>".format(self.__name__)
+        return f"<{self.__name__}>"
 
 
 class WithinPercentRangeOfBounds:
@@ -179,34 +222,38 @@ class WithinPercentRangeOfBounds:
     percentage range of the initial value, and ``False`` otherwise.
     """
 
-    def __init__(self, func: Callable, percent: float) -> None:
-        """
-        :param func: Numeric validator function.
-        :type func: Callable
-        :param percent: Percentage of the initial value to use as the bounds.
-        :type percent: float
+    @deprecated_parameters(renamed={"func": "value_fn"})
+    def __init__(self, value_fn: Callable[[Partition], float], percent: float) -> None:
+        """Initialize a WithinPercentRangeOfBounds instance.
 
-        :returns: None
+        This initializer sets up `WithinPercentRangeOfBounds` with the provided arguments and
+        validates required state.
 
-        .. Warning::
+        Args:
+            value_fn (Callable): Numeric validator function.
+            percent (float): Percentage of the initial value to use as the bounds.
+
+        Warning:
             The percentage is assumed to be in the range [0.0, 100.0].
         """
-        self.func = func
+        self.value_fn = value_fn
         self.percent = float(percent) / 100.0
         self.lbound = None
         self.ubound = None
 
+    func = deprecated_property("WithinPercentRangeOfBounds.func", "value_fn", writable=True)
+
     def __call__(self, partition: Partition) -> bool:
         if not (self.lbound and self.ubound):
-            self.lbound = self.func(partition) * (1.0 - self.percent)
-            self.ubound = self.func(partition) * (1.0 + self.percent)
+            self.lbound = self.value_fn(partition) * (1.0 - self.percent)
+            self.ubound = self.value_fn(partition) * (1.0 + self.percent)
             return True
         else:
-            return self.lbound <= self.func(partition) <= self.ubound
+            return self.lbound <= self.value_fn(partition) <= self.ubound
 
     @property
     def __name__(self) -> str:
-        return "WithinPercentRangeOfBounds({})".format(self.func.__name__)
+        return f"WithinPercentRangeOfBounds({_fn_name(self.value_fn)})"
 
     def __repr__(self) -> str:
-        return "<{}>".format(self.__name__)
+        return f"<{self.__name__}>"

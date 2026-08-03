@@ -1,11 +1,19 @@
+from __future__ import annotations
+
 import collections
 import math
 import warnings
-from typing import Dict, List, Optional, Type, Union
+from collections.abc import Callable, Hashable, Mapping, Sequence
+from typing import TYPE_CHECKING, cast
 
 import pandas
 
+from .._deprecated import deprecated_parameters, deprecated_property
 from .flows import flows_from_changes, on_flow
+
+if TYPE_CHECKING:
+    from ..graph.graph import FrozenGraph, Graph
+    from ..partition.partition import Partition
 
 
 class DataTally:
@@ -13,14 +21,13 @@ class DataTally:
     An updater for tallying numerical data that is not necessarily stored as
     node attributes
 
-    :ivar data: A Dict or Series indexed by the graph's nodes,
-        or the string key for a node attribute containing the Tally's data.
-    :type data: Union[Dict, pandas.Series, str]
-    :ivar alias: The name of the tally in the Partition's `updaters` dictionary
-    :type alias: str
+    Attributes:
+        data (dict | pandas.Series | str): A Dict or Series indexed by the graph's nodes,
+            or the string key for a node attribute containing the Tally's data.
+        alias (str): The name of the tally in the Partition's `updaters` dictionary
     """
 
-    # frm: TODO: Code:  Check to see if DataTally used for data that is NOT attribute of a node
+    # frm: * TODO: Code:  Check to see if DataTally used for data that is NOT attribute of a node
     #
     # The comment above indicates that you can use a DataTally for data that is not stored
     # as an attribute of a node.  Check to see if it is ever actually used that way.  If so,
@@ -32,21 +39,24 @@ class DataTally:
 
     __slots__ = ["data", "alias", "_call"]
 
-    def __init__(self, data: Union[Dict, pandas.Series, str], alias: str) -> None:
-        """
-        :param data: A Dict or Series indexed by the graph's nodes,
-            or the string key for a node attribute containing the Tally's data.
-        :type data: Union[Dict, pandas.Series, str]
-        :param alias: The name of the tally in the Partition's `updaters` dictionary
-        :type alias: str
+    def __init__(
+        self,
+        data: Mapping[Hashable, float] | Sequence[float] | pandas.Series | str,
+        alias: str,
+    ) -> None:
+        """Initialize a DataTally instance.
 
-        :returns: None
+        Args:
+            data (dict | Sequence | pandas.Series | str): A Dict, Series, or sequence indexed by
+                the graph's nodes, or the string key for a node attribute containing the Tally's
+                data.
+            alias (str): The name of the tally in the Partition's `updaters` dictionary
+
         """
         self.data = data
         self.alias = alias
 
-        def initialize_tally(partition):
-
+        def initialize_tally(partition: Partition) -> dict[Hashable, float]:
             # If the "data" passed in was a string, then interpret that string
             # as the name of a node attribute in the graph, and construct
             # a dict of the form: {node_id: node_attribution_value}
@@ -55,7 +65,6 @@ class DataTally:
             # form: {node_id: data_value}
 
             if isinstance(self.data, str):
-
                 # if the "data" passed in was a string, then replace its value with
                 # a dict of {node_id: attribute_value of the node}
                 graph = partition.graph
@@ -63,9 +72,9 @@ class DataTally:
                 attribute = self.data
                 self.data = {node_id: graph.node_data(node_id)[attribute] for node_id in node_ids}
 
-            tally = collections.defaultdict(int)
+            tally: dict[Hashable, float] = collections.defaultdict(int)
             for node_id, part in partition.assignment.items():
-                add = self.data[node_id]
+                add = self._value(node_id)
 
                 # Note: math.isnan() will raise an exception if the value passed in is not
                 # numeric, so there is no need to do another check to ensure that the value
@@ -73,9 +82,8 @@ class DataTally:
                 #
                 if math.isnan(add):
                     warnings.warn(
-                        "ignoring nan encountered at node_id '{}' for attribute '{}'".format(
-                            node_id, self.alias
-                        )
+                        f"ignoring nan encountered at node_id '{node_id}' "
+                        f"for attribute '{self.alias}'"
                     )
                 else:
                     tally[part] += add
@@ -83,14 +91,27 @@ class DataTally:
             return dict(tally)
 
         @on_flow(initialize_tally, alias=alias)
-        def update_tally(partition, previous, new_nodes, old_nodes):
-            inflow = sum(self.data[node] for node in new_nodes)
-            outflow = sum(self.data[node] for node in old_nodes)
+        def update_tally(
+            partition: Partition,
+            previous: float,
+            new_nodes: set[Hashable],
+            old_nodes: set[Hashable],
+        ) -> float:
+            inflow = sum(self._value(node) for node in new_nodes)
+            outflow = sum(self._value(node) for node in old_nodes)
             return previous + inflow - outflow
 
         self._call = update_tally
 
-    def __call__(self, partition, previous=None):
+    def _value(self, node: Hashable) -> float:
+        if isinstance(self.data, str):
+            raise RuntimeError("Tally data has not been initialized")
+        # A Sequence is valid data when the node ids are 0..n-1 ints; index uniformly as a Mapping.
+        return cast("Mapping[Hashable, float]", self.data)[node]
+
+    def __call__(
+        self, partition: Partition, previous: dict[Hashable, float] | None = None
+    ) -> dict[Hashable, float]:
         return self._call(partition, previous)
 
 
@@ -98,37 +119,36 @@ class Tally:
     """
     An updater for keeping a tally of one or more node attributes.
 
-    :ivar fields: The list of node attributes that you want to tally. Or just a
-        single attribute name as a string.
-    :type fields: Union[str, List[str]]
-    :ivar alias: The aliased name of this Tally (meaning, the key corresponding to
-        this Tally in the Partition's updaters dictionary)
-    :type alias: Optional[str]
-    :ivar dtype: The type (int, float, etc.) that you want the tally to have
-    :type dtype: Any
+    Attributes:
+        fields (str | list[str]): The list of node attributes that you want to tally. Or just
+        a
+            single attribute name as a string.
+        alias (str | None): The aliased name of this Tally (meaning, the key corresponding to
+            this Tally in the Partition's updaters dictionary)
+        dtype_fn (Callable[[], float]): A zero-argument callable that creates the tally's initial
+            value.
     """
 
-    __slots__ = ["fields", "alias", "dtype"]
+    __slots__ = ["fields", "alias", "dtype_fn"]
 
+    @deprecated_parameters(renamed={"dtype": "dtype_fn"})
     def __init__(
         self,
-        fields: Union[str, List[str]],
-        alias: Optional[str] = None,
-        dtype: Type = int,
+        fields: str | list[str],
+        alias: str | None = None,
+        dtype_fn: Callable[[], float] = int,
     ) -> None:
-        """
-        :param fields: The list of node attributes that you want to tally. Or a just a
-            single attribute name as a string.
-        :type fields: Union[str, List[str]]
-        :param alias: The aliased name of this Tally (meaning, the key corresponding to
-            this Tally in the Partition's updaters dictionary).
-            Default is None.
-        :type alias: Optional[str], optional
-        :param dtype: The type (int, float, etc.) that you want the tally to have.
-            Default is int.
-        :type dtype: Any, optional
+        """Initialize a Tally instance.
 
-        :returns: None
+        Args:
+            fields (str | list[str]): The list of node attributes that you want to tally. Or
+                a just a single attribute name as a string.
+            alias (str | None, optional): The aliased name of this Tally (meaning, the key
+                corresponding to this Tally in the Partition's updaters dictionary). Default is
+                None.
+            dtype_fn (Callable[[], float], optional): A zero-argument callable that creates the
+                tally's initial value. Defaults to ``int``.
+
         """
         if not isinstance(fields, list):
             fields = [fields]
@@ -136,51 +156,52 @@ class Tally:
             alias = fields[0]
         self.fields = fields
         self.alias = alias
-        self.dtype = dtype
+        self.dtype_fn = dtype_fn
 
-    def __call__(self, partition):
+    dtype = deprecated_property("Tally.dtype", "dtype_fn")
+
+    def __call__(self, partition: Partition) -> dict[Hashable, float]:
         if partition.parent is None:
             return self._initialize_tally(partition)
         return self._update_tally(partition)
 
-    def _initialize_tally(self, partition) -> Dict:
-        """
-        Compute the initial district-wide tally of data stored in the "field"
-        attribute of nodes.
+    def _initialize_tally(self, partition: Partition) -> dict[Hashable, float]:
+        """Compute initial part-level tallies for the configured field values.
 
-        :param partition: The partition to compute the tally for.
-        :type partition: :class:`~gerrychain.partition.Partition`
+        Args:
+            partition (Partition): The partition to compute the
+                tally for.
 
-        :returns: A dictionary keyed by the parts of the partition, with values
-            being the sum of the "field" attribute of nodes in that part.
-        :rtype: Dict
+        Returns:
+            dict: A dictionary keyed by the parts of the partition, with values being the sum of
+                the "field" attribute of nodes in that part.
         """
-        tally = collections.defaultdict(self.dtype)
+        tally = collections.defaultdict(self.dtype_fn)
         for node, part in partition.assignment.items():
             add = self._get_tally_from_node(partition, node)
 
             if math.isnan(add):
                 warnings.warn(
-                    "ignoring nan encountered at node '{}' for attribute '{}' "
-                    "with fields {}".format(node, self.alias, self.fields)
+                    f"ignoring nan encountered at node '{node}' for attribute '{self.alias}' "
+                    f"with fields {self.fields}"
                 )
             else:
                 tally[part] += add
         return dict(tally)
 
-    def _update_tally(self, partition):
-        """
-        Compute the district-wide tally of data stored in the "field" attribute
-        of nodes, given proposed changes.
+    def _update_tally(self, partition: Partition) -> dict[Hashable, float]:
+        """Compute the district-wide tally of data stored in the "field" attribute of nodes.
 
-        :param partition: The partition to update the tally for.
-        :type partition: :class:`~gerrychain.partition.Partition`
+        Args:
+            partition (Partition): The partition to update the tally
+                for.
 
-        :returns: A dictionary keyed by the parts of the partition, with
-            the updated tallies of the "field" attribute of nodes in each part.
-        :rtype: Dict
+        Returns:
+            dict: A dictionary keyed by the parts of the partition, with the updated tallies of the
+                "field" attribute of nodes in each part.
         """
         parent = partition.parent
+        assert parent is not None
 
         old_tally = parent[self.alias]
         new_tally = dict(old_tally)
@@ -194,41 +215,41 @@ class Tally:
 
         return new_tally
 
-    def _get_tally_from_node(self, partition, node):
+    def _get_tally_from_node(self, partition: Partition, node: Hashable) -> float:
         return sum(partition.graph.node_data(node)[field] for field in self.fields)
 
 
-def compute_out_flow(graph, fields: Union[str, List[str]], flow: Dict) -> int:
-    """
-    :param graph: The graph that the partition is defined on.
-    :type graph: :class:`~gerrychain.graph.Graph`
-    :param fields: The list of node attributes that you want to tally. Or just a
-        single attribute name as a string.
-    :type fields: Union[str, List[str]]
-    :param flow: A dictionary containing the flow from the parent of this partition
-        to this partition. This dictionary is of the form
-        `{part: {'in': <set of nodes that flowed in>, 'out': <set of nodes that flowed out>}}`.
-    :type flow: Dict
+def compute_out_flow(
+    graph: Graph | FrozenGraph, fields: list[str], flow: dict[str, set[Hashable]]
+) -> float:
+    """Return sum of the "field" attribute of nodes in the "out" set of the flow.
 
-    :returns: The sum of the "field" attribute of nodes in the "out" set of the flow.
-    :rtype: int
+    Args:
+        graph (Graph): The graph that the partition is defined on.
+        fields (list[str]): The list of node attributes that you want to tally.
+        flow (dict): A dictionary containing the flow from the parent of this partition to this
+            partition. This dictionary is of the form `{part: {'in': <set of nodes that flowed in>,
+            'out': <set of nodes that flowed out>}}`.
+
+    Returns:
+        float: The sum of the "field" attribute of nodes in the "out" set of the flow.
     """
     return sum(graph.node_data(node)[field] for node in flow["out"] for field in fields)
 
 
-def compute_in_flow(graph, fields: Union[str, List[str]], flow: Dict) -> int:
-    """
-    :param graph: The graph that the partition is defined on.
-    :type graph: :class:`~gerrychain.graph.Graph`
-    :param fields: The list of node attributes that you want to tally. Or just a
-        single attribute name as a string.
-    :type fields: Union[str, List[str]]
-    :param flow: A dictionary containing the flow from the parent of this partition
-        to this partition. This dictionary is of the form
-        `{part: {'in': <set of nodes that flowed in>, 'out': <set of nodes that flowed out>}}`.
-    :type flow: Dict
+def compute_in_flow(
+    graph: Graph | FrozenGraph, fields: list[str], flow: dict[str, set[Hashable]]
+) -> float:
+    """Return sum of the "field" attribute of nodes in the "in" set of the flow.
 
-    :returns: The sum of the "field" attribute of nodes in the "in" set of the flow.
-    :rtype: int
+    Args:
+        graph (Graph): The graph that the partition is defined on.
+        fields (list[str]): The list of node attributes that you want to tally.
+        flow (dict): A dictionary containing the flow from the parent of this partition to this
+            partition. This dictionary is of the form `{part: {'in': <set of nodes that flowed in>,
+            'out': <set of nodes that flowed out>}}`.
+
+    Returns:
+        float: The sum of the "field" attribute of nodes in the "in" set of the flow.
     """
     return sum(graph.node_data(node)[field] for node in flow["in"] for field in fields)

@@ -1,64 +1,63 @@
-from typing import Any, List, Tuple
+from collections.abc import Hashable, Iterable, Iterator, Mapping
 
-from ..graph import Graph
+from ..graph import FrozenGraph, Graph
 
 
 class SubgraphView:
     """
-    A view for accessing subgraphs of :class:`Graph` objects.
+    A view for accessing subgraphs of Graph objects.
 
     This class makes use of a subgraph cache to avoid recomputing subgraphs
     which can speed up computations when working with district assignments
     within a partition class.
 
-    :ivar graph: The parent graph from which subgraphs are derived.
-    :type graph: Graph
-    :ivar parts: A list-of-lists dictionary (so a dict with key values indicated by
-        the list index) mapping keys to subsets of nodes in the graph.
-    :type parts: List[List[Any]]
-    :ivar subgraphs_cache: Cache to store subgraph views for quick access.
-    :type subgraphs_cache: Dict
+    Attributes:
+        graph (Graph): The parent graph from which subgraphs are derived.
+        parts (Mapping[Hashable, Iterable[Hashable]]): Parts mapped to their nodes.
+        subgraphs_cache (dict[Hashable, Graph | FrozenGraph]): Cached subgraphs by part.
     """
 
     __slots__ = ["graph", "parts", "subgraphs_cache"]
 
-    def __init__(self, graph: Graph, parts: List[List[Any]]) -> None:
-        """
-        :param graph: The parent graph from which subgraphs are derived.
-        :type graph: Graph
-        :param parts: A list of lists of nodes corresponding the different
-            parts of the partition of the graph.
-        :type parts: List[List[Any]]
+    def __init__(
+        self, graph: Graph | FrozenGraph, parts: Mapping[Hashable, Iterable[Hashable]]
+    ) -> None:
+        """Initialize a SubgraphView instance.
 
-        :returns: None
+        Args:
+            graph (Graph | FrozenGraph): The parent graph from which subgraphs are derived.
+            parts (Mapping[Hashable, Iterable[Hashable]]): Parts mapped to their nodes.
+
         """
         self.graph = graph
         self.parts = parts
-        self.subgraphs_cache = {}
+        self.subgraphs_cache: dict[Hashable, Graph | FrozenGraph] = {}
 
-    def __getitem__(self, part: int) -> Graph:
-        """
-        :param part: The the id of the partition to return the subgraph for.
-        :type part: int
+    def __getitem__(self, part: Hashable) -> Graph | FrozenGraph:
+        """Return the item for the given key.
 
-        :returns: The subgraph of the parent graph corresponding to the
-            partition with id `part`.
-        :rtype: Graph
+        This method returns the item for the given key. It returns subgraph of the parent graph
+        corresponding to the partition with id `part`.
+
+        Args:
+            part (Hashable): The the id of the partition to return the subgraph for.
+
+        Returns:
+            Graph | FrozenGraph: The subgraph corresponding to the part ID.
         """
         if part not in self.subgraphs_cache:
             self.subgraphs_cache[part] = self.graph.subgraph(self.parts[part])
         return self.subgraphs_cache[part]
 
-    def __iter__(self) -> Graph:
+    def __iter__(self) -> Iterator[Graph | FrozenGraph]:
         for part in self.parts:
             yield self[part]
 
-    def items(self) -> Tuple[int, Graph]:
+    def items(self) -> Iterator[tuple[Hashable, Graph | FrozenGraph]]:
         for part in self.parts:
             yield part, self[part]
 
     def __repr__(self) -> str:
         return (
-            f"<SubgraphView with {len(self.parts)}"
-            f" and {len(self.subgraphs_cache)} cached graphs>"
+            f"<SubgraphView with {len(self.parts)} and {len(self.subgraphs_cache)} cached graphs>"
         )

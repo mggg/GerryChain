@@ -9,15 +9,17 @@ Graph object works the same with NetworkX and RustworkX.
 
 """
 
-import os
-
 # Set the random seed so that the results are reproducible!
 import random
+from collections.abc import Hashable
+from typing import Any
 
+import networkx as nx
 import pytest
 import rustworkx as rx
 
 from gerrychain import Graph
+from gerrychain.examples import gerrymandria
 
 random.seed(2024)
 
@@ -29,37 +31,27 @@ random.seed(2024)
 
 
 @pytest.fixture(scope="module")
-def json_file_path():
-    # Get path to the JSON containing graph data
-    test_file_path = os.path.abspath(__file__)
-    cur_directory = os.path.dirname(test_file_path)
-    path_for_json_file = os.path.join(cur_directory, "gerrymandria.json")
-    # print("json file is: ", json_file_path)
-    return path_for_json_file
-
-
-@pytest.fixture(scope="module")
-def gerrychain_nx_graph(json_file_path):
-    # Create an NX based Graph object from the JSON
-    graph = Graph.from_json(json_file_path)
+def gerrychain_nx_graph():
+    # Create an NX based Graph object from the bundled Gerrymandria example
+    graph = gerrymandria()
     print("gerrychain_nx_graph: len(graph): ", len(graph))
     return graph
 
 
 @pytest.fixture(scope="module")
-def nx_graph(gerrychain_nx_graph):
+def nx_graph(gerrychain_nx_graph: Graph):
     # Fetch the NX graph object from inside the Graph object
     return gerrychain_nx_graph.get_nx_graph()
 
 
 @pytest.fixture(scope="module")
-def rx_graph(nx_graph):
+def rx_graph(nx_graph: "nx.Graph[Hashable, dict[str, Any], dict[str, Any]]"):
     # Create an RX graph object from NX, preserving node data
     return rx.networkx_converter(nx_graph, keep_attributes=True)
 
 
 @pytest.fixture(scope="module")
-def gerrychain_rx_graph(rx_graph):
+def gerrychain_rx_graph(rx_graph: "rx.PyGraph[dict[str, Any], dict[str, Any]]"):
     # Create a Graph object with an RX graph inside
     return Graph.from_rustworkx(rx_graph)
 
@@ -75,35 +67,34 @@ def test_sanity():
     assert True
 
 
-def test_nx_rx_sets_of_nodes_agree(nx_graph, rx_graph):
+def test_nx_rx_sets_of_nodes_agree(
+    nx_graph: "nx.Graph[Hashable, dict[str, Any], dict[str, Any]]",
+    rx_graph: "rx.PyGraph[dict[str, Any], dict[str, Any]]",
+):
     nx_set_of_nodes = set(nx_graph.nodes())
     rx_set_of_nodes = set(rx_graph.node_indices())
     assert nx_set_of_nodes == rx_set_of_nodes
 
 
-def test_nx_rx_node_data_agree(gerrychain_nx_graph, gerrychain_rx_graph):
+def test_nx_rx_node_data_agree(gerrychain_nx_graph: Graph, gerrychain_rx_graph: Graph):
     nx_data_dict = gerrychain_nx_graph.node_data(1)
     rx_data_dict = gerrychain_rx_graph.node_data(1)
     assert nx_data_dict == rx_data_dict
 
 
-def test_nx_rx_node_indices_agree(gerrychain_nx_graph, gerrychain_rx_graph):
+def test_nx_rx_node_indices_agree(gerrychain_nx_graph: Graph, gerrychain_rx_graph: Graph):
     nx_node_indices = gerrychain_nx_graph.node_indices
     rx_node_indices = gerrychain_rx_graph.node_indices
     assert nx_node_indices == rx_node_indices
 
 
-def test_nx_rx_edges_agree(gerrychain_nx_graph, gerrychain_rx_graph):
-    # TODO: Testing:  Rethink this test.  At the moment it relies on the edge_list()
-    #           call which does not exist on a GerryChain Graph object
-    #           being handled by RX through clever __getattr__ stuff.
-    #           I think we should add an edge_list() method to GerryChain Graph
+def test_nx_rx_edges_agree(gerrychain_nx_graph: Graph, gerrychain_rx_graph: Graph):
     nx_edges = set(gerrychain_nx_graph.edges)
-    rx_edges = set(gerrychain_rx_graph.edge_list())
+    rx_edges = set(gerrychain_rx_graph.edges)
     assert nx_edges == rx_edges
 
 
-def test_nx_rx_node_neighbors_agree(gerrychain_nx_graph, gerrychain_rx_graph):
+def test_nx_rx_node_neighbors_agree(gerrychain_nx_graph: Graph, gerrychain_rx_graph: Graph):
     for i in gerrychain_nx_graph:
         # Need to convert to set, because ordering of neighbor nodes differs in the lists
         nx_neighbors = set(gerrychain_nx_graph.neighbors(i))
@@ -111,7 +102,7 @@ def test_nx_rx_node_neighbors_agree(gerrychain_nx_graph, gerrychain_rx_graph):
         assert nx_neighbors == rx_neighbors
 
 
-def test_nx_rx_subgraphs_agree(gerrychain_nx_graph, gerrychain_rx_graph):
+def test_nx_rx_subgraphs_agree(gerrychain_nx_graph: Graph, gerrychain_rx_graph: Graph):
     subgraph_nodes = [
         0,
         1,
@@ -130,7 +121,7 @@ def test_nx_rx_subgraphs_agree(gerrychain_nx_graph, gerrychain_rx_graph):
     #                   nodes as the nx_subgraph, and it does not test edge data...
 
 
-def test_nx_rx_degrees_agree(gerrychain_nx_graph, gerrychain_rx_graph):
+def test_nx_rx_degrees_agree(gerrychain_nx_graph: Graph, gerrychain_rx_graph: Graph):
     # Verify that the degree of each node agrees between NX and RX versions
     nx_degrees = {
         node_id: gerrychain_nx_graph.degree(node_id) for node_id in gerrychain_nx_graph.node_indices
@@ -192,51 +183,3 @@ frm: TODO: Testing:
              differently...
         * islands()
 """
-
-
-###    my_updaters = {
-###        "population": updaters.Tally("TOTPOP"),
-###        "cut_edges": updaters.cut_edges
-###    }
-###
-###    initial_partition = Partition(
-###        nx_graph,
-###        assignment="district",
-###        updaters=my_updaters
-###    )
-###
-###    # This should be 8 since each district has 1 person in it.
-###    # Note that the key "population" corresponds to the population updater
-###    # that we defined above and not with the population column in the json file.
-###    ideal_population = sum(initial_partition["population"].values()) / len(initial_partition)
-###
-###    proposal = partial(
-###        recom,
-###        pop_col="TOTPOP",
-###        pop_target=ideal_population,
-###        epsilon=0.01,
-###        node_repeats=2
-###    )
-###
-###    print("Got proposal")
-###
-###    recom_chain = MarkovChain(
-###        proposal=proposal,
-###        constraints=[contiguous],
-###        accept=accept.always_accept,
-###        initial_state=initial_partition,
-###        total_steps=40
-###    )
-###
-###    print("Set up Markov Chain")
-###
-###    assignment_list = []
-###
-###    for i, item in enumerate(recom_chain):
-###        print(f"Finished step {i+1}/{len(recom_chain)}")
-###        assignment_list.append(item.assignment)
-###
-###    print("Enumerated the chain: number of entries in list is: ", len(assignment_list))
-###
-###    def test_success():
-###        len(assignment_list) == 40
