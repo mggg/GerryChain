@@ -33,11 +33,16 @@ from collections.abc import Callable, Hashable, Mapping, Sequence, Set as Abstra
 from functools import partial
 from inspect import signature
 from typing import NamedTuple, Protocol, cast
+from weakref import WeakSet
 
 from .._deprecated import adapt_legacy_callable, adapt_legacy_cut_choice, deprecated_parameters
 from .._rng import make_rng
 from ..graph import FrozenGraph, Graph
 from .spanning_tree import random_spanning_tree
+
+
+# An owning operation shares one RNG across all of its bipartition attempts.
+_node_repeats_warning_rngs: WeakSet[random.Random] = WeakSet()
 
 
 """
@@ -1042,7 +1047,11 @@ def _internal_bipartition_tree(
     #       still uses the default value of 2, so we don't want to change it. However, we do
     #       want to warn the user that it is not beneficial with the default cut finder which
     #       is now memoization.
-    if node_repeats > 0 and unwrapped_cut_finder is find_balanced_edge_cuts_memoization:
+    if (
+        node_repeats > 0
+        and unwrapped_cut_finder is find_balanced_edge_cuts_memoization
+        and rng not in _node_repeats_warning_rngs
+    ):
         warnings.warn(
             "node_repeats is not beneficial with `find_balanced_edge_cuts_memoization`, which "
             "exhaustively searches each spanning tree. Set node_repeats=0 to redraw the tree "
@@ -1051,6 +1060,7 @@ def _internal_bipartition_tree(
             UserWarning,
             stacklevel=2,
         )
+        _node_repeats_warning_rngs.add(rng)
 
     spanning_tree_fn = partial(
         spanning_tree_fn,

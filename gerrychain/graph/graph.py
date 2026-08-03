@@ -64,6 +64,22 @@ class GraphValidationError(Exception):
     """Raised when a Graph fails an integrity check (see ``verify_graph_is_valid``)."""
 
 
+class _NodeCollection(list[Hashable]):
+    def __call__(self, *_args: object, **_kwargs: object) -> None:
+        raise TypeError(
+            "As of GerryChain version 1.0.0, `Graph.nodes` is a property, not a method. Use "
+            "`graph.nodes` without parentheses; use `graph.node_data(node_id)` for node attributes."
+        )
+
+
+class _EdgeCollection(set[tuple[Hashable, Hashable]]):
+    def __call__(self, *_args: object, **_kwargs: object) -> None:
+        raise TypeError(
+            "As of GerryChain version 1.0.0, `Graph.edges` is a property, not a method. Use "
+            "`graph.edges` without parentheses; use `graph.edge_data(edge_id)` for edge attributes."
+        )
+
+
 def json_serialize(input_object: object) -> int | None:
     """Return converted pandas object or None if input is not of type pd.Int64Dtype.
 
@@ -1212,14 +1228,14 @@ class Graph:
         #
         if self._rx_graph is not None:
             # A list of integer node_ids
-            return list(self._rx_graph.node_indices())
+            return _NodeCollection(self._rx_graph.node_indices())
         elif self._nx_graph is not None:
             # For subgraphs, serve the canonical order captured in subgraph(): iterating the
             # NX view directly is hash-ordered when the view is under half its parent's size.
             if self._nx_node_order is not None:
-                return list(self._nx_node_order)
+                return _NodeCollection(self._nx_node_order)
             # A list of node_ids -
-            return list(self._nx_graph.nodes)
+            return _NodeCollection(self._nx_graph.nodes)
         else:
             raise TypeError(
                 "Graph passed to 'nodes()' is neither "
@@ -1242,10 +1258,10 @@ class Graph:
 
         if self._rx_graph is not None:
             # A set of tuples for the edges
-            return set(self._rx_graph.edge_list())
+            return _EdgeCollection(self._rx_graph.edge_list())
         elif self._nx_graph is not None:
             # A set of tuples extracted from the graph's EdgeView
-            return set(self._nx_graph.edges)
+            return _EdgeCollection(self._nx_graph.edges)
         else:
             raise TypeError(
                 "Graph passed to 'edges()' is neither "

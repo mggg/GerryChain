@@ -72,6 +72,30 @@ def four_by_five_graph_rx(four_by_five_grid_nx: "nx.Graph[int, dict[str, Any], d
     return converted_graph
 
 
+@pytest.mark.parametrize(
+    ("attribute", "message"),
+    [
+        (
+            "nodes",
+            "As of GerryChain version 1.0.0, `Graph.nodes` is a property, not a method. Use "
+            "`graph.nodes` without parentheses; use `graph.node_data(node_id)` for node attributes.",
+        ),
+        (
+            "edges",
+            "As of GerryChain version 1.0.0, `Graph.edges` is a property, not a method. Use "
+            "`graph.edges` without parentheses; use `graph.edge_data(edge_id)` for edge attributes.",
+        ),
+    ],
+)
+def test_graph_collection_call_explains_property_access(
+    four_by_five_graph_rx: Graph, attribute: str, message: str
+):
+    with pytest.raises(TypeError) as exc_info:
+        getattr(four_by_five_graph_rx, attribute)()
+
+    assert str(exc_info.value) == message
+
+
 def test_convert_from_nx_to_rx(four_by_five_graph_nx: Graph):
     graph = four_by_five_graph_nx  # more readable
     converted_graph = graph.convert_from_nx_to_rx()

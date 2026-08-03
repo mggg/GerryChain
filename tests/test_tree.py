@@ -163,6 +163,26 @@ def test_node_repeats_warns_with_memoized_cut_finder(
         )
 
 
+def test_node_repeats_warns_once_per_chain(partition_with_pop: Partition):
+    graph = partition_with_pop.graph
+    ideal_pop = sum(graph.node_data(node)["pop"] for node in graph) / 2
+    proposal = build_recom_proposal_fn(
+        pop_col="pop", pop_target=ideal_pop, epsilon=0.25, node_repeats=1
+    )
+    chain = MarkovChain(
+        proposal, [contiguous], lambda x, *, rng: True, partition_with_pop, 3, rng=2018
+    )
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        list(chain)
+
+    matching_warnings = [
+        warning for warning in caught if "node_repeats is not beneficial" in str(warning.message)
+    ]
+    assert len(matching_warnings) == 1
+
+
 @pytest.mark.parametrize(
     "cut_finder",
     [
