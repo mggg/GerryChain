@@ -277,7 +277,6 @@ class Graph:
         # existing edge data with a dict (retaining the original
         # data as a value in the new dict)
 
-        graph = cls()
         for node_id in rx_graph.node_indices():
             data_dict = rx_graph[node_id]
             if not isinstance(data_dict, dict):
@@ -290,10 +289,10 @@ class Graph:
             data_dict = rx_graph.get_edge_data_by_index(edge_id)
             if data_dict is None:
                 # Create an empty dict for edge_data
-                graph.update_edge_by_index(edge_id, {})
-            if not isinstance(data_dict, dict):
+                rx_graph.update_edge_by_index(edge_id, {})
+            elif not isinstance(data_dict, dict):
                 # Create a new dict with the existing edge_data as an item
-                graph.update_edge_by_index(edge_id, {"__original_rx_edge_data": data_dict})
+                rx_graph.update_edge_by_index(edge_id, {"__original_rx_edge_data": data_dict})
 
         graph = cls()
         graph._rx_graph = cast(rustworkx.PyGraph[_AttributeDict, _AttributeDict], rx_graph)

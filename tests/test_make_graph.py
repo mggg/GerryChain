@@ -317,6 +317,23 @@ def test_from_rustworkx_rejects_directed_graph():
         Graph.from_rustworkx(rx_graph)
 
 
+def test_from_rustworkx_normalizes_edge_data():
+    preserved = {"existing": True}
+    original = object()
+    rx_graph = rx.PyGraph()
+    rx_graph.add_nodes_from([{}, {}, {}])
+    none_edge, object_edge, dict_edge = rx_graph.add_edges_from(
+        [(0, 1, None), (1, 2, original), (2, 0, preserved)]
+    )
+
+    graph = Graph.from_rustworkx(rx_graph)
+
+    assert graph.get_rx_graph() is rx_graph
+    assert graph.edge_data(none_edge) == {}
+    assert graph.edge_data(object_edge) == {"__original_rx_edge_data": original}
+    assert graph.edge_data(dict_edge) is preserved
+
+
 def test_graph_is_directed_returns_false_for_undirected_backends(
     four_by_five_grid_nx: "nx.Graph[int, dict[str, Any], dict[str, Any]]",
 ):
