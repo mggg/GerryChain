@@ -6,6 +6,14 @@ Subcommands:
   run       Run the benchmark in the *current* environment and report ms/step.
             This is also the worker that `compare` invokes under the hood.
 
+  micro     Time the per-operation building blocks the Rust migration ports
+            (graph ingestion, spanning trees, balanced cuts, one proposal) in
+            the current environment. The py-peak column is the tracemalloc
+            high-water mark: a measure of Python-object churn (allocation work
+            and GC pressure), not of total RAM. Allocations made natively by
+            extensions are invisible to it, so expect py-peak to drop as an
+            operation moves to Rust even when process memory does not.
+
   compare   Run the benchmark against one or more targets, each in an isolated
             environment (via `uv`), and print a comparison table. Targets:
 
@@ -319,6 +327,143 @@ def cmd_run(args: argparse.Namespace) -> None:
 
 
 # --------------------------------------------------------------------------
+# micro: per-operation timings for the Rust-migration units
+# --------------------------------------------------------------------------
+
+
+def cmd_micro(args: argparse.Namespace) -> None:
+    import importlib.metadata
+    import random
+    import statistics
+    import tracemalloc
+    from collections.abc import Callable
+
+    import gerrychain
+    from gerrychain import Graph, Partition, updaters
+    from gerrychain.proposals import recom
+    from gerrychain.tree import bipartition_tree, random_spanning_tree, uniform_spanning_tree
+
+    try:
+        version = importlib.metadata.version("gerrychain")
+    except importlib.metadata.PackageNotFoundError:
+        version = getattr(gerrychain, "__version__", "unknown")
+    print(f"gerrychain {version} from {gerrychain.__file__}", flush=True)
+
+    base_seed = args.seed
+    if base_seed is None:
+        base_seed = random.randrange(2**31)
+        print(f"base seed drawn randomly: {base_seed} (pass --seed {base_seed} to reproduce)")
+    seed_iter = iter(range(base_seed, base_seed + 100_000))
+
+    nx_graph = Graph.from_json(args.graph)
+    rx_graph = nx_graph.convert_from_nx_to_rx()
+    print(
+        f"graph={Path(args.graph).name} nodes={len(rx_graph.node_indices)} "
+        f"parts={args.parts} epsilon={args.epsilon} repeats={args.repeats} "
+        f"pop_col={args.pop_col}",
+        flush=True,
+    )
+
+    def timed(fn: Callable[[], object]) -> dict[str, float]:
+        wall_times: list[float] = []
+        python_peak_bytes: list[int] = []
+        for _ in range(args.repeats):
+            tracemalloc.start()
+            start_time = time.perf_counter()
+            fn()
+            wall_times.append(time.perf_counter() - start_time)
+            _, python_peak = tracemalloc.get_traced_memory()
+            tracemalloc.stop()
+            python_peak_bytes.append(python_peak)
+        return {
+            "wall_s_median": statistics.median(wall_times),
+            "wall_s_min": min(wall_times),
+            "py_peak_mb_median": statistics.median(python_peak_bytes) / 2**20,
+        }
+
+    op_timings: dict[str, dict[str, float]] = {}
+    op_timings["ingest_nx_to_rx"] = timed(nx_graph.convert_from_nx_to_rx)
+
+    # Skipped rather than failed when the external package is absent, so this keeps working
+    # after the migration removes the rustworkx dependency.
+    try:
+        import rustworkx
+    except ImportError:
+        print("ingest_from_rustworkx skipped: external rustworkx not installed", flush=True)
+    else:
+        external_rx_graph = rustworkx.networkx_converter(
+            nx_graph.get_nx_graph(), keep_attributes=True
+        )
+        op_timings["ingest_from_rustworkx"] = timed(lambda: Graph.from_rustworkx(external_rx_graph))
+
+    op_timings["random_spanning_tree"] = timed(
+        lambda: random_spanning_tree(rx_graph, rng=next(seed_iter))
+    )
+    op_timings["uniform_spanning_tree"] = timed(
+        lambda: uniform_spanning_tree(rx_graph, rng=next(seed_iter))
+    )
+
+    # Balanced-cut discovery with tree construction outside the timer.
+    total_population = sum(
+        rx_graph.node_data(node_id)[args.pop_col] for node_id in rx_graph.node_indices
+    )
+    prebuilt_trees = iter(
+        [random_spanning_tree(rx_graph, rng=next(seed_iter)) for _ in range(args.repeats)]
+    )
+    op_timings["balanced_cut_on_prebuilt_tree"] = timed(
+        lambda: bipartition_tree(
+            rx_graph,
+            pop_col=args.pop_col,
+            pop_target=total_population / 2,
+            epsilon=args.epsilon,
+            spanning_tree=next(prebuilt_trees),
+            rng=next(seed_iter),
+        )
+    )
+
+    partition = Partition.from_random_assignment(
+        graph=nx_graph,
+        n_parts=args.parts,
+        epsilon=args.epsilon,
+        pop_col=args.pop_col,
+        updaters={"population": updaters.Tally(args.pop_col, alias="population")},
+        rng=random.Random(base_seed),
+    )
+    ideal_population = sum(partition["population"].values()) / len(partition)
+    op_timings["recom_proposal"] = timed(
+        lambda: recom(
+            partition,
+            args.pop_col,
+            ideal_population,
+            epsilon=args.epsilon,
+            rng=random.Random(next(seed_iter)),
+        )
+    )
+
+    name_width = max(len(name) for name in op_timings)
+    print()
+    for name, timing in op_timings.items():
+        print(
+            f"{name:<{name_width}}  median {timing['wall_s_median'] * 1000:9.3f} ms  "
+            f"min {timing['wall_s_min'] * 1000:9.3f} ms  "
+            f"py-peak {timing['py_peak_mb_median']:7.2f} MB",
+            flush=True,
+        )
+
+    result = {
+        "version": version,
+        "module_file": gerrychain.__file__,
+        "graph": str(Path(args.graph).resolve()),
+        "parts": args.parts,
+        "epsilon": args.epsilon,
+        "seed": base_seed,
+        "repeats": args.repeats,
+        "ops": op_timings,
+    }
+    print(RESULT_MARKER + json.dumps(result), flush=True)
+
+
+# --------------------------------------------------------------------------
 # orchestrator: run the worker against several targets and compare
 # --------------------------------------------------------------------------
 
@@ -526,6 +671,32 @@ def main() -> None:
         "--out", default=str(SCRIPT_DIR / "recom_profile.prof"), help="profile output path"
     )
     run_p.set_defaults(func=cmd_run)
+
+    micro_p = sub.add_parser(
+        "micro", help="time per-operation building blocks (ingestion, trees, cuts, one proposal)"
+    )
+    micro_p.add_argument(
+        "--graph",
+        default=str(DEFAULT_GRAPH),
+        help=f"dual graph JSON to run on (default: {DEFAULT_GRAPH})",
+    )
+    micro_p.add_argument("--pop-col", default="TOTPOP", help="population column (default: TOTPOP)")
+    micro_p.add_argument(
+        "--parts", type=positive_int, default=6, help="number of districts (default: 6)"
+    )
+    micro_p.add_argument(
+        "--epsilon", type=float, default=0.01, help="population deviation (default: 0.01)"
+    )
+    micro_p.add_argument(
+        "--seed",
+        type=numpy_seed,
+        default=None,
+        help="base seed (default: drawn randomly and printed)",
+    )
+    micro_p.add_argument(
+        "--repeats", type=positive_int, default=5, help="timed repeats per op (default: 5)"
+    )
+    micro_p.set_defaults(func=cmd_micro)
 
     cmp_p = sub.add_parser("compare", help="benchmark several targets and compare")
     cmp_p.add_argument(
