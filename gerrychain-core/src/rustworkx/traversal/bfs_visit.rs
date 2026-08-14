@@ -1,0 +1,70 @@
+// Modified by GerryChain from rustworkx 0.18.1; see UPSTREAM.md for the changes.
+// Licensed under the Apache License, Version 2.0 (the "License"); you may
+// not use this file except in compliance with the License. You may obtain
+// a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+// WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+// License for the specific language governing permissions and limitations
+// under the License.
+
+use pyo3::prelude::*;
+
+use petgraph::stable_graph::NodeIndex;
+use petgraph::visit::Control;
+
+use crate::rustworkx::{PruneSearch, StopSearch};
+use rustworkx_core::traversal::BfsEvent;
+
+#[derive(FromPyObject)]
+pub struct PyBfsVisitor {
+    discover_vertex: Py<PyAny>,
+    finish_vertex: Py<PyAny>,
+    tree_edge: Py<PyAny>,
+    non_tree_edge: Py<PyAny>,
+    gray_target_edge: Py<PyAny>,
+    black_target_edge: Py<PyAny>,
+}
+
+pub fn bfs_handler(
+    py: Python,
+    vis: &PyBfsVisitor,
+    event: BfsEvent<NodeIndex, &Py<PyAny>>,
+) -> PyResult<Control<()>> {
+    let res = match event {
+        BfsEvent::Discover(u) => vis.discover_vertex.call1(py, (u.index(),)),
+        BfsEvent::TreeEdge(u, v, weight) => {
+            let edge = (u.index(), v.index(), weight);
+            vis.tree_edge.call1(py, (edge,))
+        }
+        BfsEvent::NonTreeEdge(u, v, weight) => {
+            let edge = (u.index(), v.index(), weight);
+            vis.non_tree_edge.call1(py, (edge,))
+        }
+        BfsEvent::GrayTargetEdge(u, v, weight) => {
+            let edge = (u.index(), v.index(), weight);
+            vis.gray_target_edge.call1(py, (edge,))
+        }
+        BfsEvent::BlackTargetEdge(u, v, weight) => {
+            let edge = (u.index(), v.index(), weight);
+            vis.black_target_edge.call1(py, (edge,))
+        }
+        BfsEvent::Finish(u) => vis.finish_vertex.call1(py, (u.index(),)),
+    };
+
+    match res {
+        Err(e) => {
+            if e.is_instance_of::<PruneSearch>(py) {
+                Ok(Control::Prune)
+            } else if e.is_instance_of::<StopSearch>(py) {
+                Ok(Control::Break(()))
+            } else {
+                Err(e)
+            }
+        }
+        Ok(_) => Ok(Control::Continue),
+    }
+}

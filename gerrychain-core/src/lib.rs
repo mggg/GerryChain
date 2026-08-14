@@ -12,8 +12,8 @@ mod rustworkx;
 // The Python module is named "rustworkx" (imported as gerrychain.rustworkx.rustworkx); the
 // Rust function is named differently only to avoid shadowing `mod rustworkx` above.
 #[pymodule(name = "rustworkx")]
-fn rustworkx_extension(module: &Bound<'_, PyModule>) -> PyResult<()> {
-    rustworkx::register(module)?;
+fn rustworkx_extension(py: Python<'_>, module: &Bound<'_, PyModule>) -> PyResult<()> {
+    rustworkx::register(py, module)?;
     gerrychain::register(module)?;
     Ok(())
 }

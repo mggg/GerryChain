@@ -15,7 +15,7 @@ export UV_MANAGED_PYTHON = 1
 CARGO_MANIFEST = gerrychain-core/Cargo.toml
 
 .PHONY: help check_prereq setup install install-docs check test test-all type-check format lint \
-	rust-check precommit docs docs-serve docs-test docs-linkcheck docs-cache-notebooks \
+	rust-check build precommit docs docs-serve docs-test docs-linkcheck docs-cache-notebooks \
 	docs-recom-assets clean
 
 help:
@@ -28,6 +28,7 @@ help:
 	@echo "  lint          - Run Ruff and both type checkers"
 	@echo "  type-check    - Run ty, then Pyright"
 	@echo "  rust-check    - Run cargo fmt, clippy, and tests on gerrychain-core"
+	@echo "  build         - Build the release wheel and source distribution into dist/"
 	@echo "  format        - Format the codebase"
 	@echo "  precommit     - Run pre-commit hooks"
 	@echo "  docs          - Build the documentation (warnings are errors)"
@@ -77,6 +78,11 @@ rust-check:
 	cargo fmt --manifest-path $(CARGO_MANIFEST) --check
 	cargo clippy --manifest-path $(CARGO_MANIFEST) -- -D warnings
 	cargo test --manifest-path $(CARGO_MANIFEST)
+	uv run --locked python tools/generate_cargo_notices.py --check
+
+build:
+	@echo "Building wheel and source distribution (release mode; the Rust compile takes a few minutes)..."
+	uv build
 
 test:
 	@echo "Running test suite..."
