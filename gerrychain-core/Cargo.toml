@@ -1,0 +1,22 @@
+[package]
+name = "gerrychain-core"
+version = "1.0.0"
+edition = "2024"
+# Matches the rustworkx 0.18.1 MSRV so the vendored binding sources compile unchanged.
+rust-version = "1.85"
+publish = false
+
+[lib]
+name = "gerrychain_core"
+crate-type = ["cdylib"]
+
+[dependencies.pyo3]
+version = "0.29"
+# abi3-py311: one stable-ABI wheel per platform for CPython 3.11+. Upstream rustworkx builds
+# its bindings under abi3 as well, so vendored binding code compiles unchanged here.
+features = ["abi3-py311"]
+
+[features]
+# Enabled by maturin builds (see [tool.maturin] in pyproject.toml). Kept out of the default
+# set so `cargo test` links libpython instead of building an unlinkable extension.
+extension-module = ["pyo3/extension-module"]

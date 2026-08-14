@@ -10,6 +10,10 @@ build:
   os: ubuntu-24.04
   tools:
     python: "3.11"
+    # Installing gerrychain now compiles the native extension. RTD's rust is asdf-managed, so
+    # the repo's rust-toolchain.toml pin is not enforced here; any toolchain >= the crate's
+    # rust-version (1.85) works.
+    rust: "latest"
   jobs:
     pre_create_environment:
       - asdf plugin add uv

@@ -1,16 +1,29 @@
 [build-system]
-requires = ["setuptools>=83.0.0"]
-build-backend = "setuptools.build_meta"
+requires = ["maturin>=1.14,<2"]
+build-backend = "maturin"
 
+[tool.maturin]
+manifest-path = "gerrychain-core/Cargo.toml"
+# The one compiled module, shipped inside the (currently stub) gerrychain.rustworkx package.
+module-name = "gerrychain.rustworkx.rustworkx"
+features = ["extension-module"]
+# Ship example graph data (e.g. Gerrymandria) inside the wheel so that gerrychain.examples can
+# load it via importlib.resources; py.typed marks the package as typed.
+include = [
+  { path = "gerrychain/py.typed", format = ["sdist", "wheel"] },
+  { path = "gerrychain/examples/*.json", format = ["sdist", "wheel"] },
+  { path = "gerrychain/rustworkx/*.pyi", format = ["sdist", "wheel"] },
+  { path = "rust-toolchain.toml", format = "sdist" },
+]
 
-[tool.setuptools]
-packages = { find = { include = ["gerrychain*"], exclude = ["tests*"] } }
-
-[tool.setuptools.package-data]
-# Ship example graph data (e.g. Gerrymandria) inside the wheel so that
-# gerrychain.examples can load it via importlib.resources.
-"gerrychain" = ["py.typed"]
-"gerrychain.examples" = ["*.json"]
+[tool.uv]
+# uv only rebuilds the project when a cache key changes; without these, edits to the Rust
+# sources would not trigger a rebuild of the editable install.
+cache-keys = [
+  { file = "pyproject.toml" },
+  { file = "gerrychain-core/Cargo.toml" },
+  { file = "gerrychain-core/src/**/*.rs" },
+]
 
 [project]
 name = "gerrychain"

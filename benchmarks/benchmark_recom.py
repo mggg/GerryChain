@@ -6,13 +6,13 @@ Subcommands:
   run       Run the benchmark in the *current* environment and report ms/step.
             This is also the worker that `compare` invokes under the hood.
 
-  micro     Time the per-operation building blocks the Rust migration ports
-            (graph ingestion, spanning trees, balanced cuts, one proposal) in
-            the current environment. The py-peak column is the tracemalloc
+  micro     Time the per-operation building blocks of a ReCom step (graph
+            ingestion, spanning trees, balanced cuts, one proposal) in the
+            current environment. The py-peak column is the tracemalloc
             high-water mark: a measure of Python-object churn (allocation work
             and GC pressure), not of total RAM. Allocations made natively by
-            extensions are invisible to it, so expect py-peak to drop as an
-            operation moves to Rust even when process memory does not.
+            extensions are invisible to it, so a natively implemented
+            operation shows a lower py-peak even when process memory does not.
 
   compare   Run the benchmark against one or more targets, each in an isolated
             environment (via `uv`), and print a comparison table. Targets:
