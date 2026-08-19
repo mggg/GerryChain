@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import functools
 import json
+import sys
 import warnings
 from collections.abc import Generator, Hashable, Iterable, Iterator, Mapping, Sequence
 from collections.abc import Set as AbstractSet
@@ -34,8 +35,13 @@ import geopandas as gp
 import networkx
 import numpy
 import pandas as pd
-import rustworkx
 import scipy
+import gerrychain
+
+# The shipped rustworkx port is the only graph backend; the external rustworkx package is not
+# a dependency and must never be imported by GerryChain code. An externally built PyGraph is
+# still accepted by Graph.from_rustworkx() via sys.modules detection (see that method).
+import gerrychain.rustworkx
 from networkx.readwrite import json_graph
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
@@ -101,6 +107,91 @@ def json_serialize(input_object: object) -> int | None:
     return None
 
 
+def _copy_external_rustworkx_pygraph(
+    candidate: object,
+) -> gerrychain.rustworkx.PyGraph[Any, Any] | None:
+    """Copy an external rustworkx 0.18.1 ``PyGraph`` into the shipped type, or return None.
+
+    The external package is looked up in ``sys.modules`` only: an external ``PyGraph`` can
+    exist in-process only if its module was already imported, and GerryChain must never import
+    ``rustworkx`` itself since it is not a dependency. Returns None when the candidate is not
+    an external ``PyGraph`` at all (the caller raises); raises :class:`GraphValidationError`
+    for an external ``PyGraph`` from an unsupported rustworkx version.
+
+    The copy preserves live node and edge indices exactly, including holes left by removals,
+    plus the multigraph setting and the graph-level ``attrs`` object (by reference). Node and
+    edge payloads are shared by reference; the caller's normalization pass then operates on
+    the copy only, so the external graph is never mutated. Index holes are recreated by
+    inserting throwaway entries and removing them only after all live entries are inserted.
+    Throwaway edges get a fresh temp node each so their endpoint pairs stay unique, which keeps
+    non-multigraph edge deduplication from collapsing them onto real or repeated pairs; removing
+    the temp nodes afterward also removes those edges.
+
+    Args:
+        candidate (object): The candidate object to be converted into a GerryChain ``PyGraph``.
+
+    Returns:
+        gerrychain.rustworkx.PyGraph[Any, Any] | None: A copy of the external ``PyGraph`` if it is valid,
+            or None if the candidate is not an external ``PyGraph``.
+    """
+    external = sys.modules.get("rustworkx")
+    if external is None:
+        return None
+    external_pygraph = getattr(external, "PyGraph", None)
+    if (
+        not isinstance(external_pygraph, type)
+        or external_pygraph.__module__ != "rustworkx"
+        or not isinstance(candidate, external_pygraph)
+    ):
+        return None
+    # The external class is only known at runtime, so no static narrowing is possible.
+    source: Any = candidate
+    version = getattr(external, "__version__", None)
+    if version != "0.18.1":
+        raise GraphValidationError(
+            f"Graph.from_rustworkx() accepts external rustworkx graphs only from rustworkx "
+            f"0.18.1 (found {version}); build the graph with gerrychain.rustworkx instead."
+        )
+
+    copy: gerrychain.rustworkx.PyGraph[Any, Any] = gerrychain.rustworkx.PyGraph(
+        multigraph=source.multigraph
+    )
+    copy.attrs = source.attrs
+
+    node_indices = source.node_indices()
+    if node_indices:
+        live_nodes = set(node_indices)
+        hole_nodes = []
+        for index in range(max(node_indices) + 1):
+            if index in live_nodes:
+                copy.add_node(source.get_node_data(index))
+            else:
+                hole_nodes.append(copy.add_node(None))
+        copy.remove_nodes_from(hole_nodes)
+
+    edge_indices = source.edge_indices()
+    if edge_indices:
+        live_edges = {
+            index: (
+                *source.get_edge_endpoints_by_index(index),
+                source.get_edge_data_by_index(index),
+            )
+            for index in edge_indices
+        }
+        temp_nodes = [copy.add_node(None)]
+        for index in range(max(edge_indices) + 1):
+            if index in live_edges:
+                # Endpoint names avoid shadowing `source` (the external graph) above.
+                edge_source, edge_target, payload = live_edges[index]
+                copy.add_edge(edge_source, edge_target, payload)
+            else:
+                temp_nodes.append(copy.add_node(None))
+                copy.add_edge(temp_nodes[0], temp_nodes[-1], None)
+        copy.remove_nodes_from(temp_nodes)
+
+    return copy
+
+
 class Graph:
     """
     This class closely mirrors the interface of a NetworkX Graph object, but with
@@ -145,7 +236,7 @@ class Graph:
     #       fallback. A bare, unconfigured Graph therefore has both set to None, which
     #       ``verify_graph_is_valid()`` reports as a clear error.
     _nx_graph: networkx.Graph[Hashable, _AttributeDict, _AttributeDict] | None = None
-    _rx_graph: rustworkx.PyGraph[_AttributeDict, _AttributeDict] | None = None
+    _rx_graph: gerrychain.rustworkx.PyGraph[_AttributeDict, _AttributeDict] | None = None
     _is_a_subgraph = False
     _node_id_to_parent_node_id_map: dict[Hashable, Hashable] = {}
     _node_id_to_original_nx_node_id_map: dict[Hashable, Hashable] = {}
@@ -217,9 +308,11 @@ class Graph:
 
     @classmethod
     def from_rustworkx(
-        cls, rx_graph: rustworkx.PyGraph[_NodeDataT, Any] | rustworkx.PyDiGraph[_NodeDataT, Any]
+        cls,
+        rx_graph: gerrychain.rustworkx.PyGraph[_NodeDataT, Any]
+        | gerrychain.rustworkx.PyDiGraph[_NodeDataT, Any],
     ) -> Graph:
-        """Create a Graph from a RustworkX.PyGraph object.
+        """Create a Graph from a gerrychain.rustworkx.PyGraph object.
 
         There are three primary use cases for this routine: 1) converting an NX-based Graph to be
         an RX-based Graph, 2) creating a subgraph of an RX-based Graph, and 3) creating a Graph
@@ -243,18 +336,35 @@ class Graph:
         3) In those cases where no node_id mapping is needed this routine provides a simple way to
         create an RX-based GerryChain graph object.
 
+        GerryChain ships its own rustworkx port, so the expected input is a
+        ``gerrychain.rustworkx.PyGraph``, which is embedded without copying (and payload
+        normalization below mutates it in place). A ``PyGraph`` built with the external
+        rustworkx package (version 0.18.1 only) is also accepted at runtime when that package
+        is already imported: it is copied once into the shipped type, preserving live node and
+        edge indices (including holes left by removals), the multigraph setting, and
+        graph-level ``attrs``, and sharing payload dictionaries by reference. Structural
+        mutations made afterward to either graph do not affect the other, and there is no
+        conversion back to the external type. The external acceptance is runtime-only and
+        deliberately not part of the static signature.
+
         Args:
-            rx_graph (rustworkx.PyGraph | rustworkx.PyDiGraph): a RustworkX graph object. A
-                directed ``PyDiGraph`` is rejected with :class:`GraphValidationError`.
+            rx_graph (gerrychain.rustworkx.PyGraph | gerrychain.rustworkx.PyDiGraph): a graph built with
+                ``gerrychain.rustworkx``. A directed ``PyDiGraph`` is rejected with
+                :class:`GraphValidationError`, as is any object that is not a shipped or
+                external rustworkx 0.18.1 ``PyGraph``.
 
         Returns:
-            'Graph': a GerryChain Graph object with an embedded RustworkX.PyGraph object
+            'Graph': a GerryChain Graph object with an embedded gerrychain.rustworkx.PyGraph object
         """
-        if not isinstance(rx_graph, rustworkx.PyGraph):
-            raise GraphValidationError(
-                "GerryChain Graph objects must be undirected; "
-                "Graph.from_rustworkx() requires a rustworkx.PyGraph."
-            )
+        if not isinstance(rx_graph, gerrychain.rustworkx.PyGraph):
+            copied = _copy_external_rustworkx_pygraph(rx_graph)
+            if copied is None:
+                raise GraphValidationError(
+                    "GerryChain Graph objects must be undirected; Graph.from_rustworkx() "
+                    "requires a gerrychain.rustworkx.PyGraph or an already-imported external "
+                    "rustworkx 0.18.1 PyGraph."
+                )
+            rx_graph = copied
 
         # Ensure that the RX graph has node and edge data dictionaries
         #
@@ -295,7 +405,9 @@ class Graph:
                 rx_graph.update_edge_by_index(edge_id, {"__original_rx_edge_data": data_dict})
 
         graph = cls()
-        graph._rx_graph = cast(rustworkx.PyGraph[_AttributeDict, _AttributeDict], rx_graph)
+        graph._rx_graph = cast(
+            gerrychain.rustworkx.PyGraph[_AttributeDict, _AttributeDict], rx_graph
+        )
         graph._nx_graph = None
         graph._is_a_subgraph = False  # See comments on RX subgraph issues.
 
@@ -612,11 +724,11 @@ class Graph:
             raise TypeError("Graph passed to 'get_nx_graph()' must be a networkx graph")
         return self._nx_graph
 
-    def get_rx_graph(self) -> rustworkx.PyGraph[_AttributeDict, _AttributeDict]:
+    def get_rx_graph(self) -> gerrychain.rustworkx.PyGraph[_AttributeDict, _AttributeDict]:
         """Return the embedded RX graph object.
 
         Returns:
-            rustworkx.PyGraph:
+            gerrychain.rustworkx.PyGraph:
         """
         if self._rx_graph is None:
             raise TypeError("Graph passed to 'get_rx_graph()' must be a rustworkx graph")
@@ -658,10 +770,10 @@ class Graph:
                 raise Exception("convert_from_nx_to_rx(): graph to be converted is a subgraph")
 
             nx_graph = self._nx_graph
-            rx_graph = rustworkx.networkx_converter(nx_graph, keep_attributes=True)
-            if not isinstance(rx_graph, rustworkx.PyGraph):
+            rx_graph = gerrychain.rustworkx.networkx_converter(nx_graph, keep_attributes=True)
+            if not isinstance(rx_graph, gerrychain.rustworkx.PyGraph):
                 raise TypeError("NetworkX conversion unexpectedly produced a directed graph")
-            rx_graph = cast(rustworkx.PyGraph[_AttributeDict, _AttributeDict], rx_graph)
+            rx_graph = cast(gerrychain.rustworkx.PyGraph[_AttributeDict, _AttributeDict], rx_graph)
 
             # Note that the resulting RX graph will have multigraph set to False which
             # ensures that there is never more than one edge between two specific nodes.
@@ -1748,7 +1860,7 @@ class Graph:
         function.
 
         Args:
-            G (RustworkX.PyGraph): RustworkX.PyGraph object (not a NetworkX graph).
+            G (gerrychain.rustworkx.PyGraph): gerrychain.rustworkx.PyGraph object (not a NetworkX graph).
             source (node): Starting node for the breadth-first search; this function
                 iterates over only those edges in the component reachable from
                 this node.
@@ -2039,7 +2151,7 @@ class Graph:
                 # This function is passed a dict with the data for the edge.
                 return edge_data[edge_weight_attribute_name]
 
-            spanning_tree = rustworkx.minimum_spanning_tree(rx_graph, get_weight)
+            spanning_tree = gerrychain.rustworkx.minimum_spanning_tree(rx_graph, get_weight)
 
             spanning_graph = Graph.from_rustworkx(spanning_tree)
         else:
@@ -2057,7 +2169,7 @@ class Graph:
         guaranteed to be a ``list``. Callers that need list methods should wrap it in ``list()``.
 
         The neighbors are returned in a deterministic order. RX collects neighbors into a randomly
-        seeded HashSet, so the raw ``rustworkx.NodeIndices`` order varies call to call; any seeded
+        seeded HashSet, so the raw ``gerrychain.rustworkx.NodeIndices`` order varies call to call; any seeded
         algorithm that maps RNG draws over neighbor order (a random walk, a BFS feeding a random
         choice) would otherwise be unreproducible.
 
@@ -2186,7 +2298,7 @@ class Graph:
         if self._rx_graph is not None:
             rx_graph = self._rx_graph
             # 1. Get the adjacency matrix
-            adj_matrix = rustworkx.adjacency_matrix(rx_graph)
+            adj_matrix = gerrychain.rustworkx.adjacency_matrix(rx_graph)
             # 2. Calculate the degree matrix (simplified for this example)
             degree_matrix = numpy.diag([rx_graph.degree(node) for node in rx_graph.node_indices()])
             # 3. Calculate the Laplacian matrix
@@ -2216,14 +2328,14 @@ class Graph:
         """
 
         def create_scipy_sparse_array_from_rx_graph(
-            rx_graph: rustworkx.PyGraph[_AttributeDict, _AttributeDict],
+            rx_graph: gerrychain.rustworkx.PyGraph[_AttributeDict, _AttributeDict],
         ) -> scipy.sparse.coo_matrix:
             """Create a scippy.sparce.coo_matrix from the given RX graph.
 
             This is needed in the code below to compute the normalized laplacian for the graph.
 
             Args:
-                rx_graph (rustworkx.PyGraph): The RustworkX graph object from which to create the
+                rx_graph (gerrychain.rustworkx.PyGraph): The RustworkX graph object from which to create the
                     sparse array.
 
             Returns:
@@ -2310,7 +2422,7 @@ class Graph:
     def is_connected(self) -> bool:
         """Return whether the (undirected) graph is connected.
 
-        Delegates to the backend's native connectivity routine - ``rustworkx.is_connected`` for an
+        Delegates to the backend's native connectivity routine - ``gerrychain.rustworkx.is_connected`` for an
         RX graph, ``networkx.is_connected`` for an NX graph - which are faster than hand-rolled
         Python traversal.
 
@@ -2324,7 +2436,7 @@ class Graph:
         if self._rx_graph is not None:
             if self._rx_graph.num_nodes() <= 1:
                 return True
-            return rustworkx.is_connected(self._rx_graph)
+            return gerrychain.rustworkx.is_connected(self._rx_graph)
         elif self._nx_graph is not None:
             if self._nx_graph.number_of_nodes() <= 1:
                 return True
@@ -2358,7 +2470,9 @@ class Graph:
             return True
 
         if self._rx_graph is not None:
-            return rustworkx.is_connected(self._rx_graph.subgraph(cast(list[int], nodes)))
+            return gerrychain.rustworkx.is_connected(
+                self._rx_graph.subgraph(cast(list[int], nodes))
+            )
         elif self._nx_graph is not None:
             return networkx.is_connected(self._nx_graph.subgraph(nodes))
         else:
@@ -2384,7 +2498,10 @@ class Graph:
 
         if self._rx_graph is not None:
             rx_graph = self.get_rx_graph()
-            subgraphs = [self.subgraph(nodes) for nodes in rustworkx.connected_components(rx_graph)]
+            subgraphs = [
+                self.subgraph(nodes)
+                for nodes in gerrychain.rustworkx.connected_components(rx_graph)
+            ]
         elif self._nx_graph is not None:
             nx_graph = self.get_nx_graph()
             subgraphs = [self.subgraph(nodes) for nodes in networkx.connected_components(nx_graph)]
@@ -2421,7 +2538,7 @@ class Graph:
 
         if self._rx_graph is not None:
             rx_graph = self.get_rx_graph()
-            connected_components = rustworkx.connected_components(rx_graph)
+            connected_components = gerrychain.rustworkx.connected_components(rx_graph)
         elif self._nx_graph is not None:
             nx_graph = self.get_nx_graph()
             connected_components = list(networkx.connected_components(nx_graph))
@@ -2462,7 +2579,7 @@ class Graph:
             # A graph with V-1 edges and connected must be acyclic.
 
             # We can check connectivity by ensuring there's only one connected component.
-            connected_components = rustworkx.connected_components(rx_graph)
+            connected_components = gerrychain.rustworkx.connected_components(rx_graph)
             if len(connected_components) != 1:
                 return False
 

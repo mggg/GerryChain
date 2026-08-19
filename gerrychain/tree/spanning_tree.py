@@ -72,7 +72,7 @@ import random
 from collections.abc import Hashable, Iterator
 from typing import cast
 
-import rustworkx
+import gerrychain.rustworkx
 
 from .._deprecated import deprecated_parameters
 from .._rng import make_rng
@@ -356,7 +356,7 @@ def uniform_spanning_tree(
         # through NX and convert_from_nx_to_rx() renumbers the nodes in NX insertion order,
         # silently relabeling the tree relative to the graph it spans; balanced cuts computed
         # on such a tree then split the wrong nodes.
-        rx_tree: rustworkx.PyGraph = rustworkx.PyGraph()
+        rx_tree: gerrychain.rustworkx.PyGraph = gerrychain.rustworkx.PyGraph()
         rx_tree.add_nodes_from(
             [graph.node_data(node_id) for node_id in sorted(cast("list[int]", nodes))]
         )

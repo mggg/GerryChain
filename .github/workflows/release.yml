@@ -119,11 +119,20 @@ jobs:
         shell: bash
         run: >-
           uv run --isolated --no-project --python 3.11 --with dist/*.whl python -c
-          'import os; from importlib.metadata import version;
-          from gerrychain.examples import gerrymandria;
+          'import os; import importlib.util; from importlib.metadata import version;
+          assert importlib.util.find_spec("rustworkx") is None;
+          import gerrychain.rustworkx as rx;
           from gerrychain.rustworkx import _gerrychain;
+          from gerrychain.examples import gerrymandria;
           assert version("gerrychain") == os.environ["RELEASE_VERSION"];
           assert _gerrychain.native_ping() == "gerrychain-core";
+          assert rx.__version__ == "0.18.1";
+          graph = rx.generators.grid_graph(4, 4);
+          assert rx.is_connected(graph);
+          seen = [];
+          Visitor = type("V", (rx.visit.BFSVisitor,), {"discover_vertex": lambda self, v: seen.append(v)});
+          rx.graph_bfs_search(graph, [0], Visitor());
+          assert len(seen) == 16;
           assert len(gerrymandria().nodes) == 64'
 
       - name: Upload wheel
@@ -160,11 +169,20 @@ jobs:
       - name: Smoke test source distribution
         run: >-
           uv run --isolated --no-project --python 3.11 --with dist/*.tar.gz python -c
-          'import os; from importlib.metadata import version;
-          from gerrychain.examples import gerrymandria;
+          'import os; import importlib.util; from importlib.metadata import version;
+          assert importlib.util.find_spec("rustworkx") is None;
+          import gerrychain.rustworkx as rx;
           from gerrychain.rustworkx import _gerrychain;
+          from gerrychain.examples import gerrymandria;
           assert version("gerrychain") == os.environ["RELEASE_VERSION"];
           assert _gerrychain.native_ping() == "gerrychain-core";
+          assert rx.__version__ == "0.18.1";
+          graph = rx.generators.grid_graph(4, 4);
+          assert rx.is_connected(graph);
+          seen = [];
+          Visitor = type("V", (rx.visit.BFSVisitor,), {"discover_vertex": lambda self, v: seen.append(v)});
+          rx.graph_bfs_search(graph, [0], Visitor());
+          assert len(seen) == 16;
           assert len(gerrymandria().nodes) == 64'
 
       - name: Upload source distribution
@@ -235,11 +253,20 @@ jobs:
       - name: Smoke test TestPyPI installation
         run: >-
           "$RUNNER_TEMP/testpypi-venv/bin/python" -c
-          'import os; from importlib.metadata import version;
-          from gerrychain.examples import gerrymandria;
+          'import os; import importlib.util; from importlib.metadata import version;
+          assert importlib.util.find_spec("rustworkx") is None;
+          import gerrychain.rustworkx as rx;
           from gerrychain.rustworkx import _gerrychain;
+          from gerrychain.examples import gerrymandria;
           assert version("gerrychain") == os.environ["RELEASE_VERSION"];
           assert _gerrychain.native_ping() == "gerrychain-core";
+          assert rx.__version__ == "0.18.1";
+          graph = rx.generators.grid_graph(4, 4);
+          assert rx.is_connected(graph);
+          seen = [];
+          Visitor = type("V", (rx.visit.BFSVisitor,), {"discover_vertex": lambda self, v: seen.append(v)});
+          rx.graph_bfs_search(graph, [0], Visitor());
+          assert len(seen) == 16;
           assert len(gerrymandria().nodes) == 64'
 
   pypi:

@@ -379,49 +379,49 @@ fn find_node_by_weight<Ty: EdgeType>(
 }
 
 create_exception!(
-    rustworkx,
+    gerrychain.rustworkx,
     InvalidNode,
     PyException,
     "The provided node is invalid."
 );
 create_exception!(
-    rustworkx,
+    gerrychain.rustworkx,
     DAGWouldCycle,
     PyException,
     "Performing this operation would result in trying to add a cycle to a DAG."
 );
 create_exception!(
-    rustworkx,
+    gerrychain.rustworkx,
     NoEdgeBetweenNodes,
     PyException,
     "There is no edge present between the provided nodes."
 );
 create_exception!(
-    rustworkx,
+    gerrychain.rustworkx,
     DAGHasCycle,
     PyException,
     "The specified Directed Graph has a cycle and can't be treated as a DAG."
 );
 create_exception!(
-    rustworkx,
+    gerrychain.rustworkx,
     NoSuitableNeighbors,
     PyException,
     "No neighbors found matching the provided predicate."
 );
 create_exception!(
-    rustworkx,
+    gerrychain.rustworkx,
     NullGraph,
     PyException,
     "Invalid operation on a null graph"
 );
 create_exception!(
-    rustworkx,
+    gerrychain.rustworkx,
     NoPathFound,
     PyException,
     "No path was found between the specified nodes."
 );
 create_exception!(
-    rustworkx,
+    gerrychain.rustworkx,
     InvalidMapping,
     PyException,
     "No mapping was found for the request swapping"
@@ -433,31 +433,31 @@ import_exception!(gerrychain.rustworkx.visit, PruneSearch);
 import_exception!(gerrychain.rustworkx.visit, StopSearch);
 
 create_exception!(
-    rustworkx,
+    gerrychain.rustworkx,
     JSONSerializationError,
     PyException,
     "JSON Serialization Error"
 );
 create_exception!(
-    rustworkx,
+    gerrychain.rustworkx,
     JSONDeserializationError,
     PyException,
     "JSON Deserialization Error"
 );
 create_exception!(
-    rustworkx,
+    gerrychain.rustworkx,
     NegativeCycle,
     PyException,
     "Negative Cycle found on shortest-path algorithm"
 );
 create_exception!(
-    rustworkx,
+    gerrychain.rustworkx,
     FailedToConverge,
     PyException,
     "Failed to Converge on a solution"
 );
 create_exception!(
-    rustworkx,
+    gerrychain.rustworkx,
     GraphNotBipartite,
     PyException,
     "Graph is not bipartite"

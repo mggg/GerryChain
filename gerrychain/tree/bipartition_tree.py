@@ -49,7 +49,7 @@ _node_repeats_warning_rngs: WeakSet[random.Random] = WeakSet()
 RustworkX Issues:
 
 Note: This module has been modified in order to be able to operate on
-RustworkX.PyGraph objects in addition to NetworkX.Graph objects.  The
+gerrychain.rustworkx.PyGraph objects in addition to NetworkX.Graph objects.  The
 new GerryChain Graph object embeds a graph object that can be based
 either on NetworkX or RustworkX (the old GerryChain graph object was
 a subclass of NetworkX.Graph).  The reason for supporting
@@ -59,7 +59,7 @@ The default usage model is for users to create graphs using Networkx,
 both because of legacy concerns but also because it is just convenient
 to create graphs in NetworkX.  When the user creates a Partition
 object, the embedded NetworkX.Graph object will be automatically
-converted to be a RustworkX.PyGraph object.  And since most of the
+converted to be a gerrychain.rustworkx.PyGraph object.  And since most of the
 routines in this module are used after the creation of a Partition
 object, the underlying graph operations will most often be performed by
 RustworkX code.

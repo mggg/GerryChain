@@ -1,6 +1,6 @@
 import networkx as nx
 import numpy as np
-import rustworkx as rx
+import gerrychain.rustworkx as rx
 from graph import Graph
 
 # Create an RX graph (replace with your graph data)

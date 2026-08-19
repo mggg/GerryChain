@@ -16,7 +16,7 @@ from typing import Any
 
 import networkx as nx
 import pytest
-import rustworkx as rx
+import gerrychain.rustworkx as rx
 
 from gerrychain import Graph
 from gerrychain.examples import gerrymandria

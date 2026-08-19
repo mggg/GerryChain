@@ -5,7 +5,7 @@ from collections.abc import Hashable, Mapping, Sequence
 from typing import Any, assert_type
 
 import networkx
-import rustworkx
+import gerrychain.rustworkx
 
 from gerrychain import Graph, Partition
 from gerrychain.accept import AcceptanceFn
@@ -36,7 +36,7 @@ def assert_public_types(
     optimizer: SingleMetricOptimizer,
     counts: Mapping[Hashable, float],
     nx_graph: networkx.Graph[str, dict[str, int], dict[str, float]],
-    rx_graph: rustworkx.PyGraph[dict[str, int], dict[str, float]],
+    rx_graph: gerrychain.rustworkx.PyGraph[dict[str, int], dict[str, float]],
 ) -> None:
     """Pin public types from a package consumer's perspective."""
     assert_type(graph.node_data(0), dict[str, Any])

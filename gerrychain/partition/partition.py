@@ -323,7 +323,7 @@ class Partition:
         if isinstance(graph, networkx.Graph):
             graph = Graph.from_networkx(graph)
 
-        # if a Graph object, make sure it is based on an embedded RustworkX.PyGraph
+        # if a Graph object, make sure it is based on an embedded gerrychain.rustworkx.PyGraph
         if isinstance(graph, Graph):
             # Performance Testing:  In order to compare the performance of
             # RustworkX vs NetworkX, we enable using an NX-based Graph in a partition

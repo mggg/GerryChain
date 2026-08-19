@@ -5,7 +5,7 @@ import networkx as nx
 import numpy as np
 import numpy.typing as npt
 import pytest
-import rustworkx as rx
+import gerrychain.rustworkx as rx
 import scipy.sparse
 
 from gerrychain.graph import Graph

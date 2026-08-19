@@ -9,7 +9,7 @@ import geopandas as gp
 import networkx as nx
 import pandas
 import pytest
-import rustworkx as rx
+import gerrychain.rustworkx as rx
 from pyproj import CRS
 from shapely.geometry import Polygon
 

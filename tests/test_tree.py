@@ -8,7 +8,7 @@ from typing import cast
 
 import networkx
 import pytest
-import rustworkx
+import gerrychain.rustworkx as rustworkx
 
 from gerrychain import MarkovChain
 from gerrychain.constraints import contiguous, within_percent_of_ideal_population

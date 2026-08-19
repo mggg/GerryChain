@@ -46,7 +46,6 @@ dependencies = [
     "networkx>=3.6.1",
     "numpy>=2.4.6",
     "pandas>=3.0.5",
-    "rustworkx>=0.18.1",
     "scipy>=1.17.1",
     "shapely>=2.1.2",
     "tqdm>=4.70.0",
@@ -138,6 +137,9 @@ dev = [
   "ruff>=0.16.1",
   "ty>=0.0.65",
   "pyright>=1.1.411",
+  # Test-only: the external rustworkx, pinned exactly, so the Graph.from_rustworkx() external
+  # ingestion tests can exercise the real thing. Not a runtime dependency of gerrychain.
+  "rustworkx==0.18.1",
 ]
 docs = [
   "furo>=2025.12.19",

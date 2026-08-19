@@ -8,7 +8,10 @@ Subcommands:
 
   micro     Time the per-operation building blocks of a ReCom step (graph
             ingestion, spanning trees, balanced cuts, one proposal) in the
-            current environment. The py-peak column is the tracemalloc
+            current environment. Pick --parts/--epsilon that are feasible for
+            the graph's integer populations (64 people cannot split 6 ways
+            within 1%, so grid_8x8 needs --parts 4 or a looser --epsilon);
+            infeasible combinations exhaust retries and raise. The py-peak column is the tracemalloc
             high-water mark: a measure of Python-object churn (allocation work
             and GC pressure), not of total RAM. Allocations made natively by
             extensions are invisible to it, so a natively implemented

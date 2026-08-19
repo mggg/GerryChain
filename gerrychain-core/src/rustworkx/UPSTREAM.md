@@ -39,8 +39,9 @@ made so far (nearly all of them are import or path adjustments):
 3. **Compatibility version**: `__version__` is the literal `"0.18.1"` instead of
    `env!("CARGO_PKG_VERSION")`, which would otherwise report gerrychain-core's crate version.
 4. **Python module paths**: `#[pyclass(module = "rustworkx...")]` attributes,
-   `import_exception!(rustworkx.visit, ...)` declarations, facade absolute imports, and
-   `sys.modules` strings all moved from `rustworkx...` to `gerrychain.rustworkx...`.
+   `create_exception!(rustworkx, ...)` and `import_exception!(rustworkx.visit, ...)`
+   declarations, facade absolute imports, and `sys.modules` strings all moved from
+   `rustworkx...` to `gerrychain.rustworkx...`.
 5. **Pest grammar path**: `#[grammar = "dot_parser/dot.pest"]` became
    `"rustworkx/dot_parser/dot.pest"` (paths are relative to the crate's `src/`).
 6. **Formatting**: one `use` statement lengthened by the path nesting was reflowed by rustfmt
@@ -60,10 +61,6 @@ made so far (nearly all of them are import or path adjustments):
 
 ## Known deviations
 
-- Exceptions declared with `create_exception!(rustworkx, ...)` still report
-  `__module__ == "rustworkx"`, and pickling those exception _classes_ does not round-trip
-  under the new namespace. The macro's module argument predates the vendoring and matches
-  upstream behavior otherwise; revisit if exception pickling is ever needed.
 - `tests/rustworkx_compat/visualization/test_graphviz.py::TestGraphvizDraw::test_method` is
   skipped (change 8 above), so this copy runs one fewer test than upstream. The underlying
   cause is environmental, not a defect of this copy: the test draws an unseeded random graph,

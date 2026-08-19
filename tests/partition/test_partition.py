@@ -7,7 +7,7 @@ from tempfile import TemporaryDirectory
 
 import networkx
 import pytest
-import rustworkx
+import gerrychain.rustworkx as rustworkx
 
 from gerrychain.graph import Graph
 from gerrychain.partition import GeographicPartition, Partition

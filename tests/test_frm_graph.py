@@ -3,7 +3,7 @@ from typing import Any, cast
 
 import networkx as nx
 import pytest
-import rustworkx as rx
+import gerrychain.rustworkx as rx
 
 from gerrychain import Graph
 
