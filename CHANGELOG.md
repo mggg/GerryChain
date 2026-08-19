@@ -1,176 +1,212 @@
-## [v1.0.0] - August 2026    
+## [Unreleased]
+
+### Changed
+
+- **Breaking (graph-boundary migration):** GerryChain now ships its own vendored rustworkx 0.18.1
+  port as the public `gerrychain.rustworkx` package and uses it as the only embedded graph backend.
+  The external `rustworkx` PyPI package is no longer a dependency.
+
+  - `Graph.get_rx_graph()` now returns a `gerrychain.rustworkx.PyGraph` (the shipped class)
+    instead of an external `rustworkx.PyGraph`.
+  - To run rustworkx algorithms on GerryChain graphs, replace `import rustworkx as rx` with
+    `import gerrychain.rustworkx as rx`. The `gerrychain.rustworkx` namespace will mirror the
+    complete rustworkx 0.18.1 surface for the remainder of 1.x.
+  - `Graph.from_rustworkx()` embeds a shipped `PyGraph` without copying, exactly as before. A
+    `PyGraph` built with the external rustworkx package (version 0.18.1 only, and only when that
+    package is already imported) is now copied once into the shipped type instead of being
+    embedded.
+  - Compatibility is one-way: there is no simple conversion from the shipped type back to an
+    external rustworkx type, and pickles that reference `rustworkx.*` module paths are not
+    loadable by the shipped port.
+
+### Added
+
+- GerryChain wheels now contain a compiled Rust extension (`gerrychain-core`), built with PyO3
+  against the CPython stable ABI (one `cp311-abi3` wheel per platform, CPython 3.11+). Installing
+  from source requires a Rust tooling.
+- Wheels include a Cargo dependency SBOM. Source distributions and wheels include the applicable
+  grouped third-party notices.
+
+## [v1.0.0] - August 2026
 
 ### Added
 
 #### Markov chains (module: chain)
-* Added ability to incrementally configure the chain.  
-    
-    You can explicitly set class attributes, such as: `chain.initial_partition = ...`.  
-    
-    Functions to add constraints and updaters: 
-    
-    * add_constraint()
-    * add_constraints()
-    * add_updater()
-    * add_updaters()
 
-    Function to check whether a chain is fully configured: 
-    
-    * check_valid()
+- Added ability to incrementally configure the chain.
+
+  You can explicitly set class attributes, such as: `chain.initial_partition = ...`.
+
+  Functions to add constraints and updaters:
+
+  - add_constraint()
+  - add_constraints()
+  - add_updater()
+  - add_updaters()
+
+  Function to check whether a chain is fully configured:
+
+  - check_valid()
 
 #### Graphs (module: graph)
-* Added methods to query and access the embedded NetworkX/RustworkX graph.
 
-    * is_nx_graph()
-    * is_rx_graph()
-    * get_nx_graph()
-    * get_rx_graph()
+- Added methods to query and access the embedded NetworkX/RustworkX graph.
 
-* Added methods for converting between GerryChain, NetworkX, and RustworkX graphs, and to create an empty graph.  
+  - is_nx_graph()
+  - is_rx_graph()
+  - get_nx_graph()
+  - get_rx_graph()
 
-    * from_networkx()
-    * from_rustworkx()
-    * from_null_networkx()
-    * to_networkx_graph()
+- Added methods for converting between GerryChain, NetworkX, and RustworkX graphs, and to create an empty graph.
 
-* Added methods to translate node_ids between NetworkX and RustworkX and between parent graphs and subgraphs - to deal with the differences between the way NetworkX and RustworkX implement node_ids.  
-    
-    * original_nx_node_id_for_internal_node_id()
-    * internal_node_id_for_original_nx_node_id()
-    * get_nx_to_rx_node_id_map()
-    * translate_subgraph_node_ids_for_set_of_nodes()
-    * original_nx_node_ids_for_list()
-    * original_nx_node_ids_for_set()
-    * translate_subgraph_node_ids_for_flips()
+  - from_networkx()
+  - from_rustworkx()
+  - from_null_networkx()
+  - to_networkx_graph()
 
-* Added methods to handle the fact that in RustworkX, edges are different from edge_ids.  In both NetworkX and RustworkX, an edge is a tuple of node_ids.  In NetworkX, there is no difference between an edge and an edge_id, but in RustworkX an edge_id is an integer.
+- Added methods to translate node_ids between NetworkX and RustworkX and between parent graphs and subgraphs - to deal with the differences between the way NetworkX and RustworkX implement node_ids.
 
-    * get_edge_id_from_edge()
-    * get_edge_from_edge_id()
+  - original_nx_node_id_for_internal_node_id()
+  - internal_node_id_for_original_nx_node_id()
+  - get_nx_to_rx_node_id_map()
+  - translate_subgraph_node_ids_for_set_of_nodes()
+  - original_nx_node_ids_for_list()
+  - original_nx_node_ids_for_set()
+  - translate_subgraph_node_ids_for_flips()
+
+- Added methods to handle the fact that in RustworkX, edges are different from edge_ids. In both NetworkX and RustworkX, an edge is a tuple of node_ids. In NetworkX, there is no difference between an edge and an edge_id, but in RustworkX an edge_id is an integer.
+
+  - get_edge_id_from_edge()
+  - get_edge_from_edge_id()
 
 #### Examples (module: examples)
 
-* Added `gerrymandria()`, which returns the fictional 8x8 grid graph used in the User Guide.
+- Added `gerrymandria()`, which returns the fictional 8x8 grid graph used in the User Guide.
 
 #### Partitions (module: partition)
 
-* Added `Partition.assignment_vector()` and `Assignment.to_vector()`.
+- Added `Partition.assignment_vector()` and `Assignment.to_vector()`.
 
 #### Proposals (module: proposals)
 
-* Added new names for legacy functions.  The new names adhere to the naming convention for creating proposal functions, "build_xxx_proposal_fn".  Note that the legacy functions continue to exist.
+- Added new names for legacy functions. The new names adhere to the naming convention for creating proposal functions, "build_xxx_proposal_fn". Note that the legacy functions continue to exist.
 
-    * build_any_node_flip_proposal_fn() == propose_any_node_flip()
-    * build_random_flip_proposal_fn() == propose_random_flip()
-    * build_flip_every_district_proposal_fn() == propose_flip_every_district()
-    * build_chunk_flip_proposal_fn() == propose_chunk_flip()
-    * build_slow_reversible_proposal_fn() == slow_reversible_propose()
-    * build_slow_reversible_bi_proposal_fn() == slow_reversible_propose_bi()
+  - build_any_node_flip_proposal_fn() == propose_any_node_flip()
+  - build_random_flip_proposal_fn() == propose_random_flip()
+  - build_flip_every_district_proposal_fn() == propose_flip_every_district()
+  - build_chunk_flip_proposal_fn() == propose_chunk_flip()
+  - build_slow_reversible_proposal_fn() == slow_reversible_propose()
+  - build_slow_reversible_bi_proposal_fn() == slow_reversible_propose_bi()
 
 #### ReCom proposals (module: proposals)
-* Changed the ReCom class to be a namespace that defines the five variants of recom that were discussed in the article, "Spanning Tree Methods for Sampling Graph Partitions":
 
-    * A = cut_edges_mst()
-    * B = district_pairs_mst()
-    * C = cut_edges_ust()
-    * D = district_pairs_ust()
-    * R = reversible()
+- Changed the ReCom class to be a namespace that defines the five variants of recom that were discussed in the article, "Spanning Tree Methods for Sampling Graph Partitions":
 
-* Added convenience functions to create recom proposal functions:
+  - A = cut_edges_mst()
+  - B = district_pairs_mst()
+  - C = cut_edges_ust()
+  - D = district_pairs_ust()
+  - R = reversible()
 
-    * build_recom_proposal_fn()
-    * build_reversible_recom_proposal_fn()
+- Added convenience functions to create recom proposal functions:
+
+  - build_recom_proposal_fn()
+  - build_reversible_recom_proposal_fn()
 
 #### Multi-member ReCom (module: proposals)
 
-* Added functions and the MultiMemberReCom class to support multi-member ReCom.  These new functions and the MultiMemberReCom class mirror the routines and class for standard ReCom:
+- Added functions and the MultiMemberReCom class to support multi-member ReCom. These new functions and the MultiMemberReCom class mirror the routines and class for standard ReCom:
 
-    * multi_member_recom()
-    * build_multi_member_recom_proposal_fn()
-    * epsilon_tree_bipartition_multi_member()
-    * class MultiMemberReCom
-        * cut_edges_mst()
-        * district_pairs_mst()
-        * cut_edges_ust()
-        * district_pairs_ust()
+  - multi_member_recom()
+  - build_multi_member_recom_proposal_fn()
+  - epsilon_tree_bipartition_multi_member()
+  - class MultiMemberReCom
+    - cut_edges_mst()
+    - district_pairs_mst()
+    - cut_edges_ust()
+    - district_pairs_ust()
 
 #### Constraints for multi-member ReCom (module: constraints)
 
-* Added a new constraint to support multi-member ReCom
+- Added a new constraint to support multi-member ReCom
 
-    * within_percent_of_ideal_population_per_member()
+  - within_percent_of_ideal_population_per_member()
 
 ### Changed
 
 #### Graphs
 
-* `gerrychain.Graph` no longer subclasses `networkx.Graph`.  Node and edge data access has changed.
+- `gerrychain.Graph` no longer subclasses `networkx.Graph`. Node and edge data access has changed.
   See the [v1.0 migration guide](docs/topics/v1p0p0_migration_guide.md).
 
-* Changed the way to access node and edge data
+- Changed the way to access node and edge data
 
-    * To access node data, use: my_graph.node_data(...node_id...)
-    * To access edge data, use: my_graph.edge_data(...edge_id...)
+  - To access node data, use: my_graph.node_data(...node_id...)
+  - To access edge data, use: my_graph.edge_data(...edge_id...)
 
-* GerryChain now uses independent random number generators configured through `rng=`.  See the
+- GerryChain now uses independent random number generators configured through `rng=`. See the
   [reproducibility guide](docs/topics/reproducibility.md).
 
 #### Renamed public parameters
 
-* Parameters accepting functions now generally have names that use the _fn suffix:
+- Parameters accepting functions now generally have names that use the \_fn suffix:
 
-    This is only an issue for function calls using named parameters.
+  This is only an issue for function calls using named parameters.
 
-    An example of this is the renaming of "proposal" to "proposal_fn" in the constructor for a MarkovChain object:
+  An example of this is the renaming of "proposal" to "proposal_fn" in the constructor for a MarkovChain object:
 
-    Old:
-    ```
-    my_chain = MarkovChain(
-        proposal = my_proposal,
-        ...
-    )
-    ```
-    New:
-    ```
-    my_chain = MarkovChain(
-        proposal_fn = my_proposal,
-        ...
-    )
-    ```
+  Old:
+
+  ```
+  my_chain = MarkovChain(
+      proposal = my_proposal,
+      ...
+  )
+  ```
+
+  New:
+
+  ```
+  my_chain = MarkovChain(
+      proposal_fn = my_proposal,
+      ...
+  )
+  ```
+
 ### Removed
 
 #### Removed the pre-1.0 NetworkX-derived Graph interface.
 
-* `gerrychain.Graph` is no longer a subclass of `networkx.Graph`.  See the
+- `gerrychain.Graph` is no longer a subclass of `networkx.Graph`. See the
   [v1.0 migration guide](docs/topics/v1p0p0_migration_guide.md) for replacement graph operations.
 
 #### Removed the old instantiable and callable ReCom interface.
 
-* The old ReCom class was instantiable and callable.  It has been replaced with a namespace that
-  defines functions that generate proposal functions.  See
+- The old ReCom class was instantiable and callable. It has been replaced with a namespace that
+  defines functions that generate proposal functions. See
   [The `ReCom` Namespace](docs/topics/v1p0p0_migration_guide.md#the-recom-namespace) for details.
 
 #### Other removals
 
-* `MarkovChain` is now an iterable rather than an iterator. Create an iterator with
+- `MarkovChain` is now an iterable rather than an iterator. Create an iterator with
   `chain_iterator = iter(chain)`, then call `next(chain_iterator)` instead of `next(chain)`.
 
-* Removed `gerrychain.__version__`. Use `importlib.metadata.version("gerrychain")` to read the
+- Removed `gerrychain.__version__`. Use `importlib.metadata.version("gerrychain")` to read the
   installed package version.
 
 ### Deprecated
 
 #### Pre-1.0 callback signatures
 
-* Legacy proposal, acceptance, spanning-tree, bipartition, balanced-edge-cut, cut-choice, and
-  initial-partition callbacks remain temporarily supported with warnings.  This includes callbacks
+- Legacy proposal, acceptance, spanning-tree, bipartition, balanced-edge-cut, cut-choice, and
+  initial-partition callbacks remain temporarily supported with warnings. This includes callbacks
   that do not accept `rng=`.
 
-    For more details see the [reproducibility guide](docs/topics/reproducibility.md).
+  For more details see the [reproducibility guide](docs/topics/reproducibility.md).
 
 #### Legacy parameter names
 
-* The legacy parameter names listed above remain temporarily supported with warnings.
+- The legacy parameter names listed above remain temporarily supported with warnings.
 
-* `create_grid_graph()` remains available as a deprecated compatibility shim.  There is no public
+- `create_grid_graph()` remains available as a deprecated compatibility shim. There is no public
   `create_grid_nx_graph()` function.
