@@ -23,7 +23,7 @@ mod dot_parser;
 mod dot_utils;
 mod generators;
 mod geometry;
-mod graph;
+pub(crate) mod graph;
 mod graphml;
 mod isomorphism;
 mod iterators;

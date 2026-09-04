@@ -58,6 +58,9 @@ made so far (nearly all of them are import or path adjustments):
    `@unittest.skip` because its unseeded random graph intermittently crashes broken local
    graphviz `sfdp` builds (see Known deviations). Remove the skip to restore upstream
    coverage on machines with a working sfdp.
+9. **Crate-visible graph module**: `mod graph;` in `mod.rs` became `pub(crate) mod graph;` so
+   GerryChain's own bindings under `src/gerrychain/` can name `PyGraph` and build result graphs.
+   No item in `graph.rs` changed.
 
 ## Known deviations
 
