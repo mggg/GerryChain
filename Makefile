@@ -78,7 +78,7 @@ rust-check:
 	cargo fmt --manifest-path $(CARGO_MANIFEST) --check
 	cargo clippy --manifest-path $(CARGO_MANIFEST) -- -D warnings
 	cargo test --manifest-path $(CARGO_MANIFEST)
-	uv run --locked python tools/generate_cargo_notices.py --check
+	uv run --locked --no-sync python tools/generate_cargo_notices.py --check
 
 build:
 	@echo "Building wheel and source distribution (release mode; the Rust compile takes a few minutes)..."

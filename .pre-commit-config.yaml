@@ -1,3 +1,5 @@
+# Every hook is scoped to the staged files it can act on, so a docs-only commit runs nothing and a
+# Python-only commit skips the Cargo checks. `make check` remains the whole-repository equivalent.
 repos:
   - repo: local
     hooks:
@@ -8,8 +10,32 @@ repos:
           python docs/_clear_notebook_outputs.py
         language: system
         files: ^docs/user/.*\.ipynb$
-      - id: make-format
-        name: Run `make check` (format + lint)
-        entry: make check
+      # --force-exclude keeps the vendored rustworkx paths excluded even when passed explicitly.
+      - id: ruff-format
+        name: Ruff format
+        entry: uv run --no-sync ruff format --force-exclude
         language: system
+        types_or: [python, pyi, jupyter]
+      - id: ruff-check
+        name: Ruff check
+        entry: uv run --no-sync ruff check --force-exclude
+        language: system
+        types_or: [python, pyi]
+      - id: ty
+        name: Type check with ty
+        entry: uv run --no-sync ty check
+        language: system
+        types: [python]
+        files: ^(gerrychain|tests)/
+      - id: pyright
+        name: Type check with Pyright
+        entry: uv run --no-sync pyright
+        language: system
+        types: [python]
+        files: ^(gerrychain|tests)/
+      - id: rust-check
+        name: Run `make rust-check`
+        entry: make rust-check
+        language: system
+        files: ^gerrychain-core/
         pass_filenames: false
