@@ -1,3 +1,14 @@
+## Unreleased
+
+### Added
+
+* Exploratory proposal for `repair_assignment_milp` and
+  `MILPAssignmentRepairResult`, an opt-in frozen-core border-shell repair of
+  disconnected initial assignments. This is seeking feedback and is not
+  presented as merge-ready; it defaults to one border ring, is exact only
+  within its configured local MILP model, and does not alter graph edges or
+  implicit `Partition`/`MarkovChain` behavior.
+
 ## [v1.0.0] - August 2026    
 
 ### Added
